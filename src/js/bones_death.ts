@@ -1,7 +1,7 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 
 import { clearBypasses } from './object_bypass.js';
-import { PARANOID_BONES } from './const.js';
+import { DISMOUNT_BONES, PARANOID_BONES } from './const.js';
 import { paranoidQuery } from './query.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import {
@@ -28,12 +28,15 @@ import {
 } from './monster_carry.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { initializeMonsterArmor } from './monworn.js';
+import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './object_release.js';
 import { rn2 } from './rng.js';
+import { dismountHero } from './steed.js';
+import { unpunishHero } from './punishment.js';
 import { objectWeight } from './weight.js';
 
 const PM_HUMAN = 260;
@@ -172,6 +175,11 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
         );
         if (replace !== 'y') return false;
     }
+
+    releaseAllMonsterLeashes();
+    if (game.u.punished) await unpunishHero();
+    if (game.u.usteed) await dismountHero(DISMOUNT_BONES);
+    for (const object of game.inventory) object.ghostly = true;
 
     if (arise === LEAVESTATUE) {
         const form = game.u?.umonnum ?? game.urace?.mnum ?? PM_HUMAN;
