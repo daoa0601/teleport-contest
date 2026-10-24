@@ -176,6 +176,11 @@ export async function mkmap({ lit, foreground = ROOM, background = STONE, smooth
                     loc.lit = true;
             }
         }
+        for (const room of level.rooms.slice(0, level.nroom)) {
+            if (!isRoom(room))
+                throw new Error('Cave lighting requires a complete room.');
+            room.rlit = 1;
+        }
     }
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
