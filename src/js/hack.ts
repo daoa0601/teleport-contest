@@ -310,7 +310,7 @@ export function heroTightDiagonalReason(state = game) {
 }
 
 // C hack.c:crawl_destination(): goodpos() first, then diagonal limits.
-async function crawlDestinationAllowed(
+export async function crawlDestinationAllowed(
     state: PlayingGameState, x: number, y: number,
     random: RandomBelow, publish: MessagePublisher,
 ) {
