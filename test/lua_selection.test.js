@@ -204,4 +204,20 @@ void test('flood fills wrap explicit coordinates and reject off-map starting squ
     await roomState.executeAsync('inside_room = selection.floodfill(1, 1):get(1, 1)');
     assert.equal(roomState.getGlobal('inside_room'), 1);
 });
+void test('selection matches strip numeric labels and a final newline from map fragments', t => {
+    const game = freshGame();
+    game.level.requireAt(12, 6).typ = ROOM;
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+    state.execute(`
+        labelled = selection.match("1.2\\n"):numpoints()
+        wildcard = selection.match("?.?"):numpoints()
+    `);
+    assert.equal(state.getGlobal('labelled'), 1);
+    assert.equal(state.getGlobal('wildcard'), 1, 'unknown noncentral characters are transparent');
+    assert.throws(() => state.execute('selection.match(".?.")'), /center must be valid terrain/);
+    assert.throws(() => state.execute('selection.area(12, 6, 12, 6):filter_mapchar("[")'), /unknown map character/);
+});
 //# sourceMappingURL=lua_selection.test.js.map

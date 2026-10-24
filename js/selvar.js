@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym } from './display.js';
-import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
+import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
 export function selection_new() {
@@ -667,8 +667,6 @@ const MAP_CHAR_TYPES = {
     T: TREE,
     F: IRONBARS,
     x: MAX_TYPE,
-    '[': MAX_TYPE,
-    ']': MAX_TYPE,
     B: CROSSWALL,
     w: MATCH_WALL,
 };
@@ -676,14 +674,21 @@ export function mapCharacterType(character) {
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }
 export function specialSelectionMatch(fragment) {
-    const rows = fragment.split('\n');
-    const width = Math.max(...rows.map(row => row.length));
+    const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
+    const rows = data.split('\n');
+    if (rows.at(-1) === '')
+        rows.pop();
+    if (rows.length > MAP_Y_LIM + 1)
+        throw new Error('mapfragment error');
+    const width = Math.max(0, ...rows.map(row => row.length));
     if (!(width % 2) || !(rows.length % 2))
         throw new Error('mapfragment needs to have odd height and width');
     const xRadius = Math.trunc(width / 2);
     const yRadius = Math.trunc(rows.length / 2);
-    const center = mapCharacterType(rows[yRadius]?.[xRadius]);
-    if (center === undefined || center === MAX_TYPE)
+    // mapfrag_get() indexes the original buffer with a fixed row stride.
+    const terrainAt = (x, y) => mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
+    const center = terrainAt(xRadius, yRadius);
+    if (center === INVALID_TYPE || center === MAX_TYPE)
         throw new Error('mapfragment center must be valid terrain');
     const selection = selection_new();
     for (let y = 0; y <= ROWNO; y++) {
@@ -691,12 +696,11 @@ export function specialSelectionMatch(fragment) {
             let matched = true;
             for (let offsetX = -xRadius; offsetX <= xRadius && matched; offsetX++) {
                 for (let offsetY = -yRadius; offsetY <= yRadius; offsetY++) {
-                    const expected = MAP_CHAR_TYPES[rows[offsetY + yRadius]?.[offsetX + xRadius] ?? ' '];
+                    const expected = terrainAt(offsetX + xRadius, offsetY + yRadius);
                     const actual = isok(x + offsetX, y + offsetY)
                         ? game.level?.at?.(x + offsetX, y + offsetY)?.typ
                         : STONE;
-                    if (expected === undefined
-                        || !match_maptyps(expected, actual ?? STONE)) {
+                    if (!match_maptyps(expected, actual ?? STONE)) {
                         matched = false;
                         break;
                     }

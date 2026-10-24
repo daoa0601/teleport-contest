@@ -8,7 +8,7 @@ import {
     COLNO, ROWNO, ROOMOFFSET,
     STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR,
     FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE,
-    WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL,
+    WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM,
     W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY,
     IS_STWALL, isok,
 } from './const.js';
@@ -780,8 +780,6 @@ const MAP_CHAR_TYPES: Readonly<Record<string, number>> = {
     T: TREE,
     F: IRONBARS,
     x: MAX_TYPE,
-    '[': MAX_TYPE,
-    ']': MAX_TYPE,
     B: CROSSWALL,
     w: MATCH_WALL,
 };
@@ -791,14 +789,20 @@ export function mapCharacterType(character: string | undefined): number | undefi
 }
 
 export function specialSelectionMatch(fragment: string) {
-    const rows = fragment.split('\n');
-    const width = Math.max(...rows.map(row => row.length));
+    const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
+    const rows = data.split('\n');
+    if (rows.at(-1) === '') rows.pop();
+    if (rows.length > MAP_Y_LIM + 1) throw new Error('mapfragment error');
+    const width = Math.max(0, ...rows.map(row => row.length));
     if (!(width % 2) || !(rows.length % 2))
         throw new Error('mapfragment needs to have odd height and width');
     const xRadius = Math.trunc(width / 2);
     const yRadius = Math.trunc(rows.length / 2);
-    const center = mapCharacterType(rows[yRadius]?.[xRadius]);
-    if (center === undefined || center === MAX_TYPE)
+    // mapfrag_get() indexes the original buffer with a fixed row stride.
+    const terrainAt = (x: number, y: number) =>
+        mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
+    const center = terrainAt(xRadius, yRadius);
+    if (center === INVALID_TYPE || center === MAX_TYPE)
         throw new Error('mapfragment center must be valid terrain');
 
     const selection = selection_new();
@@ -809,14 +813,11 @@ export function specialSelectionMatch(fragment: string) {
                 offsetX <= xRadius && matched; offsetX++) {
                 for (let offsetY = -yRadius;
                     offsetY <= yRadius; offsetY++) {
-                    const expected = MAP_CHAR_TYPES[
-                        rows[offsetY + yRadius]?.[offsetX + xRadius] ?? ' '
-                    ];
+                    const expected = terrainAt(offsetX + xRadius, offsetY + yRadius);
                     const actual = isok(x + offsetX, y + offsetY)
                         ? game.level?.at?.(x + offsetX, y + offsetY)?.typ
                         : STONE;
-                    if (expected === undefined
-                        || !match_maptyps(expected, actual ?? STONE)) {
+                    if (!match_maptyps(expected, actual ?? STONE)) {
                         matched = false;
                         break;
                     }
