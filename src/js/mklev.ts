@@ -3846,21 +3846,6 @@ function restoreBonesObjects(level: GameMap): void {
     game._fobjSerial = newestOrder;
 }
 
-function restoreBonesMonsterAttitudes(level: GameMap): void {
-    for (const monster of level?.monsters || []) {
-        if (!monster.isshk) {
-            const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
-            const isUnicorn = monster.mnum >= 101 && monster.mnum <= 103;
-            const coalignedUnicorn = isUnicorn
-                && Math.sign(game.u?.ualign?.type ?? 0)
-                    === Math.sign(alignment);
-            monster.mpeaceful = coalignedUnicorn || peaceMinded(monster.mnum)
-                ? 1 : 0;
-        }
-        setMonsterMalign(monster);
-    }
-}
-
 // C refs: bones.c:getbones() and restore.c:getlev(ghostly).
 async function getbones(): Promise<boolean> {
     const flags = game.flags || {};
@@ -3901,7 +3886,6 @@ async function getbones(): Promise<boolean> {
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
     restoreBonesObjects(game.level);
-    restoreBonesMonsterAttitudes(game.level);
     await fixShopDamage(game);
     sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;

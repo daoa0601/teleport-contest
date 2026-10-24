@@ -266,17 +266,17 @@ for (const [name, limit] of [
         requirePlayingGame(game);
         assert.ok(game.mvitals);
         const species = MONSTER_NAME.indexOf(name);
-        const last = await createMonsterAt(name, 12, 10, NO_MINVENT);
-        const excess = await createMonsterAt(name, 13, 10, NO_MINVENT);
+        const older = await createMonsterAt(name, 12, 10, NO_MINVENT);
+        const newer = await createMonsterAt(name, 13, 10, NO_MINVENT);
         game.mvitals[species] = { born: limit - 1, died: 0, mvflags: 0 };
 
         await restoreBonesMonsters(game.level, game);
 
-        assert.ok(requireGameLevel().monsters.includes(last));
-        assert.ok(last.mhp > 0);
-        assert.equal(requireGameLevel().monsters.includes(excess), false);
-        assert.equal(excess.dead, true);
-        assert.equal(excess.mhpmax, DEFUNCT_MONSTER);
+        assert.ok(requireGameLevel().monsters.includes(newer));
+        assert.ok(newer.mhp > 0);
+        assert.equal(requireGameLevel().monsters.includes(older), false);
+        assert.equal(older.dead, true);
+        assert.equal(older.mhpmax, DEFUNCT_MONSTER);
         assert.equal(requireMonsterVital(species).born, limit);
         assert.ok(requireMonsterVital(species).mvflags & G_EXTINCT);
     });
@@ -338,20 +338,20 @@ void test('an admitted shapechanger tallies only its base species', async () => 
     assert.equal(requireMonsterVital(NEWT).born, 4);
 });
 
-void test('only the first bones actor of a unique species is admitted', async () => {
+void test('unique bones admission follows the native chain with newest monsters first', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     const medusa = MONSTER_NAME.indexOf('Medusa');
-    const first = await createMonsterAt('Medusa', 12, 10, NO_MINVENT);
-    const duplicate = await createMonsterAt('Medusa', 13, 10, NO_MINVENT);
+    const older = await createMonsterAt('Medusa', 12, 10, NO_MINVENT);
+    const newer = await createMonsterAt('Medusa', 13, 10, NO_MINVENT);
     game.mvitals[medusa] = { born: 0, died: 0, mvflags: 0 };
 
     await restoreBonesMonsters(game.level, game);
 
-    assert.ok(requireGameLevel().monsters.includes(first));
-    assert.equal(requireGameLevel().monsters.includes(duplicate), false);
-    assert.equal(duplicate.mhpmax, DEFUNCT_MONSTER);
+    assert.ok(requireGameLevel().monsters.includes(newer));
+    assert.equal(requireGameLevel().monsters.includes(older), false);
+    assert.equal(older.mhpmax, DEFUNCT_MONSTER);
     assert.equal(requireMonsterVital(medusa).born, 1);
     assert.ok(requireMonsterVital(medusa).mvflags & G_EXTINCT);
 });

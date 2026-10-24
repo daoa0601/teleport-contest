@@ -6,11 +6,14 @@ import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, RLOC_NONE } from './const.js'
 import { sanitizeBonesName } from './bones_name.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
-import { findMonsterNearPosition } from './mklev.js';
+import { findMonsterNearPosition, peaceMinded } from './mklev.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
+import { hideMonsterOnRestore, hideMonsterUnder } from './monster_hiding.js';
 import { propagateMonsterSpecies } from './monster_population.js';
-import { MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
+import { restoreMonsterShape } from './monster_polymorph.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
 import { roomForRoomno } from './room.js';
@@ -25,10 +28,11 @@ const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
 const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
 const MS_LEADER = 36;
 const MS_NEMESIS = 37;
+const M1_CONCEAL = 0x80;
 
 export async function prepareBonesMonstersForSave(): Promise<void> {
     const level = requireGameLevel();
-    for (const monster of [...level.monsters]) {
+    for (const monster of [...level.monsters].reverse()) {
         const sound = MONSTER_SOUND[monster.mnum];
         if (monster.iswiz || monster.mnum === PM_MEDUSA
             || sound === MS_LEADER || sound === MS_NEMESIS
@@ -133,7 +137,9 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
     // C restmonchn() admits the complete chain before getbones() starts
     // purging it. Inventory drops during purge must not affect admission
     // of an actor later in that chain.
-    for (const monster of level?.monsters || []) {
+    // Births append here; native fmon starts with the newest monster.
+    const monsters = [...level.monsters].reverse();
+    for (const monster of monsters) {
         // C priest.c:restpriest(): bones belong to the receiving level.
         if (monster.ispriest && state.u.uz?.dlevel) {
             const shrine = monster.epri ?? monster.mextra?.epri;
@@ -145,7 +151,21 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
         if (!propagateMonsterSpecies(species, true, true, state))
             monster.mhpmax = DEFUNCT_MONSTER;
     }
-    for (const monster of [...(level?.monsters || [])]) {
+    for (const monster of monsters) {
+        if (monster.mundetected && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
+            await hideMonsterUnder(monster, state);
+        if (!monster.isshk) {
+            const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
+            const isUnicorn = monster.mnum >= 101 && monster.mnum <= 103;
+            const coalignedUnicorn = isUnicorn
+                && Math.sign(state.u.ualign?.type ?? 0) === Math.sign(alignment);
+            monster.mpeaceful = coalignedUnicorn || peaceMinded(monster.mnum) ? 1 : 0;
+        }
+        setMonsterMalign(monster, state);
+        await restoreMonsterShape(monster, state);
+        await hideMonsterOnRestore(monster, state);
+    }
+    for (const monster of monsters) {
         sanitizeMonsterName(monster);
         if (monster.mhpmax !== DEFUNCT_MONSTER) continue;
         await removeMonsterFromGame(monster);
