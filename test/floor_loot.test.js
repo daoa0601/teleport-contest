@@ -75,4 +75,11 @@ void test('a forced both-transfer with empty pockets drops the else from the put
     assert.equal(chest.cknown, true);
     assert.equal(game.context.move, 0);
 });
+void test('looting upward names the shop ceiling rather than a plain ceiling', async () => {
+    freshPlayableRoom();
+    await createStaffedShop({ left: 8, right: 14, top: 8, bottom: 12, keeperX: 11, keeperY: 10 });
+    await runExtendedCommand('loot', '<');
+    assert.equal(game._lastPlineMessage, "You don't find anything to loot on the shop's ceiling.");
+    assert.equal(game.context.move, 1);
+});
 //# sourceMappingURL=floor_loot.test.js.map
