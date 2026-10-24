@@ -7,6 +7,7 @@ import {
     PANICLOG, ROOM, ROWNO, STAIRS, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
+import { dungeonFeatureSentenceAt } from '../js/dungeon_feature.js';
 import { game, requireGameLevel, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { heroIsOnStairs, isInvocationPosition } from '../js/invocation_position.js';
@@ -30,6 +31,21 @@ function prepareMaze({ seed = 173, depth = 24, hell = false } = {}) {
     if (hell) game.valley_level = { dnum: 0, dlevel: 1, flags: { town: false }, alignment: null };
     game.medusa_level = { dnum: 0, dlevel: 20, flags: { town: false }, alignment: null };
 }
+
+void test('a maze branch at level one remains unknown until the hero traverses it', async () => {
+    prepareMaze({ depth: 1 });
+    game.branches = [{
+        type: 'stair', portal: false, end1_up: true,
+        end1: { dnum: 0, dlevel: 1 }, end2: { dnum: 1, dlevel: 1 },
+    }];
+
+    await generateRandomMaze();
+
+    const entrance = levelStairs(game).find(stair => stair.tolev.dnum === 1);
+    assert.ok(entrance);
+    assert.equal(dungeonFeatureSentenceAt(entrance.sx, entrance.sy),
+        'There is a staircase up here.');
+});
 
 function assertConnectedMaze(level: GameMap) {
     const passages = [];

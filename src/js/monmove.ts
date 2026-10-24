@@ -541,7 +541,7 @@ import {
     IS_STWALL,
     IS_TREE,
     IS_WALL,
-    IRONBARS,
+    IRONBARS, LADDER, STAIRS,
     LAVAPOOL,
     LAVAWALL,
     BUSTDOOR,
@@ -7473,8 +7473,9 @@ function holdsUpMonsterWeb(x: number, y: number, state: PlayingGameState): boole
     const location = state.level.at(x, y);
     if (x < 1 || !location || IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS)
         return true;
+    if (location.typ !== STAIRS && location.typ !== LADDER) return false;
     for (let stairs = state.stairs; stairs; stairs = stairs.next)
-        if (stairs.sx === x && stairs.sy === y && stairs.up) return true;
+        if (stairs.sx === x && stairs.sy === y) return stairs.up;
     return false;
 }
 

@@ -37,9 +37,9 @@ function heroHasControlledLevitation(state: GameState): boolean {
 function downStairwayAtHero(state: GameState): Stairway | null {
     const { ux, uy } = state.u;
     let stairs = state.stairs;
-    while (stairs && (stairs.sx !== ux || stairs.sy !== uy || stairs.up))
+    while (stairs && (stairs.sx !== ux || stairs.sy !== uy))
         stairs = stairs.next;
-    return stairs || null;
+    return stairs && !stairs.up ? stairs : null;
 }
 
 // C artifact_has_invprop(obj, LEVITATION) over the whole inventory: the

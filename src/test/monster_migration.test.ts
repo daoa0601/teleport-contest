@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    COLNO, HOLE, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_RANDOM, MIGR_STAIRS_DOWN, ROOM, ROWNO, VWALL, NO_MINVENT,
+    COLNO, HOLE, LADDER, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, ROOM, ROWNO, VWALL, NO_MINVENT,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
@@ -137,6 +137,27 @@ void test('a stair-directed migrant arrives by the connecting stair', async () =
     assert.equal(delivered, 1);
     // The destination's stair back to level 1 sits at 12,10.
     assert.ok(near(monster, 12, 10));
+});
+
+void test('a special-stair migrant uses the first connecting stair even when it is a ladder', async () => {
+    freshConnectedLevels();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('jackal', 14, 10, NO_MINVENT);
+    await migrateMonsterOffLevel(monster, game, {
+        dst: { dnum: 0, dlevel: 2 },
+    }, { mode: MIGR_SSTAIRS });
+    enterDestinationLevel();
+    game.level.requireAt(16, 10).typ = LADDER;
+    game.stairs = {
+        sx: 16, sy: 10, up: true, isladder: true, u_traversed: false,
+        tolev: { dnum: 0, dlevel: 1 }, next: game.stairs,
+    };
+
+    const delivered = await deliverMigratingMonsters(game);
+
+    assert.equal(delivered, 1);
+    assert.equal(monster.mx, 16, 'the first matching ladder takes priority over the older stairs');
+    assert.equal(monster.my, 10);
 });
 
 void test('a limbo monster returns near its former square', async () => {

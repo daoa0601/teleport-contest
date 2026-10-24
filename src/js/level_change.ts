@@ -547,7 +547,6 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
                     if (newdungeon) await u_on_sstairs(0);
                     else await u_on_upstairs();
                 }
-                await placeHeroOnLevel(game.u.ux, game.u.uy);
             }
             if (await applyStairTravelEffects(up, ladder)) return true;
         } else if (arrival === 'portal' && !In_endgame(game.u.uz)) {
@@ -700,7 +699,6 @@ export async function placeHeroAtRandomArrival(
     await place_lregion(area.lx, area.ly, area.hx, area.hy,
         excluded.lx, excluded.ly, excluded.hx, excluded.hy,
         up ? LR_UPTELE : LR_DOWNTELE, null);
-    await placeHeroOnLevel(game.u.ux, game.u.uy);
     await switchHeroTerrain();
     return { x: game.u.ux, y: game.u.uy };
 }

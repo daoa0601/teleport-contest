@@ -191,9 +191,8 @@ function physicalEscape(monster: Monster, state: PlayingGameState, stuck: boolea
     const floats = monsterFloats(monster);
     const cell = state.level.requireAt(monster.mx, monster.my);
     if (cell.typ === STAIRS || cell.typ === LADDER) {
-        for (let stair = state.stairs; stair; stair = stair.next)
-            if (stair.sx === monster.mx && stair.sy === monster.my && (stair.up || !floats)) return { kind: 'stairs', stair };
-        return null;
+        const stair = stairAt(state, monster.mx, monster.my);
+        return stair && (stair.up || !floats) ? { kind: 'stairs', stair } : null;
     }
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const ignoreBoulders = (MONSTER_SIZE[monster.mnum] ?? 0) === 0

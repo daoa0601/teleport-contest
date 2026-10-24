@@ -19,6 +19,7 @@ import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
 import { randomGhostName, roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { placeHeroOnLevel } from './hero_location.js';
 import { lookupNovelTitle, novelTitle } from './novel_titles.js';
 import { addFruit } from './fruit.js';
 import { setTinVariety } from './tin.js';
@@ -462,16 +463,9 @@ function is_pit(t: number): boolean { return t === PIT || t === SPIKED_PIT; }
 
 // Stairway list management
 function stairway_add(x: number, y: number, up: boolean, isladder: boolean, dest: DungeonLocation): void {
-    const currentDungeon = game.u?.uz?.dnum ?? 0;
-    const currentLevel = game.u?.uz?.dlevel ?? 1;
-    // mklev.c marks the main-dungeon level-one entrance as traversed: the
-    // hero conceptually began by coming down it, so its branch identity is
-    // already known even before the first player command.
-    const initialEntrance = !!up && currentDungeon === 0 && currentLevel === 1
-        && dest?.dnum !== undefined && dest.dnum !== currentDungeon;
     const node = {
         sx: x, sy: y, up, isladder, tolev: { ...dest },
-        u_traversed: initialEntrance,
+        u_traversed: false,
         next: game.stairs,
     };
     game.stairs = node;
@@ -492,17 +486,6 @@ function stairway_find_special_dir(up: boolean): Stairway | null {
 }
 
 // ── Hero placement (C ref: stairs.c, mkmaze.c) ──
-
-function u_on_newpos(x: number, y: number): void {
-    game.u.ux = x;
-    game.u.uy = y;
-    // dungeon.c:u_on_newpos() cannot retain a position on the departed level.
-    if (game.u.uz?.dnum !== game.u.uz0?.dnum
-        || game.u.uz?.dlevel !== game.u.uz0?.dlevel) {
-        game.u.ux0 = x;
-        game.u.uy0 = y;
-    }
-}
 
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
 // flag is only one of the gates: bottom levels and the invocation level also
@@ -600,7 +583,7 @@ async function putLregionHere(
             if (!await randomMonsterRelocation(monster, { flags: RLOC_NOMSG }))
                 await sendMonsterToLimbo(monster);
         }
-        u_on_newpos(x, y);
+        await placeHeroOnLevel(x, y);
     } else if (type === LR_PORTAL) {
         if (!destination) throw new Error('Portal region requires a destination');
         await mkportal(x, y, destination.dnum, destination.dlevel);
@@ -627,7 +610,7 @@ export async function mkportal(x: number, y: number, dnum: number, dlevel: numbe
 // staircase, falling back to a random arrival spot.
 export async function u_on_sstairs(upflag: number): Promise<void> {
     const stway = stairway_find_special_dir(!!(upflag & 1));
-    if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
+    if (stway) { await placeHeroOnLevel(stway.sx, stway.sy); return; }
     await u_on_rndspot(!!(upflag & 1));
 }
 
@@ -648,7 +631,7 @@ async function u_on_rndspot(up: boolean): Promise<void> {
 // equivalent).
 export async function u_on_upstairs(): Promise<void> {
     const stway = stairway_find_dir(true);
-    if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
+    if (stway) { await placeHeroOnLevel(stway.sx, stway.sy); return; }
     await u_on_sstairs(0); /* destination upstairs implies moving down */
 }
 
@@ -656,7 +639,7 @@ export async function u_on_upstairs(): Promise<void> {
 // equivalent).
 export async function u_on_downstairs(): Promise<void> {
     const stway = stairway_find_dir(false);
-    if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
+    if (stway) { await placeHeroOnLevel(stway.sx, stway.sy); return; }
     await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
 
@@ -8176,7 +8159,7 @@ async function makelevel(): Promise<void> {
         await generate_stairs();
 
         const branchp = is_branchlev();
-        if (branchp) await place_branch(branchp);
+        await placeRoomLevelBranch(branchp);
 
         // C ref: mklev.c makelevel() skip0 tail.  C still counts
         // ROOM_IS_FILLABLE rooms and draws the bonus-room selection here,
@@ -8250,7 +8233,7 @@ async function makelevel(): Promise<void> {
     await maybeMakeSpecialRoom(roomThreshold);
 
     // Place dungeon branch
-    if (branchp) await place_branch(branchp);
+    await placeRoomLevelBranch(branchp);
 
     // Choose one ordinary room for a level-specific bonus item, then fill all
     // ordinary rooms.  The choice uses the rooms on this level.
@@ -10319,6 +10302,16 @@ async function place_branch(branchp: DungeonBranch | null): Promise<void> {
     const mp = { x: 0, y: 0 };
     find_branch_room(mp);
     await placeBranchAt(branchp, mp.x, mp.y);
+}
+
+// C mklev.c:makelevel() marks the entrance after placing a room level's
+// branch. Lua and maze branches keep stairway_add()'s untraversed state.
+async function placeRoomLevelBranch(branch: DungeonBranch | null): Promise<void> {
+    const previous = game.stairs;
+    await place_branch(branch);
+    if (game.u.uz?.dnum === 0 && game.u.uz.dlevel === 1
+        && game.stairs && game.stairs !== previous)
+        game.stairs.u_traversed = true;
 }
 
 // ============================================================

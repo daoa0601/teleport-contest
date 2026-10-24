@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import {
     ALTAR, AM_CHAOTIC, AM_SANCTUM, AM_SHRINE, DB_EAST, DB_FLOOR, DB_ICE,
     DB_LAVA, DB_MOAT, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
-    D_ISOPEN, ICE, MOAT, STAIRS,
+    D_ISOPEN, ICE, LADDER, MOAT, STAIRS,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -119,6 +119,18 @@ void test('traversed ordinary stairs show absolute depth while unknown branch st
     assert.equal(await look(), 'There is a staircase down here.');
     game.stairs.u_traversed = true;
     assert.equal(await look(), 'There is a branch staircase down to the Dungeons of Doom here.');
+});
+
+void test('looking at an untraversed ladder describes its direction without a destination', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    game.level.requireAt(10, 10).typ = LADDER;
+    game.stairs = {
+        sx: 10, sy: 10, up: false, isladder: true,
+        tolev: { dnum: 0, dlevel: 2 }, u_traversed: false, next: null,
+    };
+
+    assert.equal(await look(), 'There is a ladder down here.');
 });
 
 void test('the traversed dungeon entrance describes departure or the Amulet destination', async () => {
