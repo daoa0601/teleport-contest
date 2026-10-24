@@ -6706,6 +6706,18 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
         case 'teleport-trap':
             throw new Error(`Trap ${event.kind} has no ordinary deferred continuation`);
     }
+    // C trap.c:3831-3837: a monster newly caught by the trap cannot stay
+    // hidden under an object; a first sighting reports that it appears.
+    if (!action.monster.dead && (action.monster.mhp ?? 0) > 0
+        && action.monster.mtrapped) {
+        const alreadySpotted = canSpotMonster(action.monster);
+        maybeUnhideAt(action.monster.mx, action.monster.my, state);
+        if (!alreadySpotted && canSeeMonster(action.monster)) {
+            await publish(`${canonicalMonsterName(action.monster, {
+                state, capitalized: true, article: 'a',
+            })} appears.`);
+        }
+    }
     if (('heroDied' in event && event.heroDied)
         || ('death' in event && event.death?.heroDied)
         || state.program_state.gameover) {

@@ -12,7 +12,7 @@ export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, 
             hero.uenmax = 0;
             state.context.botl = true;
         }
-        return formatFeltMessage('momentarily lethargic.', state);
+        return formatFeltMessage(`momentarily lethargic${punctuation}`, state);
     }
     if (amount > ((hero.uen ?? 0) + maximum) / 3)
         amount = rollOne(amount);

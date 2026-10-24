@@ -242,7 +242,9 @@ export async function triggerChestTrap(container, { state = game, disarm = false
     else {
         result = await confuseHero(container, state, publish, random);
     }
-    if (!result.destroyed && !result.died) {
+    // C trap.c:6494-6497 runs bot() and tknown=1 after every non-exploding
+    // outcome, even a fatal one; only an exploding-away chest skips them.
+    if (!result.destroyed) {
         await bot();
         container.tknown = true;
     }

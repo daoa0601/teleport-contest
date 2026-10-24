@@ -108,7 +108,7 @@ void test('fire traps teach and clear Fire Brand resistance for sighted and blin
     assert.ok(game.u.uhpmax < 100);
 });
 for (const lifesaving of [false, true]) {
-    void test(`a trapped chest fire ${lifesaving ? 'finishes trap discovery after life saving' : 'does not finish discovery after permanent death'}`, async () => {
+    void test(`a trapped chest fire ${lifesaving ? 'finishes trap discovery after life saving' : 'still marks the chest untrapped after death'}`, async () => {
         freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         const box = await addInventoryObject(CHEST, { otrapped: true });
@@ -120,7 +120,9 @@ for (const lifesaving of [false, true]) {
         assert.ok(result !== null && result !== undefined);
         assert.equal(result.outcome, 'fire');
         assert.equal(result.died, !lifesaving);
-        assert.equal(box.tknown, lifesaving);
+        // C trap.c:6497 sets tknown after every non-exploding outcome,
+        // even a fatal one.
+        assert.equal(box.tknown, true);
         if (lifesaving)
             assert.ok(game.u.uhp > 0);
     });

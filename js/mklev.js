@@ -3314,6 +3314,7 @@ export async function maketrap(x, y, typ) {
         if (launch) {
             const boulder = await mksobj(BOULDER, true, false);
             placeCreatedObject(boulder, launch.x, launch.y);
+            await stack_object(boulder);
             trap.launch = launch;
             trap.launch2 = {
                 x: x - (launch.x - x), y: y - (launch.y - y),

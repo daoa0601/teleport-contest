@@ -21,7 +21,6 @@ import { monsterHasFireResistance } from './monster_resistance.js';
 import { monsterName as perceivedMonsterName } from './monster_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { objectName } from './objnam.js';
-import { observeObject } from './object_knowledge.js';
 import { heroIsBlind } from './senses.js';
 import { d, rn2, rnd } from './rng.js';
 import { burnArmorByFire, burnHeroArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
@@ -213,8 +212,6 @@ export async function triggerHeroFireTrap(box = null, { publish = plineWithConti
     requireInitializedHero(hero);
     const couldSeeFire = !heroIsBlind();
     const originalDamage = d(2, 4);
-    if (box && couldSeeFire)
-        observeObject(box);
     const source = box ? objectName(box) : surfaceName(hero.ux, hero.uy);
     const underwater = box && box.where !== 'inventory'
         ? isPoolAt(box.ox, box.oy)
