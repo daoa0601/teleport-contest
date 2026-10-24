@@ -6,8 +6,8 @@ import {
     LAVAPOOL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, SDOOR, SHARED, STONE, TREE,
 } from './const.js';
 import { impossible } from './diagnostics.js';
-import { requireGameLevel } from './gstate.js';
-import { isok } from './hacklib.js';
+import { game, requireGameLevel } from './gstate.js';
+import { depth, isok } from './hacklib.js';
 import { dig_corridor, wallifyMap } from './mklev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
@@ -15,7 +15,7 @@ import { isRoom } from './map_types.js';
 import type { Rectangle } from './map_types.js';
 
 export interface CaveMapOptions {
-    lit: boolean;
+    lit: boolean | number;
     foreground?: number;
     background?: number;
     smoothed?: boolean;
@@ -25,7 +25,7 @@ export interface CaveMapOptions {
 }
 
 export async function mkmap({
-    lit,
+    lit: lighting,
     foreground = ROOM,
     background = STONE,
     smoothed = true,
@@ -33,6 +33,7 @@ export async function mkmap({
     walled = true,
     icedPools = false,
 }: CaveMapOptions): Promise<void> {
+    const lit = litstate_rnd(lighting);
     const level = requireGameLevel();
     const width = COLNO - 2;
     const height = ROWNO - 1;
@@ -270,4 +271,10 @@ export function flood_fill_rm(
 
     fillRun(sx, sy);
     return result;
+}
+
+export function litstate_rnd(litstate: number | boolean): boolean {
+    if (typeof litstate === 'number' && litstate < 0)
+        return rnd(1 + Math.abs(depth(game.u.uz))) < 11 && rn2(77) !== 0;
+    return !!litstate;
 }

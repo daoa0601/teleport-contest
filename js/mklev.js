@@ -1,7 +1,7 @@
 import { rotCorpse } from './corpse_rot.js';
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
-// Also includes parts of sp_lev.c (create_room) and mkmap.c (litstate_rnd).
+// Also includes parts of sp_lev.c (create_room).
 // Level construction uses the game's main random-number stream.
 import { objectMaterial } from './object_material.js';
 import { isRoom } from './map_types.js';
@@ -63,7 +63,7 @@ import { GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_m
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
-import { flood_fill_rm, mkmap } from './mkmap.js';
+import { flood_fill_rm, litstate_rnd, mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -3954,14 +3954,6 @@ function clear_level_structures() {
     lf.stormy = false;
     lf.stasis_until = 0;
     init_rect();
-}
-// C ref: mkmap.c litstate_rnd()
-function litstate_rnd(litstate) {
-    if (typeof litstate === 'number' && litstate < 0) {
-        const d = depth_of_level(game.u?.uz);
-        return (rnd(1 + Math.abs(d)) < 11 && rn2(77)) ? true : false;
-    }
-    return !!litstate;
 }
 // ── Special-level operations ──────────────────────────────────────────────
 //
