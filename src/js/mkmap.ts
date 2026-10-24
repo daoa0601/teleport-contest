@@ -3,13 +3,14 @@
 
 import {
     COLNO, ICE, ICED_MOAT, ICED_POOL, IS_OBSTRUCTED, IS_WALL, LAVAPOOL,
-    OROOM, ROOM, ROOMOFFSET, ROWNO, STONE, TREE,
+    MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, STONE, TREE,
 } from './const.js';
+import { impossible } from './diagnostics.js';
 import { requireGameLevel } from './gstate.js';
 import { dig_corridor, wallifyMap } from './mklev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
-import type { Room } from './map_types.js';
+import { isRoom } from './map_types.js';
 
 export interface CaveMapOptions {
     lit: boolean;
@@ -102,8 +103,11 @@ export async function mkmap({
         // x-major order. Temporary room numbers let somexy() choose a point
         // from an irregular component using the same bounds as C.
         const seen = new Set<string>();
-        const temporaryRooms: Room[] = [];
-        for (let x = 2; x <= width; x++) {
+        const temporaryRooms = level.rooms.slice(0, level.nroom).map(entry => {
+            if (!isRoom(entry)) throw new Error('Cave joining requires a complete room.');
+            return entry;
+        });
+        discoverRegions: for (let x = 2; x <= width; x++) {
             for (let y = 1; y < height; y++) {
                 const key = `${x},${y}`;
                 if (seen.has(key)
@@ -137,7 +141,8 @@ export async function mkmap({
                 for (const [cx, cy] of cells)
                     level.requireAt(cx, cy).roomno = roomNumber;
                 temporaryRooms.push({
-                    lx, ly, hx, hy,
+                    lx: Math.max(1, lx), ly: Math.max(1, ly),
+                    hx: Math.min(COLNO - 2, hx), hy: Math.min(ROWNO - 2, hy),
                     rtype: OROOM, rlit: 0,
                     doorct: 0, fdoor: level.doorindex,
                     irregular: true, needjoining: false,
@@ -145,6 +150,7 @@ export async function mkmap({
                     roomnoidx: temporaryRooms.length,
                     needfill: 0,
                 });
+                if (temporaryRooms.length >= MAXNROFROOMS * 2) break discoverRegions;
             }
         }
         level.rooms = temporaryRooms;
@@ -156,6 +162,7 @@ export async function mkmap({
             if (!room || !nextRoom) throw new Error('Cave connection selected an absent component.');
             const start = { x: 0, y: 0 }, end = { x: 0, y: 0 };
             if (!somexy(room, start) || !somexy(nextRoom, end)) {
+                await impossible('No start/end room loc in join_map.');
                 start.x = room.lx + Math.trunc((room.hx - room.lx) / 2);
                 start.y = room.ly + Math.trunc((room.hy - room.ly) / 2);
                 end.x = nextRoom.lx
@@ -174,6 +181,8 @@ export async function mkmap({
                 level.requireAt(x, y).roomno = 0;
         level.rooms = [{ hx: -1 }];
         level.nroom = 0;
+        level.subrooms = [];
+        level.nsubroom = 0;
     }
 
     if (walled) wallifyMap(1, 0, COLNO - 1, ROWNO - 1);
