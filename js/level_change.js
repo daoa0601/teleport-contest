@@ -265,16 +265,6 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         restoreCachedHeroTrack(cached);
     game._tutorialActive = Number.isInteger(tutorialDnum)
         && destinationDepth.dnum === tutorialDnum;
-    // Quest text preparation can run Lua, so finish it before a message
-    // pauses for player input.
-    const questArrival = await prepareQuestArrival({
-        fromDepth: oldDepth,
-    });
-    // do.c suppresses the summons when arriving through the portal back
-    // from the quest (In_quest(&u.uz0)); every other arrival delivers it,
-    // cached level or not.
-    const questPortalCall = arrival === 'portal' ? null
-        : await prepareMainQuestPortalCall();
     const oldDungeon = game.dungeons?.[oldDepth.dnum ?? 0];
     const newDungeon = game.dungeons?.[newDepth.dnum ?? 0];
     recordDungeonEntryAchievements(game, oldDepth, newDepth);
@@ -310,7 +300,20 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             await pline(familiarMessage);
         game._restoredBones = false;
     }
-    else if (questArrival?.page || questArrival?.line) {
+    // do.c:goto_level() runs familiar_level_msg() (whose deja-vu choice is
+    // the first random call of the arrival) before onquest() and the quest
+    // leader's summons, so their quest.lua loads stay behind it.  Quest
+    // text preparation can run Lua, so finish it before a message pauses
+    // for player input.
+    const questArrival = await prepareQuestArrival({
+        fromDepth: oldDepth,
+    });
+    // do.c suppresses the summons when arriving through the portal back
+    // from the quest (In_quest(&u.uz0)); every other arrival delivers it,
+    // cached level or not.
+    const questPortalCall = arrival === 'portal' ? null
+        : await prepareMainQuestPortalCall();
+    if (questArrival?.page || questArrival?.line) {
         if (postMessage) {
             await plineWithContinuation(postMessage);
             await flushPendingTopline();
