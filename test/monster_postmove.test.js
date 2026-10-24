@@ -11,7 +11,7 @@ import { takeMonsterTurn } from '../js/monmove.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
 import { MONSTER_FLAGS1, requireMonsterData } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, RIN_CONFLICT, ROCK } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
+import { initRng, rn2 } from '../js/rng.js';
 import { maketrap } from '../js/mklev.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -73,6 +73,27 @@ void test('a stationary pet spider can spin a web after a melee attack', async (
     }
     assert.ok(spunWeb, "an attack does not suppress the spider's web-spinning chance");
 });
+for (const surface of ['downstairs', 'floor']) {
+    void test(`older upstairs replaced by ${surface} cannot support a spider's web`, async () => {
+        const { pet, target } = await stationaryPetAttack('giant spider', 9);
+        requirePlayingGame(game);
+        game.level.requireAt(10, 10).typ = surface === 'downstairs' ? STAIRS : ROOM;
+        game.stairs = {
+            sx: 10, sy: 10, up: true, isladder: false, u_traversed: false,
+            tolev: { dnum: 0, dlevel: 1 }, next: null,
+        };
+        if (surface === 'downstairs')
+            game.stairs = {
+                sx: 10, sy: 10, up: false, isladder: false, u_traversed: false,
+                tolev: { dnum: 0, dlevel: 3 }, next: game.stairs,
+            };
+        // With no anchors, a giant spider's 15/1000 chance rejects 20.
+        // Treating the old stairs as an anchor would raise it to 30/1000.
+        await takeMonsterTurn(pet, game, limit => limit === 1000 ? 20 : rn2(limit));
+        assert.ok(target.mhp < 200, 'the stationary spider completed its attack');
+        assert.equal(game.level.traps.some(trap => trap.ttyp === WEB && trap.tx === pet.mx && trap.ty === pet.my), false);
+    });
+}
 void test('a spider attacking from stairs cannot cover them with a web', async () => {
     let attacked = false;
     for (let seed = 1; seed <= 80; seed++) {
