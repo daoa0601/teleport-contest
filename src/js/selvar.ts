@@ -419,10 +419,11 @@ function line_dist_coord(x1: number, y1: number, x2: number, y2: number, x3: num
     const px = x2 - x1, py = y2 - y1;
     const squared = px * px + py * py;
     if (!squared) return (x1 - x3) ** 2 + (y1 - y3) ** 2;
-    const proportion = Math.max(0, Math.min(1,
-        ((x3 - x1) * px + (y3 - y1) * py) / squared));
-    const x = Math.trunc(x1 + proportion * px);
-    const y = Math.trunc(y1 + proportion * py);
+    // Native float rounding happens before conversion back to integer coordinates.
+    const proportion = Math.max(0, Math.min(1, Math.fround(
+        Math.fround((x3 - x1) * px + (y3 - y1) * py) / Math.fround(squared))));
+    const x = Math.trunc(Math.fround(x1 + Math.fround(proportion * px)));
+    const y = Math.trunc(Math.fround(y1 + Math.fround(proportion * py)));
     return (x - x3) ** 2 + (y - y3) ** 2;
 }
 

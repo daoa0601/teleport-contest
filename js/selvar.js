@@ -367,9 +367,10 @@ function line_dist_coord(x1, y1, x2, y2, x3, y3) {
     const squared = px * px + py * py;
     if (!squared)
         return (x1 - x3) ** 2 + (y1 - y3) ** 2;
-    const proportion = Math.max(0, Math.min(1, ((x3 - x1) * px + (y3 - y1) * py) / squared));
-    const x = Math.trunc(x1 + proportion * px);
-    const y = Math.trunc(y1 + proportion * py);
+    // Native float rounding happens before conversion back to integer coordinates.
+    const proportion = Math.max(0, Math.min(1, Math.fround(Math.fround((x3 - x1) * px + (y3 - y1) * py) / Math.fround(squared))));
+    const x = Math.trunc(Math.fround(x1 + Math.fround(proportion * px)));
+    const y = Math.trunc(Math.fround(y1 + Math.fround(proportion * py)));
     return (x - x3) ** 2 + (y - y3) ** 2;
 }
 export function selection_do_gradient(selection, x1, y1, x2, y2, type, minDistance, maxDistance) {

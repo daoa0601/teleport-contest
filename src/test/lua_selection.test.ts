@@ -72,3 +72,22 @@ void test('map-character filters ignore lighting for values other than random, d
     assert.equal(state.getGlobal('dark'), 0);
     assert.equal(state.getGlobal('lit'), 1);
 });
+
+void test('a gradient projects its center segment with native single-precision rounding', async t => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+
+    await state.executeAsync(`
+        local center = selection.gradient({ x = 1, y = 0, x2 = 23, y2 = 0, maxdist = 0 })
+        start = center:get(1, 0)
+        rounded_away = center:get(14, 0)
+        finish = center:get(23, 0)
+    `);
+
+    assert.equal(state.getGlobal('start'), 1);
+    assert.equal(state.getGlobal('rounded_away'), 0);
+    assert.equal(state.getGlobal('finish'), 1);
+});
