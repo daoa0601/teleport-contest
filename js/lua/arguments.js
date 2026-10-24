@@ -94,15 +94,12 @@ function luaStringToInteger(text) {
 // with optional sign and surrounding spaces -- except that the leading
 // 'n'/'N' check rejects inf and nan spellings.
 function luaStringToFloat(text) {
-    let mode = '';
-    for (let index = 0; index < text.length; index++) {
-        const candidate = text.charAt(index);
+    for (let scan = 0; scan < text.length; scan++) {
+        const candidate = text.charAt(scan);
         if (candidate === 'n' || candidate === 'N')
             return null;
-        if (candidate === '.' || candidate === 'x' || candidate === 'X') {
-            mode = candidate === '.' ? '.' : 'x';
+        if (candidate === '.' || candidate === 'x' || candidate === 'X')
             break;
-        }
     }
     let index = skipLuaSpaces(text, 0);
     let negative = false;
