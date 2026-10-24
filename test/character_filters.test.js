@@ -75,6 +75,19 @@ void test('choosing gender first excludes male when only Valkyrie remains', asyn
     assert.equal(game.urole?.key, 'valkyrie');
     assert.equal(game.flags.female, true);
 });
+void test('choosing alignment first offers only lawful when only Knight remains', async () => {
+    const engine = await start('n~abchmprRstvw\n[');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+    assert.ok(rows.some(row => row.includes('Pick an alignment or creed')));
+    assert.ok(rows.some(row => row.includes('l - lawful')));
+    assert.equal(rows.some(row => row.includes('n - neutral')), false, 'neutral cannot lead to the only unfiltered role, Knight');
+    assert.equal(rows.some(row => row.includes('c - chaotic')), false, 'chaotic cannot lead to the only unfiltered role, Knight');
+    engine.inputGate.feed('lkmy');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1);
+    assert.equal(game.urole?.key, 'knight');
+    assert.equal(game.initAlignment?.name, 'lawful');
+});
 void test('clearing the female filter retains the implied Valkyrie exclusion on reopening', async () => {
     const engine = await start('n~>F\n~>F\n');
     const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));

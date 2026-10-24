@@ -983,7 +983,15 @@ export class Engine {
                     continue;
                 }
                 applyPreMenuRigidChecks();
-                drawAlignmentMenu(role, race, gender, candidates);
+                // setup_algnmenu() adds role and race compatibility;
+                // counting and Random still use ok_align() alone.
+                const menuCandidates = candidates.filter(candidate => {
+                    const choices = { role, race, gender, alignment: candidate };
+                    return characterAlignmentAllowed(filters, choices)
+                        && characterRoleAllowed(filters, choices)
+                        && characterRaceAllowed(filters, choices);
+                });
+                drawAlignmentMenu(role, race, gender, menuCandidates);
                 const key = String.fromCharCode(await nhgetch()).toLowerCase();
                 if (key === 'q' || key === '\x1b')
                     return null;
@@ -1014,7 +1022,7 @@ export class Engine {
                 if (key === '*' || key === ' ' || key === '\n')
                     alignment = pickCharacterChoice(candidates) ?? pickCharacterChoice(permitted);
                 else
-                    alignment = candidates.find(candidate => candidate.name[0] === key);
+                    alignment = menuCandidates.find(candidate => candidate.name[0] === key);
                 if (!alignment)
                     continue;
                 nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
