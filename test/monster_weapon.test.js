@@ -8,12 +8,24 @@ import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carr
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/monster_name.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { findMonsterArmorClass } from '../js/monworn.js';
 import { selectHandToHandWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import { AKLYS, BELL_OF_OPENING, BULLWHIP, CLUB, CRYSKNIFE, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { artifactObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+for (const shield of [false, true]) {
+    void test(`an enchanted wielded weapon does not change a goblin's ${shield ? 'shielded' : 'unarmored'} AC`, async () => {
+        freshObjectRoom();
+        const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+        if (shield)
+            await equipMonsterObject(goblin, await knownObject(SMALL_SHIELD), W_ARMS);
+        const dagger = await equipMonsterObject(goblin, await knownObject(DAGGER, { spe: 3 }), W_WEP);
+        assert.equal(goblin.mw, dagger);
+        assert.equal(findMonsterArmorClass(goblin), shield ? 9 : 10);
+    });
+}
 void test('hallucinated weapon swings assign the first identity to the attacker and the second to the defender', async () => {
     freshObjectRoom({ flags: { verbose: true }, hero: { hallucinationTurns: 10 } });
     const attacker = await createMonsterAt('balrog', 11, 10, NO_MINVENT);
