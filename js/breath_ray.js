@@ -32,6 +32,7 @@ export async function breatheFromMonster(sourceMonster, target, options = {}) {
 }
 export function breathWeaponName(damageType) {
     return ['', 'fragments', 'fire', 'frost', 'sleep gas',
-        'a disintegration blast', 'lightning', 'poison gas', 'acid'][damageType] || 'strange breath';
+        'a disintegration blast', 'lightning', 'poison gas', 'acid',
+        'strange breath #8', 'strange breath #9'][damageType] || 'strange breath';
 }
 //# sourceMappingURL=breath_ray.js.map
