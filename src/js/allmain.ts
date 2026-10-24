@@ -56,6 +56,7 @@ import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
+import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
@@ -3841,6 +3842,7 @@ export async function moveloop_core() {
     if (movementRationActionPending && !g.program_state?.gameover) {
         await settleHeroLiquidAfterAction();
         if (g.program_state?.gameover) return;
+        await seeNearbyMonsters(g);
     }
 
     // allmain.c's once-per-player-input Amulet check follows all elapsed
