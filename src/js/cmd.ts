@@ -127,7 +127,7 @@ import { endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from '.
 import { finishHeroHelplessness } from './allmain.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import {
-    addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder,
+    pickupAtHero, pickupObjectClass, pickupClassOrder,
 } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
@@ -5969,10 +5969,6 @@ async function applyTool(
         const result = await useBullwhip(item, direction, {
             state: game,
             attackMonster: (monster, x, y) => attackHostileMonster(monster, x, y),
-            holdObject: async (object: GameObject) => {
-                await addPickedInventoryObject(object);
-                return true;
-            },
         });
         game.context.move = result.spentTime ? 1 : 0;
         return item;

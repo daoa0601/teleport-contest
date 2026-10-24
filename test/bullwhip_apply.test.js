@@ -6,7 +6,10 @@ import { rhack } from '../js/cmd.js';
 import { TT_PIT, W_WEP } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE } from '../js/object_data.js';
+import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE, DAGGER, ROCK } from '../js/object_data.js';
+import { objectQuantity } from '../js/object_stack.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { UNENCUMBERED, nearCapacity, objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -113,9 +116,7 @@ void test('a whip cannot acquire a floor stack when the hero is overloaded', asy
     for (let seed = 1n; seed <= 30n; seed++) {
         initRng(seed);
         pushKeys(' '.repeat(8));
-        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 }, {
-            holdObject: async (object) => { game.inventory.push(object); return true; },
-        });
+        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 });
         assert.equal(clubs.quan, 3);
         assert.equal(game.inventory.some(object => object.otyp === CLUB), false);
     }
@@ -141,5 +142,74 @@ void test('a whip revives a Rider corpse with remote acquisition feedback', asyn
     assert.equal(floorObjectsAt(level, 10, 10).includes(corpse), false);
     assert.ok(level.monsters.some(monster => monster.mnum === rider && monster.mhp > 0));
     assert.match(messages.join('\n'), /At your attempted acquisition, the corpse suddenly moves\.\.\./);
+});
+// C apply.c:3230 hands a snatched weapon to invent.c:hold_another_object(),
+// whose fumbling, slot, and burden refusals drop it at the hero's feet.
+async function snatchClubFromBugbear(prepare) {
+    for (let seed = 1n; seed <= 200n; seed++) {
+        const level = freshPlayableRoom({
+            role: 'archeologist',
+            hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } },
+        });
+        requirePlayingGame(game);
+        const whip = await addInventoryObject(BULLWHIP, {
+            invlet: 'a', spe: 2, wielded: true, owornmask: W_WEP,
+        });
+        game.uwep = game.u.uwep = whip;
+        await prepare();
+        const club = await knownObject(CLUB, {});
+        const bugbear = await createMonsterAt('bugbear', 11, 10);
+        await equipMonsterObject(bugbear, club, W_WEP);
+        const messages = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        initRng(seed);
+        pushKeys(' '.repeat(8));
+        await useBullwhip(whip, { dx: 1, dy: 0, dz: 0 });
+        messages.push(game._pending_message);
+        const text = messages.join('\n');
+        if (/You snatch/u.test(text))
+            return { club, level, text };
+    }
+    throw new Error('No seed reached the bullwhip snatch.');
+}
+function assertDroppedAtFeet(result) {
+    assert.equal(game.inventory.includes(result.club), false);
+    assert.ok(floorObjectsAt(result.level, game.u.ux, game.u.uy).includes(result.club));
+    assert.match(result.text, /You drop [^\n]*club!/u);
+}
+void test('a snatched weapon is dropped when every inventory slot is taken', async () => {
+    const result = await snatchClubFromBugbear(async () => {
+        const letters = 'bcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (const [index, invlet] of [...letters].entries())
+            await addInventoryObject(DAGGER, { invlet, spe: index - 25 });
+    });
+    assertDroppedAtFeet(result);
+});
+void test('a snatched weapon is dropped when it would exceed the pickup burden', async () => {
+    const result = await snatchClubFromBugbear(async () => {
+        game.flags.pickup_burden = UNENCUMBERED;
+        const rocks = await addInventoryObject(ROCK, { quantity: 1 });
+        const setRocks = (count) => {
+            rocks.quan = rocks.quantity = count;
+            rocks.owt = objectWeight(rocks);
+        };
+        while (nearCapacity(game) === UNENCUMBERED)
+            setRocks(objectQuantity(rocks) + 1);
+        setRocks(objectQuantity(rocks) - 1);
+        assert.equal(nearCapacity(game), UNENCUMBERED);
+    });
+    assertDroppedAtFeet(result);
+});
+void test('a fumbling hero drops a snatched weapon', async () => {
+    const result = await snatchClubFromBugbear(() => {
+        grantIntrinsicProperty('fumbling', 'outside', game);
+    });
+    assertDroppedAtFeet(result);
+});
+void test('slippery fingers do not stop a snatched weapon from being held', async () => {
+    const result = await snatchClubFromBugbear(() => { game.u.glibTurns = 20; });
+    assert.ok(game.inventory.includes(result.club));
+    assert.match(result.text, /[a-zA-Z] - [^\n]*club/u);
 });
 //# sourceMappingURL=bullwhip_apply.test.js.map

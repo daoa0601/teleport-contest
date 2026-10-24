@@ -102,7 +102,7 @@ import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
-import { addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder, } from './pickup.js';
+import { pickupAtHero, pickupObjectClass, pickupClassOrder, } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
@@ -5922,10 +5922,6 @@ async function applyTool(item, underlay) {
         const result = await useBullwhip(item, direction, {
             state: game,
             attackMonster: (monster, x, y) => attackHostileMonster(monster, x, y),
-            holdObject: async (object) => {
-                await addPickedInventoryObject(object);
-                return true;
-            },
         });
         game.context.move = result.spentTime ? 1 : 0;
         return item;
