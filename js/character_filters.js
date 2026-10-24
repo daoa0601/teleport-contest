@@ -1,6 +1,6 @@
 // C role.c:reset_role_filtering() and its four setup_*menu() helpers.
 import { MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY } from './const.js';
-import { nativeRoleChoices } from './character_choices.js';
+import { nativeRoleChoices, validCharacterAlignment, validCharacterGender, validCharacterRace, } from './character_choices.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { aligns, genders, races } from './roles.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
@@ -9,6 +9,23 @@ export function createCharacterFilters() {
 }
 export function hasCharacterFilters(filters) {
     return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
+}
+// role.c:ok_role(), ok_race(), and ok_align() each consult only their own
+// filters and constraints. Menu builders combine the predicates they need.
+export function characterRoleAllowed(filters, choices) {
+    const { role, race, gender, alignment } = choices;
+    return (role ? [role] : nativeRoleChoices()).some(candidate => !filters.roles.has(candidate.key)
+        && (!race || validCharacterRace(candidate, race, null))
+        && (!gender || validCharacterGender(candidate, gender))
+        && (!alignment || validCharacterAlignment(candidate, null, alignment)));
+}
+export function characterRaceAllowed(filters, choices) {
+    const { role, race, alignment } = choices;
+    return (race ? [race] : races).some(candidate => !filters.races.has(candidate.name) && validCharacterRace(role, candidate, alignment));
+}
+export function characterAlignmentAllowed(filters, choices) {
+    const { role, race, alignment } = choices;
+    return (alignment ? [alignment] : aligns).some(candidate => !filters.alignments.has(candidate.name) && validCharacterAlignment(role, race, candidate));
 }
 export async function editCharacterFilters(filters) {
     const window = tty_create_nhwindow(NHW_MENU);

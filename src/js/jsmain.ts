@@ -28,7 +28,10 @@ import {
     validCharacterChoice, validCharacterGender, validCharacterRace,
 } from './character_choices.js';
 import type { ParsedCharacterName } from './character_name.js';
-import { createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';
+import {
+    characterAlignmentAllowed, characterRaceAllowed, characterRoleAllowed,
+    createCharacterFilters, editCharacterFilters, hasCharacterFilters,
+} from './character_filters.js';
 import type {
     Role, Race, Gender, Alignment, RoleKey, RaceName,
     GenderName, AlignmentName,
@@ -938,7 +941,15 @@ export class Engine {
                         continue;
                     }
                     applyPreMenuRigidChecks();
-                    drawRaceMenu(role, candidates, gender, alignment);
+                    // setup_racemenu() also checks role and alignment
+                    // compatibility. Counting and Random use ok_race() alone.
+                    const menuCandidates = candidates.filter(candidate => {
+                        const choices = { role, race: candidate, gender, alignment };
+                        return characterRaceAllowed(filters, choices)
+                            && characterRoleAllowed(filters, choices)
+                            && characterAlignmentAllowed(filters, choices);
+                    });
+                    drawRaceMenu(role, menuCandidates, gender, alignment);
                     const key = String.fromCharCode(await nhgetch());
                     if (key === 'q' || key === '\x1b') return null;
                     if (key === '?') {
@@ -972,7 +983,7 @@ export class Engine {
                     else {
                         const entry = CHARACTER_RACE_MENU.find(candidate =>
                             candidate[0] === key.toLowerCase());
-                        race = candidates.find(candidate => candidate.name === entry?.[2]);
+                        race = menuCandidates.find(candidate => candidate.name === entry?.[2]);
                     }
                     if (!race) continue;
                     nextFacet = role ? 'gender' : 'role';

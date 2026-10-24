@@ -13,7 +13,7 @@ import { plineWithContinuation } from './display.js';
 import { findRole, findRace, findAlignment, findGender, randomCharacterOption, roles, races, aligns, genders, } from './roles.js';
 import { parseCharacterName } from './character_name.js';
 import { characterSelectionQuestion, hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks, ROLE_SELECTION_RULES, RACE_SELECTION_RULES, validCharacterAlignment, validCharacterChoice, validCharacterGender, validCharacterRace, } from './character_choices.js';
-import { createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';
+import { characterAlignmentAllowed, characterRaceAllowed, characterRoleAllowed, createCharacterFilters, editCharacterFilters, hasCharacterFilters, } from './character_filters.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
@@ -836,7 +836,15 @@ export class Engine {
                         continue;
                     }
                     applyPreMenuRigidChecks();
-                    drawRaceMenu(role, candidates, gender, alignment);
+                    // setup_racemenu() also checks role and alignment
+                    // compatibility. Counting and Random use ok_race() alone.
+                    const menuCandidates = candidates.filter(candidate => {
+                        const choices = { role, race: candidate, gender, alignment };
+                        return characterRaceAllowed(filters, choices)
+                            && characterRoleAllowed(filters, choices)
+                            && characterAlignmentAllowed(filters, choices);
+                    });
+                    drawRaceMenu(role, menuCandidates, gender, alignment);
                     const key = String.fromCharCode(await nhgetch());
                     if (key === 'q' || key === '\x1b')
                         return null;
@@ -870,7 +878,7 @@ export class Engine {
                     }
                     else {
                         const entry = CHARACTER_RACE_MENU.find(candidate => candidate[0] === key.toLowerCase());
-                        race = candidates.find(candidate => candidate.name === entry?.[2]);
+                        race = menuCandidates.find(candidate => candidate.name === entry?.[2]);
                     }
                     if (!race)
                         continue;

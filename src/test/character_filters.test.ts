@@ -55,6 +55,21 @@ void test('alignment selection can open the filter editor', async () => {
     assert.equal(game.initAlignment?.name, 'chaotic');
 });
 
+void test('choosing race first offers only races compatible with an unfiltered role', async () => {
+    const engine = await start('n~abchkmprRstv\n/');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+
+    assert.ok(rows.some(row => row.includes('Pick a race or species')));
+    assert.equal(rows.some(row => row.includes('d - dwarf')), false,
+        'dwarf cannot lead to the only unfiltered role, Wizard');
+    assert.ok(rows.some(row => row.includes('e - elf')));
+    engine.inputGate.feed('ewmy');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1);
+    assert.equal(game.urole?.key, 'wizard');
+    assert.equal(game.urace?.name, 'elf');
+});
+
 for (const { facet, exclusions } of [
     { facet: 'role', exclusions: 'abchkmprRstvw' },
     { facet: 'race', exclusions: 'HEDGO' },
