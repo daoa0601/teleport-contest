@@ -115,4 +115,24 @@ void test('selection drawing and returned coordinates use the enclosing room ori
     assert.equal(state.getGlobal('visited_x'), 2);
     assert.equal(state.getGlobal('visited_y'), 2);
 });
+void test('selection iteration observes points added and removed by its callback', async (t) => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }, (callback, args) => state.callValueAsync(callback, args)),
+    });
+    t.after(() => state.destroy());
+    await state.executeAsync(`
+        local points = selection.set(10, 4) | selection.set(12, 4)
+        visited = ""
+        points:iterate(function(x, y)
+            visited = visited .. x .. ","
+            if x == 10 then
+                points:set(11, 4)
+                points:set(12, 4, 0)
+                points:set(13, 4)
+            end
+        end)
+    `);
+    assert.equal(state.getGlobal('visited'), '10,11,', 'visit current points in the original bounds, in row order');
+});
 //# sourceMappingURL=lua_selection.test.js.map

@@ -175,13 +175,15 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     const iterate = async (self: LuaValue, callback: LuaValue) => {
         if (!invoke)
             throw new Error('selection.iterate needs a Lua state');
-        const points: [number, number][] = [];
-        const start = origin();
-        selectionValue(self).forEachLua((x: number, y: number) => points.push([
-            x - start.x,
-            y - start.y,
-        ]));
-        for (const point of points) await invoke(callback, point);
+        const selection = selectionValue(self);
+        const bounds = selection.bounds();
+        for (let y = bounds.ly; y <= bounds.hy; y++) {
+            for (let x = Math.max(1, bounds.lx); x <= bounds.hx; x++) {
+                if (!selection.has(x, y)) continue;
+                const start = origin();
+                await invoke(callback, [x - start.x, y - start.y]);
+            }
+        }
     };
     const methods = {
         set,
