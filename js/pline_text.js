@@ -8,4 +8,9 @@ export function truncatePlineMessage(message) {
     const decoder = new TextDecoder();
     return `${decoder.decode(bytes.subarray(0, BUFSZ - 7))}...${decoder.decode(bytes.subarray(-3))}`;
 }
+// C pline.c:vraw_printf() keeps only the prefix, with no ellipsis.
+export function truncateRawMessage(message) {
+    const bytes = new TextEncoder().encode(message.split('\0', 1)[0] ?? '');
+    return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
+}
 //# sourceMappingURL=pline_text.js.map

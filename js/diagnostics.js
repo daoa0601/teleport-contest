@@ -1,7 +1,7 @@
 // Nonfatal impossible() reports and the Engine-local panic boundary.
 // C refs: pline.c:impossible(), files.c:paniclog(), end.c:panic().
 import { BUFSZ, PANICLOG, PATCHLEVEL, VERSION_MAJOR, VERSION_MINOR } from './const.js';
-import { beginPanicOutput, plineWithContinuation, rawPrint } from './display.js';
+import { beginPanicOutput, plineWithContinuation, rawPrint, rawPrintf } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { saveErrorGame } from './save.js';
 import { PanicTermination } from './panic_termination.js';
@@ -82,7 +82,7 @@ export async function panic(reason, { state = game } = {}) {
         : useful ? 'Suddenly, the dungeon collapses.' : 'Program initialization has failed.');
     // The pinned sysconf has WIZARDS=*, with no SUPPORT or RECOVER setting.
     if (!state.flags?.debug)
-        rawPrint('Report error to "wizard"'
+        rawPrintf('Report error to "wizard"'
             + (useful ? '\nand it may be possible to rebuild.' : '.'));
     if (useful && fuzzerMode(state) === FUZZER_OFF)
         await saveErrorGame();

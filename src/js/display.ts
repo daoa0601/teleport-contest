@@ -1,5 +1,5 @@
 import { warningSymbols } from './warning_symbols.js';
-import { truncatePlineMessage } from './pline_text.js';
+import { truncatePlineMessage, truncateRawMessage } from './pline_text.js';
 import { messageTypeFor } from './message_types.js';
 import { coordinateDescription } from './pager_lists.js';
 import type { Position } from './map_types.js';
@@ -3103,6 +3103,12 @@ function writeRawText(text: string) {
         }
     }
     display.flush();
+}
+
+export function rawPrintf(message: string): void {
+    rawPrint(truncateRawMessage(message));
+    // Both raw_printf() and vraw_printf() increment the early-message count.
+    if (!game.program_state.beyond_savefile_load) game.earlyRawMessages += 2;
 }
 
 export function rawPrint(message: string) {
