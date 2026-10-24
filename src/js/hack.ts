@@ -72,9 +72,9 @@ import {
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
 import { propertyIsActive, refreshMovementProperties, setPropertyTimeout } from './properties.js';
-import { surfaceName, waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
+import { backOnGroundMessage, iceDescriptionAt } from './dungeon_feature.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -797,36 +797,6 @@ async function finishLiquidTeleport(
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
 
-// C trap.c:back_on_ground(). Both ordinary pool exit and rescue name
-// the current surface, including ice beneath a raised drawbridge.
-export function backOnGroundMessage(rescued: boolean, state: GameState): string {
-    const { ux, uy } = state.u;
-    let surface = surfaceName(ux, uy, state);
-    let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
-    switch (surface) {
-    case 'floor': case 'ground':
-        surface = 'solid ground';
-        break;
-    case 'ice':
-        surface = iceDescriptionAt(ux, uy, { state });
-        break;
-    case 'bridge': case 'altar': case 'headstone':
-        surface = withIndefiniteArticle(surface);
-        break;
-    case 'stairs': case 'lava': case 'bottom':
-        surface = `the ${surface}`;
-        break;
-    case 'air':
-        surface = 'the air';
-        preposition = 'in';
-        break;
-    default:
-        surface = withIndefiniteArticle(surface);
-        preposition = 'in';
-    }
-    const subject = rescued ? 'You find yourself' : state.flags.verbose ? 'You are back' : 'Back';
-    return `${subject} ${preposition} ${surface}.`;
-}
 
 async function leaveWater({
     state, location, publish,

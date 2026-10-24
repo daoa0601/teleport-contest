@@ -3,17 +3,13 @@ import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
-import { makeSingular, withIndefiniteArticle } from './object_grammar.js';
+import { makeSingular } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
 import { newsym, newsym_force, flush_screen, pline, plineWithContinuation, consumeHallucinatedMenuObjectGlyph, } from './display.js';
-import { dungeonFeatureAt } from './dungeon_feature.js';
-import { waterbodyName } from './terrain_name.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { propertyTimeout } from './properties.js';
-import { backOnGroundMessage } from './hack.js';
+import { describeDecor } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
@@ -46,7 +42,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
-import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit, ICE, DRAWBRIDGE_UP, IS_FURNITURE, IS_POOL, IS_LAVA, PLNMSG_BACK_ON_GROUND, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
+import { SHOPBASE, A_WIS, STONE, W_WEP, is_pit, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
@@ -101,7 +97,6 @@ export async function autopickupAtHero() {
     const source = pickupSourceAtHero();
     const { x, y, monster } = source;
     const level = requireGameLevel();
-    const loc = level.at(x, y);
     const objects = pickupObjects(source);
     if (!monster) {
         const deepLiquid = (isPoolAt(x, y) && !(game.u.uinwater || game.underwater))
@@ -522,74 +517,11 @@ async function checkHere(source, pickedSome) {
     const { died } = await lookHere(count, { pickedSome, skipFeature });
     return { died };
 }
-// C pickup.c:describe_decor(). Feature feedback on arrival; FALSE means the
-// surface was the same non-furniture type, so look_here() shows its own
-// feature line instead of skipping it.
-export async function describeDecor() {
-    // One turn of fumbling left: slip_or_trip() interrupts the hero at the
-    // end of this turn, so hold the decor message back until after it.
-    if (propertyTimeout('fumbling') === 1 && !game.iflags.deferDecor) {
-        await deferredDecor(true);
-        return false;
-    }
-    const { ux: x, uy: y } = game.u;
-    const location = requireGameLevel().requireAt(x, y);
-    const surface = location.typ === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
-    const previous = game._prevDecorType ?? STONE;
-    const underwater = !!(game.underwater || game.u?.uinwater);
-    let feature = dungeonFeatureAt(x, y);
-    const doorHere = feature === 'open door' || feature === 'doorway';
-    const waterHere = feature === 'pool of water';
-    if (doorHere || underwater || (surface === ICE && IS_POOL(previous)))
-        feature = null;
-    let described = true;
-    if (surface === previous && !IS_FURNITURE(surface)) {
-        described = false;
-    }
-    else if (feature) {
-        if (waterHere)
-            feature = waterbodyName(x, y, game);
-        if (feature !== 'swamp' && surface !== ICE)
-            feature = withIndefiniteArticle(feature);
-        const message = game.flags.verbose
-            ? `There is ${feature} here.`
-            : `${feature.charAt(0).toUpperCase()}${feature.slice(1)}.`;
-        await plineWithContinuation(message, {
-            noRepeat: surface === ICE && !!game.flags.mention_decor,
-        });
-    }
-    else if (!underwater) {
-        if (IS_POOL(previous) || IS_LAVA(previous) || previous === ICE) {
-            if (game._lastPlineKind !== PLNMSG_BACK_ON_GROUND) {
-                await plineWithContinuation(backOnGroundMessage(false, game));
-                game._lastPlineKind = PLNMSG_BACK_ON_GROUND;
-            }
-        }
-    }
-    game._prevDecorType = game.flags.mention_decor ? surface : STONE;
-    return described;
-}
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });
 }
 export function pickupObjectClass(object) {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
-}
-// C pickup.c:deferred_decor(). Setup holds the arrival feature back behind
-// an imminent fumble; catch-up describes it only while mention_decor is
-// still set, otherwise the pending message is simply dropped.
-export async function deferredDecor(setup) {
-    if (!game.flags.mention_decor) {
-        game.iflags.deferDecor = false;
-    }
-    else if (setup) {
-        game.iflags.deferDecor = true;
-    }
-    else {
-        await describeDecor();
-        game.iflags.deferDecor = false;
-    }
 }
 //# sourceMappingURL=pickup.js.map

@@ -2,7 +2,7 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 // Floor features named by look_here() and describe_decor().
 // C invent.c:dfeature_at(), stairs.c:stairs_description(), pager.c:ice_descr().
 import { deityName } from './alignment.js';
-import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, ICE, IRONBARS, SINK, STONE, THRONE, TREE, } from './const.js';
+import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, ICE, IRONBARS, IS_FURNITURE, IS_LAVA, IS_POOL, PLNMSG_BACK_ON_GROUND, SINK, STONE, THRONE, TREE, } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { displayLiquidName, plineWithContinuation } from './display.js';
@@ -10,10 +10,10 @@ import { game, requireGameLevel } from './gstate.js';
 import { dungeonDepth } from './hacklib.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { LEVEL_TIMER_KIND, levelTimers } from './object_timers.js';
-import { propertyIsActive } from './properties.js';
+import { propertyIsActive, propertyTimeout } from './properties.js';
 import { heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
-import { waterbodyName } from './terrain_name.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
 function sameLevel(left, right) {
     return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
@@ -126,28 +126,113 @@ export function dungeonFeatureSentence(feature) {
         || feature.startsWith('frozen ') || feature.slice(feature.indexOf(' ')) === ' ice';
     return `There is ${noArticle ? feature : withIndefiniteArticle(feature)} here.`;
 }
-// C pickup.c:force_decor(TRUE). Probing reports the real floor even when
-// blindness or levitation would hide its condition during an ordinary look.
-export async function forceDescribeDecor({ state = game, probing = false } = {}) {
+// C trap.c:back_on_ground(). Both ordinary pool exit and rescue name
+// the current surface, including ice beneath a raised drawbridge.
+export function backOnGroundMessage(rescued, state) {
+    const { ux, uy } = state.u;
+    let surface = surfaceName(ux, uy, state);
+    let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
+    switch (surface) {
+        case 'floor':
+        case 'ground':
+            surface = 'solid ground';
+            break;
+        case 'ice':
+            surface = iceDescriptionAt(ux, uy, { state });
+            break;
+        case 'bridge':
+        case 'altar':
+        case 'headstone':
+            surface = withIndefiniteArticle(surface);
+            break;
+        case 'stairs':
+        case 'lava':
+        case 'bottom':
+            surface = `the ${surface}`;
+            break;
+        case 'air':
+            surface = 'the air';
+            preposition = 'in';
+            break;
+        default:
+            surface = withIndefiniteArticle(surface);
+            preposition = 'in';
+    }
+    const subject = rescued ? 'You find yourself' : state.flags.verbose ? 'You are back' : 'Back';
+    return `${subject} ${preposition} ${surface}.`;
+}
+// C pickup.c:describe_decor(). Feature feedback on arrival; FALSE means the
+// surface was the same non-furniture type, so look_here() shows its own
+// feature line instead of skipping it.
+export async function describeDecor({ state = game, publish = plineWithContinuation, fumbleOverride = false, levitateOverride = false, } = {}) {
+    // One turn of fumbling left: slip_or_trip() interrupts the hero at the
+    // end of this turn, so hold the decor message back until after it.
+    if (propertyTimeout('fumbling', state) === 1 && !state.iflags.deferDecor && !fumbleOverride) {
+        await deferredDecor(true, state, publish);
+        return false;
+    }
     const { ux: x, uy: y } = state.u;
     const location = requireGameLevel(state).requireAt(x, y);
     const surface = location.typ === DRAWBRIDGE_UP
         ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
-    state._prevDecorType = STONE;
-    let feature = dungeonFeatureAt(x, y, { state, probing });
-    if (feature === 'open door' || feature === 'doorway'
-        || state.underwater || state.u.uinwater)
+    const previous = state._prevDecorType ?? STONE;
+    const underwater = !!(state.underwater || state.u?.uinwater);
+    let feature = dungeonFeatureAt(x, y, { state, probing: levitateOverride });
+    const doorHere = feature === 'open door' || feature === 'doorway';
+    const waterHere = feature === 'pool of water';
+    if (doorHere || underwater || (surface === ICE && IS_POOL(previous)))
         feature = null;
-    if (feature) {
-        if (feature === 'pool of water')
+    let described = true;
+    if (surface === previous && !IS_FURNITURE(surface)) {
+        described = false;
+    }
+    else if (feature) {
+        if (waterHere)
             feature = waterbodyName(x, y, state);
         if (feature !== 'swamp' && surface !== ICE)
             feature = withIndefiniteArticle(feature);
         const message = state.flags.verbose
-            ? `There is ${feature} here.` : `${feature.charAt(0).toUpperCase()}${feature.slice(1)}.`;
-        await plineWithContinuation(message, { noRepeat: surface === ICE && !!state.flags.mention_decor });
+            ? `There is ${feature} here.`
+            : `${feature.charAt(0).toUpperCase()}${feature.slice(1)}.`;
+        await publish(message, {
+            noRepeat: surface === ICE && !!state.flags.mention_decor,
+        });
+    }
+    else if (!underwater) {
+        if (IS_POOL(previous) || IS_LAVA(previous) || previous === ICE) {
+            if (state._lastPlineKind !== PLNMSG_BACK_ON_GROUND) {
+                await publish(backOnGroundMessage(false, state));
+                state._lastPlineKind = PLNMSG_BACK_ON_GROUND;
+            }
+        }
     }
     state._prevDecorType = state.flags.mention_decor ? surface : STONE;
+    return described;
+}
+// C pickup.c:deferred_decor(). Setup holds the arrival feature back behind
+// an imminent fumble; catch-up describes it only while mention_decor is
+// still set, otherwise the pending message is simply dropped.
+export async function deferredDecor(setup, state = game, publish = plineWithContinuation) {
+    if (!state.flags.mention_decor) {
+        state.iflags.deferDecor = false;
+    }
+    else if (setup) {
+        state.iflags.deferDecor = true;
+    }
+    else {
+        await describeDecor({ state, publish });
+        state.iflags.deferDecor = false;
+    }
+}
+// C pickup.c:force_decor(). Probing reports the real floor even when
+// blindness or levitation would hide its condition during an ordinary look.
+export async function forceDescribeDecor({ state = game, probing = false } = {}) {
+    const { ux: x, uy: y } = state.u;
+    const location = requireGameLevel(state).requireAt(x, y);
+    state._prevDecorType = STONE;
+    await describeDecor({
+        state, fumbleOverride: true, levitateOverride: probing,
+    });
     location.lastseentyp = location.typ;
 }
 //# sourceMappingURL=dungeon_feature.js.map

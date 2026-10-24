@@ -141,6 +141,7 @@ import { applyHeroWereChange, presentWereChange } from './were.js';
 import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
+import { deferredDecor } from './dungeon_feature.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { heroHasOlfaction, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
@@ -149,7 +150,7 @@ import { advanceHeroSliming, clearHeroSliming, finishDeferredHeroSlime, heroIsSl
 import { advanceHeroPetrification, heroIsPetrifying, petrificationDialogue, } from './stoning.js';
 import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
-import { autopickupAtHero, deferredDecor } from './pickup.js';
+import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, } from './armor.js';
 import { nearCapacity, } from './weight.js';
