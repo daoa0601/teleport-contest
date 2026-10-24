@@ -90,7 +90,7 @@ export async function editCharacterFilters(filters) {
             });
         }
         tty_end_menu(window, `Pick all that apply${hasCharacterFilters(filters) ? ' and/or unpick any that no longer apply' : ''}`);
-        const result = await tty_select_menu(window, PICK_ANY);
+        const result = await tty_select_menu(window, PICK_ANY, true);
         if (result.cancelled)
             return 'cancelled';
         filters.roles.clear();

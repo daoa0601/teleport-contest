@@ -47,7 +47,7 @@ class CharacterSelection {
             game._characterPickerUsed = true;
         this.rigidChecks();
         let pickForYou = 'n';
-        if (FACETS.some(facet => !this.choices[facet])) {
+        if (FACETS.some(facet => !this.choices[facet] && !this.random.has(facet))) {
             const question = this.selectionQuestion();
             for (;;) {
                 pickForYou = (await readSetupAnswer(question)).toLowerCase();
@@ -70,7 +70,7 @@ class CharacterSelection {
                 completed = facet === 'alignment';
                 if (this.validCurrentFacet(facet))
                     continue;
-                if (pickForYou === 'y' || pickForYou === 'a') {
+                if (pickForYou === 'y' || pickForYou === 'a' || this.random.has(facet)) {
                     if (this.candidates(facet).length === 0)
                         await pline(`Incompatible ${facet}!`);
                     this.pickRandom(facet);
@@ -130,6 +130,7 @@ class CharacterSelection {
                 }
                 pickForYou = 'n';
                 this.choices = { ...EMPTY_CHOICES };
+                this.random.clear();
                 break;
             }
         }
@@ -152,7 +153,7 @@ class CharacterSelection {
     validCurrentFacet(facet) {
         const { role, race, gender, alignment } = this.choices;
         switch (facet) {
-            case 'role': return role !== null;
+            case 'role': return !!role;
             case 'race': return !!race && (!role || ROLE_RULES[role.key].races.includes(race.name));
             case 'gender': return !!gender && (!role || this.roleAllowsGender(role, gender));
             case 'alignment': return !!alignment && (!role || ROLE_RULES[role.key].aligns.includes(alignment.name))
@@ -160,6 +161,7 @@ class CharacterSelection {
         }
     }
     clearFacet(facet) {
+        this.random.delete(facet);
         switch (facet) {
             case 'role':
                 this.choices.role = null;
@@ -190,18 +192,24 @@ class CharacterSelection {
                 this.choices.alignment = aligns.find(alignment => alignment.name === key) ?? null;
                 break;
         }
+        if (this.choices[facet])
+            this.random.delete(facet);
     }
     rigidChecks() {
         // role.c resolves explicitly random facets before its rigid picks.
         for (const facet of ['role', 'race', 'alignment', 'gender']) {
-            if (!this.random.delete(facet))
+            if (!this.random.has(facet))
+                continue;
+            // A conflicting configured facet can leave pick_*() with no
+            // candidates. Keep ROLE_RANDOM until makepicks corrects it.
+            if (facet !== 'role' && this.candidates(facet).length === 0)
                 continue;
             this.pickRandom(facet);
         }
         if (!this.choices.role)
             return;
         for (const facet of ['race', 'alignment', 'gender']) {
-            if (this.choices[facet])
+            if (this.choices[facet] || this.random.has(facet))
                 continue;
             const candidates = this.candidates(facet);
             if (candidates.length === 1) {
@@ -249,8 +257,8 @@ class CharacterSelection {
     roleAllowsGender(role, gender) {
         return ROLE_RULES[role.key].genders?.includes(gender.name) ?? true;
     }
-    candidates(facet, menu = false, constraints = this.choices) {
-        const c = constraints;
+    candidates(facet, menu = false) {
+        const c = this.choices;
         switch (facet) {
             case 'role': return nativeRoleChoices().filter(role => {
                 const choice = { ...c, role };
@@ -304,7 +312,7 @@ class CharacterSelection {
     }
     async facetMenu(facet, excess) {
         const window = this.startMenu(excess);
-        this.addFacetChoices(window, facet, true);
+        this.addFacetChoices(window, facet);
         addChoice(window, 'random', '*', 'Random', true);
         if (facet !== 'role' || excess < 1 || excess > 2)
             addText(window, '');
@@ -321,11 +329,9 @@ class CharacterSelection {
         addChoice(window, 'quit', 'q', 'Quit');
         return finishMenu(window, TITLES[facet], 'random');
     }
-    addFacetChoices(window, facet, filtering) {
-        const keys = filtering ? this.candidates(facet, true) : this.allFacetKeys(facet);
-        const acceptable = new Set(this.candidates(facet, true, EMPTY_CHOICES));
+    addFacetChoices(window, facet) {
         let previous = '';
-        for (const key of keys) {
+        for (const key of this.candidates(facet, true)) {
             let selector = key.charAt(0);
             let text = key;
             if (facet === 'role') {
@@ -335,23 +341,12 @@ class CharacterSelection {
                 if (selector === previous)
                     selector = selector.toUpperCase();
                 previous = selector;
-                text = withIndefiniteArticle(this.roleName(role, filtering ? this.choices.gender : null, true));
+                text = withIndefiniteArticle(this.roleName(role, this.choices.gender, true));
             }
-            else if (!filtering)
-                selector = selector.toUpperCase();
             tty_add_menu(window, {
                 identifier: key, selector,
-                group: filtering && facet !== 'role' ? selector.toUpperCase() : '',
-                text, itemflags: !filtering && !acceptable.has(key) ? MENU_ITEMFLAGS_SELECTED : 0,
+                group: facet !== 'role' ? selector.toUpperCase() : '', text,
             });
-        }
-    }
-    allFacetKeys(facet) {
-        switch (facet) {
-            case 'role': return nativeRoleChoices().map(role => role.key);
-            case 'race': return races.map(race => race.name);
-            case 'gender': return genders.map(gender => gender.name);
-            case 'alignment': return aligns.map(alignment => alignment.name);
         }
     }
     forcedRoute(facet) {
@@ -389,8 +384,10 @@ class CharacterSelection {
     }
     async editFilters() {
         const result = await editCharacterFilters(this.filters);
-        if (result !== 'cancelled')
+        if (result !== 'cancelled') {
             this.choices = { ...EMPTY_CHOICES };
+            this.random.clear();
+        }
         return result === 'filtered';
     }
     selectionQuestion() {
@@ -410,7 +407,13 @@ async function readSetupAnswer(question) {
         display.putstr(0, row, text.slice(row * width, (row + 1) * width), NO_COLOR);
     }
     display.setCursor((text.length - 1) % width + 1, Math.floor((text.length - 1) / width));
-    return String.fromCharCode(await nhgetch());
+    const answer = await nhgetch();
+    // tty_yn_function() clears WIN_MESSAGE when its prompt spans rows.
+    if (text.length > width) {
+        for (let row = 0; row * width < text.length; row++)
+            display.clearRow(row);
+    }
+    return String.fromCharCode(answer);
 }
 function addText(window, text) {
     tty_add_menu(window, { identifier: null, text });

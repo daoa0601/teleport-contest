@@ -208,6 +208,36 @@ void test('an incompatible configured race is replaced by the role required race
     assert.equal(game.urace.name, 'human');
     assert.doesNotMatch(menu, /Shall I pick|Is this ok/);
 });
+void test('random alignment waits for an incompatible configured race to be corrected', async () => {
+    const menu = await selection('', 'role:samurai,race:elf,gender:male,align:random');
+    requirePlayingGame(game);
+    assert.equal(game.urole.key, 'samurai');
+    assert.equal(game.urace.name, 'human');
+    assert.equal(game.initAlignment?.name, 'lawful');
+    assert.doesNotMatch(menu, /Shall I pick|Is this ok/);
+});
+void test('a deferred random alignment resolves before the manual gender menu', async () => {
+    const menu = await selection('n', 'role:samurai,race:elf,align:random');
+    assert.match(menu, /Pick a gender or sex/);
+    assert.match(menu, /Samurai human <gender> lawful/);
+});
+void test('accepting filter edits discards a deferred random alignment with the other choices', async () => {
+    const menu = await selection('~\nhpm', 'role:healer,race:elf,gender:male,align:random');
+    assert.match(menu, /Pick an alignment or creed/);
+    assert.match(menu, /Priest human male <alignment>/);
+});
+void test('leaving a tall role menu keeps status blank before hero initialization', async () => {
+    const menu = await selection('nr', 'align:neutral');
+    assert.match(menu, /Pick a race or species/);
+    assert.match(menu, /Ranger <race>/);
+    for (const row of requireGameDisplay().grid.slice(-2))
+        assert.equal(row.map(cell => cell.ch).join('').trim(), '', 'character selection has no hero status');
+});
+void test('answering a wrapped question clears its continuation beside the race menu', async () => {
+    const menu = await selection('n', 'role:caveman');
+    assert.match(menu, /Pick a race or species/);
+    assert.doesNotMatch(menu, /\]/, 'the answered question must not remain beside the race menu');
+});
 void test('the opening question preserves the name-entry base window', async () => {
     const engine = await runSegment({
         seed: 19, datetime: '20260801120000',

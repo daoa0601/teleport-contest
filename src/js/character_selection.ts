@@ -70,7 +70,7 @@ class CharacterSelection {
         if (FACETS.some(facet => !this.choices[facet])) game._characterPickerUsed = true;
         this.rigidChecks();
         let pickForYou = 'n';
-        if (FACETS.some(facet => !this.choices[facet])) {
+        if (FACETS.some(facet => !this.choices[facet] && !this.random.has(facet))) {
             const question = this.selectionQuestion();
             for (;;) {
                 pickForYou = (await readSetupAnswer(question)).toLowerCase();
@@ -89,7 +89,7 @@ class CharacterSelection {
                 next = this.nextFacet(facet);
                 completed = facet === 'alignment';
                 if (this.validCurrentFacet(facet)) continue;
-                if (pickForYou === 'y' || pickForYou === 'a') {
+                if (pickForYou === 'y' || pickForYou === 'a' || this.random.has(facet)) {
                     if (this.candidates(facet).length === 0)
                         await pline(`Incompatible ${facet}!`);
                     this.pickRandom(facet);
@@ -143,6 +143,7 @@ class CharacterSelection {
                 }
                 pickForYou = 'n';
                 this.choices = { ...EMPTY_CHOICES };
+                this.random.clear();
                 break;
             }
         }
@@ -177,6 +178,7 @@ class CharacterSelection {
     }
 
     private clearFacet(facet: Facet): void {
+        this.random.delete(facet);
         switch (facet) {
         case 'role': this.choices.role = null; break;
         case 'race': this.choices.race = null; break;
@@ -192,17 +194,21 @@ class CharacterSelection {
         case 'gender': this.choices.gender = genders.find(gender => gender.name === key) ?? null; break;
         case 'alignment': this.choices.alignment = aligns.find(alignment => alignment.name === key) ?? null; break;
         }
+        if (this.choices[facet]) this.random.delete(facet);
     }
 
     private rigidChecks(): void {
         // role.c resolves explicitly random facets before its rigid picks.
         for (const facet of ['role', 'race', 'alignment', 'gender'] satisfies Facet[]) {
-            if (!this.random.delete(facet)) continue;
+            if (!this.random.has(facet)) continue;
+            // A conflicting configured facet can leave pick_*() with no
+            // candidates. Keep ROLE_RANDOM until makepicks corrects it.
+            if (facet !== 'role' && this.candidates(facet).length === 0) continue;
             this.pickRandom(facet);
         }
         if (!this.choices.role) return;
         for (const facet of ['race', 'alignment', 'gender'] satisfies Facet[]) {
-            if (this.choices[facet]) continue;
+            if (this.choices[facet] || this.random.has(facet)) continue;
             const candidates = this.candidates(facet);
             if (candidates.length === 1) {
                 const key = candidates[rn2(1)];
@@ -373,7 +379,10 @@ class CharacterSelection {
 
     private async editFilters(): Promise<boolean> {
         const result = await editCharacterFilters(this.filters);
-        if (result !== 'cancelled') this.choices = { ...EMPTY_CHOICES };
+        if (result !== 'cancelled') {
+            this.choices = { ...EMPTY_CHOICES };
+            this.random.clear();
+        }
         return result === 'filtered';
     }
 
@@ -395,7 +404,12 @@ async function readSetupAnswer(question: string): Promise<string> {
         display.putstr(0, row, text.slice(row * width, (row + 1) * width), NO_COLOR);
     }
     display.setCursor((text.length - 1) % width + 1, Math.floor((text.length - 1) / width));
-    return String.fromCharCode(await nhgetch());
+    const answer = await nhgetch();
+    // tty_yn_function() clears WIN_MESSAGE when its prompt spans rows.
+    if (text.length > width) {
+        for (let row = 0; row * width < text.length; row++) display.clearRow(row);
+    }
+    return String.fromCharCode(answer);
 }
 
 function addText(window: TtyMenuWindow<string>, text: string): void {
