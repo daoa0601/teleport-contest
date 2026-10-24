@@ -49,7 +49,8 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
+    A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD,
+    ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
     PANICKED, QUIT, STARVING, STONING, TRICKED,
     In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
@@ -1311,7 +1312,8 @@ async function discloseGame({
         const attributes = ask
             ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery)
             : defquery;
-        if (attributes === 'y') await showFinalAttributes(survived);
+        if (attributes === 'y')
+            await showFinalAttributes({ final: survived ? ENL_GAMEOVERALIVE : ENL_GAMEOVERDEAD, killer });
         if (attributes === 'q') return stopDisclosure();
     }
 

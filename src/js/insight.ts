@@ -7,10 +7,10 @@ import { formatFeltMessage } from './hero_speech.js';
 // C ref: insight.c — doattributes(), enlightenment().
 
 import { heroIsHallucinating } from './senses.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { game } from './gstate.js';
 import {
-    bot, docrt, flushPendingTopline, flush_screen, pline,
+    bot, displayLiquidName, docrt, flushPendingTopline, flush_screen, pline,
 } from './display.js';
 import { showDisclosureOverlay, showTextPages } from './windows.js';
 import {
@@ -18,6 +18,9 @@ import {
     ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL,
     ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE,
     ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN,
+    ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE,
+    P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
+    SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { simpleArmorName } from './armor.js';
@@ -33,10 +36,25 @@ import {
     ACH_HELL, ACH_MINE, ACH_RNK1, ACH_RNK8, ACH_TOWN,
     achievementEntries,
 } from './achievements.js';
-import { OBJECT_SUBTYPE, requireObjectData } from './object_data.js';
+import { SHIELD_OF_REFLECTION } from './object_data.js';
 import {
-    ensureHeroSkills, SKILL_LEVEL_NAMES, SKILL_NAMES,
+    canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
 } from './skills.js';
+import { weaponDescription } from './weapon_description.js';
+import { isAmmunition, isWetTowel } from './weapon_type.js';
+import { emptyHandedDescription } from './weapon_readiness.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { monsterDigests } from './monster_data.js';
+import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
+import { heroHidingStatus } from './hero_hide.js';
+import { heroIsSick } from './hero_illness.js';
+import { heroFormSticks } from './hero_species.js';
+import { monsterSaddle } from './steed.js';
+import { simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
+import { heroLegName, monsterLegName } from './body_parts.js';
+import { fingersOrGloves } from './dip_water.js';
+import { surfaceName } from './terrain_name.js';
+import { trapName } from './trap_name.js';
 import {
     blindfolded, heroIsBlind, heroIsDeaf, permanentBlind,
 } from './senses.js';
@@ -54,24 +72,60 @@ function plural(n: number, singular: string, pluralForm = `${singular}s`) {
 // C ref: insight.c status_enlightenment().  These rows are a projection of
 // live trouble/nutrition/load state; their optional length determines every
 // section that follows on the second attributes page.
-function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0): string[] {
+function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, killer = ''): string[] {
     const u = game.u;
+    const wizard = !!game.flags.debug;
     const lines: string[] = [];
-    const are = (what: string, suffix = '') => lines.push(contractEnlightenment(`  You ${final ? 'were' : 'are'} ${what}${suffix}.`));
-    const have = (what: string) => lines.push(`  You ${final ? 'had' : 'have'} ${what}.`);
-    if (Upolyd(u)) are('transformed');
-    if (u.levitating) are(magic && levitationAtWill() ? 'levitating, at will' : 'levitating',
-        magic && levitationAtWill() ? '' : fromWhat('levitation'));
-    else if (u.flying) are('flying', fromWhat('flying'));
+    const message = (subject: string, present: string, past: string, what: string, suffix = '') =>
+        lines.push(contractEnlightenment(`  ${subject}${final ? past : present}${what}${suffix}.`));
+    const are = (what: string, suffix = '') => message('You ', 'are ', 'were ', what, suffix);
+    const have = (what: string) => message('You ', 'have ', 'had ', what);
+    // A hero who died while dismounting still has u.usteed set.
+    const steed = u.usteed && !(final === ENL_GAMEOVERDEAD && killer === 'riding accident') ? u.usteed : null;
+    // C leaves steedname null then, which also hides the steed's wounded legs.
+    const steedName = steed ? monsterName(steed, {
+        article: steed.mtame ? 'your' : 'the', suppressSaddle: true, suppressHallucination: true,
+    }) : '';
+    let youToo = 'You ';
+    if (Upolyd(u)) are(`transformed${heroHasBeenGenocided(game)
+        ? ` and ${final ? 'felt' : 'feel'} ${feelingAfterSelfGenocide(game)} inside` : ''}`);
+    if (steed) {
+        are(`riding ${steedName}`);
+        youToo += `and ${steedName} `;
+    }
+    if (u.levitating) {
+        if (magic && levitationAtWill()) are('levitating, at will');
+        else message(youToo, 'are ', 'were ', 'levitating', fromWhat('levitation'));
+    } else if (u.flying) message(youToo, 'are ', 'were ', 'flying', fromWhat('flying'));
     if (u.uinwater) are('underwater');
-    else if (u.uinwater) are(u.swimming ? 'swimming' : 'in water', fromWhat('swimming'));
     else if (u.waterWalking && !levelIsWaterLevel() && !u.levitating && !u.flying && (isPoolAt(u.ux, u.uy) || isLavaAt(u.ux, u.uy)))
         are(`walking on ${isPoolAt(u.ux, u.uy) ? 'water' : 'lava'}`, fromWhat('waterWalking'));
-    if ((u.stonedTurns ?? 0) > 0) are('turning to stone');
-    if ((u.slimedTurns ?? 0) > 0) are('turning into slime');
+    if (Upolyd(u) && (u.uundetected || M_AP_TYPE(u) !== M_AP_NOTHING)) are(heroHidingStatus(game));
+
+    // Internal troubles, mostly in the order that prayer ranks them.
+    if ((u.stonedTurns ?? 0) > 0 || expiredFatally(u.stoned, u.stonedTurns)) {
+        if (final && expiredFatally(u.stoned, u.stonedTurns)) lines.push('  You turned into stone.');
+        else are('turning to stone');
+    }
+    if ((u.slimedTurns ?? 0) > 0 || expiredFatally(u.slimed, u.slimedTurns)) {
+        if (final && expiredFatally(u.slimed, u.slimedTurns)) lines.push('  You turned into slime.');
+        else are('turning into slime');
+    }
     if (u.strangled || (u.strangledTurns ?? 0) > 0) {
-        const timeout = game.flags.debug ? ` (${u.strangledTurns ?? 0})` : '';
-        are(u.uburied ? 'buried' : `being strangled${timeout}`, u.uburied ? '' : fromWhat('strangled'));
+        if (u.uburied) are('buried');
+        else if (final && expiredFatally(u.strangled, u.strangledTurns)) lines.push('  You died from strangulation.');
+        else are(`being strangled${wizard ? ` (${u.strangledTurns ?? 0})` : ''}`, fromWhat('strangled'));
+    }
+    if (heroIsSick(game)) {
+        const type = u.sickType ?? 0;
+        // Both sicknesses share one timeout; death reports terminal illness
+        // first, as the status line does.
+        if (final && expiredFatally(u.sick, u.sickTurns))
+            lines.push(`  You died from ${type & SICK_NONVOMITABLE ? 'terminal illness' : 'food poisoning'}.`);
+        else {
+            if (type & SICK_NONVOMITABLE) are('terminally sick from illness');
+            if (type & SICK_VOMITABLE) are('terminally sick from food poisoning');
+        }
     }
     if ((u.vomitingTurns ?? 0) > 0) are('nauseated');
     if ((u.stunnedTurns ?? 0) > 0 || u.stunned) are('stunned');
@@ -82,92 +136,214 @@ function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0):
         const onlyBlindfold = blindfolded(game) && !intrinsic && !heroHasNoEyes();
         const kind = permanentBlind(game) || (intrinsic & FROMOUTSIDE) ? 'permanently'
             : intrinsic & FROMFORM ? 'innately' : onlyBlindfold ? 'deliberately' : 'temporarily';
-        const timer = game.flags.debug && intrinsic === propertyTimeout('blinded') && !blindfolded()
+        const timer = wizard && intrinsic === propertyTimeout('blinded') && !blindfolded()
             ? ` (${propertyTimeout('blinded')})` : '';
         are(`${kind} blind${timer}`, heroHasNoEyes() ? '' : fromWhat('blinded'));
     }
     if (heroIsDeaf(game)) are('deaf', fromWhat('deaf'));
-    if (u.punished || game.uball && game.uchain) are('chained to a heavy iron ball');
-    if ((u._woundedLegTurns ?? 0) > 0 && u._woundedLegSide) {
-        const side = u._woundedLegSide;
-        have(side === 'both' ? 'wounded legs' : `a wounded ${side} leg`);
+
+    // External troubles, more or less.
+    if (game.uball) are(`chained to ${simpleObjectNameWithArticle(game.uball)}`);
+    if (u.utrap) {
+        const predicament = trapPredicament(final, wizard);
+        if (u.usteed) {
+            const anchored = u.utraptype === TT_BURIEDBALL;
+            const subject = `${anchored ? 'you and ' : ''}${steedName} `;
+            message(subject.charAt(0).toUpperCase() + subject.slice(1),
+                anchored ? 'are ' : 'is ', anchored ? 'were ' : 'was ', predicament);
+        } else are(predicament);
     }
+    const holder = u.ustuck;
+    if (holder) {
+        let held = monsterName(holder, { article: 'a' });
+        if (held === 'it' && MGIVENNAME(holder) !== 'it') held = 'an unseen creature';
+        if (u.uswallow) {
+            let buf = `${monsterDigests(holder) ? 'swallowed' : 'engulfed'} by ${held}`;
+            if (monsterDigests(holder)) {
+                // A final digestion death leaves u.uswldtim at zero.
+                buf += final && !u.uswldtim ? ' and got totally digested'
+                    : ` and ${final ? 'were' : 'are'} being digested`;
+            }
+            are(`${buf}${wizard ? ` (${u.uswldtim ?? 0})` : ''}`);
+        } else {
+            are(`${heroFormSticks(game) ? 'holding' : 'held by'} ${held} (${
+                distanceDescription(holder.mx - u.ux, holder.my - u.uy)})`);
+        }
+    }
+    if (steed) {
+        const saddle = monsterSaddle(steed);
+        if (saddle?.cursed) are(`stuck to ${possessiveName(steedName)} ${simpleObjectName(saddle)}`);
+    }
+    if ((u._woundedLegTurns ?? 0) > 0 && u._woundedLegSide) {
+        // When mounted these are the steed's legs, shown only in wizard mode.
+        const side = u._woundedLegSide;
+        const leg = u.usteed ? monsterLegName(u.usteed.mnum) : heroLegName(game);
+        const legs = side === 'both' ? `wounded ${makePlural(leg)}` : `a wounded ${side} ${leg}`;
+        if (!u.usteed) have(legs);
+        else if (wizard && steedName)
+            message(steedName.charAt(0).toUpperCase() + steedName.slice(1), ' has ', ' had ', legs);
+    }
+    if ((u.glibTurns ?? 0) > 0)
+        have(`slippery ${fingersOrGloves()}${wizard ? ` (${u.glibTurns})` : ''}`);
     const knownCause = (property: PropertyName) => (u._propertySources?.[property]?.worn ?? [])
         .some(source => {
             const object = game[source.slot];
             return object?.dknown && game._knownObjectTypes?.has(object.otyp);
         });
     if ((u.fumbling || propertyTimeout('fumbling')) && (magic || knownCause('fumbling')))
-        lines.push(`  You ${final ? 'fumbled' : 'fumble'}${fromWhat('fumbling')}.`);
+        message('You ', 'fumble', 'fumbled', '', fromWhat('fumbling'));
     if ((u.sleepy || propertyTimeout('sleepy')) && (magic || knownCause('sleepy')))
-        lines.push(`  You ${final ? 'fell' : 'fall'} asleep uncontrollably${fromWhat('sleepy')}${game.flags.debug ? ` (${propertyTimeout('sleepy')})` : ''}.`);
+        message('You ', 'fall', 'fell', ' asleep uncontrollably', `${fromWhat('sleepy')}${wizard ? ` (${propertyTimeout('sleepy')})` : ''}`);
     if ((u.hunger || propertyTimeout('hunger')) && (magic || knownCause('hunger')))
-        lines.push(`  You ${final ? 'hungered' : 'hunger'} rapidly${fromWhat('hunger')}.`);
-    const hunger = u.uhunger ?? 900;
-    const hungerText = hunger > 1000 ? 'satiated' : hunger > 150 ? 'not hungry' : hunger > 50 ? 'hungry'
-        : hunger > 0 ? 'weak from severe hunger' : 'fainting due to starvation';
-    are(`${hungerText}${game.flags.debug ? ` <${hunger}>` : ''}`);
+        message('You ', 'hunger', 'hungered', ' rapidly', fromWhat('hunger'));
+    // eat.c hu_stat[u.uhs], with "not hungry" supplied for the blank state.
+    const hungerText = ['satiated', 'not hungry', 'hungry', 'weak from severe hunger',
+        'fainting due to starvation', 'fainted due to starvation', 'starved'][u.uhs ?? NOT_HUNGRY] ?? 'not hungry';
+    are(`${hungerText}${wizard ? ` <${u.uhunger}>` : ''}`);
     const capacity = nearCapacity(game);
     const encumbrance = ['unencumbered', 'burdened', 'stressed', 'strained', 'overtaxed', 'overloaded'][capacity] ?? 'unencumbered';
     const degree = ['', 'slightly', 'moderately', 'very', 'extremely', 'not possible'][capacity] ?? '';
-    are(`${encumbrance}${game.flags.debug ? ` <${invWeight(game)}>` : ''}${capacity
+    are(`${encumbrance}${wizard ? ` <${invWeight(game)}>` : ''}${capacity
         ? `; movement ${final ? 'was' : 'is'} ${degree}${capacity < 5 ? ' slowed' : ''}` : ''}`);
     return lines;
 }
 
-const OBJECT_CLASS_NOUN: Readonly<Partial<Record<number, string>>> = Object.freeze({
-    1: 'strange object', 2: 'weapon', 3: 'armor', 4: 'ring', 5: 'amulet',
-    6: 'tool', 7: 'food', 8: 'potion', 9: 'scroll', 10: 'spellbook',
-    11: 'wand', 12: 'coin', 13: 'gem', 14: 'large rock',
-    15: 'iron ball', 16: 'iron chain', 17: 'venom',
-});
+// C timeout.c:done_timeout() ORs I_SPECIAL into a fatal intrinsic after its
+// timer has counted down; the port keeps that condition's flag set at zero.
+function expiredFatally(active: boolean | undefined, turns: number | undefined): boolean {
+    return !!active && !turns;
+}
 
-// C ref: insight.c:weapon_insight() -> weapon.c:weapon_descr().  A wielded
-// non-weapon is described by object class and has no skill row because
-// weapon_type() returns P_NONE.
+// C insight.c:trap_predicament().
+function trapPredicament(final: EnlightenmentFinal, wizard: boolean): string {
+    const u = game.u;
+    let predicament: string;
+    if (u.utraptype === TT_BURIEDBALL) predicament = 'tethered to something buried';
+    else if (u.utraptype === TT_LAVA) predicament = `sinking into ${final ? 'lava' : displayLiquidName('lava')}`;
+    else if (u.utraptype === TT_INFLOOR) predicament = `stuck in the ${surfaceName(u.ux, u.uy)}`;
+    else {
+        const trap = game.level?.traps.find(candidate => candidate.tx === u.ux && candidate.ty === u.uy);
+        predicament = `trapped${trap ? ` in ${withIndefiniteArticle(trapName(trap.ttyp))}` : ''}`;
+    }
+    // u.utrap is an escape-attempt counter, so wizard mode uses braces.
+    return wizard ? `${predicament} {${u.utrap}}` : predicament;
+}
+
+// C getpos.c:dxdy_to_dist_descr(dx, dy, TRUE).
+function distanceDescription(dx: number, dy: number): string {
+    if (!dx && !dy) return 'here';
+    const direction = DIRECTION_NAMES.find(entry => entry.dx === dx && entry.dy === dy);
+    if (direction) return direction.name;
+    const vertical = dy ? `${Math.abs(dy)}${dy > 0 ? 'south' : 'north'}${dx ? ',' : ''}` : '';
+    return `${vertical}${dx ? `${Math.abs(dx)}${dx > 0 ? 'east' : 'west'}` : ''}`;
+}
+
+const DIRECTION_NAMES = [
+    { dx: -1, dy: 0, name: 'west' }, { dx: -1, dy: -1, name: 'northwest' },
+    { dx: 0, dy: -1, name: 'north' }, { dx: 1, dy: -1, name: 'northeast' },
+    { dx: 1, dy: 0, name: 'east' }, { dx: 1, dy: 1, name: 'southeast' },
+    { dx: 0, dy: 1, name: 'south' }, { dx: -1, dy: 1, name: 'southwest' },
+] as const;
+
+// C ref: insight.c:weapon_insight().  Weapons are described by
+// weapon.c:weapon_descr(); the skill rows come from the hero's live skill
+// table, including two-weapon limits and pending #enhance eligibility.
 function weaponInsightLines(final: EnlightenmentFinal = 0) {
-    const are = final ? 'were' : 'are';
-    const have = final ? 'had' : 'have';
-    if (game.u?.twoweap) {
-        return [
-            `  You ${are} wielding two weapons at once.`,
-            `  Your skill in long sword ${final ? 'was' : 'is'} limited by being unskilled with two weapons.`,
-            `  Your skill in short sword ${final ? 'was' : 'is'} also limited by being unskilled with two weapons`,
-        ];
-    }
-    if (!game.uwep) {
-        return game.urole?.key === 'monk'
-            ? [`  You ${are} empty handed.`, `  You ${have} basic skill with martial arts.`]
-            : [`  You ${are} bare handed.`, `  You ${are} unskilled in bare handed combat.`];
-    }
-
-    if (game.uwep.oclass !== 2 && game.uwep.oclass !== 6) {
-        const what = OBJECT_CLASS_NOUN[game.uwep.oclass] || 'object';
-        const quantity = game.uwep.quan ?? game.uwep.quantity ?? 1;
-        return [`  You ${are} wielding ${quantity === 1
-            ? withIndefiniteArticle(what) : `${quantity} ${plural(quantity, what)}`}.`];
+    const lines: string[] = [];
+    const message = (subject: string, present: string, past: string, what: string) =>
+        lines.push(contractEnlightenment(`  ${subject}${final ? past : present}${what}.`));
+    const are = (what: string) => message('You ', 'are ', 'were ', what);
+    const have = (what: string) => message('You ', 'have ', 'had ', what);
+    const weapon = game.uwep ?? null;
+    if (!weapon) are(emptyHandedDescription());
+    else if (game.u.twoweap) are('wielding two weapons at once');
+    else {
+        const what = weapon.otyp === SHIELD_OF_REFLECTION ? simpleArmorName(weapon, 'uarms', game)
+            : isWetTowel(weapon) ? 'wet towel' : weaponDescription(weapon);
+        are(['armor', 'food', 'venom'].includes(what.toLowerCase()) ? `wielding some ${what}`
+            : `wielding ${weapon.quan === 1 ? withIndefiniteArticle(what) : makePlural(what)}`);
     }
 
-    // weapon.c:weapon_descr() normally projects the P_* skill name rather
-    // than the object's material/base name: silver saber is simply "saber",
-    // and katana is "long sword". OBJECT_SUBTYPE supplies the special
-    // mattock, hook, and aklys labels.
-    const weaponType = requireObjectData(OBJECT_SUBTYPE, game.uwep.otyp);
-    const weaponSkill = SKILL_NAMES[weaponType]
-        || wieldedWeaponName(game.uwep).replace(/^(?:orcish|elven|dwarvish|silver) /, '');
-    const lines = [
-        `  You ${are} wielding ${withIndefiniteArticle(weaponSkill)}.`,
-    ];
-    const skillLevel = ensureHeroSkills(game)?.[weaponType]?.skill;
-    if (skillLevel === undefined || !Number.isInteger(skillLevel)) return lines;
-    const skillName = SKILL_LEVEL_NAMES[skillLevel];
-    if (skillName === undefined) throw new RangeError(`Unknown weapon proficiency ${skillLevel}`);
-    const levelName = skillLevel === 0 ? 'no' : skillName.toLowerCase();
-    const usesHave = skillLevel !== 1 && skillLevel !== 3;
-    lines.push(usesHave
-        ? `  You ${have} ${levelName} skill with ${weaponSkill}.`
-        : `  You ${are} ${levelName} in ${weaponSkill}.`);
+    const wtype = weaponSkillType(weapon);
+    if (wtype === P_NONE || (weapon && isAmmunition(weapon))) return lines;
+    const sklvl = skillLevel(wtype);
+    const sklvlName = skillLevelDescription(sklvl);
+    const hav = sklvl !== P_UNSKILLED && sklvl !== P_SKILLED;
+    let buf = `${sklvlName} ${hav ? 'skill with' : 'in'} ${skillName(wtype)}`;
+    if (!game.u.twoweap) {
+        if (canAdvanceHeroSkill(wtype)) buf += ` and ${final ? 'could have enhanced' : 'can enhance'} that`;
+        if (hav) have(buf);
+        else are(buf);
+        return lines;
+    }
+
+    const wtype2 = weaponSkillType(game.uswapwep ?? null);
+    const sklvl2 = skillLevel(wtype2);
+    const hav2 = sklvl2 !== P_UNSKILLED && sklvl2 !== P_SKILLED;
+    let twoskl = skillLevel(P_TWO_WEAPON_COMBAT);
+    let twobuf: string;
+    if (twoskl === P_ISRESTRICTED) {
+        // Polymorphed forms with several weapon attacks can two-weapon
+        // without the skill; restricted then behaves as unskilled.
+        twoskl = P_UNSKILLED;
+        twobuf = 'restricted';
+    } else twobuf = skillLevelDescription(twoskl);
+    let also = '', also2 = '', also3 = false;
+    if (twoskl < sklvl) {
+        message(`Your skill in ${skillName(wtype)} `, 'is', 'was', ` limited by being ${twobuf} with two weapons`);
+        also = 'also ';
+    } else if (twoskl > sklvl) {
+        message('Your two weapon skill ', 'is', 'was', ` limited by ${sklvl > P_ISRESTRICTED
+            ? `being ${sklvlName}` : 'having no skill'} with ${skillName(wtype)}`);
+        also2 = 'also ';
+    } else {
+        buf += ' and two weapons';
+        also3 = true;
+        if (hav) have(buf);
+        else are(buf);
+    }
+
+    // Skip the secondary comparison when it duplicates the primary one.
+    if (wtype2 !== wtype) {
+        const name2 = skillName(wtype2);
+        const sklvlName2 = skillLevelDescription(sklvl2);
+        if (twoskl < sklvl2) {
+            message(`Your skill in ${name2} `, 'is', 'was', ` ${also}limited by being ${twobuf} with two weapons`);
+        } else if (twoskl > sklvl2) {
+            message('Your two weapon skill ', 'is', 'was', ` ${also2}limited by ${sklvl2 > P_ISRESTRICTED
+                ? `being ${sklvlName2}` : 'having no skill'} with ${name2}`);
+        } else {
+            const both = `${sklvlName2} ${hav2 ? 'skill with' : 'in'} ${name2} and two weapons`;
+            if (also3) message('You also ', hav2 ? 'have' : 'are', hav2 ? 'had' : 'were', ` ${both}`);
+            else if (hav2) have(both);
+            else are(both);
+        }
+    }
+
+    const a1 = canAdvanceHeroSkill(wtype);
+    const a2 = wtype2 !== wtype && canAdvanceHeroSkill(wtype2);
+    const ab = canAdvanceHeroSkill(P_TWO_WEAPON_COMBAT);
+    if (a1 || a2 || ab) {
+        const alsoWith = ' and also with ';
+        const count = Number(a1) + Number(a2) + Number(ab);
+        message('You ', 'can enhance', 'could have enhanced', ` skill${count > 1 ? 's' : ''} with ${
+            a1 ? skillName(wtype) : ''}${a1 && a2 && ab ? ', ' : a1 && (a2 || ab) ? alsoWith : ''}${
+            a2 ? skillName(wtype2) : ''}${a1 && a2 && ab ? ', and ' : a2 && ab ? alsoWith : ''}${
+            ab ? 'two weapons' : ''}`);
+    }
     return lines;
+}
+
+function skillLevel(skill: number): number {
+    const entry = ensureHeroSkills(game)?.[skill];
+    if (!entry) throw new Error(`Weapon insight requires initialized skill ${skill}`);
+    return entry.skill;
+}
+
+// "no" for restricted, otherwise weapon.c:skill_level_name() lowercased.
+function skillLevelDescription(level: number): string {
+    if (level === P_ISRESTRICTED) return 'no';
+    return (SKILL_LEVEL_NAMES[level] ?? 'Unknown').toLowerCase();
 }
 
 function statusEquipmentLines(final: EnlightenmentFinal = 0): string[] {
@@ -178,12 +354,6 @@ function statusEquipmentLines(final: EnlightenmentFinal = 0): string[] {
         lines.push(game.u.uroleplay?.nudist ? `  You ${final ? 'did' : 'do'} not wear any armor.`
             : `  You ${final ? "weren't" : "aren't"} wearing any armor.`);
     return lines;
-}
-
-function wieldedWeaponName(object: GameObject): string {
-    if (object.name === undefined)
-        throw new Error(`Wielded object ${object.o_id} has no presentation name`);
-    return object.name;
 }
 
 function killedCountPhrase(count: number) {
@@ -236,13 +406,7 @@ function attributePages({ basic = true, magic = false }: EnlightenmentOptions = 
 
     if (magic) lines.push(...attributeEnlightenmentLines());
 
-    lines.push('', ' Miscellaneous:');
-    if (basic && (game.flags?.debug || game.flags?.explore)) {
-        lines.push(`  You are running in ${game.flags?.debug
-            ? 'debug' : 'explore'} mode.`);
-        lines.push("  You haven't encountered any bones levels.");
-    }
-    lines.push('  Total elapsed playing time is none.');
+    lines.push(...miscellaneousLines(basic));
     return paginateAttributeLines(lines);
 }
 
@@ -270,20 +434,43 @@ export async function doEnlightenmentEffect() {
     await exerciseAttribute(A_WIS, true);
 }
 
-function finalAttributePages(final: 1 | 2): TextPage[] {
+// C insight.c:enlightenment() "Miscellaneous" section.  The recorder's
+// fixed clock leaves urealtime.realtime at zero, so elapsed time is " none".
+function miscellaneousLines(basic: boolean, final: EnlightenmentFinal = 0): string[] {
+    const lines = ['', ' Miscellaneous:'];
+    const wizard = !!game.flags.debug, discover = !!game.flags.explore;
+    if (basic && (wizard || discover || final)) {
+        if (wizard || discover)
+            lines.push(`  You ${final ? 'were' : 'are'} running in ${wizard ? 'debug' : 'explore'} mode.`);
+        // you_have_X(): the final form drops the verb ("You encountered").
+        if (game.flags.bones === false) {
+            // Storing is mentioned only when the hero has just died.
+            lines.push(`  You ${final ? '' : 'have '}disabled loading${
+                final === ENL_GAMEOVERDEAD ? ' and storing' : ''} of bones levels.`);
+        } else if (!game._bonesEncountered) {
+            lines.push(`  You ${final ? "didn't encounter" : "haven't encountered"} any bones levels.`);
+        } else lines.push(`  You ${final ? '' : 'have '}encountered 1 bones level.`);
+    }
+    lines.push(`  Total elapsed playing time ${final ? 'was' : 'is'} none.`);
+    return lines;
+}
+
+export interface FinalAttributeOptions {
+    final: typeof ENL_GAMEOVERALIVE | typeof ENL_GAMEOVERDEAD;
+    // svk.killer.name; a dismount death excludes the steed from Final Status.
+    killer?: string;
+}
+
+function finalAttributePages({ final, killer = '' }: FinalAttributeOptions): TextPage[] {
     const lines = [
         ` ${game.displayName || game.plname} the ${enlightenmentRoleName()}'s attributes:`,
         ...backgroundEnlightenmentLines(final),
         ...basicsEnlightenmentLines(final),
         ...characteristicEnlightenmentLines(true, final),
-        '', ' Final Status:', ...statusEnlightenmentLines(true, final),
+        '', ' Final Status:', ...statusEnlightenmentLines(true, final, killer),
         ...statusEquipmentLines(final),
     ];
-    lines.push(...attributeEnlightenmentLines(final), '', ' Miscellaneous:');
-    if (game.flags.debug || game.flags.explore)
-        lines.push(`  You were running in ${game.flags.debug ? 'debug' : 'explore'} mode.`);
-    lines.push(game._bonesEncountered ? '  You encountered a bones level.' : "  You didn't encounter any bones levels.",
-        '  Total elapsed playing time was none.');
+    lines.push(...attributeEnlightenmentLines(final), ...miscellaneousLines(true, final));
     // Final disclosure uses putstr(), without the menu's extra leading column.
     const textLines = lines.map(line => line.startsWith(' ') ? line.slice(1) : line);
     const pages: TextPage[] = [];
@@ -295,8 +482,9 @@ function finalAttributePages(final: 1 | 2): TextPage[] {
     return pages;
 }
 
-export async function showFinalAttributes(survived = false) {
-    return showTextPages(finalAttributePages(survived ? 1 : 2), {
+// C end.c:disclose() -> enlightenment(BASIC | MAGIC, final).
+export async function showFinalAttributes(options: FinalAttributeOptions) {
+    return showTextPages(finalAttributePages(options), {
         validKeys: [27, 32, 10, 13],
     });
 }

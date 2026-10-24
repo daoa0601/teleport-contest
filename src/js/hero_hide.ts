@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import {
-    M_AP_NOTHING, M_AP_OBJECT, SPIKED_PIT, STONING, TT_PIT,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, SPIKED_PIT, STONING, TT_PIT,
 } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
@@ -18,7 +18,7 @@ import {
 } from './monster_data.js';
 import { CORPSE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { corpseName, simpleObjectNameWithArticle } from './objnam.js';
+import { corpseName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import {
     heroFormClings, heroFormHidesUnderObjects,
     heroFormHidesWithoutCover, heroIsFlying,
@@ -26,11 +26,13 @@ import {
 } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
 import { touchPetrifies } from './stoning.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
-import { levelHasCeiling } from './terrain_properties.js';
+import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
+import { isPoolAt, levelHasCeiling } from './terrain_properties.js';
 
 const M1_HUMANOID = 0x00020000;
 const S_MIMIC = 13;
+const S_EEL = 57;
+const STRANGE_OBJECT = 0; // objects.h: first object type
 
 interface HidingAbility {
     form: number;
@@ -113,24 +115,41 @@ function isWaterLevel(state: GameState) {
     return sameLevel(state.u.uz, state.water_level);
 }
 
-function hidingDescription(ability: HidingAbility, state: GameState, objects: readonly GameObject[]) {
-    if (ability.mimic) return 'mimicking a strange object';
-    if (ability.hidesUnder) {
-        const cover = objects[0];
-        if (!cover) throw new Error('Hiding under objects requires an object on the floor');
-        return `hiding underneath ${simpleObjectNameWithArticle(cover, state)}`;
+// C insight.c:youhiding(): the shared phrase for #monster feedback and the
+// enlightenment line.  It reads the hero's disguise and current form, not
+// the #monster hiding ability, so meal-induced disguises and eels in water
+// are described too.
+export function heroHidingStatus(state: GameState = game): string {
+    const apType = state.u.m_ap_type ?? M_AP_NOTHING;
+    if (apType !== M_AP_NOTHING) {
+        if (apType === M_AP_OBJECT) {
+            return `mimicking ${withIndefiniteArticle(
+                simpleObjectTypeName(state.u.mappearance ?? STRANGE_OBJECT, state))}`;
+        }
+        if (apType === M_AP_FURNITURE) return 'mimicking something';
+        if (apType === M_AP_MONSTER) return 'mimicking someone';
+        return 'mimicking';
     }
-    if (ability.onCeiling) {
-        return `hiding on the ${
-            ceilingName(state.u.ux, state.u.uy, state)
-        }`;
+    const form = heroMonsterForm(state);
+    if (!state.u.uundetected || form == null) return 'hiding';
+    const { ux, uy } = state.u;
+    if (MONSTER_SYMBOL[form] === S_EEL) {
+        return isPoolAt(ux, uy, state)
+            ? `hiding in the ${waterbodyName(ux, uy, state)}` : 'hiding';
     }
+    if (heroFormHidesUnderObjects(state)) {
+        const cover = floorObjects(state)[0];
+        return cover
+            ? `hiding underneath ${simpleObjectNameWithArticle(cover, state)}` : 'hiding';
+    }
+    if (heroFormClings(state) || heroIsFlying(state))
+        return `hiding on the ${ceilingName(ux, uy, state)}`;
     if (state.u.utrap && state.u.utraptype === TT_PIT) {
         const trap = state.level?.traps?.find(candidate =>
-            candidate.tx === state.u.ux && candidate.ty === state.u.uy);
+            candidate.tx === ux && candidate.ty === uy);
         return `hiding in a ${trap?.ttyp === SPIKED_PIT ? 'spiked ' : ''}pit`;
     }
-    return `hiding on the ${surfaceName(state.u.ux, state.u.uy, state)}`;
+    return `hiding on the ${surfaceName(ux, uy, state)}`;
 }
 
 export async function useHeroHide({
@@ -196,18 +215,18 @@ export async function useHeroHide({
             && (state.u.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING);
     if (alreadyHidden) {
         await publish(`You are already ${
-            hidingDescription(ability, state, objects)
+            heroHidingStatus(state)
         }.`);
         return { used: true, spentTime: false, reason: 'already-hidden' };
     }
 
     if (ability.mimic) {
         state.u.m_ap_type = M_AP_OBJECT;
-        state.u.mappearance = 0; // STRANGE_OBJECT
+        state.u.mappearance = STRANGE_OBJECT;
     } else {
         state.u.uundetected = 1;
     }
     refresh(state.u.ux, state.u.uy);
-    await publish(`You are now ${hidingDescription(ability, state, objects)}.`);
+    await publish(`You are now ${heroHidingStatus(state)}.`);
     return { used: true, spentTime: true };
 }

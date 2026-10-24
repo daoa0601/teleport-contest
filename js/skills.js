@@ -424,7 +424,7 @@ export async function advanceHeroSkill(state, skill, { speedy = false } = {}) {
         identifySpellbooksForSkills(state);
     return proficiency;
 }
-function skillName(skill, state = game) {
+export function skillName(skill, state = game) {
     if (skill === 35
         && (state.urole?.key === 'monk' || state.urole?.key === 'samurai')) {
         return 'martial arts';
