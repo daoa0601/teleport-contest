@@ -120,6 +120,8 @@ for (const lifesaving of [false, true]) {
         assert.ok(result !== null && result !== undefined);
         assert.equal(result.outcome, 'fire');
         assert.equal(result.died, !lifesaving);
+        // C trap.c:6497 is unreachable for a real death (done() never
+        // returns), so only a surviving hero records the discovery.
         assert.equal(box.tknown, lifesaving);
         if (lifesaving)
             assert.ok(game.u.uhp > 0);

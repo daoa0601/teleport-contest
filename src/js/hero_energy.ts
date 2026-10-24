@@ -20,7 +20,7 @@ export function drainHeroEnergy(
             hero.uenmax = 0;
             state.context.botl = true;
         }
-        return formatFeltMessage('momentarily lethargic.', state);
+        return formatFeltMessage(`momentarily lethargic${punctuation}`, state);
     }
 
     if (amount > ((hero.uen ?? 0) + maximum) / 3)

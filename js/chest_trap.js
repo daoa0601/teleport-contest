@@ -242,6 +242,9 @@ export async function triggerChestTrap(container, { state = game, disarm = false
     else {
         result = await confuseHero(container, state, publish, random);
     }
+    // C trap.c:6494-6497: bot() and tknown=1 run after surviving outcomes
+    // (including a life-saved or declined death); done() never returns for a
+    // real death, so a fatal outcome leaves tknown clear for the bones file.
     if (!result.destroyed && !result.died) {
         await bot();
         container.tknown = true;

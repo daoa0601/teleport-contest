@@ -15,15 +15,16 @@ import { heroHasMagicKey } from './monster_key.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { heroFingerName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE, MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, WEB, isok, } from './const.js';
+import { A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE, MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, WEB, WT_TOOMUCH_DIAGONAL, isok, } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
+import { abusePet } from './dog.js';
 import { addExperience, checkExperienceLevel, } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game } from './gstate.js';
 import { convertTrapToObject } from './trap_object.js';
-import { heroBadRock, heroTightDiagonalReason } from './hack.js';
-import { heroHasConflict } from './hero_conflict.js';
+import { heroBadRock } from './hack.js';
+import { consumeObjectCharge } from './object_charge.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
@@ -35,20 +36,21 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL, monsterIsMindless, monsterTypeName, } from './monster_data.js';
+import { MONSTER_SIZE } from './monster_data.js';
 import { ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE, LARGE_BOX, CHEST, OBJECT_BIMANUAL, POT_OIL, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { heroHasNoHands, } from './polyself.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { promptYesNoQuit } from './query.js';
 import { d, rnd, rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { resolveImmediatePetrification, touchPetrifies, } from './stoning.js';
 import { promptDirection } from './tty_prompts.js';
-import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, nearCapacity, objectWeight, } from './weight.js';
+import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight, } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
-import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
+import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -56,6 +58,7 @@ const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
 const G_UNIQ = 0x1000;
 const S_HUMAN = 53;
+const MZ_LARGE = 3;
 function heroIsImpaired(state) {
     const hero = state.u;
     return !!hero.confused || (hero.confusionTurns ?? 0) > 0
@@ -289,6 +292,17 @@ function webCuttingWeapon(trap, state) {
     const secondary = state.uswapwep || state.u?.uswapwep;
     return state.u.twoweap && secondary && isBlade(secondary) ? secondary : null;
 }
+// C objnam.c:bare_artifactname(uwep): the primary weapon's artifact name
+// with a lowercased leading "The ", or its plain xname() when it is no
+// artifact (trap.c:5581 names the primary even for a fiery secondary).
+function bareArtifactOrPlainName(weapon, state) {
+    const artifact = artifactById(weapon?.oartifact, state);
+    if (artifact)
+        return artifact.name.replace(/^The /, 'the ');
+    if (!weapon)
+        return '';
+    return objectCombatName(weapon, { state, includeCorpseSpecies: false });
+}
 function untrapFailureRoll(trap, state, random) {
     let chance = 3;
     if (trap.ttyp === WEB) {
@@ -340,14 +354,24 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
     }
     const dx = trap.tx - state.u.ux;
     const dy = trap.ty - state.u.uy;
-    const tightDiagonal = dx && dy
+    // C trap.c:5461-5469 duplicates only the tight-space core of
+    // test_move(): bad rock in both orthogonal squares plus overencumbrance
+    // or a big form.  cant_squeeze_thru()'s extra exemptions do not apply.
+    const tooTight = !!(dx && dy
         && heroBadRock(state, state.u.ux, trap.ty)
         && heroBadRock(state, trap.tx, state.u.uy)
-        && heroTightDiagonalReason(state);
-    if (tightDiagonal) {
+        && (((state.inventory || []).length > 0
+            && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
+            || (MONSTER_SIZE[heroSpecies(state)] ?? 2) >= MZ_LARGE));
+    if (tooTight) {
         await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
+    // C trap.c:5471-5477 splits this refusal into an unskilled-rider
+    // rider_cant_reach() case and a generic one, but can_reach_floor()'s
+    // rider check (engrave.c:197-198) precedes anything reachable from
+    // untrap(), so a mounted hero is always refused by the main flow and
+    // only the generic message is reachable here.
     if (!heroCanReachFloor(state, { checkPit: here })) {
         await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
@@ -386,12 +410,8 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
 }
 async function failMonsterRescue(monster, trap, { state, publish, random, rollOne, }) {
     if (trap.ttyp === BEAR_TRAP) {
-        if (monster.mtame) {
-            monster.mtame = heroHasConflict(state)
-                ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
-            if (monster.mtame > 0 && monster.edog)
-                monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
-        }
+        if (monster.mtame)
+            await abusePet(monster, state);
         monster.mhp = (monster.mhp ?? 1) - rollOne(4);
         if (monster.mhp <= 0) {
             await finishEnvironmentalMonsterDeath(monster, state, {
@@ -437,12 +457,19 @@ async function disarmHoldingTrap(trap, options) {
         return true;
     }
     else {
-        const blade = webCuttingWeapon(trap, state);
+        // C trap.c:5575-5586 picks the blade without regard to the monster
+        // that was just extracted, and names the primary weapon's artifact
+        // (bare_artifactname(uwep)) for the fiery-blade message.
+        const primary = state.uwep || state.u?.uwep;
+        const secondary = state.uswapwep || state.u?.uswapwep;
+        const blade = primary && isBlade(primary) ? primary
+            : state.u.twoweap && secondary && isBlade(secondary)
+                ? secondary : null;
         const artifact = artifactById(blade?.oartifact, state);
-        if (artifact?.name === 'Sting')
+        if (blade && artifact && blade === primary && artifact.name === 'Sting')
             await publish(`Sting cuts through ${possessiveTrap(trap)} web!`);
-        else if (artifact?.attack?.damageType === 'fire')
-            await publish(`${artifact.name} burns through ${possessiveTrap(trap)} web!`);
+        else if (blade && artifact && artifact.attack?.damageType === 'fire')
+            await publish(`${bareArtifactOrPlainName(primary, state)} burns through ${possessiveTrap(trap)} web!`);
         else if (blade)
             await publish(`You cut through ${possessiveTrap(trap)} web.`);
         else
@@ -482,7 +509,7 @@ async function disarmSqueakyBoard(trap, options) {
     if (result < 2)
         return result !== 0;
     if (tool.otyp === CAN_OF_GREASE) {
-        tool.spe = Math.max(0, (tool.spe ?? 0) - 1);
+        await consumeObjectCharge(tool, { state: options.state });
     }
     else {
         await consumeOne(tool, options.state);
