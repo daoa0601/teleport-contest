@@ -744,8 +744,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
         if ((recoveryCapacity < MOD_ENCUMBER
             && sourceTurn % interval === 0)
             || energyRegeneration) {
-            const attributes = game.u?.acurr?.a || [];
-            let upper = Math.trunc(((attributes[A_WIS] ?? 0) + (attributes[A_INT] ?? 0)) / 15) + 1;
+            let upper = Math.trunc((currentAttribute(A_WIS, game) + currentAttribute(A_INT, game)) / 15) + 1;
             if (game.u?.magicalBreathingExtrinsic)
                 upper += 2;
             game.u.uen = Math.min(game.u.uenmax, game.u.uen + 1 + rn2(upper));
