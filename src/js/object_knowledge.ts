@@ -82,7 +82,7 @@ export function objectClassForType(otyp: number | null | undefined): number {
 }
 
 function rememberType(otyp: number, state: GameState = game): void {
-    if (!Number.isInteger(otyp) || otyp < 1) return;
+    if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT) return;
     if (!Array.isArray(state._objectDiscoveryOrder)) state._objectDiscoveryOrder = [];
     if (!state._objectDiscoveryOrder.includes(otyp)) state._objectDiscoveryOrder.push(otyp);
 }
@@ -102,7 +102,7 @@ export function observeObject(object: Pick<GameObject, 'otyp' | 'dknown'>, state
 }
 
 export function recordObjectEncounter(otyp: number, state: GameState = game): void {
-    if (!Number.isInteger(otyp) || otyp < 1) return;
+    if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT) return;
     rememberType(otyp, state);
     if (!(state._encounteredObjectTypes instanceof Set)) state._encounteredObjectTypes = new Set();
     state._encounteredObjectTypes.add(otyp);
@@ -113,7 +113,7 @@ export function recordObjectKnowledge(otyp: number, state: GameState = game): vo
 }
 
 function discoverKnownType(otyp: number, creditHero: boolean, state: GameState): void {
-    if (!Number.isInteger(otyp) || otyp < 1) return;
+    if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT) return;
     const known = OBJECT_INITIAL_KNOWN[otyp] || state._knownObjectTypes?.has(otyp);
     rememberType(otyp, state);
     if (!(state._knownObjectTypes instanceof Set)) state._knownObjectTypes = new Set();
@@ -128,7 +128,7 @@ function discoverKnownType(otyp: number, creditHero: boolean, state: GameState):
 // C makeknown(): learning a type also records the encounter and credits
 // Wisdom once. Restoring saved knowledge does not grant that credit.
 export function learnObjectType(otyp: number, state: GameState = game): void {
-    if (otyp < 1) return;
+    if (otyp < FIRST_OBJECT) return;
     recordObjectEncounter(otyp, state);
     discoverKnownType(otyp, true, state);
 }
