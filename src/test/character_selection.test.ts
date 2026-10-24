@@ -191,6 +191,26 @@ void test('role-menu separators are omitted only when needed to fit the terminal
     assert.equal(rows[randomRow + 2], '/ - Pick race first');
 });
 
+void test('resolving a random alignment restores the role summary separator on a short terminal', async () => {
+    const display = new GameDisplay(new Terminal(null, { cols: 80, rows: 23 }));
+    const engine = new Engine({
+        seed: 19, display, storage: memoryStorage(),
+        nethackrc: 'OPTIONS=name:Selector,!legacy,!tutorial,!tips,role:healer,race:elf,align:random',
+    });
+    engine.inputGate.feed('n?');
+    await engine.runUntilInputNeeded();
+    await engine.lua.destroy();
+
+    const rows = display.grid.map(row => row.map(cell => cell.ch).join('').trim());
+    assert.ok(rows.includes('Pick a role or profession'), 'the role menu must be open');
+    const summaryRow = rows.findIndex(row => /^<role> <race> <gender> (lawful|neutral|chaotic)$/.test(row));
+    assert.ok(summaryRow >= 0, 'the summary must show the resolved random alignment');
+    assert.equal(rows[summaryRow + 1], '', 'the summary separator must fit after alignment narrows the roles');
+    const randomRow = rows.findIndex(row => row === '* * Random');
+    assert.ok(randomRow > summaryRow, 'the role choices must include Random');
+    assert.equal(rows[randomRow + 1], '/ - Pick race first', 'the Random separator uses the earlier role count');
+});
+
 for (const shortcut of ['a', '*', '@']) {
     void test(`${shortcut} at the opening question picks all remaining facets and starts immediately`, async () => {
         const menu = await selection(shortcut, 'role:priest,gender:female');

@@ -311,7 +311,9 @@ class CharacterSelection {
         return Math.max(0, count - rows);
     }
     async facetMenu(facet, excess) {
-        const window = this.startMenu(excess);
+        // plsel_startmenu() measures after rigid checks; the Random separator
+        // below uses the role count from before those checks.
+        const window = this.startMenu(facet === 'role' ? this.roleMenuExcess() : 0);
         this.addFacetChoices(window, facet);
         addChoice(window, 'random', '*', 'Random', true);
         if (facet !== 'role' || excess < 1 || excess > 2)
