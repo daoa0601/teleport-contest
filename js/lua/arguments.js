@@ -155,7 +155,7 @@ function luaStringToFloat(text) {
             if (exponentNegative)
                 exponent = -exponent;
         }
-        value = Number(mantissa) * 2 ** (exponent - 4 * fractionDigits);
+        value = hexFloatValue(mantissa, exponent - 4 * fractionDigits);
     }
     else {
         const start = index;
@@ -192,6 +192,32 @@ function luaStringToFloat(text) {
     if (index !== text.length)
         return null;
     return negative ? -value : value;
+}
+// strtod-grade mantissa * 2^shift: the arithmetic stays exact in BigInt
+// space and crosses into double precision once, so a zero mantissa with
+// a huge exponent is zero rather than 0 * Infinity = NaN, and a long
+// mantissa with a negative exponent stays finite instead of overflowing
+// the conversion first.
+function hexFloatValue(mantissa, shift) {
+    if (mantissa === 0n)
+        return 0;
+    const magnitude = bitLength(mantissa) - 1 + shift;
+    if (magnitude > 11000)
+        return Infinity;
+    if (magnitude < -11000)
+        return 0;
+    if (shift >= 0)
+        return Number(mantissa << BigInt(shift));
+    // m / 2^k = m * 5^k / 10^k, so only the decimal point moves.
+    const scale = -shift;
+    const digits = (mantissa * 5n ** BigInt(scale)).toString();
+    const wholeDigits = digits.length - scale;
+    return wholeDigits > 0
+        ? Number(`${digits.slice(0, wholeDigits)}.${digits.slice(wholeDigits)}`)
+        : Number(`0.${'0'.repeat(-wholeDigits)}${digits}`);
+}
+function bitLength(value) {
+    return value.toString(2).length;
 }
 // lobject.c:luaO_str2num(): integer syntax converts to an integer,
 // float syntax (including C99 hex floats such as "0x1p4") to a float,

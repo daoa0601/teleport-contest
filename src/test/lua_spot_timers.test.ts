@@ -210,10 +210,13 @@ void test('timer arguments convert Lua numeral strings by luaO_str2num rules', a
         'hex float numerals name coordinate zero');
     assert.equal(game.level.requireAt(11, 5).typ, ICE);
 
-    // A delay string outside Lua's grammar converts as zero, not three:
-    // the second sheet melts without waiting for move three.
-    await lua.executeAsync('nh.start_timer_at(1, 0, "melt-ice", "0b11")');
+    // A zero mantissa with a huge exponent is strtod's zero, not
+    // 0 * Infinity = NaN, so the coordinate reads as zero instead of
+    // erroring about an integer representation.
+    game.level.requireAt(10, 5).typ = ICE;
+    await lua.executeAsync(
+        'nh.start_timer_at({ x = "0x0p5000", y = 0 }, "melt-ice", 0)');
     await runDueTimers();
-    assert.equal(game.level.requireAt(11, 5).typ, MOAT,
-        'a non-numeral delay reads as zero, not JavaScript 0b11');
+    assert.equal(game.level.requireAt(10, 5).typ, MOAT,
+        '0x0p5000 is the float zero at coordinate zero');
 });

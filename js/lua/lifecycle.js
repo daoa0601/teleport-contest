@@ -51,15 +51,9 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
                 throw new NethackLuaError('Wrong args');
             },
             callback: (...args) => {
-                const registration = lifecycle.registerCallback(args);
-                if (!registration)
-                    return undefined;
-                if (!registration.overdrawn) {
-                    registration.run();
-                    return undefined;
-                }
-                return impossible('nh.callback counts are wrong', { state: gameState })
-                    .then(() => registration.run());
+                if (lifecycle.registerCallback(args))
+                    return impossible('nh.callback counts are wrong', { state: gameState });
+                return undefined;
             },
             gamestate: (...args) => changeTutorialState(gameState, args.at(-1) != null && args.at(-1) !== false),
             pline: luaPline,
@@ -153,24 +147,24 @@ export class LuaLifecycle {
         if (!this.core)
             throw new Error('Lua callbacks require an initialized core');
         if (args.length !== 2 && args.length !== 3)
-            return null;
+            return false;
         let [name, fn, remove] = args;
         if (![name, fn].every(value => ['string', 'number'].includes(typeof value)))
             throw new TypeError('nh.callback expects an event name and function name');
         name = String(name);
         fn = String(fn);
         if (!isCallbackName(name))
-            return null;
+            return false;
         const removing = remove != null && remove !== false;
         const count = (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1);
         this.callbackCounts.set(name, count);
-        // nhl_callback() reports each removal that drives a count negative
-        // and only then asks the core to run nh_callback_rm; run() is the
-        // second half so the caller can report between the two steps.
-        return {
-            overdrawn: removing && count < 0,
-            run: () => this.core?.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn),
-        };
+        // nhl_callback() reports a removal that drives a count negative
+        // with impossible(). The removal itself must run in every
+        // execution mode: synchronous Lua cannot await the paged report,
+        // and nh_callback_rm is silent, so running it before the report
+        // leaves the observable output identical to the C order.
+        this.core.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn);
+        return removing && count < 0;
     }
     async runCallbacks(gameState, name, ...args) {
         if (!this.core || !this.callbackCounts.get(name))

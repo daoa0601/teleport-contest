@@ -193,4 +193,26 @@ void test('removing an unregistered Lua callback reports an impossible count', a
     await flushPendingTopline();
     assert.match(game.storage.getItem(PANICLOG) ?? '', /"type":"impossible","reason":"nh\.callback counts are wrong"/);
 });
+void test('an overdrawn removal under synchronous execution still runs and reports', async (t) => {
+    freshTurnRoom();
+    game.storage = memoryStorage();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    const core = await startLuaCore(t);
+    // Synchronous Lua cannot await the paged impossible, but the removal
+    // itself is not lost: the count updates, nh_callback_rm runs, and the
+    // impossible report reaches the panic log before the engine stops.
+    assert.throws(() => core.execute('nh.callback("end_turn", "ghost", true)'), /asynchronous Lua binding requires asynchronous execution/);
+    assert.match(game.storage.getItem(PANICLOG) ?? '', /"type":"impossible","reason":"nh\.callback counts are wrong"/);
+    // Let the paged report from the synchronous call finish before
+    // triggering another one.
+    for (let spin = 0; game.program_state.in_impossible && spin < 50; spin++)
+        await new Promise(setImmediate);
+    // A later asynchronous over-removal still reports through the pager,
+    // so the synchronous failure left the registration usable.
+    await core.executeAsync('nh.callback("end_turn", "ghost", true)');
+    await flushPendingTopline();
+    assert.equal((game.storage.getItem(PANICLOG) ?? '')
+        .match(/nh\.callback counts are wrong/g)?.length, 2);
+});
 //# sourceMappingURL=lua_callbacks.test.js.map
