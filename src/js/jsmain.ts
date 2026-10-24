@@ -15,6 +15,7 @@ import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import type { NethackConfiguration } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
+import { plineWithContinuation } from './display.js';
 import {
     findRole, findRace, findAlignment, findGender,
     roles, races, aligns, genders,
@@ -160,14 +161,27 @@ const CHARACTER_RACE_MENU: readonly RaceMenuEntry[] = [
 function validCharacterChoice(
     role: RoleChoice, race: RaceChoice, gender: GenderChoice, alignment: AlignmentChoice,
 ): boolean {
-    const rules = role && ROLE_SELECTION_RULES[role.key];
-    if (!rules) return false;
-    if (race && !rules.races.includes(race.name)) return false;
-    if (gender && rules.genders && !rules.genders.includes(gender.name)) return false;
-    if (alignment && !rules.aligns.includes(alignment.name)) return false;
-    if (race && alignment
-        && !RACE_SELECTION_RULES[race.name]?.aligns.includes(alignment.name)) return false;
-    return true;
+    return !!role && (!race || validCharacterRace(role, race, alignment))
+        && (!gender || validCharacterGender(role, gender))
+        && (!alignment || validCharacterAlignment(role, race, alignment));
+}
+
+// Native ok_race(), ok_gend(), and ok_align() check only the constraints
+// belonging to that facet. An incompatible alignment must not erase a
+// valid gender or prevent the user from choosing a race first.
+function validCharacterRace(role: RoleChoice, race: Race, alignment: AlignmentChoice): boolean {
+    return (!role || ROLE_SELECTION_RULES[role.key].races.includes(race.name))
+        && (!alignment || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
+}
+
+function validCharacterGender(role: RoleChoice, gender: Gender): boolean {
+    const permitted = role && ROLE_SELECTION_RULES[role.key].genders;
+    return !permitted || permitted.includes(gender.name);
+}
+
+function validCharacterAlignment(role: RoleChoice, race: RaceChoice, alignment: Alignment): boolean {
+    return (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
+        && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
 }
 
 function hasCharacterCompletion(
@@ -179,6 +193,56 @@ function hasCharacterCompletion(
                 && validCharacterChoice(
                     role, candidateRace, candidateGender, candidateAlignment,
                 ))));
+}
+
+function randomCharacterOption(option: string | null): boolean {
+    if (!option) return false;
+    const text = option.toLowerCase();
+    return text === '*' || text === '@' || 'random'.startsWith(text);
+}
+
+function pickCharacterChoice<T>(choices: readonly T[]): T | null {
+    return choices.length ? choices[rn2(choices.length)] ?? null : null;
+}
+
+function nativeRoleChoices(): Role[] {
+    return CHARACTER_ROLE_ORDER.flatMap(key => {
+        const role = roles.find(candidate => candidate.key === key);
+        return role ? [role] : [];
+    });
+}
+
+// role.c:rigid_role_checks(). Explicit random choices run in role, race,
+// alignment, gender order. Unspecified facets roll only when forced.
+function rigidCharacterChecks(initial: CharacterChoices, random: ReadonlySet<CharacterFacet>): CharacterChoices {
+    let { role, race, gender, alignment } = initial;
+    if (random.has('role')) {
+        const candidates = nativeRoleChoices().filter(candidate =>
+            hasCharacterCompletion(candidate, race, gender, alignment));
+        role = pickCharacterChoice(candidates) ?? pickCharacterChoice(nativeRoleChoices());
+    }
+    if (random.has('race'))
+        race = pickCharacterChoice(races.filter(candidate => validCharacterRace(role, candidate, alignment)));
+    if (random.has('alignment'))
+        alignment = pickCharacterChoice(aligns.filter(candidate => validCharacterAlignment(role, race, candidate)));
+    if (random.has('gender'))
+        gender = pickCharacterChoice(genders.filter(candidate => validCharacterGender(role, candidate)));
+
+    if (role) {
+        if (!race && !random.has('race')) {
+            const candidates = races.filter(candidate => validCharacterRace(role, candidate, alignment));
+            if (candidates.length === 1) race = pickCharacterChoice(candidates);
+        }
+        if (!alignment && !random.has('alignment')) {
+            const candidates = aligns.filter(candidate => validCharacterAlignment(role, race, candidate));
+            if (candidates.length === 1) alignment = pickCharacterChoice(candidates);
+        }
+        if (!gender && !random.has('gender')) {
+            const candidates = genders.filter(candidate => validCharacterGender(role, candidate));
+            if (candidates.length === 1) gender = pickCharacterChoice(candidates);
+        }
+    }
+    return { role, race, gender, alignment };
 }
 
 // Serialize semantic terminal cells back into the tty wire form recorded by
@@ -445,20 +509,23 @@ export class Engine {
             await restoregamePreamble();
             return true;
         }
-        // C ref: role_init().  Contest sessions specify these options, so
-        // invalid/missing values use stable NetHack-style defaults here and
-        // can later be extended with the interactive role-selection prompt.
         let selectedRole = findRole(opts.role);
         let selectedRace = findRace(opts.race);
         let selectedGender = findGender(opts.gender);
         let selectedAlignment = findAlignment(opts.align);
-        if (!selectedRole || !selectedRace || !selectedGender || !selectedAlignment) {
+        if (!selectedRole || !selectedRace || !selectedGender || !selectedAlignment
+            || !validCharacterChoice(selectedRole, selectedRace, selectedGender, selectedAlignment)) {
+            const random = new Set<CharacterFacet>();
+            if (!selectedRole && randomCharacterOption(opts.role)) random.add('role');
+            if (!selectedRace && randomCharacterOption(opts.race)) random.add('race');
+            if (!selectedGender && randomCharacterOption(opts.gender)) random.add('gender');
+            if (!selectedAlignment && randomCharacterOption(opts.align)) random.add('alignment');
             const selected = await this._selectCharacter({
                 role: selectedRole,
                 race: selectedRace,
                 gender: selectedGender,
                 alignment: selectedAlignment,
-            });
+            }, random);
             selectedRole = selected.role;
             selectedRace = selected.race;
             selectedGender = selected.gender;
@@ -561,15 +628,27 @@ export class Engine {
         display.setCursor(left + cursorOffset, cursorRow);
     }
 
-    async _selectCharacter(initial: CharacterChoices): Promise<SelectedCharacter> {
+    async _selectCharacter(configured: CharacterChoices, random: ReadonlySet<CharacterFacet> = new Set()): Promise<SelectedCharacter> {
         const display = this.requireDisplay();
         let selectedName = game.plname;
+        const needsConfirmation = (!configured.role && !random.has('role'))
+            || (!configured.race && !random.has('race'))
+            || (!configured.gender && !random.has('gender'))
+            || (!configured.alignment && !random.has('alignment'));
+        const initial = rigidCharacterChecks(configured, random);
         let manualInitial = initial;
-        const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
-        display.clearRow(0);
-        display.putstr(0, 0, question, NO_COLOR);
-        display.setCursor(question.length + 1, 0);
-        const auto = String.fromCharCode(await nhgetch()).toLowerCase();
+        const hasUnspecifiedChoice = (!initial.role && !random.has('role'))
+            || (!initial.race && !random.has('race'))
+            || (!initial.gender && !random.has('gender'))
+            || (!initial.alignment && !random.has('alignment'));
+        let auto = needsConfirmation ? 'y' : random.size ? 'a' : 'n';
+        if (hasUnspecifiedChoice) {
+            const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
+            display.clearRow(0);
+            display.putstr(0, 0, question, NO_COLOR);
+            display.setCursor(question.length + 1, 0);
+            auto = String.fromCharCode(await nhgetch()).toLowerCase();
+        }
 
         if (auto !== 'n') {
             let role = initial.role;
@@ -578,30 +657,27 @@ export class Engine {
             let alignment = initial.alignment;
 
             if (!role) {
-                const candidates = CHARACTER_ROLE_ORDER
-                    .map(key => roles.find(candidate => candidate.key === key))
-                    .filter((candidate): candidate is Role => !!candidate && hasCharacterCompletion(
+                const candidates = nativeRoleChoices()
+                    .filter(candidate => hasCharacterCompletion(
                         candidate, race, gender, alignment,
                     ));
-                role = candidates[rn2(candidates.length)];
+                if (!candidates.length) await plineWithContinuation('Incompatible role!');
+                role = pickCharacterChoice(candidates.length ? candidates : nativeRoleChoices());
             }
-            if (!race || !validCharacterChoice(role, race, gender, alignment)) {
-                const candidates = races.filter(candidate => hasCharacterCompletion(
-                    role, candidate, gender, alignment,
-                ));
-                race = candidates[rn2(candidates.length)];
+            if (!race || !validCharacterRace(role, race, null)) {
+                const candidates = races.filter(candidate => validCharacterRace(role, candidate, alignment));
+                if (candidates.length) race = pickCharacterChoice(candidates);
+                else {
+                    await plineWithContinuation('Incompatible race!');
+                    const permitted = races.filter(candidate => validCharacterRace(role, candidate, null));
+                    race = permitted[Math.trunc(rn2(permitted.length * 100) / 100)];
+                }
             }
-            if (!gender || !validCharacterChoice(role, race, gender, alignment)) {
-                const candidates = genders.filter(candidate => hasCharacterCompletion(
-                    role, race, candidate, alignment,
-                ));
-                gender = candidates[rn2(candidates.length)];
+            if (!gender || !validCharacterGender(role, gender)) {
+                gender = pickCharacterChoice(genders.filter(candidate => validCharacterGender(role, candidate)));
             }
-            if (!alignment || !validCharacterChoice(role, race, gender, alignment)) {
-                const candidates = aligns.filter(candidate => validCharacterChoice(
-                    role, race, gender, candidate,
-                ));
-                alignment = candidates[rn2(candidates.length)];
+            if (!alignment || !validCharacterAlignment(role, race, alignment)) {
+                alignment = pickCharacterChoice(aligns.filter(candidate => validCharacterAlignment(role, race, candidate)));
             }
 
             if (!role || !race || !gender || !alignment)
@@ -680,15 +756,13 @@ export class Engine {
             role: RoleChoice, gender: GenderChoice, alignment: AlignmentChoice,
         ): Race[] => races.filter(race =>
             !filteredRaces.has(race.name)
-            && hasCompletion(role, race, gender, alignment));
+            && validCharacterRace(role, race, alignment));
         const availableGenders = (
             role: RoleChoice, race: RaceChoice, alignment: AlignmentChoice,
-        ): Gender[] => genders.filter(gender =>
-            hasCompletion(role, race, gender, alignment));
+        ): Gender[] => genders.filter(gender => validCharacterGender(role, gender));
         const availableAlignments = (
             role: RoleChoice, race: RaceChoice, gender: GenderChoice,
-        ): Alignment[] => aligns.filter(alignment =>
-            hasCompletion(role, race, gender, alignment));
+        ): Alignment[] => aligns.filter(alignment => validCharacterAlignment(role, race, alignment));
         const availableRoles = (
             race: RaceChoice, gender: GenderChoice, alignment: AlignmentChoice,
         ): RoleCandidate[] => CHARACTER_ROLE_MENU.flatMap(entry => {
@@ -956,7 +1030,7 @@ export class Engine {
                 }
 
                 if (nextFacet === 'race') {
-                    if (race && hasCompletion(role, race, gender, alignment)) {
+                    if (race && validCharacterRace(role, race, null)) {
                         nextFacet = role ? 'gender' : 'role';
                         continue;
                     }
@@ -1008,7 +1082,7 @@ export class Engine {
                 }
 
                 if (nextFacet === 'gender') {
-                    if (gender && hasCompletion(role, race, gender, alignment)) {
+                    if (gender && validCharacterGender(role, gender)) {
                         nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
                         continue;
                     }
@@ -1048,7 +1122,7 @@ export class Engine {
                     continue;
                 }
 
-                if (alignment && hasCompletion(role, race, gender, alignment)) {
+                if (alignment && validCharacterAlignment(role, race, alignment)) {
                     nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
                     if (!nextFacet) break facetSelection;
                     continue;
@@ -1092,6 +1166,8 @@ export class Engine {
 
             if (!role || !race || !gender || !alignment)
                 throw new Error('Character selection did not resolve all choices');
+            if (!needsConfirmation)
+                return { role, race, gender, alignment, name: selectedName };
             let preserveConfirmationBackground = false;
             for (;;) {
                 const roleName = gender.value === 1 && role.name.f
