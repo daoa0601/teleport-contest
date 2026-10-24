@@ -3,6 +3,7 @@
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym_force } from './display.js';
+import { impossible } from './diagnostics.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
@@ -191,11 +192,18 @@ export function selection_filter_mapchar(selection, typ, lit = -2) {
             if (!selection_getpoint(x, y, selection)
                 || !location || !match_maptyps(typ, location.typ))
                 continue;
-            const keep = lit === -1 ? rn2(2)
-                : lit === 0 || lit === 1 ? Number(location.lit) === lit
-                    : true;
-            if (keep)
-                selection_setpoint(x, y, result, 1);
+            switch (lit) {
+                case -1:
+                    selection_setpoint(x, y, result, rn2(2));
+                    break;
+                case 0:
+                case 1:
+                    if (Number(location.lit) === lit)
+                        selection_setpoint(x, y, result, 1);
+                    break;
+                default:
+                    selection_setpoint(x, y, result, 1);
+            }
         }
     }
     return result;
@@ -368,17 +376,21 @@ function line_dist_coord(x1, y1, x2, y2, x3, y3) {
     if (!squared)
         return (x1 - x3) ** 2 + (y1 - y3) ** 2;
     // Native float rounding happens before conversion back to integer coordinates.
-    const proportion = Math.max(0, Math.min(1, Math.fround(Math.fround((x3 - x1) * px + (y3 - y1) * py) / Math.fround(squared))));
+    const numerator = Math.fround((x3 - x1) * px + (y3 - y1) * py);
+    const projection = Math.fround(numerator / Math.fround(squared));
+    const proportion = Math.max(0, Math.min(1, projection));
     const x = Math.trunc(Math.fround(x1 + Math.fround(proportion * px)));
     const y = Math.trunc(Math.fround(y1 + Math.fround(proportion * py)));
     return (x - x3) ** 2 + (y - y3) ** 2;
 }
-export function selection_do_gradient(selection, x1, y1, x2, y2, type, minDistance, maxDistance) {
+export async function selection_do_gradient(selection, x1, y1, x2, y2, type, minDistance, maxDistance) {
     if (minDistance > maxDistance)
         [minDistance, maxDistance] = [maxDistance, minDistance];
     const minSquared = minDistance * minDistance;
     const maxSquared = maxDistance * maxDistance;
     const spread = Math.max(1, maxSquared - minSquared);
+    if (type !== SEL_GRADIENT_RADIAL && type !== SEL_GRADIENT_SQUARE)
+        await impossible('Unrecognized gradient type! Defaulting to radial...');
     for (let x = 0; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             let distance;

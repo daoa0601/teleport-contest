@@ -186,7 +186,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return self ?? wrap(result);
     };
-    const gradient = (options: LuaValue, ...extra: LuaValue[]) => {
+    const gradient = async (options: LuaValue, ...extra: LuaValue[]) => {
         if (!(options instanceof LuaTable) || extra.length)
             throw new TypeError('selection.gradient requires table argument');
         const type = luaString(options.get('type') ?? 'radial');
@@ -199,7 +199,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const y2 = coordxy(start.y + luaCoordinate(options.get('y2') ?? -1));
         const pointCenter = x2 === -1 && y2 === -1;
         const result = new SpecialSelection();
-        selection_do_gradient(result.selection, x, y,
+        await selection_do_gradient(result.selection, x, y,
             pointCenter ? x : x2, pointCenter ? y : y2,
             type === 'radial' ? SEL_GRADIENT_RADIAL : SEL_GRADIENT_SQUARE,
             luaCoordinate(options.get('mindist') ?? 0), luaCoordinate(options.get('maxdist')));

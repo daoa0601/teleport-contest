@@ -6974,7 +6974,8 @@ function createLuaLevelSession() {
         catch (error) {
             if (error instanceof PanicTermination)
                 throw error;
-            await impossible(`Lua error: ${state.sid}:l_selection_iterate ${error instanceof Error ? error.message : String(error)}`);
+            const detail = error instanceof Error ? error.message : String(error);
+            await impossible(`Lua error: ${state.sid}:l_selection_iterate ${detail}`);
             return false;
         }
     });
