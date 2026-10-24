@@ -7,7 +7,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ARROW_TRAP, CORR, DOOR, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
+import { ARROW_TRAP, CORR, DB_LAVA, DOOR, DRAWBRIDGE_UP, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
@@ -32,6 +32,7 @@ import { installPunishedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { isLavaAt, isPoolAt } from '../js/terrain_properties.js';
 
 async function guardCorridor({ blocked = true } = {}) {
     const level = freshObjectRoom();
@@ -179,6 +180,19 @@ void test('restoration removes traps and engravings but keeps embedded objects a
     assert.equal(level.requireAt(12, 10).lit, false);
     assert.equal(level.requireAt(12, 10).waslit, false);
     assert.equal(game.vision_full_recalc, 1);
+});
+
+void test('restoring a raised drawbridge restores its water instead of stale lava', async () => {
+    const { level, guard } = await guardCorridor({ blocked: false });
+    assert.ok(guard._egd);
+    guard._egd.fakecorr[1] = { x: 12, y: 10, typ: DRAWBRIDGE_UP, flags: 0 };
+    level.requireAt(12, 10).drawbridgemask = DB_LAVA;
+
+    await removeMonsterFromGame(guard);
+
+    assert.equal(level.requireAt(12, 10).typ, DRAWBRIDGE_UP);
+    assert.equal(isPoolAt(12, 10), true);
+    assert.equal(isLavaAt(12, 10), false);
 });
 
 void test('a dead guard does not let the living hero block terrain restoration', async () => {

@@ -14,6 +14,19 @@ export function requireVaultGuard(guard) {
     if (!guard._egd)
         throw new TypeError('Vault guard has no corridor state.');
 }
+// C rm.h overlays these fields on rm.flags. Vault repairs must restore
+// every alias so the restored terrain uses the saved flags.
+export function setVaultTerrainFlags(location, flags) {
+    location.flags = flags;
+    location.doormask = flags;
+    location.wall_info = flags;
+    location.altarmask = flags;
+    location.ladder = flags;
+    location.drawbridgemask = flags;
+    location.looted = flags;
+    location.icedpool = flags;
+    location.emptygrave = flags !== 0;
+}
 function corridorPoint(corridor, index) {
     const point = corridor.fakecorr[index];
     if (!point)
@@ -70,7 +83,7 @@ export async function clearVaultCorridor(guard, force = false, state = game) {
         if (location.typ === CORR && cansee(point.x, point.y))
             sawCorridor = true;
         location.typ = point.typ;
-        location.flags = location.doormask = location.wall_info = point.flags;
+        setVaultTerrainFlags(location, point.flags);
         if (IS_STWALL(location.typ)) {
             const trap = level.traps.find((candidate) => candidate.tx === point.x && candidate.ty === point.y);
             if (trap)

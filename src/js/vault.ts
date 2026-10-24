@@ -32,6 +32,7 @@ import { setWallStateAt } from './wall_topology.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
 import {
     findVaultGuard,
+    setVaultTerrainFlags,
 } from './vault_guard.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
@@ -278,6 +279,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         else if (x === lx - 1 || x === hx + 1) original.typ = VWALL;
         original.wall_info = 0;
         setWallStateAt(entry.x, entry.y);
+        setVaultTerrainFlags(original, original.wall_info);
     }
     corridor.fakecorr.push({
         x: entry.x,
@@ -289,7 +291,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     corridor.warncnt = 1;
     stopLevelTimer(entry.x, entry.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
     original.typ = DOOR;
-    original.flags = original.wall_info = original.doormask = D_NODOOR;
+    setVaultTerrainFlags(original, D_NODOOR);
     vision_note_blocker_change(entry.x, entry.y);
     game.vision_full_recalc = 1;
     game.context.move = 0;

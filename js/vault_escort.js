@@ -25,7 +25,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard } from './vault_guard.js';
+import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard, setVaultTerrainFlags } from './vault_guard.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { askTeleportDestination } from './cmd.js';
@@ -197,7 +197,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
                 egd.gddone = 1;
                 if (!ACCESSIBLE(typ)) {
                     cell.typ = typ === SCORR ? CORR : DOOR;
-                    cell.flags = cell.doormask = cell.wall_info = D_NODOOR;
+                    setVaultTerrainFlags(cell, D_NODOOR);
                     deleteEngravingAt(x, y, level);
                     vision_note_blocker_change(x, y);
                     if (cansee(x, y))
@@ -276,7 +276,7 @@ function restoreEntry(guard, x, y, state) {
         throw new Error('A vault guard cannot restore its missing entry.');
     const cell = requireGameLevel(state).requireAt(x, y);
     cell.typ = entry.typ;
-    cell.flags = cell.wall_info = cell.doormask = entry.flags;
+    setVaultTerrainFlags(cell, entry.flags);
     vision_note_blocker_change(x, y);
     deleteEngravingAt(x, y, requireGameLevel(state));
     newsym(x, y);
@@ -341,13 +341,13 @@ function nextCorridorSquare(guard, state) {
         const cell = level.requireAt(nx, ny), typ = cell.typ;
         if (typ === STONE) {
             cell.typ = CORR;
-            cell.flags = cell.wall_info = cell.doormask = 0;
+            setVaultTerrainFlags(cell, 0);
             return { x: nx, y: ny, typ };
         }
         const ex = nx + nx - x, ey = ny + ny - y;
         if (isok(ex, ey) && IS_ROOM(level.requireAt(ex, ey).typ)) {
             cell.typ = DOOR;
-            cell.flags = cell.wall_info = cell.doormask = D_NODOOR;
+            setVaultTerrainFlags(cell, D_NODOOR);
             deleteEngravingAt(ex, ey, level);
             return { x: nx, y: ny, typ };
         }
@@ -363,7 +363,7 @@ function nextCorridorSquare(guard, state) {
             continue;
         }
         cell.typ = IS_ROOM(typ) ? DOOR : CORR;
-        cell.flags = cell.wall_info = cell.doormask = 0;
+        setVaultTerrainFlags(cell, 0);
         if (IS_ROOM(typ))
             deleteEngravingAt(ex, ey, level);
         return { x: nx, y: ny, typ };
@@ -480,8 +480,9 @@ export async function wallifyVault(guard, state, random = rn2) {
                 deleteTrap(trap, state);
             cell.typ = x === left ? y === top ? TLCORNER : y === bottom ? BLCORNER : VWALL
                 : x === right ? y === top ? TRCORNER : y === bottom ? BRCORNER : VWALL : HWALL;
-            cell.wall_info = cell.flags = cell.doormask = 0;
+            cell.wall_info = 0;
             setWallStateAt(x, y);
+            setVaultTerrainFlags(cell, cell.wall_info);
             deleteEngravingAt(x, y, level);
             const row = state.viz_array?.[y], oldVision = row?.[x] ?? 0;
             if (row)
