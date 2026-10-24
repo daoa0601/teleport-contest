@@ -1,3 +1,5 @@
+import type { MessageTypeRule } from './message_types.js';
+
 // Options may be absent until their owning startup step supplies a default.
 // A closed list keeps misspelled configuration names out of saved game state.
 export type GameBooleanFlag =
@@ -53,6 +55,7 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
 }
 
 export interface InterfaceFlags {
+    messageTypes?: MessageTypeRule[];
     bgcolors?: boolean;
     sounds?: boolean;
     altmeta?: boolean;

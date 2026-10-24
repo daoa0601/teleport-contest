@@ -1,5 +1,6 @@
 import { warningSymbols } from './warning_symbols.js';
 import { truncatePlineMessage } from './pline_text.js';
+import { messageTypeFor } from './message_types.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
@@ -29,7 +30,8 @@ import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
-    BUFSZ, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
+    BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
+    COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
@@ -133,7 +135,11 @@ interface MonsterProjection { wormTail: boolean; showAppearance: boolean; detect
 interface MonsterIdentity { name: string; personal: boolean }
 interface ToplineCell { ch: string; dec: boolean }
 interface RedrawOptions { beforeGlow?: (() => void | Promise<void>) | null }
-export interface ToplineOptions { noRepeat?: boolean; urgent?: boolean }
+export interface ToplineOptions {
+    noRepeat?: boolean;
+    urgent?: boolean;
+    overrideMessageType?: boolean;
+}
 interface ToplinePagingOptions { urgent?: boolean; dismissKey?: number }
 
 const HALLUCINATED_LIQUIDS = [
@@ -2952,7 +2958,9 @@ export async function pline(msg: string): Promise<void> {
     await plineWithContinuation(msg);
 }
 
-export async function plineWithContinuation(msg: string, { noRepeat = false, urgent = false }: ToplineOptions = {}): Promise<number | null | undefined> {
+export async function plineWithContinuation(msg: string, {
+    noRepeat = false, urgent = false, overrideMessageType = false,
+}: ToplineOptions = {}): Promise<number | null | undefined> {
     msg = msg.split('\0', 1)[0] ?? '';
     if (!msg || game.program_state.wizkit_wishing) return;
     const length = new TextEncoder().encode(msg).length;
@@ -2966,12 +2974,15 @@ export async function plineWithContinuation(msg: string, { noRepeat = false, urg
         game._lastPlineKind = PLNMSG_UNKNOWN;
         return;
     }
+    const messageType = overrideMessageType ? MSGTYP_NORMAL
+        : messageTypeFor(msg, noRepeat, game.iflags.messageTypes);
+    if (!urgent && (messageType === MSGTYP_NOSHOW
+        || (messageType === MSGTYP_NOREP && msg === game._lastPlineMessage))) return;
     if (urgent && game._suppressMessagesUntilInput) {
         game._suppressMessagesUntilInput = false;
         game._pending_message = '';
         game._retained_message = '';
     }
-    if (!urgent && noRepeat && msg === game._lastPlineMessage) return;
     // vpline() flushes the map before tty decides whether older prose needs
     // acknowledgment. Direct message-window display does not do this.
     if (game.vision_full_recalc) vision_recalc(0);
@@ -2980,7 +2991,7 @@ export async function plineWithContinuation(msg: string, { noRepeat = false, urg
     // C pline.c tracks the last individual message, not the joined tty line.
     game._lastPlineMessage = msg;
     game._lastPlineKind = PLNMSG_UNKNOWN;
-    return dismissal;
+    return messageType === MSGTYP_STOP ? await displayMessageWindow() : dismissal;
 }
 
 // C update_topl() also owns bare tty_putstr() output from singleton menus.
