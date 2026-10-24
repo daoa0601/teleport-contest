@@ -245,7 +245,19 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
     const hpLoss = hero.uhpinc?.[level] || 0;
     const energyLoss = hero.ueninc?.[level] || 0;
     const oldHpMax = hero.uhpmax;
-    hero.uhpmax = Math.min(oldHpMax, Math.max(level, 10, oldHpMax - hpLoss));
+    const minimumHpMax = Math.max(level, 10);
+    hero.uhpmax -= hpLoss;
+    // C's setuhpmax() clamps current HP when restoring either maximum.
+    // That happens before the separate loss of this level's current HP.
+    if (hero.uhpmax < minimumHpMax) {
+        hero.uhpmax = minimumHpMax;
+        hero.uhppeak = Math.max(hero.uhppeak, hero.uhpmax);
+        hero.uhp = Math.min(hero.uhp, hero.uhpmax);
+    }
+    if (hero.uhpmax > oldHpMax) {
+        hero.uhpmax = oldHpMax;
+        hero.uhp = Math.min(hero.uhp, hero.uhpmax);
+    }
     hero.uhp = Math.max(1, Math.min(hero.uhpmax, hero.uhp - hpLoss));
     hero.uenmax = Math.max(0, (hero.uenmax || 0) - energyLoss);
     hero.uen = Math.max(0, Math.min(hero.uenmax, (hero.uen || 0) - energyLoss));
