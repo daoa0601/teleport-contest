@@ -124,7 +124,8 @@ async function selectTraditionalSpell(spells) {
         rememberCommandKey(key);
         if (key === 42 || key === 63)
             return 'menu';
-        if ([32, 10, 13, 27].includes(key)) {
+        // C strchr(quitchars, ilet) also matches a literal fuzzer NUL.
+        if ([0, 32, 10, 13, 27].includes(key)) {
             await plineWithContinuation('Never mind.');
             return null;
         }

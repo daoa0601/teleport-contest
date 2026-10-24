@@ -3748,20 +3748,23 @@ async function readInventorySplitCount(): Promise<number | null> {
     await flushPendingTopline();
     let key = await promptKey('Split off how many?', 1);
     if (key < 48 || key > 57) return null;
-    let count = key - 48;
-    let showZero = key === 48;
+    let count = BigInt(key - 48);
+    let showCount = true;
     for (;;) {
         clearMessageWindow();
-        key = await promptKey(`Count: ${count > 0 || showZero ? count : ''}`);
+        key = await promptKey(`Count: ${showCount ? count : ''}`);
         if (key >= 48 && key <= 57) {
-            count = Math.min(Number.MAX_SAFE_INTEGER, count * 10 + key - 48);
-            showZero = key === 48;
+            const nextCount = count * 10n + BigInt(key - 48);
+            // AppendLongDigit() reports native long overflow; get_count()
+            // clears that count so subsequent digits can start another.
+            count = nextCount > 9223372036854775807n ? 0n : nextCount;
+            showCount = true;
         } else if (key === 8 || key === 127) {
-            count = Math.trunc(count / 10);
-            showZero = false;
+            count /= 10n;
+            showCount = count > 0n;
         } else {
             clearMessageWindow();
-            return key === 32 || key === 10 || key === 13 ? count : null;
+            return key === 32 || key === 10 || key === 13 ? Number(count) : null;
         }
     }
 }
@@ -3852,7 +3855,8 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
             if (!key) continue;
         }
         destination = String.fromCharCode(key);
-        if ([27, 32, 10, 13].includes(key) || splitting && destination === source) {
+        // C strchr(quitchars, let) also matches a literal fuzzer NUL.
+        if ([0, 27, 32, 10, 13].includes(key) || splitting && destination === source) {
             if (splitting) await rejoinObjectStack(splitting, object, game);
             clearMessageWindow();
             await pline('Never mind.');

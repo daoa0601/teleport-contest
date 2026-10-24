@@ -115,6 +115,50 @@ for (const eraseKey of ['\b', '\x7f']) {
         assert.equal(game.context.move, 0);
     });
 }
+void test('overflowing a native long displays zero and rejects the split amount', async () => {
+    freshObjectRoom();
+    const dagger = await addInventoryObject(DAGGER, { quan: 7 });
+    const input = resetInputState();
+    await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+        { prompt: /Weapons/, keys: dagger.invlet },
+        { prompt: /I - Adjust inventory by splitting this stack/, keys: 'I' },
+    ]);
+    const splitting = rhack(0);
+    try {
+        await answerPrompts(splitting, input, [
+            { prompt: /Split off how many\?/, keys: '9223372036854775808' },
+            { prompt: /^Count: 0 +\n/, keys: ' ' },
+        ]);
+    }
+    finally {
+        input.feed('\x1b');
+        await splitting;
+    }
+    assert.equal(game._pending_message, 'Amount to split from current stack must be at least 1.');
+    assert.equal(dagger.quan, 7);
+    assert.equal(game.inventory.length, 1);
+});
+for (const { description, digits, amount } of [
+    { description: 'digits entered after overflow', digits: '92233720368547758083', amount: 3 },
+    { description: 'backspacing a count above the safe-integer limit', digits: '90071992547409937' + '\b'.repeat(16), amount: 9 },
+]) {
+    void test(`a split uses the remaining count after ${description}`, async () => {
+        freshObjectRoom();
+        const dagger = await addInventoryObject(DAGGER, { quan: 20 });
+        const input = resetInputState();
+        await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+            { prompt: /Weapons/, keys: dagger.invlet },
+            { prompt: /I - Adjust inventory by splitting this stack/, keys: 'I' },
+        ]);
+        await answerPrompts(rhack(0), input, [
+            { prompt: /Split off how many\?/, keys: digits + ' ' },
+            { prompt: /Split \d+ to what/, keys: 'z' },
+        ]);
+        assert.equal(game.inventory.find(object => object.invlet === 'z')?.quan, amount);
+        assert.equal(dagger.quan, 20 - amount);
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('the fifth invalid split destination cancels and rejoins the stack without another reminder pager', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 2 });

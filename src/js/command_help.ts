@@ -70,6 +70,8 @@ export async function whatDoesCommand(): Promise<void> {
         key = await readKey('] ');
         if (key !== 27) key |= 128;
     }
+    // Native key lookup, key text, and numeric diagnostics use unsigned char.
+    key &= 255;
     const description = describeCommandKey(key);
     if (description === null)
         await pline(`No such command '${visibleCommandKey(key)}', char code ${key} (0${key.toString(8).padStart(3, '0')} or 0x${key.toString(16).padStart(2, '0')}).`);

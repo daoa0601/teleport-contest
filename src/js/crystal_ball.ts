@@ -65,8 +65,8 @@ export async function useCrystalBall(object: GameObject): Promise<GameObject | n
     if (game.flags.verbose) await pline('You may look for an object, monster, or special map symbol.');
     await flushPendingTopline();
     let symbol = String.fromCharCode(await promptKey('What do you look for? '));
-    // Space is the ghost class, so it is a search rather than cancellation.
-    if ('\r\n\x1b'.includes(symbol)) {
+    // C's quitchars matches NUL too; space remains a ghost-class search.
+    if ('\0\r\n\x1b'.includes(symbol)) {
         if (game.flags.verbose) await pline('Never mind.');
         return object;
     }

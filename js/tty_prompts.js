@@ -4,7 +4,7 @@ import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plin
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK } from './const.js';
 import { game } from './gstate.js';
 import { selectMapPosition } from './getpos.js';
-import { nhgetch, readchar, takeCommandKey } from './input.js';
+import { readchar, takeCommandKey } from './input.js';
 import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
@@ -24,8 +24,18 @@ export async function promptKey(message, cursorOffset = 0) {
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined)
         return queuedKey;
+    // tty_yn_function() clears WIN_STOP before painting its question,
+    // including when fuzzer input will bypass nhgetch().
+    game._suppressMessagesUntilInput = false;
     const coveredRows = await paintKeyPrompt(message, cursorOffset);
-    const key = await nhgetch();
+    // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
+    const key = await readchar();
+    // Fuzzer input bypasses nhgetch(); tty_yn_function's cleanup still marks
+    // its question as read.
+    if (game._pending_message) {
+        game._retained_message = game._pending_message;
+        game._pending_message = '';
+    }
     // C tty_yn_function() retains a one-line query, but clears wrapped ones.
     if (coveredRows > 1)
         clearMessageWindow(coveredRows);
@@ -88,7 +98,8 @@ export async function promptDirection(readKey = readDirectionKey) {
             hero.dz = direction === '<' ? -1 : 1;
         }
         else {
-            if ([27, 32, 10, 13].includes(code))
+            // C getdir() skips invalid-direction help for all quitchars, including NUL.
+            if ([0, 27, 32, 10, 13].includes(code))
                 return null;
             const helpRequested = code === game.commandBindings.specialKey('getdir.help');
             if (helpRequested || game.flags?.cmdassist !== false) {

@@ -54,7 +54,8 @@ export function heroCanSpinWeb(state = game) {
 export async function chooseSpiderAbility(readKey = promptKey) {
     for (;;) {
         const key = await readKey('Hide [h] or spin a web [s]? ');
-        if ([27, 10, 13].includes(key)) return null;
+        // The native restricted prompt maps quitchars (including NUL) to 'q'.
+        if ([0, 27, 32, 10, 13].includes(key)) return null;
         const choice = String.fromCharCode(key).toLowerCase();
         if (choice === 'q') return null;
         if (choice === 'h') return 'hide';

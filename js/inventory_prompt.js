@@ -3,8 +3,9 @@ import { ingSuffix } from './hacklib.js';
 // C ref: invent.c getobj().
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
+import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
-import { clearCommandKeys, nhgetch, takeCommandKey } from './input.js';
+import { clearCommandKeys, readchar, takeCommandKey } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { rn2 } from './rng.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, } from './const.js';
@@ -16,7 +17,8 @@ const CANCELLED = { cancelled: true, object: null, none: false, count: null };
 const HANDS = { cancelled: false, object: null, none: true, count: null };
 const COIN_CLASS = 12;
 const HANDS_SYM = 45, QUESTION = 63, ASTERISK = 42, ESCAPE = 27;
-const QUITCHARS = [32, 13, 10, ESCAPE];
+// strchr(quitchars, '\0') also succeeds, for a literal NUL from the fuzzer.
+const QUITCHARS = [0, 32, 13, 10, ESCAPE];
 function admitsChoice(classification) {
     return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
 }
@@ -355,13 +357,13 @@ export function compactInventoryLetters(letters) {
     return compact;
 }
 // C cmd.c:get_count(): only a positive typed count is passed on by getobj.
-// Backspace edits the count; a second digit makes the count visible.
+// Backspace edits the count; counts above nine are echoed.
 async function readInventoryCount(firstKey) {
     let count = 0, key = firstKey, backspaced = false;
     for (;;) {
         let showZero = false;
         if (key >= 48 && key <= 57) {
-            count = Math.min(0x7fffffff, count * 10 + key - 48);
+            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT, count * 10 + key - 48);
             showZero = key === 48;
         }
         else if (key === 8 || key === 127) {
@@ -381,7 +383,7 @@ async function readInventoryCount(firstKey) {
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }
-        key = await nhgetch();
+        key = await readchar();
     }
 }
 // C getobj() uses tty_yn_function(), which acknowledges unread prose before
