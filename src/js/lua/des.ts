@@ -240,6 +240,7 @@ const TRAP_TYPES = new Map([
 function tableOptions(
     value: LuaValue | undefined,
     lighting: 'terrain' | 'integer' | 'boolean' = 'terrain',
+    preferExplicitRegion = false,
 ): DesOptions {
     if (!(value instanceof LuaTable))
         throw new TypeError('des operation expects a table');
@@ -303,6 +304,9 @@ function tableOptions(
             ? [location.x, location.y] : location;
     }
     for (const key of ['region', 'exclude'] as const) {
+        if (key === 'region' && preferExplicitRegion
+            && [options.x1, options.y1, options.x2, options.y2]
+                .some(axis => axis !== undefined && axis !== -1)) continue;
         const entry = value.get(key);
         if (entry == null) continue;
         const coordinates = luaArgument(entry);
@@ -311,7 +315,8 @@ function tableOptions(
             throw new TypeError(`des.${key} must contain four coordinates`);
         const [lx, ly, hx, hy] = coordinates;
         if (typeof lx !== 'number' || typeof ly !== 'number'
-            || typeof hx !== 'number' || typeof hy !== 'number')
+            || typeof hx !== 'number' || typeof hy !== 'number'
+            || ![lx, ly, hx, hy].every(Number.isInteger))
             throw new TypeError(`des.${key} must contain four coordinates`);
         options[key] = [lx, ly, hx, hy];
     }
@@ -652,22 +657,6 @@ export function mapOrigin(options: DesOptions, width: number, height: number, le
     return { xstart, ystart, width, height };
 }
 
-export function regionCoordinates(context: Pick<SelectionContext, 'xstart' | 'ystart'>, coordinates: LuaRegion | undefined, levelCoordinates: LuaFlag | undefined) {
-    if (!coordinates) throw new TypeError('Lua region requires four coordinates');
-    if (levelCoordinates) {
-        return {
-            lx: coordinates[0], ly: coordinates[1],
-            hx: coordinates[2], hy: coordinates[3],
-        };
-    }
-    return {
-        lx: context.xstart + coordinates[0],
-        ly: context.ystart + coordinates[1],
-        hx: context.xstart + coordinates[2],
-        hy: context.ystart + coordinates[3],
-    };
-}
-
 export function createDesBindings(
     operations: DesOperations,
     wrapSelection: (value: SpecialSelection) => LuaValue,
@@ -681,7 +670,7 @@ export function createDesBindings(
         message: (value: LuaValue) => operations.message(String(value)),
         terrain: (...args: LuaValue[]) => callTerrain(operations, args),
         replace_terrain: (value: LuaValue) => {
-            const options = tableOptions(value);
+            const options = tableOptions(value, 'terrain', true);
             return operations.replaceTerrain({
                 ...options,
                 selection: options.selection == null
@@ -689,7 +678,7 @@ export function createDesBindings(
             });
         },
         region: (selection: LuaValue, lighting: LuaValue) => selection instanceof LuaTable
-            ? operations.roomRegion(tableOptions(selection, 'integer'))
+            ? operations.roomRegion(tableOptions(selection, 'integer', true))
             : operations.region(
                 unwrapSelection(selection), String(lighting),
             ),
@@ -731,7 +720,7 @@ export function createDesBindings(
         non_passwall: (selection: LuaValue) => operations.nonPasswall(
             selection == null ? null : unwrapSelection(selection),
         ),
-        wall_property: (value: LuaValue) => operations.wallProperty(tableOptions(value)),
+        wall_property: (value: LuaValue) => operations.wallProperty(tableOptions(value, 'terrain', true)),
         wallify: (value: LuaValue) => operations.wallify(value == null ? null : tableOptions(value)),
         teleport_region: (value: LuaValue) => operations.teleportRegion(
             tableOptions(value),

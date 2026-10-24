@@ -33,7 +33,7 @@ const TRAP_TYPES = new Map([
     ['polymorph', POLY_TRAP],
     ['vibrating square', VIBRATING_SQUARE],
 ]);
-function tableOptions(value, lighting = 'terrain') {
+function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false) {
     if (!(value instanceof LuaTable))
         throw new TypeError('des operation expects a table');
     const options = {};
@@ -102,6 +102,10 @@ function tableOptions(value, lighting = 'terrain') {
             ? [location.x, location.y] : location;
     }
     for (const key of ['region', 'exclude']) {
+        if (key === 'region' && preferExplicitRegion
+            && [options.x1, options.y1, options.x2, options.y2]
+                .some(axis => axis !== undefined && axis !== -1))
+            continue;
         const entry = value.get(key);
         if (entry == null)
             continue;
@@ -111,7 +115,8 @@ function tableOptions(value, lighting = 'terrain') {
             throw new TypeError(`des.${key} must contain four coordinates`);
         const [lx, ly, hx, hy] = coordinates;
         if (typeof lx !== 'number' || typeof ly !== 'number'
-            || typeof hx !== 'number' || typeof hy !== 'number')
+            || typeof hx !== 'number' || typeof hy !== 'number'
+            || ![lx, ly, hx, hy].every(Number.isInteger))
             throw new TypeError(`des.${key} must contain four coordinates`);
         options[key] = [lx, ly, hx, hy];
     }
@@ -445,22 +450,6 @@ export function mapOrigin(options, width, height, levelInitialized) {
     }
     return { xstart, ystart, width, height };
 }
-export function regionCoordinates(context, coordinates, levelCoordinates) {
-    if (!coordinates)
-        throw new TypeError('Lua region requires four coordinates');
-    if (levelCoordinates) {
-        return {
-            lx: coordinates[0], ly: coordinates[1],
-            hx: coordinates[2], hy: coordinates[3],
-        };
-    }
-    return {
-        lx: context.xstart + coordinates[0],
-        ly: context.ystart + coordinates[1],
-        hx: context.xstart + coordinates[2],
-        hy: context.ystart + coordinates[3],
-    };
-}
 export function createDesBindings(operations, wrapSelection) {
     const commands = {
         level_init: (options) => operations.levelInit(tableOptions(options, 'boolean')),
@@ -469,7 +458,7 @@ export function createDesBindings(operations, wrapSelection) {
         message: (value) => operations.message(String(value)),
         terrain: (...args) => callTerrain(operations, args),
         replace_terrain: (value) => {
-            const options = tableOptions(value);
+            const options = tableOptions(value, 'terrain', true);
             return operations.replaceTerrain({
                 ...options,
                 selection: options.selection == null
@@ -477,7 +466,7 @@ export function createDesBindings(operations, wrapSelection) {
             });
         },
         region: (selection, lighting) => selection instanceof LuaTable
-            ? operations.roomRegion(tableOptions(selection, 'integer'))
+            ? operations.roomRegion(tableOptions(selection, 'integer', true))
             : operations.region(unwrapSelection(selection), String(lighting)),
         room: (value) => operations.room(tableOptions(value, 'integer')),
         stair: (direction, x, y) => operations.stair(stairOptions(direction, x, y)),
@@ -507,7 +496,7 @@ export function createDesBindings(operations, wrapSelection) {
         altar: (value) => operations.altar(tableOptions(value)),
         non_diggable: (selection) => operations.nonDiggable(selection == null ? null : unwrapSelection(selection)),
         non_passwall: (selection) => operations.nonPasswall(selection == null ? null : unwrapSelection(selection)),
-        wall_property: (value) => operations.wallProperty(tableOptions(value)),
+        wall_property: (value) => operations.wallProperty(tableOptions(value, 'terrain', true)),
         wallify: (value) => operations.wallify(value == null ? null : tableOptions(value)),
         teleport_region: (value) => operations.teleportRegion(tableOptions(value)),
         levregion: (value) => operations.levelRegion(tableOptions(value)),

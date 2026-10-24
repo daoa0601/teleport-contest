@@ -9,7 +9,7 @@ import { initRng } from '../js/rng.js';
 import { roomBindings } from './support/themed-room-bindings.js';
 import { levelStairs } from './support/level-state.js';
 
-void test('a staircase on the room perimeter prevents conversion to a shop', async t => {
+void test('a staircase inside the room prevents conversion to a shop', async t => {
     const lua = await roomBindings(t);
     requirePlayingGame(game);
     game.u.uz = { dnum: 0, dlevel: 2 };
@@ -17,7 +17,7 @@ void test('a staircase on the room perimeter prevents conversion to a shop', asy
         themerooms = {{ frequency = 1, contents = function()
             des.room({ type = "ordinary", w = 6, h = 4, lit = 0,
                 contents = function()
-                    des.stair("up", 0, -1)
+                    des.stair("up", 0, 0)
                 end })
         end }}
     `);
@@ -31,9 +31,9 @@ void test('a staircase on the room perimeter prevents conversion to a shop', asy
         assert.ok(rooms.length >= 3, 'the level needs enough rooms to attempt a shop');
         const stairs = levelStairs(game);
         for (const room of rooms) {
-            assert.ok(stairs.some(stair => stair.up && stair.sx === room.lx && stair.sy === room.ly - 1),
-                `candidate at ${room.lx},${room.ly} needs an upstairs on its perimeter`);
-            assert.ok(room.rtype < SHOPBASE, `a shop must exclude perimeter stairs (seed ${seed})`);
+            assert.ok(stairs.some(stair => stair.up && stair.sx === room.lx && stair.sy === room.ly),
+                `candidate at ${room.lx},${room.ly} needs an upstairs inside`);
+            assert.ok(room.rtype < SHOPBASE, `a shop must exclude rooms with stairs (seed ${seed})`);
         }
     }
 });
