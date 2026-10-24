@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DBWALL, D_CLOSED, DOOR, VWALL, W_NONPASSWALL } from '../js/const.js';
 import { ORCISH_HELM } from '../js/object_data.js';
-import { game } from '../js/gstate.js';
-import { rhack } from '../js/cmd.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { rhack } from '../js/cmd.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -23,18 +23,22 @@ void test('moving into a raised drawbridge reports the closed bridge', async () 
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.equal(game._pending_message, 'That drawbridge is up!');
 });
-void test('a phasing hero cannot enter Sokoban unphaseable walls', async () => {
-    const level = freshObjectRoom({ flags: { autoopen: false } });
-    const wall = level.requireAt(11, 10);
-    wall.typ = VWALL;
-    wall.wall_info = W_NONPASSWALL;
-    level.flags.sokoban_rules = true;
-    installPolymorphedHero('xorn');
-    initRng(1n);
-    await rhack('l'.charCodeAt(0));
-    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
-    assert.equal(game._pending_message, 'The Sokoban walls resist your ability.');
-});
+for (const solved of [false, true]) {
+    void test(`a phasing hero cannot enter Sokoban unphaseable walls${solved ? ' after the puzzle is solved' : ''}`, async () => {
+        const level = freshObjectRoom({ flags: { autoopen: false } });
+        const wall = level.requireAt(11, 10);
+        wall.typ = VWALL;
+        wall.wall_info = W_NONPASSWALL;
+        requirePlayingGame(game);
+        game.sokoban_dnum = game.u.uz.dnum;
+        level.flags.sokoban_rules = !solved;
+        installPolymorphedHero('xorn');
+        initRng(1n);
+        await rhack('l'.charCodeAt(0));
+        assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+        assert.equal(game._pending_message, 'The Sokoban walls resist your ability.');
+    });
+}
 void test('an amorphous hero with unsqueezable possessions fails to ooze under a door', async () => {
     const level = freshObjectRoom({ flags: { autoopen: false } });
     const door = level.requireAt(11, 9);

@@ -507,7 +507,7 @@ import {
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_NOTHING, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
-    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE,
+    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, In_sokoban, W_ARMOR, W_ACCESSORY, W_SADDLE,
     P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
@@ -7363,8 +7363,10 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
             // C test_move(): the raised drawbridge reports itself before the
             // generic mention_walls fallback and without that option.
             await pline('That drawbridge is up!');
-        } else if (heroPassesWalls(game) && game.level.flags.sokoban_rules) {
-            // A phasing hero still cannot enter Sokoban's unphaseable walls.
+        } else if (heroPassesWalls(game) && In_sokoban(game.u.uz)) {
+            // C test_move() keys this off In_sokoban(), so the soko
+            // restriction stays even after the puzzle is solved and
+            // level.flags.sokoban_rules has been cleared.
             await pline('The Sokoban walls resist your ability.');
         } else if (game.flags?.mention_walls) {
             const obstruction = loc?.typ === STONE

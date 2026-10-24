@@ -316,7 +316,7 @@ import { kickDoor } from './kick_door.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, IS_WATERWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_NOTHING, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, IS_WATERWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_NOTHING, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, In_sokoban, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -7287,8 +7287,10 @@ async function domoveCore(dx, dy) {
             // generic mention_walls fallback and without that option.
             await pline('That drawbridge is up!');
         }
-        else if (heroPassesWalls(game) && game.level.flags.sokoban_rules) {
-            // A phasing hero still cannot enter Sokoban's unphaseable walls.
+        else if (heroPassesWalls(game) && In_sokoban(game.u.uz)) {
+            // C test_move() keys this off In_sokoban(), so the soko
+            // restriction stays even after the puzzle is solved and
+            // level.flags.sokoban_rules has been cleared.
             await pline('The Sokoban walls resist your ability.');
         }
         else if (game.flags?.mention_walls) {
