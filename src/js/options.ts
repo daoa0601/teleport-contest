@@ -16,8 +16,10 @@ import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
 import { findRole } from './roles.js';
+import { PosixRegex } from './posix_regex.js';
 import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
+import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -27,9 +29,8 @@ import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
-import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    BUFSZ, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
+    BUFSZ, CLR_MAX, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -372,12 +373,14 @@ function matchConfigStatement(name: string): ConfigStatementName | null {
 }
 
 // C's uchar list parser (cfgfiles.c:get_uchars()). Zeros are stored unless
-// the list is being modified in place; parsing stops at the first character
-// that is neither a digit nor whitespace, or once `size` values were read.
+// the list is being modified in place, but every parsed number still counts
+// toward the `size` limit; parsing stops at the first character that is
+// neither a digit nor whitespace, or once `size` numbers were read.
 function parseUcharList(
     bytes: Uint8Array, size: number, modifyInPlace: boolean,
 ): { values: number[]; syntaxError: boolean } {
     const values: number[] = [];
+    let count = 0;
     let number = 0;
     let haveNumber = false;
     let index = 0;
@@ -386,10 +389,11 @@ function parseUcharList(
         if (byte === 32 || byte === 9 || byte === 10 || byte === undefined) {
             if (haveNumber) {
                 if (number !== 0 || !modifyInPlace) values.push(number & 0xFF);
+                count++;
                 number = 0;
                 haveNumber = false;
             }
-            if (values.length === size || byte === undefined)
+            if (count === size || byte === undefined)
                 return { values, syntaxError: false };
             index++;
         } else if (byte >= 48 && byte <= 57) {
@@ -426,6 +430,123 @@ function parseAutocompleteStatement(value: string, addRawError: (message: string
     setCommandAutocomplete(value, condition);
 }
 
+// C hacklib.c:fuzzymatch(): compare while skipping ' ', '-', '_' and
+// folding case.
+function fuzzyMatch(input: string, name: string): boolean {
+    const skip = (character: string | undefined) =>
+        character === ' ' || character === '-' || character === '_';
+    let i = 0, j = 0;
+    for (;;) {
+        while (skip(input[i])) i++;
+        while (skip(name[j])) j++;
+        const a = input[i], b = name[j];
+        if (a === undefined || b === undefined) break;
+        if (a.toLowerCase() !== b.toLowerCase()) return false;
+        i++;
+        j++;
+    }
+    return input[i] === undefined && name[j] === undefined;
+}
+
+// C coloratt.c:colornames[] and attrnames[].
+const MENUCOLOR_COLOR_NAMES = [
+    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
+    'orange', 'light green', 'yellow', 'light blue', 'light magenta',
+    'light cyan', 'white', 'no color', 'transparent', 'purple',
+    'light purple', 'bright purple', 'grey', 'bright red', 'bright green',
+    'bright blue', 'bright magenta', 'bright cyan',
+];
+const MENUCOLOR_ATTR_NAMES = [
+    'none', 'bold', 'dim', 'italic', 'underline', 'blink', 'inverse',
+    'normal', 'uline', 'reverse',
+];
+
+// C coloratt.c:add_menu_coloring(). The coloring list itself is not kept
+// (menus are not colored in this port), but every diagnostic is emitted.
+function parseMenuColoring(value: string, addError: (message: string) => void): boolean {
+    const equals = value.indexOf('=');
+    if (equals < 0) {
+        addError('Malformed MENUCOLOR');
+        return false;
+    }
+    let tail = value.slice(equals + 1).replace(/[ \t]+/g, ' ').trim();
+    const ampersand = tail.indexOf('&');
+    if (ampersand >= 0) tail = tail.slice(0, ampersand);
+    if (!MENUCOLOR_COLOR_NAMES.some(name => fuzzyMatch(tail, name))) {
+        // match_str2clr() falls back to atoi() when no name matched and the
+        // text starts with a digit; anything outside 0..CLR_MAX-1 fails.
+        const digits = tail.match(/^\d+/)?.[0];
+        if (digits === undefined || Number(digits) >= CLR_MAX) {
+            addError(`Unknown color '${tail.slice(0, 60)}'`);
+            return false;
+        }
+    }
+    if (ampersand >= 0) {
+        const attribute = value.slice(equals + 1)
+            .replace(/[ \t]+/g, ' ').trim().slice(ampersand + 1);
+        if (!MENUCOLOR_ATTR_NAMES.some(name => fuzzyMatch(attribute, name))) {
+            addError(`Unknown text attribute '${attribute.slice(0, 50)}'`);
+            return false;
+        }
+    }
+    // The regexp portion is not condensed by mungspaces(); a matching pair
+    // of quotes around it is stripped.
+    let pattern = value.slice(0, equals);
+    const quote = pattern.charAt(0);
+    if (quote === '"' || quote === '\'') {
+        let end = pattern.length - 1;
+        while (end >= 0 && /[ \t]/.test(pattern.charAt(end))) end--;
+        if (pattern.charAt(end) === quote) pattern = pattern.slice(1, end);
+    }
+    try {
+        new PosixRegex(pattern);
+    } catch (error) {
+        if (!(error instanceof SyntaxError)) throw error;
+        addError(`Menucolor regex error: ${error.message}`);
+        return false;
+    }
+    return true;
+}
+
+// C options.c:add_autopickup_exception(): sscanf() forms `"<%s`, `">%s`, or
+// `"%s`, each with an optional whitespace + '#' comment after the closing
+// quote. The exception list itself is not kept; the diagnostics are.
+function parseAutopickupException(value: string, addError: (message: string) => void): boolean {
+    // %253[^\"] stops after 253 characters or at the closing quote; a run of
+    // scanf whitespace then precedes the single %c character, if any.
+    const scan = (prefix: string): { text: string; trailing: string | null } | null => {
+        const start = 1 + prefix.length;
+        if (!value.startsWith('"' + prefix)) return null;
+        const close = value.indexOf('"', start);
+        // The scanset must match at least one character and at most 253.
+        if (close <= start || close - start > 253) return null;
+        const rest = value.slice(close + 1).replace(/^[ \t\n\r\f\v]+/, '');
+        return { text: value.slice(start, close), trailing: rest.charAt(0) || null };
+    };
+    const compile = (text: string): boolean => {
+        try {
+            new PosixRegex(text);
+        } catch (error) {
+            if (!(error instanceof SyntaxError)) throw error;
+            addError(`regex error in AUTOPICKUP_EXCEPTION: ${error.message}`);
+            return false;
+        }
+        return true;
+    };
+    const grab = scan('<');
+    if (grab && (grab.trailing === null || grab.trailing === '#'))
+        return compile(grab.text);
+    const noGrab = scan('>');
+    if (noGrab?.trailing === null) return compile(noGrab.text);
+    // The final check reuses the plain-quoted scan's captures, exactly as C
+    // reuses the last sscanf()'s results ('">x" #c' keeps the '>x' text).
+    const plain = scan('');
+    if (plain && (plain.trailing === null || plain.trailing === '#'))
+        return compile(plain.text);
+    addError('syntax error in AUTOPICKUP_EXCEPTION');
+    return false;
+}
+
 function handleConfigStatement(
     statement: ConfigStatementName,
     parsed: ParsedConfigStatement,
@@ -434,16 +555,22 @@ function handleConfigStatement(
     addRawError: (message: string) => void,
 ): void {
     switch (statement) {
-    // Accepted by the C table but without observable effect in this port:
-    // path prefixes are ignored on this platform, and MENUCOLOR,
-    // HILITE_STATUS, SYMBOLS/ROGUESYMBOLS, AUTOPICKUP_EXCEPTION, and WIZKIT
-    // feed display or file subsystems that are not implemented.
-    case 'AUTOPICKUP_EXCEPTION':
+    // Accepted by the C table without effect in this port: path prefixes
+    // are ignored on this platform, WIZKIT names a file this runtime cannot
+    // supply, and HILITE_STATUS and SYMBOLS/ROGUESYMBOLS validation need the
+    // status-hilite grammar and the symbol-name tables, which are missing —
+    // their bad-value diagnostics remain unported.
     case 'HACKDIR': case 'LEVELDIR': case 'LEVELS': case 'SAVEDIR':
     case 'BONESDIR': case 'DATADIR': case 'SCOREDIR': case 'LOCKDIR':
-    case 'CONFIGDIR': case 'TROUBLEDIR': case 'MENUCOLOR': case 'HILITE_STATUS':
+    case 'CONFIGDIR': case 'TROUBLEDIR': case 'HILITE_STATUS':
     case 'ROGUESYMBOLS': case 'SYMBOLS': case 'WIZKIT':
     case 'QT_TILEWIDTH': case 'QT_TILEHEIGHT': case 'QT_FONTSIZE': case 'QT_COMPACT':
+        break;
+    case 'AUTOPICKUP_EXCEPTION':
+        parseAutopickupException(parsed.valueText, addError);
+        break;
+    case 'MENUCOLOR':
+        parseMenuColoring(parsed.valueText, addError);
         break;
     case 'BINDINGS':
         for (const field of bindingFields(parsed.valueText)) {
@@ -465,7 +592,9 @@ function handleConfigStatement(
         break;
     }
     case 'NAME':
-        result.name = parsed.valueText.slice(0, PL_NSIZ - 1);
+        // cnf_line_NAME() strncpy's PL_NSIZ-1 bytes; a UTF-8 name cut at
+        // that limit keeps its partial final sequence as one character.
+        result.name = new TextDecoder().decode(parsed.valueBytes.subarray(0, PL_NSIZ - 1));
         break;
     case 'ROLE':
     case 'CHARACTER':

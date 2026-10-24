@@ -194,8 +194,12 @@ void test('raw diagnostics keep their position among counted errors', async () =
     assert.doesNotMatch(screen(engine), /Hit return to continue:/);
 });
 
-void test('a numeric BOULDER statement is accepted silently', () => {
-    assert.equal(fileErrors('BOULDER=125').length, 0);
+void test('BOULDER counts a zero value even though it stores nothing', () => {
+    // get_uchars() finishes after one parsed number, so the text after an
+    // accepted zero is never examined.
+    for (const statement of ['BOULDER=0 x', 'BOULDER=0 5', 'BOULDER=0']) {
+        assert.equal(fileErrors(statement).length, 0, statement);
+    }
 });
 
 void test('BOULDER syntax errors print without the counted error treatment', () => {
@@ -203,6 +207,49 @@ void test('BOULDER syntax errors print without the counted error treatment', () 
     assert.equal(raw.length, 1);
     assert.equal(raw[0]?.message, 'Syntax error in BOULDER');
     assert.equal(raw[0]?.raw, true);
+});
+
+void test('a NAME statement truncates on bytes, not characters', () => {
+    // 20 two-byte characters: the 31-byte limit keeps fifteen whole
+    // characters plus one byte of the sixteenth.
+    const longName = parseNethackrc('NAME=' + 'é'.repeat(20));
+    assert.equal(longName.name, 'é'.repeat(15) + '\uFFFD');
+    assert.equal(parseNethackrc('NAME=' + 'é'.repeat(10)).name, 'é'.repeat(10));
+});
+
+void test('MENUCOLOR statements report malformed patterns, colors, and attributes', () => {
+    assert.deepEqual(fileErrors('MENUCOLOR=nocolorhere').map(error => error.message),
+        ['Malformed MENUCOLOR']);
+    assert.deepEqual(fileErrors('MENUCOLOR="blessed" = nosuchcolor').map(error => error.message),
+        ["Unknown color 'nosuchcolor'"]);
+    assert.deepEqual(fileErrors('MENUCOLOR="blessed" = green&nosuchattr').map(error => error.message),
+        ["Unknown text attribute 'nosuchattr'"]);
+    // Fuzzy names and digits within the palette are accepted.
+    assert.equal(fileErrors('MENUCOLOR="blessed" = LIGHT-green&reverse').length, 0);
+    assert.equal(fileErrors('MENUCOLOR="blessed" = 3&bold').length, 0);
+    assert.equal(fileErrors('MENUCOLOR="blessed" = 99').length, 1);
+
+    const regexError = fileErrors('MENUCOLOR="bless(ed" = green');
+    assert.equal(regexError.length, 1);
+    assert.match(regexError[0]?.message ?? '', /^Menucolor regex error: /);
+    assert.notEqual(regexError[0]?.raw, true);
+});
+
+void test('AUTOPICKUP_EXCEPTION statements report syntax and regex errors', () => {
+    // An unclosed quote fails the sscanf() scan and is a syntax error.
+    assert.equal(fileErrors('AUTOPICKUP_EXCEPTION="<arrow"').length, 0);
+    assert.deepEqual(
+        fileErrors('AUTOPICKUP_EXCEPTION="<*arrow').map(error => error.message),
+        ['syntax error in AUTOPICKUP_EXCEPTION']);
+    assert.equal(fileErrors('AUTOPICKUP_EXCEPTION=">food" # avoid food').length, 0);
+    assert.equal(fileErrors('AUTOPICKUP_EXCEPTION=unquoted').length, 1);
+    assert.deepEqual(
+        fileErrors('AUTOPICKUP_EXCEPTION=unquoted').map(error => error.message),
+        ['syntax error in AUTOPICKUP_EXCEPTION']);
+
+    const regexError = fileErrors('AUTOPICKUP_EXCEPTION="<*arr(ow"');
+    assert.equal(regexError.length, 1);
+    assert.match(regexError[0]?.message ?? '', /^regex error in AUTOPICKUP_EXCEPTION: /);
 });
 
 void test('AUTOCOMPLETE statements flip extended-command autocompletion', () => {
