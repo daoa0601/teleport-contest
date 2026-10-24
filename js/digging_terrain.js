@@ -3,21 +3,19 @@ import { trapName } from './trap_name.js';
 // C refs: dig.c dig_check(), digcheck_fail_message(), dighole(),
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
 // dispatch.  The digging effort loop itself lives in hero_digging.js.
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { AD_DGST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
+import { A_LAWFUL, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
 import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig, } from './shop_damage.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, SHIELD_STATIC, } from './display.js';
+import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
+import { explode } from './explosion.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { levelAtDepth } from './dungeon.js';
 import { depth } from './hacklib.js';
-import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { convertTrapToObject } from './trap_object.js';
 import { heroLiquidEffects } from './hack.js';
@@ -27,19 +25,14 @@ import { liquidForHole } from './hole.js';
 import { gotoLevel } from './level_change.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { angerAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, } from './monster_data.js';
-import { monsterResistsEffect } from './monster_resistance.js';
+import { MONSTER_FLAGS1, MONSTER_SIZE, } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
-import { revealMonsterAppearance } from './monster_appearance.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js';
-import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
-import { loseHeroHp } from './hero_damage.js';
+import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { delobj } from './object_delete.js';
 import { canDigDown, createToptenObject, deleteFloorTrap, maketrap, makemonAt, mkclassAligned, } from './mklev.js';
 import { buriedBallToPunishment, unearthFloorObjectsAt, } from './buried_object.js';
@@ -259,7 +252,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
         await tooHardMessage();
     }
     else if (trap && is_magical_trap(trap.ttyp)) {
-        await explodeMagicalTrapAt(digX, digY, state);
+        await explode(digX, digY, 0, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL, { state });
         deleteTrap(trap, state);
         newsym(digX, digY);
     }
@@ -717,225 +710,5 @@ export function spotChecks(x, y, oldTyp, state = game) {
         return;
     stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
     updateIceObjectTimersAt(x, y, state);
-}
-// C explode.c explode() restricted to dighole()'s call:
-// explode(x, y, 0, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL).
-// Source no-ops for this invocation, kept out deliberately: do_hallu naming
-// (only set for MON_EXPLODE), destroy_items() item damage (cold/fire/electric
-// only), zap_over_floor() floor effects (zap type 0), golemeffects()
-// (flesh/iron golems react to fire/cold/electric only), and the wand-role
-// damage reduction (WAND_CLASS only).
-async function explodeMagicalTrapAt(x, y, state) {
-    const hero = state.u;
-    const damage = 20 + d(3, 6);
-    const deaf = state.deaf || hero?.deaf;
-    const insideEngulfer = !!hero?.uswallow;
-    // held but not engulfed: the holder reaches into the second spot
-    let grabbing = false;
-    let grabbed = false;
-    let grabxy = null;
-    if (hero?.ustuck && !hero.uswallow) {
-        grabbing = formSticks(hero);
-        grabbed = !grabbing;
-        grabxy = { x: hero.ustuck.mx, y: hero.ustuck.my };
-    }
-    const cells = [];
-    let visible = false;
-    let anyShield = false;
-    for (let i = 0; i < 3; i++) {
-        for (let j = 0; j < 3; j++) {
-            const xx = x + i - 1;
-            const yy = y + j - 1;
-            if (!isok(xx, yy))
-                continue;
-            let mask = 0;
-            let monster = monsterAt(xx, yy, state);
-            if (!monster && hero?.ux === xx && hero?.uy === yy) {
-                monster = hero.usteed || null;
-            }
-            if (hero?.ux === xx && hero?.uy === yy
-                && heroAntimagic(state)) {
-                mask |= 1; /* EXPL_HERO */
-            }
-            if (monster && monsterHasMagicResistance(monster))
-                mask |= 2;
-            if (monster && cansee(xx, yy) && !canSpotMonster(monster)) {
-                map_invisible(xx, yy);
-            }
-            else if (!monster) {
-                unmap_invisible(xx, yy);
-            }
-            if (cansee(xx, yy))
-                visible = true;
-            if (mask)
-                anyShield = true;
-            cells.push({ x: xx, y: yy, mask, monster });
-        }
-    }
-    if (visible) {
-        const effect = new TemporaryMapEffect('beam', explosionGlyph(EXPL_MAGICAL, -1, -1));
-        await effect.start();
-        for (const cell of cells) {
-            const glyph = explosionGlyph(EXPL_MAGICAL, cell.x - x, cell.y - y);
-            effect.changeGlyph(glyph);
-            await effect.show(cell.x, cell.y);
-        }
-        await flush_screen(1);
-        if (anyShield && state.flags?.sparkle !== false) {
-            for (const character of SHIELD_STATIC) {
-                const glyph = shieldGlyph(character);
-                for (const cell of cells) {
-                    if (!cell.mask)
-                        continue;
-                    show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
-                }
-                await flush_screen(1);
-                await state.animationFrame?.();
-            }
-            // Cover the last shield glyph with the blast symbol.
-            for (const cell of cells) {
-                if (!cell.mask)
-                    continue;
-                const glyph = explosionGlyph(EXPL_MAGICAL, cell.x - x, cell.y - y);
-                show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
-            }
-        }
-        else {
-            await state.animationFrame?.();
-            await state.animationFrame?.();
-        }
-        // tmp_at(DISP_END): clear the explosion
-        effect.clear();
-    }
-    else if (!deaf) {
-        await publishHeardMessage('a blast.', plineWithContinuation, state);
-    }
-    if (visible && !deaf) {
-        await plineWithContinuation('Boom!');
-    }
-    // apply effects to monsters first, in case hero damage is fatal
-    let heroHurt = 0;
-    if (damage) {
-        for (const cell of cells) {
-            if (hero?.ux === cell.x && hero?.uy === cell.y) {
-                heroHurt = (cell.mask & 1) ? 1 : 2;
-            }
-            else if (insideEngulfer) {
-                // for inside_engulfer, only <u.ux,u.uy> is affected
-                continue;
-            }
-            const monster = cell.monster;
-            if (!monster)
-                continue;
-            if (hero?.uswallow && hero.ustuck === monster) {
-                // the blast hits the creature the hero is inside
-                await engulferExplosionMessage(monster);
-            }
-            else if (cansee(cell.x, cell.y)) {
-                if (monster.m_ap_type) {
-                    revealMonsterAppearance(monster);
-                }
-                await plineWithContinuation(`${monsterSubject(monster)} is caught in the `
-                    + 'magical blast!');
-            }
-            let monsterDamage;
-            if (cell.mask & 2) {
-                // shielded: only item damage applies, zero for AD_MAGM
-                monsterDamage = 0;
-            }
-            else {
-                monsterDamage = damage;
-                // resist(mtmp, TRAP_EXPLODE, 0, FALSE): hero-level attack
-                if (monsterResistsEffect(monster, hero?.ulevel ?? 1, rn2)) {
-                    if (cansee(cell.x, cell.y)) {
-                        await plineWithContinuation(`${monsterSubject(monster)} resists the `
-                            + 'magical blast!');
-                    }
-                    monsterDamage = Math.trunc((damage + 1) / 2);
-                }
-                // a grabber reaching into the blast takes double damage
-                if (grabbed && monster === hero?.ustuck
-                    && Math.max(Math.abs(monster.mx - x), Math.abs(monster.my - y)) <= 1) {
-                    monsterDamage *= 2;
-                }
-            }
-            monster.mhp = (monster.mhp ?? 1) - monsterDamage;
-            if (monster.mhp <= 0) {
-                await finishHeroMonsterKill(monster, monster.mx, monster.my, {
-                    showKillMessage: true,
-                });
-            }
-            else {
-                await angerAttackedMonster(monster);
-            }
-        }
-    }
-    // Do your injury last
-    if (heroHurt) {
-        let blastDamage = damage;
-        if (verbose(state)) {
-            await plineWithContinuation('You are caught in the magical blast!');
-        }
-        if (hero.invulnerable || hero.uinvulnerable) {
-            blastDamage = 0;
-            await plineWithContinuation('You are unharmed!');
-        }
-        if (heroHurt === 2) {
-            // a poly'd hero reaching into the blast takes double damage
-            if (grabbing && grabxy
-                && (grabxy.x - x) ** 2 + (grabxy.y - y) ** 2 <= 2) {
-                blastDamage *= 2;
-            }
-            const wouldDie = (hero.uhp ?? 1) - blastDamage <= 0;
-            if (wouldDie && blastDamage > 0) {
-                if (game._last_message
-                    === 'You are caught in the magical blast!') {
-                    await plineWithContinuation('It is fatal.');
-                }
-                else {
-                    await plineWithContinuation('The magical blast is fatal.');
-                }
-            }
-            const died = await loseHeroHp(blastDamage, 'caught yourself in a magical blast', { state });
-            if (!died)
-                await exerciseAttribute(A_STR, false, state);
-        }
-        // monsters learn whether the hero resisted the blast
-        if (heroHurt === 1) {
-            monstersObserveHeroResistance(M_SEEN_MAGR, state);
-        }
-        else {
-            monstersForgetHeroResistance(M_SEEN_MAGR, state);
-        }
-    }
-    // explosions are noisy
-    let noise = Math.max(damage * damage, 50);
-    if (insideEngulfer)
-        noise = Math.trunc((noise + 3) / 4);
-    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, noise, state);
-}
-function heroAntimagic(state) {
-    return !!(state.u?.antimagic || state.u?.magicProtection
-        || state.u?.magicResistance);
-}
-// C mondata.c sticks(): the poly'd hero holds what she hits.
-function formSticks(hero) {
-    const attacks = MONSTER_ATTACKS[hero?.umonnum] || [];
-    const hasAttack = (aatyp, adtyp) => attacks.some(([type, type2]) => (aatyp === null || type === aatyp)
-        && (adtyp === null || type2 === adtyp));
-    return hasAttack(null, AD_STCK)
-        || (hasAttack(null, AD_WRAP) && !hasAttack(AT_ENGL, null))
-        || hasAttack(AT_HUGS, null);
-}
-// C explode.c engulfer_explosion_msg() for AD_MAGM.
-async function engulferExplosionMessage(monster) {
-    const digests = (MONSTER_ATTACKS[monster.mnum] || [])
-        .some(([, adtyp]) => adtyp === AD_DGST);
-    if (digests) {
-        await plineWithContinuation(`${monsterSubject(monster)} gets fried!`);
-    }
-    else {
-        await plineWithContinuation(`${monsterSubject(monster)} gets slightly fried!`);
-    }
 }
 //# sourceMappingURL=digging_terrain.js.map
