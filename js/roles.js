@@ -625,8 +625,21 @@ export function findRole(name) {
     if (typeof name !== 'string' || !name)
         return null;
     const lc = name.toLowerCase();
-    return roles.find(r => r.name.m.toLowerCase().startsWith(lc)
-        || r.name.f.toLowerCase().startsWith(lc));
+    // str2role() resolves ambiguous prefixes in native table order,
+    // where Rogue precedes Ranger.
+    for (let index = 0; index < roles.length; index++) {
+        const role = nativeRoleAt(index);
+        if (role && (role.name.m.toLowerCase().startsWith(lc)
+            || role.name.f.toLowerCase().startsWith(lc)))
+            return role;
+    }
+    return undefined;
+}
+export function randomCharacterOption(option) {
+    if (!option)
+        return false;
+    const text = option.toLowerCase();
+    return text === '*' || text === '@' || 'random'.startsWith(text);
 }
 export function findRace(name) {
     if (typeof name !== 'string' || !name)

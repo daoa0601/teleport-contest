@@ -8,11 +8,12 @@ import { game, requireLiveGame } from './gstate.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { formatFeltMessage, heroCanChant } from './hero_speech.js';
 import { spendHeroNutrition } from './hunger.js';
-import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_EXTRA_HEALING, SPE_HEALING, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, } from './object_data.js';
+import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_EXTRA_HEALING, SPE_HEALING, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { propertyIsActive } from './properties.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
+import { spellSkillType } from './spell_school.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
 const HEALING_BONUS_SPELLS = new Set([
@@ -101,15 +102,9 @@ export function currentSpellKnowledge(spell, state = game) {
         return 0;
     return Math.max(0, spell.know - Math.max(0, state.moves - 1));
 }
-export function spellSkillType(otyp) {
-    const subtype = OBJECT_SUBTYPE[otyp];
-    if (subtype === undefined)
-        throw new RangeError(`Unknown spell object type ${otyp}`);
-    return subtype;
-}
 export function liveSpellSkill(otyp, state = game) {
     const skills = ensureHeroSkills(state);
-    return skills?.[spellSkillType(otyp)]?.skill ?? P_ISRESTRICTED;
+    return skills?.[spellSkillType(otyp, state)]?.skill ?? P_ISRESTRICTED;
 }
 export function percentSuccess(spell, state = game) {
     requirePlayingGame(state);
@@ -135,7 +130,7 @@ export function percentSuccess(spell, state = game) {
 }
 function innateCastingPenalty(type, state) {
     const role = state.urole.spellcasting;
-    const paladin = state.urole.key === 'knight' && spellSkillType(type) === P_CLERIC_SPELL;
+    const paladin = state.urole.key === 'knight' && spellSkillType(type, state) === P_CLERIC_SPELL;
     const suit = wornObject('uarm', state);
     const robe = wornObject('uarmc', state)?.otyp === ROBE;
     let penalty = role.base;

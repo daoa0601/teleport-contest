@@ -3,8 +3,9 @@
 import { MENU_TRADITIONAL, NHW_MENU, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_SKILLED, } from './const.js';
 import { flushPendingTopline, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_DIG } from './object_data.js';
-import { currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, spellSkillType, } from './spell_casting_rules.js';
+import { OBJECT_NAMES, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_DIG } from './object_data.js';
+import { currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, } from './spell_casting_rules.js';
+import { spellCategory, spellSkillType } from './spell_school.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { promptKey } from './tty_prompts.js';
 import { showInventoryWindow } from './windows.js';
@@ -150,7 +151,7 @@ async function showSpellMenu(title, { state, order = null, view = false, presele
         const spell = spellAt(state, index);
         const name = OBJECT_NAMES[spell.otyp];
         const level = OBJECT_SPELL_LEVEL[spell.otyp];
-        const category = OBJECT_SPELL_CATEGORY[spell.otyp];
+        const category = spellCategory(spell.otyp, state);
         if (name == null || level === undefined || category == null)
             throw new Error(`Missing spell metadata for object ${spell.otyp}`);
         const failure = 100 - percentSuccess(spell, state);
@@ -203,7 +204,7 @@ function compareSpells(first, second, mode, state) {
     const secondSpell = spellAt(state, second);
     const secondType = secondSpell.otyp;
     if (mode >= SORT_SKILL_ALPHA) {
-        const difference = spellSkillType(firstType) - spellSkillType(secondType);
+        const difference = spellSkillType(firstType, state) - spellSkillType(secondType, state);
         if (difference)
             return difference;
     }

@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, CHAIN_MAIL, HELMET, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, QUARTERSTAFF, ROBE, ROCK, SMALL_SHIELD, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_TURN_UNDEAD, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { ensureHeroSkills } from '../js/skills.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { checkSpellCast, currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, spellSkillType, } from '../js/spell_casting_rules.js';
+import { checkSpellCast, currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, } from '../js/spell_casting_rules.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
