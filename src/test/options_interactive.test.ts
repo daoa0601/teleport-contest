@@ -720,6 +720,9 @@ for (const { symset, expected } of [
     { symset: null, expected: '[default]' },
     { symset: 'DECgraphics', expected: '[DECgraphics, active, handler=DEC]' },
     { symset: 'plain', expected: '[plain, active]' },
+    { symset: 'curses', expected: '[curses, active, handler=DEC]' },
+    { symset: 'IBMgraphics', expected: '[IBMgraphics, active, handler=IBM]' },
+    { symset: 'Enhanced1', expected: '[Enhanced1, active, handler=UTF8]' },
 ]) {
     void test(`the full options menu displays the ${symset ?? 'default'} symbol set state`, async () => {
         freshObjectRoom();

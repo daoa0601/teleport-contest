@@ -488,6 +488,24 @@ void test('section diagnostics are cut at the config error length', () => {
     assert.equal(error.message, `Section "[${'é'.repeat(122)}\uFFFD`);
 });
 
+// options.c:optfn_symset() loads the named set from the symbols file; a
+// name no `start:` line carries is an error and reverts to the default set
+// (files.c:read_sym_file()), while "default" itself clears the choice.
+void test('a symset the symbols file does not carry reverts to default with an error', () => {
+    const missing = parseNethackrc('OPTIONS=symset:NOSUCHSET');
+    assert.equal(missing.symset, undefined);
+    assert.deepEqual(fileErrors('OPTIONS=symset:NOSUCHSET').map(error => error.message),
+        ['Unable to load symbol set "NOSUCHSET" from "symbols"']);
+
+    assert.equal(parseNethackrc('OPTIONS=symset:curses').symset, 'curses');
+    assert.equal(parseNethackrc('OPTIONS=symset:DECGraphics').symset, 'DECGraphics');
+
+    for (const alias of ['default', 'Default Symbols', 'default-symbols']) {
+        assert.equal(parseNethackrc(`OPTIONS=symset:${alias}`).symset, undefined, alias);
+        assert.equal(fileErrors(`OPTIONS=symset:${alias}`).length, 0, alias);
+    }
+});
+
 // pager.c's do_screen_description() matches ROCK_CLASS against the BOULDER
 // override, so the ';' look at a configured boulder glyph still names it.
 void test('a BOULDER= glyph is still described as a boulder', async () => {
