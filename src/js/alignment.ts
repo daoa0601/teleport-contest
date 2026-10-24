@@ -40,9 +40,9 @@ export function hallucinatedDeityName(
     do {
         const role = nativeRoleAt(rn2Display(roles.length));
         if (!role) throw new Error('No hallucinated deity role was selected');
-        // C installs the current Priest's borrowed pantheon in roles[].
-        // JS keeps it on the live role instead of mutating the shared table.
-        gods = role.key === state.urole.key ? state.urole.gods : role.gods;
+        // role_init() copies borrowed gods into urole. halu_gname() reads
+        // the unchanged roles[] table, so Priest remains a rejected choice.
+        gods = role.gods;
     } while (!gods?.lawful);
     const choice = rn2Display(9);
     const name = choice < 2 ? gods.lawful

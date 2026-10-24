@@ -40,9 +40,12 @@ export async function initializeSourceStartup() {
     initializeRoleQuestGenders();
     // role_init(): Priests borrow a pantheon from a random non-Priest role.
     if (game.urole?.key === 'priest') {
-        do
-            game._priestPantheonIndex = rn2(13);
-        while (game._priestPantheonIndex === 6);
+        let pantheon = 6;
+        let attempts = 0;
+        while (pantheon === 6 && ++attempts < 100)
+            pantheon = rn2(13);
+        // C falls back to the first role with gods after 99 failed draws.
+        game._priestPantheonIndex = pantheon === 6 ? 0 : pantheon;
     }
     await init_dungeons();
     initializeArtifacts(game);
