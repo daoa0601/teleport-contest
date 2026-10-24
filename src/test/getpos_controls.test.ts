@@ -277,9 +277,9 @@ void test('target menus describe displayed glyphs without a caller callback', as
         start: { x: 10, y: 10 }, prompt: 'Pick a target.', goal: 'a target',
     }), input, [
         { prompt: /Pick a monster[\s\S]*a - kitten/, keys: 'a' },
-        { prompt: /Move cursor to a target:/, keys: 'a' },
+        { prompt: /kitten/, keys: 'a' },
         { prompt: /Pick an interesting thing[\s\S]*a - kitten[\s\S]*b - fountain/, keys: 'b' },
-        { prompt: /Move cursor to a target:/, keys: '.' },
+        { prompt: /fountain/, keys: '.' },
     ]);
     assert.equal(selected?.x, 12);
     assert.equal(selected?.y, 10);

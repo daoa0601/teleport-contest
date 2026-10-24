@@ -14,7 +14,7 @@ import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
-import { farlookLocationDescription } from './cmd.js';
+import { farlookLocationDescription, isValidTravelTarget } from './cmd.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { visibleCommandKey } from './command_keys.js';
@@ -291,8 +291,15 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
     game._pending_message = '';
     return await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
-async function describeSelectedPosition(describe, cursor, fallback) {
-    return await describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(describe, cursor, isValidLocation) {
+    const description = describe ? await describe(cursor.x, cursor.y)
+        : await describeGetposLocation(cursor.x, cursor.y);
+    if (!description)
+        return null;
+    const coordinates = coordinateDescription(cursor.x, cursor.y, game.iflags.getpos_coords ?? 'n');
+    return description + (coordinates ? ` ${coordinates}` : '')
+        + (isValidLocation && !isValidLocation(cursor.x, cursor.y) ? ' (invalid target)' : '')
+        + (game.iflags.getloc_travelmode && !await isValidTravelTarget(cursor.x, cursor.y) ? ' (no travel path)' : '');
 }
 async function selectGetposMenu(spots, kind) {
     const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
@@ -302,7 +309,7 @@ async function selectGetposMenu(spots, kind) {
     try {
         await tty_start_menu(window);
         for (const spot of spots) {
-            const text = await describeMenuPosition(spot);
+            const text = await describeGetposLocation(spot.x, spot.y);
             if (text === null)
                 continue;
             const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
@@ -323,19 +330,12 @@ async function selectGetposMenu(spots, kind) {
 }
 // getpos_menu() describes the displayed glyph even when the caller only
 // supplied a validity rule, such as spell or polearm targeting.
-async function describeMenuPosition({ x, y }) {
+export async function describeGetposLocation(x, y) {
     const screen = screenDescription(x, y, '');
     if (!screen.count)
         return null;
     return screen.needsDetail
         ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
-}
-export async function describeGetposLocation(x, y) {
-    const description = await describeMenuPosition({ x, y });
-    if (!description)
-        return null;
-    const coordinates = coordinateDescription(x, y, game.iflags.getpos_coords ?? 'n');
-    return description + (coordinates ? ` ${coordinates}` : '');
 }
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
@@ -518,6 +518,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     const movePrompt = `Move cursor to ${goal}:`;
     let message = prompt;
     let firstPaint = true;
+    let showGoal = false;
     // Native msg_given clears prompts at exit, but leaves automatic
     // descriptions visible after the player has read them.
     let clearMessageOnExit = true;
@@ -543,9 +544,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     };
     const targetCycles = new Map();
     const autoDescription = () => game.iflags.autodescribe ?? true;
-    // Without autodescribe, nxtc leaves whatever the message window shows.
-    const movementMessage = async () => autoDescription()
-        ? await describeSelectedPosition(describe, cursor, movePrompt) : message;
     const validLocations = () => {
         if (!validity.cycle) {
             if (!isValidLocation)
@@ -568,6 +566,13 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         const initialMapCursor = isValidLocation && !game.flags.verbose
             ? lastDirtyMapCursor() : null;
         for (;;) {
+            if (showGoal) {
+                message = movePrompt;
+                showGoal = false;
+            }
+            else if (!firstPaint && autoDescription() && !clearMessageOnExit) {
+                message = await describeSelectedPosition(describe, cursor, isValidLocation) ?? message;
+            }
             // The symbol callback runs only when entering that state. Cursor
             // movement keeps its temporary glyphs until a toggle or refresh.
             const paintedSpots = isValidLocation && hilite.state === 'symbols' && !marking
@@ -622,7 +627,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                         distance++;
                 }
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = await movementMessage();
                 continue;
             }
             const helpRequested = key === game.commandBindings.specialKey('getpos.help');
@@ -634,7 +638,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     });
                 }
                 refreshHilite();
-                message = movePrompt;
+                showGoal = true;
                 continue;
             }
             if (!force && [' ', '\n', '\r'].includes(ch)) {
@@ -642,8 +646,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 clearMessageOnExit = false;
                 return null;
             }
-            if (ch === ' ') {
-                message = await movementMessage();
+            if ([' ', '\n', '\r'].includes(ch)) {
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -661,7 +664,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                             break;
                     }
                 }
-                message = movePrompt;
+                showGoal = true;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.autodescribe')) {
@@ -708,7 +711,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     validity.cycle.index = 0;
                 for (const cycle of targetCycles.values())
                     cycle.index = 0;
-                message = await movementMessage();
                 continue;
             }
             const target = getposCycleKind(key);
@@ -731,7 +733,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                         cursor.x = spot.x;
                         cursor.y = spot.y;
                     }
-                    message = await movementMessage();
                     continue;
                 }
                 let cycle = kind === 'valid' && isValidLocation ? validLocations() : targetCycles.get(kind);
@@ -748,7 +749,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = await movementMessage();
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
@@ -760,8 +760,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     message = '';
                 }
                 clearMessageOnExit = false;
-                if (autoDescription())
-                    message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);

@@ -23,7 +23,7 @@ import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
-import { farlookLocationDescription } from './cmd.js';
+import { farlookLocationDescription, isValidTravelTarget } from './cmd.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
     tty_select_menu, tty_start_menu,
@@ -344,8 +344,17 @@ export async function getposHelpUntilDismissed(
     return await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
 
-async function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): Promise<string> {
-    return await describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(
+    describe: PositionDescription | null | undefined, cursor: Position,
+    isValidLocation: ValidLocation | null,
+): Promise<string | null> {
+    const description = describe ? await describe(cursor.x, cursor.y)
+        : await describeGetposLocation(cursor.x, cursor.y);
+    if (!description) return null;
+    const coordinates = coordinateDescription(cursor.x, cursor.y, game.iflags.getpos_coords ?? 'n');
+    return description + (coordinates ? ` ${coordinates}` : '')
+        + (isValidLocation && !isValidLocation(cursor.x, cursor.y) ? ' (invalid target)' : '')
+        + (game.iflags.getloc_travelmode && !await isValidTravelTarget(cursor.x, cursor.y) ? ' (no travel path)' : '');
 }
 
 async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKind): Promise<Position | null> {
@@ -356,7 +365,7 @@ async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKin
     try {
         await tty_start_menu(window);
         for (const spot of spots) {
-            const text = await describeMenuPosition(spot);
+            const text = await describeGetposLocation(spot.x, spot.y);
             if (text === null) continue;
             const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
             tty_add_menu(window, { identifier: spot,
@@ -375,18 +384,11 @@ async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKin
 
 // getpos_menu() describes the displayed glyph even when the caller only
 // supplied a validity rule, such as spell or polearm targeting.
-async function describeMenuPosition({ x, y }: Position): Promise<string | null> {
+export async function describeGetposLocation(x: number, y: number): Promise<string | null> {
     const screen = screenDescription(x, y, '');
     if (!screen.count) return null;
     return screen.needsDetail
         ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
-}
-
-export async function describeGetposLocation(x: number, y: number): Promise<string | null> {
-    const description = await describeMenuPosition({ x, y });
-    if (!description) return null;
-    const coordinates = coordinateDescription(x, y, game.iflags.getpos_coords ?? 'n');
-    return description + (coordinates ? ` ${coordinates}` : '');
 }
 
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
@@ -562,6 +564,7 @@ export async function selectMapPosition({
     const movePrompt = `Move cursor to ${goal}:`;
     let message = prompt;
     let firstPaint = true;
+    let showGoal = false;
     // Native msg_given clears prompts at exit, but leaves automatic
     // descriptions visible after the player has read them.
     let clearMessageOnExit = true;
@@ -587,10 +590,6 @@ export async function selectMapPosition({
     };
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
     const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
-    // Without autodescribe, nxtc leaves whatever the message window shows.
-    const movementMessage = async (): Promise<string> => autoDescription()
-        ? await describeSelectedPosition(describe, cursor, movePrompt) : message;
-
     const validLocations = (): LocationCycle => {
         if (!validity.cycle) {
             if (!isValidLocation) throw new Error('Valid-location selection requires a location predicate');
@@ -612,6 +611,12 @@ export async function selectMapPosition({
         const initialMapCursor = isValidLocation && !game.flags.verbose
             ? lastDirtyMapCursor() : null;
         for (;;) {
+            if (showGoal) {
+                message = movePrompt;
+                showGoal = false;
+            } else if (!firstPaint && autoDescription() && !clearMessageOnExit) {
+                message = await describeSelectedPosition(describe, cursor, isValidLocation) ?? message;
+            }
             // The symbol callback runs only when entering that state. Cursor
             // movement keeps its temporary glyphs until a toggle or refresh.
             const paintedSpots = isValidLocation && hilite.state === 'symbols' && !marking
@@ -659,7 +664,6 @@ export async function selectMapPosition({
                     while (sameTerrain(distance) && sameTerrain(distance + 1)) distance++;
                 }
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = await movementMessage();
                 continue;
             }
 
@@ -672,7 +676,7 @@ export async function selectMapPosition({
                     });
                 }
                 refreshHilite();
-                message = movePrompt;
+                showGoal = true;
                 continue;
             }
             if (!force && [' ', '\n', '\r'].includes(ch)) {
@@ -680,8 +684,7 @@ export async function selectMapPosition({
                 clearMessageOnExit = false;
                 return null;
             }
-            if (ch === ' ') {
-                message = await movementMessage();
+            if ([' ', '\n', '\r'].includes(ch)) {
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -699,7 +702,7 @@ export async function selectMapPosition({
                         break;
                     }
                 }
-                message = movePrompt;
+                showGoal = true;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.autodescribe')) {
@@ -744,7 +747,6 @@ export async function selectMapPosition({
                 // NHKF_GETPOS_SELF resets every gather index.
                 if (validity.cycle) validity.cycle.index = 0;
                 for (const cycle of targetCycles.values()) cycle.index = 0;
-                message = await movementMessage();
                 continue;
             }
             const target = getposCycleKind(key);
@@ -765,7 +767,6 @@ export async function selectMapPosition({
                     }
                     const spot = await selectGetposMenu(spots, kind);
                     if (spot) { cursor.x = spot.x; cursor.y = spot.y; }
-                    message = await movementMessage();
                     continue;
                 }
                 let cycle = kind === 'valid' && isValidLocation ? validLocations() : targetCycles.get(kind);
@@ -781,7 +782,6 @@ export async function selectMapPosition({
                 if (!spot) throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = await movementMessage();
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
@@ -793,7 +793,6 @@ export async function selectMapPosition({
                     message = '';
                 }
                 clearMessageOnExit = false;
-                if (autoDescription()) message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);
