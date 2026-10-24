@@ -18,13 +18,13 @@ import { heroFingerName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE, MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, WEB, WT_TOOMUCH_DIAGONAL, isok, } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
+import { abusePet } from './dog.js';
 import { addExperience, checkExperienceLevel, } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game } from './gstate.js';
 import { convertTrapToObject } from './trap_object.js';
 import { heroBadRock } from './hack.js';
 import { consumeObjectCharge } from './object_charge.js';
-import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
@@ -37,7 +37,6 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL, monsterIsMindless, monsterTypeName, } from './monster_data.js';
 import { MONSTER_SIZE } from './monster_data.js';
-import { propertyIsActive } from './properties.js';
 import { ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE, LARGE_BOX, CHEST, OBJECT_BIMANUAL, POT_OIL, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
@@ -409,15 +408,8 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
 }
 async function failMonsterRescue(monster, trap, { state, publish, random, rollOne, }) {
     if (trap.ttyp === BEAR_TRAP) {
-        if (monster.mtame) {
-            // C trap.c:5485-5486 -> abuse_dog(): Aggravate_monster or
-            // Conflict halves tameness instead of the single-point hit.
-            monster.mtame = heroHasConflict(state)
-                || propertyIsActive('aggravateMonster', state)
-                ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
-            if (monster.mtame > 0 && monster.edog)
-                monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
-        }
+        if (monster.mtame)
+            await abusePet(monster, state);
         monster.mhp = (monster.mhp ?? 1) - rollOne(4);
         if (monster.mhp <= 0) {
             await finishEnvironmentalMonsterDeath(monster, state, {

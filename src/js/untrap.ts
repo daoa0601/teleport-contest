@@ -25,6 +25,7 @@ import {
 } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
+import { abusePet } from './dog.js';
 import {
     addExperience, checkExperienceLevel,
 } from './exper.js';
@@ -39,7 +40,6 @@ import type { DirectionSelection } from './tty_prompts.js';
 import { convertTrapToObject } from './trap_object.js';
 import { heroBadRock } from './hack.js';
 import { consumeObjectCharge } from './object_charge.js';
-import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
@@ -55,7 +55,6 @@ import {
     MONSTER_SYMBOL, monsterIsMindless, monsterTypeName,
 } from './monster_data.js';
 import { MONSTER_SIZE } from './monster_data.js';
-import { propertyIsActive } from './properties.js';
 
 import {
     ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
@@ -528,15 +527,7 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
     state, publish, random, rollOne,
 }: RescueOptions): Promise<void> {
     if (trap.ttyp === BEAR_TRAP) {
-        if (monster.mtame) {
-            // C trap.c:5485-5486 -> abuse_dog(): Aggravate_monster or
-            // Conflict halves tameness instead of the single-point hit.
-            monster.mtame = heroHasConflict(state)
-                || propertyIsActive('aggravateMonster', state)
-                    ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
-            if (monster.mtame > 0 && monster.edog)
-                monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
-        }
+        if (monster.mtame) await abusePet(monster, state);
         monster.mhp = (monster.mhp ?? 1) - rollOne(4);
         if (monster.mhp <= 0) {
             await finishEnvironmentalMonsterDeath(monster, state, {
