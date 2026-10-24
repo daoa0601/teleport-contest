@@ -75,6 +75,26 @@ async function armedSoldier() {
     return soldier;
 }
 
+void test('an unseen thrower missing its returning club reports Something landing nearby', async () => {
+    const soldier = await armedSoldier();
+    requirePlayingGame(game);
+    soldier.mconf = true;
+    soldier.minvis = true;
+    const aklys = soldier.mw;
+    assert.ok(aklys);
+    const messages: string[] = [];
+
+    await throwMonsterWeaponAtHero(soldier, game, aklys, {
+        random: limit => limit === 2 ? 0 : 1,
+        rollOne: () => 1,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes('You hear Something land near it.'), messages.join(' | '));
+    assert.ok(floorObjectsAt(game.level, soldier.mx, soldier.my).includes(aklys));
+    assert.equal(soldier.mw, null);
+});
+
 void test('a monster chooses its tethered club before an expendable dagger', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

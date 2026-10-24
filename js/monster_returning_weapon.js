@@ -58,7 +58,7 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
                 await publish(`${definiteObjectAction(weapon, 'return', state)} back to ${name()}, landing at ${monsterPossessive(monster, { state })} ${feet}.`);
             }
             else if (!heroIsDeaf(state)) {
-                await publishHeardMessage(`something land near ${name()}.`, publish, state);
+                await publishHeardMessage(`Something land near ${name()}.`, publish, state);
             }
         }
         else {

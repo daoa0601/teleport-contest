@@ -82,7 +82,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
                 const feet = makePlural(monsterFootName(monster.mnum));
                 await publish(`${definiteObjectAction(weapon, 'return', state)} back to ${name()}, landing at ${monsterPossessive(monster, { state })} ${feet}.`);
             } else if (!heroIsDeaf(state)) {
-                await publishHeardMessage(`something land near ${name()}.`, publish, state);
+                await publishHeardMessage(`Something land near ${name()}.`, publish, state);
             }
         } else {
             damage += rollOne(3);
