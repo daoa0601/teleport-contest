@@ -12,6 +12,7 @@ import { displayConfigurationErrors } from './config_errors.js';
 import { plineWithContinuation } from './display.js';
 import { findRole, findRace, findAlignment, findGender, randomCharacterOption, roles, races, aligns, genders, } from './roles.js';
 import { parseCharacterName } from './character_name.js';
+import { hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks, ROLE_SELECTION_RULES, RACE_SELECTION_RULES, validCharacterAlignment, validCharacterChoice, validCharacterGender, validCharacterRace, } from './character_choices.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
@@ -19,36 +20,6 @@ import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
 const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
-// C ref: role.c roles[].allow and races[].allow.  The JS role table keeps
-// Ranger before Rogue for historical callers, while the C selection table
-// deliberately keeps Rogue before Ranger; random character selection must
-// use the latter order to preserve the PRNG-to-role mapping.
-const CHARACTER_ROLE_ORDER = [
-    'archeologist', 'barbarian', 'caveman', 'healer', 'knight', 'monk',
-    'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard',
-];
-const ROLE_SELECTION_RULES = {
-    archeologist: { races: ['human', 'dwarf', 'gnome'], aligns: ['lawful', 'neutral'] },
-    barbarian: { races: ['human', 'orc'], aligns: ['neutral', 'chaotic'] },
-    caveman: { races: ['human', 'dwarf', 'gnome'], aligns: ['lawful', 'neutral'] },
-    healer: { races: ['human', 'gnome'], aligns: ['neutral'] },
-    knight: { races: ['human'], aligns: ['lawful'] },
-    monk: { races: ['human'], aligns: ['lawful', 'neutral', 'chaotic'] },
-    priest: { races: ['human', 'elf'], aligns: ['lawful', 'neutral', 'chaotic'] },
-    rogue: { races: ['human', 'orc'], aligns: ['chaotic'] },
-    ranger: { races: ['human', 'elf', 'gnome', 'orc'], aligns: ['neutral', 'chaotic'] },
-    samurai: { races: ['human'], aligns: ['lawful'] },
-    tourist: { races: ['human'], aligns: ['neutral'] },
-    valkyrie: { races: ['human', 'dwarf'], aligns: ['lawful', 'neutral'], genders: ['female'] },
-    wizard: { races: ['human', 'elf', 'gnome', 'orc'], aligns: ['neutral', 'chaotic'] },
-};
-const RACE_SELECTION_RULES = {
-    human: { aligns: ['lawful', 'neutral', 'chaotic'] },
-    elf: { aligns: ['chaotic'] },
-    dwarf: { aligns: ['lawful'] },
-    gnome: { aligns: ['neutral'] },
-    orc: { aligns: ['chaotic'] },
-};
 const CHARACTER_ROLE_MENU = [
     ['a', 'archeologist', 'an Archeologist'],
     ['b', 'barbarian', 'a Barbarian'],
@@ -68,74 +39,6 @@ const CHARACTER_RACE_MENU = [
     ['h', 'H', 'human'], ['e', 'E', 'elf'], ['d', 'D', 'dwarf'],
     ['g', 'G', 'gnome'], ['o', 'O', 'orc'],
 ];
-function validCharacterChoice(role, race, gender, alignment) {
-    return !!role && (!race || validCharacterRace(role, race, alignment))
-        && (!gender || validCharacterGender(role, gender))
-        && (!alignment || validCharacterAlignment(role, race, alignment));
-}
-// Native ok_race(), ok_gend(), and ok_align() check only the constraints
-// belonging to that facet. An incompatible alignment must not erase a
-// valid gender or prevent the user from choosing a race first.
-function validCharacterRace(role, race, alignment) {
-    return (!role || ROLE_SELECTION_RULES[role.key].races.includes(race.name))
-        && (!alignment || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
-}
-function validCharacterGender(role, gender) {
-    const permitted = role && ROLE_SELECTION_RULES[role.key].genders;
-    return !permitted || permitted.includes(gender.name);
-}
-function validCharacterAlignment(role, race, alignment) {
-    return (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
-        && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
-}
-function hasCharacterCompletion(role, race, gender, alignment) {
-    return races.some(candidateRace => (race ? candidateRace === race : true)
-        && genders.some(candidateGender => (gender ? candidateGender === gender : true)
-            && aligns.some(candidateAlignment => (alignment ? candidateAlignment === alignment : true)
-                && validCharacterChoice(role, candidateRace, candidateGender, candidateAlignment))));
-}
-function pickCharacterChoice(choices) {
-    return choices.length ? choices[rn2(choices.length)] ?? null : null;
-}
-function nativeRoleChoices() {
-    return CHARACTER_ROLE_ORDER.flatMap(key => {
-        const role = roles.find(candidate => candidate.key === key);
-        return role ? [role] : [];
-    });
-}
-// role.c:rigid_role_checks(). Explicit random choices run in role, race,
-// alignment, gender order. Unspecified facets roll only when forced.
-function rigidCharacterChecks(initial, random) {
-    let { role, race, gender, alignment } = initial;
-    if (random.has('role')) {
-        const candidates = nativeRoleChoices().filter(candidate => hasCharacterCompletion(candidate, race, gender, alignment));
-        role = pickCharacterChoice(candidates) ?? pickCharacterChoice(nativeRoleChoices());
-    }
-    if (random.has('race'))
-        race = pickCharacterChoice(races.filter(candidate => validCharacterRace(role, candidate, alignment)));
-    if (random.has('alignment'))
-        alignment = pickCharacterChoice(aligns.filter(candidate => validCharacterAlignment(role, race, candidate)));
-    if (random.has('gender'))
-        gender = pickCharacterChoice(genders.filter(candidate => validCharacterGender(role, candidate)));
-    if (role) {
-        if (!race && !random.has('race')) {
-            const candidates = races.filter(candidate => validCharacterRace(role, candidate, alignment));
-            if (candidates.length === 1)
-                race = pickCharacterChoice(candidates);
-        }
-        if (!alignment && !random.has('alignment')) {
-            const candidates = aligns.filter(candidate => validCharacterAlignment(role, race, candidate));
-            if (candidates.length === 1)
-                alignment = pickCharacterChoice(candidates);
-        }
-        if (!gender && !random.has('gender')) {
-            const candidates = genders.filter(candidate => validCharacterGender(role, candidate));
-            if (candidates.length === 1)
-                gender = pickCharacterChoice(candidates);
-        }
-    }
-    return { role, race, gender, alignment };
-}
 // Serialize semantic terminal cells back into the tty wire form recorded by
 // the C harness. The frozen grid intentionally stores rendered Unicode and
 // literal blank cells; C emits DEC shift sequences and cursor-forward skips.
