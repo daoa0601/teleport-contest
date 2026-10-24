@@ -3608,7 +3608,7 @@ export async function moveloop_core() {
     // across warning boundaries and leave vision_full_recalc set, so this
     // source order is display-RNG-visible under Hallucination.
     const hallucinatingNow = heroIsHallucinating(g);
-    if (!g.context?.mv) {
+    if (!g.context.mv || heroIsBlind(g)) {
         // The see_* calls remain in place while swallowed (newsym suppresses
         // them), then swallowed(0) refreshes the eight-cell stomach projection
         // from the same display RNG stream.
@@ -3619,16 +3619,16 @@ export async function moveloop_core() {
             if (g.u?.uswallow)
                 swallowed(false);
         }
-        else if (g.u?.warning
+        else if (g.u?.warning || g.u.warnOfMonster
             || (g.u?.unblind_telepat_range ?? -1) >= 0
             || g.level?.regions?.some(region => region.visible
                 && region.ttl !== -2)) {
             await see_monsters();
         }
-    }
-    if (g.vision_full_recalc) {
-        vision_recalc(0);
-        g.vision_full_recalc = 0;
+        if (g.vision_full_recalc) {
+            vision_recalc(0);
+            g.vision_full_recalc = 0;
+        }
     }
     // C runs bot() or timebot() here and then curs_on_u(), whose
     // flush_screen() draws the buffered map, only when the status changed.
