@@ -12,7 +12,6 @@ import { nhgetch } from './input.js';
 import {
     clearMessageWindow, displayMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation,
 } from './display.js';
-import { publishDeferredImpossibles } from './diagnostics.js';
 import { readEngravingAt } from './engrave.js';
 import { stopRun } from './runmode.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
@@ -161,9 +160,6 @@ export async function showFloorPile(
         }
         descriptions.push(await pricedFloorObjectDescription(object));
     }
-    // Native formats into a hidden window. Finish naming reports before
-    // painting the pile or retaining the map that its dismissal restores.
-    await publishDeferredImpossibles();
     if (game._pending_message) {
         await displayMessageWindow();
         // tty_display_nhwindow() clears WIN_MESSAGE before a corner window,

@@ -24,6 +24,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
+import { createStaffedShop } from './support/shop.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
@@ -501,6 +502,9 @@ for (const selector of ['.', '@']) {
     void test(`bulk category selection with ${selector} preserves paid equipment and mixed BUC states`, async () => {
         freshObjectRoom({ flags: { menu_style: MENU_FULL, verbose: false } });
         const shield = await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        await createStaffedShop({ bill: [
+                { bo_id: shield.o_id, bquan: 1, price: 10, useup: false },
+            ] });
         const cloak = await addInventoryObject(LEATHER_CLOAK, { blessed: true });
         const ring = await addInventoryObject(RIN_PROTECTION, { bknown: false });
         wearHeroArmor(shield);
@@ -605,7 +609,10 @@ for (const categories of ['$u', 'u$', '$uU', 'uU$']) {
     void test(`traditional takeoff ${categories} ${categories.includes('U') ? 'admits' : 'preserves'} paid quivered gold`, async () => {
         freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
         const gold = await addInventoryObject(GOLD_PIECE, { quan: 20 });
-        await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        const shield = await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        await createStaffedShop({ bill: [
+                { bo_id: shield.o_id, bquan: 1, price: 10, useup: false },
+            ] });
         await setQuiverObject(gold);
         await takeOff(`${categories}\ny`);
         await work(1);

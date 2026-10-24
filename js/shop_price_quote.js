@@ -1,7 +1,6 @@
 // C shk.c:shop_object(), price_quote(), and shk_embellish().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
-import { publishDeferredImpossibles } from './diagnostics.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, objectTypeKnown, shopObjectUnitCost } from './shk.js';
 import { containedBuyCost, objectPricingUnits, shopkeeperIsMuted } from './shop_loss.js';
@@ -31,9 +30,6 @@ export async function quoteShopGoods() {
             cost *= objectPricingUnits(object);
         observeObjectForNaming(object);
         const name = `${cost && contentsOnly ? 'the contents of ' : ''}${await objectDescription(object)}`;
-        // doname() finishes its report and repairs stale links before a later
-        // naming call, including the second name used for a single-item quote.
-        await publishDeferredImpossibles();
         const each = object.quan > 1 ? ' each' : '';
         quotes.push({ object, cost, contentsOnly, each, name,
             line: `${name}, ${cost ? `${cost} ${currency(cost)}${each}` : 'no charge'}` });

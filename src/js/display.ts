@@ -2,7 +2,6 @@ import { warningSymbols } from './warning_symbols.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
-import { publishDeferredImpossibles } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
@@ -2839,8 +2838,6 @@ export async function showMessageMenu(
         return 0;
     }
 
-    // The choice's own formatting reported before tty drew it.
-    await publishDeferredImpossibles();
     // dismiss_more is set first, so the letter also acknowledges older prose.
     const menuLetter = letter.charCodeAt(0);
     let key = await updateTopline(message, { dismissKey: menuLetter });
@@ -2913,7 +2910,6 @@ async function pageTopline(
 // displayed.  Quest pages and other modal producers use this boundary when a
 // time-consuming command has left ordinary prose pending for the scheduler.
 export async function flushPendingTopline() {
-    await publishDeferredImpossibles();
     const pending = game._pending_message || '';
     return pending ? pageTopline(pending) : null;
 }
@@ -2921,8 +2917,6 @@ export async function flushPendingTopline() {
 // C tty_display_nhwindow(WIN_MESSAGE): unlike a direct more(), the window
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
 export async function displayMessageWindow(): Promise<number | null> {
-    // Formatting reports precede the window, even if earlier prose was stopped.
-    await publishDeferredImpossibles();
     if (game._suppressMessagesUntilInput) return null;
     const dismissal = await flushPendingTopline();
     clearMessageWindow();
@@ -2944,7 +2938,6 @@ export async function pline(msg: string): Promise<void> {
 
 export async function plineWithContinuation(msg: string, { noRepeat = false, urgent = false }: ToplineOptions = {}): Promise<number | null | undefined> {
     if (!msg) return;
-    await publishDeferredImpossibles();
     if (game.program_state?.windows_exited) {
         rawPrint(msg);
         game._lastPlineKind = PLNMSG_UNKNOWN;

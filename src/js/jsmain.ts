@@ -26,8 +26,7 @@ import type {
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
-import { panic } from './diagnostics.js';
-import { FormatterPanic, PanicTermination } from './panic_termination.js';
+import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
 
@@ -1169,15 +1168,7 @@ export class Engine {
             started = await this.start();
             if (!started) return;
             while (!this.state.program_state?.gameover) await moveloop_core();
-        } catch (caught) {
-            let error = caught;
-            if (error instanceof FormatterPanic) {
-                try {
-                    await panic(error.message, { state: this.state });
-                } catch (termination) {
-                    error = termination;
-                }
-            }
+        } catch (error) {
             if (error instanceof PanicTermination)
                 this.lastRunResult = { kind: 'panicked', reason: error.message, stack: error.stack };
             throw error;

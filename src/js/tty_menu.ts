@@ -1,5 +1,4 @@
 // Native tty menu window ownership (win/tty/wintty.c).
-import { publishDeferredImpossibles } from './diagnostics.js';
 import { BUFSZ, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
     MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT } from './const.js';
 import { game } from './gstate.js';
@@ -236,8 +235,6 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
     // origin each time, so redisplay honors the current overlay setting.
     const layout = { ...measured, boundary: windowOrigin(d.cols, d.rows,
         measured.width, measured.maxRows, game.flags.menu_overlay !== false) };
-    // Diagnostics from building the menu's text precede its display.
-    await publishDeferredImpossibles();
     // Native message-window display returns immediately while WIN_STOP is set.
     if (!game._suppressMessagesUntilInput) await flushPendingTopline();
     clearMessageWindow();
@@ -252,8 +249,6 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
 }
 
 export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPickMode): Promise<TtyMenuResult<T>> {
-    // Native reports during formatting, before select_menu() disables status.
-    await publishDeferredImpossibles();
     const previousStatusDisabled = game._statusUpdatesDisabled;
     const restoreStatusUpdates = () => {
         if (previousStatusDisabled === undefined) delete game._statusUpdatesDisabled;

@@ -7,7 +7,7 @@ import {
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { deferImpossible } from './diagnostics.js';
+import { impossible } from './diagnostics.js';
 import { monsterName } from './monster_name.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, FIGURINE,
@@ -73,9 +73,7 @@ async function describeTool(
                 state, article: 'your', suppressIt: true,
             })})`;
         } else {
-            // Repair before a name-shortening retry can report the same link.
-            // deferImpossible() still throws before repair in panic mode.
-            deferImpossible(`leashed monster #${item.leashmon} not found`, state);
+            await impossible(`leashed monster #${item.leashmon} not found`, { state });
             item.leashmon = 0;
         }
         return;

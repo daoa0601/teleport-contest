@@ -34,8 +34,6 @@ export interface MonsterHelplessnessReason {
 
 export interface ProgramState {
     beyond_savefile_load?: boolean | number;
-    // Text awaiting publication from synchronous name formatters.
-    deferred_impossibles?: string[];
     gameover?: boolean;
     in_docrt?: boolean | number;
     in_moveloop?: boolean;
