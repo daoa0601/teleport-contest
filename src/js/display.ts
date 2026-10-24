@@ -3003,6 +3003,10 @@ function writeRawText(text: string) {
             const row = display.cursorRow + 1;
             if (row >= display.rows) display.scrollUp();
             display.setCursor(0, Math.min(row, display.rows - 1));
+        } else if (ch === '\t') {
+            // tty_raw_print() leaves tabs for the terminal's eight-column stops.
+            const nextTab = display.cursorCol + 8 - display.cursorCol % 8;
+            display.setCursor(Math.min(nextTab, display.cols - 1), display.cursorRow);
         } else {
             if (display.cursorCol >= display.cols) writeRawText('\n');
             display.setCell(display.cursorCol, display.cursorRow, ch, NO_COLOR, 0);

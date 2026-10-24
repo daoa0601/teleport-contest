@@ -7,7 +7,8 @@ import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
-import { parseNethackrc } from './options.js';
+import { parseNethackOptions, parseNethackrc } from './options.js';
+import { displayConfigurationErrors } from './config_errors.js';
 import { findRole, findRace, findAlignment, findGender, roles, races, aligns, genders, } from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
@@ -258,6 +259,8 @@ export class Engine {
     _seed;
     _datetime;
     _nethackrc;
+    _nethackrcFileName;
+    _nethackOptions;
     storage;
     display;
     state;
@@ -274,6 +277,8 @@ export class Engine {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
         this._nethackrc = opts.nethackrc || '';
+        this._nethackrcFileName = opts.nethackrcFileName || '.nethackrc';
+        this._nethackOptions = opts.nethackOptions ?? null;
         // Save files, bones, and records share this Web Storage interface in
         // both the browser and headless engine.
         this.storage = opts.storage || null;
@@ -310,7 +315,9 @@ export class Engine {
         // Gameplay code paints a transient frame, then yields here.
         g.animationFrame = () => this.animationFrame();
         // Parse nethackrc
-        const opts = parseNethackrc(this._nethackrc);
+        const opts = parseNethackrc(this._nethackrc, {
+            fileName: this._nethackrcFileName,
+        });
         // Install the terminal before character creation because an unset
         // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
@@ -318,6 +325,16 @@ export class Engine {
         this.coreRng = g.coreCtx;
         this.displayRng = g.displayCtx;
         enableRngLog();
+        this.applyStartupConfiguration(opts);
+        await displayConfigurationErrors(opts.configErrors);
+        if (this._nethackOptions !== null) {
+            // C rcfile() waits for file errors before parsing NETHACKOPTIONS.
+            const report = parseNethackOptions(this._nethackOptions, opts);
+            this.applyStartupConfiguration(opts);
+            await displayConfigurationErrors([report]);
+        }
+        if (opts.configErrors.some(report => report.errors.length > 0))
+            this.display.clearScreen();
         const configuredName = opts.name || await this._readPlayerName();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
@@ -326,24 +343,6 @@ export class Engine {
         // the status line and menu headings capitalize it for display.
         g.plname = playerName;
         g.displayName = playerName.charAt(0).toUpperCase() + playerName.slice(1);
-        g.flags = {
-            verbose: true,
-            menu_style: 2, // MENU_FULL in native initoptions().
-            // NetHack 5.0 starts this tty profile with autopickup off unless
-            // the rc file or an in-game toggle explicitly enables it.
-            pickup: false,
-            legacy: true,
-            tutorial: true,
-            ...opts.flags,
-        };
-        g.iflags = { ...opts.iflags };
-        g._monTelecontrol = !!opts.monTelecontrol;
-        g.commandBindings = opts.commandBindings;
-        g.symset = opts.symset || null;
-        if (opts.preferred_pet !== undefined)
-            g.preferred_pet = opts.preferred_pet;
-        if (opts.tutorial_set)
-            g.tutorial_set_in_config = true;
         // Initialize hero struct
         g.u = createHeroState();
         g.context = { move: 0 };
@@ -402,6 +401,28 @@ export class Engine {
         // Run game startup
         await newgame();
         return true;
+    }
+    applyStartupConfiguration(opts) {
+        const g = this.state;
+        g.plname = opts.name;
+        g.flags = {
+            verbose: true,
+            menu_style: 2, // MENU_FULL in native initoptions().
+            // NetHack 5.0 starts this tty profile with autopickup off unless
+            // the rc file or an in-game toggle explicitly enables it.
+            pickup: false,
+            legacy: true,
+            tutorial: true,
+            ...opts.flags,
+        };
+        g.iflags = { ...opts.iflags };
+        g._monTelecontrol = !!opts.monTelecontrol;
+        g.commandBindings = opts.commandBindings;
+        g.symset = opts.symset || null;
+        if (opts.preferred_pet !== undefined)
+            g.preferred_pet = opts.preferred_pet;
+        if (opts.tutorial_set)
+            g.tutorial_set_in_config = true;
     }
     requireDisplay() {
         const display = game.nhDisplay;
