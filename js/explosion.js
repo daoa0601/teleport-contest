@@ -2,7 +2,7 @@
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, } from './const.js';
+import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, } from './const.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, } from './display.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroDeath } from './end.js';
@@ -427,18 +427,18 @@ async function finishExplosionMonsterDeath(monster, { state, publish, heroCaused
 }
 function explosionDeathCause(type, objectClass, description, killer, state) {
     if (objectClass === MON_EXPLODE)
-        return { killer: killer || description };
+        return { killer: killer || description, killerFormat: KILLED_BY_AN };
     const himself = state.flags.female ? 'herself' : 'himself';
     if (objectClass === TRAP_EXPLODE) {
         const cause = `caught ${himself} in a ${description}`;
-        return { killer: cause, deathCause: cause };
+        return { killer: cause, killerFormat: NO_KILLER_PREFIX };
     }
     if (type >= 0 && objectClass !== SCROLL_CLASS) {
         const cause = `caught ${himself} in ${state.flags.female ? 'her' : 'his'} own ${description}`;
-        return { killer: cause, deathCause: cause };
+        return { killer: cause, killerFormat: NO_KILLER_PREFIX };
     }
-    return { killer: description, deathCause: ['tower of flame', 'fireball'].includes(description)
-            ? `killed by a ${description}` : `killed by ${description}` };
+    return { killer: description, killerFormat: ['tower of flame', 'fireball'].includes(description)
+            ? KILLED_BY_AN : KILLED_BY };
 }
 export async function createElementalMonsterExplosion(x, y, damageType, damage, killer, options = {}) {
     const style = await explosionStyleForDamage(damageType, options.state ?? game);

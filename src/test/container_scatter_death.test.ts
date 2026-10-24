@@ -51,7 +51,7 @@ for (const { action, eggs, triggeringBag } of [
         else await runExtendedCommand('tip', 'ba' + ' '.repeat(100));
 
         assert.equal(game.program_state.gameover, true);
-        assert.equal(loadScoreRecords()[0]?.death, 'killed by a fireball',
+        assert.equal(loadScoreRecords()[0]?.death, 'burned by a fireball',
             'The scattered egg kills the hero before the bag explosion can deal damage.');
         assert.equal(explodingBag.in_use, true, 'Bones creation must omit the exploding bag.');
         if (triggeringBag) assert.notEqual(bag.where, 'gone',
