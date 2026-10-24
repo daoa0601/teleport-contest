@@ -3655,6 +3655,7 @@ export function saveBonesLevel(): boolean {
     payload.level.bonesNames = [
         who, ...(payload.level.bonesNames ?? []),
     ];
+    if (game.flags.debug) payload.level.flags.wizard_bones = true;
 
     for (const monster of payload.level.monsters || []) {
         monster.mlstmv = 0;

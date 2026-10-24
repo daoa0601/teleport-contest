@@ -37,4 +37,13 @@ void test('a unique corpse in bones loses its revival and becomes a rotting dopp
     assert.equal(objectTimers(corpse).some(timer => timer.kind === OBJECT_TIMER_KIND.REVIVE_MON), false);
     assert.equal(objectTimers(corpse).some(timer => timer.kind === OBJECT_TIMER_KIND.ROT_CORPSE), true);
 });
+void test('bones made in wizard mode retain their wizard origin on restoration', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    assert.equal(saveBonesLevel(), true);
+    bonesRoom(storage);
+    pushKeys('yn');
+    await mklev();
+    assert.equal(requireGameLevel().flags.wizard_bones, true);
+});
 //# sourceMappingURL=bones_reset.test.js.map
