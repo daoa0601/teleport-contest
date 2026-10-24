@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { THRONE } from '../js/const.js';
-import { GOLD_PIECE } from '../js/object_data.js';
-import { setPropertyTimeout } from '../js/properties.js';
+import { THRONE, DUST } from '../js/const.js';
+import { makeEngravingAt } from '../js/engrave.js';
 import { autopickupAtHero } from '../js/pickup.js';
+import { setPropertyTimeout } from '../js/properties.js';
+import { GOLD_PIECE } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -40,5 +41,17 @@ void test('a hero who cannot reach the floor still hears the feature underneath'
     await autopickupAtHero();
 
     assert.equal(game._lastPlineMessage, 'There is an opulent throne here.');
+    assert.equal(game.inventory.length, 0);
+});
+
+void test('a levitating hero over unreachable loot still reads the floor engraving', async () => {
+    freshPlayableRoom({ flags: { verbose: true } });
+    makeEngravingAt(10, 10, 'a faded warning', null, 0, DUST);
+    await floorObject(GOLD_PIECE, 10, 10, { quan: 37 });
+    setPropertyTimeout('levitation', 10);
+
+    await autopickupAtHero();
+
+    assert.match(game._lastPlineMessage, /You read: "a faded warning"\.$/);
     assert.equal(game.inventory.length, 0);
 });

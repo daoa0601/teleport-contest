@@ -29,7 +29,7 @@ export function heroTeetersAtPit(state, trap) {
         && trap.tx === state.u.ux && trap.ty === state.u.uy
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
-function heroEscapedShaft(trap) {
+export function heroEscapedShaft(trap) {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
 export function floorReachProblem(state = game, { checkPit = false } = {}) {

@@ -23,10 +23,10 @@ import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
 import { yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
+import { heroCanReachFloor, heroEscapedShaft, heroTeetersAtPit } from './floor_reach.js';
 import { hideHeroUnder } from './monster_hiding.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
-import { heroCanReachFloor } from './floor_reach.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
@@ -115,6 +115,10 @@ export async function autopickupAtHero() {
         const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
         if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
             await describeDecor();
+            if ((game.multi && !game._runState)
+                || !game.flags.pickup
+                || trap && (heroTeetersAtPit(game, trap) || heroEscapedShaft(trap)))
+                await readFloorEngraving(x, y);
             return;
         }
         const busy = !game._runState && (game.multi
