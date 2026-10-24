@@ -1,7 +1,7 @@
 // Monster state saved in bones levels.
 // C refs: bones.c:savebones()/getbones().
 import { setMonsterGivenName } from './monster_given_name.js';
-import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, PL_NSIZ, RLOC_NONE } from './const.js';
+import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, MON_FLOOR, PL_NSIZ, RLOC_NONE } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -29,6 +29,8 @@ const M1_CONCEAL = 0x80;
 export async function prepareBonesMonstersForSave() {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
+        if (monster.mhp < 1 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            continue;
         const sound = MONSTER_SOUND[monster.mnum];
         if (monster.iswiz || monster.mnum === PM_MEDUSA
             || sound === MS_LEADER || sound === MS_NEMESIS
