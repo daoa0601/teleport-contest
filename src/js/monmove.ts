@@ -3299,6 +3299,21 @@ async function movePet(
             }
         }
         if (edible) {
+            // C dog_move()'s food goto jumps to newdogpos, where the chosen
+            // candidate is re-tested for ALLOW_U first: a conflicted pet
+            // called to its master's square attacks the hero instead of
+            // stepping onto the food beneath the hero.
+            if (candidate.info & ALLOW_U) {
+                return finishPetMovePlan(monster, state, {
+                    oldx,
+                    oldy,
+                    nix: nx,
+                    niy: ny,
+                    selectedInfo: candidate.info,
+                    reluctant: false,
+                    inventoryAction,
+                }, random, rollDice, rollOne, calls);
+            }
             updateMonsterRegions(monster, state, { x: nx, y: ny });
             if (await readyMonsterDiggingWeapon(monster, state, nx, ny)) {
                 return {
