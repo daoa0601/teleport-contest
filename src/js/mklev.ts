@@ -19,6 +19,7 @@ import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
 import { randomGhostName, roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { placeHeroOnLevel } from './hero_location.js';
 import { lookupNovelTitle, novelTitle } from './novel_titles.js';
 import { addFruit } from './fruit.js';
 import { setTinVariety } from './tin.js';
@@ -493,17 +494,6 @@ function stairway_find_special_dir(up: boolean): Stairway | null {
 
 // ── Hero placement (C ref: stairs.c, mkmaze.c) ──
 
-function u_on_newpos(x: number, y: number): void {
-    game.u.ux = x;
-    game.u.uy = y;
-    // dungeon.c:u_on_newpos() cannot retain a position on the departed level.
-    if (game.u.uz?.dnum !== game.u.uz0?.dnum
-        || game.u.uz?.dlevel !== game.u.uz0?.dlevel) {
-        game.u.ux0 = x;
-        game.u.uy0 = y;
-    }
-}
-
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor
 // flag is only one of the gates: bottom levels and the invocation level also
 // reject holes, while the Castle is an explicit exception because its
@@ -600,7 +590,7 @@ async function putLregionHere(
             if (!await randomMonsterRelocation(monster, { flags: RLOC_NOMSG }))
                 await sendMonsterToLimbo(monster);
         }
-        u_on_newpos(x, y);
+        await placeHeroOnLevel(x, y);
     } else if (type === LR_PORTAL) {
         if (!destination) throw new Error('Portal region requires a destination');
         await mkportal(x, y, destination.dnum, destination.dlevel);
@@ -627,7 +617,7 @@ export async function mkportal(x: number, y: number, dnum: number, dlevel: numbe
 // staircase, falling back to a random arrival spot.
 export async function u_on_sstairs(upflag: number): Promise<void> {
     const stway = stairway_find_special_dir(!!(upflag & 1));
-    if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
+    if (stway) { await placeHeroOnLevel(stway.sx, stway.sy); return; }
     await u_on_rndspot(!!(upflag & 1));
 }
 
@@ -648,7 +638,7 @@ async function u_on_rndspot(up: boolean): Promise<void> {
 // equivalent).
 export async function u_on_upstairs(): Promise<void> {
     const stway = stairway_find_dir(true);
-    if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
+    if (stway) { await placeHeroOnLevel(stway.sx, stway.sy); return; }
     await u_on_sstairs(0); /* destination upstairs implies moving down */
 }
 
@@ -656,7 +646,7 @@ export async function u_on_upstairs(): Promise<void> {
 // equivalent).
 export async function u_on_downstairs(): Promise<void> {
     const stway = stairway_find_dir(false);
-    if (stway) { u_on_newpos(stway.sx, stway.sy); return; }
+    if (stway) { await placeHeroOnLevel(stway.sx, stway.sy); return; }
     await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
 

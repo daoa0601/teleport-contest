@@ -496,7 +496,6 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, was
                     else
                         await u_on_upstairs();
                 }
-                await placeHeroOnLevel(game.u.ux, game.u.uy);
             }
             if (await applyStairTravelEffects(up, ladder))
                 return true;
@@ -662,7 +661,6 @@ export async function placeHeroAtRandomArrival(region = null, up = false) {
     const area = region ?? { lx: 0, ly: 0, hx: 0, hy: 0 };
     const excluded = region?.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
     await place_lregion(area.lx, area.ly, area.hx, area.hy, excluded.lx, excluded.ly, excluded.hx, excluded.hy, up ? LR_UPTELE : LR_DOWNTELE, null);
-    await placeHeroOnLevel(game.u.ux, game.u.uy);
     await switchHeroTerrain();
     return { x: game.u.ux, y: game.u.uy };
 }
