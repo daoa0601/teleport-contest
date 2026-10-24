@@ -4,6 +4,7 @@
 import {
     COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
     LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
+    TER_DETECT, TER_MAP, TER_MON, TER_OBJ,
 } from './const.js';
 import {
     clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor,
@@ -11,7 +12,7 @@ import {
     terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
-import { nhgetch, readchar } from './input.js';
+import { readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
@@ -32,6 +33,7 @@ import type { Position } from './map_types.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { visibleCommandKey } from './command_keys.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { showDisclosureOverlay } from './windows.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
@@ -270,63 +272,76 @@ export async function paintGetposCursor(cursor: Position, message: string, marke
     return markers;
 }
 
-// C getpos.c:getpos_help() draws this menu over the right side of the map.
+// C getpos.c:getpos_help(): advertise only controls relevant to this view.
 export async function getposHelpUntilDismissed(
-    goal: string, { hasValidLocations = false }: { hasValidLocations?: boolean } = {},
-) {
-    const display = game.nhDisplay;
-    const left = 10;
+    goal: string, { hasValidLocations = false, force = true }: {
+        hasValidLocations?: boolean; force?: boolean;
+    } = {},
+): Promise<number> {
+    const bindings = game.commandBindings;
+    const key = (name: string) => {
+        const code = bindings.specialKey(`getpos.${name}`);
+        if (code === undefined) throw new Error(`Map selection requires a getpos.${name} binding`);
+        return visibleCommandKey(code);
+    };
+    const directions = (mode: number) => [0, 6, 2, 4]
+        .map(direction => `'${visibleCommandKey(bindings.keyForDirection(direction, mode))}'`).join(', ');
+    const moveskip = !!game.iflags.getloc_moveskip;
+    const fastModes = ['8 units at a time', 'skipping same glyphs'];
+    const terrain = game.iflags.terrainmode ?? 0;
+    const menu = !!game.iflags.getloc_usemenu;
+    const filter = game.iflags.getloc_filter === 1 ? ' in view'
+        : game.iflags.getloc_filter === 2 ? ' in this area' : '';
     const lines = [
-        `Use 'h', 'j', 'k', 'l' to move the cursor to ${goal}.`,
-        "Use 'H', 'J', 'K', 'L' to fast-move the cursor, 8 units at a time.",
-        "(or prefix normal move with 'G' or 'g' to fast-move)",
+        `Use ${directions(0)} to move the cursor to ${goal}.`,
+        `Use ${directions(1)} to fast-move the cursor, ${fastModes[Number(moveskip)]}.`,
+        `(or prefix normal move with '${visibleCommandKey(bindings.keyForCommand('run'))}' or '${visibleCommandKey(bindings.keyForCommand('rush'))}' to fast-move)`,
         "Or enter a background symbol (ex. '<').",
-        "Use '@' to move the cursor on yourself.",
-        "Use 'm'/'M' to move the cursor to next/previous monster.",
-        "Use 'o'/'O' to move the cursor to next/previous object.",
-        "Use 'd'/'D' to move the cursor to next/previous door or doorway.",
-        "Use 'x'/'X' to move the cursor next to an unexplored location.",
-        "Use 'a'/'A' to move the cursor to anything interesting.",
-        "Use '*' to change fast-move mode to skipping same glyphs.",
-        "Use '!' to toggle menu listing for possible targets.",
-        `Use '"' to change the mode of limiting possible targets.`,
+        `Use '${key('self')}' to move the cursor on yourself.`,
     ];
-    if (hasValidLocations) {
-        // getpos_help() adds these only while a getvalid rule and a hilite
-        // callback are installed (getpos_sethilite() callers).
-        const keyLabel = (name: string) => {
-            const key = game.commandBindings.specialKey(name);
-            if (key === undefined) throw new Error(`Map selection requires a ${name} binding`);
-            return visibleCommandKey(key);
-        };
-        lines.push(`Use '${keyLabel('getpos.valid.next')}' or '${keyLabel('getpos.valid.prev')}' to move to valid locations.`);
-        lines.push(`Use '${keyLabel('getpos.valid')}' to toggle marking of valid locations.`);
+    const targets = (kind: GetposCycleKind, movement: string, listing: string) => {
+        const unexplored = kind === 'unexplored';
+        const action = menu ? 'get a menu of ' : unexplored
+            ? 'move the cursor next to an ' : 'move the cursor to ';
+        const suffix = menu && unexplored ? filter.replace('this area', 'area') : filter;
+        lines.push(`Use '${key(`${kind}.next`)}'/'${key(`${kind}.prev`)}' to ${action}${menu ? listing : movement}${suffix}.`);
+    };
+    if (!terrain || terrain & TER_MON) targets('mon', 'next/previous monster', 'monsters');
+    if (goal !== 'a monster') {
+        if (!terrain || terrain & TER_OBJ) targets('obj', 'next/previous object', 'objects');
+        if (!terrain || terrain & TER_MAP) {
+            targets('door', 'next/previous door or doorway', 'doors or doorways');
+            targets('unexplored', 'unexplored location', 'locations next to unexplored locations');
+            targets('all', 'anything interesting', 'anything interesting');
+        }
+        lines.push(`Use '${key('moveskip')}' to change fast-move mode to ${fastModes[Number(!moveskip)]}.`);
+        if (!terrain || !(terrain & TER_DETECT)) {
+            lines.push(`Use '${key('menu')}' to toggle menu listing for possible targets.`,
+                `Use '${key('filter')}' to change the mode of limiting possible targets.`);
+        }
+        if (!terrain) {
+            if (hasValidLocations) {
+                lines.push(`Use '${key('valid.next')}' or '${key('valid.prev')}' to move to valid locations.`,
+                    `Use '${key('valid')}' to toggle marking of valid locations.`);
+            }
+            lines.push(`Use '${key('autodescribe')}' to toggle automatic description.`);
+        }
     }
-    lines.push(
-        "Use '#' to toggle automatic description.",
-        "Type a '.' when you are at the right place.",
-        '',
-    );
-
+    if (!terrain || goal === 'a monster') {
+        const looking = goal === 'a monster, object or location';
+        const picks = looking ? ['pick', 'pick.quick', 'pick.once', 'pick.verbose'] : ['pick'];
+        lines.push(`Type a ${picks.map(name => `'${key(name)}'`).join(' or ')} when you are at the right place.`);
+        if (looking) {
+            lines.push(`  '${key('pick.verbose')}' describe current spot, show 'more info', move to another spot.`,
+                `  '${key('pick')}' describe current spot,${game.flags.help !== false && !force ? " prompt if 'more info'," : ''} move to another spot;`,
+                `  '${key('pick.quick')}' describe current spot, move to another spot;`,
+                `  '${key('pick.once')}' describe current spot, stop looking at things;`);
+        }
+    }
+    if (!force) lines.push("Type Space or Escape when you're done.");
+    lines.push('');
     game._pending_message = '';
-    display?.clearRow(0);
-    for (let row = 1; row <= lines.length; row++) {
-        for (let col = left - 1; col < (display?.cols ?? 80); col++)
-            display?.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    for (const [row, line] of lines.entries()) {
-        for (let col = 0; col < line.length; col++)
-            display?.setCell(left + col, row, line.charAt(col), NO_COLOR, 0);
-    }
-    const more = '--More--';
-    for (let col = 0; col < more.length; col++)
-        display?.setCell(left + col, lines.length, more.charAt(col), NO_COLOR, 0);
-    display?.setCursor(left + more.length, lines.length);
-
-    let key;
-    do key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
-    return key;
+    return await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
 
 async function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): Promise<string> {
@@ -653,7 +668,7 @@ export async function selectMapPosition({
                 // Help takes priority when its key is also bound to redraw.
                 if (helpRequested) {
                     await getposHelpUntilDismissed(goal, {
-                        hasValidLocations: !!isValidLocation,
+                        hasValidLocations: !!isValidLocation, force,
                     });
                 }
                 refreshHilite();

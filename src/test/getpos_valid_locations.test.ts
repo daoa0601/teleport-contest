@@ -12,7 +12,7 @@ import {
     getposHelpUntilDismissed, selectMapPosition,
 } from '../js/getpos.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { pushKeys, resetInputState } from '../js/input.js';
+import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -288,22 +288,26 @@ void test("getpos help lists the valid-location keys while a rule is active",
         freshObjectRoom();
         requireFixtureGame(game);
 
+        const input = resetInputState();
         const help = getposHelpUntilDismissed('the spot to hit',
             { hasValidLocations: true });
-        pushKeys(' ');
-        await help;
+        await input.waitUntilBlocked();
         const text = requireGameDisplay(game).grid
             .map(row => row.map(cell => cell.ch).join('')).join('\n');
         assert.ok(text.includes("Use 'z' or 'Z' to move to valid locations."));
         assert.ok(text.includes("Use '$' to toggle marking of valid locations."));
+        input.feed(' ');
+        await help;
 
         freshObjectRoom();
+        const plainInput = resetInputState();
         const plainHelp = getposHelpUntilDismissed('the spot to hit');
-        pushKeys(' ');
-        await plainHelp;
+        await plainInput.waitUntilBlocked();
         const plainText = requireGameDisplay(game).grid
             .map(row => row.map(cell => cell.ch).join('')).join('\n');
         assert.ok(!plainText.includes('valid locations'));
+        plainInput.feed(' ');
+        await plainHelp;
     });
 
 void test("the '$' marking is cleaned up after a pick, a cancel, and an error",
