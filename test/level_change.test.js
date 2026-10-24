@@ -102,6 +102,7 @@ void test('quest stairs require permission from the leader', async () => {
     const { source } = freshConnectedLevels({ dungeonName: 'The Quest' });
     requirePlayingGame(game);
     game._activeSpecialLevel = { prototype: 'Cav-strt', file: 'Cav-strt.lua' };
+    game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: game.u.uz?.dnum ?? 0, dlevel: game.u.uz?.dlevel ?? 1 })]]);
     installPagerInput(resetInputState(), {
         expected: /mysterious force prevents you from descending/,
         limit: 1,

@@ -4,7 +4,7 @@
   "description": "The Teleport Coding Challenge — source-faithful NetHack TypeScript port",
   "type": "module",
   "scripts": {
-    "test": "node --test --test-concurrency=1 --test-reporter=spec $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
+    "test": "node --test --test-concurrency=${TEST_CONCURRENCY:-1} --test-reporter=spec $(find test -maxdepth 1 -type f -name '*.test.js' -print | sort)",
     "score": "bash frozen/score.sh",
     "score:engine": "node frozen/ps_test_runner.mjs sessions",
     "generate:monster-attacks": "node scripts/generate-monster-attack-types.mjs",

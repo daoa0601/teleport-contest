@@ -12,7 +12,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
-import { createDungeon } from './support/topology.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
 
 for (const hero of [
     { form: 'yellow mold', female: false, oddly: true },
@@ -26,6 +26,7 @@ for (const hero of [
         game._activeSpecialLevel = {
             prototype: 'Val-strt', file: 'Val-strt.lua',
         };
+        game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: game.u.uz?.dnum ?? 0, dlevel: game.u.uz?.dlevel ?? 1 })]]);
         game.flags.female = hero.female;
         installPolymorphedHero(hero.form);
         initRng(1n);
