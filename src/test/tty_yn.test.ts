@@ -3,8 +3,10 @@ import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { bindInputGate, InputGate, nhgetch, resetInputState } from '../js/input.js';
+import { flushPendingTopline, flush_screen, pline } from '../js/display.js';
 import { promptChoice, tty_yn_function } from '../js/query.js';
 import { Terminal } from '../js/terminal.js';
+import { promptKey } from '../js/tty_prompts.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 void test('choices after Escape remain accepted but are omitted from the prompt', async () => {
@@ -105,6 +107,27 @@ void test('an unrestricted tty prompt accepts one character without a choice suf
         assert.equal((await answer).answer, 'Z');
     }
 });
+
+for (const fuzzer of [false, true]) {
+    void test(`a key prompt restores messages after Escape with ${fuzzer ? 'fuzzer' : 'keyboard'} input`, async () => {
+        freshPlayableRoom();
+        resetInputState().feed('\x1b');
+        await pline('An introductory message.');
+        await flushPendingTopline();
+        game.iflags.debug_fuzzer = fuzzer;
+        if (fuzzer) bindInputGate(new QueuedFuzzerInput('^'));
+        else resetInputState().feed('^');
+
+        const answer = await promptKey('What do you look for? ');
+        await pline('First result.');
+        await pline('Second result.');
+        await flush_screen(1);
+
+        assert.equal(answer, '^'.charCodeAt(0));
+        const topline = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('');
+        assert.match(topline ?? '', /First result\.  Second result\./);
+    });
+}
 
 for (const responses of ['yn\xe9', null]) {
     void test(`a ${responses === null ? 'free' : 'restricted'} tty prompt accepts an eight-bit response`, async () => {

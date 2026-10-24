@@ -37,6 +37,9 @@ async function paintKeyPrompt(message: string, cursorOffset = 0): Promise<number
 export async function promptKey(message: string, cursorOffset = 0): Promise<number> {
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) return queuedKey;
+    // tty_yn_function() clears WIN_STOP before painting its question,
+    // including when fuzzer input will bypass nhgetch().
+    game._suppressMessagesUntilInput = false;
     const coveredRows = await paintKeyPrompt(message, cursorOffset);
     // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
     const key = await readchar();
