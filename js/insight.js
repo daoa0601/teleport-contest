@@ -440,11 +440,15 @@ function miscellaneousLines(basic, final = 0) {
             // Storing is mentioned only when the hero has just died.
             lines.push(`  You ${final ? '' : 'have '}disabled loading${final === ENL_GAMEOVERDEAD ? ' and storing' : ''} of bones levels.`);
         }
-        else if (!game._bonesEncountered) {
-            lines.push(`  You ${final ? "didn't encounter" : "haven't encountered"} any bones levels.`);
+        else {
+            // u.uroleplay.numbones counts each bones level loaded this game.
+            const bones = game.u.uroleplay?.numbones ?? 0;
+            if (!bones) {
+                lines.push(`  You ${final ? "didn't encounter" : "haven't encountered"} any bones levels.`);
+            }
+            else
+                lines.push(`  You ${final ? '' : 'have '}encountered ${bones} bones level${bones === 1 ? '' : 's'}.`);
         }
-        else
-            lines.push(`  You ${final ? '' : 'have '}encountered 1 bones level.`);
     }
     lines.push(`  Total elapsed playing time ${final ? 'was' : 'is'} none.`);
     return lines;
