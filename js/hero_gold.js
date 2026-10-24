@@ -25,6 +25,8 @@ export async function takeHeroGold(state = game) {
     await plineWithContinuation(lostMoney
         ? 'You notice you have no gold!'
         : formatFeltMessage('a strange sensation.', state));
+    if (lostMoney)
+        state.context.botl = true;
 }
 function quantity(object) {
     return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));
