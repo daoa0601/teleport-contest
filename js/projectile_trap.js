@@ -86,7 +86,7 @@ export async function finishMonsterProjectileTrap(monster, event, state = game, 
         // C trap.c:thitm() names the missile with doname(), which also
         // marks a seen missile's appearance as known.
         observeObjectForNaming(event.missile, { state });
-        await publish(`${describeMonster(monster)} is ${event.hit ? 'hit' : 'almost hit'} by ${objectDescription(event.missile)}!`);
+        await publish(`${describeMonster(monster)} is ${event.hit ? 'hit' : 'almost hit'} by ${await objectDescription(event.missile)}!`);
     }
     if (event.hit) {
         const damage = Math.max(1, rollPhysicalWeaponDamage(event.missile, monster, { rollOne }));

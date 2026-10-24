@@ -242,8 +242,8 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
         if (wasVisible) {
             if (old) observeDistantObjectForNaming(old, state);
             observeDistantObjectForNaming(best, state);
-            const oldName = old ? inventoryItemDescription(old) : '';
-            let newName = inventoryItemDescription(best);
+            const oldName = old ? await inventoryItemDescription(old) : '';
+            let newName = await inventoryItemDescription(best);
             if (newName.toLowerCase() === oldName.toLowerCase())
                 newName = newName.replace(/^an? /i, 'another ');
             const subject = monsterName(monster, { state, capitalized: true });

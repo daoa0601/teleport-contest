@@ -88,7 +88,7 @@ void test('sink vapors offer a call name for an unknown see-invisible potion', a
 
     assert.equal(potion.quan, 1);
     assert.equal(game._objectCallNames?.[POT_SEE_INVISIBLE], 'veil');
-    assert.match(inventoryItemDescription(potion), /potion called veil/);
+    assert.match(await inventoryItemDescription(potion), /potion called veil/);
     assert.equal(game._knownObjectTypes?.has(POT_SEE_INVISIBLE) ?? false, false);
     assert.equal(game.context.move, 1);
 });

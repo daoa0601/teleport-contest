@@ -75,8 +75,8 @@ void test('changing fruit after creation retains old inventory names and reselec
     assert.equal(objectName(old), 'Papaya');
     assert.equal(objectName(current), 'Guava');
     assert.notEqual(old.spe, current.spe);
-    assert.match(inventoryItemDescription(old), /Papaya/);
-    assert.match(inventoryItemDescription(current), /Guava/);
+    assert.match(await inventoryItemDescription(old), /Papaya/);
+    assert.match(await inventoryItemDescription(current), /Guava/);
     await changeFruitThroughOptions('Papaya');
     const again = await mksobj(SLIME_MOLD, true, false);
     assert.equal(again.spe, old.spe);
@@ -123,8 +123,8 @@ void test('already plural external fruit labels wish and display stacks without 
     assert.ok(stack && !stack.noWish);
     assert.equal(stack.object.spe, id);
     assert.equal(stack.object.quan, 3);
-    assert.match(inventoryItemDescription(stack.object), /3 berries/);
-    assert.doesNotMatch(inventoryItemDescription(stack.object), /berrieses/);
+    assert.match(await inventoryItemDescription(stack.object), /3 berries/);
+    assert.doesNotMatch(await inventoryItemDescription(stack.object), /berrieses/);
 });
 
 void test('a registered fruit does not override a real object wish alias', async () => {

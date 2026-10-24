@@ -63,7 +63,7 @@ export async function useGrayStone(stone, { state = game } = {}) {
         learnObjectType(TOUCHSTONE, state);
         learnObjectType(object.otyp, state);
         observeObjectForNaming(object, { state });
-        await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+        await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object)}.`);
         return { spentTime: true };
     }
     const result = stoneMarks(stone, object, gemLike, material, state);

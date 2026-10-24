@@ -29,7 +29,7 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
     const quantity = object.quan ?? object.quantity ?? 1;
     if (requestedName === undefined && quantity > 1)
         observeObjectForNaming(object, { state });
-    const name = requestedName ?? (quantity > 1 ? objectDescription(object, { state })
+    const name = requestedName ?? (quantity > 1 ? await objectDescription(object, { state })
         : objectCombatName(object, { state, includeCorpseSpecies: false }));
     // C thitu() keeps an object killer's article and only adds one to an
     // explicit name when that name does not already start with an article.

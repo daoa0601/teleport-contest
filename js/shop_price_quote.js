@@ -30,7 +30,7 @@ export async function quoteShopGoods() {
         if (object.globby)
             cost *= objectPricingUnits(object);
         observeObjectForNaming(object);
-        const name = `${cost && contentsOnly ? 'the contents of ' : ''}${objectDescription(object)}`;
+        const name = `${cost && contentsOnly ? 'the contents of ' : ''}${await objectDescription(object)}`;
         // doname() finishes its report and repairs stale links before a later
         // naming call, including the second name used for a single-item quote.
         await publishDeferredImpossibles();
@@ -48,7 +48,7 @@ export async function quoteShopGoods() {
         await plineWithContinuation(`"${capitalize(quote.line)}!"`);
     }
     else {
-        const name = `${quote.contentsOnly ? 'the contents of ' : ''}${objectDescription(quote.object)}`;
+        const name = `${quote.contentsOnly ? 'the contents of ' : ''}${await objectDescription(quote.object)}`;
         await plineWithContinuation(`"${capitalize(name)}, price ${quote.cost} ${currency(quote.cost)}${quote.each}${quote.contentsOnly ? '.' : embellish(quote.object, quote.cost)}"`);
     }
     return true;

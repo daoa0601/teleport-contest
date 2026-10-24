@@ -661,13 +661,13 @@ async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne,
         const known = box.tknown && box.dknown;
         if (!known)
             observeObjectForNaming(box, { state });
-        const answer = await ask(objectQuestion(box, {
+        const answer = await ask(await objectQuestion(box, {
             prefix: known ? 'Disarm this ' : 'There is ',
             suffix: known ? '' : ' here.  Check it for traps?',
             fallback: 'a box',
-            format: (object, nameState) => known
+            format: async (object, nameState) => known
                 ? objectCombatName(object, { state: nameState, includeCorpseSpecies: false })
-                : objectDescription(object, { state: nameState }),
+                : await objectDescription(object, { state: nameState }),
             shortFormat: simpleObjectNameWithArticle,
         }, state));
         if (answer === 'q')

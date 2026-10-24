@@ -237,7 +237,7 @@ async function identifyTraditionally(limit: number): Promise<IdentificationResul
         // identification allowance remains. The per-item q choice quits.
         if (answer === null) continue;
         if (answer.includes('i')) {
-            await showInventoryWindow(inventorySections(candidates, false), { pickMode: PICK_ONE });
+            await showInventoryWindow(await inventorySections(candidates, false), { pickMode: PICK_ONE });
             continue;
         }
         const categories = await parseIdentificationCategories(answer);
@@ -265,7 +265,7 @@ async function identifyTraditionally(limit: number): Promise<IdentificationResul
                         const letter = game.flags.fixinv === false
                             ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
                             : object.invlet;
-                        const description = inventoryItemDescription(object, {
+                        const description = await inventoryItemDescription(object, {
                             primaryHandDetail: inventoryPrimaryHandDetail(object),
                         });
                         await flushPendingTopline();
@@ -291,7 +291,7 @@ async function identifyTraditionally(limit: number): Promise<IdentificationResul
 async function identificationMenu(candidates: readonly GameObject[], first: boolean): Promise<GameObject[] | null> {
     await flushPendingTopline();
     clearMessageWindow();
-    const sections: MultiSelectSection<GameObject>[] = inventorySections(candidates, false).map(section => ({
+    const sections: MultiSelectSection<GameObject>[] = (await inventorySections(candidates, false)).map(section => ({
         ...section,
         items: section.items.map(item => {
             if (item.key === undefined) throw new Error('Identification item has no inventory letter');
@@ -309,7 +309,7 @@ async function identificationMenu(candidates: readonly GameObject[], first: bool
 async function identifyAndDescribe(object: GameObject) {
     fullyIdentifyObject(object);
     observeObjectForNaming(object);
-    await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object, {
+    await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object, {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
 }
@@ -373,8 +373,8 @@ export function inventoryPrimaryHandDetail(item: GameObject) {
     return primaryHandDescriptionDetail(item);
 }
 
-export function inventoryItemDescription(item: GameObject, options: InventoryDescriptionOptions = {}): string {
-    return objectDescription(item, options);
+export async function inventoryItemDescription(item: GameObject, options: InventoryDescriptionOptions = {}): Promise<string> {
+    return await objectDescription(item, options);
 }
 
 export async function consumeInventoryItem(item: GameObject, state: GameState = game) {
@@ -390,11 +390,11 @@ export async function consumeInventoryItem(item: GameObject, state: GameState = 
     await useUpInventoryStack(item, state);
 }
 
-function rerollItemDescription(item: GameObject) {
+async function rerollItemDescription(item: GameObject) {
     // invent.c:reroll_menu() brackets distant_name(doname) with
     // override_ID.  Identify a temporary view rather than mutating the live
     // object or discovery tables for a character which might be rejected.
-    return inventoryItemDescription({
+    return await inventoryItemDescription({
         ...item,
         known: true,
         bknown: true,
@@ -431,14 +431,16 @@ async function rerollFallbackPrompt() {
 export async function rerollMenu() {
     const acceptKey = game.flags?.lootabc ? 'a' : 'p';
     const rerollKey = game.flags?.lootabc ? 'b' : 'r';
+    const descriptions = [];
+    for (const item of game.inventory || []) {
+        observeObjectForNaming(item, { distant: true });
+        descriptions.push(await rerollItemDescription(item));
+    }
     const entries = [
         { key: acceptKey, text: 'start the game with this character' },
         { key: rerollKey, text: 'reroll another character' },
         '',
-        ...(game.inventory || []).map(item => {
-            observeObjectForNaming(item, { distant: true });
-            return rerollItemDescription(item);
-        }),
+        ...descriptions,
         '',
         rerollAttributeLine(),
     ];
@@ -457,11 +459,11 @@ export async function rerollMenu() {
     return reroll;
 }
 
-function inventorySections(items: readonly GameObject[] = game.inventory || [], includeGold = true): InventorySection[] {
-    return inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
+async function inventorySections(items: readonly GameObject[] = game.inventory || [], includeGold = true): Promise<InventorySection[]> {
+    return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
 }
 
-function inventorySectionsInOrder(items: readonly GameObject[], includeGold = true): InventorySection[] {
+async function inventorySectionsInOrder(items: readonly GameObject[], includeGold = true): Promise<InventorySection[]> {
     const grouped = new Map<string | null, InventoryMenuItem[]>();
     for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS) continue;
@@ -475,7 +477,7 @@ function inventorySectionsInOrder(items: readonly GameObject[], includeGold = tr
         }
         section.push({
             ...(item.invlet == null ? {} : { key: item.invlet }),
-            text: inventoryItemDescription(item, {
+            text: await inventoryItemDescription(item, {
                 primaryHandDetail: inventoryPrimaryHandDetail(item),
             }),
         });
@@ -742,7 +744,7 @@ export async function selectUsedInventoryLetter(avoidLetter: string | null): Pro
     // not reorder items within a class, even when it sorts other menus.
     const ordered = game.flags.sortpack === false ? items
         : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
-    const result = await showInventoryWindow(inventorySectionsInOrder(ordered), {
+    const result = await showInventoryWindow(await inventorySectionsInOrder(ordered), {
         title: 'Inventory letters used:', pickMode: PICK_ONE,
     });
     return result.key;
@@ -802,14 +804,14 @@ export async function selectInventoryObject({
         if (item) observeObjectForNaming(item);
         const letter = item ? item.invlet : '-';
         if (!letter) throw new Error('A carried inventory choice has no letter');
-        const description = item ? inventoryItemDescription(item, {
+        const description = item ? await inventoryItemDescription(item, {
             primaryHandDetail: inventoryPrimaryHandDetail(item),
         }) : extraChoice;
         const key = await showMessageMenu(letter, item ? pickMode : PICK_ONE,
             `${letter} - ${description}.`);
         return { key, count: null };
     }
-    const sections = inventorySections(visible, true);
+    const sections = await inventorySections(visible, true);
     if (extraChoice && !wizardIdentification) sections.unshift({
         heading: game.flags.sortpack === false ? null : 'Miscellaneous',
         items: [{ text: extraChoice, key: '-' }],

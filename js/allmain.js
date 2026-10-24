@@ -1535,13 +1535,13 @@ export async function finishHeroHelplessness(messageOverride, state = game, publ
 function addHeroMovementRation(state, amount) {
     state.u.umovement = Math.max(0, (state.u.umovement ?? 0) + amount);
 }
-function reluctantPetMessage(monster, movement) {
+async function reluctantPetMessage(monster, movement) {
     const game = requireInitializedGame();
     const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
     const rememberedObject = game.level?.at(movement.x, movement.y)?.remembered_glyph?.kind === 'object';
     const top = !heroIsHallucinating(game) && game.level?.flags.hero_memory && rememberedObject
         ? pile[0] : undefined;
-    const objectName = top ? distantMonsterObjectName(top) : 'something';
+    const objectName = top ? await distantMonsterObjectName(top) : 'something';
     const verb = verbForSubject(null, monsterLocomotion(monster.mnum, 'step'));
     const subject = monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true });
     const preposition = monsterFliesOrFloats(monster) ? 'over' : 'onto';
@@ -1630,10 +1630,10 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
 function wornItemRemover(monster, state) {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });
 }
-function wornTheftObjectDescription(object) {
+async function wornTheftObjectDescription(object) {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
-    let description = inventoryItemDescription(object)
+    let description = (await inventoryItemDescription(object))
         .replace(/^(?:the|an|a) /, object === game.uchain ? 'the ' : 'your ')
         .replace(' (being worn)', '')
         .replace(' (alternate weapon; not wielded)', '');
@@ -1722,7 +1722,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     }
     if (!object) {
         if (!animal && game.uchain && draw(4)) {
-            await plineWithContinuation(`${wornItemRemover(monster, game)} takes off ${wornTheftObjectDescription(game.uchain)}.`);
+            await plineWithContinuation(`${wornItemRemover(monster, game)} takes off ${await wornTheftObjectDescription(game.uchain)}.`);
             await removeWornHeroItem(game.uchain, game);
         }
         else if (!animal && game.u.utrap && game.u.utraptype === TT_BURIEDBALL && !draw(4)) {
@@ -1843,7 +1843,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     const removalItem = object === game.uball && game.uchain ? game.uchain : object;
     if (!charmed && (wasWeapon || stillWorn)) {
         observeObjectForNaming(removalItem);
-        const description = wornTheftObjectDescription(removalItem);
+        const description = await wornTheftObjectDescription(removalItem);
         const verb = removalItem === object && wasWeapon ? 'disarms'
             : wasAccessory ? 'removes' : 'takes off';
         // worn_item_removal() names the thief again with Some_Monnam().
@@ -1878,7 +1878,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         return true;
     }
     observeObjectForNaming(object);
-    const stolenObjectDescription = inventoryItemDescription(object);
+    const stolenObjectDescription = await inventoryItemDescription(object);
     const thief = charmed || (game._lastPlineKind === PLNMSG_MON_TAKES_OFF_ITEM
         && MONSTER_SYMBOL[monster.mnum] === 14) ? 'She' : subject;
     // urgent_pline() does not force a pager for its newly installed line.
@@ -1941,7 +1941,7 @@ async function finishDelayedArmorTheft(thief, object, state) {
     unlinkObject(object, state);
     await finishInventoryRemoval(object, state);
     observeObjectForNaming(object, { state });
-    await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${inventoryItemDescription(object)}!`);
+    await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${await inventoryItemDescription(object)}!`);
     await addObjectToMonsterInventory(thief, object, state);
     await makeMonsterFlee(thief, { state, announce: false });
     if (!await reportMonsterTeleportRestriction(thief, { state }))
@@ -1956,9 +1956,9 @@ async function presentMonsterCuss(action) {
         return rn2(sides);
     });
 }
-function distantMonsterObjectName(object) {
+async function distantMonsterObjectName(object) {
     observeDistantObjectForNaming(object);
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 async function presentMonsterGrowth(monster, growth) {
     const game = requireInitializedGame();
@@ -2978,7 +2978,7 @@ async function presentMonsterPickups(action, game) {
     if (movement?.pickedUp
         && cansee(movement.oldx, movement.oldy)) {
         observeDistantObjectForNaming(movement.pickedUp);
-        const name = inventoryItemDescription(movement.pickedUp);
+        const name = await inventoryItemDescription(movement.pickedUp);
         if (game.flags.verbose !== false) {
             await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${name}.`);
         }
@@ -2992,7 +2992,7 @@ async function presentPetMovementPrelude(action, game, actorWasOpticallySeen) {
     if (movement?.deferredPetMove) {
         if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
             observeDistantObjectForNaming(movement.pickedUp);
-            const name = inventoryItemDescription(movement.pickedUp);
+            const name = await inventoryItemDescription(movement.pickedUp);
             if (game.flags.verbose !== false) {
                 await plineWithContinuation(`${visibleMonsterSubject(monster)} picks up ${name}.`);
             }
@@ -3017,7 +3017,7 @@ async function presentPetMovementPrelude(action, game, actorWasOpticallySeen) {
     }
     if (movement.deferredPetReluctance) {
         if (actorWasOpticallySeen || canSeeMonster(monster))
-            await plineWithContinuation(reluctantPetMessage(monster, movement));
+            await plineWithContinuation(await reluctantPetMessage(monster, movement));
         await resumeDeferredPetReluctance(action, game);
     }
 }

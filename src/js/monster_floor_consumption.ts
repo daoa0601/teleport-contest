@@ -118,7 +118,7 @@ async function eatMetal(monster: Monster, context: FloorMealContext): Promise<0 
             object.oerodeproof = false;
             monster.mstun = 1;
             if (visible) {
-                const name = distantMealName(object, state);
+                const name = await distantMealName(object, state);
                 if (state.flags.verbose)
                     await publish(`${monsterName(monster, { state, capitalized: true })} spits ${name} out in disgust!`);
             }
@@ -158,7 +158,7 @@ async function eatOrEngulfPile(monster: Monster, context: FloorMealContext): Pro
             || (petrifyingFood(object) && !monsterHasStoneResistance(monster))
             || (object.otyp === GLOB_OF_GREEN_SLIME && !monsterIsSlimeproof(monster))) {
             engulfed++;
-            const name = distantMealName(object, state);
+            const name = await distantMealName(object, state);
             if (engulfed === 1)
                 engulfMessage = `${monsterName(monster, { state, capitalized: true })} engulfs ${name}.`;
             else if (engulfed === 2)
@@ -237,14 +237,14 @@ function petrifyingFood(object: GameObject): boolean {
     return [CORPSE, EGG, TIN].includes(object.otyp) && fleshPetrifies(object.corpsenm);
 }
 
-function distantMealName(object: GameObject, state: GameState): string {
+async function distantMealName(object: GameObject, state: GameState): Promise<string> {
     observeDistantObjectForNaming(object, state);
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 
 async function describeEating(monster: Monster, object: GameObject, { state, publish }: FloorMealContext): Promise<void> {
     // Naming can identify an object even when verbose prose is disabled.
-    const name = distantMealName(object, state);
+    const name = await distantMealName(object, state);
     if (state.flags.verbose)
         await publish(`${monsterName(monster, { state, capitalized: true })} eats ${name}!`);
 }

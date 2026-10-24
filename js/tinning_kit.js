@@ -77,7 +77,7 @@ export async function useTinningKit(kit) {
         await useUpFloorObject(corpse, 1);
     }
     observeObjectForNaming(tin);
-    await holdAnotherObject(tin, { dropMessage: `You make, but cannot pick up, ${inventoryItemDescription(tin)}.` });
+    await holdAnotherObject(tin, { dropMessage: `You make, but cannot pick up, ${await inventoryItemDescription(tin)}.` });
 }
 function tinnable(corpse) {
     return corpse.otyp === CORPSE && !corpse.oeaten && !!MONSTER_NUTRITION[corpse.corpsenm ?? -1];
@@ -100,7 +100,7 @@ async function chooseTinningCorpse() {
             }
             const one = corpse.quan === 1;
             observeObjectForNaming(corpse);
-            const answer = await promptChoice(`There ${one ? 'is' : 'are'} ${inventoryItemDescription(corpse)} here; tin ${one ? 'it' : 'one'}?`, ['y', 'n', 'q'], 'n');
+            const answer = await promptChoice(`There ${one ? 'is' : 'are'} ${await inventoryItemDescription(corpse)} here; tin ${one ? 'it' : 'one'}?`, ['y', 'n', 'q'], 'n');
             if (answer === 'y')
                 return corpse;
             if (answer === 'q')

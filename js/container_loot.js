@@ -100,13 +100,17 @@ async function lootFloorContainers(x, y, unlock) {
             return true;
         }
     }
+    const items = [];
+    if (containers.length > 1) {
+        for (const object of containers) {
+            observeObjectForNaming(object);
+            items.push({ text: await inventoryItemDescription(object), value: object });
+        }
+    }
     const selected = containers.length === 1 ? containers
         : await showMultiSelectWindow({ title: 'Loot which containers?', omitHeadings: true,
             pageLocalKeys: true,
-            sections: [{ items: containers.map(object => {
-                        observeObjectForNaming(object);
-                        return { text: inventoryItemDescription(object), value: object };
-                    }) }], signalEscape: true });
+            sections: [{ items }], signalEscape: true });
     if (selected === null)
         return true;
     if (!selected.length)
@@ -169,7 +173,7 @@ async function lootMonster(monster) {
                 await pline(`You take the ${simpleObjectName(saddle)} off of ${monsterName(monster)}.`);
             // C doloot()/addinv_core0() reset the batch when the saddle is acquired.
             clearJustPicked(game);
-            const held = await holdAnotherObject(saddle, { dropMessage: `You drop ${inventoryItemDescription(saddle)}!` });
+            const held = await holdAnotherObject(saddle, { dropMessage: `You drop ${await inventoryItemDescription(saddle)}!` });
             markJustPicked(held.object);
             rnd(3);
             game.context.move = 1;

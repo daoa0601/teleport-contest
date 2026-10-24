@@ -13,6 +13,6 @@ void test('end-of-game farlook omits shirt text while inventory disclosure retai
     newsym(11, 10);
     game.program_state.gameover = true;
     assert.equal(await farlookLocationDescription(11, 10), 'a T-shirt');
-    assert.match(objectDescription(shirt), /with text "/);
+    assert.match(await objectDescription(shirt), /with text "/);
 });
 //# sourceMappingURL=distant_object_disclosure.test.js.map

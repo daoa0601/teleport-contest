@@ -18,32 +18,32 @@ void test('a Samurai sees sake when looking at a known potion on the floor', asy
     await showFloorPile([potion]);
     await flush_screen(1);
     assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd(), 'You see here a potion of sake.');
-    assert.equal(inventoryItemDescription(potion), 'a potion of sake');
+    assert.equal(await inventoryItemDescription(potion), 'a potion of sake');
 });
 void test('Samurai weapon names and known enchantments apply on the floor too', async () => {
     freshObjectRoom({ role: 'samurai' });
     const sword = await knownObject(SHORT_SWORD, { spe: 2, bknown: false });
-    assert.equal(floorObjectDescription(sword), 'a +2 wakizashi');
-    assert.equal(inventoryItemDescription(sword), 'a +2 wakizashi');
+    assert.equal(await floorObjectDescription(sword), 'a +2 wakizashi');
+    assert.equal(await inventoryItemDescription(sword), 'a +2 wakizashi');
 });
 void test('named ya stacks retain their arrow noun in inventory and floor descriptions', async () => {
     freshObjectRoom({ role: 'samurai' });
     const arrows = await knownObject(YA, { quan: 3, spe: 1, oname: 'Needle', bknown: false });
-    assert.equal(inventoryItemDescription(arrows), '3 +1 ya named Needle');
-    assert.equal(floorObjectDescription(arrows), '3 +1 ya named Needle');
+    assert.equal(await inventoryItemDescription(arrows), '3 +1 ya named Needle');
+    assert.equal(await floorObjectDescription(arrows), '3 +1 ya named Needle');
 });
 void test('holy water wording requires both type and blessing knowledge', async () => {
     freshObjectRoom();
     const potion = await knownObject(POT_WATER, {
         typeKnown: false, known: false, bknown: false, blessed: true,
     });
-    assert.equal(inventoryItemDescription(potion), 'a clear potion');
+    assert.equal(await inventoryItemDescription(potion), 'a clear potion');
     potion.bknown = true;
-    assert.equal(inventoryItemDescription(potion), 'a blessed clear potion');
+    assert.equal(await inventoryItemDescription(potion), 'a blessed clear potion');
     learnObjectType(POT_WATER);
-    assert.equal(inventoryItemDescription(potion), 'a potion of holy water');
+    assert.equal(await inventoryItemDescription(potion), 'a potion of holy water');
     potion.bknown = false;
-    assert.equal(inventoryItemDescription(potion), 'a potion of water');
+    assert.equal(await inventoryItemDescription(potion), 'a potion of water');
 });
 void test('identification override retains the blessing of globally unknown water', async () => {
     freshObjectRoom();
@@ -51,7 +51,7 @@ void test('identification override retains the blessing of globally unknown wate
         typeKnown: false, known: false, bknown: false, blessed: true,
     });
     game.iflags.override_ID = true;
-    assert.equal(inventoryItemDescription(potion), 'a blessed potion of holy water');
+    assert.equal(await inventoryItemDescription(potion), 'a blessed potion of holy water');
     assert.equal(potion.bknown, false);
 });
 void test('fully identified Grimtooth uses its artifact identity without a poison prefix', async () => {
@@ -62,16 +62,16 @@ void test('fully identified Grimtooth uses its artifact identity without a poiso
     assert.equal(nameArtifact(dagger, artifact), true);
     fullyIdentifyObject(dagger);
     assert.ok(dagger.opoisoned);
-    assert.equal(inventoryItemDescription(dagger), 'the +0 Grimtooth');
+    assert.equal(await inventoryItemDescription(dagger), 'the +0 Grimtooth');
 });
 void test('dilution is visible only after the potion appearance has been observed', async () => {
     freshObjectRoom();
     const potion = await knownObject(POT_BOOZE, {
         dknown: false, bknown: false, odiluted: true,
     });
-    assert.equal(inventoryItemDescription(potion), 'a potion');
+    assert.equal(await inventoryItemDescription(potion), 'a potion');
     potion.dknown = true;
-    assert.equal(inventoryItemDescription(potion), 'a diluted potion of booze');
+    assert.equal(await inventoryItemDescription(potion), 'a diluted potion of booze');
 });
 void test('an unknown called ring uses the class noun without revealing its true type', async () => {
     freshObjectRoom();
@@ -80,7 +80,7 @@ void test('an unknown called ring uses the class noun without revealing its true
     });
     recordObjectCall(RIN_PROTECTION, 'Luck');
     assert.equal(objectName(ring), 'ring called Luck');
-    assert.equal(inventoryItemDescription(ring), 'a ring called Luck');
+    assert.equal(await inventoryItemDescription(ring), 'a ring called Luck');
 });
 void test('a called potion retains its dilution but omits the appearance adjective', async () => {
     freshObjectRoom();
@@ -89,15 +89,15 @@ void test('a called potion retains its dilution but omits the appearance adjecti
     });
     recordObjectCall(POT_BOOZE, 'tonic');
     assert.equal(objectName(potion), 'diluted potion called tonic');
-    assert.equal(floorObjectDescription(potion), 'a diluted potion called tonic');
+    assert.equal(await floorObjectDescription(potion), 'a diluted potion called tonic');
 });
 void test('plural tins retain their known contents and individual name', async () => {
     freshObjectRoom();
     const tins = await knownObject(TIN, {
         quan: 2, spe: 1, corpsenm: -1, bknown: false, oname: 'Lunch',
     });
-    assert.equal(inventoryItemDescription(tins), '2 tins of spinach named Lunch');
-    assert.equal(floorObjectDescription(tins), '2 tins of spinach named Lunch');
+    assert.equal(await inventoryItemDescription(tins), '2 tins of spinach named Lunch');
+    assert.equal(await floorObjectDescription(tins), '2 tins of spinach named Lunch');
 });
 void test('figurines retain species and individual names after pluralization', async () => {
     freshObjectRoom();
@@ -105,7 +105,7 @@ void test('figurines retain species and individual names after pluralization', a
         quan: 2, corpsenm: MONSTER_NAME.indexOf('kitten'), spe: 0,
         bknown: false, oname: 'Keepsake',
     });
-    assert.equal(inventoryItemDescription(figurines), '2 figurines of a kitten named Keepsake');
+    assert.equal(await inventoryItemDescription(figurines), '2 figurines of a kitten named Keepsake');
 });
 void test('named statues describe their subject on both the floor and in inventory', async () => {
     freshObjectRoom();
@@ -113,8 +113,8 @@ void test('named statues describe their subject on both the floor and in invento
         corpsenm: MONSTER_NAME.indexOf('kitten'), spe: 0,
         bknown: false, oname: 'Mittens',
     });
-    assert.equal(inventoryItemDescription(statue), 'a statue of a kitten named Mittens');
-    assert.equal(floorObjectDescription(statue), 'a statue of a kitten named Mittens');
+    assert.equal(await inventoryItemDescription(statue), 'a statue of a kitten named Mittens');
+    assert.equal(await floorObjectDescription(statue), 'a statue of a kitten named Mittens');
 });
 void test('known empty containers describe their traps, locks, and grease', async () => {
     freshObjectRoom();
@@ -122,22 +122,22 @@ void test('known empty containers describe their traps, locks, and grease', asyn
         bknown: false, cknown: true, lknown: true, olocked: true,
         otrapped: true, tknown: true, greased: true, contents: [],
     });
-    assert.equal(floorObjectDescription(chest), 'an empty trapped locked greased chest');
+    assert.equal(await floorObjectDescription(chest), 'an empty trapped locked greased chest');
 });
 void test('iron corrosion and known proofing use their native descriptions', async () => {
     freshObjectRoom();
     const sword = await knownObject(LONG_SWORD, {
         bknown: false, spe: 1, oeroded2: 2, oerodeproof: true, rknown: false,
     });
-    assert.equal(inventoryItemDescription(sword), 'a very corroded +1 long sword');
+    assert.equal(await inventoryItemDescription(sword), 'a very corroded +1 long sword');
     sword.rknown = true;
-    assert.equal(inventoryItemDescription(sword), 'a very corroded rustproof +1 long sword');
+    assert.equal(await inventoryItemDescription(sword), 'a very corroded rustproof +1 long sword');
 });
 void test('a known erodeproof crysknife is fixed without ordinary erosion words', async () => {
     freshObjectRoom();
     const knife = await knownObject(CRYSKNIFE, {
         bknown: false, spe: 0, rknown: true, oerodeproof: true, oeroded: 2,
     });
-    assert.equal(inventoryItemDescription(knife), 'a fixed +0 crysknife');
+    assert.equal(await inventoryItemDescription(knife), 'a fixed +0 crysknife');
 });
 //# sourceMappingURL=shared_object_naming.test.js.map

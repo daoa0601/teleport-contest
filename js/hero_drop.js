@@ -112,7 +112,7 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
             const description = objectIsUnpaid(object)
                 ? `${ownerText} ${(object.quan > 1 ? `${object.quan} ` : '')
                     + objectName(object, state)}`
-                : inventoryItemDescription(object);
+                : await inventoryItemDescription(object);
             await publish(`You drop ${description} into ${into}.`);
         }
     }
@@ -130,7 +130,7 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
             const levhack = beginLevitatingArtifactDrop(object, state);
             if (state.flags?.verbose !== false) {
                 observeObjectForNaming(object, { state });
-                await publish(`You drop ${inventoryItemDescription(object)}.`);
+                await publish(`You drop ${await inventoryItemDescription(object)}.`);
             }
             await freeInventoryObject(object, state);
             // the finesse exists precisely because freeinv can end badly;
@@ -147,7 +147,7 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
         if (!(dropLocation && IS_ALTAR(dropLocation.typ))
             && state.flags?.verbose !== false) {
             observeObjectForNaming(object, { state });
-            await publish(`You drop ${inventoryItemDescription(object)}.`);
+            await publish(`You drop ${await inventoryItemDescription(object)}.`);
         }
     }
     object.how_lost = LOST_DROPPED;

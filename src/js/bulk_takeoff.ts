@@ -139,7 +139,7 @@ async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<
 }
 
 async function offMessage(object: GameObject, state: GameState): Promise<void> {
-    const message = armorOffMessage(object, state);
+    const message = await armorOffMessage(object, state);
     if (message) await pline(message);
 }
 

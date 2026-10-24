@@ -101,7 +101,7 @@ for (const dualWielding of [false, true]) {
             input.feed('q');
             await action;
         }
-        assert.ok(objectDescription(dagger).includes(name), 'the full item name returns after the question');
+        assert.ok((await objectDescription(dagger)).includes(name), 'the full item name returns after the question');
         assert.equal(dagger.where, 'inventory');
     });
 }

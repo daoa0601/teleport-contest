@@ -36,7 +36,7 @@ void test('a starting pony receives a fully identified saddle when it is visible
     assert.ok(saddle, 'The starting pony must wear a saddle');
     newsym(pony.mx, pony.my);
     assert.equal(await farlookLocationDescription(pony.mx, pony.my), 'tame saddled pony');
-    assert.equal(inventoryItemDescription(saddle), 'an uncursed saddle (being worn)');
+    assert.equal(await inventoryItemDescription(saddle), 'an uncursed saddle (being worn)');
     assert.equal(saddle.known, true);
     assert.equal(saddle.dknown, true);
     assert.equal(saddle.bknown, true);
@@ -51,7 +51,7 @@ for (const options of ['', 'OPTIONS=permablind']) {
         const pony = await startKnight(options);
         const saddle = monsterSaddle(pony);
         assert.ok(saddle, 'The starting pony must wear a saddle');
-        assert.equal(inventoryItemDescription(saddle), 'a saddle (being worn)');
+        assert.equal(await inventoryItemDescription(saddle), 'a saddle (being worn)');
         assert.equal(saddle.bknown ?? false, false);
         assert.equal(saddle.rknown ?? false, false);
         assert.equal(saddle.dknown, false);

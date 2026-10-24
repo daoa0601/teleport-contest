@@ -39,7 +39,7 @@ for (const [type, garment] of [[T_SHIRT, 'T-shirt'], [ALCHEMY_SMOCK, 'apron']]) 
             const disclosed = objectName(object);
             const text = disclosed.match(/ with text "(.*)" named Keepsake$/)?.[1];
             assert.ok(text !== undefined, `Expected the inscription before the personal name: ${disclosed}`);
-            assert.ok(inventoryItemDescription(object).includes(`with text "${text}" named Keepsake`));
+            assert.ok((await inventoryItemDescription(object)).includes(`with text "${text}" named Keepsake`));
             assert.equal(game.u.uconduct.literate || 0, 0);
             if (eroded) {
                 const intact = objectName({ ...object, oeroded: 0, oeroded2: 0 });
@@ -74,7 +74,7 @@ void test('candy stack disclosure pluralizes the bar before its wrapper and pers
     const singleName = objectName(candy);
     const label = singleName.match(/^candy bar labeled "(.+)" named Snack$/)?.[1];
     assert.ok(label !== undefined, singleName);
-    assert.equal(inventoryItemDescription(candy), `3 candy bars labeled "${label}" named Snack`);
+    assert.equal(await inventoryItemDescription(candy), `3 candy bars labeled "${label}" named Snack`);
     assert.equal(game.u.uconduct.literate || 0, 0);
     game.program_state.gameover = false;
     const reading = await readOutput(candy);
@@ -89,7 +89,7 @@ void test('a blank candy wrapper remains absent from disclosure and does not gra
     const candy = await knownObject(CANDY_BAR, { bknown: false, spe: 0 });
     game.program_state.gameover = true;
     assert.equal(objectName(candy), 'candy bar');
-    assert.equal(inventoryItemDescription(candy), 'a candy bar');
+    assert.equal(await inventoryItemDescription(candy), 'a candy bar');
     assert.equal(game.u.uconduct.literate || 0, 0);
     game.program_state.gameover = false;
     const reading = await readOutput(candy);
@@ -105,7 +105,7 @@ void test('Hawaiian disclosure uses a singular motif while reading describes the
     assert.doesNotMatch(objectName(shirt), /motif/);
     game.program_state.gameover = true;
     assert.equal(objectName(shirt), 'Hawaiian shirt with an orchid motif');
-    assert.doesNotMatch(inventoryItemDescription(shirt), /background/);
+    assert.doesNotMatch(await inventoryItemDescription(shirt), /background/);
     assert.equal(game.u.uconduct.literate || 0, 0);
     game.program_state.gameover = false;
     const reading = await readOutput(shirt);

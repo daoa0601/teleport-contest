@@ -123,7 +123,7 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
     const level = requireGameLevel(state);
     const { ux, uy } = state.u;
     observeObjectForNaming(object, { state });
-    await publish(`You drop ${inventoryItemDescription(object)} down the drain.`);
+    await publish(`You drop ${await inventoryItemDescription(object)} down the drain.`);
     object.in_use = true; /* block free identification via interrupt */
     let ideed = true;
     let nosink = false;
@@ -187,7 +187,7 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
                 if (!heroIsBlind(state)) {
                     observeObjectForNaming(pileObject, { state });
                     const quantity = pileObject.quan ?? pileObject.quantity ?? 1;
-                    await publish(`Suddenly, ${floorObjectDescription(pileObject)} `
+                    await publish(`Suddenly, ${await floorObjectDescription(pileObject)} `
                         + `${quantity === 1 ? 'vanishes' : 'vanish'}`
                         + ' from the sink!');
                     ideed = true;
@@ -277,7 +277,7 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
     }
     if (rn2(20) === 0 && !nosink) {
         observeObjectForNaming(object, { state });
-        await publish(`The sink backs up, leaving ${inventoryItemDescription(object)}.`);
+        await publish(`The sink backs up, leaving ${await inventoryItemDescription(object)}.`);
         object.in_use = false;
         await dropInventoryObjectAtHero(object, { state, publish });
     }

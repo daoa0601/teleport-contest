@@ -42,7 +42,7 @@ void test('temporary identification shows exact quantities in a vague object des
         quan: 6, dknown: false, known: false, bknown: false,
     });
     game.iflags.override_ID = true;
-    assert.match(objectDescription(daggers, { vagueQuantity: true }), /^6 /);
+    assert.match(await objectDescription(daggers, { vagueQuantity: true }), /^6 /);
     assert.equal(daggers.dknown, false, 'temporary identification does not learn the appearance');
 });
 //# sourceMappingURL=farlook_objects.test.js.map

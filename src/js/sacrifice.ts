@@ -121,7 +121,7 @@ async function chooseOffering(): Promise<GameObject | null> {
             const single = objectQuantity(corpse) === 1;
             observeObjectForNaming(corpse);
             const answer = await promptYesNoQuit(
-                `There ${single ? 'is' : 'are'} ${floorObjectDescription(corpse)} here; sacrifice ${single ? 'it' : 'one'}?`,
+                `There ${single ? 'is' : 'are'} ${await floorObjectDescription(corpse)} here; sacrifice ${single ? 'it' : 'one'}?`,
                 'n',
             );
             if (answer === 'y') return corpse;
@@ -149,7 +149,7 @@ async function offerCorpse(corpse: GameObject, highAltar: boolean, alignment: nu
     const hero = game.u;
     const conduct = hero.uconduct ||= {};
     if (!conduct.gnostic)
-        recordGameLogEvent(`rejected atheism by offering ${inventoryItemDescription(corpse)} on an altar of ${deityName(alignment)}`);
+        recordGameLogEvent(`rejected atheism by offering ${await inventoryItemDescription(corpse)} on an altar of ${deityName(alignment)}`);
     conduct.gnostic = (conduct.gnostic || 0) + 1;
     await feelPetrifyingCorpse(corpse, { forceTouch: true });
     if (game.program_state.gameover) return;

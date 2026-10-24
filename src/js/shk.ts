@@ -882,10 +882,10 @@ export async function chargeAlteredUnpaidObject(
 
 // C shk.c:unpaid_cost(). The root keeps its agreed bill price; contents
 // use the current shop valuation, and a partially used stack uses its live count.
-export function unpaidObjectCost(
+export async function unpaidObjectCost(
     object: GameObject, state: GameState = game,
     costType: 'object' | 'contents' | 'single' = 'object',
-): number {
+): Promise<number> {
     let price = 0;
     let resident: Shopkeeper | null = null;
     let billed: BilledObject | null = null;

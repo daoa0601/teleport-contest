@@ -103,7 +103,7 @@ function maximumLiftedCount(object: GameObject, requested: number, container: Ga
     return low;
 }
 
-function itemDescription(object: GameObject, count = objectQuantity(object)): string {
+async function itemDescription(object: GameObject, count = objectQuantity(object)): Promise<string> {
     if (isCoin(object))
         return count === 1 ? 'a gold piece' : `${count} gold pieces`;
     const view = withQuantity(object, count);
@@ -113,7 +113,7 @@ function itemDescription(object: GameObject, count = objectQuantity(object)): st
         view.plural = presentation.plural;
         view.class = presentation.class;
     }
-    return inventoryItemDescription(view);
+    return await inventoryItemDescription(view);
 }
 
 function locationPhrase(container: GameObject | null, state: GameState, short = false): string {
@@ -129,13 +129,13 @@ async function reportPartialLift(object: GameObject, count: number, container: G
     observeObjectForNaming(object, { state });
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${
-        itemDescription(object)} ${locationPhrase(container, state)}.`);
+        await itemDescription(object)} ${locationPhrase(container, state)}.`);
 }
 
 async function reportUnliftable(object: GameObject, container: GameObject | null, state: GameState, telekinesis: boolean): Promise<void> {
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     observeObjectForNaming(object, { state });
-    const description = itemDescription(object);
+    const description = await itemDescription(object);
     const where = locationPhrase(container, state, !container);
     if ((state.inventory || []).length || heroGoldAmount(state)) {
         await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but you cannot ${
@@ -269,7 +269,7 @@ export async function liftObject({
         observeObjectForNaming(object, { state });
         const answer = await promptYesNoQuit(
             `${pickupLoadPrefix(nextBurden)} ${action} ${
-                itemDescription(object, liftedCount)
+                await itemDescription(object, liftedCount)
             }.  Continue?`,
         );
         // pickup.c lift_object() clears WIN_MESSAGE after every answer, so

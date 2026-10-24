@@ -692,7 +692,7 @@ export async function doengrave(state = game) {
     // Tell the adventurer what is going on.
     if (!usingHands && object) {
         const quantity = object.quan ?? object.quantity ?? 1;
-        await pline(`You ${everb} the ${eloc} with ${setup.type === ENGRAVE && quantity > 1 ? '1 of ' : ''}${inventoryItemDescription(object)}.`);
+        await pline(`You ${everb} the ${eloc} with ${setup.type === ENGRAVE && quantity > 1 ? '1 of ' : ''}${await inventoryItemDescription(object)}.`);
     }
     else {
         await pline(`You ${everb} the ${eloc} with your ${heroFingerTipName(state)}.`);
@@ -846,11 +846,11 @@ export async function continueEngraving(state = game) {
             unlinkObject(stylus, state);
             await holdAnotherObject(stylus, {
                 state,
-                dropMessage: `You drop one ${inventoryItemDescription(stylus)}!`,
+                dropMessage: `You drop one ${await inventoryItemDescription(stylus)}!`,
             });
         }
         else if (dulled && stylus.known) {
-            await pline(`${stylus.invlet} - ${inventoryItemDescription(stylus)}.`);
+            await pline(`${stylus.invlet} - ${await inventoryItemDescription(stylus)}.`);
         }
     }
     else if (marker && stylus) {

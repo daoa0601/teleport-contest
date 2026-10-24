@@ -204,7 +204,7 @@ void test('a pending formatter report and a later impossible() both complete', a
     game.storage = memoryStorage();
     const leash = await addInventoryObject(LEASH, { leashmon: 4242 });
     const screens = recordScreens();
-    inventoryItemDescription(leash);
+    await inventoryItemDescription(leash);
     await impossible('second report');
     const all = screens.join('\n----\n') + '\n' + visibleText();
     assert.doesNotMatch(all, /impossible called impossible/);

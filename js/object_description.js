@@ -21,7 +21,7 @@ const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
 // C objnam.c:paydoname(). Billing hides contents, weights, and the usual
 // inventory price; the payment menu supplies its own price column.
-export function paymentObjectDescription(object, quantity, { state = game, purchasingContents = false, } = {}) {
+export async function paymentObjectDescription(object, quantity, { state = game, purchasingContents = false, } = {}) {
     const { quan, cknown } = object;
     const { wizweight, suppress_price } = state.iflags;
     const hasContents = !!object.contents?.length;
@@ -31,7 +31,7 @@ export function paymentObjectDescription(object, quantity, { state = game, purch
     state.iflags.wizweight = false;
     state.iflags.suppress_price = true;
     try {
-        let name = objectDescription(object, { state });
+        let name = await objectDescription(object, { state });
         if (hasContents) {
             if (!object.no_charge && !(purchasingContents && object.unpaid))
                 name = `${object.unpaid ? 'an unpaid' : 'your'} ${name.replace(/^an? /, '')}`;
@@ -55,7 +55,7 @@ export function paymentObjectDescription(object, quantity, { state = game, purch
             state.iflags.suppress_price = suppress_price;
     }
 }
-export function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, } = {}) {
+export async function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, } = {}) {
     let noun = objectName(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
     if (poisoned)
@@ -87,7 +87,7 @@ export function objectDescription(object, { state = game, withPrice = false, pri
     if (known && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS || isWeaponTool(object)
         || object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]))
         prefix.push(`${object.spe >= 0 ? '+' : ''}${object.spe}`);
-    const details = objectClassDescription(object, state);
+    const details = await objectClassDescription(object, state);
     prefix.push(...details.prefix);
     if (object.quan !== 1)
         noun = pluralizeObjectNoun(object, noun);
@@ -120,7 +120,7 @@ export function objectDescription(object, { state = game, withPrice = false, pri
     const handDetail = primaryHandDetail === undefined
         ? primaryHandDescriptionDetail(object, state) : primaryHandDetail;
     description += heldObjectDescription(object, { state, primaryHandDetail: handDetail, projectPrimaryHand });
-    description += objectDescriptionPrice(object, { state, withPrice });
+    description += await objectDescriptionPrice(object, { state, withPrice });
     if (state.flags.debug && state.iflags.wizweight) {
         description = withPrice && description.endsWith(')')
             ? `${description.slice(0, -1)}, ${object.owt} aum)`

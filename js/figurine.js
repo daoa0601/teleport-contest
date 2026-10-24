@@ -127,7 +127,7 @@ function monsterCarrierDescription(monster, state) {
     }
     return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
 }
-function familiarPresentation(monster, figurine, location, overdue, state) {
+async function familiarPresentation(monster, figurine, location, overdue, state) {
     const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
     const seesInvisible = !!(state.u?.seeInvisible
         || (state.u?.seeInvisibleTurns ?? 0) > 0);
@@ -139,7 +139,7 @@ function familiarPresentation(monster, figurine, location, overdue, state) {
         const shelter = state.level?.objects?.[monster.mx]?.[monster.my]?.[0];
         if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL
             && shelter) {
-            ending = ` and ${figurineLocomotion(monster.mnum, 'crawl')} under ${objectDescription(shelter, { state })}`;
+            ending = ` and ${figurineLocomotion(monster.mnum, 'crawl')} under ${await objectDescription(shelter, { state })}`;
         }
         else if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             || MONSTER_SYMBOL[monster.mnum] === S_EEL) {
@@ -212,7 +212,7 @@ export async function runClaimedFigurineTimer(claimed, state = game, currentTurn
         };
     }
     const overdue = claimed.timer.deadline !== currentTurn;
-    const message = familiarPresentation(monster, figurine, { ...location, x: position.x, y: position.y }, overdue, state);
+    const message = await familiarPresentation(monster, figurine, { ...location, x: position.x, y: position.y }, overdue, state);
     const floorVisible = onFloor && cansee(position.x, position.y);
     return {
         figurine, monster,

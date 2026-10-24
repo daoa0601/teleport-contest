@@ -56,7 +56,7 @@ async function stealItem(attacker, defender, context) {
     // C doname() records the appearance it names while the hero can see.
     if (visible)
         observeObjectForNaming(object, { state });
-    const description = visible ? inventoryItemDescription(object) : '';
+    const description = visible ? await inventoryItemDescription(object) : '';
     // add_to_minv retains ownership without mpickobj's pickup side effects.
     await linkObjectToMonsterInventory(attacker, object, { state });
     const thiefName = monsterName(attacker, { state, capitalized: true });

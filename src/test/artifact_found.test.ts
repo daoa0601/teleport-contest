@@ -214,7 +214,7 @@ void test('formatting an artifact name alone does not find it', async () => {
     nameArtifact(object, artifact);
     object.dknown = true;
 
-    assert.match(inventoryItemDescription(object), /Magicbane/);
+    assert.match(await inventoryItemDescription(object), /Magicbane/);
 
     assert.equal(foundEvents().length, 0);
 });

@@ -53,9 +53,9 @@ export async function lootMonsterContainer(monster, container, { state, random =
                 else {
                     observeObjectForNaming(object, { state });
                     if (!index)
-                        await publish(`${subject()} removes ${inventoryItemDescription(object)} from ${name}.`);
+                        await publish(`${subject()} removes ${await inventoryItemDescription(object)} from ${name}.`);
                     else
-                        await publish(`${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} removes ${inventoryItemDescription(object)}.`);
+                        await publish(`${pronoun.charAt(0).toUpperCase() + pronoun.slice(1)} removes ${await inventoryItemDescription(object)}.`);
                 }
             }
             if (container.otyp === ICE_BOX)

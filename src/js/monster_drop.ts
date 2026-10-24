@@ -43,7 +43,7 @@ export async function dropMonsterObject(monster: Monster, object: GameObject, st
     const level = requireGameLevel(state);
     const x = monster.mx, y = monster.my;
     const worn = object.owornmask ?? 0;
-    const name = distantDropObjectName(object, state);
+    const name = await distantDropObjectName(object, state);
     if (!await removeObjectFromMonsterInventory(monster, object, state, {
         doExtrinsics: false, silently: true, publish,
     })) return null;
@@ -67,9 +67,9 @@ export async function dropMonsterObject(monster: Monster, object: GameObject, st
     return landed;
 }
 
-function distantDropObjectName(object: GameObject, state: GameState): string {
+async function distantDropObjectName(object: GameObject, state: GameState): Promise<string> {
     observeDistantObjectForNaming(object, state);
-    return inventoryItemDescription(inventoryItem(object));
+    return await inventoryItemDescription(inventoryItem(object));
 }
 
 // C steal.c:relobj(). Pets keep their worn gear and useful tools.

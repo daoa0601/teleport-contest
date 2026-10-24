@@ -55,7 +55,7 @@ export function unequipEyewear(object: GameObject, state: GameState = game): voi
 }
 
 async function announceWorn(object: GameObject): Promise<void> {
-    const message = objectWearMessage(object);
+    const message = await objectWearMessage(object);
     if (message) await pline(message);
 }
 
@@ -129,7 +129,7 @@ export async function removeEyewear(object: GameObject | null = null, {
     unequipEyewear(object, state);
     const blind = syncBlindness(state);
     if (!noOffMessage && state.flags?.verbose !== false)
-        await publish(armorOffMessage(object, state));
+        await publish(await armorOffMessage(object, state));
 
     let changed = false;
     if (blind) {

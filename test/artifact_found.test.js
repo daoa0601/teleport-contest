@@ -184,7 +184,7 @@ void test('formatting an artifact name alone does not find it', async () => {
     const object = await mksobj(artifact.baseType, false, false);
     nameArtifact(object, artifact);
     object.dknown = true;
-    assert.match(inventoryItemDescription(object), /Magicbane/);
+    assert.match(await inventoryItemDescription(object), /Magicbane/);
     assert.equal(foundEvents().length, 0);
 });
 void test('uncreating an artifact lets its replacement be found', async () => {

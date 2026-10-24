@@ -370,16 +370,16 @@ function askSell(question, { query }) {
 // C safe_qbuf() reserves the offer and question before short_oname()
 // abbreviates user names. Cash offers use xname/simpleonames; credit offers
 // use doname/thesimpleoname. The object's full names survive the question.
-function saleQuestion(object, prefix, suffix, one, state, kind) {
+async function saleQuestion(object, prefix, suffix, one, state, kind) {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
-    const describe = (item, nameState) => {
+    const describe = async (item, nameState) => {
         if (kind === 'cash')
             return objectCombatName(item, { state: nameState, includeCorpseSpecies: false });
         observeObjectForNaming(item, { state: nameState });
-        return objectDescription(item, { state: nameState });
+        return await objectDescription(item, { state: nameState });
     };
     const question = (name) => `${prefix}${name}${suffix}`;
-    let name = describe(object, state);
+    let name = await describe(object, state);
     if (name.length <= limit)
         return question(name);
     const callName = state._objectCallNames?.[object.otyp];
@@ -392,18 +392,18 @@ function saleQuestion(object, prefix, suffix, one, state, kind) {
         ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
         : object;
     if (shortCallState !== state) {
-        name = describe(object, shortCallState);
+        name = await describe(object, shortCallState);
         if (name.length <= limit)
             return question(name);
     }
     if (shortNamedObject !== object) {
-        name = describe(shortNamedObject, state);
+        name = await describe(shortNamedObject, state);
         if (name.length <= limit)
             return question(name);
     }
     const shortenBoth = shortCallState !== state && shortNamedObject !== object;
     if (shortenBoth) {
-        name = describe(shortNamedObject, shortCallState);
+        name = await describe(shortNamedObject, shortCallState);
         if (name.length <= limit)
             return question(name);
     }
@@ -412,7 +412,7 @@ function saleQuestion(object, prefix, suffix, one, state, kind) {
     const nameState = shortenBoth ? shortCallState : state;
     const plainObject = { ...(shortenBoth ? shortNamedObject : object),
         bknown: false, rknown: false, greased: false, oeroded: 0, oeroded2: 0 };
-    name = describe(plainObject, nameState);
+    name = await describe(plainObject, nameState);
     if (name.length > limit) {
         name = simpleObjectName(plainObject, nameState);
         if (kind === 'credit')
@@ -543,7 +543,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
             const prefix = `Will you accept ${moneyAmount(tmpcr, state)} in credit for `;
-            answer = await askSell(saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query });
+            answer = await askSell(await saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
@@ -596,7 +596,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         const prefix = `${shopkeeperName(resident)} offers${shortFunds ? ' only' : ''} ${goldPieces(offer)} for ${cltmp && !ltmp
             ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''}${object.unpaid ? 'the' : 'your'} `;
         const suffix = `${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
-        const question = saleQuestion(object, prefix, suffix, one, state, 'cash');
+        const question = await saleQuestion(object, prefix, suffix, one, state, 'cash');
         const answer = await askSell(question, { query });
         if (answer === 'q')
             sellResponse = 'n';

@@ -56,7 +56,7 @@ for (const [type, identifiedName] of [
         assert.equal(object.known, false);
         assert.equal(object.dknown, false);
         assert.equal(object.bknown, false);
-        assert.doesNotMatch(inventoryItemDescription(object), /magic resistance|jade/);
+        assert.doesNotMatch(await inventoryItemDescription(object), /magic resistance|jade/);
     });
 }
 

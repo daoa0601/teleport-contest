@@ -28,7 +28,7 @@ for (const unpaidContainer of [false, true]) {
         sack.unpaid = unpaidContainer;
         dagger.unpaid = true;
         setHeroGoldAmount(game, 20);
-        const [purchase] = itemizedShopBill(shopkeeper);
+        const [purchase] = await itemizedShopBill(shopkeeper);
         assert.ok(purchase);
         const input = resetInputState();
         const buying = buyShopBillItem(shopkeeper, purchase);

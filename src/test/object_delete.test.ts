@@ -132,7 +132,7 @@ void test('nested billed content survives container destruction on the bill', as
         candidate.bo_id === potion.o_id);
     assert.ok(entry, 'the bill entry must survive container destruction');
     assert.equal(entry.useup, true);
-    assert.ok(itemizedShopBill(resident).some(item => item.object === potion));
+    assert.ok((await itemizedShopBill(resident)).some(item => item.object === potion));
 });
 
 for (const [name, type] of [['magic lamp', MAGIC_LAMP], ['oil lamp', OIL_LAMP]] as const) {

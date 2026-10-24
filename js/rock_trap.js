@@ -84,7 +84,7 @@ export async function finishMonsterRockTrap(monster, event, state = game, { publ
         // thitm() names the missile before stackobj(); seeing it makes it
         // eligible to join an already observed pile.
         observeObjectForNaming(event.rock, { state });
-        await publish(`${subject} is hit by ${inventoryItemDescription(event.rock)}${event.harmless ? ' but is not harmed.' : '!'}`);
+        await publish(`${subject} is hit by ${await inventoryItemDescription(event.rock)}${event.harmless ? ' but is not harmed.' : '!'}`);
     }
     if (!event.harmless) {
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);

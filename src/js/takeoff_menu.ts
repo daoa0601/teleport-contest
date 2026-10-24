@@ -44,21 +44,23 @@ export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
         return;
     }
     const sorted = sortObjects(worn, { mode: inventorySortMode() });
-    const sections: MultiSelectSection<GameObject>[] = inventoryClassOrder().flatMap(oclass => {
+    const sections: MultiSelectSection<GameObject>[] = [];
+    for (const oclass of inventoryClassOrder()) {
         const objects = sorted.filter(object => object.oclass === oclass);
-        if (!objects.length) return [];
-        const items = objects.map(object => {
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
-            return {
+            items.push({
                 key: object.invlet ?? '#',
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] ?? '',
-                text: objectDescription(object, { withPrice: true }),
+                text: await objectDescription(object, { withPrice: true }),
                 value: object,
-            };
-        });
-        return [{ heading: objectClassHeading(oclass), items }];
-    });
+            });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
     const underlay = snapshotMenuUnderlay();
     const selected = await showMultiSelectWindow({
         title: 'What do you want to take off?', sections, returnCounts: true,
@@ -225,7 +227,7 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
                 const letter = game.flags.fixinv !== false ? object.invlet
                     : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
                 const answer = acceptAll ? 'y' : await promptYesNoAllQuit(
-                    `${letter} - ${inventoryItemDescription(object)}?`, 'n');
+                    `${letter} - ${await inventoryItemDescription(object)}?`, 'n');
                 if (answer === 'q') return null;
                 if (answer === 'n') continue;
                 if (answer === 'a') acceptAll = true;

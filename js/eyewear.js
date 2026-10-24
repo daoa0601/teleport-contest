@@ -49,7 +49,7 @@ export function unequipEyewear(object, state = game) {
     setWornArtifactProperties(object, 'ublindf', false, state);
 }
 async function announceWorn(object) {
-    const message = objectWearMessage(object);
+    const message = await objectWearMessage(object);
     if (message)
         await pline(message);
 }
@@ -118,7 +118,7 @@ export async function removeEyewear(object = null, { state = game, publish = pli
     unequipEyewear(object, state);
     const blind = syncBlindness(state);
     if (!noOffMessage && state.flags?.verbose !== false)
-        await publish(armorOffMessage(object, state));
+        await publish(await armorOffMessage(object, state));
     let changed = false;
     if (blind) {
         if (!wasBlind) {

@@ -33,7 +33,7 @@ export async function dip({ fountain, }) {
     }
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     let declinedSource = false;
-    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : dipTargetDescription(object);
+    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : await dipTargetDescription(object);
     const target = game.flags.verbose ? description : dipTargetPronoun(object);
     if (!game.iflags.menu_requested && heroCanReachFloor(game) && location.typ === FOUNTAIN) {
         if (await promptYesNo(`Dip ${target} into the fountain?`, 'n') === 'y') {
@@ -160,15 +160,15 @@ function dipTargetPronoun(object) {
     return objectNameIsPlural(object) || object.otyp === LENSES
         || slot === 'uarmg' || slot === 'uarmf' ? 'them' : 'it';
 }
-function dipTargetDescription(object) {
+async function dipTargetDescription(object) {
     observeObjectForNaming(object);
-    const full = inventoryItemDescription(object);
+    const full = await inventoryItemDescription(object);
     if (full.length <= 49)
         return full;
     const shortened = { ...object, bknown: false, rknown: false,
         greased: false, oeroded: 0, oeroded2: 0 };
     delete shortened.buc;
-    const name = inventoryItemDescription(shortened);
+    const name = await inventoryItemDescription(shortened);
     return name.length <= 49 ? name : `the ${simpleObjectName(object)}`;
 }
 //# sourceMappingURL=potion_dip.js.map

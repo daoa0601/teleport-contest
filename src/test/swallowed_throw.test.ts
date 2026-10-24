@@ -1446,7 +1446,7 @@ void test('dknown unknown swallowed potion records a live type call after impact
         assert.deepEqual(game.inventory, [sibling]);
         assert.equal(potion.where, 'gone');
         assert.equal(game._objectCallNames?.[POT_FRUIT_JUICE], 'mystery');
-        assert.equal(inventoryItemDescription(sibling), 'a blessed potion called mystery');
+        assert.equal(await inventoryItemDescription(sibling), 'a blessed potion called mystery');
         assert.equal(floorObjects(game.level).length, 0);
     });
 

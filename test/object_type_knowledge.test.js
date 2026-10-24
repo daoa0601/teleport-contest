@@ -37,10 +37,10 @@ void test('releasing a djinni identifies magic lamps without identifying the res
     assert.equal(game.context.move, 1);
     assert.equal(objectTypeKnown({ otyp: MAGIC_LAMP }), true);
     assert.equal(objectTypeKnown({ otyp: OIL_LAMP }), false);
-    assert.equal(inventoryItemDescription(lamp), 'an uncursed lamp (wielded)');
+    assert.equal(await inventoryItemDescription(lamp), 'an uncursed lamp (wielded)');
     assert.equal(objectNeedsFullIdentification(lamp), true);
     fullyIdentifyObject(lamp);
-    assert.equal(inventoryItemDescription(lamp), 'an uncursed oil lamp (wielded)');
+    assert.equal(await inventoryItemDescription(lamp), 'an uncursed oil lamp (wielded)');
     assert.equal(objectNeedsFullIdentification(lamp), false);
 });
 void test('a failed rub lets a blind hero smell the smoke', async () => {
@@ -70,7 +70,7 @@ for (const oilKnown of [false, true]) {
             recordObjectKnowledge(OIL_LAMP);
         transformMagicLampToOilLamp(lamp, 1200);
         assert.equal(objectName(lamp), oilKnown ? 'oil lamp' : 'lamp called refill');
-        assert.equal(inventoryItemDescription(lamp), oilKnown
+        assert.equal(await inventoryItemDescription(lamp), oilKnown
             ? 'a blessed oil lamp' : 'a blessed lamp called refill');
         const otherMagicLamp = await mksobj(MAGIC_LAMP, false, false);
         otherMagicLamp.dknown = true;

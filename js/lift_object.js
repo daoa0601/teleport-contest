@@ -76,7 +76,7 @@ function maximumLiftedCount(object, requested, container, state) {
     }
     return low;
 }
-function itemDescription(object, count = objectQuantity(object)) {
+async function itemDescription(object, count = objectQuantity(object)) {
     if (isCoin(object))
         return count === 1 ? 'a gold piece' : `${count} gold pieces`;
     const view = withQuantity(object, count);
@@ -86,7 +86,7 @@ function itemDescription(object, count = objectQuantity(object)) {
         view.plural = presentation.plural;
         view.class = presentation.class;
     }
-    return inventoryItemDescription(view);
+    return await inventoryItemDescription(view);
 }
 function locationPhrase(container, state, short = false) {
     if (!container)
@@ -99,12 +99,12 @@ function presentTense(object) {
 async function reportPartialLift(object, count, container, telekinesis, state) {
     observeObjectForNaming(object, { state });
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
-    await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${itemDescription(object)} ${locationPhrase(container, state)}.`);
+    await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${await itemDescription(object)} ${locationPhrase(container, state)}.`);
 }
 async function reportUnliftable(object, container, state, telekinesis) {
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     observeObjectForNaming(object, { state });
-    const description = itemDescription(object);
+    const description = await itemDescription(object);
     const where = locationPhrase(container, state, !container);
     if ((state.inventory || []).length || heroGoldAmount(state)) {
         await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but you cannot ${verb} any more.`);
@@ -201,7 +201,7 @@ export async function liftObject({ object, container = null, count = objectQuant
         }
         const action = container ? 'removing' : 'lifting';
         observeObjectForNaming(object, { state });
-        const answer = await promptYesNoQuit(`${pickupLoadPrefix(nextBurden)} ${action} ${itemDescription(object, liftedCount)}.  Continue?`);
+        const answer = await promptYesNoQuit(`${pickupLoadPrefix(nextBurden)} ${action} ${await itemDescription(object, liftedCount)}.  Continue?`);
         // pickup.c lift_object() clears WIN_MESSAGE after every answer, so
         // the question is gone before any later floor-pile window.
         clearMessageWindow();

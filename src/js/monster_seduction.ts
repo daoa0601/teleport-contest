@@ -175,7 +175,7 @@ async function exchangeAdornmentRings(context: SeductionContext): Promise<boolea
             await publish(`${who} puts the ${objectName(ring, state)} on your ${slot === 'uright' ? 'right' : 'left'} ${heroHandName(state)}.`);
         }
         await wearHeroAccessory(ring, slot, state);
-        await publish(`${ring.invlet || '?'} - ${inventoryItemDescription(ring)}.`);
+        await publish(`${ring.invlet || '?'} - ${await inventoryItemDescription(ring)}.`);
     }
     return triedGloves;
 }

@@ -58,7 +58,7 @@ export async function presentMonsterQuaff(monster: Monster, object: GameObject, 
     if (seen) {
         observeObject(object, state);
         observeObjectForNaming(object, { state });
-        const name = inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
+        const name = await inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
         await publish(`${monsterName(monster, { state, capitalized: true })} drinks ${name}!`);
     } else if (!heroIsDeaf(state)) {
         const message = formatHeardMessage('a chugging sound.', state);
@@ -149,7 +149,7 @@ export async function presentMonsterWandUse(monster: Monster, object: GameObject
         const subject = monsterName(monster, { state, capitalized: true });
         const action = monsterReflexiveAction(monster, subject, 'zap', '', { state });
         observeObjectForNaming(object, { state });
-        await publish(`${action} with ${inventoryItemDescription(object)}!`);
+        await publish(`${action} with ${await inventoryItemDescription(object)}!`);
     } else {
         const subject = monsterName(monster, { state, capitalized: true });
         await publish(`${subject} zaps ${withIndefiniteArticle(objectCombatName(object, { state }))}!`);
@@ -189,7 +189,7 @@ export async function presentMonsterScrollRead(monster: Monster, object: GameObj
     observeObject(object, state);
     if (visible) observeObjectForNaming(object, { state });
     const single = { ...object, quan: 1, quantity: 1 };
-    const name = visible ? inventoryItemDescription(single)
+    const name = visible ? await inventoryItemDescription(single)
         : withIndefiniteArticle(minimalObjectName(single, state));
     if (visible) {
         await publish(`${monsterName(monster, { state, capitalized: true })} reads ${name}!`);

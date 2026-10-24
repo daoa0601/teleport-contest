@@ -143,7 +143,7 @@ export async function finishMonsterProjectileTrap(
         await publish(
             `${describeMonster(monster)} is ${
                 event.hit ? 'hit' : 'almost hit'
-            } by ${objectDescription(event.missile)}!`,
+            } by ${await objectDescription(event.missile)}!`,
         );
     }
     if (event.hit) {

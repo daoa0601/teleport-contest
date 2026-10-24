@@ -142,7 +142,7 @@ void test('charging a worn protection ring changes armor class without removing 
     assert.equal(ring.spe, 1);
     assert.equal(game.u.uac, armorClass - 1);
     assert.equal(game.uleft, ring);
-    assert.match(inventoryItemDescription(ring), /\+1 ring of protection/);
+    assert.match(await inventoryItemDescription(ring), /\+1 ring of protection/);
 });
 void test('charging a worn strength ring updates its bonus without changing innate strength', async () => {
     freshObjectRoom();
@@ -285,7 +285,7 @@ void test('destroying an unpaid wand preserves the amount owed to the shop', asy
     const wand = await floorObject(WAN_WISHING, 10, 10, { spe: 0, recharged: 1 });
     pushKeys('\x1b');
     await pickupAtHero();
-    const debt = unpaidObjectCost(wand);
+    const debt = await unpaidObjectCost(wand);
     await rechargeObject(wand, 1);
     assert.equal(game.inventory.includes(wand), false);
     assert.equal(wand.where, 'onbill');

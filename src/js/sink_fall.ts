@@ -102,7 +102,7 @@ export async function fallIntoSink(
         for (const object of pile) {
             if (!isWeaponOrWeaponTool(object)) continue;
             observeObjectForNaming(object, { state });
-            await publish(`You fell on ${floorObjectDescription(object)}.`);
+            await publish(`You fell on ${await floorObjectDescription(object)}.`);
             if (await loseHeroHp(maybeHalfPhysicalDamage(rnd(3), state),
                 FELL_ON_SINK, { state, publish, die })) {
                 return { fell: true, died: true };
@@ -129,20 +129,20 @@ export async function fallIntoSink(
     const left = wornAt('uleft', state);
     if (left?.otyp === RIN_LEVITATION) {
         await removeHeroAccessory(left, state);
-        const message = armorOffMessage(left, state);
+        const message = await armorOffMessage(left, state);
         if (message) await publish(message);
     }
     const right = wornAt('uright', state);
     if (right?.otyp === RIN_LEVITATION) {
         await removeHeroAccessory(right, state);
-        const message = armorOffMessage(right, state);
+        const message = await armorOffMessage(right, state);
         if (message) await publish(message);
     }
     if (levBoots) {
         const boots = wornAt('uarmf', state);
         if (!boots) throw new Error('The levitation boots disappeared before forced removal');
         await removeHeroArmor(boots, state);
-        const message = armorOffMessage(boots, state);
+        const message = await armorOffMessage(boots, state);
         if (message) await publish(message);
     }
     hero.levitationTurns = 0; // C HLevitation--

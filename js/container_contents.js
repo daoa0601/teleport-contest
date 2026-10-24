@@ -28,7 +28,7 @@ export async function containerContents(list, identified, allContainers, reportE
                     for (const object of sortObjects(box.contents, { mode: lootSortMode() })) {
                         if (identified)
                             identifyObjectForDisclosure(object);
-                        lines.push(`  ${objectDescription(object, { withPrice: true })}`);
+                        lines.push(`  ${await objectDescription(object, { withPrice: true })}`);
                     }
                 }
                 await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });

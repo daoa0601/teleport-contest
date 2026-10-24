@@ -184,7 +184,7 @@ export async function useTinOpener(tool, { state = game, swapWeapons } = {}) {
     }
     let usedTime = false;
     if (tool !== state.uwep) {
-        if (tool.cursed && tool.bknown && await promptYesNoQuit(`Really wield ${inventoryItemDescription(tool)}?`) !== 'y')
+        if (tool.cursed && tool.bknown && await promptYesNoQuit(`Really wield ${await inventoryItemDescription(tool)}?`) !== 'y')
             return { usedTime, cancelled: true, heroDied: false };
         const wielded = await wieldTool(tool, 'use', { swapWeapons }, state);
         if (!wielded.ready || state.program_state.gameover)

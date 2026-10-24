@@ -137,7 +137,7 @@ export async function showFloorPile(
         observeObjectForNaming(first);
         await plineWithContinuation(
             `You ${heroIsBlind() ? 'feel' : 'see'} here ${
-                pricedFloorObjectDescription(first)}.`,
+                await pricedFloorObjectDescription(first)}.`,
         );
         game._lastPlineKind = PLNMSG_ONE_ITEM_HERE;
         return await feelPetrifyingCorpse(first);
@@ -155,11 +155,11 @@ export async function showFloorPile(
     for (const object of objects) {
         observeObjectForNaming(object);
         if (willFeelPetrifyingCorpse(object)) {
-            descriptions.push(`${floorObjectDescription(object)}...`);
+            descriptions.push(`${await floorObjectDescription(object)}...`);
             touchedCorpse = object;
             break;
         }
-        descriptions.push(pricedFloorObjectDescription(object));
+        descriptions.push(await pricedFloorObjectDescription(object));
     }
     // Native formats into a hidden window. Finish naming reports before
     // painting the pile or retaining the map that its dismissal restores.
@@ -210,10 +210,10 @@ async function showFloorPileCorner(display: GameDisplay, lines: readonly string[
     while (![27, 32, 10, 13].includes(key));
 }
 
-export function pricedFloorObjectDescription(object: GameObject): string {
-    return objectDescription(object, { withPrice: true });
+export async function pricedFloorObjectDescription(object: GameObject): Promise<string> {
+    return await objectDescription(object, { withPrice: true });
 }
 
-export function floorObjectDescription(object: GameObject): string {
-    return objectDescription(object);
+export async function floorObjectDescription(object: GameObject): Promise<string> {
+    return await objectDescription(object);
 }

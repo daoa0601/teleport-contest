@@ -70,7 +70,7 @@ async function readySelectedWeapon(weapon, state) {
     else {
         if (weapon.otyp === AKLYS)
             await pline('You secure the tether.');
-        await pline(`${weapon.invlet} - ${inventoryItemDescription(weapon, { projectPrimaryHand: true })}.`);
+        await pline(`${weapon.invlet} - ${await inventoryItemDescription(weapon, { projectPrimaryHand: true })}.`);
     }
     await setPrimaryWeapon(weapon, state);
     await explainTwoWeaponEnd(wasTwoWeapon, state);

@@ -74,7 +74,7 @@ export async function useHornOfPlenty(horn: GameObject, {
             if (terrain === ALTAR) await landObjectOnAltar(object);
             else {
                 observeObjectForNaming(object);
-                const description = inventoryItemDescription(object);
+                const description = await inventoryItemDescription(object);
                 await pline(`${description.charAt(0).toUpperCase()}${description.slice(1)} ${
                     object.quan === 1 ? 'drops' : 'drop'} to the ${surfaceName(game.u.ux, game.u.uy)}.`);
             }

@@ -12,13 +12,13 @@ const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
 const POTION_CLASS = 8;
 const WAND_CLASS = 11;
-export function objectClassDescription(item, state = game) {
+export async function objectClassDescription(item, state = game) {
     const details = { prefix: [], suffix: '' };
     const known = item.known || item.overrideIdentified || state.iflags.override_ID;
     switch (item.oclass) {
         case TOOL_CLASS:
             if (!isWeaponTool(item))
-                describeTool(item, details, !!known, state);
+                await describeTool(item, details, !!known, state);
             break;
         case FOOD_CLASS:
             if (item.oeaten)
@@ -46,7 +46,7 @@ export function objectClassDescription(item, state = game) {
     }
     return details;
 }
-function describeTool(item, details, known, state) {
+async function describeTool(item, details, known, state) {
     // The native worn-tool branch ends before attachment, fuel, or charges.
     if ((item.owornmask ?? 0) & (W_TOOL | W_SADDLE))
         return;

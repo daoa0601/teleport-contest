@@ -129,7 +129,7 @@ async function describePetMeal(monster: Monster, meal: PetMeal, state: GameState
     if (!sawPet && !seesObject) return;
     const seesPet = sawPet || canSpotMonster(monster);
     observeDistantObjectForNaming(meal.object, state);
-    const food = inventoryItemDescription(meal.object);
+    const food = await inventoryItemDescription(meal.object);
     if (seesPet) {
         const subject = monsterName(monster, {
             state, article: 'your', capitalized: true, suppressIt: true,
@@ -169,7 +169,7 @@ export async function finishPetEating(
         if (canSeeMonster(monster)) {
             observeDistantObjectForNaming(object, state);
             if (state.flags.verbose) await plineWithContinuation(
-                `${monsterName(monster, { state, capitalized: true })} spits ${inventoryItemDescription(object)} out in disgust!`,
+                `${monsterName(monster, { state, capitalized: true })} spits ${await inventoryItemDescription(object)} out in disgust!`,
             );
         }
         return;
@@ -182,7 +182,7 @@ export async function finishPetEating(
         dog.apport += Math.trunc(200 / elapsed);
     }
     if (object.unpaid) {
-        const cost = unpaidObjectCost(object, state, 'contents');
+        const cost = await unpaidObjectCost(object, state, 'contents');
         await plineWithContinuation(`That ${chargedName} will cost you ${cost} ${currency(cost, { state })}.`);
     }
     await consumeMonsterObject(monster, object, state);

@@ -99,7 +99,7 @@ void test('breaking unpaid goods outside every shop retains a used-up bill rathe
     assert.equal(shopkeeper.eshk.debit, 0);
     assert.equal(shopkeeper.eshk.bill.length, 1);
     assert.equal(entry.useup, true);
-    assert.ok(itemizedShopBill(shopkeeper).some(item => item.object === potion));
+    assert.ok((await itemizedShopBill(shopkeeper)).some(item => item.object === potion));
     assert.equal(potion.where, 'onbill');
     assert.equal(potion.unpaid, false);
 });

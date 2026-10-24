@@ -735,7 +735,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
         const quantity = object.quan ?? object.quantity ?? 1;
         await pline(`You ${everb} the ${eloc} with ${
             setup.type === ENGRAVE && quantity > 1 ? '1 of ' : ''
-        }${inventoryItemDescription(object)}.`);
+        }${await inventoryItemDescription(object)}.`);
     } else {
         await pline(`You ${everb} the ${eloc} with your ${heroFingerTipName(state)}.`);
     }
@@ -900,10 +900,10 @@ export async function continueEngraving(state: GameState = game): Promise<boolea
             unlinkObject(stylus, state);
             await holdAnotherObject(stylus, {
                 state,
-                dropMessage: `You drop one ${inventoryItemDescription(stylus)}!`,
+                dropMessage: `You drop one ${await inventoryItemDescription(stylus)}!`,
             });
         } else if (dulled && stylus.known) {
-            await pline(`${stylus.invlet} - ${inventoryItemDescription(stylus)}.`);
+            await pline(`${stylus.invlet} - ${await inventoryItemDescription(stylus)}.`);
         }
     } else if (marker && stylus) {
         const inkCost = Math.max(Math.trunc(rate / 2), 1); /* no infinite graffiti */

@@ -122,7 +122,7 @@ void test('shop material mixed into a player glob remains owed through a used-up
     assert.ok(remainingCharge);
     assert.equal(remainingCharge.price, oldPrice);
     assert.equal(remainingCharge.useup, true);
-    assert.ok(itemizedShopBill(shopkeeper).some(({ object }) => object.o_id === remainingCharge.bo_id && object.where === 'onbill'));
+    assert.ok((await itemizedShopBill(shopkeeper)).some(({ object }) => object.o_id === remainingCharge.bo_id && object.where === 'onbill'));
 });
 void test('mixing a billed glob into a player glob prints the native demand even for a deaf hero', async () => {
     freshObjectRoom();

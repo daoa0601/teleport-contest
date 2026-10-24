@@ -17,7 +17,7 @@ void test('a leash names its attached pet even when that pet is invisible', asyn
     pet.minvis = true;
     pet.mleashed = 1;
     const leash = await knownObject(LEASH, { bknown: false, leashmon: pet.m_id });
-    assert.equal(inventoryItemDescription(leash), 'a leash (attached to your invisible little dog)');
+    assert.equal(await inventoryItemDescription(leash), 'a leash (attached to your invisible little dog)');
     assert.equal(leash.leashmon, pet.m_id);
 });
 for (const { count, lit, suffix } of [
@@ -32,7 +32,7 @@ for (const { count, lit, suffix } of [
         });
         if (lit)
             assert.equal(beginObjectBurn(candelabrum), true);
-        const description = inventoryItemDescription(candelabrum);
+        const description = await inventoryItemDescription(candelabrum);
         assert.ok(description.endsWith(` ${suffix}`), description);
         assert.doesNotMatch(description, /\(\d+:-?\d+\)/);
     });
@@ -42,13 +42,13 @@ for (const [type, name] of [[TALLOW_CANDLE, 'tallow'], [WAX_CANDLE, 'wax']]) {
         freshObjectRoom();
         const candle = await knownObject(type, { bknown: false });
         assert.equal(beginObjectBurn(candle), true);
-        const fresh = inventoryItemDescription(candle);
+        const fresh = await inventoryItemDescription(candle);
         assert.match(fresh, /candle \(lit\)$/);
         assert.doesNotMatch(fresh, /partly used/);
         game.moves++;
-        assert.match(inventoryItemDescription(candle), /partly used .*candle \(lit\)$/);
+        assert.match(await inventoryItemDescription(candle), /partly used .*candle \(lit\)$/);
         assert.equal(endObjectBurn(candle), true);
-        const extinguished = inventoryItemDescription(candle);
+        const extinguished = await inventoryItemDescription(candle);
         assert.match(extinguished, /partly used .*candle$/);
         assert.doesNotMatch(extinguished, /\(lit\)/);
     });
@@ -61,11 +61,11 @@ for (const [type, name] of [
         freshObjectRoom();
         const light = await knownObject(type, { bknown: false, spe: 1, age: 400 });
         assert.equal(beginObjectBurn(light), true);
-        const burning = inventoryItemDescription(light);
+        const burning = await inventoryItemDescription(light);
         assert.match(burning, / \(lit\)$/);
         assert.doesNotMatch(burning, /\(\d+:-?\d+\)/);
         assert.equal(endObjectBurn(light), true);
-        assert.doesNotMatch(inventoryItemDescription(light), /\(lit\)/);
+        assert.doesNotMatch(await inventoryItemDescription(light), /\(lit\)/);
     });
 }
 for (const [type, name] of [[WAN_FIRE, 'wand'], [MAGIC_MARKER, 'marker']]) {
@@ -74,16 +74,16 @@ for (const [type, name] of [[WAN_FIRE, 'wand'], [MAGIC_MARKER, 'marker']]) {
         const object = await knownObject(type, {
             bknown: false, known: false, recharged: 2, spe: 9,
         });
-        assert.doesNotMatch(inventoryItemDescription(object), /\(2:9\)/);
+        assert.doesNotMatch(await inventoryItemDescription(object), /\(2:9\)/);
         game.iflags.override_ID = true;
-        assert.match(inventoryItemDescription(object), / \(2:9\)$/);
+        assert.match(await inventoryItemDescription(object), / \(2:9\)$/);
         assert.equal(object.known, false, 'Identification override must not identify the actual object');
     });
 }
 void test('a weapon-tool displays enchantment instead of charges', async () => {
     freshObjectRoom();
     const horn = await knownObject(UNICORN_HORN, { bknown: false, recharged: 1, spe: 2 });
-    const description = inventoryItemDescription(horn);
+    const description = await inventoryItemDescription(horn);
     assert.match(description, /\+2 unicorn horn/);
     assert.doesNotMatch(description, /\(1:2\)/);
 });
@@ -92,7 +92,7 @@ void test('a started meal is partly eaten even before its first nutrition is con
     const nutrition = OBJECT_NUTRITION[FOOD_RATION];
     assert.ok(nutrition !== undefined && nutrition > 0);
     const ration = await knownObject(FOOD_RATION, { bknown: false, oeaten: nutrition });
-    assert.equal(inventoryItemDescription(ration), 'a partly eaten food ration');
+    assert.equal(await inventoryItemDescription(ration), 'a partly eaten food ration');
 });
 void test('an egg reveals its origin when its species becomes known', async () => {
     freshObjectRoom();
@@ -100,9 +100,9 @@ void test('an egg reveals its origin when its species becomes known', async () =
     const egg = await knownObject(EGG, {
         initialize: false, bknown: false, known: false, corpsenm: species, spe: 1,
     });
-    assert.doesNotMatch(inventoryItemDescription(egg), /laid by you/);
+    assert.doesNotMatch(await inventoryItemDescription(egg), /laid by you/);
     requireMonsterVital(species).mvflags |= MV_KNOWS_EGG;
-    assert.match(inventoryItemDescription(egg), /cockatrice egg \(laid by you\)$/);
+    assert.match(await inventoryItemDescription(egg), /cockatrice egg \(laid by you\)$/);
 });
 void test('egg origin requires a real species and the laid-by-you flag', async () => {
     freshObjectRoom();
@@ -110,8 +110,8 @@ void test('egg origin requires a real species and the laid-by-you flag', async (
     const found = await knownObject(EGG, {
         bknown: false, corpsenm: MONSTER_NAME.indexOf('cockatrice'), spe: 0,
     });
-    assert.doesNotMatch(inventoryItemDescription(ordinary), /laid by you/);
-    assert.doesNotMatch(inventoryItemDescription(found), /laid by you/);
+    assert.doesNotMatch(await inventoryItemDescription(ordinary), /laid by you/);
+    assert.doesNotMatch(await inventoryItemDescription(found), /laid by you/);
 });
 for (const [gender, label] of [
     [CORPSTAT_RANDOM, 'unspecified gender'], [CORPSTAT_MALE, 'male'],
@@ -123,12 +123,12 @@ for (const [gender, label] of [
             bknown: false, corpsenm: MONSTER_NAME.indexOf('little dog'), spe: gender,
         });
         game.iflags.wizmgender = true;
-        assert.equal(inventoryItemDescription(figurine).endsWith(` (${label})`), false);
+        assert.equal((await inventoryItemDescription(figurine)).endsWith(` (${label})`), false);
         game.flags.debug = true;
-        const description = inventoryItemDescription(figurine);
+        const description = await inventoryItemDescription(figurine);
         assert.ok(description.endsWith(` (${label})`), description);
         game.iflags.wizmgender = false;
-        assert.equal(inventoryItemDescription(figurine).endsWith(` (${label})`), false);
+        assert.equal((await inventoryItemDescription(figurine)).endsWith(` (${label})`), false);
     });
 }
 //# sourceMappingURL=object_description_details.test.js.map

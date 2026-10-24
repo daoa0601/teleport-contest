@@ -36,22 +36,24 @@ export async function selectBulkTakeoff(selectOff) {
         return;
     }
     const sorted = sortObjects(worn, { mode: inventorySortMode() });
-    const sections = inventoryClassOrder().flatMap(oclass => {
+    const sections = [];
+    for (const oclass of inventoryClassOrder()) {
         const objects = sorted.filter(object => object.oclass === oclass);
         if (!objects.length)
-            return [];
-        const items = objects.map(object => {
+            continue;
+        const items = [];
+        for (const object of objects) {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
-            return {
+            items.push({
                 key: object.invlet ?? '#',
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] ?? '',
-                text: objectDescription(object, { withPrice: true }),
+                text: await objectDescription(object, { withPrice: true }),
                 value: object,
-            };
-        });
-        return [{ heading: objectClassHeading(oclass), items }];
-    });
+            });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
     const underlay = snapshotMenuUnderlay();
     const selected = await showMultiSelectWindow({
         title: 'What do you want to take off?', sections, returnCounts: true,
@@ -225,7 +227,7 @@ async function traditionalCategories(combo, selectOff) {
                 const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
                 const letter = game.flags.fixinv !== false ? object.invlet
                     : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
-                const answer = acceptAll ? 'y' : await promptYesNoAllQuit(`${letter} - ${inventoryItemDescription(object)}?`, 'n');
+                const answer = acceptAll ? 'y' : await promptYesNoAllQuit(`${letter} - ${await inventoryItemDescription(object)}?`, 'n');
                 if (answer === 'q')
                     return null;
                 if (answer === 'n')

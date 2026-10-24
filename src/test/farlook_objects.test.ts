@@ -51,6 +51,6 @@ void test('temporary identification shows exact quantities in a vague object des
     });
     game.iflags.override_ID = true;
 
-    assert.match(objectDescription(daggers, { vagueQuantity: true }), /^6 /);
+    assert.match(await objectDescription(daggers, { vagueQuantity: true }), /^6 /);
     assert.equal(daggers.dknown, false, 'temporary identification does not learn the appearance');
 });

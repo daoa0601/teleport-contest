@@ -129,13 +129,13 @@ export function observeDistantObjectForNaming(object: GameObject, state: GameSta
 
 // C distant_name() also suppresses inscriptions during final map browsing.
 // Restore the identity before returning; it still selects inventory text.
-export function distantObjectName(object: GameObject, format: (object: GameObject) => string,
-    state: GameState = game): string {
+export async function distantObjectName(object: GameObject, format: (object: GameObject) => string | Promise<string>,
+    state: GameState = game): Promise<string> {
     const identity = object.o_id;
     if (state.program_state.gameover) object.o_id = 0;
     try {
         observeDistantObjectForNaming(object, state);
-        return format(object);
+        return await format(object);
     } finally {
         object.o_id = identity;
     }
@@ -625,14 +625,14 @@ export function ownedSimpleObjectName(
     return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
 }
 
-export function ownedObjectQuestion(
+export async function ownedObjectQuestion(
     object: GameObject,
     { prefix, suffix, fallback, capitalized }: {
         prefix: string; suffix: string; fallback: string; capitalized: boolean;
     },
     state: GameState = game,
-): string {
-    return objectQuestion(object, {
+): Promise<string> {
+    return await objectQuestion(object, {
         prefix, suffix, fallback,
         format: (item, nameState) => ownedObjectName(item, nameState, { capitalized }),
         shortFormat: (item, nameState) => ownedSimpleObjectName(item, nameState, { capitalized }),
@@ -640,21 +640,21 @@ export function ownedObjectQuestion(
 }
 
 // C safe_qbuf()/short_oname(): reserve the question before shortening names.
-export function objectQuestion(
+export async function objectQuestion(
     object: GameObject,
     { prefix, suffix, fallback, format, shortFormat }: {
         prefix: string;
         suffix: string;
         fallback: string;
-        format: (object: GameObject, state: GameState) => string;
+        format: (object: GameObject, state: GameState) => string | Promise<string>;
         shortFormat: (object: GameObject, state: GameState) => string;
     },
     state: GameState = game,
-): string {
+): Promise<string> {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
     const question = (name: string): string => `${prefix}${name}${suffix}`;
     if (fallback.length > limit) return question(fallback).slice(0, QBUFSZ - 1);
-    let name = format(object, state);
+    let name = await format(object, state);
     if (name.length <= limit) return question(name);
 
     const callName = state._objectCallNames?.[object.otyp];
@@ -668,7 +668,7 @@ export function objectQuestion(
 
     // short_oname() changes the live object while formatting it. Keep its
     // identity so equipment and dressing annotations still find their owner.
-    function formatName({ nameState = state, shortenName = false, stripAttributes = false } = {}): string {
+    async function formatName({ nameState = state, shortenName = false, stripAttributes = false } = {}): Promise<string> {
         const saved = {
             oextra: object.oextra,
             bknown: object.bknown, rknown: object.rknown, greased: object.greased,
@@ -683,7 +683,7 @@ export function objectQuestion(
             object.orotten = object.norevive = object.odiluted = false;
         }
         try {
-            const formatted = format(object, nameState);
+            const formatted = await format(object, nameState);
             return stripAttributes && formatted.length > limit
                 ? shortFormat(object, nameState) : formatted;
         } finally {
@@ -713,22 +713,22 @@ export function objectQuestion(
     }
 
     if (shortCallState !== state) {
-        name = formatName({ nameState: shortCallState });
+        name = await formatName({ nameState: shortCallState });
         if (name.length <= limit) return question(name);
     }
     if (shortPersonalName) {
-        name = formatName({ shortenName: true });
+        name = await formatName({ shortenName: true });
         if (name.length <= limit) return question(name);
     }
     const shortenBoth = shortCallState !== state && shortPersonalName !== null;
     if (shortenBoth) {
-        name = formatName({ nameState: shortCallState, shortenName: true });
+        name = await formatName({ nameState: shortCallState, shortenName: true });
         if (name.length <= limit) return question(name);
     }
 
     // Native retains shortened names during attribute removal only after
     // the combined attempt. Each separate attempt restores the full names.
-    name = formatName({
+    name = await formatName({
         nameState: shortenBoth ? shortCallState : state,
         shortenName: shortenBoth, stripAttributes: true,
     });

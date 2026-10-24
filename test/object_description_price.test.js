@@ -29,7 +29,7 @@ void test('an owned floor bag quotes its nested merchandise, excluding owned con
     assert.equal(cost.price, 8);
     assert.equal(cost.noCharge, 1);
     assert.equal(priceQuoteSuffix(SACK), '', 'a cost lookup does not teach a quoted price');
-    assert.match(objectDescription(bag, { withPrice: true }), / \(contents, 8 zorkmids\)$/);
+    assert.match(await objectDescription(bag, { withPrice: true }), / \(contents, 8 zorkmids\)$/);
     assert.equal(priceQuoteSuffix(SACK), ' {buy 8}');
 });
 void test('the keeper home square makes the whole floor container free', async () => {
@@ -37,7 +37,7 @@ void test('the keeper home square makes the whole floor container free', async (
     const home = shopkeeper.eshk.shk;
     const bag = await floorObject(SACK, home.x, home.y, { initialize: false });
     await addCreatedObjectToContainer(bag, await uninitializedObject(DAGGER));
-    assert.match(objectDescription(bag, { withPrice: true }), / \(no charge\)$/);
+    assert.match(await objectDescription(bag, { withPrice: true }), / \(no charge\)$/);
     assert.equal(priceQuoteSuffix(SACK), '');
 });
 void test('an unpaid stack keeps its agreed unit price and charges only the remaining objects', async () => {
@@ -51,9 +51,9 @@ void test('an unpaid stack keeps its agreed unit price and charges only the rema
     daggers.quan = daggers.quantity = 2;
     game.u.acurr.a[A_CHA] = game.u.amax.a[A_CHA] = 5;
     assert.equal(shopkeeper.eshk.bill[0]?.bquan, 3);
-    assert.equal(unpaidObjectCost(daggers), 8);
-    assert.equal(unpaidObjectCost(daggers, game, 'single'), 4);
-    assert.match(objectDescription(daggers), / \(unpaid, 8 zorkmids\)$/);
+    assert.equal(await unpaidObjectCost(daggers), 8);
+    assert.equal(await unpaidObjectCost(daggers, game, 'single'), 4);
+    assert.match(await objectDescription(daggers), / \(unpaid, 8 zorkmids\)$/);
 });
 void test('a carried owned bag describes unpaid contents at the current shop price', async () => {
     await pricingShop();
@@ -64,16 +64,16 @@ void test('a carried owned bag describes unpaid contents at the current shop pri
     await addShopObjectToBill(bag, game, { silent: true });
     await addInventoryItem(unlinkObject(bag));
     game.u.acurr.a[A_CHA] = game.u.amax.a[A_CHA] = 5;
-    assert.equal(unpaidObjectCost(dagger), 4, 'the dagger itself keeps its bill price');
+    assert.equal(await unpaidObjectCost(dagger), 4, 'the dagger itself keeps its bill price');
     assert.equal(getCostOfShopItem(bag).price, 8, 'carried contents use the hero location');
-    assert.match(objectDescription(bag), / \(contents, 8 zorkmids\)$/);
+    assert.match(await objectDescription(bag), / \(contents, 8 zorkmids\)$/);
 });
 void test('glob quotes remember the displayed price for the full weight', async () => {
     await pricingShop();
     const glob = await floorObject(GLOB_OF_GRAY_OOZE, 10, 10, {
         initialize: false, globby: true, owt: 41,
     });
-    assert.match(objectDescription(glob, { withPrice: true }), / \(for sale, 18 zorkmids\)$/);
+    assert.match(await objectDescription(glob, { withPrice: true }), / \(for sale, 18 zorkmids\)$/);
     assert.equal(priceQuoteSuffix(GLOB_OF_GRAY_OOZE), ' {buy 18}');
 });
 void test('remembered quotes appear only for unidentified types when price quotes are enabled', async () => {
@@ -82,30 +82,30 @@ void test('remembered quotes appear only for unidentified types when price quote
     recordObjectPriceQuote(POT_HEALING, 50);
     recordObjectPriceQuote(POT_HEALING, 75);
     recordObjectPriceQuote(POT_HEALING, 20, 'sell');
-    assert.equal(objectDescriptionPrice(potion), '');
+    assert.equal(await objectDescriptionPrice(potion), '');
     game.flags.price_quotes = true;
-    assert.match(objectDescription(potion), / \{buy 50-75 sell 20\}$/);
-    assert.equal(objectDescriptionPrice(potion, { withPrice: true }), ' {buy 50-75 sell 20}');
+    assert.match(await objectDescription(potion), / \{buy 50-75 sell 20\}$/);
+    assert.equal(await objectDescriptionPrice(potion, { withPrice: true }), ' {buy 50-75 sell 20}');
     recordObjectKnowledge(POT_HEALING);
-    assert.equal(objectDescriptionPrice(potion), '');
+    assert.equal(await objectDescriptionPrice(potion), '');
 });
 void test('suppressed and restoring descriptions do not display or remember shop prices', async () => {
     await pricingShop();
     const dagger = await floorObject(DAGGER, 10, 10, { initialize: false });
     game.iflags.suppress_price = true;
-    assert.equal(objectDescriptionPrice(dagger, { withPrice: true }), '');
+    assert.equal(await objectDescriptionPrice(dagger, { withPrice: true }), '');
     assert.equal(priceQuoteSuffix(DAGGER), '');
     game.iflags.suppress_price = false;
     game.program_state.restoring = true;
-    assert.equal(objectDescriptionPrice(dagger, { withPrice: true }), '');
+    assert.equal(await objectDescriptionPrice(dagger, { withPrice: true }), '');
     assert.equal(priceQuoteSuffix(DAGGER), '');
     game.program_state.restoring = false;
-    assert.equal(objectDescriptionPrice(dagger, { withPrice: true }), ' (for sale, 4 zorkmids)');
+    assert.equal(await objectDescriptionPrice(dagger, { withPrice: true }), ' (for sale, 4 zorkmids)');
 });
 void test('a carried paid item does not become merchandise inside a shop', async () => {
     await pricingShop();
     const dagger = await addInventoryObject(DAGGER, { initialize: false });
     assert.equal(getCostOfShopItem(dagger).price, 0);
-    assert.equal(objectDescriptionPrice(dagger, { withPrice: true }), '');
+    assert.equal(await objectDescriptionPrice(dagger, { withPrice: true }), '');
 });
 //# sourceMappingURL=object_description_price.test.js.map

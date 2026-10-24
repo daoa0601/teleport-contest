@@ -247,7 +247,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
             }
             else {
                 observeObjectForNaming(weapon, { state });
-                const description = inventoryItemDescription(weapon);
+                const description = await inventoryItemDescription(weapon);
                 await publish(`${monsterName(monster, { state, capitalized: true })} tries to wield ${description}.`);
                 observeObjectForNaming(previous, { state });
                 await publish(`${ownedObjectName(previous, state)} ${welded}!`);
@@ -263,7 +263,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
     monster.weaponCheck = NEED_WEAPON;
     if (canSeeMonster(monster)) {
         observeObjectForNaming(weapon, { state });
-        const description = inventoryItemDescription(weapon);
+        const description = await inventoryItemDescription(weapon);
         await publish(`${monsterName(monster, { state, capitalized: true })} wields ${description}${digging ? '.' : '!'}`);
         if (weapon.otyp === AKLYS)
             await publish(`${monsterName(monster, { state, capitalized: true })} secures the tether on the ${objectName(weapon, state)}.`);
@@ -354,7 +354,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster, state = game, {
         monster.weaponCheck = NO_WEAPON_WANTED;
         if (cansee(monster.mx, monster.my)) {
             observeDistantObjectForNaming(weapon, state);
-            const description = inventoryItemDescription(weapon);
+            const description = await inventoryItemDescription(weapon);
             await publish(`${monsterSentenceSubject(monster)} drops ${description}.`);
             newsym(monster.mx, monster.my);
         }

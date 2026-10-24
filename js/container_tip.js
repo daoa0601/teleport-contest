@@ -34,9 +34,9 @@ import { showMultiSelectWindow } from './windows.js';
 import { rn2 } from './rng.js';
 import { currency } from './currency.js';
 import { tipWornHelmet } from './tip_hat.js';
-function description(object) {
+async function description(object) {
     observeObjectForNaming(object);
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 export async function tipCommand() {
     game.context.move = 0;
@@ -53,9 +53,11 @@ export async function tipCommand() {
             canTip = await ableToLoot(x, y, false);
         if (canTip) {
             if (containers.length > 1) {
-                const items = containers.map(object => ({
-                    text: description(object), value: object,
-                }));
+                const items = [];
+                for (const object of containers)
+                    items.push({
+                        text: await description(object), value: object,
+                    });
                 if (game.inventory.length)
                     items.push({ selectable: false, text: '' }, {
                         ...(containers.length <= 8 && !game.flags.lootabc ? { key: 'i' } : {}),
@@ -76,7 +78,7 @@ export async function tipCommand() {
             else {
                 const source = containers[0];
                 if (source) {
-                    const answer = await promptYesNoQuit(`There is ${description(source)} here, tip it?`);
+                    const answer = await promptYesNoQuit(`There is ${await description(source)} here, tip it?`);
                     if (answer === 'q')
                         return;
                     if (answer === 'y') {
@@ -148,11 +150,11 @@ async function tipDestination(source) {
             : `You have no free ${heroHandName()}.`);
     for (const object of targets) {
         if (!hands || object.olocked && object.lknown || !object.invlet)
-            items.push({ selectable: false, text: `    ${description(object)}` });
+            items.push({ selectable: false, text: `    ${await description(object)}` });
         else
-            items.push({ key: object.invlet, text: description(object), value: object });
+            items.push({ key: object.invlet, text: await description(object), value: object });
     }
-    const picked = await showMultiSelectWindow({ title: `Where to tip the contents of ${description(source)}`,
+    const picked = await showMultiSelectWindow({ title: `Where to tip the contents of ${await description(source)}`,
         sections: [{ items }], omitHeadings: true, pickOne: true, signalEscape: true });
     return { cancelled: picked === null, target: picked?.find(object => object !== null) ?? null };
 }
@@ -279,7 +281,7 @@ async function tipContainer(source) {
                     if (altar)
                         await landObjectOnAltar(object);
                     else {
-                        const name = description(object);
+                        const name = await description(object);
                         await pline(terse ? `${name}${index + 1 < contents.length ? ',' : '.'}`
                             : `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object) ? 'drop' : 'drops'} to the ${surfaceName(x, y)}.`);
                         if (terse)

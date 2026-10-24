@@ -25,7 +25,7 @@ for (const portion of ['partly used', 'intact', 'fully used']) {
         if (portion === 'fully used')
             await deleteObject(daggers);
         setHeroGoldAmount(game, 20);
-        const [purchase] = itemizedShopBill(shopkeeper);
+        const [purchase] = await itemizedShopBill(shopkeeper);
         assert.ok(purchase);
         const bill = shopkeeper.eshk.bill[0];
         assert.ok(bill);
@@ -71,7 +71,7 @@ void test('an unaffordable used portion keeps its quantity until payment feedbac
         ] });
     daggers.unpaid = true;
     setHeroGoldAmount(game, 4);
-    const purchase = itemizedShopBill(shopkeeper).find(item => item.kind === 'used');
+    const purchase = (await itemizedShopBill(shopkeeper)).find(item => item.kind === 'used');
     assert.ok(purchase);
     const input = resetInputState();
     const buying = buyShopBillItem(shopkeeper, purchase);
@@ -107,7 +107,7 @@ for (const contained of [false, true]) {
             game.u.deafTurns = deaf ? 20 : 0;
             daggers.unpaid = true;
             setHeroGoldAmount(game, 20);
-            const purchase = itemizedShopBill(shopkeeper).find(item => item.kind !== 'used');
+            const purchase = (await itemizedShopBill(shopkeeper)).find(item => item.kind !== 'used');
             assert.ok(purchase);
             const input = resetInputState();
             await plineWithContinuation('You look over your purchases.');

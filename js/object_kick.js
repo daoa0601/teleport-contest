@@ -123,7 +123,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
         || costlyAdjacent(owner, x, y, state) && object.unpaid);
     const isGold = object.oclass === 12;
     observeObjectForNaming(object, { state });
-    await publish(`You kick ${objectDescription(isGold ? object
+    await publish(`You kick ${await objectDescription(isGold ? object
         : { ...object, quan: 1, quantity: 1 }, { state })}.`, { noRepeat: true });
     const source = state.level?.at(x, y);
     const heroSquare = state.level?.at(state.u.ux, state.u.uy);
@@ -221,7 +221,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     if (!moving)
         throw new Error('A kicked stack must yield an object.');
     if (slide && !heroIsBlind(state)) {
-        const name = inventoryItemDescription(moving);
+        const name = await inventoryItemDescription(moving);
         await publish(`Whee!  ${name.charAt(0).toUpperCase() + name.slice(1)} ${quantity(moving) === 1 ? 'slides' : 'slide'} across the ${surfaceName(x, y, state)}.`);
     }
     remove_object(moving, state);

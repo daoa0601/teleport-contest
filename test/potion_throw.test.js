@@ -984,7 +984,7 @@ void test('unknown inert map potion records a live type call after visible impac
     assert.deepEqual(game.inventory, [sibling]);
     assert.equal(potion.where, 'gone');
     assert.equal(game._objectCallNames?.[POT_GAIN_LEVEL], 'mystery');
-    assert.equal(inventoryItemDescription(sibling), 'a blessed potion called mystery');
+    assert.equal(await inventoryItemDescription(sibling), 'a blessed potion called mystery');
     assert.equal(floorObjects(game.level).length, 0);
 });
 for (const lifeSaving of [false, true]) {

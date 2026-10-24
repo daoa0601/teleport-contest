@@ -1030,11 +1030,11 @@ export function armorSimpleName(object, state = game) {
         return 'shirt';
     return actualName;
 }
-export function armorOffMessage(object, state = game) {
+export async function armorOffMessage(object, state = game) {
     if (state.flags?.verbose === false)
         return '';
     observeObjectForNaming(object, { state });
-    return `You were wearing ${inventoryItemDescription(object)}.`;
+    return `You were wearing ${await inventoryItemDescription(object)}.`;
 }
 // C cancel_don(): discard the interrupted callback and its recovery text.
 // The caller retains whether this was donning before clearing the action.

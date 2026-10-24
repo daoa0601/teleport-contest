@@ -1017,10 +1017,10 @@ export function armorSimpleName(
     return actualName;
 }
 
-export function armorOffMessage(object: GameObject, state: GameState = game) {
+export async function armorOffMessage(object: GameObject, state: GameState = game) {
     if (state.flags?.verbose === false) return '';
     observeObjectForNaming(object, { state });
-    return `You were wearing ${inventoryItemDescription(object)}.`;
+    return `You were wearing ${await inventoryItemDescription(object)}.`;
 }
 
 // C cancel_don(): discard the interrupted callback and its recovery text.

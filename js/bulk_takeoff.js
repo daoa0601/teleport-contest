@@ -139,7 +139,7 @@ async function removeSelectedSlot(slot, state) {
     }
 }
 async function offMessage(object, state) {
-    const message = armorOffMessage(object, state);
+    const message = await armorOffMessage(object, state);
     if (message)
         await pline(message);
 }

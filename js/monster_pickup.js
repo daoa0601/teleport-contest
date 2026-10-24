@@ -45,7 +45,7 @@ export async function pickUpMonsterFloorObject(monster, state, random = rn2) {
             // Native distant_name names the original stack after splitting,
             // and observes it even when verbose messages are disabled.
             observeDistantObjectForNaming(object, state);
-            const name = inventoryItemDescription(object);
+            const name = await inventoryItemDescription(object);
             if (state.flags.verbose)
                 await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} picks up ${name}.`);
         }

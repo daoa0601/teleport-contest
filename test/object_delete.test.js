@@ -105,7 +105,7 @@ void test('nested billed content survives container destruction on the bill', as
     const entry = resident.eshk.bill.find(candidate => candidate.bo_id === potion.o_id);
     assert.ok(entry, 'the bill entry must survive container destruction');
     assert.equal(entry.useup, true);
-    assert.ok(itemizedShopBill(resident).some(item => item.object === potion));
+    assert.ok((await itemizedShopBill(resident)).some(item => item.object === potion));
 });
 for (const [name, type] of [['magic lamp', MAGIC_LAMP], ['oil lamp', OIL_LAMP]]) {
     void test(`deleting a lit ${name} removes its light before the next message`, async () => {

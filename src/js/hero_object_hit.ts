@@ -57,7 +57,7 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     // The latter omits the monster species from a single corpse's hit name.
     const quantity = object.quan ?? object.quantity ?? 1;
     if (requestedName === undefined && quantity > 1) observeObjectForNaming(object, { state });
-    const name = requestedName ?? (quantity > 1 ? objectDescription(object, { state })
+    const name = requestedName ?? (quantity > 1 ? await objectDescription(object, { state })
         : objectCombatName(object, { state, includeCorpseSpecies: false }));
     // C thitu() keeps an object killer's article and only adds one to an
     // explicit name when that name does not already start with an article.

@@ -50,13 +50,13 @@ void test('an unseen hostile pickup hides the saddle details the hero can no lon
         fullyIdentifyObject(saddle, game);
 
         assert.equal(saddle.buc, 'blessed');
-        assert.equal(inventoryItemDescription(saddle),
+        assert.equal(await inventoryItemDescription(saddle),
             'a blessed saddle named Maple');
 
         const carried = await addObjectToMonsterInventory(ant, saddle, game);
 
         assert.equal(carried, saddle);
-        assert.equal(inventoryItemDescription(saddle), 'a saddle');
+        assert.equal(await inventoryItemDescription(saddle), 'a saddle');
         assert.deepEqual({
             bknown: saddle.bknown,
             cknown: saddle.cknown,
@@ -109,7 +109,7 @@ void test('unseen pickup keeps the source description exceptions and type identi
         assert.equal(glob.dknown, true);
         assert.equal(wand.known, false);
         assert.equal(objectTypeKnown(wand), true);
-        assert.equal(inventoryItemDescription(wand), 'a wand');
+        assert.equal(await inventoryItemDescription(wand), 'a wand');
     });
 
 void test('a visible hostile pickup preserves object knowledge', async () => {
@@ -121,7 +121,7 @@ void test('a visible hostile pickup preserves object knowledge', async () => {
     await addObjectToMonsterInventory(ant, saddle, game);
 
     assert.equal(saddle.buc, 'blessed');
-    assert.equal(inventoryItemDescription(saddle), 'a blessed saddle');
+    assert.equal(await inventoryItemDescription(saddle), 'a blessed saddle');
     assert.deepEqual({
         bknown: saddle.bknown,
         cknown: saddle.cknown,
@@ -152,7 +152,7 @@ void test('telepathy does not substitute for seeing a hostile pickup', async () 
     assert.equal(canSenseMonster(ant), true);
     await addObjectToMonsterInventory(ant, saddle, game);
 
-    assert.equal(inventoryItemDescription(saddle), 'a saddle');
+    assert.equal(await inventoryItemDescription(saddle), 'a saddle');
     assert.equal(saddle.dknown, false);
     assert.equal(saddle.bknown, false);
 });
@@ -168,7 +168,7 @@ void test('an unseen tame monster does not erase object knowledge', async () => 
     await addObjectToMonsterInventory(ant, saddle, game);
 
     assert.equal(saddle.buc, 'blessed');
-    assert.equal(inventoryItemDescription(saddle), 'a blessed saddle');
+    assert.equal(await inventoryItemDescription(saddle), 'a blessed saddle');
     assert.equal(saddle.dknown, true);
     assert.equal(saddle.bknown, true);
 });
@@ -182,7 +182,7 @@ void test('touch keeps knowledge when the unseen monster is holding the hero',
 
         await addObjectToMonsterInventory(ant, saddle, game);
 
-        assert.equal(inventoryItemDescription(saddle), 'a blessed saddle');
+        assert.equal(await inventoryItemDescription(saddle), 'a blessed saddle');
         assert.equal(saddle.dknown, true);
         assert.equal(saddle.bknown, true);
     });
