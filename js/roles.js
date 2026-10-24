@@ -635,6 +635,12 @@ export function findRole(name) {
     }
     return undefined;
 }
+export function randomCharacterOption(option) {
+    if (!option)
+        return false;
+    const text = option.toLowerCase();
+    return text === '*' || text === '@' || 'random'.startsWith(text);
+}
 export function findRace(name) {
     if (typeof name !== 'string' || !name)
         return null;

@@ -744,6 +744,12 @@ export function findRole(name: unknown): Role | null | undefined {
     return undefined;
 }
 
+export function randomCharacterOption(option: string | null): boolean {
+    if (!option) return false;
+    const text = option.toLowerCase();
+    return text === '*' || text === '@' || 'random'.startsWith(text);
+}
+
 export function findRace(name: unknown): Race | null | undefined {
     if (typeof name !== 'string' || !name) return null;
     const lc = name.toLowerCase();

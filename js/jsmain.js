@@ -10,7 +10,8 @@ import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { plineWithContinuation } from './display.js';
-import { findRole, findRace, findAlignment, findGender, roles, races, aligns, genders, } from './roles.js';
+import { findRole, findRace, findAlignment, findGender, randomCharacterOption, roles, races, aligns, genders, } from './roles.js';
+import { parseCharacterName } from './character_name.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
@@ -92,12 +93,6 @@ function hasCharacterCompletion(role, race, gender, alignment) {
         && genders.some(candidateGender => (gender ? candidateGender === gender : true)
             && aligns.some(candidateAlignment => (alignment ? candidateAlignment === alignment : true)
                 && validCharacterChoice(role, candidateRace, candidateGender, candidateAlignment))));
-}
-function randomCharacterOption(option) {
-    if (!option)
-        return false;
-    const text = option.toLowerCase();
-    return text === '*' || text === '@' || 'random'.startsWith(text);
 }
 function pickCharacterChoice(choices) {
     return choices.length ? choices[rn2(choices.length)] ?? null : null;
@@ -389,10 +384,23 @@ export class Engine {
         }
         if (opts.configErrors.some(report => report.errors.length > 0))
             this.display.clearScreen();
-        const configuredName = opts.name || await this._readPlayerName();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
-        let playerName = opts.flags.debug ? 'wizard' : configuredName;
+        let configuredName = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
+        for (;;) {
+            if (configuredName.role)
+                opts.role = configuredName.role;
+            if (configuredName.race)
+                opts.race = configuredName.race;
+            if (configuredName.gender)
+                opts.gender = configuredName.gender;
+            if (configuredName.align)
+                opts.align = configuredName.align;
+            if (configuredName.name)
+                break;
+            configuredName = await this._readPlayerName();
+        }
+        let playerName = configuredName.name;
         // NetHack keeps the configured player name verbatim for prose, while
         // the status line and menu headings capitalize it for display.
         g.plname = playerName;
@@ -601,7 +609,9 @@ export class Engine {
                     const code = await nhgetch();
                     const key = String.fromCharCode(code).toLowerCase();
                     if (key === 'a') {
-                        selectedName = await this._readPlayerName(10, false);
+                        do {
+                            selectedName = (await this._readPlayerName(10, false)).name;
+                        } while (!selectedName);
                         game.plname = selectedName;
                         continue;
                     }
@@ -1053,7 +1063,9 @@ export class Engine {
                 const code = await nhgetch();
                 const key = String.fromCharCode(code).toLowerCase();
                 if (key === 'a') {
-                    selectedName = await this._readPlayerName(10, false);
+                    do {
+                        selectedName = (await this._readPlayerName(10, false)).name;
+                    } while (!selectedName);
                     game.plname = selectedName;
                     preserveConfirmationBackground = true;
                     continue;
@@ -1093,7 +1105,7 @@ export class Engine {
                 display.putstr(prompt.length + name.length - 1, row, String.fromCharCode(key), NO_COLOR);
             }
         }
-        return name || 'player';
+        return parseCharacterName(name || 'player');
     }
     run() {
         if (!this.runningTask)
