@@ -155,7 +155,11 @@ async function cleaveAroundTarget(targetX: number, targetY: number, attack: Atta
     if (direction < 0) throw new Error('Cleaver requires an adjacent target.');
     const mortality = game.u.umortality ?? 0;
     const clockwise = game._cleaveClockwise ?? false;
-    for (const offset of clockwise ? [-1, 0, 1] : [1, 0, -1]) {
+    // Native hitum_cleave() sweeps three squares in its xdir[] rotation,
+    // which is the reverse of this list's order, so a native counter-
+    // clockwise sweep (clockwise FALSE) maps to [-1, 0, 1] here; the
+    // alternating static flag keeps mirroring the native one.
+    for (const offset of clockwise ? [1, 0, -1] : [-1, 0, 1]) {
         const delta = DIRECTIONS[(direction + offset + DIRECTIONS.length) % DIRECTIONS.length];
         if (!delta) throw new Error('Cleaver direction is outside the compass.');
         const x = originX + delta[0];

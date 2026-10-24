@@ -161,7 +161,7 @@ void test('Cleaver hits both adjacent targets and reverses the swing on its next
 
     assert.ok(monster.mhp < 100 && north.mhp < 100 && south.mhp < 100);
     const prose = [...messages, state._pending_message].join('\n');
-    assert.match(prose, /stone giant[\s\S]*hill giant[\s\S]*frost giant[\s\S]*frost giant[\s\S]*hill giant[\s\S]*stone giant/);
+    assert.match(prose, /frost giant[\s\S]*hill giant[\s\S]*stone giant[\s\S]*stone giant[\s\S]*hill giant[\s\S]*frost giant/);
     assert.equal(state.u.uconduct.weaphit, 6);
 });
 
