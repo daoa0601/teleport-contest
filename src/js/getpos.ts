@@ -698,14 +698,6 @@ export async function selectMapPosition({
                 showGoal = true;
                 continue;
             }
-            if (!force && [' ', '\n', '\r', '\x1b'].includes(ch)) {
-                await pline('Done.');
-                clearMessageOnExit = false;
-                return null;
-            }
-            if ([' ', '\n', '\r', '\x1b'].includes(ch)) {
-                continue;
-            }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
                 if (isValidLocation) {
                     switch (hilite.state) {
@@ -805,6 +797,12 @@ export async function selectMapPosition({
                 cursor.x = spot.x;
                 cursor.y = spot.y;
                 continue;
+            }
+            if ([' ', '\n', '\r', '\x1b'].includes(ch)) {
+                if (force) continue;
+                await pline('Done.');
+                clearMessageOnExit = false;
+                return null;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
