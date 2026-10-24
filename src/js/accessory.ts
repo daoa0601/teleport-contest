@@ -16,7 +16,7 @@ import {
     AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES,
     OBJECT_PROPERTY, RIN_PROTECTION,
 } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
 import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
@@ -360,10 +360,13 @@ function changeRingBonus(ring: GameObject, direction: 1 | -1, state: GameState, 
     }
 }
 
+// C do_wear.c:learnring(). observe_object() records the ring's appearance
+// whenever the effect was observable; only hallucination suppresses that
+// observation, blindness does not.
 function learnRing(ring: GameObject, observable: boolean, state: GameState): void {
     if (observable) {
         if (objectTypeKnown(ring, state)) {
-            if (!heroIsBlind(state)) ring.dknown = true;
+            observeObject(ring, state);
         } else if (ring.dknown) {
             learnObjectType(ring.otyp, state);
         }
