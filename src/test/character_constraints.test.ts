@@ -79,3 +79,18 @@ void test('a random alignment stays automatic after manually replacing an incomp
     assert.equal(game.urace?.name, 'human');
     assert.ok(game.initAlignment?.name === 'neutral' || game.initAlignment?.name === 'chaotic');
 });
+
+void test('changing the selection order resolves a pending random alignment before the next menu', async () => {
+    const engine = await start('role:Wizard,race:dwarf,gender:male,align:random');
+    engine.inputGate.feed('"');
+    await engine.runUntilInputNeeded();
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+
+    assert.ok(rows.some(row => row.includes('Pick a gender or sex')));
+    assert.ok(rows.some(row => /Wizard <race> <gender> (neutral|chaotic)/.test(row)),
+        'clearing the incompatible race lets rigid checks resolve the requested random alignment');
+    engine.inputGate.feed('mh');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1);
+    assert.equal(game.urace?.name, 'human');
+});

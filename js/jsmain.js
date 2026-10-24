@@ -450,8 +450,8 @@ export class Engine {
             || (!configured.gender && !random.has('gender'))
             || (!configured.alignment && !random.has('alignment'));
         const initial = rigidCharacterChecks(configured, random);
-        // A random choice which rigid checks could not resolve stays random
-        // until its own facet is visited; it does not enable pick-for-you.
+        // Keep unresolved random requests separate from pick-for-you so rigid
+        // checks can retry them without randomizing explicit choices.
         const pendingRandom = new Set([...random].filter(facet => !initial[facet]));
         let manualInitial = initial;
         const hasUnspecifiedChoice = (!initial.role && !random.has('role'))
@@ -746,6 +746,16 @@ export class Engine {
             // consumes rn2(1) for its sole candidate; facets skipped without
             // constructing a menu do not cross this boundary.
             const applyPreMenuRigidChecks = () => {
+                if (pendingRandom.size) {
+                    const checked = rigidCharacterChecks({ role, race, gender, alignment }, pendingRandom);
+                    role = checked.role;
+                    race = checked.race;
+                    gender = checked.gender;
+                    alignment = checked.alignment;
+                    for (const facet of pendingRandom)
+                        if (checked[facet])
+                            pendingRandom.delete(facet);
+                }
                 if (!role)
                     return;
                 if (!race) {
@@ -770,8 +780,8 @@ export class Engine {
                         nextFacet = 'race';
                         continue;
                     }
-                    const candidates = availableRoles(race, gender, alignment);
                     applyPreMenuRigidChecks();
+                    const candidates = availableRoles(race, gender, alignment);
                     drawRoleMenu(candidates, race, gender, alignment);
                     const key = String.fromCharCode(await nhgetch());
                     if (key === 'q' || key === '\x1b')
@@ -818,7 +828,6 @@ export class Engine {
                         nextFacet = role ? 'gender' : 'role';
                         continue;
                     }
-                    race = null;
                     const candidates = availableRaces(role, gender, alignment);
                     const permitted = races.filter(candidate => validCharacterRace(role, candidate, null));
                     if (randomRace) {
