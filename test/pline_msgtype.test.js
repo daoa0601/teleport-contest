@@ -17,6 +17,14 @@ void test('MSGTYPE hide suppresses matching prose without replacing unread prose
     await flush_screen(1);
     assert.equal(topline(), 'The door opens.');
 });
+void test('an optional grouped word boundary keeps doorbell messages visible', async () => {
+    freshPlayableRoom();
+    applyNethackrc('MSGTYPE=hide "([[:<:]])?bell"');
+    await plineWithContinuation('A doorbell rings.');
+    await plineWithContinuation('A bell rings.');
+    await flush_screen(1);
+    assert.equal(topline(), 'A doorbell rings.');
+});
 void test('MSGTYPE norep compares the previous individual message', async () => {
     freshPlayableRoom();
     applyNethackrc('MSGTYPE=norep "bell"');

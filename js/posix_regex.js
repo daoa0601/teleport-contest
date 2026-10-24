@@ -276,6 +276,42 @@ const POSIX_CHARACTER_NAMES = new Map([
     ['space', ' '], ['tab', '\t'], ['three', '3'], ['tilde', '~'], ['two', '2'],
     ['underscore', '_'], ['vertical-line', '|'], ['vertical-tab', '\v'], ['zero', '0'],
 ]);
+// TRE's tre_match_empty() keeps the assertions from the first branch that
+// can match without consuming input, including inside optional groups.
+// null means the expression requires a character; [] means it has no assertions.
+function emptyMatchAssertions(node) {
+    switch (node.kind) {
+        case 'literal':
+        case 'dot':
+        case 'set': return null;
+        case 'assertion': return [node.assertion];
+        case 'sequence': {
+            const assertions = [];
+            for (const part of node.nodes) {
+                const required = emptyMatchAssertions(part);
+                if (required === null)
+                    return null;
+                assertions.push(...required);
+            }
+            return assertions;
+        }
+        case 'alternatives':
+            for (const branch of node.nodes) {
+                const assertions = emptyMatchAssertions(branch);
+                if (assertions !== null)
+                    return assertions;
+            }
+            return null;
+        case 'repeat': {
+            if (node.maximum === 0)
+                return [];
+            // tre_expand_ast() gives optional bounded copies an empty first branch.
+            if (node.minimum === 0 && node.maximum !== null && node.maximum > 1)
+                return [];
+            return emptyMatchAssertions(node.node) ?? (node.minimum === 0 ? [] : null);
+        }
+    }
+}
 class EreMatcher {
     text;
     cache = new Map();
@@ -291,7 +327,12 @@ class EreMatcher {
         const cached = positions.get(start);
         if (cached !== undefined)
             return cached;
-        const result = this.match(node, start);
+        let result = this.match(node, start);
+        if (result.has(start)) {
+            const assertions = emptyMatchAssertions(node);
+            if (assertions?.some(assertion => !this.assertion(assertion, start)))
+                result = new Set(Array.from(result).filter(end => end !== start));
+        }
         positions.set(start, result);
         return result;
     }
