@@ -29,10 +29,8 @@ function sameLevel(left: DungeonLocation, right: DungeonLocation | null | undefi
     return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
 
-// C stairs.c:stairs_description(): stcase requests "staircase"; otherwise
-// use "stairs". Ladders always keep their singular noun.
-export function stairwayDescription(stairway: Stairway, state: GameState, stcase: boolean): string {
-    const noun = stairway.isladder ? 'ladder' : stcase ? 'staircase' : 'stairs';
+function stairwayDescription(stairway: Stairway, state: GameState): string {
+    const noun = stairway.isladder ? 'ladder' : 'staircase';
     const direction = stairway.up ? 'up' : 'down';
     const here = state.u.uz;
     if (!here) throw new Error('Stair description requires the hero dungeon position');
@@ -107,7 +105,7 @@ export function dungeonFeatureAt(x: number, y: number, { state = game, probing =
     }
     for (let stairway = state.stairs; stairway; stairway = stairway.next)
         if (stairway.sx === x && stairway.sy === y)
-            return stairwayDescription(stairway, state, true);
+            return stairwayDescription(stairway, state);
     if (type === DRAWBRIDGE_DOWN) return 'lowered drawbridge';
     if (type === DBWALL) return 'raised drawbridge';
     if (type === GRAVE) return 'grave';
