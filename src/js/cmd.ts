@@ -136,6 +136,7 @@ import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
 import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.js';
 import { strikeIronBarsWithWeapon } from './projectile_bars.js';
+import { fightSeenWebWithForce } from './hero_web_fight.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import {
     floorObjectDescription,
@@ -334,7 +335,7 @@ import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS,
     requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests,
-    monsterSpeciesHidesOnCeiling,
+    monsterSpeciesHidesOnCeiling, monsterIsAmorphous,
 } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import {
@@ -506,7 +507,7 @@ import {
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_NOTHING, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
-    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE,
+    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, In_sokoban, W_ARMOR, W_ACCESSORY, W_SADDLE,
     P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
@@ -7243,6 +7244,8 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         return true;
     }
 
+    if (await fightSeenWebWithForce(newx, newy, game)) return true;
+
     if (await fightEmptyDestination(newx, newy))
         return true;
 
@@ -7297,14 +7300,27 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         // resulting orthogonal fallback is independently classified: Blind,
         // Stunned, low Dexterity, or Fumbling spends the turn on an "Ouch!"
         // bump, while Confusion by itself only reports a closed door.
+        // C test_move() reports the failed ooze for any amorphous form whose
+        // inventory cannot fit under the door, before the open-or-bump
+        // decision, and for diagonal attempts as well.
+        if (monsterIsAmorphous({ mnum: heroSpecies(game) })) {
+            await pline("You try to ooze under the door,"
+                + " but can't squeeze your possessions through.");
+        }
         if (!autoopenEligible) {
             // test_move(DO_MOVE) only reports the closed-door message for an
             // orthogonal attempt.  A diagonal attempt which reaches this
             // fallback is rejected silently before the intact-door check.
             if (!dx || !dy) {
                 if (blind || stunned || dexterity < 10 || fumbling) {
-                    await pline('Ouch!  You bump into a door.');
-                    await exerciseAttribute(A_DEX, false);
+                    if (u.usteed) {
+                        // C substitutes a riding failure for the bump, with
+                        // the same move consumption but no Dexterity exercise.
+                        await pline(`You can't lead ${monsterName(u.usteed, { state: game, article: 'your' })} through that closed door.`);
+                    } else {
+                        await pline('Ouch!  You bump into a door.');
+                        await exerciseAttribute(A_DEX, false);
+                    }
                     // C sets context.move despite returning false from
                     // test_move(), then nomul(0).  `true` is this port's
                     // scheduler-facing "time elapsed" result; the hero's
@@ -7343,7 +7359,16 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
             if (result.died) return false;
             return rejectHeroMove();
         }
-        if (game.flags?.mention_walls) {
+        if (loc?.typ === DBWALL) {
+            // C test_move(): the raised drawbridge reports itself before the
+            // generic mention_walls fallback and without that option.
+            await pline('That drawbridge is up!');
+        } else if (heroPassesWalls(game) && In_sokoban(game.u.uz)) {
+            // C test_move() keys this off In_sokoban(), so the soko
+            // restriction stays even after the puzzle is solved and
+            // level.flags.sokoban_rules has been cleared.
+            await pline('The Sokoban walls resist your ability.');
+        } else if (game.flags?.mention_walls) {
             const obstruction = loc?.typ === STONE
                 ? 'solid stone'
                 : loc?.typ === TREE ? 'a tree'
