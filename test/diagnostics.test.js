@@ -307,7 +307,7 @@ for (const [initialName, finalName] of [['Other', 'Diagnostic'], ['Diagnostic', 
                 return ' ';
             else if (screen.includes('Start a new game instead?'))
                 return 'y';
-            else if (screen.includes('Shall I pick character'))
+            else if (screen.startsWith('Shall I pick '))
                 return 'y';
             else if (screen.includes('Is this ok?')) {
                 const key = renaming ? 'y' : 'a';

@@ -12,6 +12,8 @@ for (const { choices, question } of [
         question: "Shall I pick your female elf's role for you? [ynaq]" },
     { choices: 'role:Valkyrie',
         question: "Shall I pick your Valkyrie's race and alignment for you? [ynaq]" },
+    { choices: 'role:Valkyrie,race:human,gender:female',
+        question: "Shall I pick your human Valkyrie's alignment for you? [ynaq]" },
     { choices: '',
         question: "Shall I pick character's race, role, gender and alignment for you? [ynaq]" },
 ]) {
