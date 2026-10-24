@@ -25,7 +25,7 @@ import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearBypasses } from './object_bypass.js';
-import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { ESCAPED, In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
@@ -931,6 +931,12 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferA
     addHeroMovementRation(game, moveAmount);
     setTrack(game);
     game.moves = (game.moves || 1) + 1;
+    if (game.moves >= 1000000000) {
+        await flushPendingTopline();
+        await plineWithContinuation('The dungeon capitulates.', { urgent: true });
+        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+        return { kind: 'complete', moveAmount };
+    }
     if (game.flags.time && !game.context.run)
         game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
