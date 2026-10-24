@@ -1,6 +1,9 @@
 import { warningSymbols } from './warning_symbols.js';
 import { truncatePlineMessage } from './pline_text.js';
 import { messageTypeFor } from './message_types.js';
+import { coordinateDescription } from './pager_lists.js';
+import type { Position } from './map_types.js';
+import type { Hero } from './hero_types.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
@@ -30,7 +33,7 @@ import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
-    BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
+    BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok,
     COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP,
@@ -139,6 +142,7 @@ export interface ToplineOptions {
     noRepeat?: boolean;
     urgent?: boolean;
     overrideMessageType?: boolean;
+    position?: Position;
 }
 interface ToplinePagingOptions { urgent?: boolean; dismissKey?: number }
 
@@ -2949,20 +2953,53 @@ export async function displayMessageWindow(): Promise<number | null> {
     return dismissal;
 }
 
-// C tty topl.c:update_topl().  A later pline either appends to the pending
-// topline or owns a --More-- boundary before replacing it.  Keep this policy
-// at the terminal layer so source callers can remain ordinary sequential
-// pline() producers.
-// C pline.c:vpline() always reaches tty through update_topl().
+// C pline.c: the next vpline consumes the message location, even when hidden.
+export function set_msg_dir(direction: number): void {
+    const previous = game.iflags.messageLocation ?? { x: 0, y: 0 };
+    const dx = xdir[direction], dy = ydir[direction];
+    game.iflags.messageLocation = {
+        x: game.u.ux + (dx ?? previous.x), y: game.u.uy + (dy ?? previous.y),
+    };
+}
+
+export function set_msg_xy(x: number, y: number): void {
+    game.iflags.messageLocation = { x, y };
+}
+
+export async function pline_dir(direction: number, message: string): Promise<void> {
+    set_msg_dir(direction);
+    await pline(message);
+}
+
+export async function pline_xy(x: number, y: number, message: string): Promise<void> {
+    set_msg_xy(x, y);
+    await pline(message);
+}
+
+export async function pline_mon(monster: Monster | Hero, message: string): Promise<void> {
+    if ('mx' in monster) set_msg_xy(monster.mx, monster.my);
+    else set_msg_xy(0, 0);
+    await pline(message);
+}
+
+// C tty topl.c:update_topl(): successive messages join or page older prose.
 export async function pline(msg: string): Promise<void> {
     await plineWithContinuation(msg);
 }
 
 export async function plineWithContinuation(msg: string, {
-    noRepeat = false, urgent = false, overrideMessageType = false,
+    noRepeat = false, urgent = false, overrideMessageType = false, position,
 }: ToplineOptions = {}): Promise<number | null | undefined> {
+    const location = position ?? game.iflags.messageLocation;
+    delete game.iflags.messageLocation;
     msg = msg.split('\0', 1)[0] ?? '';
     if (!msg || game.program_state.wizkit_wishing) return;
+    if (game.flags.accessiblemsg && location && isok(location.x, location.y)) {
+        const mode = game.iflags.getpos_coords;
+        const coordinates = coordinateDescription(location.x, location.y,
+            !mode || mode === 'n' ? 'f' : mode);
+        msg = `${coordinates}: ${msg}`;
+    }
     const length = new TextEncoder().encode(msg).length;
     if (length > 5 * BUFSZ - 1) {
         const { panic } = await import('./diagnostics.js');

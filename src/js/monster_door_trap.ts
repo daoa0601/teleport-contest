@@ -24,12 +24,14 @@ export async function triggerMonsterDoorTrap(monster: Monster, visible: boolean,
     requireLiveGame(state);
     if (state.flags.verbose) {
         const dx = monster.mx - state.u.ux, dy = monster.my - state.u.uy;
-        const message = visible && !heroIsUnaware(state)
+        const seen = visible && !heroIsUnaware(state);
+        const message = seen
             ? 'KABOOM!!  You see a door explode.'
             : !heroIsDeaf(state)
                 ? formatHeardMessage(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`, state)
                 : null;
-        if (message) await publish(message);
+        if (message) await publish(message,
+            seen ? { position: { x: monster.mx, y: monster.my } } : {});
     }
     await wakeMonstersNearWithMessages(monster.mx, monster.my, 49, state, publish);
     monster.mstun = 1;
