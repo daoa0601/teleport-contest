@@ -34,6 +34,8 @@ interface LootClassification {
     discovery: number;
 }
 
+type LootView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'dknown' | 'globby'>>;
+
 interface LootEntry {
     object: GameObject;
     index: number;
@@ -128,7 +130,7 @@ export function sortObjects(objects: readonly GameObject[], {
     return entries.map(entry => entry.object);
 }
 
-function classifyLoot(object: GameObject, state: GameState): LootClassification {
+export function classifyLoot(object: LootView, state: GameState = game): LootClassification {
     const oclass = object.oclass || objectClassForType(object.otyp);
     const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
     const position = classOrder.indexOf(oclass);
@@ -143,7 +145,7 @@ function classifyLoot(object: GameObject, state: GameState): LootClassification 
     };
 }
 
-function lootSubclass(object: GameObject, oclass: number, seen: boolean, discovered: boolean): number {
+function lootSubclass(object: LootView, oclass: number, seen: boolean, discovered: boolean): number {
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
     if (oclass === 3) return [7, 4, 1, 2, 3, 5, 6][skill] ?? 8;
     if (oclass === 2) return skill < 0

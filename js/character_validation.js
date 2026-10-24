@@ -166,6 +166,7 @@ export function validSavedGameFlags(value) {
         pile_limit: optional((entry) => string(entry) || integer(entry)),
         runmode: optional(string),
         sortloot: optional(oneOf('n', 'l', 'f')),
+        discosort: optional(oneOf('o', 's', 'c', 'a')),
         suppress_alert: optional(string),
         vanqSortmode: optional(integer),
     });

@@ -83,7 +83,7 @@ export function sortObjects(objects, { mode = 0, state = game, filter = null, } 
     entries.sort((left, right) => compareLoot(left, right, mode, state));
     return entries.map(entry => entry.object);
 }
-function classifyLoot(object, state) {
+export function classifyLoot(object, state = game) {
     const oclass = object.oclass || objectClassForType(object.otyp);
     const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
     const position = classOrder.indexOf(oclass);

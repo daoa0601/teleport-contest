@@ -16,6 +16,8 @@ import {
     tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import type { GameObject } from './object_types.js';
+import type { DiscoverySortMode } from './flags.js';
+import { heroIsBlind } from './senses.js';
 import { ATR_INVERSE, addMenuHeading, showTextPages } from './windows.js';
 import {
     FLINT,
@@ -37,11 +39,51 @@ import {
 import {
     OBJECT_CLASS_LABELS,
     objectClassForType,
+    observeObject,
     priceQuoteSuffix,
 } from './object_knowledge.js';
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
-import { inventoryClassOrder } from './object_sort.js';
+import { classifyLoot, inventoryClassOrder } from './object_sort.js';
+import { MENU_ITEMFLAGS_SELECTED } from './const.js';
+
+const DISCOVERY_ORDERS: Readonly<Record<DiscoverySortMode, string>> = {
+    o: 'by order of discovery within each class',
+    s: 'sortloot order (by class with some sub-class groupings)',
+    c: 'alphabetical within each class',
+    a: 'alphabetical across all classes',
+};
+
+export function discoverySortDescription(): string {
+    return DISCOVERY_ORDERS[game.flags.discosort ?? 'o'];
+}
+
+export async function chooseDiscoverySort(mode: 0 | 1 | 2): Promise<boolean> {
+    const previous = game.flags.discosort ?? 'o';
+    const window = tty_create_nhwindow<DiscoverySortMode>(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (const key of ['o', 's', 'c', 'a'] as const)
+            tty_add_menu(window, { identifier: key, selector: key, text: DISCOVERY_ORDERS[key],
+                itemflags: key === previous ? MENU_ITEMFLAGS_SELECTED : 0 });
+        if (mode === 2) {
+            for (const text of ['',
+                'Note: full alphabetical and alphabetical within class',
+                '      are equivalent for single class discovery, but',
+                '      will matter for future use of total discoveries.'])
+                tty_add_menu(window, { identifier: null, text });
+        }
+        tty_end_menu(window, 'Ordering of discoveries');
+        const result = await tty_select_menu(window, PICK_ONE);
+        if (result.cancelled) return false;
+        const chosen = result.selections.find(selection => selection.identifier !== previous)
+            ?? result.selections[0];
+        game.flags.discosort = chosen?.identifier ?? previous;
+        return true;
+    } finally {
+        await tty_destroy_nhwindow(window);
+    }
+}
 
 export function init_objects(): (string | null)[] {
     // o_init.c initializes per-game object-class knowledge and disco[] along
@@ -256,13 +298,9 @@ export async function renameDiscoveredType(): Promise<void> {
 
 // C ref: o_init.c dodiscovered() — show discoveries grouped by object class.
 export async function dodiscovered(): Promise<void> {
-    const classOrder = [...inventoryClassOrder(), 17];
-    const grouped = new Map<number, string[]>(classOrder.map((oclass) => [oclass, []]));
-    for (const otyp of game._objectDiscoveryOrder || []) {
-        const oclass = objectClassForType(otyp);
-        const line = formattedDiscovery(otyp);
-        if (line) grouped.get(oclass)?.push(line);
-    }
+    game.flags.discosort ??= 'o';
+    if (game.iflags.menu_requested && !await chooseDiscoverySort(1)) return;
+    const order = game.flags.discosort;
 
     const body: TextMenuEntry[] = [];
     const relics = discoveredRelics();
@@ -275,14 +313,23 @@ export async function dodiscovered(): Promise<void> {
         body.push(discoveryHeading('Artifacts'));
         body.push(...artifacts);
     }
-    for (const oclass of classOrder) {
-        const entries = grouped.get(oclass);
-        if (!entries?.length) continue;
+    const alphabetical: string[] = [];
+    for (const oclass of discoveryClassOrder()) {
+        const entries = classDiscoveries(oclass, order);
+        if (!entries.length) continue;
+        if (order === 'a') {
+            alphabetical.push(...entries);
+            continue;
+        }
         const heading = OBJECT_CLASS_LABELS[oclass];
         if (heading === undefined)
             throw new Error(`Missing discovery heading for object class ${oclass}`);
         body.push(discoveryHeading(heading));
         body.push(...entries);
+    }
+    if (alphabetical.length) {
+        if (relics.length || artifacts.length) body.push(discoveryHeading('Discovered items'));
+        body.push(...alphabetical.sort(compareDiscoveryNames));
     }
 
     if (!body.length) {
@@ -294,7 +341,7 @@ export async function dodiscovered(): Promise<void> {
     // into 23 content rows, reserving the last terminal row for --More--.
     // Only the first page carries the title and its following blank line.
     const rows: TextMenuEntry[] = [
-        'Discoveries, by order of discovery within each class',
+        `Discoveries, ${DISCOVERY_ORDERS[order]}`,
         '',
         ...body,
     ];
@@ -312,6 +359,33 @@ export async function dodiscovered(): Promise<void> {
     await bot();
     await flush_screen(1);
     game.context.move = 0;
+}
+
+function discoveryClassOrder(): number[] {
+    const classes = inventoryClassOrder();
+    return classes.includes(17) ? classes : [...classes, 17];
+}
+
+function classDiscoveries(oclass: number, order: DiscoverySortMode): string[] {
+    const entries = [];
+    for (const type of game._objectDiscoveryOrder ?? []) {
+        if (objectClassForType(type) !== oclass) continue;
+        const line = formattedDiscovery(type);
+        if (!line) continue;
+        const sample = { otyp: type, oclass, dknown: true };
+        if (order === 's' && !heroIsBlind()) observeObject(sample);
+        entries.push({ line, classification: classifyLoot(sample) });
+    }
+    if (order !== 'o') entries.sort((left, right) =>
+        (order === 's' ? left.classification.subclass - right.classification.subclass
+            || left.classification.discovery - right.classification.discovery : 0)
+        || compareDiscoveryNames(left.line, right.line));
+    return entries.map(entry => entry.line);
+}
+
+function compareDiscoveryNames(left: string, right: string): number {
+    const a = left.slice(2).toLowerCase(), b = right.slice(2).toLowerCase();
+    return a < b ? -1 : a > b ? 1 : 0;
 }
 
 function discoveryHeading(text: string): TextMenuEntry {

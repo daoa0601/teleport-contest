@@ -93,7 +93,7 @@ export function observeBucForNaming(object: GameObject, state: GameState = game)
     object.buc = object.blessed ? 'blessed' : object.cursed ? 'cursed' : undefined;
 }
 
-export function observeObject(object: GameObject, state: GameState = game): void {
+export function observeObject(object: Pick<GameObject, 'otyp' | 'dknown'>, state: GameState = game): void {
     if (object.otyp >= FIRST_OBJECT && !heroIsHallucinating(state)) {
         object.dknown = true;
         recordObjectEncounter(object.otyp, state);
