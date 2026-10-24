@@ -192,6 +192,18 @@ void test('a visible werewolf announces its natural change', async () => {
     assert.deepEqual(messages, ['The werewolf changes into a wolf.']);
     assert.equal(game.were_changes, 1);
 });
+void test('a natural werewolf transformation restores movement to an immobilized monster', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('human werewolf', 11, 10, NO_MINVENT);
+    monster.mcanmove = false;
+    monster.mfrozen = 0;
+    await wereChange(monster, game, () => 0, {
+        publish: async () => undefined,
+    });
+    assert.equal(monster.mnum, MONSTER_NAME.indexOf('werewolf'));
+    assert.ok(monster.mcanmove, 'the new body can move again');
+});
 void test('an unseen werejackal howls and wakes nearby monsters', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

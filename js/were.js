@@ -345,7 +345,7 @@ export async function transformWereMonster(monster, state = game, { repaint = st
         await publish(`${monsterName(monster, { state, capitalized: true })} changes into a ${form}.`);
     }
     setMonsterSpecies(monster, newMnum);
-    if (monster.msleeping || monster.mfrozen || monster.mcanmove === 0) {
+    if (monster.msleeping || !monster.mcanmove) {
         monster.msleeping = 0;
         monster.mfrozen = 0;
         monster.mcanmove = 1;
