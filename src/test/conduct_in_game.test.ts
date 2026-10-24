@@ -27,6 +27,24 @@ void test('#conduct reports broken conducts and achievements in present tense', 
     assert.match(lines, /You have entered a shop\./);
 });
 
+// C insight.c:enlght_line(): every conduct line passes through the
+// contraction table, so the literals "have not violated" (insight.c:2220)
+// and "have not wished" (insight.c:2211) render contracted, as native
+// recordings show ("You haven't wished for any artifacts.").
+void test('#conduct renders clean records with enlght_line contractions', () => {
+    freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    game.u.uconduct = { wishes: 2 };
+    game.u.uachieved = [ACH_SOKO];
+
+    const lines = currentConductLines().join('\n');
+
+    assert.match(lines, /You haven't violated any of the special Sokoban rules\./);
+    assert.match(lines, /You haven't wished for any artifacts\./);
+    assert.doesNotMatch(lines, /have not violated/);
+    assert.doesNotMatch(lines, /have not wished/);
+});
+
 // C insight.c:show_achievements(): the Amulet's present tense is always
 // "have"/"have obtained"; "delivered" is the past tense for an ascension.
 void test('#conduct keeps the Amulet present tense independent of ascension', () => {
