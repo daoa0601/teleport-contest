@@ -10,7 +10,7 @@ import { tameMonster } from './monster_taming.js';
 import { threateningMonsterNearby } from './do.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { setHeroSpecies } from './hero_species.js';
-import { makemonNear, splitHeroMonsterForm } from './mklev.js';
+import { makemonAt, splitHeroMonsterForm } from './mklev.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
 import {
     canSeeMonster, newsym, plineWithContinuation,
@@ -350,7 +350,7 @@ async function summonWerePack(
     for (let count = rollOne(5); count > 0; count--) {
         const species = summonedWereAlly(form, random);
         if (species === null) continue;
-        const helper = await makemonNear(species, state.u.ux, state.u.uy, 0, true);
+        const helper = await makemonAt(species, state.u.ux, state.u.uy);
         if (!helper) continue;
         if (yours) await tameMonster(helper, null, { state });
         helpers.push(helper);
