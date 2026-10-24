@@ -7,7 +7,7 @@
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { initializeObjectProbabilities } from './mklev.js';
-import type { TextMenuEntry, TextPage } from './windows.js';
+import type { TextMenuEntry } from './windows.js';
 import { rn2 } from './rng.js';
 import { bot, clearMessageWindow, docrt, flush_screen, plineWithContinuation } from './display.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE } from './const.js';
@@ -20,7 +20,7 @@ import {
 import type { GameObject } from './object_types.js';
 import type { DiscoverySortMode } from './flags.js';
 import { heroIsBlind } from './senses.js';
-import { ATR_INVERSE, addMenuHeading, showTextPages } from './windows.js';
+import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import {
     FLINT,
     AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD,
@@ -304,48 +304,44 @@ export async function renameDiscoveredType(): Promise<void> {
 export async function dodiscovered(): Promise<void> {
     game.flags.discosort ??= 'o';
     if (game.iflags.menu_requested && !await chooseDiscoverySort(1)) return;
-    const order = game.flags.discosort;
-
-    const body: TextMenuEntry[] = [];
     const relics = discoveredRelics();
-    if (relics.length) {
-        body.push(discoveryHeading('Unique items or Relics'));
-        body.push(...relics);
-    }
     const artifacts = discoveredArtifacts();
-    if (artifacts.length) {
-        body.push(discoveryHeading('Artifacts'));
-        body.push(...artifacts);
-    }
-    const alphabetical: string[] = [];
-    for (const oclass of discoveryClassOrder()) {
-        const entries = classDiscoveries(oclass, order);
-        if (!entries.length) continue;
-        if (order === 'a') {
-            alphabetical.push(...entries);
-            continue;
-        }
-        const heading = OBJECT_CLASS_LABELS[oclass];
-        if (heading === undefined)
-            throw new Error(`Missing discovery heading for object class ${oclass}`);
-        body.push(discoveryHeading(heading));
-        body.push(...entries);
-    }
-    if (alphabetical.length) {
-        if (relics.length || artifacts.length) body.push(discoveryHeading('Discovered items'));
-        body.push(...alphabetical.sort(compareDiscoveryNames));
-    }
-
-    if (!body.length) {
+    if (!relics.length && !artifacts.length
+        && !(game._objectDiscoveryOrder ?? []).some(type => formattedDiscovery(type))) {
         await plineWithContinuation("You haven't discovered anything yet...");
         return;
     }
+    await showDiscoveries(discoveryRows(game.flags.discosort, relics, artifacts));
+}
 
-    await showDiscoveries([
-        `Discoveries, ${DISCOVERY_ORDERS[order]}`,
-        '',
-        ...body,
-    ]);
+function* discoveryRows(
+    order: DiscoverySortMode, relics: readonly string[], artifacts: readonly string[],
+): Generator<TextMenuEntry> {
+    yield `Discoveries, ${DISCOVERY_ORDERS[order]}`;
+    yield '';
+    if (relics.length) {
+        yield discoveryHeading('Unique items or Relics');
+        yield* relics;
+    }
+    if (artifacts.length) {
+        yield discoveryHeading('Artifacts');
+        yield* artifacts;
+    }
+    const alphabetical: string[] = [];
+    for (const oclass of discoveryClassOrder()) {
+        if (!(game._objectDiscoveryOrder ?? []).some(type =>
+            objectClassForType(type) === oclass && formattedDiscovery(type))) continue;
+        if (order === 'a') {
+            alphabetical.push(...classDiscoveries(oclass, order));
+            continue;
+        }
+        yield discoveryHeading(discoveryClassName(oclass));
+        yield* classDiscoveries(oclass, order);
+    }
+    if (alphabetical.length) {
+        if (relics.length || artifacts.length) yield discoveryHeading('Discovered items');
+        yield* alphabetical.sort(compareDiscoveryNames);
+    }
 }
 
 // o_init.c:doclassdisco(). Even traditional prompts accept empty classes;
@@ -427,19 +423,8 @@ function discoveryClassName(oclass: number): string {
     return name;
 }
 
-async function showDiscoveries(rows: readonly TextMenuEntry[]): Promise<void> {
-    // The tty text-window backend paginates the continuous putstr() stream
-    // into 23 content rows, reserving the last terminal row for --More--.
-    // Only the first page carries the title and its following blank line.
-    const pages: TextPage[] = [];
-    for (let offset = 0; offset < rows.length; offset += 23) {
-        const lines = Array<TextMenuEntry>(24).fill('');
-        const pageRows = rows.slice(offset, offset + 23);
-        for (const [row, line] of pageRows.entries()) lines[row] = line;
-        lines[23] = '--More--';
-        pages.push({ lines, cursor: [8, 23] });
-    }
-    await showTextPages(pages);
+async function showDiscoveries(rows: Iterable<TextMenuEntry>): Promise<void> {
+    await showTextWindow(rows);
     // A full-screen tty text window owns docrt() when it is destroyed.
     await docrt();
     await bot();
