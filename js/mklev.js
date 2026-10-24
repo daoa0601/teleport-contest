@@ -48,7 +48,7 @@ import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
 import { attachFigurineTimer } from './figurine_timer.js';
 import { placeCreatedObject, remove_object, stack_object, updateIceObjectTimersAt, } from './floor_object.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt, } from './buried_object.js';
-import { resetHeroTrap } from './terrain_movement.js';
+import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { addShopDamage, fixShopDamage } from './shop_damage.js';
 import { GameMap } from './game.js';
@@ -464,33 +464,45 @@ export async function mkportal(x, y, dnum, dlevel) {
     }
     portal.dst = { dnum, dlevel };
 }
-// C stairs.c:u_on_upstairs() uses downward travel rules for random arrivals.
+// C ref: stairs.c:u_on_sstairs() — place the hero on the special (branch)
+// staircase, falling back to a random arrival spot.
+export async function u_on_sstairs(upflag) {
+    const stway = stairway_find_special_dir(!!(upflag & 1));
+    if (stway) {
+        u_on_newpos(stway.sx, stway.sy);
+        return;
+    }
+    await u_on_rndspot(!!(upflag & 1));
+}
+// C ref: dungeon.c:u_on_rndspot() restricted to the flag bits the stairs.c
+// callers pass: arrivals use the level's up or down teleport region, and an
+// unset region lets place_lregion() default to the whole level.
+async function u_on_rndspot(up) {
+    const region = up ? game.level?.upTeleportRegion : game.level?.downTeleportRegion;
+    const area = region ?? { lx: 0, ly: 0, hx: 0, hy: 0 };
+    const excluded = region?.exclude ?? { lx: -1, ly: -1, hx: -1, hy: -1 };
+    await place_lregion(area.lx, area.ly, area.hx, area.hy, excluded.lx, excluded.ly, excluded.hx, excluded.hy, up ? LR_UPTELE : LR_DOWNTELE, null);
+    await switchHeroTerrain();
+}
+// C ref: stairs.c:u_on_upstairs() — place you on upstairs (or special
+// equivalent).
 export async function u_on_upstairs() {
     const stway = stairway_find_dir(true);
     if (stway) {
         u_on_newpos(stway.sx, stway.sy);
         return;
     }
-    const special = stairway_find_special_dir(false);
-    if (special) {
-        u_on_newpos(special.sx, special.sy);
-        return;
-    }
-    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_DOWNTELE, null);
+    await u_on_sstairs(0); /* destination upstairs implies moving down */
 }
-// C stairs.c:u_on_dnstairs() uses upward travel rules for random arrivals.
+// C ref: stairs.c:u_on_dnstairs() — place you on dnstairs (or special
+// equivalent).
 export async function u_on_downstairs() {
     const stway = stairway_find_dir(false);
     if (stway) {
         u_on_newpos(stway.sx, stway.sy);
         return;
     }
-    const special = stairway_find_special_dir(true);
-    if (special) {
-        u_on_newpos(special.sx, special.sy);
-        return;
-    }
-    await place_lregion(0, 0, 0, 0, 0, 0, 0, 0, LR_UPTELE, null);
+    await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
 // Object probabilities are mutable because gemstone rarity changes with
 // dungeon depth.  This is the level-dependent half of o_init.c.
