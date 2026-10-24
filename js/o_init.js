@@ -5,15 +5,16 @@
 // Fisher-Yates description/color shuffles.  Other startup owners remain
 // partial; the implementation below is the source of truth.
 import { game } from './gstate.js';
+import { artifactById } from './artifacts.js';
 import { rn2 } from './rng.js';
 import { bot, docrt, flush_screen, plineWithContinuation } from './display.js';
 import { NHW_MENU, PICK_ONE } from './const.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { ATR_INVERSE, addMenuHeading, showTextPages } from './windows.js';
-import { FLINT, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
+import { FLINT, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
 import { OBJECT_CLASS_LABELS, objectClassForType, priceQuoteSuffix, } from './object_knowledge.js';
-import { japaneseItemName } from './objnam.js';
+import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
 import { inventoryClassOrder } from './object_sort.js';
 export function init_objects() {
@@ -232,6 +233,16 @@ export async function dodiscovered() {
             grouped.get(oclass)?.push(line);
     }
     const body = [];
+    const relics = discoveredRelics();
+    if (relics.length) {
+        body.push(discoveryHeading('Unique items or Relics'));
+        body.push(...relics);
+    }
+    const artifacts = discoveredArtifacts();
+    if (artifacts.length) {
+        body.push(discoveryHeading('Artifacts'));
+        body.push(...artifacts);
+    }
     for (const oclass of classOrder) {
         const entries = grouped.get(oclass);
         if (!entries?.length)
@@ -239,7 +250,7 @@ export async function dodiscovered() {
         const heading = OBJECT_CLASS_LABELS[oclass];
         if (heading === undefined)
             throw new Error(`Missing discovery heading for object class ${oclass}`);
-        body.push({ text: heading, attr: ATR_INVERSE });
+        body.push(discoveryHeading(heading));
         body.push(...entries);
     }
     if (!body.length) {
@@ -269,5 +280,32 @@ export async function dodiscovered() {
     await bot();
     await flush_screen(1);
     game.context.move = 0;
+}
+function discoveryHeading(text) {
+    return { text, attr: game.iflags.menu_headings?.attr ?? ATR_INVERSE };
+}
+function discoveredRelics() {
+    const lines = [];
+    for (const type of [AMULET_OF_YENDOR, BELL_OF_OPENING,
+        SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION]) {
+        const known = !!game._knownObjectTypes?.has(type);
+        if (!known && (type === AMULET_OF_YENDOR || !game._encounteredObjectTypes?.has(type)))
+            continue;
+        const name = known ? requireObjectData(OBJECT_NAMES, type)
+            : game.objectDescriptions?.[type] ?? requireObjectData(OBJECT_DESCRIPTIONS, type);
+        lines.push(`  ${name}${!known && type === SPE_BOOK_OF_THE_DEAD ? ' spellbook' : ''}`);
+    }
+    return lines;
+}
+function discoveredArtifacts() {
+    return (game._artifactDiscoveries ?? []).map(id => {
+        const artifact = artifactById(id);
+        if (!artifact)
+            throw new Error(`Unknown discovered artifact ${id}`);
+        const alignment = artifact.alignment === 1 ? 'lawful'
+            : artifact.alignment === 0 ? 'neutral'
+                : artifact.alignment === -1 ? 'chaotic' : 'non-aligned';
+        return `  ${artifact.name} [${alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
+    });
 }
 //# sourceMappingURL=o_init.js.map
