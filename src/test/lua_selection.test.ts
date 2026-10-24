@@ -262,7 +262,7 @@ void test('selection matches strip numeric labels and a final newline from map f
     assert.equal(state.getGlobal('labelled'), 1);
     assert.equal(state.getGlobal('wildcard'), 1, 'unknown noncentral characters are transparent');
     assert.throws(() => state.execute('selection.match(".?.")'), /center must be valid terrain/);
-    assert.throws(() => state.execute('selection.area(12, 6, 12, 6):filter_mapchar("[")'), /unknown map character/);
+    assert.throws(() => state.execute('selection.area(12, 6, 12, 6):filter_mapchar("[")'), /Erroneous map char/);
 });
 
 void test('random lines narrow roughness to the native signed-byte range before subdividing', t => {
@@ -338,7 +338,7 @@ void test('selection point and gradient arguments use native coordinate conversi
     assert.equal(state.getGlobal('gradient'), 1);
     await assert.rejects(state.executeAsync('selection.set()'), /Selection setpoint error/);
     await assert.rejects(state.executeAsync('selection.set(1, 2, 3)'), /requires a selection/);
-    await assert.rejects(state.executeAsync('selection.new():get({x = 0, [2] = 0})'), /integer/);
+    await assert.rejects(state.executeAsync('selection.new():get({x = 0, [2] = 0})'), /Not a coordinate/);
 });
 
 void test('selection integer options narrow before percentage, removal, lighting and fill decisions', async t => {
@@ -364,4 +364,37 @@ void test('selection integer options narrow before percentage, removal, lighting
     assert.equal(state.getGlobal('remaining'), 1);
     assert.equal(state.getGlobal('lighting'), 0);
     assert.equal(state.getGlobal('filled'), 0);
+});
+
+void test('selection geometry and iteration reject unsupported argument counts', async t => {
+    freshGame();
+    const state: LuaState = new LuaState({
+        selection: createSelectionBindings(
+            { xstart: 0, ystart: 0, width: 80, height: 21 },
+            async (callback, args) => {
+                await state.callValueAsync(callback, args);
+                return true;
+            },
+        ),
+    });
+    t.after(() => state.destroy());
+
+    for (const source of [
+        'selection.line(1, 2, 3, 4, 5)',
+        'selection.rect(1, 2, 3, 4, 5)',
+        'selection.area(1, 2, 3, 4, 5)',
+        'selection.circle(1, 2, 3, 0, 5)',
+        'selection.ellipse(1, 2, 3, 4, 0, 5)',
+        'selection.randline(1, 2, 3, 4)',
+        'selection.match(".", 1)',
+        'selection.floodfill(1, 2, false, 0)',
+        'selection.new():iterate(function() end, 1)',
+        'selection.new():describe_size(1)',
+        'selection.negate(nil)',
+        'selection.clone(selection.new(), 1)',
+        'selection.grow(selection.new(), "north", 1)',
+        'selection.gradient({x = 1, y = 1, maxdist = 0}, 1)',
+    ]) {
+        await assert.rejects(state.executeAsync(source), { name: 'TypeError' }, source);
+    }
 });

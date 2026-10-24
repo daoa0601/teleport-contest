@@ -568,7 +568,7 @@ export class SpecialSelection {
     filterMapCharacter(character, lit = -2) {
         const terrain = mapCharacterType(character);
         if (terrain == null)
-            throw new Error(`unknown map character ${character}`);
+            throw new TypeError('Erroneous map char');
         return new SpecialSelection(selection_filter_mapchar(this.selection, terrain, lit));
     }
     randomCoordinate(remove = false) {

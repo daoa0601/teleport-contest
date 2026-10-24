@@ -104,6 +104,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const table = args[0];
         if (args.length === 1 && table instanceof LuaTable) {
             if (table.get('x') != null) {
+                if (table.get('y') == null) throw new TypeError('Not a coordinate');
                 coordinate = { x: luaCoordinate(table.get('x')), y: luaCoordinate(table.get('y')) };
             } else {
                 if (table.length() !== 2) throw new TypeError('Not a coordinate');
@@ -117,18 +118,24 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selectionValue(self).selection);
     };
-    const clone = (self: LuaValue) => wrap(selectionValue(self).clone());
+    const clone = (self: LuaValue, ...extra: LuaValue[]) => {
+        if (extra.length) throw new TypeError('wrong parameters');
+        return wrap(selectionValue(self).clone());
+    };
     const numpoints = (self: LuaValue) => selectionValue(self).numPoints();
-    const negate = (self: LuaValue) => wrap(self == null
-        ? new SpecialSelection().negate()
-        : selectionValue(self).negate());
+    const negate = (...args: LuaValue[]) => {
+        if (args.length === 0) return wrap(new SpecialSelection().negate());
+        if (args.length !== 1) throw new TypeError('wrong parameters');
+        return wrap(selectionValue(args[0]).negate());
+    };
     const percentage = (self: LuaValue, percent: LuaValue) => wrap(
         selectionValue(self).percentage(luaInt(percent)),
     );
     const filterMapchar = (self: LuaValue, character: LuaValue, lit: LuaValue = -2) => wrap(
         selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)),
     );
-    const grow = (self: LuaValue, direction: LuaValue = 'all') => {
+    const grow = (self: LuaValue, direction: LuaValue = 'all', ...extra: LuaValue[]) => {
+        if (extra.length) throw new TypeError('wrong parameters');
         const name = luaString(direction ?? 'all');
         if (!['all', 'random', 'north', 'south', 'east', 'west'].includes(name))
             throw new TypeError(`Unknown selection growth direction: ${name}`);
@@ -148,6 +155,8 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
     const geometry = (shape: 'line' | 'rect' | 'area', args: LuaValue[]) => {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        if (args.length !== 4)
+            throw new TypeError(`selection.${shape === 'area' ? 'fillrect' : shape}: illegal arguments`);
         const result = self ? selectionValue(self).clone() : new SpecialSelection();
         const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
         if (shape === 'area') {
@@ -165,6 +174,9 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
     const ellipse = (circular: boolean, args: LuaValue[]) => {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        const required = circular ? 3 : 4;
+        if (args.length !== required && args.length !== required + 1)
+            throw new TypeError('wrong parameters');
         const result = self ? selectionValue(self) : new SpecialSelection();
         const x = luaInteger(args[0]), y = luaInteger(args[1]);
         const radiusX = luaInt(args[2]);
@@ -174,9 +186,9 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return self ?? wrap(result);
     };
-    const gradient = (options: LuaValue) => {
-        if (!(options instanceof LuaTable))
-            throw new TypeError('selection.gradient requires a table');
+    const gradient = (options: LuaValue, ...extra: LuaValue[]) => {
+        if (!(options instanceof LuaTable) || extra.length)
+            throw new TypeError('selection.gradient requires table argument');
         const type = luaString(options.get('type') ?? 'radial');
         if (type !== 'radial' && type !== 'square')
             throw new TypeError(`Unknown gradient type: ${type}`);
@@ -195,17 +207,20 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
     const randline = (...args: LuaValue[]) => {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        if (args.length !== 5) throw new TypeError('wrong parameters');
         const result = self ? selectionValue(self).clone() : new SpecialSelection();
         const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
         return wrap(specialSelectionRandLine(
             start.x, start.y, end.x, end.y,
-            luaInt(args[4] ?? 7),
+            luaInt(args[4]),
             12,
             result,
         ));
     };
-    const iterate = async (self: LuaValue, callback: LuaValue) => {
-        if (luaType(callback) !== 'function') throw new TypeError('wrong parameters');
+    const iterate = async (self: LuaValue, ...args: LuaValue[]) => {
+        const callback = args[0];
+        if (args.length !== 1 || callback === undefined || luaType(callback) !== 'function')
+            throw new TypeError('wrong parameters');
         if (!invoke)
             throw new Error('selection.iterate needs a Lua state');
         const selection = selectionValue(self);
@@ -239,11 +254,19 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         gradient,
         randline,
         iterate,
-        describe_size: self => selection_size_description(selectionValue(self).selection),
-        floodfill: (x, y, diagonals = false) => wrap(
-            specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals)),
-        ),
-        match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
+        describe_size: (...args) => {
+            if (args.length !== 1) throw new TypeError('wrong parameters');
+            return selection_size_description(selectionValue(args[0]).selection);
+        },
+        floodfill: (...args) => {
+            if (args.length !== 2 && args.length !== 3) throw new TypeError('wrong parameters');
+            return wrap(specialSelectionFloodFill(currentContext(),
+                luaInteger(args[0]), luaInteger(args[1]), luaTruthy(args[2])));
+        },
+        match: (...args) => {
+            if (args.length !== 1) throw new TypeError('wrong parameters');
+            return wrap(specialSelectionMatch(luaString(args[0])));
+        },
         room: (...args) => {
             const candidate = args.length === 1
                 ? game.level?.rooms[luaInt(args[0])] : undefined;
