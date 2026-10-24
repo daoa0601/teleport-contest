@@ -3,7 +3,7 @@
 
 import { artifactById, resolveHeroArtifactTouch, rollHeroArtifactBlast } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_WIS } from './const.js';
+import { A_WIS, KILLED_BY } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
@@ -46,10 +46,12 @@ export async function touchArtifactByHero(
         const name = definiteName(objectCombatName(object, { state }), state);
         await publish(`You are blasted by ${name}${name.endsWith('s') ? "'" : "'s"} power!`);
         damage = rollHeroArtifactBlast(object, artifact, state);
+        // C touch_artifact(): losehp(dmg, "touching <artifact>", KILLED_BY).
         died = await loseHeroHp(damage, `touching ${artifact.name}`, {
             state,
             publish,
             die,
+            killerFormat: KILLED_BY,
         });
         if (!died) await exerciseAttribute(A_WIS, false, state);
     }
