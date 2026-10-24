@@ -307,7 +307,8 @@ import {
     inventoryItemDescription, rerollMenu,
 } from './invent.js';
 import {
-    hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive,
+    hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty,
+    hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive,
     propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout,
 } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
@@ -922,18 +923,16 @@ async function finishInitialTurnMaintenanceAfterRegions({
         const interval = Math.max(1, Math.trunc(
             ((30 + 8 - level) * roleFactor) / 6,
         ));
-        const energyRegeneration = !!(
-            game.u?.energyRegeneration
-            || game.u?.energyRegenerationIntrinsic
-            || game.u?.energyRegenerationExtrinsic
-        );
+        const energyRegeneration = propertyIsActive('energyRegeneration', game);
         if ((recoveryCapacity < MOD_ENCUMBER
                 && sourceTurn % interval === 0)
             || energyRegeneration) {
             let upper = Math.trunc(
                 (currentAttribute(A_WIS, game) + currentAttribute(A_INT, game)) / 15,
             ) + 1;
-            if (game.u?.magicalBreathingExtrinsic) upper += 2;
+            if (hasWornProperty('magicalBreathing', game)
+                || hasCarriedProperty('magicalBreathing', null, game)
+                || hasInvokedProperty('magicalBreathing', game)) upper += 2;
             game.u.uen = Math.min(
                 game.u.uenmax,
                 game.u.uen + 1 + rn2(upper),

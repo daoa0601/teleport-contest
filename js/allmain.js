@@ -164,7 +164,7 @@ import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, } from './shk.js';
 import { inventoryItemDescription, rerollMenu, } from './invent.js';
-import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
+import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
@@ -738,14 +738,14 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
         const level = game.u?.ulevel ?? 1;
         const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
         const interval = Math.max(1, Math.trunc(((30 + 8 - level) * roleFactor) / 6));
-        const energyRegeneration = !!(game.u?.energyRegeneration
-            || game.u?.energyRegenerationIntrinsic
-            || game.u?.energyRegenerationExtrinsic);
+        const energyRegeneration = propertyIsActive('energyRegeneration', game);
         if ((recoveryCapacity < MOD_ENCUMBER
             && sourceTurn % interval === 0)
             || energyRegeneration) {
             let upper = Math.trunc((currentAttribute(A_WIS, game) + currentAttribute(A_INT, game)) / 15) + 1;
-            if (game.u?.magicalBreathingExtrinsic)
+            if (hasWornProperty('magicalBreathing', game)
+                || hasCarriedProperty('magicalBreathing', null, game)
+                || hasInvokedProperty('magicalBreathing', game))
                 upper += 2;
             game.u.uen = Math.min(game.u.uenmax, game.u.uen + 1 + rn2(upper));
             game.context.botl = true;
