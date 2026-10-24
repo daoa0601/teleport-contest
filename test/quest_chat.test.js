@@ -6,7 +6,7 @@ import { ensureQuestStatus, registerQuestLeader } from '../js/quest.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { createDungeon } from './support/topology.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { artifactObject } from './support/game-objects.js';
 import { floorArtifact } from './support/game-objects.js';
 import { rhack } from '../js/cmd.js';
@@ -26,6 +26,7 @@ async function questLeader(level = 14, record = 20) {
     game.dungeons = [createDungeon({ dname: 'The Quest' })];
     game.u.uz = { dnum: 0, dlevel: 1 };
     game._activeSpecialLevel = { prototype: 'Hea-strt', file: 'Hea-strt.lua' };
+    game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: game.u.uz?.dnum ?? 0, dlevel: game.u.uz?.dlevel ?? 1 })]]);
     const leader = await createMonsterAt('Hippocrates', 11, 10);
     registerQuestLeader(leader);
     leader.msleeping = 0;
@@ -186,6 +187,7 @@ void test('a rejected chat returns the hero to the parent portal before the next
     game.branches = [{ end1: { dnum: 1, dlevel: 1 }, end2: { dnum: 0, dlevel: 1 },
             type: 'portal', portal: true, end1_up: false }];
     game._activeSpecialLevel = { prototype: 'Hea-strt', file: 'Hea-strt.lua' };
+    game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: game.u.uz?.dnum ?? 0, dlevel: game.u.uz?.dlevel ?? 1 })]]);
     game.u.ulevel = 13;
     addTrap(destination, MAGIC_PORTAL, 14, 10);
     const leader = await createMonsterAt('Hippocrates', 11, 10);

@@ -22,6 +22,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
+import { ensureQuestStatus } from '../js/quest.js';
 void test('blessed teleportation grants destination control and applies arrival pickup', async () => {
     freshObjectRoom({ flags: { tips: false, pickup: true } });
     requirePlayingGame(game);
@@ -203,6 +204,9 @@ void test('Quest controlled input uses Home levels rather than absolute dungeon 
     const { destination } = freshConnectedLevels({ dungeonName: 'The Quest' });
     game.quest_dnum = 0;
     game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: 0, dlevel: 1 })]]);
+    // do.c:goto_level() keeps a hero on the quest home without the leader's
+    // permission; with the leader dead the teleport may leave it.
+    ensureQuestStatus().killed_leader = true;
     const dungeon = game.dungeons[0];
     assert.ok(dungeon, 'Quest has no dungeon descriptor');
     dungeon.depth_start = 12;

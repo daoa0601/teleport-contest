@@ -23,7 +23,7 @@ import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './regions.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { impossible } from './diagnostics.js';
-import { markOverviewUnreachable } from './dungeon.js';
+import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
 const MS_LEADER = 36;
@@ -178,9 +178,12 @@ export async function prepareQuestArrival({ fromDepth } = {}, g = game) {
         return null;
     if (g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname !== 'The Quest')
         return null;
-    const prototype = g._activeSpecialLevel?.prototype || '';
+    // quest.c:onquest() classifies the destination by dungeon position
+    // (Is_qstart/Is_qlocate/Is_nemesis), not by the last generation script:
+    // a bones filler level keeps the departure level's prototype.
+    const at = (name) => sameDungeonLevel(currentDepth, g.specialLevels?.get(name));
     const status = ensureQuestStatus(g);
-    if (prototype.endsWith('-strt')) {
+    if (at('x-strt')) {
         if (!status.first_start) {
             return {
                 ...await prepareQtDelivery('firsttime', g),
@@ -202,7 +205,7 @@ export async function prepareQuestArrival({ fromDepth } = {}, g = game) {
         }
         return null;
     }
-    if (prototype.endsWith('-loca')) {
+    if (at('x-loca')) {
         if (status.killed_nemesis)
             return null;
         const fromAbove = (fromDepth?.dlevel ?? currentDepth.dlevel)
@@ -219,7 +222,7 @@ export async function prepareQuestArrival({ fromDepth } = {}, g = game) {
         if (fromAbove)
             return prepareQtDelivery('locate_next', g);
     }
-    if (prototype.endsWith('-goal')) {
+    if (at('x-goal')) {
         if (status.killed_nemesis)
             return null;
         if (!status.made_goal) {
@@ -240,13 +243,12 @@ export async function prepareQuestArrival({ fromDepth } = {}, g = game) {
     }
     return null;
 }
-// C do.c main-dungeon arrival branch: reaching the Quest entrance for the
-// first time invokes com_pager("quest_portal").  Loading quest.lua consumes
-// nhlib's alignment shuffle before its four plines collide with any pending
-// level-teleport message.
-export async function prepareMainQuestPortalCall({ firstVisit = true } = {}, g = game) {
-    if (!firstVisit)
-        return null;
+// C do.c main-dungeon arrival branch: every arrival at the Quest entrance
+// level from outside the Quest branch delivers the leader's summons
+// (quest_portal first, then quest_portal_again, or _demand for Rogues).
+// Loading quest.lua consumes nhlib's alignment shuffle before its plines
+// collide with any pending level-teleport message.
+export async function prepareMainQuestPortalCall({ fromDepth } = {}, g = game) {
     const event = g.u?.uevent || (g.u.uevent = {});
     const status = ensureQuestStatus(g);
     if (event.qcompleted || event.qexpelled || status.leader_is_dead)
@@ -263,6 +265,11 @@ export async function prepareMainQuestPortalCall({ firstVisit = true } = {}, g =
             || (hereIsEnd2 && branch.end1?.dnum === questDnum);
     });
     if (!entrance || currentDnum === questDnum)
+        return null;
+    // do.c delivers the summons only when the previous level was outside
+    // the Quest branch (In_quest(&u.uz0)); the wizard forced-destination
+    // teleport can leave the Quest without using the portal.
+    if (fromDepth?.dnum === questDnum)
         return null;
     const messageId = event.qcalled
         ? g.urole?.key === 'rogue' ? 'quest_portal_demand' : 'quest_portal_again'
@@ -334,9 +341,9 @@ async function questPurity(talk, g = game) {
         return 1;
     return currentBaseAlignment(g) !== original ? -1 : 0;
 }
+// C Is_qstart(&u.uz): the quest home is identified by dungeon position.
 export function onQuestStart(g = game) {
-    return g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname === 'The Quest'
-        && g._activeSpecialLevel?.prototype?.endsWith('-strt');
+    return sameDungeonLevel(g.u?.uz, g.specialLevels?.get('x-strt'));
 }
 // C quest.c:ok_to_quest() asks the non-interactive purity predicate.  Keep
 // that scorecard decision shared with pager and level-transition callers so
