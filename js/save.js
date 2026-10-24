@@ -3,7 +3,7 @@
 import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
+import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -175,7 +175,24 @@ async function writeSave(storage, key, reportFailure) {
     game.program_state.saving--;
     return saved;
 }
+// C restore.c:restgamestate() reports its refusal through You() and returns
+// FALSE; dorecover() then waits for the message to be dismissed and discards
+// the save file. The synchronous restoreGame() can only report the refusal,
+// so the caller completes that dialogue through dismissUnhealthyRestore().
+let restoreRefusal = null;
+export function restoreRefusedAsUnhealthy() {
+    return restoreRefusal === 'unhealthy';
+}
+export async function dismissUnhealthyRestore(name, storage = game.storage) {
+    if (restoreRefusal !== 'unhealthy')
+        return;
+    restoreRefusal = null;
+    await pline('You were not healthy enough to survive restoration.');
+    await displayMessageWindow();
+    storage?.removeItem?.(saveKey(name));
+}
 export function restoreGame(name, storage = game.storage) {
+    restoreRefusal = null;
     if (!storage?.getItem)
         return false;
     const key = saveKey(name);
@@ -188,13 +205,13 @@ export function restoreGame(name, storage = game.storage) {
             return false;
         requireInitializedHero(snapshot.state.u);
         // C restgamestate() refuses a save whose hero was not healthy enough
-        // to survive restoration; dorecover() then discards the save file and
-        // the game starts over rather than resurrecting the dead character.
+        // to survive restoration, and dorecover() then waits for the message
+        // to be dismissed before discarding the save file and starting over.
+        // restoreGame() is synchronous, so the caller owns that dialogue.
         const savedHero = snapshot.state.u;
         if ((savedHero.uhp ?? 0) <= 0
             && (!Upolyd(savedHero) || (savedHero.mh ?? 0) <= 0)) {
-            rawPrint('You were not healthy enough to survive restoration.');
-            storage.removeItem?.(key);
+            restoreRefusal = 'unhealthy';
             return false;
         }
         restoreSavedMonsters(snapshot.state);

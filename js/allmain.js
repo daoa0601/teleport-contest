@@ -355,10 +355,13 @@ export async function restoregamePreamble() {
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
     game._encumbranceLevel = 0;
-    // C getlev() closes dorecover() by restoring every monster on the
-    // current level: elapsed time is zero at a plain restore, so the pass
-    // is restore_cham() alone. Births append in the port, whereas C's fmon
-    // chain keeps the newest monster first.
+    // C getlev() closes dorecover() with a fixup pass over every monster on
+    // the restored current level. Its other steps — steed and engulfer
+    // relinking, placement, hidden cover, and shopkeeper residency — are
+    // restored directly from the saved graph, and elapsed time is zero at a
+    // plain restore, so restore_cham() is the piece this pass still owes.
+    // Births append in the port, whereas C's fmon chain keeps the newest
+    // monster first.
     for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
         await restoreMonsterShape(monster, game);
         if (game.program_state.gameover)
