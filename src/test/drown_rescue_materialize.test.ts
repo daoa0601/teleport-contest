@@ -27,7 +27,12 @@ function poolAtHero() {
 
 // C trap.c:5189: the life-saving rescue runs safe_teleds(TELEDS_TELEPORT),
 // and teleds() prints the verbose "You materialize in ... location!" line
-// for every teleport-flagged relocation (teleport.c:545-547).
+// for every teleport-flagged relocation (teleport.c:545-547).  Only the
+// "a different" variant can occur here: a drowning hero stands on liquid,
+// and goodpos() rejects that liquid square as a destination for a
+// non-swimming youmonst (teleport.c:133-143), so the rescue can never
+// land where it started.  The same/different selection still mirrors
+// teleds() exactly.
 void test('a life-saved drowning hero still materializes audibly at the rescue spot', async () => {
     const level = poolAtHero();
     requireFixtureGame(game);

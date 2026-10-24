@@ -20,7 +20,7 @@ import {
     A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
     DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED,
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE,
-    MAXULEV, P_BASIC, P_RIDING, PIT, SPIKED_PIT, SQKY_BOARD, WEB,
+    MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, WEB,
     WT_TOOMUCH_DIAGONAL, isok,
 } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
@@ -43,7 +43,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
-import { dismountHero, riderCannotReachMessage } from './steed.js';
+import { dismountHero } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectTypeKnown } from './shk.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
@@ -485,12 +485,13 @@ async function tryDisarm(trap: Trap, {
         await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
+    // C trap.c:5471-5477 splits this refusal into an unskilled-rider
+    // rider_cant_reach() case and a generic one, but can_reach_floor()'s
+    // rider check (engrave.c:197-198) precedes anything reachable from
+    // untrap(), so a mounted hero is always refused by the main flow and
+    // only the generic message is reachable here.
     if (!heroCanReachFloor(state, { checkPit: here })) {
-        if (state.u.usteed
-            && (state.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC)
-            await publish(riderCannotReachMessage(state));
-        else
-            await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
+        await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
 
@@ -589,7 +590,6 @@ async function disarmHoldingTrap(trap: Trap, options: FloorTrapOptions): Promise
             : state.u.twoweap && secondary && isBlade(secondary)
                 ? secondary : null;
         const artifact = artifactById(blade?.oartifact, state);
-        const primaryArtifact = artifactById(primary?.oartifact, state);
         if (blade && artifact && blade === primary && artifact.name === 'Sting')
             await publish(`Sting cuts through ${possessiveTrap(trap)} web!`);
         else if (blade && artifact && artifact.attack?.damageType === 'fire')

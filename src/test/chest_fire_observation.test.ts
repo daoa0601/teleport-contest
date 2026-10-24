@@ -7,9 +7,10 @@ import { addInventoryObject } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-// C trap.c:4246/4254 -> objnam.c:627-628: naming the box with the() runs
-// xname(), which calls observe_object() when the hero is not blind, setting
-// dknown and recording the discovery.
+// Pins the C xname() side effect that round 0 of this branch deleted in
+// error and round 1 restored: naming the burning box with the() runs
+// xname(), whose !Blind path calls observe_object() (objnam.c:627-628),
+// setting dknown and recording the discovery (trap.c:4246/4254).
 void test('a chest fire teaches the chest type to a sighted hero', async () => {
     freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
     requireFixtureGame(game);
