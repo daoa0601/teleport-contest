@@ -1,5 +1,5 @@
 // C apply.c:use_tinning_kit(), tinnable(); eat.c:floorfood("tin", 2).
-import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOMEMADE_TIN } from './const.js';
+import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOMEMADE_TIN } from './const.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -106,8 +106,7 @@ async function chooseTinningCorpse(): Promise<GameObject | null> {
     const corpse = await chooseInventoryObject('tin', object => {
         if (!object || object.oclass !== 7) return GETOBJ_EXCLUDE;
         return tinnable(object) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE_SELECTABLE;
-    }, { emptyMessage: declinedFloorCorpse
-        ? "You don't have anything else to tin." : "You don't have anything to tin." });
+    }, { hands: declinedFloorCorpse ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
     if (corpse && !tinnable(corpse)) {
         await pline("You can't tin that!");
         return null;

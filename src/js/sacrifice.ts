@@ -14,7 +14,7 @@ import { heroFootName } from './body_parts.js';
 import {
     A_NONE, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align,
     Is_astralevel, LUCKMAX, LUCKMIN, MM_NOMSG, ROOM,
-    STRAT_APPEARMSG, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
+    STRAT_APPEARMSG, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
 } from './const.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -135,7 +135,7 @@ async function chooseOffering(): Promise<GameObject | null> {
         if (![CORPSE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp))
             return GETOBJ_EXCLUDE_SELECTABLE;
         return astral !== (object.oclass === AMULET_CLASS) ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST;
-    }, { emptyMessage: `You don't have anything ${declinedFloor ? 'else ' : ''}to sacrifice.` });
+    }, { hands: declinedFloor ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
     if (object && object.oclass !== AMULET_CLASS && object.otyp !== CORPSE) {
         await pline("You can't sacrifice that!");
         return null;

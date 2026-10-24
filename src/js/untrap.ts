@@ -17,7 +17,8 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
-    DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE,
+    DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED,
+    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE,
     MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD,
     WEB, isok,
 } from './const.js';
@@ -41,7 +42,8 @@ import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
 import { dismountHero } from './steed.js';
-import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
+import { objectTypeKnown } from './shk.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
@@ -99,7 +101,7 @@ export interface UntrapOptions {
     enterTrap?: TrapEntry | null;
     chooseDirection?: () => DirectionSelection | null | Promise<DirectionSelection | null>;
     ask?: typeof promptYesNoQuit;
-    chooseObject?: typeof promptInventoryObject;
+    chooseObject?: typeof chooseInventoryObject;
     publish?: MessagePublisher;
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
@@ -110,7 +112,7 @@ export interface UntrapOptions {
 interface FloorTrapOptions {
     state: GameState;
     enterTrap: TrapEntry | null;
-    chooseObject: typeof promptInventoryObject;
+    chooseObject: typeof chooseInventoryObject;
     publish: MessagePublisher;
     random: (limit: number) => number;
     rollOne: (sides: number) => number;
@@ -221,7 +223,7 @@ export async function untrap({
     enterTrap = null,
     chooseDirection = promptDirection,
     ask = promptYesNoQuit,
-    chooseObject = promptInventoryObject,
+    chooseObject = chooseInventoryObject,
     publish = pline,
     random = rn2,
     rollOne = rnd,
@@ -607,24 +609,14 @@ async function disarmSqueakyBoard(trap: Trap, options: FloorTrapOptions): Promis
     return true;
 }
 
-async function chooseSqueakyBoardTool({ state, chooseObject, publish }: Pick<FloorTrapOptions, 'state' | 'chooseObject' | 'publish'>): Promise<GameObject | null> {
-    const eligible = (state.inventory || []).filter(object =>
-        object.otyp === CAN_OF_GREASE || object.oclass === POTION_CLASS);
-    if (!eligible.length) {
-        await publish("You don't have anything to untrap with.");
-        return null;
-    }
-    const recommended = eligible.filter(object =>
-        object.otyp === CAN_OF_GREASE
-        || (object.otyp === POT_OIL && object.dknown
-            && state._knownObjectTypes?.has(POT_OIL)));
-    const letters = compactInventoryLetters(
-        recommended.map(object => object.invlet).join(''),
-    );
-    const choices = letters ? `${letters} or ?*` : '?*';
-    const prompt = `What do you want to untrap with? [${choices}] `;
-    const selection = await chooseObject(prompt, eligible, { verb: 'untrap with', allowMenu: true });
-    return selection.cancelled ? null : selection.object;
+// C trap.c:disarm_squeaky_board(): getobj("untrap with", unsqueak_ok,
+// GETOBJ_PROMPT).  unsqueak_ok() downplays potions other than known oil.
+async function chooseSqueakyBoardTool({ state, chooseObject }: Pick<FloorTrapOptions, 'state' | 'chooseObject'>): Promise<GameObject | null> {
+    return chooseObject('untrap with', object => {
+        if (object.otyp === CAN_OF_GREASE) return GETOBJ_SUGGEST;
+        if (object.otyp === POT_OIL && object.dknown && objectTypeKnown(object, state)) return GETOBJ_SUGGEST;
+        return object.oclass === POTION_CLASS ? GETOBJ_DOWNPLAY : GETOBJ_EXCLUDE;
+    }, { forcePrompt: true });
 }
 
 async function consumeOne(object: GameObject, state: GameState): Promise<void> {

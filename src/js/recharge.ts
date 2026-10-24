@@ -4,7 +4,9 @@
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { findArmorClass } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, SPE_LIM } from './const.js';
+import {
+    A_STR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, SPE_LIM,
+} from './const.js';
 import { displayColorName, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -14,9 +16,8 @@ import type { DeathHandler } from './end.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
 import { consumeInventoryItem } from './invent.js';
-import {
-    compactInventoryLetters, promptInventoryObject,
-} from './inventory_prompt.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
+import type { InventoryClassification } from './inventory_prompt.js';
 import { endObjectBurn } from './light.js';
 import {
     BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE,
@@ -50,7 +51,6 @@ export interface RechargeRingOptions {
     rollOne?: typeof rnd;
     die?: DeathHandler;
 }
-type ChargingChoice = 'suggest' | 'exclude' | 'selectable' | 'downplay';
 
 const RING_CLASS = 4;
 const TOOL_CLASS = 6;
@@ -58,57 +58,27 @@ const WAND_CLASS = 11;
 const NODIR = 1;
 const WAN_NOTHING = OBJECT_NAMES.indexOf('nothing');
 
-function chargingChoice(object: GameObject, state: GameState): ChargingChoice {
-    if (object.oclass === WAND_CLASS) return 'suggest';
+// C read.c:charge_ok().
+function chargingChoice(object: GameObject, state: GameState): InventoryClassification {
+    if (object.oclass === WAND_CLASS) return GETOBJ_SUGGEST;
     const discovered = object.dknown && objectTypeKnown(object, state);
     if (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]
-        && discovered) return 'suggest';
-    if (isWeaponTool(object)) return 'exclude';
-    if (object.oclass !== TOOL_CLASS) return 'selectable';
+        && discovered) return GETOBJ_SUGGEST;
+    if (isWeaponTool(object)) return GETOBJ_EXCLUDE;
+    // Weapons, armor and the rest stay selectable for the "feeling of
+    // loss" response.
+    if (object.oclass !== TOOL_CLASS) return GETOBJ_EXCLUDE_SELECTABLE;
     if (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN
         || object.otyp === MAGIC_LAMP && !objectTypeKnown(object, state))
-        return 'suggest';
-    if (OBJECT_CHARGED[object.otyp]) return discovered ? 'suggest' : 'downplay';
-    return 'exclude';
+        return GETOBJ_SUGGEST;
+    if (OBJECT_CHARGED[object.otyp]) return discovered ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
+    return GETOBJ_EXCLUDE;
 }
 
+// getobj("charge", charge_ok, GETOBJ_PROMPT | GETOBJ_ALLOWCNT).
 export async function chooseObjectToCharge(state: GameState = game): Promise<GameObject | null> {
-    const inventory = state.inventory;
-    const suggested = inventory.filter(object =>
-        chargingChoice(object, state) === 'suggest');
-    const letterOrder = '$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ#';
-    const letters = compactInventoryLetters(suggested.map(object => object.invlet)
-        .filter((letter): letter is string => letter != null)
-        .sort((a, b) => letterOrder.indexOf(a) - letterOrder.indexOf(b)).join(''));
-    const choices = letters ? `[${letters} or ?*]` : '[*]';
-    const selection = await promptInventoryObject(
-        `What do you want to charge? ${choices} `,
-        inventory, {
-            verb: 'charge',
-            allowMenu: true,
-            allowNone: true,
-            allowCount: true,
-            allowGold: true,
-            menuItems: suggested.length ? suggested : inventory.filter(
-                object => chargingChoice(object, state) === 'downplay'),
-        });
-    if (selection.none) {
-        await pline('You mime charging something.');
-        return null;
-    }
-    const { object, count } = selection;
-    if (!object) return null;
-    if (chargingChoice(object, state) === 'exclude') {
-        await pline('That is a silly thing to charge.');
-        return null;
-    }
-    if (count && count < objectQuantity(object)
-        && !(object.otyp === LOADSTONE && object.cursed)
-        && !isWeldedPrimary(object, state)) {
-        const part = splitObjectStack(object, count, state);
-        if (part) return part;
-    }
-    return object;
+    return chooseInventoryObject('charge', object => chargingChoice(object, state),
+        { forcePrompt: true, allowCount: true });
 }
 
 export async function rechargeObject(object: GameObject, blessing: number, state: GameState = game): Promise<RechargeResult> {

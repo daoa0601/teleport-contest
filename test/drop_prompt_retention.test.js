@@ -4,7 +4,8 @@ import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { promptInventoryObject } from '../js/inventory_prompt.js';
+import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from '../js/const.js';
+import { getobj } from '../js/inventory_prompt.js';
 import { APPLE, EGG } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -22,14 +23,15 @@ void test('a silent drop leaves its answered object query visible', async () => 
 });
 void test('answering a wrapped object query clears the message window', async () => {
     freshGameplayRoom();
-    const letters = 'bdfhjlnprtvxzBDFHJLNPRTVXZcegikmoqsu';
+    // Pairs of letters survive compactify(), so the question wraps.
+    const letters = 'abdeghjkmnpqstvwyzABDEGHJKMNPQSTVWYZ';
     for (const [species, invlet] of [...letters].entries()) {
         await addInventoryObject(EGG, { invlet, corpsenm: species + 1 });
     }
     const egg = game.inventory.find(object => object.invlet === 'b');
     assert.ok(egg);
     pushKeys('b');
-    const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, game.inventory, { verb: 'rub the royal jelly on' });
+    const selection = await getobj('rub the royal jelly on', object => object.otyp === EGG ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });
     await flush_screen(1);
     assert.equal(selection.object, egg);
     const topline = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd();
