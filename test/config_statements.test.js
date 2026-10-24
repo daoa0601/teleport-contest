@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { def_warnsyms, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { flush_screen, glyphAt, map_object, newsym } from '../js/display.js';
+import { flush_screen, flushPendingTopline, glyphAt, map_object, newsym } from '../js/display.js';
+import { rhack } from '../js/cmd.js';
 import { completeExtendedCommand } from '../js/extended_commands.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { Engine, runSegment } from '../js/jsmain.js';
 import { ARROW, BOULDER, SCR_MAGIC_MAPPING } from '../js/object_data.js';
@@ -389,5 +390,31 @@ void test('section diagnostics are cut at the config error length', () => {
     // 'Section "[' is ten bytes; 245 more bytes hold 122 two-byte
     // characters and the first byte of the next one.
     assert.equal(error.message, `Section "[${'é'.repeat(122)}\uFFFD`);
+});
+// pager.c's do_screen_description() matches ROCK_CLASS against the BOULDER
+// override, so the ';' look at a configured boulder glyph still names it.
+void test('a BOULDER= glyph is still described as a boulder', async () => {
+    freshObjectRoom({ flags: { tips: false } });
+    requirePlayingGame(game);
+    applyNethackrc('BOULDER=56');
+    await floorObject(BOULDER, 11, 10, { dknown: true });
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, '8');
+    const display = requireGameDisplay();
+    const topLine = () => display.grid[0]?.map(cell => cell.ch).join('') ?? '';
+    const pages = [];
+    const input = resetInputState();
+    input.feed('l.');
+    input.display = {
+        async readKey() {
+            pages.push(topLine());
+            return ' '.charCodeAt(0);
+        },
+    };
+    await rhack(';'.charCodeAt(0));
+    await flushPendingTopline();
+    const text = [...pages, topLine()].join(' ').replace(/\s+/g, ' ');
+    assert.match(text, /^8 {1,}a boulder/, text);
 });
 //# sourceMappingURL=config_statements.test.js.map

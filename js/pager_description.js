@@ -69,11 +69,16 @@ export function screenDescription(x, y, description) {
         const symbols = Is_rogue_level(game.u.uz)
             ? ['', ']', ')', ']', '=', ',', '(', ':', '!', '?', '+', '/', '*', '*', '`', '0', '_', '.']
             : OBJECT_CLASS_SYMBOLS;
+        // pager.c matches ROCK_CLASS against the BOULDER override when one
+        // is set for this level's symset, else the default rock symbol.
+        const boulderSymbol = !Is_rogue_level(game.u.uz) && game.boulderSym
+            ? game.boulderSym : symbols[14] ?? '';
         for (let index = 1; index < symbols.length; index++) {
             const statue = index === 14 && glyph.kind === 'object' && glyph.statueGlyph;
-            if (!statue && !sameSymbol({ ch: symbols[index] ?? '' }))
+            const boulder = index === 14 && sameSymbol({ ch: boulderSymbol });
+            if (index === 14 ? !statue && !boulder : !sameSymbol({ ch: symbols[index] ?? '' }))
                 continue;
-            const name = index === 14 ? statue && !sameSymbol({ ch: '`' }) ? 'statue' : 'boulder'
+            const name = index === 14 ? boulder ? 'boulder' : 'statue'
                 : OBJECT_CLASS_EXPLAIN[index];
             if (!name)
                 continue;
