@@ -181,33 +181,38 @@ function classDescriptionMatches(description, wanted) {
     return end === description.length || description[end] === ' ';
 }
 export function nameToMonsterClass(value) {
+    return resolveMonsterClass(value).monsterClass;
+}
+// name_to_monclass() can identify one species as well as its class.
+export function resolveMonsterClass(value) {
     const raw = value;
     if (!raw)
-        return 0;
+        return { monsterClass: 0, mnum: -1 };
     if (raw.length === 1) {
         const found = MONSTER_CLASS_SYMBOLS.indexOf(raw);
         if (found === 60)
-            return 13;
+            return { monsterClass: 13, mnum: -1 };
         if (found === 59)
-            return 23;
-        return found < 0 ? 0 : found;
+            return { monsterClass: 23, mnum: canonicalMonsterNumber('long worm') };
+        return { monsterClass: found < 0 ? 0 : found, mnum: -1 };
     }
+    if (raw.toLowerCase() === 'long')
+        return { monsterClass: 0, mnum: -1 };
     const wanted = makeSingular(raw).toLowerCase();
-    if (wanted === 'long')
-        return 0;
     if (['an', 'the', 'or', 'other', 'or other'].includes(wanted))
-        return 0;
+        return { monsterClass: 0, mnum: -1 };
+    if (wanted === 'long worm')
+        return { monsterClass: 23, mnum: canonicalMonsterNumber('long worm') };
     const special = new Map([
-        ['long worm', 23], ['demon', 56], ['devil', 56],
-        ['bug', 24], ['fish', 57],
+        ['demon', 56], ['devil', 56], ['bug', 24], ['fish', 57],
     ]).get(wanted);
     if (special)
-        return special;
+        return { monsterClass: special, mnum: -1 };
     for (let monsterClass = 1; monsterClass < MONSTER_CLASS_NAMES.length; monsterClass++) {
         if (classDescriptionMatches(MONSTER_CLASS_NAMES[monsterClass] ?? '', wanted))
-            return monsterClass;
+            return { monsterClass, mnum: -1 };
     }
     const mnum = nameToMonster(wanted);
-    return mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0);
+    return { monsterClass: mnum < 0 ? 0 : (MONSTER_SYMBOL[mnum] ?? 0), mnum };
 }
 //# sourceMappingURL=mondata.js.map
