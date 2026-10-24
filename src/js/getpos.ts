@@ -2,7 +2,7 @@
 // display.c:tmp_at() for the valid-location marking overlay.
 
 import {
-    COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
+    COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK,
     LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB,
     TER_DETECT, TER_MAP, TER_MON, TER_OBJ,
 } from './const.js';
@@ -188,6 +188,13 @@ function getposGlyphSymbol(glyph: number | undefined): number | null {
     return null;
 }
 
+function knownVibratingSquareAt(x: number, y: number, state: GameState): boolean {
+    const invocation = state.level?.invocationPosition;
+    return Invocation_lev(state.u.uz, state) && invocation?.x === x && invocation.y === y
+        && !!state.level?.traps.some(trap => trap.tx === x && trap.ty === y
+            && trap.ttyp === VIBRATING_SQUARE && trap.tseen);
+}
+
 function getposFeatureMatches(
     x: number, y: number, key: string, matching: ReadonlySet<number>, state: GameState,
 ): boolean {
@@ -199,8 +206,7 @@ function getposFeatureMatches(
         const remembered = getposGlyphSymbol(loc.remembered_glyph?.glyph);
         if (remembered !== null && matching.has(remembered)) return true;
     }
-    if (key === '~' && state.level?.traps.some(trap =>
-        trap.tx === x && trap.ty === y && trap.ttyp === VIBRATING_SQUARE && trap.tseen))
+    if (key === '~' && knownVibratingSquareAt(x, y, state))
         return true;
     if (loc.seenv) {
         const background = getposGlyphSymbol(terrain_glyph(loc, x, y).glyph);
@@ -512,7 +518,7 @@ function matchesGetposCycle(kind: Exclude<GetposCycleKind, 'valid'>, x: number, 
                 || adjacent.remembered_glyph.kind === 'unexplored');
         });
     }
-    if (door) return true;
+    if (door || knownVibratingSquareAt(x, y, game)) return true;
     if (!glyph || ['nothing', 'unexplored'].includes(glyph.kind)) return false;
     return terrain === null || !['wall', 'stone', 'tree', 'iron bars', 'ice', 'air', 'cloud',
         'water', 'molten lava', 'wall of lava', 'floor of a room',
