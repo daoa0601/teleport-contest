@@ -108,6 +108,7 @@ import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
 import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.js';
+import { strikeIronBarsWithWeapon } from './projectile_bars.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -425,7 +426,8 @@ export function heroTestMove(x, y) {
     }
     const passesWalls = heroPassesWalls(game);
     if (location.typ === IRONBARS && !passesWalls
-        && !monsterPassesBars({ mnum: heroSpecies(game) }))
+        && (hero.uinwater || game.underwater
+            || !monsterPassesBars({ mnum: heroSpecies(game) })))
         return false;
     const dx = x - hero.ux, dy = y - hero.uy;
     if (dx && dy) {
@@ -7121,6 +7123,13 @@ async function domoveCore(dx, dy) {
     // missile logic can observe the hero as stationary rather than retreating.
     u.ux0 = u.ux;
     u.uy0 = u.uy;
+    const weapon = game.uwep || game.u.uwep;
+    if (game.context.forcefight && loc?.typ === IRONBARS && weapon) {
+        game.bhitpos.x = newx;
+        game.bhitpos.y = newy;
+        await strikeIronBarsWithWeapon(weapon, newx, newy, game);
+        return true;
+    }
     if (await fightEmptyDestination(newx, newy))
         return true;
     if (await ridingPreventsMovement()) {

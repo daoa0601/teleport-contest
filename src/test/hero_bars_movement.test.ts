@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rhack } from '../js/cmd.js';
+import { heroTestMove, rhack } from '../js/cmd.js';
 import { IRONBARS, W_NONDIGGABLE } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -9,6 +9,16 @@ import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+
+for (const form of ['garter snake', 'rust monster', 'ghost']) {
+    void test(`movement preview ${form === 'ghost' ? 'admits' : 'rejects'} an underwater ${form} at bars`, () => {
+        const level = freshObjectRoom({ hero: { uinwater: true } });
+        installPolymorphedHero(form);
+        level.requireAt(11, 10).typ = IRONBARS;
+
+        assert.equal(heroTestMove(11, 10), form === 'ghost');
+    });
+}
 
 for (const form of ['human', 'garter snake', 'ghost', 'python', 'brown pudding']) {
     void test(`iron bars ${form === 'human' || form === 'python' ? 'block' : 'admit'} a ${form}`, async () => {
