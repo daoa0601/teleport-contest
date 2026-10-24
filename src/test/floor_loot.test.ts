@@ -9,6 +9,7 @@ import { CHEST, CLUB, DART, SADDLE } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
+import { createStaffedShop } from './support/shop.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 void test('counted loot inside a swallower picks up the whole selected stack', async () => {
@@ -72,5 +73,20 @@ void test('loot cannot reach a submerged container even when underwater', async 
 
     assert.equal(chest.lknown, false);
     assert.equal(game._pending_message, 'You cannot loot things that are deep in the water.');
+    assert.equal(game.context.move, 0);
+});
+
+void test('a forced both-transfer with empty pockets drops the else from the put-in refusal', async () => {
+    freshPlayableRoom();
+    const chest = await floorObject(CHEST, 10, 10, {
+        initialize: false, olocked: false, otrapped: false, cknown: true,
+    });
+    chest.contents = [];
+    assert.equal(game.inventory.length, 0);
+
+    await runExtendedCommand('loot', ' ');
+
+    assert.equal(game._lastPlineMessage, 'You don\'t have anything to put in.');
+    assert.equal(chest.cknown, true);
     assert.equal(game.context.move, 0);
 });

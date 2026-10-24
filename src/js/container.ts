@@ -972,7 +972,7 @@ async function useContainerActions(container: GameObject, {
         const hasOtherInventory = (game.inventory || [])
             .some(object => object !== container);
         if (!hasOtherInventory) {
-            await pline(`You don't have anything else to ${
+            await pline(`You don't have anything${game.inventory.length ? ' else' : ''} to ${
                 action === keys.stash ? 'stash' : 'put in'}.`);
         } else {
             const transfer = await putSelectedObjects(
