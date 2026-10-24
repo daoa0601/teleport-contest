@@ -25,6 +25,7 @@ export type GameBooleanFlag =
 
 export type MenuStyle = 0 | 1 | 2 | 3;
 export type LootSortMode = 'n' | 'l' | 'f';
+export type DiscoverySortMode = 'o' | 's' | 'c' | 'a';
 
 export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     statusConditionMask?: number;
@@ -50,6 +51,7 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     pile_limit?: string | number;
     runmode?: string;
     sortloot?: LootSortMode;
+    discosort?: DiscoverySortMode;
     suppress_alert?: string;
     /** insight.c vanq_sortmode: VANQ_* order of vanquished/genocided lists. */
     vanqSortmode?: number;

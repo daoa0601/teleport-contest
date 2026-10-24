@@ -25,6 +25,8 @@ export type Artifact = { -readonly [Key in keyof ArtifactDefinition]: ArtifactDe
     wieldedProperties: PropertyName[];
 };
 
+export type ArtifactOrigin = 'gift' | 'wish' | 'named' | 'viadip' | 'lvldef' | 'bones' | 'random';
+
 export type ArtifactDefenseQuery =
     | ArtifactDefense
     | ArtifactDamage
@@ -223,6 +225,7 @@ export function initializeArtifacts(state: GameState = game): Map<number, Artifa
     state._artifactRuntime = runtime;
     state._artifactExists = new Set();
     state._artifactFound = new Set();
+    state._artifactOrigins = new Map();
     state._artifactDiscoveries = [];
     return runtime;
 }
@@ -238,16 +241,16 @@ function existenceSet(state: GameState): Set<number> {
 export function nameArtifact(
     object: GameObject | null | undefined,
     artifact: Artifact | null | undefined,
-    { knownOrigin = false, state = game }: { knownOrigin?: boolean; state?: GameState } = {},
+    { origin = 'random', knownOrigin = false, state = game }: {
+        origin?: ArtifactOrigin; knownOrigin?: boolean; state?: GameState;
+    } = {},
 ): boolean {
     if (!object || !artifact) return false;
     const exists = existenceSet(state);
     if (exists.has(artifact.id)) return false;
-    exists.add(artifact.id);
-    if (knownOrigin) markArtifactFound(artifact.id, state);
-    else state._artifactFound?.delete(artifact.id);
     object.artifact = true;
     object.oartifact = artifact.id;
+    setArtifactOrigin(object, origin, { knownOrigin, state });
     object.oextra = {
         ...(object.oextra || {}),
         oname: artifact.name,
@@ -259,6 +262,31 @@ export function nameArtifact(
     return true;
 }
 
+// C artifact.c:artifact_origin(). A wish or gift can replace the random
+// origin assigned by mk_artifact(); knowledge is reset at the same boundary.
+export function setArtifactOrigin(
+    object: GameObject, origin: ArtifactOrigin,
+    { knownOrigin = false, state = game }: { knownOrigin?: boolean; state?: GameState } = {},
+): void {
+    const id = object.oartifact;
+    if (!id) return;
+    existenceSet(state).add(id);
+    (state._artifactOrigins ??= new Map()).set(id, origin);
+    if (knownOrigin) markArtifactFound(id, state);
+    else state._artifactFound?.delete(id);
+}
+
+// C artifact.c:dump_artifact_info(). This includes artifacts the hero has
+// never encountered; the creation flags describe game state, not discoveries.
+export function artifactInfoLines(state: GameState = game): string[] {
+    return artifactList(state).map(artifact => {
+        const exists = state._artifactExists?.has(artifact.id) ? 'exists;' : '';
+        const found = state._artifactFound?.has(artifact.id) ? ' hero knows;' : '';
+        const origin = state._artifactOrigins?.get(artifact.id);
+        return `  ${artifact.name.slice(0, 36).padEnd(36)}[${exists}${found}${origin ? ` ${origin}` : ''}]`;
+    });
+}
+
 export function uncreateArtifact(
     object: GameObject | null | undefined,
     state: GameState = game,
@@ -266,6 +294,7 @@ export function uncreateArtifact(
     if (!object?.oartifact) return false;
     const removed = state._artifactExists?.delete(object.oartifact) ?? false;
     state._artifactFound?.delete(object.oartifact);
+    state._artifactOrigins?.delete(object.oartifact);
     object.artifact = false;
     object.oartifact = 0;
     return removed;

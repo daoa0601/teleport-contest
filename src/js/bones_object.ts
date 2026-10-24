@@ -140,7 +140,7 @@ export function prepareBonesObjectForRestore<T extends GameObject | null | undef
     if (object.oartifact) {
         const artifact = artifactById(object.oartifact, state);
         if (!artifact || artifact.questArtifact
-            || !nameArtifact(object, artifact, { state })) {
+            || !nameArtifact(object, artifact, { origin: 'bones', state })) {
             removeArtifactIdentity(object);
         }
     } else {

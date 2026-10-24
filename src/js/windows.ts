@@ -394,27 +394,28 @@ export async function showMultiSelectWindow<T>({
 
 // C tty_putstr(NHW_TEXT) buffers rows, including empty rows, and flushes at
 // terminal height minus its footer. A trailing blank can therefore own a page.
-export async function showTextWindow(lines: Iterable<string> | AsyncIterable<string>): Promise<number> {
+export async function showTextWindow(lines: Iterable<TextMenuEntry> | AsyncIterable<TextMenuEntry>): Promise<number> {
     const d = display();
     if (!d) return 27;
     if (d.rows < 2 || d.cols < 2)
         throw new RangeError('A text window requires a content row and a pager row');
 
     const pageSize = d.rows - 1;
-    let page: string[] = [];
+    let page: TextMenuEntry[] = [];
     let key = 32;
     const displayPage = async () => {
         while (page.length < pageSize) page.push('');
         key = await showTextPages([{ lines: [...page, '--More--'], cursor: [8, pageSize] }]);
         page = [];
     };
-    for await (const line of lines) {
-        for (const row of textWindowRows(line, d.cols)) {
+    for await (const entry of lines) {
+        const line = typeof entry === 'string' ? { text: entry } : entry;
+        for (const row of textWindowRows(line.text, d.cols)) {
             // tty_putstr flushes a full page before buffering the new row.
             // Its caller has already computed this line at that boundary.
             if (key === 27) continue;
             if (page.length === pageSize) await displayPage();
-            if (key !== 27) page.push(row);
+            if (key !== 27) page.push({ ...line, text: row });
         }
     }
     // A cancelled window ignores more rows, but the producer still runs:

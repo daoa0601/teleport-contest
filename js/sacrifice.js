@@ -4,7 +4,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { nomul } from './command_state.js';
 import { observeObjectForNaming } from './objnam.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
-import { artifactById, artifactExistCount, createArtifactGift, discoverArtifact, markArtifactFound, } from './artifacts.js';
+import { artifactById, artifactExistCount, createArtifactGift, discoverArtifact, setArtifactOrigin, } from './artifacts.js';
 import { adjustAttribute, exerciseAttribute } from './attrib.js';
 import { heroFootName } from './body_parts.js';
 import { A_NONE, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, Is_astralevel, LUCKMAX, LUCKMIN, MM_NOMSG, ROOM, STRAT_APPEARMSG, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, } from './const.js';
@@ -461,7 +461,7 @@ async function bestowArtifact(value) {
         return false;
     if (object.oartifact === undefined)
         throw new Error('An artifact gift requires an artifact id.');
-    markArtifactFound(object.oartifact);
+    setArtifactOrigin(object, 'gift', { knownOrigin: true });
     const artifact = artifactById(object.oartifact);
     if (!artifact)
         throw new Error('An artifact gift must have a registered artifact identity.');

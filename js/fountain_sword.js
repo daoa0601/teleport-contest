@@ -40,7 +40,7 @@ export async function dipFountainSword(object, location) {
     else {
         await pline('From the murky depths, a hand reaches up to bless the sword.');
         await pline('As the hand retreats, the fountain disappears!');
-        nameArtifact(object, artifact, { knownOrigin: true });
+        nameArtifact(object, artifact, { origin: 'viadip', knownOrigin: true });
         if (object === game.uswapwep)
             setTwoWeaponCombat(false);
         // C oname() activates an artifact created in the wielded hand.

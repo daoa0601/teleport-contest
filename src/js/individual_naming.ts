@@ -65,7 +65,7 @@ export async function nameIndividualObject(object: GameObject): Promise<void> {
         delete object.oextra.oname;
     }
     if (!artifact || artifact.baseType !== object.otyp || inscription !== artifact.name) return;
-    if (!nameArtifact(object, artifact, { knownOrigin: true })) return;
+    if (!nameArtifact(object, artifact, { origin: 'named', knownOrigin: true })) return;
     if (object === (game.uswapwep || game.u.uswapwep)) {
         if (game.u.twoweap) await pline('You can no longer wield two weapons at once.');
         setTwoWeaponCombat(false);

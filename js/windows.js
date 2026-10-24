@@ -293,8 +293,9 @@ export async function showTextWindow(lines) {
         key = await showTextPages([{ lines: [...page, '--More--'], cursor: [8, pageSize] }]);
         page = [];
     };
-    for await (const line of lines) {
-        for (const row of textWindowRows(line, d.cols)) {
+    for await (const entry of lines) {
+        const line = typeof entry === 'string' ? { text: entry } : entry;
+        for (const row of textWindowRows(line.text, d.cols)) {
             // tty_putstr flushes a full page before buffering the new row.
             // Its caller has already computed this line at that boundary.
             if (key === 27)
@@ -302,7 +303,7 @@ export async function showTextWindow(lines) {
             if (page.length === pageSize)
                 await displayPage();
             if (key !== 27)
-                page.push(row);
+                page.push({ ...line, text: row });
         }
     }
     // A cancelled window ignores more rows, but the producer still runs:

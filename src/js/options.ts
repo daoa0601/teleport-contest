@@ -17,6 +17,7 @@ import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, pli
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
+import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
@@ -471,6 +472,17 @@ function parseConfiguration(
             if (bindingOption === 'sortloot') {
                 const mode = optionValue?.[0]?.toLowerCase();
                 if (isLootSortMode(mode)) result.flags.sortloot = mode;
+                continue;
+            }
+            if (bindingOption === 'sortdiscoveries') {
+                const initial = optionValue?.charAt(0).toLowerCase();
+                if (negated) result.flags.discosort = 'o';
+                else if (initial === 'o' || initial === '0') result.flags.discosort = 'o';
+                else if (initial === 's' || initial === '1') result.flags.discosort = 's';
+                else if (initial === 'c' || initial === '2') result.flags.discosort = 'c';
+                else if (initial === 'a' || initial === '3') result.flags.discosort = 'a';
+                else if (optionValue) addError(`Unknown sortdiscoveries parameter '${optionValue}'`);
+                else addError(`Missing parameter for '${stripped}'`);
                 continue;
             }
             if (bindingOption === 'altmeta' || bindingOption === 'toptenwin' || bindingOption === 'menu_tab_sep') {
@@ -1132,7 +1144,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('roguesymset', 'roguesymset             [default]'),
             choice('runmode', `runmode                 [${compoundMenuValue('runmode')}]`),
             choice('scores', `scores                  [${scoreDisplayDescription()}]`),
-            choice('sortdiscoveries', 'sortdiscoveries         [by order of discovery within each class]'),
+            choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),
             choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
             choice('sortvanquished', 'sortvanquished          [t: traditional: by monster level]'),
             choice('statushilites', "statushilites           [0 (off: don't highlight status fields)]"),
@@ -1301,6 +1313,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'fruit') await editFruitOption(fullMenu && game.iflags.optionMessages !== false);
     else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'sortloot') await editSortLoot();
+    else if (name === 'sortdiscoveries') await chooseDiscoverySort(0);
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {

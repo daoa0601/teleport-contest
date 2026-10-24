@@ -2,7 +2,7 @@
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
 
-import { markArtifactFound } from './artifacts.js';
+import { setArtifactOrigin } from './artifacts.js';
 import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, NHW_MENU, PICK_ONE } from './const.js';
 import {
     bot, docrt, flushPendingTopline, flush_screen, pline,
@@ -112,7 +112,7 @@ export async function makeWish(): Promise<void> {
     }
     const object = result.object;
     rememberWish(value ?? '');
-    if (object.oartifact) markArtifactFound(object.oartifact);
+    if (object.oartifact) setArtifactOrigin(object, 'wish', { knownOrigin: true });
     game.u.uconduct.wishes = (game.u.uconduct.wishes || 0) + 1;
 
     if (object.otyp === CORPSE && !(game.uarmg || game.u.uarmg)

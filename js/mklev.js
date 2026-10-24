@@ -495,10 +495,16 @@ export async function u_on_downstairs() {
 // Object probabilities are mutable because gemstone rarity changes with
 // dungeon depth.  This is the level-dependent half of o_init.c.
 let objectProb = OBJECT_PROB.slice();
+export function initializeObjectProbabilities() {
+    objectProb = OBJECT_PROB.slice();
+    setGemProbabilities(0);
+}
 export function oinit() {
+    setGemProbabilities(Math.min(ledgerNo(game.u?.uz), maxLedgerNo()));
+}
+function setGemProbabilities(ledger) {
     const firstGem = getObjectClassBounds(GEM_CLASS).first;
     const lastRealGem = 460;
-    const ledger = Math.min(ledgerNo(game.u?.uz), maxLedgerNo());
     let first = firstGem;
     for (let j = 0; j < 9 - Math.trunc(ledger / 3); j++) {
         objectProb[first++] = 0;
@@ -6303,7 +6309,7 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
     if (options.name) {
         const artifact = artifactByName(options.name);
         if (artifact?.baseType === object.otyp) {
-            if (nameArtifact(object, artifact) && artifact.questArtifact)
+            if (nameArtifact(object, artifact, { origin: 'lvldef' }) && artifact.questArtifact)
                 object.questArtifact = true;
         }
         else {

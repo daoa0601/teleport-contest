@@ -991,7 +991,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         const namedArtifact = artifactByName(personalName);
         if (namedArtifact?.baseType === object.otyp) {
             artifact = namedArtifact;
-            nameArtifact(object, artifact);
+            nameArtifact(object, artifact, { origin: 'wish' });
             object.quan = 1;
             game.u.uconduct ||= {};
             game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, artifactInfoLines, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
@@ -85,6 +85,7 @@ void test('naming a wielded elven dagger Sting creates its artifact and warning'
     await rhack('#'.charCodeAt(0));
     assert.equal(dagger.oartifact, artifactByName('Sting')?.id);
     assert.equal(dagger.oextra?.oname, 'Sting');
+    assert.match(artifactInfoLines().find(line => line.startsWith('  Sting ')) ?? '', /\[exists; hero knows; named\]$/);
     assert.equal(game.u.warnOfMonster, true);
     assert.equal(game.u.uconduct?.literate, 1);
     assert.equal(game.context.move, 0);

@@ -310,7 +310,7 @@ async function crownHero(): Promise<void> {
         if (!classGift && object?.otyp === LONG_SWORD && !object.oartifact) {
             if (!heroIsBlind(game)) await pline('Your sword shines brightly for a moment.');
             const before = objectName(object);
-            if (nameArtifact(object, artifact, { knownOrigin: true })) {
+            if (nameArtifact(object, artifact, { origin: 'gift', knownOrigin: true })) {
                 hero.ugifts = (hero.ugifts || 0) + 1;
                 recordGameLogEvent(`had ${game.flags.female ? 'her' : 'his'} wielded ${before} transformed into ${artifact.name}`);
             }
@@ -328,7 +328,7 @@ async function crownHero(): Promise<void> {
             observeObject(object);
         } else if (!classGift && !existing) {
             object = await mksobj(hero.ualign.type < 0 ? RUNESWORD : LONG_SWORD, false, false);
-            nameArtifact(object, artifact, { knownOrigin: true });
+            nameArtifact(object, artifact, { origin: 'gift', knownOrigin: true });
             object.spe = 1;
             await dropGift(object, blackSword ? withIndefiniteArticle(blackSword) : 'A sword');
             hero.ugifts = (hero.ugifts || 0) + 1;

@@ -18,7 +18,7 @@ import type { RngSeed } from './rng.js';
 import type { CannedCommand, AfterMove, MovementAttempt, RepeatCommandEntry, RunState } from './command_types.js';
 import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
 import type { TakeoffContext } from './takeoff_state.js';
-import type { Artifact } from './artifacts.js';
+import type { Artifact, ArtifactOrigin } from './artifacts.js';
 import type { LuaVariables } from './lua/runtime.js';
 import type { LuaAlignmentName } from './lua/lifecycle.js';
 import type { SpellCategory } from './data_types.js';
@@ -290,6 +290,7 @@ export interface GameState {
     _artifactRuntime?: Map<number, Artifact>;
     _artifactExists?: Set<number>;
     _artifactFound?: Set<number>;
+    _artifactOrigins?: Map<number, ArtifactOrigin>;
     _artifactDiscoveries?: number[];
     gamelog?: Array<{ turn: number; text: string }>;
     _bonesEncountered?: boolean;
