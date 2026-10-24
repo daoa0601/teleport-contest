@@ -365,12 +365,15 @@ async function showUnpaid(carried, floor, buried) {
             const contents = unpaidObjects(container.contents ?? []);
             if (!container.contents?.length)
                 continue;
-            const prices = contents.map(object => unpaidObjectCost(object));
-            const price = prices.reduce((sum, cost) => sum + cost, 0);
-            total += price;
-            if (container.cknown)
-                contents.forEach((object, index) => lines.push(pricedInventoryLine(object, '>', prices[index] ?? 0)));
-            else
+            let price = 0;
+            for (const object of contents) {
+                const cost = unpaidObjectCost(object);
+                price += cost;
+                total += cost;
+                if (container.cknown)
+                    lines.push(pricedInventoryLine(object, '>', cost));
+            }
+            if (!container.cknown)
                 lines.push(pricedInventoryLine(null, '>', price, `${possessiveName(objectName(container))} contents`));
         }
     }

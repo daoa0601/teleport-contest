@@ -2835,6 +2835,7 @@ export async function showMessageMenu(letter, pickMode, message) {
         // WIN_STOP skips the choice's own display; morc cancels the prompt.
         if (game.nhDisplay)
             game.nhDisplay.stoppedTopline = message;
+        game._suppressMessagesUntilInput = false;
         return 27;
     }
     game._pending_message = message;

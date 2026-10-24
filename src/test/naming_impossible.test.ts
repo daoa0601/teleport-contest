@@ -5,11 +5,14 @@ import { NO_MINVENT, PANICLOG } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { FUZZER_IMPOSSIBLE_PANIC, impossible } from '../js/diagnostics.js';
+import { bot } from '../js/display.js';
+import { loseHeroHp } from '../js/hero_damage.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';
-import { LEASH, POT_HEALING, TIN, TIN_OPENER } from '../js/object_data.js';
+import { LEASH, POT_HEALING, SACK, TIN, TIN_OPENER } from '../js/object_data.js';
+import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { useTinOpener } from '../js/tin.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -29,9 +32,8 @@ function loggedReasons(): string[] {
 }
 
 // Answer every key request, recording each screen the hero is asked about.
-function recordScreens(): string[] {
+function recordScreens(input = resetInputState()): string[] {
     const screens: string[] = [];
-    const input = resetInputState();
     input.display = {
         readKey(): Promise<number> {
             const screen = visibleText();
@@ -85,6 +87,64 @@ void test('an unpaid object missing from the bill reports unpaid_cost impossible
     assert.ok(diagnostic < menu, 'the diagnostic precedes the menu that prices the potion');
     assert.deepEqual(loggedReasons(), ["unpaid_cost: object wasn't on any bill."]);
 });
+
+void test('inventory naming diagnostics refresh changed hit points before their pagers', async () => {
+    freshPlayableRoom({ hero: { uhp: 12, uhpmax: 20 } });
+    await addInventoryObject(LEASH, { leashmon: 4242 });
+    await bot();
+    await loseHeroHp(5, 'a blow');
+    const screens = recordScreens();
+
+    await rhack('i'.charCodeAt(0));
+
+    firstScreenIndex(screens, /leashed monster #4242 not found/);
+    const reports = screens.filter(screen => screen.includes('--More--'));
+    assert.ok(reports.length > 0, 'the naming diagnostic has an acknowledgment pager');
+    for (const screen of reports)
+        assert.match(screen.split('\n')[23] ?? '', /HP:7\(20\)/,
+            'diagnostic prose flushes the current HP before inventory selection disables status');
+});
+
+for (const panic of [false, true]) {
+    void test(`known unpaid contents ${panic ? 'panic on' : 'report'} a missing leash before a later missing bill`, async () => {
+        freshPlayableRoom({ flags: { menu_style: 0 } });
+        game.storage = memoryStorage();
+        const bag = await addInventoryObject(SACK, { initialize: false, cknown: true });
+        const potion = await knownObject(POT_HEALING);
+        await addCreatedObjectToContainer(bag, potion);
+        const leash = await knownObject(LEASH, { leashmon: 4242 });
+        // add_to_container prepends: the billed leash precedes the unbilled potion.
+        await addCreatedObjectToContainer(bag, leash);
+        leash.unpaid = true;
+        potion.unpaid = true;
+        await createStaffedShop({ bill: [{ bo_id: leash.o_id, bquan: 1, price: 20, useup: false }] });
+        game.flags.debug_fuzzer = panic ? FUZZER_IMPOSSIBLE_PANIC : 0;
+        const input = resetInputState();
+        const screens = recordScreens(input);
+        input.feed('u');
+
+        if (panic) {
+            await assert.rejects(rhack('I'.charCodeAt(0)), {
+                name: 'FormatterPanic', message: 'leashed monster #4242 not found',
+            });
+
+            assert.equal(leash.leashmon, 4242, 'the panic stops naming before the leash is detached');
+            assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);
+        } else {
+            await rhack('I'.charCodeAt(0));
+
+            const missingLeash = firstScreenIndex(screens, /leashed monster #4242 not found/);
+            const missingBill = firstScreenIndex(screens, /unpaid_cost: object wasn't on any bill\./);
+            const menu = firstScreenIndex(screens, /an uncursed leash/);
+            assert.ok(missingLeash < missingBill && missingBill < menu,
+                `expected leash report, bill report, menu; got screens ${missingLeash}, ${missingBill}, ${menu}`);
+            assert.equal(leash.leashmon, 0);
+            assert.deepEqual(loggedReasons(), [
+                'leashed monster #4242 not found', "unpaid_cost: object wasn't on any bill.",
+            ]);
+        }
+    });
+}
 
 void test('a leash attached to a dead monster reports that monster as not found', async () => {
     freshPlayableRoom();

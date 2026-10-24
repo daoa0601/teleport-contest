@@ -2847,6 +2847,7 @@ export async function showMessageMenu(
     else if (pending && await pageTopline(pending, { dismissKey: menuLetter }) === 27) {
         // WIN_STOP skips the choice's own display; morc cancels the prompt.
         if (game.nhDisplay) game.nhDisplay.stoppedTopline = message;
+        game._suppressMessagesUntilInput = false;
         return 27;
     }
     game._pending_message = message;

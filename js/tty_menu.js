@@ -201,6 +201,8 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
     return result;
 }
 export async function tty_select_menu(window, how) {
+    // Native reports during formatting, before select_menu() disables status.
+    await publishDeferredImpossibles();
     const previousStatusDisabled = game._statusUpdatesDisabled;
     const restoreStatusUpdates = () => {
         if (previousStatusDisabled === undefined)

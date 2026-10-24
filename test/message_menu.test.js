@@ -131,12 +131,15 @@ void test('the item letter dismisses an older message before the singleton is sh
     assert.equal(selected, 'b'.charCodeAt(0));
     assert.equal(rowText(0), '');
 });
-void test('Escape at an older message cancels the singleton without showing it', async () => {
+void test('Escape at an older message cancels the singleton and allows later ordinary messages', async () => {
     freshObjectRoom();
     const input = resetInputState();
     await plineWithContinuation(olderMessage);
     const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [{ prompt: /spellbooks\.--More--/, keys: '\x1b' }]);
     assert.equal(selected, 27);
     assert.doesNotMatch(rowText(0), /dagger/);
+    await plineWithContinuation('You keep your dagger.');
+    await flush_screen(1);
+    assert.equal(rowText(0), 'You keep your dagger.');
 });
 //# sourceMappingURL=message_menu.test.js.map
