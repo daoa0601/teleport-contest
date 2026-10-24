@@ -201,8 +201,9 @@ async function snatchPetrifyingCorpse(weapon: GameObject, state: GameState) {
 async function disarmMonster(
     monster: Monster, weapon: GameObject, proficiency: number, state: GameState,
 ): Promise<boolean> {
+    // C apply.c:3156: a fumbling hero keeps hold only on !rn2(10).
     let gotWeapon = proficiency > 0
-        && (!heroIsFumbling(state) || rn2(10) !== 0);
+        && (!heroIsFumbling(state) || rn2(10) === 0);
     const hand = monsterHandName(monster.mnum);
     const hands = isTwoHanded(weapon) ? makePlural(hand) : hand;
     observeObjectForNaming(weapon, { state });

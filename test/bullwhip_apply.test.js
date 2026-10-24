@@ -210,6 +210,35 @@ void test('a fumbling hero drops a snatched weapon', async () => {
     });
     assertDroppedAtFeet(result);
 });
+void test('a fumbling hero rarely keeps a disarmed weapon in the bullwhip', async () => {
+    let wraps = 0;
+    let snatches = 0;
+    for (let seed = 1n; seed <= 120n; seed++) {
+        freshPlayableRoom({ role: 'archeologist', hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } } });
+        requirePlayingGame(game);
+        const whip = await addInventoryObject(BULLWHIP, { invlet: 'a', spe: 2, wielded: true, owornmask: W_WEP });
+        game.uwep = game.u.uwep = whip;
+        grantIntrinsicProperty('fumbling', 'outside', game);
+        const bugbear = await createMonsterAt('bugbear', 11, 10);
+        bugbear.mpeaceful = 0;
+        await equipMonsterObject(bugbear, await knownObject(CLUB, {}), W_WEP);
+        const messages = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        initRng(seed);
+        pushKeys(' '.repeat(8));
+        await useBullwhip(whip, { dx: 1, dy: 0, dz: 0 });
+        messages.push(game._pending_message);
+        const text = messages.join('\n');
+        if (/You wrap your bullwhip/u.test(text))
+            wraps++;
+        if (/You snatch|yank|is snatched|You pull/u.test(text))
+            snatches++;
+    }
+    // C apply.c:3156: proficient && (!Fumbling || !rn2(10)) keeps hold one time in ten.
+    assert.ok(wraps >= 30, `expected many wraps, got ${wraps}`);
+    assert.ok(snatches * 3 < wraps, `fumbling kept hold ${snatches} of ${wraps} times`);
+});
 void test('slippery fingers do not stop a snatched weapon from being held', async () => {
     const result = await snatchClubFromBugbear(() => { game.u.glibTurns = 20; });
     assert.ok(game.inventory.includes(result.club));

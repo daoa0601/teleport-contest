@@ -156,8 +156,9 @@ async function snatchPetrifyingCorpse(weapon, state) {
 }
 /** Returns true when the hero died during the disarm (snatch death ends the game). */
 async function disarmMonster(monster, weapon, proficiency, state) {
+    // C apply.c:3156: a fumbling hero keeps hold only on !rn2(10).
     let gotWeapon = proficiency > 0
-        && (!heroIsFumbling(state) || rn2(10) !== 0);
+        && (!heroIsFumbling(state) || rn2(10) === 0);
     const hand = monsterHandName(monster.mnum);
     const hands = isTwoHanded(weapon) ? makePlural(hand) : hand;
     observeObjectForNaming(weapon, { state });
