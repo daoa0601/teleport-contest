@@ -20,17 +20,19 @@ import {
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    AMULET_OF_LIFE_SAVING, APPLE, FOOD_RATION, HEAVY_IRON_BALL, OBJECT_NAMES,
+    AMULET_OF_LIFE_SAVING, APPLE, FOOD_RATION, HEAVY_IRON_BALL, LEATHER_GLOVES, OBJECT_NAMES,
 } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { inventoryWeight, weightCapacity } from '../js/weight.js';
 import { startRun } from '../js/runmode.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { loadScoreRecords } from '../js/score_records.js';
 import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { installPagerInput } from './support/pager-input.js';
 
 function acknowledgeMessages() {
     const input = resetInputState();
@@ -301,6 +303,32 @@ void test('premature revival ends a faint without ending another involuntary del
     game._helplessReason = 'paralyzed';
     assert.equal(await resetHeroFaint(), false);
     assert.equal(game._helplessTurns, 12);
+});
+
+void test('fainting onto a wielded cockatrice corpse petrifies even through gloves', async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+        hero: { uhunger: 1, uhs: WEAK } });
+    requireFixtureGame(game);
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const corpse = await corpseObject(MONSTER_NAME.indexOf('cockatrice'));
+    corpse.where = 'inventory';
+    game.inventory.push(corpse);
+    game.uwep = corpse;
+    game.uarmg = await addInventoryObject(LEATHER_GLOVES);
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        if (game._pending_message) messages.push(game._pending_message);
+    };
+    installPagerInput(input, { expected: /stone|touch|faint|Goodbye|points|You were/i, limit: 10 });
+
+    await spendHeroNutrition(1);
+
+    assert.ok(game.program_state.gameover, 'falling while wielding the corpse must be fatal');
+    assert.ok(messages.join(' ').includes('Falling, you touch the cockatrice corpse.'), messages.join(' | '));
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by a cockatrice corpse, while fainted from lack of food');
 });
 
 void test('restore keeps fainting hunger, deafness, and weakness but loses the recovery callback', async () => {
