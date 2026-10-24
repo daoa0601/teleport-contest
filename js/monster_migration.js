@@ -15,7 +15,7 @@ import { releaseMonsterLeash, releaseMonsterLeashWithFeedback, } from './monster
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { initializeUnplacedMonsterWormBody, removeMonsterWormBody, } from './monster_worm.js';
 import { newsym } from './display.js';
-import { vision_recalc } from './vision.js';
+import { monsterEmitsLight, vision_recalc } from './vision.js';
 import { rn2, rn1, rnd } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
@@ -140,6 +140,11 @@ export async function migrateMonsterOffLevel(monster, state, trap, { kind = 'lev
     monster.mx = 0;
     monster.my = 0;
     migrationQueue(state).push(monster);
+    // C migrate_to_level() keeps a mobile light but turns it global (mx == 0)
+    // and recalculates vision at once, so what it lit goes dark before the
+    // next monster moves.
+    if (monsterEmitsLight(monster.mnum))
+        vision_recalc(0);
     return {
         kind, trap, visible, destination: monster.migrationDestination,
         damage: 0, killed: false,
