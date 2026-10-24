@@ -1,5 +1,5 @@
 // C cfgfiles.c:config_error_init(), config_erradd(), config_error_done().
-import { rawPrint } from './display.js';
+import { rawPrint, rawPrintf } from './display.js';
 import { truncatePlineMessage } from './pline_text.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
@@ -29,7 +29,7 @@ export async function displayConfigurationErrors(reports) {
         let previousLine = null;
         for (const error of report.errors) {
             if (error.raw) {
-                rawConfigurationMessage(error.message);
+                rawPrintf(error.message);
                 await awaitStartupReturn();
                 continue;
             }

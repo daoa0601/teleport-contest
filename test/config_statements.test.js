@@ -237,4 +237,14 @@ void test('an invalid AUTOCOMPLETE command prints a raw diagnostic', () => {
     assert.equal(raw[0]?.message, "Bad autocomplete: invalid extended command 'nosuchcommand'.");
     assert.equal(raw[0]?.raw, true);
 });
+void test('a long AUTOCOMPLETE diagnostic keeps its prefix and counts as early raw output', async () => {
+    const command = 'unknown_' + 'x'.repeat(260) + '_discarded_suffix';
+    const engine = await start(`${PLAY}\nAUTOCOMPLETE=${command}`);
+    const text = screen(engine);
+    assert.match(text, /^Bad autocomplete: invalid extended command 'unknown_/);
+    assert.doesNotMatch(text, /\.\.\.|discarded_suffix|error in \.nethackrc\./);
+    assert.match(text, /Hit return to continue:/);
+    assert.equal(engine.state.earlyRawMessages, 2);
+    assert.equal(engine.state.moves, 0);
+});
 //# sourceMappingURL=config_statements.test.js.map
