@@ -27,7 +27,6 @@ import { relocateObjectRandomly } from './object_teleport.js';
 import { BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, ROCK, } from './object_data.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';
 const COIN_CLASS = 12;
 const GLASS = 19;
@@ -112,9 +111,10 @@ function transitSubject(object, state) {
         : `the ${objectCombatName(object, { state })}`;
     return subject.charAt(0).toUpperCase() + subject.slice(1);
 }
+// C cansee() reads only the vision array.  A hero blinded by polymorph keeps
+// the old sight until the next vision_recalc(), so the shed equipment's
+// transit messages still show.
 function squareIsVisible(state, x, y) {
-    if (heroIsBlind(state))
-        return false;
     if (state === game)
         return cansee(x, y);
     return !state.viz_array || !!((state.viz_array[y]?.[x] ?? 0) & 0x2);
