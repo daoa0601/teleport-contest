@@ -202,6 +202,7 @@ import {
 } from './object_timers.js';
 import { aligns, nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
+import { ensureQuestStatus } from './quest.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import {
@@ -3768,6 +3769,10 @@ export async function newgame() {
             };
         }
     }
+    // role_init() records the patron's gender after a Priest borrows gods.
+    // Quest pronouns retain this original patron after alignment conversion.
+    const patronAlignment = g.initAlignment?.name ?? 'neutral';
+    ensureQuestStatus(g).godgend = g.urole?.goddessAlignments?.includes(patronAlignment) ? 1 : 0;
 
     uInitMisc(handednessRoll);
 
