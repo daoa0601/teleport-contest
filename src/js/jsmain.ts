@@ -23,7 +23,7 @@ import {
 import { parseCharacterName } from './character_name.js';
 import type { AlignmentChoice, CharacterChoices, CharacterFacet, GenderChoice, RaceChoice, RoleChoice } from './character_choices.js';
 import {
-    hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks,
+    characterSelectionQuestion, hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks,
     ROLE_SELECTION_RULES, RACE_SELECTION_RULES, validCharacterAlignment,
     validCharacterChoice, validCharacterGender, validCharacterRace,
 } from './character_choices.js';
@@ -521,7 +521,7 @@ export class Engine {
             || (!initial.alignment && !random.has('alignment'));
         let auto = needsConfirmation ? 'y' : random.size ? 'a' : 'n';
         if (hasUnspecifiedChoice) {
-            const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
+            const question = characterSelectionQuestion(initial, random);
             do {
                 display.clearRow(0);
                 display.putstr(0, 0, question, NO_COLOR);

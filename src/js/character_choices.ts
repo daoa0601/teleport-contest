@@ -56,6 +56,56 @@ export const RACE_SELECTION_RULES: Record<RaceName, { aligns: readonly Alignment
     orc: { aligns: ['chaotic'] },
 };
 
+// role.c:root_plselection_prompt() and build_plselection_prompt().
+export function characterSelectionQuestion(choices: CharacterChoices, random: ReadonlySet<CharacterFacet>): string {
+    const { role, race, gender, alignment } = choices;
+    const description: string[] = [];
+    const missing = new Set<CharacterFacet>();
+    const usableAlignment = alignment && validCharacterAlignment(role, race, alignment) ? alignment : null;
+    if (usableAlignment) description.push(usableAlignment.name);
+    else if (!race || validCharacterRace(role, race, null)
+        && RACE_SELECTION_RULES[race.name].aligns.length > 1) missing.add('alignment');
+
+    const genderCount = role ? ROLE_SELECTION_RULES[role.key].genders?.length ?? genders.length : 0;
+    if (gender) {
+        if (!role || genderCount > 1 && role.name.m === role.name.f)
+            description.push(gender.name);
+    } else if (!role || genderCount > 1) missing.add('gender');
+
+    if (race && (!role || validCharacterRace(role, race, usableAlignment)))
+        description.push(role ? race.adj : race.name);
+    else missing.add('race');
+
+    if (role) {
+        const name = gender?.name === 'female' ? role.name.f
+            : !gender && !random.has('gender') && role.name.m !== role.name.f
+                ? `${role.name.m}/${role.name.f}` : role.name.m;
+        description.push(name);
+    } else if (!random.has('role')) missing.add('role');
+    if (!role && !race) description.push('character');
+
+    const owner = role || race || random.has('race') ? 'your' : 'a';
+    let prompt = `Shall I pick ${owner} ${description.join(' ')}`
+        .replace('pick a character', 'pick character');
+    // Native s_suffix() uses a bare apostrophe after s; this one combined
+    // role name has an explicit exception in build_plselection_prompt().
+    prompt += /s$/i.test(prompt) && !prompt.endsWith('Priest/Priestess') ? "'" : "'s";
+
+    if (!missing.size) {
+        if (!role && !random.has('role')) missing.add('role');
+        if (!race && !random.has('race')) missing.add('race');
+        if (!gender && !random.has('gender')) missing.add('gender');
+        if (!alignment && !random.has('alignment')) missing.add('alignment');
+    }
+    const facetOrder: readonly CharacterFacet[] = ['race', 'role', 'gender', 'alignment'];
+    const facets = facetOrder.filter(facet => missing.has(facet));
+    const last = facets.at(-1);
+    if (facets.length > 1)
+        prompt += ` ${facets.slice(0, -1).join(', ')} and ${last ?? ''}`;
+    else if (last) prompt += ` ${last}`;
+    return `${prompt} for you? [ynaq]`;
+}
+
 export function validCharacterChoice(
     role: RoleChoice, race: RaceChoice, gender: GenderChoice, alignment: AlignmentChoice,
 ): boolean {

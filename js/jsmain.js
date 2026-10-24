@@ -12,7 +12,7 @@ import { displayConfigurationErrors } from './config_errors.js';
 import { plineWithContinuation } from './display.js';
 import { findRole, findRace, findAlignment, findGender, randomCharacterOption, roles, races, aligns, genders, } from './roles.js';
 import { parseCharacterName } from './character_name.js';
-import { hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks, ROLE_SELECTION_RULES, RACE_SELECTION_RULES, validCharacterAlignment, validCharacterChoice, validCharacterGender, validCharacterRace, } from './character_choices.js';
+import { characterSelectionQuestion, hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks, ROLE_SELECTION_RULES, RACE_SELECTION_RULES, validCharacterAlignment, validCharacterChoice, validCharacterGender, validCharacterRace, } from './character_choices.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
@@ -456,7 +456,7 @@ export class Engine {
             || (!initial.alignment && !random.has('alignment'));
         let auto = needsConfirmation ? 'y' : random.size ? 'a' : 'n';
         if (hasUnspecifiedChoice) {
-            const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
+            const question = characterSelectionQuestion(initial, random);
             do {
                 display.clearRow(0);
                 display.putstr(0, 0, question, NO_COLOR);
