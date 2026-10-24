@@ -68,6 +68,28 @@ void test('a lawful hero loses alignment for lying to a vault guard', async () =
     ]);
     assert.equal(game.u.ualign.record, 4);
 });
+void test('a nonbreaking space is part of a claimed name rather than ordinary padding', async () => {
+    const level = arrivingGuard();
+    const input = resetInputState();
+    await answerPrompts(continueVaultGuardArrival(), input, [
+        { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
+        { prompt: /Hello stranger, who are you\?/, keys: 'Croesus\u00a0\n' },
+    ]);
+    assert.equal(level.monsters.some(monster => monster.isgd), true);
+    assert.match(game._pending_message, /I don't know you/);
+});
+void test('a lawful hero cannot substitute an accented letter with different case in a claimed name', async () => {
+    arrivingGuard();
+    requirePlayingGame(game);
+    game.u.ualign = { type: 1, record: 5 };
+    game.plname = '\u00c9clair';
+    const input = resetInputState();
+    await answerPrompts(continueVaultGuardArrival(), input, [
+        { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
+        { prompt: /Hello stranger, who are you\?/, keys: '\u00e9clair\n' },
+    ]);
+    assert.equal(game.u.ualign.record, 4);
+});
 void test('a guard reports interrupted work before asking the hero name', async () => {
     arrivingGuard();
     game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };

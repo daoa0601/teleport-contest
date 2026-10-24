@@ -146,10 +146,16 @@ async function readGuardName() {
         : '"Hello stranger, who are you?" -';
     for (let tries = 5; tries > 0; tries--) {
         const response = await getLine(prompt, (_character, key) => key >= 32 && key !== 127);
-        const name = response?.trim().replace(/\s+/g, ' ') ?? '\x1b';
+        // C mungspaces() trims and collapses ordinary spaces only.
+        const name = response?.replace(/^ +| +$/g, '').replace(/ +/g, ' ') ?? '\x1b';
         if (name) return name;
     }
     return '';
+}
+
+// C strcmpi()/strncmpi() preserve characters outside ASCII A-Z.
+function lowercaseAscii(name: string): string {
+    return name.replace(/[A-Z]/g, character => character.toLowerCase());
 }
 
 export async function continueVaultGuardArrival(state: GameState = game) {
@@ -230,9 +236,10 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     await stopHeroOccupation(state);
     await displayMessageWindow();
     const response = await readGuardName();
-    if (state.u.ualign?.type === 1 && !response.toLowerCase().startsWith(state.plname.toLowerCase()))
+    const claimedName = lowercaseAscii(response);
+    if (state.u.ualign?.type === 1 && !claimedName.startsWith(lowercaseAscii(state.plname)))
         adjustHeroAlignment(-1, state);
-    if (['croesus', 'kroisos', 'creosote'].includes(response.toLowerCase())) {
+    if (['croesus', 'kroisos', 'creosote'].includes(claimedName)) {
         if (!(state.mvitals?.[286]?.died ?? 0)) {
             if (!deaf) await plineWithContinuation('"Oh, yes, of course.  Sorry to have disturbed you."');
             else if (!blind) await plineWithContinuation(`${name()} waves goodbye.`);
