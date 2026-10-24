@@ -104,4 +104,21 @@ void test('explicit look-here bypasses hidden feedback and restores filtering af
     await flush_screen(1);
     assert.equal(topline(), '');
 });
+void test('POSIX message patterns treat backslash-d as a literal letter', async () => {
+    freshPlayableRoom();
+    applyNethackrc('MSGTYPE=hide "^\\d+$"');
+    await plineWithContinuation('ddd');
+    await plineWithContinuation('123');
+    await flush_screen(1);
+    assert.equal(topline(), '123');
+});
+for (const pattern of ['[[.a.]]', '[[=a=]]']) {
+    void test(`the POSIX bracket expression ${pattern} matches its character`, async () => {
+        freshPlayableRoom();
+        applyNethackrc(`MSGTYPE=hide "^${pattern}$"`);
+        await plineWithContinuation('a');
+        await flush_screen(1);
+        assert.equal(topline(), '');
+    });
+}
 //# sourceMappingURL=pline_msgtype.test.js.map

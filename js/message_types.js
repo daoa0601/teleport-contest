@@ -26,13 +26,14 @@ export function addMessageTypeRule(value, rules) {
 }
 export function messageTypeFor(text, noRepeat, rules = []) {
     const rule = rules.find(entry => entry.pattern.test(text));
+    if (!rule)
+        return noRepeat ? MSGTYP_NOREP : MSGTYP_NORMAL;
     // A disabled matching rule still wins over older rules and Norep().
-    return rule ? rule.disabled ? MSGTYP_NORMAL : rule.type
-        : noRepeat ? MSGTYP_NOREP : MSGTYP_NORMAL;
+    return rule.disabled ? MSGTYP_NORMAL : rule.type;
 }
 export function hideUnhideMessageTypes(hide, mask, rules = []) {
     for (const rule of rules) {
-        if ((1 << rule.type) & mask)
+        if (rule.type !== MSGTYP_NORMAL && ((1 << rule.type) & mask))
             rule.disabled = hide;
     }
 }
@@ -60,6 +61,16 @@ function posixPattern(pattern) {
             result += range;
             index = end + 1;
         }
+        else if (inSet && (pattern.startsWith('[.', index) || pattern.startsWith('[=', index))) {
+            const end = pattern.indexOf(`${pattern.charAt(index + 1)}]`, index + 2);
+            const character = pattern.slice(index + 2, end);
+            // The native process retains the C locale: collating symbols and
+            // equivalence classes each contain one character.
+            if (end < 0 || character.length !== 1)
+                throw new SyntaxError('Invalid collating element');
+            result += '[]\\^-'.includes(character) ? `\\${character}` : character;
+            index = end + 1;
+        }
         else if (ch === '\\') {
             if (inSet)
                 result += '\\\\';
@@ -67,7 +78,7 @@ function posixPattern(pattern) {
                 const escaped = pattern.charAt(++index);
                 if (!escaped)
                     throw new SyntaxError('Trailing backslash');
-                result += `\\${escaped}`;
+                result += posixEscape(escaped);
             }
         }
         else if (!inSet && ch === '[') {
@@ -91,5 +102,24 @@ function posixPattern(pattern) {
     if (inSet)
         throw new SyntaxError('Unclosed character class');
     return result;
+}
+function posixEscape(character) {
+    // glibc's POSIX engine also accepts these word and string boundaries.
+    if (character === '<')
+        return '(?<!\\w)(?=\\w)';
+    if (character === '>')
+        return '(?<=\\w)(?!\\w)';
+    if (character === '`')
+        return '^';
+    if (character === "'")
+        return '(?![\\s\\S])';
+    if (character === 's')
+        return '[ \\t\\r\\n\\v\\f]';
+    if (character === 'S')
+        return '[^ \\t\\r\\n\\v\\f]';
+    // ERE does not interpret JavaScript's \d, \n, \x, or \u escapes.
+    if (/[a-zA-Z0]/.test(character) && !'bBwW'.includes(character))
+        return character;
+    return `\\${character}`;
 }
 //# sourceMappingURL=message_types.js.map
