@@ -12,7 +12,9 @@ import { flushPendingTopline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { artifactObject, addInventoryObject, knownObject } from './support/game-objects.js';
+import { wearEyewear } from '../js/eyewear.js';
+import { heroIsBlind } from '../js/senses.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
@@ -82,8 +84,8 @@ void test('a cancelled Medusa gazes once before her ordinary attacks', async () 
     initRng(1n);
     await runTurn();
     await flushPendingTopline();
-    assert.ok(messages.some(message => message.includes('Medusa gazes ineffectually.')));
-    const gazePages = messages.filter(message => message.includes('Medusa gazes ineffectually.'));
+    assert.ok(messages.some(message => message.includes("Medusa doesn't look all that ugly.")));
+    const gazePages = messages.filter(message => message.includes("Medusa doesn't look all that ugly."));
     assert.equal(gazePages.length, 1);
     assert.ok(game.u.uhp > 0 && game.u.uhp < 500);
 });
@@ -165,4 +167,21 @@ void test('Medusa is announced killed before her medallion saves her', async () 
     assert.doesNotMatch(prose, /The Medusa/);
     assert.ok(!(game.level.objects[11]?.[10] || []).some(object => object.otyp === STATUE));
     assert.equal(game.u.uconduct.killer, 1);
+});
+
+void test('an Archon gaze does not blind the Eyes of the Overworld', async () => {
+    const { runTurn, messages } = gazeRoom(/Archon|blind|radiance|vision|hit|miss|sword|knocks you backward|aches/i);
+    requirePlayingGame(game);
+    await wearEyewear(await artifactObject('The Eyes of the Overworld'));
+    const archon = await createMonsterAt('Archon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    archon.msleeping = 0;
+    archon.movement = 12;
+    initRng(1n);
+    await runTurn();
+    await flushPendingTopline();
+    const prose = messages.join('\n');
+    assert.match(prose, /You are blinded by the Archon's radiance!/);
+    assert.match(prose, /Your vision quickly clears\./);
+    assert.equal(heroIsBlind(game), false);
+    assert.ok((game.u.blindTurns ?? 0) > 0, 'the underlying blindness timeout still accumulates');
 });
