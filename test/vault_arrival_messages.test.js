@@ -14,6 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createRoom } from './support/topology.js';
+import { initRng } from '../js/rng.js';
 void test('the guard accepts and echoes names longer than thirty-one characters', async () => {
     const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
@@ -102,5 +103,30 @@ void test('guard arrival does not redraw warnings before announcing the guard', 
     await arrival;
     assert.notEqual(before, 'warning');
     assert.equal(atAnnouncement, before);
+});
+void test('answering a guard does not change its hallucinated appearance before the next turn', async () => {
+    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    requirePlayingGame(game);
+    level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
+    level.requireAt(16, 10).typ = CORR;
+    level.requireAt(11, 10).typ = VWALL;
+    game.u.uinvault = 29;
+    game.u.hallucinationTurns = 20;
+    initRng(123n);
+    assert.equal(maintainVaultResidence(), true);
+    const input = resetInputState();
+    const arrival = continueVaultGuardArrival();
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    const beforeAnswer = glyphAt(11, 10);
+    input.feed('TestHero\n');
+    await arrival;
+    const afterAnswer = glyphAt(11, 10);
+    assert.ok(beforeAnswer?.kind === 'monster' && afterAnswer?.kind === 'monster');
+    assert.equal(afterAnswer.mnum, beforeAnswer.mnum);
 });
 //# sourceMappingURL=vault_arrival_messages.test.js.map

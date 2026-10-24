@@ -291,7 +291,6 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     original.typ = DOOR;
     original.flags = original.wall_info = original.doormask = D_NODOOR;
     vision_note_blocker_change(entry.x, entry.y);
-    newsym(entry.x, entry.y);
     game.vision_full_recalc = 1;
     game.context.move = 0;
     return true;
