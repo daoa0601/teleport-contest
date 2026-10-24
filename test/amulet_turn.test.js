@@ -7,10 +7,27 @@ import { resetInputState } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { amuletTurn } from '../js/wizard.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+for (const blind of [false, true]) {
+    void test(`portal warmth ${blind ? 'does not reveal' : 'reveals'} an unseen Amulet's appearance ${blind ? 'while blind' : 'after sight returns'}`, async () => {
+        freshObjectRoom({ hero: { blindTurns: blind ? 100 : 0 } });
+        requirePlayingGame(game);
+        const amulet = await addInventoryObject(AMULET_OF_YENDOR, { dknown: false, observed: false });
+        game.uwep = amulet;
+        game.u.uhave.amulet = true;
+        await maketrap(game.u.ux + 1, game.u.uy, MAGIC_PORTAL);
+        for (let seed = 1; seed <= 64 && !game._pending_message; seed++) {
+            initRng(BigInt(seed));
+            await amuletTurn(game);
+        }
+        assert.equal(game._pending_message, blind ? 'The amulet feels hot!' : 'The Amulet of Yendor feels hot!');
+        assert.equal(amulet.dknown, !blind);
+    });
+}
 void test('a wielded Amulet reports portal heat during ordinary turns', async () => {
     for (const [distance, warmth] of [[3, 'hot!'], [8, 'very warm.'], [12, 'warm.']]) {
         let feltHeat = false;

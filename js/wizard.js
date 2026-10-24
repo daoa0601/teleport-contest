@@ -8,7 +8,7 @@ import { MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
 import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './monster_migration.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { rn2 } from './rng.js';
-import { definiteName, objectName } from './objnam.js';
+import { definiteObjectAction } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
 const WIZARD = 285;
 // C wizard.c:amulet(). Called once per global turn while carrying the Amulet.
@@ -23,8 +23,7 @@ export async function amuletTurn(state) {
             const warmth = distance <= 9 ? 'hot!' : distance <= 64 ? 'very warm.'
                 : distance <= 144 ? 'warm.' : null;
             if (warmth) {
-                const name = definiteName(objectName(amulet, state), state);
-                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} feels ${warmth}`);
+                await plineWithContinuation(`${definiteObjectAction(amulet, 'feel', state)} ${warmth}`);
             }
         }
     }
