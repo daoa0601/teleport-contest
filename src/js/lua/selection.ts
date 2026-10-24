@@ -9,6 +9,7 @@ import {
     selection_do_gradient,
     selection_getpoint,
     selection_setpoint,
+    selection_size_description,
     SEL_GRADIENT_RADIAL,
     SEL_GRADIENT_SQUARE,
 } from '../selvar.js';
@@ -187,7 +188,8 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             }
         }
     };
-    const methods = {
+    const methods: LuaHostObject = {
+        new: () => wrap(new SpecialSelection()),
         set,
         get,
         clone,
@@ -207,11 +209,21 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         gradient,
         randline,
         iterate,
+        describe_size: self => selection_size_description(selectionValue(self).selection),
+        floodfill: (x, y, diagonals = false) => wrap(
+            specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals)),
+        ),
+        match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
+        room: (...args) => {
+            const candidate = args.length === 1
+                ? game.level?.rooms[luaInteger(args[0])] : undefined;
+            return wrap(new SpecialSelection(selection_from_mkroom(
+                isRoom(candidate) ? candidate : currentContext()._room,
+            )));
+        },
     };
     const metatable: LuaMetatable = {
-        __index: {
-            ...methods,
-        },
+        __index: methods,
         __bor: (left, right) => wrap(
             selectionValue(left).union(selectionValue(right)),
         ),
@@ -236,22 +248,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         return value;
     };
 
-    const bindings: LuaHostObject = {
-        new: () => wrap(new SpecialSelection()),
-        ...methods,
-        floodfill: (x, y, diagonals = false) => wrap(
-            specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals)),
-        ),
-        match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
-        room: (...args) => {
-            const candidate = args.length === 1
-                ? game.level?.rooms[luaInteger(args[0])] : undefined;
-            return wrap(new SpecialSelection(selection_from_mkroom(
-                isRoom(candidate) ? candidate : currentContext()._room,
-            )));
-        },
-    };
-    return { bindings, wrap };
+    return { bindings: methods, wrap };
 }
 
 export function createSelectionBindings(context: ContextSource, invoke: InvokeSelection = null) {

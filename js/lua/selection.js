@@ -1,4 +1,4 @@
-import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
+import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, selection_size_description, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
@@ -147,6 +147,7 @@ export function createSelectionApi(context, invoke = null) {
         }
     };
     const methods = {
+        new: () => wrap(new SpecialSelection()),
         set,
         get,
         clone,
@@ -166,11 +167,17 @@ export function createSelectionApi(context, invoke = null) {
         gradient,
         randline,
         iterate,
+        describe_size: self => selection_size_description(selectionValue(self).selection),
+        floodfill: (x, y, diagonals = false) => wrap(specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals))),
+        match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
+        room: (...args) => {
+            const candidate = args.length === 1
+                ? game.level?.rooms[luaInteger(args[0])] : undefined;
+            return wrap(new SpecialSelection(selection_from_mkroom(isRoom(candidate) ? candidate : currentContext()._room)));
+        },
     };
     const metatable = {
-        __index: {
-            ...methods,
-        },
+        __index: methods,
         __bor: (left, right) => wrap(selectionValue(left).union(selectionValue(right))),
         __band: (left, right) => wrap(selectionValue(left).intersect(selectionValue(right))),
         __bxor: (left, right) => wrap(selectionValue(left).xor(selectionValue(right))),
@@ -185,18 +192,7 @@ export function createSelectionApi(context, invoke = null) {
             throw new Error('selection needs an active level context');
         return value;
     };
-    const bindings = {
-        new: () => wrap(new SpecialSelection()),
-        ...methods,
-        floodfill: (x, y, diagonals = false) => wrap(specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals))),
-        match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
-        room: (...args) => {
-            const candidate = args.length === 1
-                ? game.level?.rooms[luaInteger(args[0])] : undefined;
-            return wrap(new SpecialSelection(selection_from_mkroom(isRoom(candidate) ? candidate : currentContext()._room)));
-        },
-    };
-    return { bindings, wrap };
+    return { bindings: methods, wrap };
 }
 export function createSelectionBindings(context, invoke = null) {
     return createSelectionApi(context, invoke).bindings;

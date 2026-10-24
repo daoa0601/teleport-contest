@@ -192,3 +192,23 @@ void test('selection.room selects a numbered room and falls back to the enclosin
     assert.equal(state.getGlobal('enclosing'), 10);
     assert.equal(state.getGlobal('invalid'), 10);
 });
+
+void test('selection methods describe rectangular and irregular bounds', t => {
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+
+    state.execute(`
+        square = selection.area(10, 4, 11, 5):describe_size()
+        rectangle = selection.describe_size(selection.area(10, 4, 12, 5))
+        irregular = (selection.area(10, 4, 12, 5) - selection.area(11, 5, 11, 5)):describe_size()
+        local factory = selection.new()
+        empty = factory.new():numpoints()
+    `);
+
+    assert.equal(state.getGlobal('square'), 'square 2 by 2');
+    assert.equal(state.getGlobal('rectangle'), 'rectangular 3 by 2');
+    assert.equal(state.getGlobal('irregular'), 'irregularly shaped 3 by 2');
+    assert.equal(state.getGlobal('empty'), 0);
+});
