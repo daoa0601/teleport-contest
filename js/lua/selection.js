@@ -2,6 +2,8 @@ import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, spe
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
+import { game } from '../gstate.js';
+import { isRoom } from '../map_types.js';
 function selectionValue(value) {
     if (!(value instanceof LuaUserdata)
         || !(value.value instanceof SpecialSelection))
@@ -188,7 +190,11 @@ export function createSelectionApi(context, invoke = null) {
         ...methods,
         floodfill: (x, y, diagonals = false) => wrap(specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals))),
         match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
-        room: () => wrap(new SpecialSelection(selection_from_mkroom(currentContext()._room))),
+        room: (...args) => {
+            const candidate = args.length === 1
+                ? game.level?.rooms[luaInteger(args[0])] : undefined;
+            return wrap(new SpecialSelection(selection_from_mkroom(isRoom(candidate) ? candidate : currentContext()._room)));
+        },
     };
     return { bindings, wrap };
 }

@@ -15,6 +15,8 @@ import {
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
+import { game } from '../gstate.js';
+import { isRoom } from '../map_types.js';
 import type { Coordinate, SelectionBounds } from '../selvar.js';
 import type { LuaHostObject, LuaMetatable, LuaValue } from './runtime.js';
 
@@ -241,9 +243,13 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals)),
         ),
         match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
-        room: () => wrap(new SpecialSelection(
-            selection_from_mkroom(currentContext()._room),
-        )),
+        room: (...args) => {
+            const candidate = args.length === 1
+                ? game.level?.rooms[luaInteger(args[0])] : undefined;
+            return wrap(new SpecialSelection(selection_from_mkroom(
+                isRoom(candidate) ? candidate : currentContext()._room,
+            )));
+        },
     };
     return { bindings, wrap };
 }

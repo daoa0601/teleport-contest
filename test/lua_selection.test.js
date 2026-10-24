@@ -4,7 +4,7 @@ import { LuaState } from '../js/lua/runtime.js';
 import { createSelectionBindings } from '../js/lua/selection.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
-import { ROOM } from '../js/const.js';
+import { ROOM, ROOMOFFSET } from '../js/const.js';
 function selectionRoom(lx, ly, hx, hy, index = 0) {
     return {
         lx, ly, hx, hy, roomnoidx: index, rtype: 0, rlit: 0,
@@ -134,5 +134,34 @@ void test('selection iteration observes points added and removed by its callback
         end)
     `);
     assert.equal(state.getGlobal('visited'), '10,11,', 'visit current points in the original bounds, in row order');
+});
+void test('selection.room selects a numbered room and falls back to the enclosing room', t => {
+    const game = freshGame();
+    const first = selectionRoom(10, 4, 12, 6);
+    const second = selectionRoom(20, 8, 22, 10, 1);
+    game.level.rooms = [first, second];
+    for (const room of [first, second])
+        for (let x = room.lx; x <= room.hx; x++)
+            for (let y = room.ly; y <= room.hy; y++)
+                game.level.requireAt(x, y).roomno = ROOMOFFSET + room.roomnoidx;
+    game.level.requireAt(20, 8).edge = true;
+    game.level.requireAt(22, 10).roomno = 0;
+    const state = new LuaState({
+        selection: createSelectionBindings({
+            xstart: 0, ystart: 0, width: 80, height: 21, _room: first,
+        }),
+    });
+    t.after(() => state.destroy());
+    state.execute(`
+        local selected = selection.room(1)
+        count = selected:numpoints()
+        left = selected:bounds().lx
+        enclosing = selection.room():bounds().lx
+        invalid = selection.room(99):bounds().lx
+    `);
+    assert.equal(state.getGlobal('count'), 7, 'exclude edges and squares outside room membership');
+    assert.equal(state.getGlobal('left'), 20);
+    assert.equal(state.getGlobal('enclosing'), 10);
+    assert.equal(state.getGlobal('invalid'), 10);
 });
 //# sourceMappingURL=lua_selection.test.js.map
