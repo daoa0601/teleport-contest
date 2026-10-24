@@ -356,15 +356,27 @@ export async function restoregamePreamble() {
     // restored directly from the saved graph, and elapsed time is zero at a
     // plain restore, so restore_cham() is the piece this pass still owes.
     // Births append in the port, whereas C's fmon chain keeps the newest
-    // monster first.
-    for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
-        await restoreMonsterShape(monster, game);
-        if (game.program_state.gameover)
-            return;
+    // monster first. The pass runs where C runs it, before vision_reset()
+    // (restore.c:926) and with program_state.restoring still set, so plain
+    // sight sees nothing yet and the map stays unpainted behind any
+    // sensed-change message; only sensing can spot a revert here.
+    game.program_state.restoring = true;
+    game.vision_full_recalc = 0;
+    try {
+        for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+            await restoreMonsterShape(monster, game);
+            if (game.program_state.gameover)
+                return;
+        }
     }
-    // C dorecover() rebuilds the unsaved vision state before docrt() and
-    // welcome(). Search and monster feedback use that same live sight.
-    vision_reset_new_level();
+    finally {
+        game.program_state.restoring = false;
+        // C dorecover() rebuilds the unsaved vision state (restore.c:926-928)
+        // and clears program_state.restoring before docrt(); docrt() pages
+        // any pending line at cls()'s message flush, as tty does.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
+    }
     await docrt();
     // The first flush paints the display state restored with the level.
     await bot();

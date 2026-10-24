@@ -4,9 +4,10 @@ import test from 'node:test';
 import { game, resetGame } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { convertQuestLine } from '../js/quest_pager.js';
-import { initRng } from '../js/rng.js';
-import type { RoleKey } from '../js/roles.js';
+import { initRng, rn2 } from '../js/rng.js';
+import { rollQuestFigureGenders } from '../js/startup.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import type { RoleKey } from '../js/roles.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -49,6 +50,7 @@ for (const { name, role, leaderGender, nemesisGender, text } of cases) {
         resetGame();
         initRng(1);
         assert.equal(restoreGame('Questor', storage), true);
+        const afterRestore = rn2(1000);
 
         assert.equal(game.quest_status?.ldrgend, leaderGender,
             'Restoring must retain the saved quest leader gender.');
@@ -58,5 +60,14 @@ for (const { name, role, leaderGender, nemesisGender, text } of cases) {
             convertQuestLine('%lH guides you. %nH challenges you with %nj magic.'),
             text,
         );
+
+        // The rolls still run ahead of the stream even though the saved
+        // record wins; role_init() spends them before restgamestate() reads
+        // the hero (restore.c:596).
+        initRng(1);
+        assert.ok(game.urole, 'The restored game keeps its role.');
+        rollQuestFigureGenders(game.urole, { ldrgend: 0, nemgend: 0 });
+        assert.equal(afterRestore, rn2(1000),
+            "restoreGame() must spend role_init()'s gender rolls.");
     });
 }

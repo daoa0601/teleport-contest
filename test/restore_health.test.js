@@ -31,12 +31,17 @@ void test('a dead hero is refused at restore, one key dismisses the message, and
     game.nhDisplay = new GameDisplay(null);
     const input = resetInputState();
     installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
+    const reads = [];
+    input.beforeRead = () => { reads.push(game._pending_message || ''); };
     assert.equal(restoreGame('Ill', storage), false);
     assert.equal(restoreRefusedAsUnhealthy(), true, 'The refusal must be reported back to the async caller.');
     assert.notEqual(storage.getItem(key), null, 'C discards the save file only after the message is dismissed.');
+    assert.deepEqual(reads, [], 'Nothing waits for a key before the refusal is dismissed.');
     await dismissUnhealthyRestore('Ill', storage);
     assert.equal(storage.getItem(key), null, 'The refused save file is discarded.');
     assert.equal(restoreRefusedAsUnhealthy(), false);
+    assert.equal(reads.length, 1, 'The refusal message waits for exactly one dismissal key.');
+    assert.match(reads[0] ?? '', /not healthy enough to survive restoration/, 'The key dismisses the refusal message itself.');
 });
 // A polymorphed hero runs on its current body's hit points: the save is
 // refused only when that body is dead too. Both halves of that boundary are
