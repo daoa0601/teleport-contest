@@ -14,9 +14,14 @@ export function monsterKnowsTrap(monster, trap) {
     return (known & (1 << (trap.ttyp - 1))) !== 0;
 }
 export function monsterLearnsTrap(monster, trap) {
-    const bit = 1 << ((trap?.ttyp ?? 0) - 1);
-    if (bit > 0)
-        monster.mtrapseen = (monster.mtrapseen ?? 0) | bit;
+    if (!trap)
+        return;
+    if (trap.ttyp === -1)
+        monster.mtrapseen = -1;
+    else if (trap.ttyp === 0)
+        monster.mtrapseen = 0;
+    else
+        monster.mtrapseen = (monster.mtrapseen ?? 0) | (1 << (trap.ttyp - 1));
 }
 // C mondata.c:mons_see_trap().  Trap knowledge belongs to each observer,
 // rather than to the level or monster class.  An unlit trigger teaches only
