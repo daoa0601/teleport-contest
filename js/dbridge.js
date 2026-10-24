@@ -3,7 +3,7 @@
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA, DB_MOAT, DB_NORTH, DB_SOUTH, DB_UNDER, DB_WEST, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_NODOOR, ICE, ICED_MOAT, IS_DRAWBRIDGE, Is_stronghold, LAVAPOOL, MOAT, ROOM, W_NONDIGGABLE, isok, } from './const.js';
-import { newsym, plineWithContinuation, } from './display.js';
+import { displayLiquidName, newsym, plineWithContinuation, } from './display.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { destroyDrawbridgeOccupants, moveDrawbridgeOccupants, } from './drawbridge_occupants.js';
 import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
@@ -11,17 +11,21 @@ import { game, requireGameLevel } from './gstate.js';
 import { remove_object } from './floor_object.js';
 import { BOULDER } from './object_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { stopAllObjectTimers } from './object_timers.js';
+import { delobj } from './object_delete.js';
+import { unpunishHero } from './punishment.js';
+import { heroIsDeaf } from './senses.js';
+import { reviveNastyAt } from './revive_nasty.js';
 import { cansee, vision_note_blocker_change, vision_recalc, } from './vision.js';
-function directionFromBridgeToWall(bridge) {
-    const direction = (bridge.drawbridgemask || 0) & DB_DIR;
+// C get_wall_for_db() reads the current mask, even after collapse clears it.
+export function drawbridgeWallPosition({ x, y, location }) {
+    const direction = (location.drawbridgemask || 0) & DB_DIR;
     if (direction === DB_NORTH)
-        return { dx: 0, dy: -1 };
+        return { x, y: y - 1 };
     if (direction === DB_SOUTH)
-        return { dx: 0, dy: 1 };
+        return { x, y: y + 1 };
     if (direction === DB_EAST)
-        return { dx: 1, dy: 0 };
-    return { dx: -1, dy: 0 };
+        return { x: x + 1, y };
+    return { x: x - 1, y };
 }
 export function drawbridgeWallAt(x, y, state = game) {
     const level = state.level;
@@ -30,9 +34,7 @@ export function drawbridgeWallAt(x, y, state = game) {
     const bridge = level.at(x, y);
     if (!bridge || !IS_DRAWBRIDGE(bridge.typ))
         return null;
-    const { dx, dy } = directionFromBridgeToWall(bridge);
-    const wallX = x + dx;
-    const wallY = y + dy;
+    const { x: wallX, y: wallY } = drawbridgeWallPosition({ x, y, location: bridge });
     if (!isok(wallX, wallY))
         return null;
     const location = level.at(wallX, wallY);
@@ -75,17 +77,15 @@ export function findDrawbridgeAt(x, y, state = game) {
     const bridgeLocation = state.level.at(bridge.x, bridge.y);
     return bridgeLocation ? { x: bridge.x, y: bridge.y, location: bridgeLocation } : null;
 }
-function destroyObjectsAt(x, y, state = game) {
-    const pile = state.level?.objects?.[x]?.[y] || [];
-    for (const object of pile) {
-        stopAllObjectTimers(object);
-        object.where = 'gone';
-        object.ox = 0;
-        object.oy = 0;
+async function destroyObjectsAt(x, y, state) {
+    for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
+        if (object.where === 'gone')
+            continue;
+        if (object === (state.uball || state.u.uball))
+            await unpunishHero(state);
+        if (object !== (state.uchain || state.u.uchain))
+            await delobj(object, state);
     }
-    const column = state.level?.objects[x];
-    if (column)
-        column[y] = [];
 }
 function removeTrapAt(x, y, state = game) {
     const trap = state.level?.traps.find(candidate => candidate.tx === x && candidate.ty === y);
@@ -96,10 +96,13 @@ function removeEngravingAt(x, y, state = game) {
     const level = requireGameLevel(state);
     level.engravings = (level.engravings || []).filter(engraving => engraving.x !== x || engraving.y !== y);
 }
-function clearDrawbridgeSquares(bridge, wall, includeWallObjects, state) {
-    destroyObjectsAt(bridge.x, bridge.y, state);
+async function clearDrawbridgeSquares(bridge, wall, includeWallObjects, state) {
+    await reviveNastyAt(bridge.x, bridge.y, null, state);
     if (includeWallObjects)
-        destroyObjectsAt(wall.x, wall.y, state);
+        await reviveNastyAt(wall.x, wall.y, null, state);
+    await destroyObjectsAt(bridge.x, bridge.y, state);
+    if (includeWallObjects)
+        await destroyObjectsAt(wall.x, wall.y, state);
     removeTrapAt(bridge.x, bridge.y, state);
     removeTrapAt(wall.x, wall.y, state);
     removeEngravingAt(bridge.x, bridge.y, state);
@@ -133,11 +136,11 @@ function heroAt(point, state) {
 async function announceBridgeDestruction(bridge, wall, under, state) {
     const overLava = under === DB_LAVA;
     if (under === DB_MOAT || overLava) {
-        const liquid = overLava ? 'lava' : 'moat';
         const raised = bridge.location.typ === DRAWBRIDGE_UP;
         const visiblePoint = raised ? wall : bridge;
         if (cansee(visiblePoint.x, visiblePoint.y)
             || heroAt(visiblePoint, state)) {
+            const liquid = overLava ? displayLiquidName('lava', state) : 'moat';
             await plineWithContinuation(raised
                 ? `The portcullis of the drawbridge falls into the ${liquid}!`
                 : `The drawbridge collapses into the ${liquid}!`);
@@ -167,7 +170,7 @@ export async function openDrawbridge(x, y, state = game, options = {}) {
     await moveDrawbridgeOccupants(bridge, wall, state, options);
     if (state.program_state?.gameover)
         return true;
-    clearDrawbridgeSquares(bridge, wall, false, state);
+    await clearDrawbridgeSquares(bridge, wall, false, state);
     newsym(x, y);
     newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
@@ -194,7 +197,9 @@ export async function closeDrawbridge(x, y, state = game, options = {}) {
     await moveDrawbridgeOccupants(bridge, wall, state, options);
     if (state.program_state?.gameover)
         return true;
-    clearDrawbridgeSquares(bridge, wall, true, state);
+    if (state.level?.objects[x]?.[y]?.length && !heroIsDeaf(state))
+        await publishHeardMessage('smashing and crushing.', plineWithContinuation, state);
+    await clearDrawbridgeSquares(bridge, wall, true, state);
     newsym(x, y);
     newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);

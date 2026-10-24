@@ -156,7 +156,7 @@ export interface HeroLiquidOptions {
     chooseTeleportDestination?: (() => Promise<Position | null>) | null;
     applyLandingEffects?: LandingEffect;
     die?: LiquidDeathHandler;
-    entry?: 'spot-effects' | 'float-down' | 'drown';
+    entry?: 'spot-effects' | 'float-down' | 'drown' | 'lava';
 }
 interface LiquidTeleportContext {
     state: PlayingGameState;
@@ -861,9 +861,8 @@ async function leaveWater({
 // default.  entry 'float-down' (C trap.c:float_down() -> drown()/
 // lava_effects()) skips the spoteffects-only stages: leaving water, the
 // mounted-steed dismount, and the ceiling-hider check, none of which the
-// direct drown()/lava_effects() calls perform.  Entry 'drown' also skips
-// their terrain-entry guards: a submerged hero still drowns while held
-// by a monster or wearing water-walking boots (C Amulet_off()).
+// direct drown()/lava_effects() calls perform. Entries 'drown' and 'lava'
+// also skip their terrain-entry guards, including being held by a monster.
 export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promise<LiquidEffectResult | null | undefined> {
     const {
         state = game,
@@ -887,6 +886,11 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     let y = u?.uy;
     let location = state.level?.at?.(x, y);
     if (!u || !location) return null;
+    if (entry === 'lava')
+        return heroLavaEffects({
+            state, location, publish, random, rollDice, rollOne,
+            repaint, resetVision, recalculateVision, applyLandingEffects, die,
+        });
     if (entry !== 'drown') {
         const leftWater = fromFloatDown ? false : await leaveWater({ state, location, publish });
         const airborne = u.levitating || u.levitation
