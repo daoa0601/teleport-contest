@@ -9,7 +9,8 @@ import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsAmorphous, monsterIsVampireShift
 import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { couldsee } from './vision.js';
-import { ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok, } from './const.js';
+import { isAccessibleAt } from './terrain_properties.js';
+import { D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok, } from './const.js';
 import { isContainer } from './container.js';
 import { ARROW, BAG_OF_HOLDING, BAG_OF_TRICKS, BLINDFOLD, BOOMERANG, CANDY_BAR, CORPSE, CREDIT_CARD, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEASH, LEATHER_JACKET, LEMBAS_WAFER, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_MARKER, MAGIC_WHISTLE, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, SACK, SKELETON_KEY, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, } from './object_data.js';
 const M1_WALLWALK = 0x00000008;
@@ -172,13 +173,11 @@ export function setMonsterApparentHeroPosition(monster, state, random, calls = n
         const location = state?.level?.at?.(x, y);
         const closedDoor = !!location && IS_DOOR(location.typ)
             && !!(location.doormask & (D_CLOSED | D_LOCKED));
-        const accessible = location && ACCESSIBLE(location.typ)
-            && !closedDoor;
         const canUseClosedDoor = closedDoor
             && (monsterCanOoze(monster)
                 || monsterCanFog(monster, state));
         if ((x !== heroX || y !== heroY)
-            && !passesWalls && !accessible && !canUseClosedDoor)
+            && !passesWalls && !isAccessibleAt(x, y, state) && !canUseClosedDoor)
             continue;
         if (!couldsee(x, y))
             continue;

@@ -10,8 +10,9 @@ import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsAmorphous, monsterIsVampireShift
 import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { couldsee } from './vision.js';
+import { isAccessibleAt } from './terrain_properties.js';
 import {
-    ACCESSIBLE, D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok,
+    D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok,
 } from './const.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -223,13 +224,11 @@ export function setMonsterApparentHeroPosition(
         const location = state?.level?.at?.(x, y);
         const closedDoor = !!location && IS_DOOR(location.typ)
             && !!(location.doormask & (D_CLOSED | D_LOCKED));
-        const accessible = location && ACCESSIBLE(location.typ)
-            && !closedDoor;
         const canUseClosedDoor = closedDoor
             && (monsterCanOoze(monster)
                 || monsterCanFog(monster, state));
         if ((x !== heroX || y !== heroY)
-            && !passesWalls && !accessible && !canUseClosedDoor) continue;
+            && !passesWalls && !isAccessibleAt(x, y, state) && !canUseClosedDoor) continue;
         if (!couldsee(x, y)) continue;
         monster.mux = x;
         monster.muy = y;
