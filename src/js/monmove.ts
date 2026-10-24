@@ -5287,7 +5287,10 @@ async function beginHeroAttackSlot(
             nativeResult: M_ATTK_MISS,
         };
     }
-    if (attackType !== AT_MAGC && distant) return null;
+    // C mattacku() lets a monster that is holding the hero (u.ustuck) use
+    // its hug attack even when it is not beside the hero's apparent spot.
+    if (attackType !== AT_MAGC && distant
+        && !(attackType === AT_HUGS && state.u.ustuck === monster)) return null;
     if (naturalContact) {
         if (attackType === AT_KICK && monster.mtrapped) {
             const trap = trapAt(state, monster.mx, monster.my);
