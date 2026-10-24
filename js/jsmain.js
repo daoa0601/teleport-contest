@@ -668,22 +668,22 @@ export class Engine {
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
         };
-        const drawGenderMenu = (role, race, alignment) => {
-            const lines = Array(14).fill('');
+        const drawGenderMenu = (role, race, alignment, candidates) => {
+            const lines = Array(candidates.length + 12).fill('');
             lines[0] = { text: 'Pick a gender or sex', attr: 1 };
             lines[2] = facetSummary(role, race, null, alignment);
-            lines[4] = 'm - male';
-            lines[5] = 'f - female';
-            lines[6] = '* * Random';
-            lines[8] = '? - Pick another role first';
-            lines[9] = '/ - Pick another race first';
-            lines[8] = `? - ${routeLabel(role, 'role')}`;
-            lines[9] = `/ - ${routeLabel(race, 'race')}`;
-            lines[10] = forcedAlignmentRow(role, race, alignment);
-            lines[11] = `~ - ${hasCharacterFilters(filters) ? 'Reset' : 'Set'} role/race/&c filtering`;
-            lines[12] = 'q - Quit';
-            lines[13] = '(end)';
-            this._drawCharacterMenu(lines, 41, 13);
+            let row = 4;
+            for (const gender of candidates)
+                lines[row++] = `${gender.name.charAt(0)} - ${gender.name}`;
+            lines[row++] = '* * Random';
+            row++;
+            lines[row++] = `? - ${routeLabel(role, 'role')}`;
+            lines[row++] = `/ - ${routeLabel(race, 'race')}`;
+            lines[row++] = forcedAlignmentRow(role, race, alignment);
+            lines[row++] = `~ - ${hasCharacterFilters(filters) ? 'Reset' : 'Set'} role/race/&c filtering`;
+            lines[row++] = 'q - Quit';
+            lines[row] = '(end)';
+            this._drawCharacterMenu(lines, 41, row);
         };
         const drawAlignmentMenu = (role, race, gender, candidates) => {
             const lines = Array(candidates.length + 12).fill('');
@@ -792,10 +792,12 @@ export class Engine {
                         nextFacet = 'alignment';
                         continue;
                     }
-                    const chosen = key === '*' || key === ' ' || key === '\n'
-                        ? candidates[rn2(candidates.length)]?.[1]
+                    const choosingRandom = key === '*' || key === ' ' || key === '\n';
+                    const chosen = choosingRandom
+                        ? pickCharacterChoice(candidates.map(([, candidate]) => candidate))
+                            ?? pickCharacterChoice(nativeRoleChoices())
                         : roleByKey(key);
-                    if (!chosen || !candidates.some(([, candidate]) => candidate === chosen))
+                    if (!chosen || !choosingRandom && !candidates.some(([, candidate]) => candidate === chosen))
                         continue;
                     role = chosen;
                     nextFacet = 'race';
@@ -807,11 +809,11 @@ export class Engine {
                         continue;
                     }
                     race = null;
-                    let candidates = availableRaces(role, gender, alignment);
-                    if (!candidates.length)
-                        candidates = availableRaces(role, null, null);
-                    if (candidates.length === 1) {
-                        race = candidates[0];
+                    const candidates = availableRaces(role, gender, alignment);
+                    const permitted = races.filter(candidate => validCharacterRace(role, candidate, null));
+                    const counted = candidates.length ? candidates : permitted;
+                    if (counted.length === 1) {
+                        race = counted[0];
                         nextFacet = role ? 'gender' : 'role';
                         continue;
                     }
@@ -842,8 +844,10 @@ export class Engine {
                         await resetFiltering('race');
                         continue;
                     }
-                    if (key === '*' || key === ' ' || key === '\n')
-                        race = pickCharacterChoice(candidates);
+                    if (key === '*' || key === ' ' || key === '\n') {
+                        race = pickCharacterChoice(candidates)
+                            ?? permitted[Math.trunc(rn2(permitted.length * 100) / 100)];
+                    }
                     else {
                         const entry = CHARACTER_RACE_MENU.find(candidate => candidate[0] === key.toLowerCase());
                         race = candidates.find(candidate => candidate.name === entry?.[2]);
@@ -859,16 +863,16 @@ export class Engine {
                         continue;
                     }
                     gender = null;
-                    let candidates = availableGenders(role, race, alignment);
-                    if (!candidates.length)
-                        candidates = availableGenders(role, race, null);
-                    if (candidates.length === 1) {
-                        gender = candidates[0];
+                    const candidates = availableGenders(role, race, alignment);
+                    const permitted = genders.filter(candidate => validCharacterGender(role, candidate));
+                    const counted = candidates.length ? candidates : permitted;
+                    if (counted.length === 1) {
+                        gender = counted[0];
                         nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
                         continue;
                     }
                     applyPreMenuRigidChecks();
-                    drawGenderMenu(role, race, alignment);
+                    drawGenderMenu(role, race, alignment, candidates);
                     const key = String.fromCharCode(await nhgetch()).toLowerCase();
                     if (key === 'q' || key === '\x1b')
                         return null;
@@ -895,7 +899,7 @@ export class Engine {
                         continue;
                     }
                     if (key === '*' || key === ' ' || key === '\n')
-                        gender = pickCharacterChoice(candidates);
+                        gender = pickCharacterChoice(candidates) ?? pickCharacterChoice(permitted);
                     else
                         gender = candidates.find(candidate => candidate.name[0] === key);
                     if (!gender)
@@ -910,11 +914,11 @@ export class Engine {
                     continue;
                 }
                 alignment = null;
-                let candidates = availableAlignments(role, race, gender);
-                if (!candidates.length)
-                    candidates = availableAlignments(role, race, null);
-                if (candidates.length === 1) {
-                    alignment = candidates[0];
+                const candidates = availableAlignments(role, race, gender);
+                const permitted = aligns.filter(candidate => validCharacterAlignment(role, race, candidate));
+                const counted = candidates.length ? candidates : permitted;
+                if (counted.length === 1) {
+                    alignment = counted[0];
                     nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
                     if (!nextFacet)
                         break facetSelection;
@@ -948,7 +952,7 @@ export class Engine {
                     continue;
                 }
                 if (key === '*' || key === ' ' || key === '\n')
-                    alignment = pickCharacterChoice(candidates);
+                    alignment = pickCharacterChoice(candidates) ?? pickCharacterChoice(permitted);
                 else
                     alignment = candidates.find(candidate => candidate.name[0] === key);
                 if (!alignment)

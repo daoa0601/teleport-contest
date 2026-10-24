@@ -54,3 +54,21 @@ void test('alignment selection can open the filter editor', async () => {
     assert.equal(game.urole?.key, 'monk');
     assert.equal(game.initAlignment?.name, 'chaotic');
 });
+
+for (const { facet, exclusions } of [
+    { facet: 'role', exclusions: 'abchkmprRstvw' },
+    { facet: 'race', exclusions: 'HEDGO' },
+    { facet: 'gender', exclusions: '>MF' },
+    { facet: 'alignment', exclusions: '>LNC' },
+]) {
+    void test(`Random falls back to legal choices when every ${facet} is filtered`, async () => {
+        const engine = await start(`n~${exclusions}\n`);
+        for (let choices = 0; game.moves === 0 && choices < 8; choices++) {
+            engine.inputGate.feed('\n');
+            await engine.runUntilInputNeeded();
+        }
+
+        assert.equal(game.moves, 1, 'the default Random choice must permit game startup');
+        assert.ok(game.urole && game.urace && game.initAlignment);
+    });
+}
