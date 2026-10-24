@@ -3809,14 +3809,13 @@ async function renewBonesIdentities(level, fruits) {
         }
     }
 }
-function restoreBonesObjects(level) {
-    resetBonesObjects(level, 'restore');
+function restoreBonesFloorOrder(level) {
     let newestOrder = game._fobjSerial ?? 0;
     eachObjectInBonesGraph(level, object => {
         newestOrder = Math.max(newestOrder, object._fobjOrder ?? 0);
     });
-    // C restore.c:getlev() keeps the bones fobj chain; objects placed
-    // afterwards are pushed in front of it.
+    // C getlev() restores fobj before restore_cham() can drop equipment.
+    // Those drops must precede every object already in the bones chain.
     game._fobjSerial = newestOrder;
 }
 // C restore.c:restobjchn()/getlev() and timeout.c:restore_timers(). Bones
@@ -3909,10 +3908,11 @@ async function getbones() {
     }));
     restoreBonesClock(game.level, payload.savedAt);
     await renewBonesIdentities(game.level, payload.fruits);
+    restoreBonesFloorOrder(game.level);
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
     repairBonesConnections(game.level, location);
-    restoreBonesObjects(game.level);
+    resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
     sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
