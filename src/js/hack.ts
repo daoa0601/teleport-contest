@@ -37,7 +37,7 @@ import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import {
-    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL,
@@ -198,7 +198,7 @@ const S_EYE = 5;
 const S_VORTEX = 22;
 const S_LIGHT = 25;
 const PM_GREMLIN = 40;
-const PM_GRID_BUG = 112;
+const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_AIR_ELEMENTAL = 154;
 const PM_IRON_GOLEM = 259;
 
@@ -317,7 +317,7 @@ export async function crawlDestinationAllowed(
     const u = state.u;
     if (!goodPosition(x, y, { kind: 'hero' }, { state, random })) return false;
     if (x === u.ux || y === u.uy) return true;
-    if ((u.mtimedone ?? 0) > 0 && u.umonnum === PM_GRID_BUG) return false;
+    if (u.umonnum === PM_GRID_BUG) return false;
     if (heroPassesWalls(state)) return true;
     const location = state.level.at(x, y);
     if (location?.typ === DOOR) {
