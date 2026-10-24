@@ -2,6 +2,7 @@
 // C ref: mondata.c name_to_mon() and name_to_monclass().
 import { MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
 import { roles } from './roles.js';
+import { makeSingular } from './object_grammar.js';
 export const MONSTER_CLASS_SYMBOLS = [
     '', ...'abcdefghijklmnopqrstuvwxyz', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     '@', ' ', "'", '&', ';', ':', '~', ']',
@@ -172,21 +173,6 @@ export function resolveMonsterNamePrefix(value) {
         remainder: source.slice(title.length), overridesGender: false,
     } : null;
 }
-function singularClassName(value) {
-    const name = normalizeMonsterName(value);
-    const irregular = new Map([
-        ['fungi', 'fungus'], ['mice', 'mouse'],
-    ]).get(name);
-    if (irregular)
-        return irregular;
-    if (name.endsWith('ies'))
-        return `${name.slice(0, -3)}y`;
-    if (name.endsWith('es'))
-        return name.slice(0, -2);
-    if (name.endsWith('s'))
-        return name.slice(0, -1);
-    return name;
-}
 function classDescriptionMatches(description, wanted) {
     const start = description.toLowerCase().indexOf(wanted);
     if (start < 0 || (start > 0 && description[start - 1] !== ' '))
@@ -206,7 +192,7 @@ export function nameToMonsterClass(value) {
             return 23;
         return found < 0 ? 0 : found;
     }
-    const wanted = singularClassName(raw);
+    const wanted = makeSingular(raw).toLowerCase();
     if (wanted === 'long')
         return 0;
     if (['an', 'the', 'or', 'other', 'or other'].includes(wanted))

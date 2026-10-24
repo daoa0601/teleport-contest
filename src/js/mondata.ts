@@ -5,6 +5,7 @@ import {
     MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName,
 } from './monster_data.js';
 import { roles } from './roles.js';
+import { makeSingular } from './object_grammar.js';
 
 // Native MALE, FEMALE, and NEUTRAL name indices.
 export type MonsterNameGender = 0 | 1 | 2;
@@ -200,18 +201,6 @@ export function resolveMonsterNamePrefix(value: string): MonsterNamePrefix | nul
     } : null;
 }
 
-function singularClassName(value: string) {
-    const name = normalizeMonsterName(value);
-    const irregular = new Map([
-        ['fungi', 'fungus'], ['mice', 'mouse'],
-    ]).get(name);
-    if (irregular) return irregular;
-    if (name.endsWith('ies')) return `${name.slice(0, -3)}y`;
-    if (name.endsWith('es')) return name.slice(0, -2);
-    if (name.endsWith('s')) return name.slice(0, -1);
-    return name;
-}
-
 function classDescriptionMatches(description: string, wanted: string) {
     const start = description.toLowerCase().indexOf(wanted);
     if (start < 0 || (start > 0 && description[start - 1] !== ' '))
@@ -230,7 +219,7 @@ export function nameToMonsterClass(value: string) {
         return found < 0 ? 0 : found;
     }
 
-    const wanted = singularClassName(raw);
+    const wanted = makeSingular(raw).toLowerCase();
     if (wanted === 'long') return 0;
     if (['an', 'the', 'or', 'other', 'or other'].includes(wanted)) return 0;
     const special = new Map([
