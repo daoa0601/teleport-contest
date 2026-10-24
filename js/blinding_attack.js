@@ -5,7 +5,7 @@ import { W_ARMH } from './const.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { AD_BLND, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_STNG, AT_TUCH } from './monster_attack_types.js';
+import { AD_BLND, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { game } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS, } from './object_data.js';
@@ -42,6 +42,10 @@ export function heroCanBeBlindedByContact(attacker, attackType, state = game) {
         return false;
     // "a crow will not pluck out the eye of another crow"
     if (attacker.mnum === PM_RAVEN && heroSpecies(state) === PM_RAVEN)
+        return false;
+    if ([AT_EXPL, AT_BOOM, AT_GAZE, AT_MAGC, AT_BREA].includes(attackType))
+        return !attacker.mcan && !heroResistsBlindingLight(state);
+    if ([AT_WEAP, AT_SPIT, AT_NONE].includes(attackType))
         return false;
     if (attackType === AT_CLAW) {
         // All eyewear, including lenses, protects; so does a visor.

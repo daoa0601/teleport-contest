@@ -5,7 +5,7 @@ import { canSpotMonster, flashGlyphAt, newsym, plineWithContinuation,
     transientMonsterGlyph } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { mkclassAligned, makemonNear, rndmonstAdj } from './mklev.js';
-import { nameToMonsterClass, resolveMonsterName } from './mondata.js';
+import { resolveMonsterClass, resolveMonsterName } from './mondata.js';
 import type { MonsterNameGender } from './mondata.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
     requireMonsterData } from './monster_data.js';
@@ -103,9 +103,8 @@ function monsterChoice(name: string): MonsterChoice | null {
     if (game.flags.debug && (name === '*' || name === 'random')) return { kind: 'random' };
     const match = resolveMonsterName(name);
     if (match) return { kind: 'species', species: match.mnum, gender: match.gender };
-    if (name === '~') return { kind: 'species', species: 114, gender: 2 }; // long worm
-    if (name === 'I') return { kind: 'species', species: PM_STALKER, gender: 2 };
-    const monsterClass = nameToMonsterClass(name);
+    const { monsterClass, mnum } = resolveMonsterClass(name);
+    if (mnum >= 0) return { kind: 'species', species: mnum, gender: 2 };
     if (monsterClass === 35) return { kind: 'species', species: PM_STALKER, gender: 2 };
     if (monsterClass === 59) return { kind: 'species', species: 114, gender: 2 };
     return monsterClass > 0 ? { kind: 'class', monsterClass } : null;

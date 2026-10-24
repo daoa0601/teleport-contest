@@ -70,7 +70,7 @@ import {
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
-import { nameToMonster, nameToMonsterClass } from './mondata.js';
+import { nameToMonster, resolveMonsterClass } from './mondata.js';
 import { counterWereSpecies } from './monster_species.js';
 import { isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
@@ -1336,11 +1336,13 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }: {
             return { mnum: -1, random: true };
 
         mnum = nameToMonster(name);
-        const monsterClass = mnum < 0 ? nameToMonsterClass(name) : 0;
-        if (monsterClass) {
+        const classMatch = mnum < 0 ? resolveMonsterClass(name) : null;
+        const monsterClass = classMatch?.monsterClass ?? 0;
+        if (classMatch && monsterClass) {
             for (;;) {
-                mnum = dragon !== null && monsterClass === S_DRAGON
-                    ? dragon : pickFormFromClass(monsterClass);
+                mnum = classMatch.mnum >= 0 ? classMatch.mnum
+                    : dragon !== null && monsterClass === S_DRAGON
+                        ? dragon : pickFormFromClass(monsterClass);
                 if (mnum < 0 || mayChooseForm(mnum)) break;
                 if (rn2(3) || --tries > 0) continue;
                 tries++;
