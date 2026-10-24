@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { M_AP_F_DKNOWN, M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
+import { LAVAPOOL, M_AP_F_DKNOWN, M_AP_OBJECT, NO_MINVENT, POOL, ROOM, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { BOULDER } from '../js/object_data.js';
@@ -9,6 +9,7 @@ import { mnearto } from '../js/shop_damage.js';
 import { requireShopGame } from '../js/shop_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
 void test('a monster displaced to make room leaves its square as it would leave the level', async () => {
     const level = freshObjectRoom({ right: 22 });
     const hidden = await createMonsterAt('iron piercer', 15, 10, NO_MINVENT);
@@ -41,4 +42,31 @@ void test('displacing a boulder-disguised mimic reopens the view past its square
     assert.equal(mimic.m_ap_type, 0);
     assert.equal(cansee(14, 10), true);
 });
+for (const arrivalFits of [false, true]) {
+    void test(`endgame displacement migrates the resident onward when ${arrivalFits ? 'only its replacement fits' : 'neither monster can be placed'}`, async () => {
+        const level = freshObjectRoom();
+        const arrival = await createMonsterAt('Wizard of Yendor', 11, 10, NO_MINVENT);
+        const resident = await createMonsterAt(arrivalFits ? 'salamander' : 'xorn', 12, 10, NO_MINVENT);
+        for (let x = 7; x <= 16; x++) {
+            for (let y = 6; y <= 14; y++)
+                level.requireAt(x, y).typ = STONE;
+        }
+        level.requireAt(game.u.ux, game.u.uy).typ = ROOM;
+        level.requireAt(arrival.mx, arrival.my).typ = POOL;
+        level.requireAt(resident.mx, resident.my).typ = arrivalFits ? LAVAPOOL : STONE;
+        game.u.uz = { dnum: 1, dlevel: 3 };
+        game.astral_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
+        game.dungeons = [
+            createDungeon({ dname: 'The Dungeons of Doom', depth_start: 1, num_dunlevs: 20 }),
+            createDungeon({ dname: 'The Endgame', depth_start: 1, num_dunlevs: 5 }),
+        ];
+        requireShopGame(game);
+        const result = await mnearto(arrival, 12, 10, game, { moveOther: true });
+        assert.equal(result, arrivalFits ? 2 : 0);
+        assert.ok(level.monsters.includes(arrival), 'the Wizard must not be removed to make room');
+        assert.equal(level.monsters.includes(resident), false);
+        assert.ok(game._migratingMonsters?.includes(resident));
+        assert.deepEqual(resident.migrationDestination, { dnum: 1, dlevel: 2 });
+    });
+}
 //# sourceMappingURL=monster_make_room.test.js.map
