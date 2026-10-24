@@ -50,7 +50,8 @@ import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
-import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, } from './const.js';
+import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, } from './const.js';
+import { buriedBallToPunishment } from './buried_object.js';
 import { resurrectWizard } from './wizard.js';
 import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -197,6 +198,10 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         return false;
     }
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
+    // C do.c:1594: a buried-ball tether converts back to ordinary
+    // punishment before the departing level is saved and left behind.
+    if (game.u.utrap && game.u.utraptype === TT_BURIEDBALL)
+        await buriedBallToPunishment(game);
     resetTrapSetting();
     maybeResetPick(null);
     if (arrival === 'falling')
