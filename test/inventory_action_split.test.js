@@ -115,7 +115,7 @@ for (const eraseKey of ['\b', '\x7f']) {
         assert.equal(game.context.move, 0);
     });
 }
-void test('overflowing a native long clears the split amount', async () => {
+void test('overflowing a native long displays zero and rejects the split amount', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 7 });
     const input = resetInputState();
@@ -123,9 +123,17 @@ void test('overflowing a native long clears the split amount', async () => {
         { prompt: /Weapons/, keys: dagger.invlet },
         { prompt: /I - Adjust inventory by splitting this stack/, keys: 'I' },
     ]);
-    await answerPrompts(rhack(0), input, [
-        { prompt: /Split off how many\?/, keys: '9223372036854775808 ' },
-    ]);
+    const splitting = rhack(0);
+    try {
+        await answerPrompts(splitting, input, [
+            { prompt: /Split off how many\?/, keys: '9223372036854775808' },
+            { prompt: /^Count: 0 +\n/, keys: ' ' },
+        ]);
+    }
+    finally {
+        input.feed('\x1b');
+        await splitting;
+    }
     assert.equal(game._pending_message, 'Amount to split from current stack must be at least 1.');
     assert.equal(dagger.quan, 7);
     assert.equal(game.inventory.length, 1);

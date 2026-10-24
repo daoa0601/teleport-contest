@@ -3695,20 +3695,20 @@ async function readInventorySplitCount() {
     if (key < 48 || key > 57)
         return null;
     let count = BigInt(key - 48);
-    let showZero = key === 48;
+    let showCount = true;
     for (;;) {
         clearMessageWindow();
-        key = await promptKey(`Count: ${count > 0n || showZero ? count : ''}`);
+        key = await promptKey(`Count: ${showCount ? count : ''}`);
         if (key >= 48 && key <= 57) {
             const nextCount = count * 10n + BigInt(key - 48);
             // AppendLongDigit() reports native long overflow; get_count()
             // clears that count so subsequent digits can start another.
             count = nextCount > 9223372036854775807n ? 0n : nextCount;
-            showZero = key === 48;
+            showCount = true;
         }
         else if (key === 8 || key === 127) {
             count /= 10n;
-            showZero = false;
+            showCount = count > 0n;
         }
         else {
             clearMessageWindow();

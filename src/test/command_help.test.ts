@@ -29,6 +29,32 @@ void test('whatdoes describes the command currently bound to the requested key',
     }
 });
 
+for (const { key, message } of [
+    { key: '\xe1', message: 'M-a     adjust inventory letters (#adjust).' },
+    { key: '\xff', message: "No such command 'M-^?', char code 255 (0377 or 0xff)." },
+]) {
+    void test(`whatdoes interprets the 8-bit key ${JSON.stringify(key)} as unsigned`, async () => {
+        const input = freshTurnRoom();
+        input.feed('&');
+        const action = rhack(0);
+        try {
+            await input.waitUntilBlocked();
+            while (game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').includes('--More--')) {
+                input.feed(' ');
+                await input.waitUntilBlocked();
+            }
+            input.feed(key);
+            await action;
+
+            assert.equal(game._pending_message, message);
+            assert.equal(game.context.move, 0);
+        } finally {
+            input.feed('\x1b');
+            await action;
+        }
+    });
+}
+
 void test('the full key list shows configured command keys', async () => {
     const input = freshTurnRoom();
     game.commandBindings.bindKey('!'.charCodeAt(0), 'search');
