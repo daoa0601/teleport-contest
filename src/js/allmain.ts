@@ -2652,11 +2652,12 @@ async function presentMonsterAttackEffects(
                             else await publishHeardMessage('a cough.', publishSlotMessage);
                         }
                         if (breath.launched) {
+                            // C mthrowu.c:breamm() ends with dobuzz() and
+                            // nomul(0), both inside the resolver; the breath
+                            // neither stops the hero's occupation nor spends
+                            // the hero's next movement ration.
                             await resolveDeferredMonsterBreath(action, breath, game, publishSlotMessage);
                             if (game.program_state?.gameover) return { heroDied: true };
-                            if (game._occupation) game._interruptedMultiActionDebt = true;
-                            game._occupation = null;
-                            if (game._runState) stopRun(game);
                         }
                         previousHeroAttack = heroAttack;
                         heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
@@ -3888,10 +3889,9 @@ export async function moveloop_core() {
                 // to act; acknowledge that relief before monsters act again.
                 if (g.u.umovement < NORMAL_SPEED) await reportHeroEncumbrance(g);
             }
-            if (g.u.umovement < NORMAL_SPEED) continue;
-            if (!g._interruptedMultiActionDebt) break;
-            g._interruptedMultiActionDebt = false;
-            g.u.umovement -= NORMAL_SPEED;
+            // C allmain.c's do/while exits as soon as the hero can act;
+            // no monster attack may spend the hero's movement ration.
+            if (g.u.umovement >= NORMAL_SPEED) break;
         }
         g._heroTimePending = false;
         g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
