@@ -557,7 +557,7 @@ async function hitHeroWithProjectile(shot: MonsterProjectileShot, context: Fligh
     const die = finishHeroDeathAfterMonsterMessage;
     const hit = await hitHeroWithObject(object, damage, accuracy, {
         state, publish, rollOne, die,
-        name: captureHeroProjectileName(object, state, volley), killer: killerObjectName(object, state),
+        ...(volley ? { volley } : {}),
     });
     shot.hit = hit.hit;
     shot.heroDied = hit.died;

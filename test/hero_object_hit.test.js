@@ -3,9 +3,23 @@ import assert from 'node:assert/strict';
 import { artifactByName, discoverArtifact } from '../js/artifacts.js';
 import { game } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
-import { CLUB } from '../js/object_data.js';
+import { CLUB, ROCK } from '../js/object_data.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a rock striking from above passes harmlessly through a rock-passing hero', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    installPolymorphedHero('xorn', { hitPoints: 40 });
+    const rock = await knownObject(ROCK);
+    const messages = [];
+    const result = await hitHeroWithObject(rock, 6, 20, {
+        name: 'falling rock', rollOne: () => 1,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(result.hit, true);
+    assert.equal(game.u.mh, 40);
+    assert.equal(messages[1], 'It passes harmlessly through you.');
+});
 for (const { name, accuracy, roll, hit, message } of [
     { name: 'hits', accuracy: 8, roll: 1, hit: true, message: 'You are hit by 3 blessed +2 clubs.' },
     { name: 'almost hits', accuracy: 8, roll: 18, hit: false, message: 'You are almost hit by 3 blessed +2 clubs.' },

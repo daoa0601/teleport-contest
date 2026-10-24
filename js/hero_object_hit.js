@@ -7,13 +7,14 @@ import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { captureHeroProjectileName } from './hero_physical_messages.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM } from './object_data.js';
 import { rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
-import { definiteName, objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
+import { definiteName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 const SILVER = 14;
@@ -22,7 +23,7 @@ const MINERAL = 21;
 const RING_CLASS = 4;
 const M1_WALLWALK = 0x00000008;
 const M1_UNSOLID = 0x00100000;
-export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, die = finishHeroDeath, name: requestedName, killer: requestedKiller, } = {}) {
+export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, die = finishHeroDeath, name: requestedName, killer: requestedKiller, volley, } = {}) {
     requirePlayingGame(state);
     // C thitu() uses doname() for stacks and mshot_xname() for single objects.
     // The latter omits the monster species from a single corpse's hit name.
@@ -30,7 +31,7 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
     if (requestedName === undefined && quantity > 1)
         observeObjectForNaming(object, { state });
     const name = requestedName ?? (quantity > 1 ? await objectDescription(object, { state })
-        : objectCombatName(object, { state, includeCorpseSpecies: false }));
+        : captureHeroProjectileName(object, state, volley));
     // C thitu() keeps an object killer's article and only adds one to an
     // explicit name when that name does not already start with an article.
     const namedKiller = requestedName === undefined ? undefined
@@ -68,7 +69,8 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
     }
     else if (object.oclass !== RING_CLASS
         && material !== undefined && [GEMSTONE, MINERAL].includes(material) && passesRocks) {
-        await publish("It doesn't harm you.");
+        await publish(requestedName === undefined
+            ? "It doesn't harm you." : 'It passes harmlessly through you.');
     }
     else {
         if (material === SILVER && heroHatesSilver(state)) {
