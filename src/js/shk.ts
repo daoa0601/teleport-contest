@@ -423,6 +423,20 @@ export function* visitBilledShopkeepers(state: GameState = game): Generator<Bill
     }
 }
 
+// C gem_learned(): identification changes the price of every live stack of
+// this gem on a bill. Used-up bill objects retain their original price.
+export function repriceDiscoveredGems(otyp: number, state: GameState = game): void {
+    const objects = objectsInTimerGraph(state);
+    for (const keeper of visitBilledShopkeepers(state)) {
+        for (const entry of keeper.eshk.bill) {
+            const object = objects.find(candidate => candidate.o_id === entry.bo_id
+                && candidate.where !== 'free' && candidate.where !== 'onbill');
+            if (object && (otyp === 0 ? object.oclass === GEM_CLASS : object.otyp === otyp))
+                entry.price = shopObjectUnitCost(object, keeper, state);
+        }
+    }
+}
+
 export interface BilledObject {
     resident: BilledShopkeeper;
     entry: ShopBillEntry;
