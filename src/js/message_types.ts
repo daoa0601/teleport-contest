@@ -95,6 +95,9 @@ function posixPattern(pattern: string): string {
         } else if (inSet && ch === ']') {
             if (index === setStart) result += '\\]';
             else { inSet = false; result += ch; }
+        } else if (!inSet && ch === '(' && pattern.charAt(index + 1) === '?') {
+            // POSIX ERE has no group prefixes; '?' here has no operand.
+            throw new SyntaxError('repetition-operator operand invalid');
         } else if (!inSet && ch === '$') result += '(?![\\s\\S])';
         else result += ch;
     }

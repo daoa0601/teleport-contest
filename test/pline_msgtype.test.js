@@ -121,4 +121,30 @@ for (const pattern of ['[[.a.]]', '[[=a=]]']) {
         assert.equal(topline(), '');
     });
 }
+for (const pattern of [
+    'A bell(?= rings)', 'A bell(?! stops)', '(?<=A )bell',
+    '(?<!No )bell', '(?:A bell)', '(?<sound>A bell)',
+]) {
+    void test(`the non-POSIX pattern ${pattern} reports an error and leaves messages visible`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "${pattern}"`);
+        await plineWithContinuation('A bell rings.');
+        await flush_screen(1);
+        assert.equal(topline(), 'A bell rings.');
+        const errors = config.configErrors.flatMap(report => report.errors);
+        assert.equal(errors.length, 1);
+        assert.match(errors[0]?.message ?? '', /^MSGTYPE regex error:/);
+    });
+}
+void test('POSIX groups and bracketed group punctuation still filter messages', async () => {
+    freshPlayableRoom();
+    const config = applyNethackrc('MSGTYPE=hide "^A (bell|gong)( rings)?[.]$"\n'
+        + 'MSGTYPE=hide "^A bell[(][?]= rings[)]$"');
+    await plineWithContinuation('A bell rings.');
+    await plineWithContinuation('A bell(?= rings)');
+    await plineWithContinuation('The door opens.');
+    await flush_screen(1);
+    assert.equal(topline(), 'The door opens.');
+    assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
+});
 //# sourceMappingURL=pline_msgtype.test.js.map
