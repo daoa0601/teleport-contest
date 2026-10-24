@@ -24,6 +24,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { createSaddledSteed } from './support/monsters.js';
+import { runExtendedCommand } from './support/commands.js';
+import { installPagerInput } from './support/pager-input.js';
+import { TT_INFLOOR } from '../js/const.js';
 void test('escaping a web takes a movement attempt without moving the hero', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);
@@ -303,4 +307,40 @@ for (const lifesaving of [false, true]) {
         }
     });
 }
+void test('a mounted hero escaping a web names the steed', async () => {
+    freshObjectRoom({
+        role: 'knight',
+        flags: { pickup: false },
+    });
+    installPagerInput(resetInputState(), { expected: /mount|web/, limit: 8 });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, pony);
+    game.u.utrap = 1;
+    game.u.utraptype = TT_WEB;
+    initRng(1n);
+    const x = game.u.ux, y = game.u.uy;
+    await rhack('l'.charCodeAt(0));
+    assert.deepEqual([game.u.ux, game.u.uy], [x, y]);
+    assert.equal(game.u.utrap, 0);
+    assert.equal(game._pending_message, 'Your pony breaks out of the web.');
+});
+void test('a mounted hero stuck in the floor names the steed', async () => {
+    freshObjectRoom({
+        role: 'knight',
+        flags: { pickup: false },
+    });
+    installPagerInput(resetInputState(), { expected: /mount|floor|stuck/, limit: 8 });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, pony);
+    game.u.utrap = 2;
+    game.u.utraptype = TT_INFLOOR;
+    initRng(1n);
+    const x = game.u.ux, y = game.u.uy;
+    await rhack('l'.charCodeAt(0));
+    assert.deepEqual([game.u.ux, game.u.uy], [x, y]);
+    assert.equal(game.u.utrap, 1);
+    assert.equal(game._pending_message, 'Your pony is stuck in the floor.');
+});
 //# sourceMappingURL=hero_trap_movement.test.js.map

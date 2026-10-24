@@ -471,12 +471,20 @@ async function struggleInWeb() {
         await pline('Sting cuts through the web!');
         return;
     }
+    const steed = hero.usteed;
+    const subject = steed
+        ? monsterName(steed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })
+        : null;
     if (reduceHeroTrapDuration() <= 0) {
         clearHeroTrap();
-        await pline('You disentangle yourself.');
+        await pline(subject
+            ? `${subject} breaks out of the web.`
+            : 'You disentangle yourself.');
     }
     else if (game.flags?.verbose !== false) {
-        await repeatableTrapMessage('You are stuck to the web.');
+        await repeatableTrapMessage(subject
+            ? `${subject} is stuck to the web.`
+            : 'You are stuck to the web.');
     }
 }
 // C dig.c:buried_ball_to_freedom(). The ball stays where it was buried,
@@ -513,15 +521,24 @@ async function struggleInFloor(targetX, targetY, anchored) {
     if (reduceHeroTrapDuration() > 0) {
         if (game.flags?.verbose !== false) {
             const message = anchored
-                ? 'You are chained to the buried ball.'
-                : `You are stuck in the ${surfaceName(hero.ux, hero.uy)}.`;
+                ? (hero.usteed
+                    ? `You and ${monsterName(hero.usteed, { state: game, article: 'your' })} are chained to the buried ball.`
+                    : 'You are chained to the buried ball.')
+                : (hero.usteed
+                    ? `${monsterName(hero.usteed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })} is stuck in the ${surfaceName(hero.ux, hero.uy)}.`
+                    : `You are stuck in the ${surfaceName(hero.ux, hero.uy)}.`);
             await repeatableTrapMessage(message);
         }
         return false;
     }
-    await pline(anchored
-        ? 'You finally wrench the ball free.'
-        : 'You finally wriggle free.');
+    if (hero.usteed) {
+        await pline(`${monsterName(hero.usteed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })} finally ${anchored ? 'wrenches the ball' : 'lurches'} free.`);
+    }
+    else {
+        await pline(anchored
+            ? 'You finally wrench the ball free.'
+            : 'You finally wriggle free.');
+    }
     if (ball)
         await buriedBallToPunishment();
     else
@@ -559,18 +576,24 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
         case TT_WEB:
             await struggleInWeb();
             return false;
-        case TT_LAVA:
+        case TT_LAVA: {
+            const steed = hero.usteed;
             if (game.flags?.verbose !== false)
-                await repeatableTrapMessage('You are stuck in the lava.');
+                await repeatableTrapMessage(steed
+                    ? `${monsterName(steed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })} is stuck in the lava.`
+                    : 'You are stuck in the lava.');
             if (!isLavaAt(targetX, targetY)) {
                 hero.utrap--;
                 if ((hero.utrap & 0xff) === 0) {
                     clearHeroTrap();
-                    await pline('You pull yourself to the edge of the lava.');
+                    await pline(steed
+                        ? `You lead ${monsterName(steed, { state: game, article: 'your' })} to the edge of the lava.`
+                        : 'You pull yourself to the edge of the lava.');
                 }
             }
             hero.umoved = true;
             return false;
+        }
         case TT_INFLOOR:
             return struggleInFloor(targetX, targetY, false);
         case TT_BURIEDBALL:
