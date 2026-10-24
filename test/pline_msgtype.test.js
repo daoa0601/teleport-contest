@@ -25,6 +25,14 @@ void test('an optional grouped word boundary keeps doorbell messages visible', a
     await flush_screen(1);
     assert.equal(topline(), 'A doorbell rings.');
 });
+void test('an unbounded counted MSGTYPE keeps the trailing empty word-boundary constraint', async () => {
+    freshPlayableRoom();
+    applyNethackrc('MSGTYPE=hide "^(.|[[:>:]]){2,}$"');
+    await plineWithContinuation('!!');
+    await plineWithContinuation('!!!');
+    await flush_screen(1);
+    assert.equal(topline(), '!!');
+});
 void test('MSGTYPE norep compares the previous individual message', async () => {
     freshPlayableRoom();
     applyNethackrc('MSGTYPE=norep "bell"');

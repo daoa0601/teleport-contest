@@ -59,6 +59,14 @@ class EreParser {
             const [minimum, maximum] = this.bounds();
             if (node.kind === 'assertion')
                 throw new SyntaxError('repetition-operator operand invalid');
+            // Native tre_expand_ast() splits {m,}, m > 1, into m copies
+            // followed by a star. Its empty tail keeps the operand's assertions.
+            if (maximum === null && minimum > 1) {
+                return { kind: 'sequence', nodes: [
+                        { kind: 'repeat', node, minimum, maximum: minimum },
+                        { kind: 'repeat', node, minimum: 0, maximum: null },
+                    ] };
+            }
             return { kind: 'repeat', node, minimum, maximum };
         }
         if (!'*+?'.includes(operator) || operator === '')
