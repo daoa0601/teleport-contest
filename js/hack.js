@@ -208,7 +208,7 @@ export function heroTightDiagonalReason(state = game) {
     return 0;
 }
 // C hack.c:crawl_destination(): goodpos() first, then diagonal limits.
-async function crawlDestinationAllowed(state, x, y, random, publish) {
+export async function crawlDestinationAllowed(state, x, y, random, publish) {
     const u = state.u;
     if (!goodPosition(x, y, { kind: 'hero' }, { state, random }))
         return false;

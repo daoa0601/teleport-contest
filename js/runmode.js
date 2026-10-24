@@ -17,19 +17,23 @@ export function startRun(dx, dy, g = game, mode = 1) {
     g.context.mv = true;
     return g._runState;
 }
-export function stopRun(g = game) {
+// C hack.c:end_running(). An adjacent travel target first ends running
+// without cancelling travel, then tests the step using ordinary move rules.
+export function stopRun(g = game, andTravel = true) {
     const running = !!g.context.run;
     if (g.context.run && g.flags.time)
         g.context.time_botl = true;
-    g._runState = null;
     g.context.run = 0;
     if (running && g.flags.terrainstatus) {
         g.iflags.terrain_typ = MAX_TYPE;
         classifyStatusTerrain(g);
     }
-    g.context.mv = false;
-    g.context.travel = false;
-    g.context.travel1 = false;
+    if (andTravel) {
+        g._runState = null;
+        g.context.mv = false;
+        g.context.travel = false;
+        g.context.travel1 = false;
+    }
     if (g.multi > 0)
         g.multi = 0;
 }
