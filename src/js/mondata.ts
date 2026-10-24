@@ -210,7 +210,7 @@ function classDescriptionMatches(description: string, wanted: string) {
 }
 
 export function nameToMonsterClass(value: string) {
-    const raw = String(value || '').trim();
+    const raw = value;
     if (!raw) return 0;
     if (raw.length === 1) {
         const found = MONSTER_CLASS_SYMBOLS.indexOf(raw);

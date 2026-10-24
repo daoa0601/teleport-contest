@@ -181,7 +181,7 @@ function classDescriptionMatches(description, wanted) {
     return end === description.length || description[end] === ' ';
 }
 export function nameToMonsterClass(value) {
-    const raw = String(value || '').trim();
+    const raw = value;
     if (!raw)
         return 0;
     if (raw.length === 1) {

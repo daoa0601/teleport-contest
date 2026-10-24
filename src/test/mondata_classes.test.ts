@@ -10,3 +10,7 @@ void test('monster classes singularize ordinary and irregular plural nouns', () 
     assert.equal(nameToMonsterClass('fungi'), 32);
 });
 
+void test('a space denotes the ghost class', () => {
+    assert.equal(nameToMonsterClass(' '), 54);
+});
+
