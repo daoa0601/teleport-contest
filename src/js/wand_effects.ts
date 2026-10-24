@@ -138,7 +138,9 @@ export async function zapWithoutDirection(source: GameObject, state: PlayingGame
         if (await createCritters(rn2(23) ? 1 : rn2(7) + 2)) known = !!source.dknown;
         break;
     case WAN_WISHING:
-        if ((state.u.uluck || 0) + rn2(5) < 0) await pline('Unfortunately, nothing happens.');
+        // zapnodir(): C tests Luck, which includes a carried luckstone's bonus.
+        if ((state.u.uluck || 0) + (state.u.moreluck || 0) + rn2(5) < 0)
+            await pline('Unfortunately, nothing happens.');
         else {
             known = !!source.dknown;
             await makeWish();

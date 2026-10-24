@@ -135,7 +135,7 @@ async function traceRay(direction, originX, originY, context) {
     const range = 7 + random(7);
     const fireball = context.nativeType === 11;
     let endpoint = { x: originX, y: originY };
-    let vanished = false;
+    let vanishedAt = null;
     const stopped = await runRay({
         state, direction, range: dx || dy ? range : 1,
         beamType: context.displayDamageType - 1, originX, originY, random,
@@ -151,13 +151,19 @@ async function traceRay(direction, originX, originY, context) {
             endpoint = { x: previousX, y: previousY };
         },
         onBounce: () => publish(`${raySubject(context.displayName())} bounces!`),
-        onVanish: async () => {
-            vanished = true;
+        onVanish: async ({ x, y }) => {
+            vanishedAt = { x, y };
             await publish(`${raySubject(context.displayName())} vanishes into the aether!`);
         },
     });
-    if (fireball && !vanished && !state.program_state.gameover)
-        await explode(endpoint.x, endpoint.y, 11, context.rollDice(12, 6), 0, EXPL_FIERY, { state, publish, heroCaused: true });
+    if (fireball && !state.program_state.gameover) {
+        // dobuzz(): a fireball that "vanishes into the aether" on the Plane
+        // of Air still detonates, coerced to a wand-style fire blast at the
+        // cell it entered before rebounding off the open sky.
+        const spot = vanishedAt ?? endpoint;
+        const blastType = vanishedAt !== null ? 1 : 11;
+        await explode(spot.x, spot.y, blastType, context.rollDice(12, 6), 0, EXPL_FIERY, { state, publish, heroCaused: true });
+    }
     if (context.shopDamage && !state.program_state.gameover) {
         const verb = context.damageType === AD_FIRE ? 'burn away'
             : context.damageType === AD_COLD ? 'shatter'

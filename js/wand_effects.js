@@ -123,7 +123,8 @@ export async function zapWithoutDirection(source, state) {
                 known = !!source.dknown;
             break;
         case WAN_WISHING:
-            if ((state.u.uluck || 0) + rn2(5) < 0)
+            // zapnodir(): C tests Luck, which includes a carried luckstone's bonus.
+            if ((state.u.uluck || 0) + (state.u.moreluck || 0) + rn2(5) < 0)
                 await pline('Unfortunately, nothing happens.');
             else {
                 known = !!source.dknown;
