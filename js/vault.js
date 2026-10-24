@@ -11,14 +11,15 @@ import { makemonAt } from './mklev.js';
 import { vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
-import { findVaultGuard, } from './vault_guard.js';
+import { findVaultGuard, setVaultTerrainFlags, } from './vault_guard.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { resetHeroFaint } from './hunger.js';
 import { heroIsDeaf } from './senses.js';
 import { heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './command_state.js';
+import { stopHeroOccupation } from './occupation.js';
 import { canSpotMonster, map_invisible } from './display.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { angerMonster } from './monster_anger.js';
@@ -122,11 +123,16 @@ async function readGuardName() {
         : '"Hello stranger, who are you?" -';
     for (let tries = 5; tries > 0; tries--) {
         const response = await getLine(prompt, (_character, key) => key >= 32 && key !== 127);
-        const name = response?.trim().replace(/\s+/g, ' ') ?? '\x1b';
+        // C mungspaces() trims and collapses ordinary spaces only.
+        const name = response?.replace(/^ +| +$/g, '').replace(/ +/g, ' ') ?? '\x1b';
         if (name)
             return name;
     }
     return '';
+}
+// C strcmpi()/strncmpi() preserve characters outside ASCII A-Z.
+function lowercaseAscii(name) {
+    return name.replace(/[A-Z]/g, character => character.toLowerCase());
 }
 export async function continueVaultGuardArrival(state = game) {
     requireLiveGame(state);
@@ -213,14 +219,13 @@ export async function continueVaultGuardArrival(state = game) {
         await removeMonsterFromGame(guard);
         return true;
     }
-    state._occupation = null;
-    if ((state.multi ?? 0) > 0)
-        endVoluntaryMultiTurn(state);
+    await stopHeroOccupation(state);
     await displayMessageWindow();
     const response = await readGuardName();
-    if (state.u.ualign?.type === 1 && !response.toLowerCase().startsWith(state.plname.toLowerCase()))
+    const claimedName = lowercaseAscii(response);
+    if (state.u.ualign?.type === 1 && !claimedName.startsWith(lowercaseAscii(state.plname)))
         adjustHeroAlignment(-1, state);
-    if (['croesus', 'kroisos', 'creosote'].includes(response.toLowerCase())) {
+    if (['croesus', 'kroisos', 'creosote'].includes(claimedName)) {
         if (!(state.mvitals?.[286]?.died ?? 0)) {
             if (!deaf)
                 await plineWithContinuation('"Oh, yes, of course.  Sorry to have disturbed you."');
@@ -281,6 +286,7 @@ export async function continueVaultGuardArrival(state = game) {
             original.typ = VWALL;
         original.wall_info = 0;
         setWallStateAt(entry.x, entry.y);
+        setVaultTerrainFlags(original, original.wall_info);
     }
     corridor.fakecorr.push({
         x: entry.x,
@@ -292,9 +298,8 @@ export async function continueVaultGuardArrival(state = game) {
     corridor.warncnt = 1;
     stopLevelTimer(entry.x, entry.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
     original.typ = DOOR;
-    original.flags = original.wall_info = original.doormask = D_NODOOR;
+    setVaultTerrainFlags(original, D_NODOOR);
     vision_note_blocker_change(entry.x, entry.y);
-    newsym(entry.x, entry.y);
     game.vision_full_recalc = 1;
     game.context.move = 0;
     return true;

@@ -78,6 +78,56 @@ void test('a lawful hero loses alignment for lying to a vault guard', async () =
     assert.equal(game.u.ualign.record, 4);
 });
 
+void test('a nonbreaking space is part of a claimed name rather than ordinary padding', async () => {
+    const level = arrivingGuard();
+    const input = resetInputState();
+
+    await answerPrompts(continueVaultGuardArrival(), input, [
+        { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
+        { prompt: /Hello stranger, who are you\?/, keys: 'Croesus\u00a0\n' },
+    ]);
+
+    assert.equal(level.monsters.some(monster => monster.isgd), true);
+    assert.match(game._pending_message, /I don't know you/);
+});
+
+void test('a lawful hero cannot substitute an accented letter with different case in a claimed name', async () => {
+    arrivingGuard();
+    requirePlayingGame(game);
+    game.u.ualign = { type: 1, record: 5 };
+    game.plname = '\u00c9clair';
+    const input = resetInputState();
+
+    await answerPrompts(continueVaultGuardArrival(), input, [
+        { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
+        { prompt: /Hello stranger, who are you\?/, keys: '\u00e9clair\n' },
+    ]);
+
+    assert.equal(game.u.ualign.record, 4);
+});
+
+void test('a guard reports interrupted work before asking the hero name', async () => {
+    arrivingGuard();
+    game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
+    const messages: string[] = [];
+    const input = resetInputState();
+    let answered = false;
+    input.beforeRead = () => {
+        const text = game.nhDisplay?.grid.slice(0, 3)
+            .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('') ?? '';
+        messages.push(text);
+        if (text.includes('Hello stranger, who are you?')) {
+            if (!answered) input.feed('TestHero\n');
+            answered = true;
+        } else input.feed(' ');
+    };
+
+    await continueVaultGuardArrival();
+
+    assert.match(messages.join('\n'), /You stop wiping your face\..*\n.*Hello stranger, who are you\?/);
+    assert.equal(game._occupation, null);
+});
+
 void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
     const level = arrivingGuard();
     game._vaultGuardArrivalPending = null;

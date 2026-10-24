@@ -2,6 +2,7 @@
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameMap } from './game.js';
+import type { MapLocation } from './map_types.js';
 import type { Monster, VaultGuardData } from './monster_types.js';
 import { RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, isok } from './const.js';
 import { map_location, newsym, plineWithContinuation } from './display.js';
@@ -20,6 +21,20 @@ export interface VaultGuard extends Monster {
 
 export function requireVaultGuard(guard: Monster): asserts guard is VaultGuard {
     if (!guard._egd) throw new TypeError('Vault guard has no corridor state.');
+}
+
+// C rm.h overlays these fields on rm.flags. Vault repairs must restore
+// every alias so the restored terrain uses the saved flags.
+export function setVaultTerrainFlags(location: MapLocation, flags: number): void {
+    location.flags = flags;
+    location.doormask = flags;
+    location.wall_info = flags;
+    location.altarmask = flags;
+    location.ladder = flags;
+    location.drawbridgemask = flags;
+    location.looted = flags;
+    location.icedpool = flags;
+    location.emptygrave = flags !== 0;
 }
 
 function corridorPoint(corridor: VaultGuardData, index: number) {
@@ -78,7 +93,7 @@ export async function clearVaultCorridor(guard: Monster, force = false, state: G
         const location = corridorLocation(level, point.x, point.y);
         if (location.typ === CORR && cansee(point.x, point.y)) sawCorridor = true;
         location.typ = point.typ;
-        location.flags = location.doormask = location.wall_info = point.flags;
+        setVaultTerrainFlags(location, point.flags);
         if (IS_STWALL(location.typ)) {
             const trap = level.traps.find(
                 (candidate) => candidate.tx === point.x && candidate.ty === point.y,
