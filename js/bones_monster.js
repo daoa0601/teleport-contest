@@ -1,14 +1,58 @@
 // Monster state saved in bones levels.
 // C refs: bones.c:savebones()/getbones().
 import { setMonsterGivenName } from './monster_given_name.js';
-import { DEFUNCT_MONSTER } from './const.js';
+import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, RLOC_NONE } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
-import { game } from './gstate.js';
+import { game, requireGameLevel } from './gstate.js';
+import { isRoom } from './map_types.js';
+import { findMonsterNearPosition } from './mklev.js';
 import { removeMonsterFromGame } from './monster_departure.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { propagateMonsterSpecies } from './monster_population.js';
-import { SPECIAL_PM } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
+import { roomForRoomno } from './room.js';
+import { relocateMonsterTo } from './teleport.js';
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
+const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
+const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
+const MS_LEADER = 36;
+const MS_NEMESIS = 37;
+export async function prepareBonesMonstersForSave() {
+    const level = requireGameLevel();
+    for (const monster of [...level.monsters]) {
+        const sound = MONSTER_SOUND[monster.mnum];
+        if (monster.iswiz || monster.mnum === PM_MEDUSA
+            || sound === MS_LEADER || sound === MS_NEMESIS
+            || monster.mnum === PM_VLAD || monster.cham === PM_VLAD
+            || monster.mnum === PM_ORACLE && !await fixupOracle(monster))
+            await removeMonsterFromGame(monster);
+    }
+    purgeDeadMonsters(level);
+}
+async function fixupOracle(oracle) {
+    if (!Is_oracle_level(game.u.uz))
+        return false;
+    const level = requireGameLevel();
+    oracle.mpeaceful = 1;
+    const currentRoom = () => roomForRoomno(level, level.at(oracle.mx, oracle.my)?.roomno ?? 0);
+    if (currentRoom()?.rtype === DELPHI)
+        return true;
+    const chamber = level.rooms.find(room => isRoom(room) && room.orig_rtype === DELPHI);
+    if (!isRoom(chamber))
+        return true;
+    if (currentRoom() !== chamber) {
+        const x = Math.trunc((chamber.lx + chamber.hx) / 2);
+        const y = Math.trunc((chamber.ly + chamber.hy) / 2);
+        const destination = findMonsterNearPosition(oracle.mnum, x, y);
+        if (destination)
+            await relocateMonsterTo(oracle, destination.x, destination.y, { flags: RLOC_NONE });
+    }
+    if (currentRoom() === chamber)
+        chamber.rtype = DELPHI;
+    return true;
+}
 function sanitizeMonsterName(monster) {
     const name = monster?.mextra?.mgivenname
         || monster?.mgivenname

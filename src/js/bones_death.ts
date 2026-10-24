@@ -9,7 +9,7 @@ import {
     MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd,
 } from './const.js';
 import {
-    completeBonesMonster, giveHeroResistancesToMonster,
+    completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave,
 } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -179,6 +179,7 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
     releaseAllMonsterLeashes();
     if (game.u.punished) await unpunishHero();
     if (game.u.usteed) await dismountHero(DISMOUNT_BONES);
+    await prepareBonesMonstersForSave();
     for (const object of game.inventory) object.ghostly = true;
 
     if (arise === LEAVESTATUE) {
