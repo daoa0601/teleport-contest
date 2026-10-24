@@ -20,9 +20,9 @@ function increaseLevitationTimeout(hero, amount) {
 }
 function upStairwayAt(x, y, state) {
     let stairs = state.stairs;
-    while (stairs && (stairs.sx !== x || stairs.sy !== y || !stairs.up))
+    while (stairs && (stairs.sx !== x || stairs.sy !== y))
         stairs = stairs.next;
-    return stairs || null;
+    return stairs?.up ? stairs : null;
 }
 export async function applyLevitationPotion(potion, { state = game, publish = plineWithContinuation } = {}) {
     // The quaff lifecycle owns the live world: stair climbs, float_up, and

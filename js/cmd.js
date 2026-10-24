@@ -1937,10 +1937,9 @@ export async function travelStairs(up) {
             return false;
     }
     let stairs = game.stairs;
-    while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
-        || !!stairs.up !== up))
+    while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy))
         stairs = stairs.next;
-    if (!stairs) {
+    if (!stairs || stairs.up !== up) {
         const pit = !up && level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy
             && (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) && trap.tseen
             && !(game.u.utrap && game.u.utraptype === TT_PIT));

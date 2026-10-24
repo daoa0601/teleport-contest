@@ -21,9 +21,9 @@ function heroHasControlledLevitation(state) {
 function downStairwayAtHero(state) {
     const { ux, uy } = state.u;
     let stairs = state.stairs;
-    while (stairs && (stairs.sx !== ux || stairs.sy !== uy || stairs.up))
+    while (stairs && (stairs.sx !== ux || stairs.sy !== uy))
         stairs = stairs.next;
-    return stairs || null;
+    return stairs && !stairs.up ? stairs : null;
 }
 // C artifact_has_invprop(obj, LEVITATION) over the whole inventory: the
 // artifact confers levitation via #invoke, whether or not it is the source

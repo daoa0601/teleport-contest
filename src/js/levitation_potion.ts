@@ -33,9 +33,9 @@ function increaseLevitationTimeout(hero: Hero, amount: number): void {
 
 function upStairwayAt(x: number, y: number, state: GameState): Stairway | null {
     let stairs = state.stairs;
-    while (stairs && (stairs.sx !== x || stairs.sy !== y || !stairs.up))
+    while (stairs && (stairs.sx !== x || stairs.sy !== y))
         stairs = stairs.next;
-    return stairs || null;
+    return stairs?.up ? stairs : null;
 }
 
 export async function applyLevitationPotion(
