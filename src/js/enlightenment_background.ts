@@ -16,6 +16,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { hiddenGold } from './gold.js';
 import { currency } from './currency.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { deityName } from './alignment.js';
 import { newExperienceThreshold, experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL, monsterTypeName } from './monster_data.js';
 import { DUNCE_CAP, GAUNTLETS_OF_POWER, OBJECT_NAMES } from './object_data.js';
@@ -58,11 +59,9 @@ export function backgroundEnlightenmentLines(final: EnlightenmentFinal = 0): str
     const modifier = temporary ? final ? 'temporarily ' : 'currently '
         : converted ? final ? 'belatedly ' : 'now '
             : !u.uconduct.gnostic && game.moves > 1000 ? 'nominally ' : '';
-    const gods = urole.gods;
-    const godName = (value: number) => gods?.[alignmentName(value)] ?? 'an unknown god';
     const opponents = [1, 0, -1].filter(value => value !== alignment)
-        .map(value => `${godName(value)} (${alignmentName(value)})`);
-    lines.push(`  You ${final ? 'were' : 'are'} ${alignmentName(alignment)}, ${modifier}on a mission for ${godName(alignment)}`,
+        .map(value => `${deityName(value)} (${alignmentName(value)})`);
+    lines.push(`  You ${final ? 'were' : 'are'} ${alignmentName(alignment)}, ${modifier}on a mission for ${deityName(alignment)}`,
         `  who ${final ? 'was' : 'is'} opposed by ${opponents.join(' and ')}.`);
     if (temporary) lines.push(`  You ${final ? 'were' : 'are'} actually ${alignmentName(current)}.`);
     if (changedGender || converted) lines.push(`  You started out ${changedGender ? game.flags.initgend ? 'female' : 'male' : ''}${

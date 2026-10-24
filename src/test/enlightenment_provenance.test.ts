@@ -15,14 +15,14 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { A_INT, A_STR, W_TOOL } from '../js/const.js';
+import { A_INT, A_STR, ENL_GAMEOVERDEAD, W_TOOL } from '../js/const.js';
 import { races } from '../js/roles.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createSaddledSteed } from './support/monsters.js';
 
 async function enlightenmentText(basic = false, final = false, magic = true) {
     const input = resetInputState();
-    const report = final ? showFinalAttributes() : showEnlightenment({ basic, magic });
+    const report = final ? showFinalAttributes({ final: ENL_GAMEOVERDEAD }) : showEnlightenment({ basic, magic });
     const lines: string[] = [];
     try {
         let pages = 0;

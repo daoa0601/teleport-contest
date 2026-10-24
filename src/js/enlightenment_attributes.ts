@@ -225,7 +225,8 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (extrinsicPropertyMask('sustainAbility')) have('fixed abilities', 'sustainAbility');
     if (extrinsicPropertyMask('lifeSaving')) message('Your life ', 'will be', 'would have been', ' saved');
 
-    const luck = u.uluck ?? 0;
+    // youprop.h Luck includes the luckstone/luck item bonus.
+    const luck = (u.uluck ?? 0) + (u.moreluck ?? 0);
     if (luck) are(`${Math.abs(luck) >= 10 ? 'extremely ' : Math.abs(luck) >= 5 ? 'very ' : ''}${
         luck < 0 ? 'un' : ''}lucky${wizard ? ` (${luck})` : ''}`);
     else if (wizard) message('Your luck ', 'is', 'was', ' zero');

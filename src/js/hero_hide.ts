@@ -113,6 +113,15 @@ function isWaterLevel(state: GameState) {
     return sameLevel(state.u.uz, state.water_level);
 }
 
+// C insight.c:youhiding(TRUE, final): the enlightenment phrase for a hero
+// already concealed in its current form.
+export function heroHidingStatus(state: GameState = game): string {
+    const ability = heroHidingAbility(state);
+    const objects = floorObjects(state);
+    if (!ability || (ability.hidesUnder && !objects[0])) return 'hiding';
+    return hidingDescription(ability, state, objects);
+}
+
 function hidingDescription(ability: HidingAbility, state: GameState, objects: readonly GameObject[]) {
     if (ability.mimic) return 'mimicking a strange object';
     if (ability.hidesUnder) {
