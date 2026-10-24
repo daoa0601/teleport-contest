@@ -52,7 +52,10 @@ export async function monsterStatusLine(monster, { state = game, x = monster.mx,
         conditions.push('shapechanger');
     if (monster.meating)
         conditions.push('eating');
-    conditions.push(...await monsterHiddenConditions(monster, state));
+    // Native gates this on the probed square, even though the hidden
+    // description itself uses the head square for a long worm.
+    if (monster.mundetected || monster.m_ap_type || visibleRegionAt(state, x, y))
+        conditions.push(...await monsterHiddenConditions(monster, state));
     if (monster.mcan)
         conditions.push('cancelled');
     if (monster.mconf)
