@@ -54,12 +54,19 @@ function boundsTable(bounds: SelectionBounds): LuaTable {
 
 export function createSelectionApi(context: ContextSource, invoke: InvokeSelection = null) {
     const wrap = (selection: SpecialSelection) => new LuaUserdata(selection, metatable);
-    const relativePoint = (point: Coordinate | null): Coordinate | null => {
-        if (!point) return null;
+    const origin = () => {
         const active = currentContext();
         return {
-            x: point.x - active.xstart,
-            y: point.y - active.ystart,
+            x: active._room?.lx ?? active.xstart,
+            y: active._room?.ly ?? active.ystart,
+        };
+    };
+    const relativePoint = (point: Coordinate | null): Coordinate | null => {
+        if (!point) return null;
+        const start = origin();
+        return {
+            x: point.x - start.x,
+            y: point.y - start.y,
         };
     };
     const set = async (...args: LuaValue[]) => {
@@ -101,10 +108,10 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     );
     const bounds = (self: LuaValue) => boundsTable(selectionValue(self).bounds());
     const explicitPoint = (x: LuaValue | undefined, y: LuaValue | undefined) => {
-        const active = currentContext();
+        const start = origin();
         return {
-            x: active.xstart + (luaInteger(x) & 0xff),
-            y: active.ystart + (luaInteger(y) & 0xff),
+            x: start.x + (luaInteger(x) & 0xff),
+            y: start.y + (luaInteger(y) & 0xff),
         };
     };
     const geometry = (shape: 'line' | 'rect' | 'area', args: LuaValue[]) => {
@@ -141,11 +148,11 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const type = luaString(options.get('type') ?? 'radial');
         if (type !== 'radial' && type !== 'square')
             throw new TypeError(`Unknown gradient type: ${type}`);
-        const active = currentContext();
-        const x = active.xstart + luaInteger(options.get('x'));
-        const y = active.ystart + luaInteger(options.get('y'));
-        const x2 = active.xstart + luaInteger(options.get('x2') ?? -1);
-        const y2 = active.ystart + luaInteger(options.get('y2') ?? -1);
+        const start = origin();
+        const x = start.x + luaInteger(options.get('x'));
+        const y = start.y + luaInteger(options.get('y'));
+        const x2 = start.x + luaInteger(options.get('x2') ?? -1);
+        const y2 = start.y + luaInteger(options.get('y2') ?? -1);
         const pointCenter = x2 === -1 && y2 === -1;
         const result = new SpecialSelection();
         selection_do_gradient(result.selection, x, y,
@@ -169,10 +176,10 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         if (!invoke)
             throw new Error('selection.iterate needs a Lua state');
         const points: [number, number][] = [];
-        const active = currentContext();
+        const start = origin();
         selectionValue(self).forEachLua((x: number, y: number) => points.push([
-            x - active.xstart,
-            y - active.ystart,
+            x - start.x,
+            y - start.y,
         ]));
         for (const point of points) await invoke(callback, point);
     };

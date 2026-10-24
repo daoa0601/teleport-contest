@@ -5,6 +5,13 @@ import { createSelectionBindings } from '../js/lua/selection.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { ROOM } from '../js/const.js';
+function selectionRoom(lx, ly, hx, hy, index = 0) {
+    return {
+        lx, ly, hx, hy, roomnoidx: index, rtype: 0, rlit: 0,
+        doorct: 0, fdoor: 0, irregular: false, needjoining: false,
+        nsubrooms: 0, sbrooms: [], needfill: 0,
+    };
+}
 void test('Lua selection methods and operators use the selvar backend', () => {
     const context = { xstart: 2, ystart: 3, width: 20, height: 12 };
     const state = new LuaState({
@@ -77,5 +84,35 @@ void test('a gradient projects its center segment with native single-precision r
     assert.equal(state.getGlobal('start'), 1);
     assert.equal(state.getGlobal('rounded_away'), 0);
     assert.equal(state.getGlobal('finish'), 1);
+});
+void test('selection drawing and returned coordinates use the enclosing room origin', async (t) => {
+    freshGame();
+    initRng(17);
+    const state = new LuaState({
+        selection: createSelectionBindings({
+            xstart: 2, ystart: 3, width: 40, height: 15,
+            _room: selectionRoom(20, 8, 30, 18),
+        }, (callback, args) => state.callValueAsync(callback, args)),
+    });
+    t.after(() => state.destroy());
+    await state.executeAsync(`
+        line = selection.line(1, 1, 3, 1):get(1, 1)
+        rect = selection.rect(1, 1, 3, 3):get(1, 1)
+        area = selection.area(1, 1, 3, 3):get(2, 2)
+        circle = selection.circle(3, 3, 1, 1):get(3, 3)
+        ellipse = selection.ellipse(3, 3, 2, 1, 1):get(3, 3)
+        randline = selection.randline(1, 1, 3, 1, 0):get(1, 1)
+        gradient = selection.gradient({x = 3, y = 3, x2 = 3, y2 = 3, maxdist = 0}):get(3, 3)
+        local point = selection.set(2, 2)
+        local chosen = point:rndcoord()
+        chosen_x, chosen_y = chosen.x, chosen.y
+        point:iterate(function(x, y) visited_x, visited_y = x, y end)
+    `);
+    for (const shape of ['line', 'rect', 'area', 'circle', 'ellipse', 'randline', 'gradient'])
+        assert.equal(state.getGlobal(shape), 1, `${shape} uses room-relative coordinates`);
+    assert.equal(state.getGlobal('chosen_x'), 2);
+    assert.equal(state.getGlobal('chosen_y'), 2);
+    assert.equal(state.getGlobal('visited_x'), 2);
+    assert.equal(state.getGlobal('visited_y'), 2);
 });
 //# sourceMappingURL=lua_selection.test.js.map
