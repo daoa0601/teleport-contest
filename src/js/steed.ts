@@ -65,6 +65,7 @@ import { vision_recalc } from './vision.js';
 import { heroLegName } from './body_parts.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
 import { loseHeroHp } from './hero_damage.js';
+import { announceInvocationSquare } from './invocation.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -461,6 +462,8 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     newsym(movement.oldx, movement.oldy);
     vision_recalc(1);
     await applyHeroLocationEffects();
+    // Mounting uses teleds(), whose invocation message follows spot effects.
+    if (!game.program_state.gameover) await announceInvocationSquare();
     game.context.botl = true;
     return true;
 }
@@ -815,7 +818,7 @@ export async function dismountHero(
                 // and the tail display are never reached.
                 state._steedDismounting = true;
                 try {
-                    movement = await moveHeroByTeleport(landing.x, landing.y, state);
+                    movement = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
                     newsym(oldx, oldy);
                     vision_recalc(0);
                     // C teleport.c:536-568: the moved hero renders, then
@@ -832,6 +835,7 @@ export async function dismountHero(
                             dismounted: true, steed, movement, liquid,
                             location, died: true,
                         };
+                    await announceInvocationSquare();
                     if (state.level.flags.sokoban_rules
                         && (state.level.objects[landing.x]?.[landing.y] || [])
                             .some(object => object.otyp === BOULDER)) {
