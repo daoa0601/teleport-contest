@@ -826,15 +826,21 @@ function findGuessedTravelDirection(targetX: number, targetY: number, g: GameSta
     const dx = Math.sign(targetX - originX);
     const dy = Math.sign(targetY - originY);
     return travelStepAllowed(originX, originY, originX + dx, originY + dy, g)
-        ? { dx, dy } : null;
+        ? { dx, dy } : { dx: 0, dy: 0 };
 }
 
 export function findTravelDirection(state: RunState | null | undefined = game._runState, g: GameState = game): { dx: number; dy: number } | null {
     if (!state || state.mode !== 8 || !g.u || !g.level) return null;
     const { targetX, targetY } = state;
-    if (g.u.ux === targetX && g.u.uy === targetY) return null;
-    return findDirectTravelDirection(targetX, targetY, g)
-        || findGuessedTravelDirection(targetX, targetY, g);
+    const direction = g.u.ux === targetX && g.u.uy === targetY
+        ? { dx: 0, dy: 0 }
+        : findDirectTravelDirection(targetX, targetY, g)
+            || findGuessedTravelDirection(targetX, targetY, g);
+    if (!direction) return null;
+    // findtravelpath() stores even a blocked guess's zero direction.
+    g.u.dx = direction.dx;
+    g.u.dy = direction.dy;
+    return direction.dx || direction.dy ? direction : null;
 }
 
 function canSeeRunMonster(monster: Monster, x: number, y: number, g: GameState = game): boolean {
@@ -1029,6 +1035,8 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
             state.lastStrTurn = turn;
             state.dx = x0 - u.ux;
             state.dy = y0 - u.uy;
+            u.dx = state.dx;
+            u.dy = state.dy;
         }
     }
     return true;
