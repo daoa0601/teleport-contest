@@ -8,7 +8,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
-import { ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM, SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, Upolyd, VIBRATING_SQUARE, } from '../js/const.js';
+import { ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM, SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD, TT_BURIEDBALL, TT_PIT, TT_WEB, STATUE_TRAP, Upolyd, VIBRATING_SQUARE, LAVAPOOL, TT_BEARTRAP, TT_LAVA, } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
@@ -343,4 +343,39 @@ void test('a mounted hero stuck in the floor names the steed', async () => {
     assert.equal(game.u.utrap, 1);
     assert.equal(game._pending_message, 'Your pony is stuck in the floor.');
 });
+void test('a hallucinating rider sees one steed identity per lava struggle', async () => {
+    const stuckName = await hallucinatedLavaStuckName(true);
+    const leadName = await hallucinatedLavaStuckName(false);
+    assert.ok(stuckName && leadName);
+    assert.equal(leadName, stuckName.charAt(0).toLowerCase() + stuckName.slice(1), 'both lava messages reuse the single trapmove() steed name');
+});
+async function hallucinatedLavaStuckName(stepIntoLava) {
+    const level = freshObjectRoom({
+        role: 'knight',
+        flags: { pickup: false },
+    });
+    installPagerInput(resetInputState(), { expected: /mount|lava|lead|edge/, limit: 8 });
+    const pony = await createSaddledSteed();
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, pony);
+    // The hero now shares the pony's square; the step destination is one
+    // square further east.
+    if (stepIntoLava)
+        level.requireAt(game.u.ux + 1, game.u.uy).typ = LAVAPOOL;
+    game.u.hallucinationTurns = 20;
+    game.u.utrap = 1;
+    game.u.utraptype = TT_LAVA;
+    initRng(1n);
+    const x = game.u.ux, y = game.u.uy;
+    await rhack('l'.charCodeAt(0));
+    assert.deepEqual([game.u.ux, game.u.uy], [x, y]);
+    if (stepIntoLava) {
+        const stuck = game._pending_message?.match(/^(.+) is stuck in the lava\.$/) ?? null;
+        assert.ok(stuck, `expected a stuck message, got: ${game._pending_message}`);
+        return stuck[1] ?? null;
+    }
+    const led = game._pending_message?.match(/^You lead (.+) to the edge of the /) ?? null;
+    assert.ok(led, `expected an edge message, got: ${game._pending_message}`);
+    return led[1] ?? null;
+}
 //# sourceMappingURL=hero_trap_movement.test.js.map

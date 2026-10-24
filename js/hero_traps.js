@@ -15,7 +15,7 @@ import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
-import { flush_screen, lastDirtyMapCursor, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
+import { displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -384,6 +384,10 @@ function reduceHeroTrapDuration() {
         throw new Error('An active hero trap requires a remaining duration.');
     return --hero.utrap;
 }
+// C pline.c:upstart(), applied to the one trapmove() steed name.
+function upstart(text) {
+    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
 // C Norep() compares pline.c's previous individual message.
 async function repeatableTrapMessage(message) {
     if (game._lastPlineMessage !== message)
@@ -463,7 +467,7 @@ function heroWieldsSting() {
     const weapon = game.uwep || game.u?.uwep;
     return artifactById(weapon?.oartifact)?.name === 'Sting';
 }
-async function struggleInWeb() {
+async function struggleInWeb(steedName) {
     requirePlayingGame(game);
     const hero = game.u;
     if (heroWieldsSting()) {
@@ -471,19 +475,15 @@ async function struggleInWeb() {
         await pline('Sting cuts through the web!');
         return;
     }
-    const steed = hero.usteed;
-    const subject = steed
-        ? monsterName(steed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })
-        : null;
     if (reduceHeroTrapDuration() <= 0) {
         clearHeroTrap();
-        await pline(subject
-            ? `${subject} breaks out of the web.`
+        await pline(steedName
+            ? `${upstart(steedName)} breaks out of the web.`
             : 'You disentangle yourself.');
     }
     else if (game.flags?.verbose !== false) {
-        await repeatableTrapMessage(subject
-            ? `${subject} is stuck to the web.`
+        await repeatableTrapMessage(steedName
+            ? `${upstart(steedName)} is stuck to the web.`
             : 'You are stuck to the web.');
     }
 }
@@ -505,7 +505,7 @@ export async function freeHeroFromBuriedBall(state = game) {
     newsym(x, y);
     return true;
 }
-async function struggleInFloor(targetX, targetY, anchored) {
+async function struggleInFloor(targetX, targetY, anchored, steedName) {
     requirePlayingGame(game);
     const hero = game.u;
     const ball = anchored ? buriedBallNear(hero.ux, hero.uy, game) : null;
@@ -521,18 +521,18 @@ async function struggleInFloor(targetX, targetY, anchored) {
     if (reduceHeroTrapDuration() > 0) {
         if (game.flags?.verbose !== false) {
             const message = anchored
-                ? (hero.usteed
-                    ? `You and ${monsterName(hero.usteed, { state: game, article: 'your' })} are chained to the buried ball.`
+                ? (steedName
+                    ? `You and ${steedName} are chained to the buried ball.`
                     : 'You are chained to the buried ball.')
-                : (hero.usteed
-                    ? `${monsterName(hero.usteed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })} is stuck in the ${surfaceName(hero.ux, hero.uy)}.`
+                : (steedName
+                    ? `${upstart(steedName)} is stuck in the ${surfaceName(hero.ux, hero.uy)}.`
                     : `You are stuck in the ${surfaceName(hero.ux, hero.uy)}.`);
             await repeatableTrapMessage(message);
         }
         return false;
     }
-    if (hero.usteed) {
-        await pline(`${monsterName(hero.usteed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })} finally ${anchored ? 'wrenches the ball' : 'lurches'} free.`);
+    if (steedName) {
+        await pline(`${upstart(steedName)} finally ${anchored ? 'wrenches the ball' : 'lurches'} free.`);
     }
     else {
         await pline(anchored
@@ -550,19 +550,23 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
     if (!hero?.utrap)
         return true;
     requirePlayingGame(game);
+    // C hack.c:trapmove() formats y_monnam(u.usteed) once at entry, and
+    // every mounted message in the call reuses that one string.  Compute the
+    // name before the switch so a hallucinating rider draws one random
+    // identity per attempt even on paths that print no message.
+    const steedName = hero.usteed
+        ? monsterName(hero.usteed, { state: game, article: 'your', suppressSaddle: true })
+        : null;
     switch (hero.utraptype) {
         case TT_BEARTRAP: {
-            const steed = hero.usteed;
-            const subject = steed
-                ? monsterName(steed, { article: 'your', capitalized: true, suppressSaddle: true })
-                : 'You';
+            const subject = steedName ? upstart(steedName) : 'You';
             if (game.flags?.verbose !== false) {
-                await plineWithContinuation(`${subject} ${steed ? 'is' : 'are'} caught in a bear trap.`, { noRepeat: true });
+                await plineWithContinuation(`${subject} ${steedName ? 'is' : 'are'} caught in a bear trap.`, { noRepeat: true });
             }
             if ((hero.dx && hero.dy) || rn2(5) === 0)
                 hero.utrap--;
             if (hero.utrap <= 0) {
-                await plineWithContinuation(`${subject} finally ${steed ? 'lurches' : 'wriggle'} free.`);
+                await plineWithContinuation(`${subject} finally ${steedName ? 'lurches' : 'wriggle'} free.`);
                 clearHeroTrap();
             }
             return false;
@@ -574,20 +578,19 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
             await climbOutOfPit();
             return false;
         case TT_WEB:
-            await struggleInWeb();
+            await struggleInWeb(steedName);
             return false;
         case TT_LAVA: {
-            const steed = hero.usteed;
             if (game.flags?.verbose !== false)
-                await repeatableTrapMessage(steed
-                    ? `${monsterName(steed, { state: game, article: 'your', capitalized: true, suppressSaddle: true })} is stuck in the lava.`
+                await repeatableTrapMessage(steedName
+                    ? `${upstart(steedName)} is stuck in the lava.`
                     : 'You are stuck in the lava.');
             if (!isLavaAt(targetX, targetY)) {
                 hero.utrap--;
                 if ((hero.utrap & 0xff) === 0) {
                     clearHeroTrap();
-                    await pline(steed
-                        ? `You lead ${monsterName(steed, { state: game, article: 'your' })} to the edge of the lava.`
+                    await pline(steedName
+                        ? `You lead ${steedName} to the edge of the ${displayLiquidName('lava', game)}.`
                         : 'You pull yourself to the edge of the lava.');
                 }
             }
@@ -595,9 +598,9 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
             return false;
         }
         case TT_INFLOOR:
-            return struggleInFloor(targetX, targetY, false);
+            return struggleInFloor(targetX, targetY, false, steedName);
         case TT_BURIEDBALL:
-            return struggleInFloor(targetX, targetY, true);
+            return struggleInFloor(targetX, targetY, true, steedName);
         case undefined:
             return false;
         default:
