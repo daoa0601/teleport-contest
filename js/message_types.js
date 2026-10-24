@@ -51,6 +51,7 @@ function posixPattern(pattern) {
     let result = '';
     let inSet = false;
     let setStart = -1;
+    let repeatable = false;
     for (let index = 0; index < pattern.length; index++) {
         const ch = pattern.charAt(index);
         if (inSet && pattern.startsWith('[:', index)) {
@@ -98,14 +99,51 @@ function posixPattern(pattern) {
             // POSIX ERE has no group prefixes; '?' here has no operand.
             throw new SyntaxError('repetition-operator operand invalid');
         }
+        else if (!inSet && ch === '{') {
+            const repetition = posixRepetition(pattern.slice(index), repeatable);
+            if (repetition === null) {
+                result += ch;
+                repeatable = true;
+            }
+            else {
+                result += repetition;
+                index += repetition.length - 1;
+                repeatable = false;
+            }
+        }
         else if (!inSet && ch === '$')
             result += '(?![\\s\\S])';
         else
             result += ch;
+        // Counted repetition needs an atom, rather than an anchor, group
+        // opening, alternative or another repetition operator.
+        if (!inSet && ch !== '{')
+            repeatable = !'(^$|*+?'.includes(ch);
     }
     if (inSet)
         throw new SyntaxError('brackets ([ ]) not balanced');
     return result;
+}
+function posixRepetition(pattern, repeatable) {
+    const repetition = /^\{([0-9]+)(?:,([0-9]*))?/.exec(pattern);
+    // A brace starts a counted repetition only when followed by a digit.
+    if (!repetition?.[1])
+        return null;
+    if (!repeatable)
+        throw new SyntaxError('repetition-operator operand invalid');
+    const minimum = Number(repetition[1]);
+    const maximum = repetition[2] === undefined ? minimum
+        : repetition[2] === '' ? null : Number(repetition[2]);
+    if (minimum > 255 || (maximum !== null && maximum > 255))
+        throw new SyntaxError('maximum repetition exceeds 255');
+    if (maximum !== null && minimum > maximum)
+        throw new SyntaxError('invalid repetition count(s)');
+    const end = repetition[0].length;
+    if (end === pattern.length)
+        throw new SyntaxError('braces not balanced');
+    if (pattern.charAt(end) !== '}')
+        throw new SyntaxError('invalid repetition count(s)');
+    return pattern.slice(0, end + 1);
 }
 function posixRegexDiagnostic(error) {
     // Translation errors already use the macOS recorder's regerror() text.

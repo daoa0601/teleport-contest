@@ -210,6 +210,59 @@ void test('POSIX groups and bracketed group punctuation still filter messages', 
 });
 
 for (const [pattern, diagnostic] of [
+    ['bell{2', 'braces not balanced'],
+    ['bell{2,', 'braces not balanced'],
+    ['bell{2,3', 'braces not balanced'],
+    ['bell{2x}', 'invalid repetition count(s)'],
+    ['bell{2,x}', 'invalid repetition count(s)'],
+    ['bell{256}', 'maximum repetition exceeds 255'],
+    ['bell{1,256}', 'maximum repetition exceeds 255'],
+    ['{2', 'repetition-operator operand invalid'],
+    ['{256}', 'repetition-operator operand invalid'],
+    ['(bell|{2})', 'repetition-operator operand invalid'],
+    ['bell{2}{3}', 'repetition-operator operand invalid'],
+] as const) {
+    void test(`MSGTYPE rejects the invalid repetition in ${pattern} without hiding messages`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "${pattern}"`);
+
+        await plineWithContinuation(`A ${pattern} rings.`);
+        await flush_screen(1);
+
+        const errors = config.configErrors.flatMap(report => report.errors);
+        assert.equal(errors.length, 1);
+        assert.equal(errors[0]?.message, `MSGTYPE regex error: ${diagnostic}`);
+        assert.equal(topline(), `A ${pattern} rings.`);
+    });
+}
+
+for (const [pattern, hidden] of [
+    ['bell{2}', 'belll'],
+    ['bell{2,3}', 'bellll'],
+    ['bell{2,}', 'bellllll'],
+    ['bell{0}', 'bel'],
+    ['(bell){2}', 'bellbell'],
+    ['[bel]{2}', 'be'],
+    ['bell\\?{2}', 'bell??'],
+    ['bell{q}', 'bell{q}'],
+    ['bell{,2}', 'bell{,2}'],
+    ['bell\\{2', 'bell{2'],
+    ['bell[{]2', 'bell{2'],
+] as const) {
+    void test(`the valid MSGTYPE brace pattern ${pattern} hides matching messages`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "^${pattern}$"`);
+
+        await plineWithContinuation(hidden);
+        await plineWithContinuation('The door opens.');
+        await flush_screen(1);
+
+        assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
+        assert.equal(topline(), 'The door opens.');
+    });
+}
+
+for (const [pattern, diagnostic] of [
     ['[', 'brackets ([ ]) not balanced'],
     ['[[:unknown:]]', 'invalid character class'],
     ['[[.word.]]', 'invalid collating element'],
