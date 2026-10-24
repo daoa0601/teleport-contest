@@ -149,7 +149,7 @@ import { advanceHeroSliming, clearHeroSliming, finishDeferredHeroSlime, heroIsSl
 import { advanceHeroPetrification, heroIsPetrifying, petrificationDialogue, } from './stoning.js';
 import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
-import { autopickupAtHero, describeDecor } from './pickup.js';
+import { autopickupAtHero, deferredDecor } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import { applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, } from './armor.js';
 import { nearCapacity, } from './weight.js';
@@ -767,10 +767,8 @@ async function finishFumblingExpiryAfterMessage(fumbled, publish) {
         || propertyIsActive('fumbling', game)
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
     // C timeout.c: a decor message deferred past the trip catches up here.
-    if (game.iflags.deferDecor) {
-        await describeDecor();
-        game.iflags.deferDecor = false;
-    }
+    if (game.iflags.deferDecor)
+        await deferredDecor(false);
 }
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
     if (game.u.warning)

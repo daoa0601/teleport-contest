@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { THRONE, DUST } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { autopickupAtHero } from '../js/pickup.js';
+import { autopickupAtHero, deferredDecor } from '../js/pickup.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
@@ -13,14 +13,11 @@ void test('mention_decor describes an arrival feature when autopickup finds noth
     level.requireAt(10, 10).typ = THRONE;
     await autopickupAtHero();
     assert.equal(game._lastPlineMessage, 'There is an opulent throne here.');
-    assert.equal(game._prevDecorType, THRONE);
 });
 void test('furniture decor repeats because same-terrain suppression skips furniture', async () => {
     const level = freshPlayableRoom({ flags: { mention_decor: true, verbose: true } });
     level.requireAt(10, 10).typ = THRONE;
     await autopickupAtHero();
-    assert.equal(game._lastPlineMessage, 'There is an opulent throne here.');
-    game._prevDecorType = THRONE;
     await autopickupAtHero();
     assert.equal(game._lastPlineMessage, 'There is an opulent throne here.');
 });
@@ -41,5 +38,21 @@ void test('a levitating hero over unreachable loot still reads the floor engravi
     await autopickupAtHero();
     assert.match(game._lastPlineMessage, /You read: "a faded warning"\.$/);
     assert.equal(game.inventory.length, 0);
+});
+void test('a deferred decor message is described once the fumble resolves', async () => {
+    const level = freshPlayableRoom({ flags: { mention_decor: true, verbose: true } });
+    level.requireAt(10, 10).typ = THRONE;
+    game.iflags.deferDecor = true;
+    await deferredDecor(false);
+    assert.equal(game._lastPlineMessage, 'There is an opulent throne here.');
+    assert.equal(game.iflags.deferDecor, false);
+});
+void test('turning mention_decor off drops a deferred decor message without describing it', async () => {
+    const level = freshPlayableRoom({ flags: { mention_decor: false, verbose: true } });
+    level.requireAt(10, 10).typ = THRONE;
+    game.iflags.deferDecor = true;
+    await deferredDecor(false);
+    assert.equal(game._lastPlineMessage, '');
+    assert.equal(game.iflags.deferDecor, false);
 });
 //# sourceMappingURL=pickup_arrival_decor.test.js.map

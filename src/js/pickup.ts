@@ -545,9 +545,8 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
 export async function describeDecor(): Promise<boolean> {
     // One turn of fumbling left: slip_or_trip() interrupts the hero at the
     // end of this turn, so hold the decor message back until after it.
-    // C deferred_decor(TRUE) only defers while mention_decor is set.
     if (propertyTimeout('fumbling') === 1 && !game.iflags.deferDecor) {
-        game.iflags.deferDecor = !!game.flags.mention_decor;
+        await deferredDecor(true);
         return false;
     }
     const { ux: x, uy: y } = game.u;
@@ -593,4 +592,18 @@ export function orderedPickupObjects(pile: readonly GameObject[]): GameObject[] 
 export function pickupObjectClass(object: GameObject): string {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
+}
+
+// C pickup.c:deferred_decor(). Setup holds the arrival feature back behind
+// an imminent fumble; catch-up describes it only while mention_decor is
+// still set, otherwise the pending message is simply dropped.
+export async function deferredDecor(setup: boolean): Promise<void> {
+    if (!game.flags.mention_decor) {
+        game.iflags.deferDecor = false;
+    } else if (setup) {
+        game.iflags.deferDecor = true;
+    } else {
+        await describeDecor();
+        game.iflags.deferDecor = false;
+    }
 }

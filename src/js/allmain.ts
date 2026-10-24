@@ -267,7 +267,7 @@ import {
 } from './stoning.js';
 import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
-import { autopickupAtHero, describeDecor } from './pickup.js';
+import { autopickupAtHero, deferredDecor } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import {
     applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass,
@@ -942,10 +942,7 @@ async function finishFumblingExpiryAfterMessage(fumbled: boolean, publish: Messa
         || propertyIsActive('fumbling', game)
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
     // C timeout.c: a decor message deferred past the trip catches up here.
-    if (game.iflags.deferDecor) {
-        await describeDecor();
-        game.iflags.deferDecor = false;
-    }
+    if (game.iflags.deferDecor) await deferredDecor(false);
 }
 
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({
