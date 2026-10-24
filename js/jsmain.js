@@ -880,7 +880,10 @@ export class Engine {
                     }
                     else {
                         const entry = CHARACTER_RACE_MENU.find(candidate => candidate[0] === key.toLowerCase());
-                        race = menuCandidates.find(candidate => candidate.name === entry?.[2]);
+                        const chosen = menuCandidates.find(candidate => candidate.name === entry?.[2]);
+                        if (!chosen)
+                            continue;
+                        race = chosen;
                     }
                     if (!race)
                         continue;

@@ -64,6 +64,23 @@ void test('a random alignment stays automatic after manually replacing an incomp
     assert.equal(game.urace?.name, 'human');
     assert.ok(game.initAlignment?.name === 'neutral' || game.initAlignment?.name === 'chaotic');
 });
+void test('invalid race-menu keys preserve races with different required alignments', async () => {
+    const engine = await start('role:Wizard,race:dwarf,gender:male,align:random');
+    for (const key of ['x', 'd']) {
+        engine.inputGate.feed(key);
+        await engine.runUntilInputNeeded();
+        const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+        assert.ok(rows.some(row => row.includes('Pick a race or species')));
+        assert.ok(rows.some(row => row.includes('e - elf')), `invalid key ${key} must keep the chaotic elf choice`);
+        assert.ok(rows.some(row => row.includes('g - gnome')), `invalid key ${key} must keep the neutral gnome choice`);
+        assert.equal(game.moves, 0, 'invalid input must not start the game');
+    }
+    engine.inputGate.feed('e');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.urace?.name, 'elf');
+    assert.equal(game.initAlignment?.name, 'chaotic');
+    assert.equal(game.moves, 1, 'the requested random alignment needs no menu input');
+});
 void test('changing the selection order resolves a pending random alignment before the next menu', async () => {
     const engine = await start('role:Wizard,race:dwarf,gender:male,align:random');
     engine.inputGate.feed('"');
