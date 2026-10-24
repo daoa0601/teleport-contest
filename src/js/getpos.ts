@@ -659,9 +659,15 @@ export async function selectMapPosition({
             const pickType = mapPositionPickType(key);
             if (pickType !== null) return { ...cursor, pickType };
             const movement = game.commandBindings.movementForKey(key);
-            if (movement && movement.direction < 8) {
+            // movecmd() updates the horizontal direction even for '<' and
+            // '>', then rejects those as cursor movement. Subsequent mode
+            // checks clear dz before the key is used as a feature symbol.
+            if (movement) {
                 game.u.dx = movement.dx;
                 game.u.dy = movement.dy;
+            }
+            game.u.dz = 0;
+            if (movement && movement.direction < 8) {
                 const fastMove = fast || movement.mode !== 0;
                 let distance = fastMove ? 8 : 1;
                 if (fastMove && game.iflags.getloc_moveskip) {
