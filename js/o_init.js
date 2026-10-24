@@ -242,6 +242,10 @@ export async function dodiscovered() {
         body.push({ text: heading, attr: ATR_INVERSE });
         body.push(...entries);
     }
+    if (!body.length) {
+        await plineWithContinuation("You haven't discovered anything yet...");
+        return;
+    }
     // The tty text-window backend paginates the continuous putstr() stream
     // into 23 content rows, reserving the last terminal row for --More--.
     // Only the first page carries the title and its following blank line.
