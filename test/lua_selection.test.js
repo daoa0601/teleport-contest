@@ -224,7 +224,9 @@ void test('selection.room selects a numbered room and falls back to the enclosin
     const game = freshGame();
     const first = selectionRoom(10, 4, 12, 6);
     const second = selectionRoom(20, 8, 22, 10, 1);
-    game.level.rooms = [first, second];
+    const stale = selectionRoom(30, 12, 32, 14, 2);
+    game.level.rooms = [first, second, stale];
+    game.level.nroom = 2;
     for (const room of [first, second])
         for (let x = room.lx; x <= room.hx; x++)
             for (let y = room.ly; y <= room.hy; y++)
@@ -243,11 +245,13 @@ void test('selection.room selects a numbered room and falls back to the enclosin
         left = selected:bounds().lx
         enclosing = selection.room():bounds().lx
         invalid = selection.room(99):bounds().lx
+        beyond = selection.room(2):bounds().lx
     `);
     assert.equal(state.getGlobal('count'), 7, 'exclude edges and squares outside room membership');
     assert.equal(state.getGlobal('left'), 20);
     assert.equal(state.getGlobal('enclosing'), 10);
     assert.equal(state.getGlobal('invalid'), 10);
+    assert.equal(state.getGlobal('beyond'), 10, 'a room slot at or past nroom is not a level room');
 });
 void test('selection methods describe rectangular and irregular bounds', t => {
     const state = new LuaState({

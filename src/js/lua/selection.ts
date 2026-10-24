@@ -324,8 +324,11 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             return wrap(specialSelectionMatch(luaString(args[0])));
         },
         room: (...args) => {
-            const candidate = args.length === 1
-                ? game.level?.rooms[luaInt(args[0])] : undefined;
+            // nhlsel.c uses room i only while 0 <= i < nroom; slots past
+            // nroom (placeholders or stale rooms) fall back to the coder room.
+            const index = args.length === 1 ? luaInt(args[0]) : -1;
+            const candidate = index >= 0 && index < (game.level?.nroom ?? 0)
+                ? game.level?.rooms[index] : undefined;
             return wrap(new SpecialSelection(selection_from_mkroom(
                 isRoom(candidate) ? candidate : currentContext()._room,
             )));
