@@ -1,5 +1,6 @@
 // C wizard.c:wizdeadorgone() and resurrect().
 import { game } from './gstate.js';
+import { artifactById } from './artifacts.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { plineWithContinuation } from './display.js';
@@ -9,7 +10,9 @@ import { MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
 import {
     catchUpMonster, monsterArrive, WIZ_ARRIVE,
 } from './monster_migration.js';
-import { AMULET_OF_YENDOR } from './object_data.js';
+import {
+    AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD,
+} from './object_data.js';
 import { rn2 } from './rng.js';
 import { definiteName, objectName } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
@@ -57,6 +60,16 @@ export function wizardDeadOrGone(state: GameState = game, random = rn2): void {
 export function monsterCarriesAmulet(monster: Monster): boolean {
     // C wizard.c:mon_has_amulet() searches only the top-level inventory.
     return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
+}
+
+// C wizard.c:mon_has_special() excludes objects inside carried containers.
+export function monsterCarriesSpecialObject(monster: Monster, state: GameState = game): boolean {
+    return (monster.minvent ?? []).some(object =>
+        object.otyp === AMULET_OF_YENDOR
+        || artifactById(object.oartifact, state)?.questArtifact
+        || object.otyp === BELL_OF_OPENING
+        || object.otyp === CANDELABRUM_OF_INVOCATION
+        || object.otyp === SPE_BOOK_OF_THE_DEAD);
 }
 
 function monsterHelpless(monster: Monster): boolean {

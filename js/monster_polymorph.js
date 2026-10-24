@@ -30,7 +30,8 @@ import { smellUnseenMonster } from './monster_smell.js';
 import { isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { adjustRiderAfterSteedPolymorph } from './steed.js';
-import { BOULDER, CANDELABRUM_OF_INVOCATION } from './object_data.js';
+import { BOULDER } from './object_data.js';
+import { monsterCarriesSpecialObject } from './wizard.js';
 import { rn1, rn2 } from './rng.js';
 import { monsterEmitsLight } from './vision.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -279,24 +280,20 @@ function pickVampireShape(monster) {
         throw new Error(`Vampire ${monster.m_id} has no natural species`);
     const uppercaseOnly = Is_rogue_level(game.u?.uz);
     let targetMnum = baseMnum;
-    let wolfChance = 10;
-    if (baseMnum === PM_VLAD_THE_IMPALER) {
-        const inventory = monster.minvent || monster.inventory || [];
-        if (inventory.some(object => object.otyp === CANDELABRUM_OF_INVOCATION))
-            return baseMnum;
-        wolfChance = 3;
-    }
-    if (baseMnum === PM_VAMPIRE_LEADER
-        || baseMnum === PM_VLAD_THE_IMPALER) {
-        if (!rn2(wolfChance) && !uppercaseOnly
+    const keepsSpecialObject = baseMnum === PM_VLAD_THE_IMPALER
+        && monsterCarriesSpecialObject(monster);
+    if (!keepsSpecialObject) {
+        const wolfChance = baseMnum === PM_VLAD_THE_IMPALER ? 3 : 10;
+        if ((baseMnum === PM_VAMPIRE_LEADER || baseMnum === PM_VLAD_THE_IMPALER)
+            && !rn2(wolfChance) && !uppercaseOnly
             && !isPoolAt(monster.mx, monster.my)
             && !isLavaAt(monster.mx, monster.my)) {
             targetMnum = PM_WOLF;
         }
-    }
-    if (targetMnum === baseMnum) {
-        targetMnum = !rn2(4) && !uppercaseOnly
-            ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
+        else {
+            targetMnum = !rn2(4) && !uppercaseOnly
+                ? PM_FOG_CLOUD : PM_VAMPIRE_BAT;
+        }
     }
     if (monsterIsGenocided(targetMnum)
         || (monster.mnum !== baseMnum && !rn2(4)))
