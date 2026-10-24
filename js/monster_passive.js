@@ -181,16 +181,17 @@ async function applyMagicMissilePassive({ monster, damage, state, publish, die, 
     monstersForgetHeroResistance(M_SEEN_MAGR, state);
     return { resisted: false, appliedDamage: damage, heroDied };
 }
-async function applyEnchantmentPassive({ monster, hit, attackType, weapon, state, }) {
+async function applyEnchantmentPassive({ monster, hit, attackType, weapon, state, random, }) {
     if (!hit)
         return { heroDied: false };
-    const object = objectTouchedByEnchantment(state, attackType, weapon);
+    const object = objectTouchedByEnchantment(state, attackType, weapon, random);
     if (!object)
         return { heroDied: false };
     await applyMonsterPassiveToObject(monster, object, {
         carried: true,
         attackType,
         state,
+        random,
     });
     return { heroDied: false };
 }
@@ -349,14 +350,20 @@ function objectTouchedByAttack(state, attackType, weapon) {
     return [AT_WEAP, AT_CLAW, AT_MAGC, AT_TUCH].includes(attackType)
         ? weapon : null;
 }
-function objectTouchedByEnchantment(state, attackType, weapon) {
+function objectTouchedByEnchantment(state, attackType, weapon, random = rn2) {
     if (attackType === AT_KICK)
         return weapon;
     if (attackType === AT_BITE || attackType === AT_BUTT
         || (attackType >= AT_STNG && attackType < AT_WEAP))
         return null;
-    return weapon || state.uwep || state.u?.uwep
-        || state.uarmg || state.u?.uarmg || null;
+    if (weapon)
+        return weapon;
+    // C passive_obj() with no object picks the secondary weapon half the
+    // time while dual-wielding, then the gloves.
+    const secondary = state.uswapwep || state.u?.uswapwep || null;
+    if (state.u.twoweap && secondary && random(2) === 0)
+        return secondary;
+    return state.uwep || state.u?.uwep || state.uarmg || state.u?.uarmg || null;
 }
 // C uhitm.c:passive() sets nomovemsg to You_can_move_again for the cube and
 // clears it for the floating eye, which unmul() also turns into that message.

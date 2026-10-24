@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
+import { requireFixtureGame } from './support/game-state.js';
+import { applyHeroContactPassive } from '../js/monster_passive.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
+import { AT_CLAW } from '../js/monster_attack_types.js';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { applyMonsterPassiveToObject } from '../js/monster_passive.js';
-import { ARROW, CLUB } from '../js/object_data.js';
+import { ARROW, CLUB, DAGGER, SHORT_SWORD } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -106,5 +110,22 @@ void test('an ordinary human hero has no passive object damage', async () => {
     assert.equal(arrow.spe, 3);
     assert.equal(arrow.oeroded ?? 0, 0);
     assert.equal(arrow.oeroded2 ?? 0, 0);
+});
+void test("a dual-wielding hero's weaponless blow disenchants the secondary weapon half the time", async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
+    const primary = await addInventoryObject(DAGGER, { spe: 5 });
+    const secondary = await addInventoryObject(SHORT_SWORD, { spe: 5 });
+    await setPrimaryWeapon(primary);
+    await setSecondaryWeapon(secondary);
+    setTwoWeaponCombat(true);
+    await applyHeroContactPassive(disenchanter, {
+        hit: true, attackType: AT_CLAW, weapon: null,
+        random: limit => (limit === 2 ? 0 : limit - 1),
+        publish: async () => { },
+    });
+    assert.equal(secondary.spe, 4, 'passive_obj() picks the secondary on the favorable roll');
+    assert.equal(primary.spe, 5);
 });
 //# sourceMappingURL=passive_object_contact.test.js.map
