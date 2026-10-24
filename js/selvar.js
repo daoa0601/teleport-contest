@@ -2,7 +2,7 @@
 // C refs: src/selvar.c and src/nhlsel.c.
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
-import { newsym } from './display.js';
+import { newsym_force } from './display.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
@@ -510,7 +510,7 @@ export function selection_force_newsyms(selection) {
     for (let x = 1; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
             if (selection_getpoint(x, y, selection))
-                newsym(x, y);
+                newsym_force(x, y);
 }
 const GROW_DIRECTIONS = {
     all: W_ANY,
