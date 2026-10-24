@@ -1540,17 +1540,31 @@ export function glyphAt(x, y, state = game) {
     return loc.disp_glyph || { ch: ' ', color: NO_COLOR, decgfx: false,
         kind: 'unexplored', glyph: GlyphOffset.unexplored };
 }
+// display.c:map_glyphinfo() re-applies the showrace highlight to the hero's
+// own glyph after reset_glyphmap() cleared the Rogue level's colors.  The
+// hero glyph is the race monster whenever showrace is set (display.h
+// hero_glyph).
+function isRogueShowraceHeroGlyph(glyph, x, y) {
+    if (!game.flags.showrace || Upolyd(game.u) || game.urace === null)
+        return false;
+    if (glyph?.kind !== 'monster' || x !== game.u.ux || y !== game.u.uy)
+        return false;
+    const heroGlyphNumber = GlyphOffset.monMale + game.urace.mnum
+        + (game.flags.female ? MONSTER_COLOR.length : 0);
+    return glyph.glyph === heroGlyphNumber;
+}
 export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr = 0, glyph = null) {
     if (suppressMapOutput() || x === 0)
         return;
     const loc = game.level?.at(x, y);
     if (!loc)
         return;
-    // symbols.c:assign_graphics(ROGUESET) selects the classic character set
-    // and marks it nocolor.  Keep that policy at the final map-cell boundary
-    // so hero, monster, object, trap, and remembered overlays agree.
+    // display.c:reset_glyphmap() clears every color on the Rogue level
+    // (GMAP_ROGUELEVEL without rogue IBM color); only the hero's own
+    // showrace glyph is re-highlighted afterwards by map_glyphinfo().
     if (Is_rogue_level(game.u?.uz)) {
-        color = NO_COLOR;
+        if (!isRogueShowraceHeroGlyph(glyph, x, y))
+            color = NO_COLOR;
         decgfx = false;
     }
     const nextGlyph = glyph || { kind: 'effect' };
