@@ -61,3 +61,28 @@ void test('a ladder across a dungeon branch uses the special-stair escape and ar
     assert.equal(monster.migrationMode, MIGR_SSTAIRS);
     assert.deepEqual(monster.migrationDestination, { dnum: 1, dlevel: 1 });
 });
+
+for (const ladder of [false, true]) {
+    void test(`a floating monster cannot escape through older upstairs beneath a downward ${ladder ? 'ladder' : 'staircase'}`, async () => {
+        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('floating eye', 10, 10, MM_ANGRY | NO_MINVENT);
+        monster.mhp = 1;
+        monster.mhpmax = 100;
+        monster.mux = game.u.ux;
+        monster.muy = game.u.uy;
+        level.requireAt(10, 10).typ = ladder ? LADDER : STAIRS;
+        game.stairs = {
+            sx: 10, sy: 10, up: false, isladder: ladder, u_traversed: false,
+            tolev: { dnum: 0, dlevel: 2 },
+            next: {
+                sx: 10, sy: 10, up: true, isladder: false, u_traversed: false,
+                tolev: { dnum: 0, dlevel: 0 }, next: null,
+            },
+        };
+
+        const choice = findMonsterDefensiveItem(monster, game);
+
+        assert.equal(choice, null, 'the first staircase is downward and cannot help a floater flee');
+    });
+}
