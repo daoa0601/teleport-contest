@@ -2,6 +2,7 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
+import { addMessageTypeRule } from './message_types.js';
 import type { ConfigurationErrorReport } from './config_errors.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
@@ -310,6 +311,12 @@ function parseConfiguration(
         // the original OPTIONS statement to cnf_line_OPTIONS().
         const text = new TextDecoder().decode(bytes);
         const line = text.replace(/[ \t]+/g, ' ').trim();
+        const messageType = fromFile ? line.match(/^MSGTYPE\s*[:=]\s*(.*)$/i) : null;
+        if (messageType?.[1] !== undefined) {
+            const error = addMessageTypeRule(messageType[1], result.iflags.messageTypes ??= []);
+            if (error) addError(error);
+            continue;
+        }
         const bindMatch = fromFile ? line.match(/^(?:BIND|BINDINGS)=(.+)$/i) : null;
         if (bindMatch?.[1]) {
             for (const field of bindingFields(bindMatch[1])) {

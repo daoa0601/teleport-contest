@@ -3,6 +3,7 @@ import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
 
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription } from './object_description.js';
 import { primaryHandDescriptionDetail } from './object_equipment_description.js';
@@ -19,7 +20,7 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import {
-    ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE,
+    ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE,
     W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit,
 } from './const.js';
 import {
@@ -830,6 +831,15 @@ export async function selectInventoryObject({
 }
 
 export async function dolook() {
+    hideUnhideMessageTypes(true, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
+    try {
+        await inspectHere();
+    } finally {
+        hideUnhideMessageTypes(false, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
+    }
+}
+
+async function inspectHere(): Promise<void> {
     if (game.u.uswallow && game.u.ustuck) {
         await lookInsideSwallower(game.u.ustuck);
         game.context.move = heroIsBlind() ? 1 : 0;

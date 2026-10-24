@@ -411,6 +411,7 @@ export interface GameState {
     _last_message: string;
     _lastPlineMessage: string;
     _lastPlineKind?: number;
+    earlyRawMessages: number;
     _screen_output: string;
     _mapFlushPaused?: boolean;
     _mapPositionHighlight?: {
@@ -478,6 +479,6 @@ export function createGameState(): GameState {
         _monsterSwallower: null, _monsterEngulf: null, warn_obj_cnt: 0, _magicKeyTrapWarningCount: 0,
         bhitpos: { x: 0, y: 0 }, notonhead: false,
         _pending_message: '', _retained_message: '', _last_message: '',
-        _lastPlineMessage: '', _screen_output: '',
+        _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };
 }

@@ -131,6 +131,7 @@ const transientFields = {
     _interruptedMultiActionDebt: true,
     _lastPlineKind: true,
     _lastPlineMessage: true,
+    earlyRawMessages: true,
     _luaObjectRefs: true,
     _mapFlushPaused: true,
     _underwaterView: true,

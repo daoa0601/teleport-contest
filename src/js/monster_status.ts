@@ -65,13 +65,16 @@ export async function monsterStatusLine(monster: Monster, {
     if (monster.cham !== undefined && monster.cham >= 0 && monster.cham !== monster.mnum)
         conditions.push('shapechanger');
     if (monster.meating) conditions.push('eating');
-    conditions.push(...await monsterHiddenConditions(monster, state));
+    // Native gates this on the probed square, even though the hidden
+    // description itself uses the head square for a long worm.
+    if (monster.mundetected || monster.m_ap_type || visibleRegionAt(state, x, y))
+        conditions.push(...await monsterHiddenConditions(monster, state));
     if (monster.mcan) conditions.push('cancelled');
     if (monster.mconf) conditions.push('confused');
-    if (monster.mblinded || monster.mcansee === 0) conditions.push('blind');
+    if (monster.mblinded || !monster.mcansee) conditions.push('blind');
     if (monster.mstun) conditions.push('stunned');
     if (monster.msleeping) conditions.push('asleep');
-    else if (monster.mfrozen || monster.mcanmove === 0) conditions.push("can't move");
+    else if (monster.mfrozen || !monster.mcanmove) conditions.push("can't move");
     else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) conditions.push('meditating');
     if (monster.mflee) conditions.push('scared');
     if (monster.mtrapped) conditions.push('trapped');
