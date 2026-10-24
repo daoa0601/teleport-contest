@@ -1,6 +1,7 @@
 // Occupants caught by a moving drawbridge.
 // C ref: dbridge.c do_entity(), e_missed(), e_jumps(), e_survives_at().
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { drawbridgeWallPosition, findDrawbridgeAt } from './dbridge.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { CRUSHING, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, KILLED_BY_AN, MOAT, NO_KILLER_PREFIX, } from './const.js';
@@ -258,7 +259,7 @@ async function dieMovingEntity(entity, bridge, state, options, occupants, killer
             if (occupant?.actor === entity.actor)
                 occupant.active = false;
 }
-async function handleEntity(entity, bridge, wall, state, options, occupants) {
+async function handleEntity(entity, bridge, state, options, occupants) {
     if (!entity?.active)
         return;
     const inView = entityIsVisible(entity);
@@ -310,7 +311,10 @@ async function handleEntity(entity, bridge, wall, state, options, occupants) {
             relocates = !entityJumps(entity, state);
         }
     }
-    const destination = entity.x === bridge.x && entity.y === bridge.y ? wall : bridge;
+    const nearbyBridge = findDrawbridgeAt(oldx, oldy, state);
+    const destination = nearbyBridge && (nearbyBridge.x !== oldx || nearbyBridge.y !== oldy)
+        ? nearbyBridge
+        : drawbridgeWallPosition({ x: oldx, y: oldy, location });
     const other = occupantAt(occupants, destination.x, destination.y);
     if (relocates && other) {
         if (entitySurvivesAt(other, state) && entityAutomaticallyMissed(other, state)) {
@@ -319,7 +323,7 @@ async function handleEntity(entity, bridge, wall, state, options, occupants) {
         else {
             while (occupantAt(occupants, destination.x, destination.y)
                 && occupantAt(occupants, destination.x, destination.y) !== entity) {
-                await handleEntity(other, bridge, wall, state, options, occupants);
+                await handleEntity(other, bridge, state, options, occupants);
                 if (state.program_state.gameover)
                     return;
             }
@@ -363,11 +367,11 @@ async function handleEntity(entity, bridge, wall, state, options, occupants) {
 }
 export async function moveDrawbridgeOccupants(bridge, wall, state, options = {}) {
     const occupants = [entityAt(bridge.x, bridge.y, state), entityAt(wall.x, wall.y, state)];
-    await handleEntity(occupants[0], bridge, wall, state, options, occupants);
+    await handleEntity(occupants[0], bridge, state, options, occupants);
     if (state.program_state.gameover)
         return;
     occupants[1] = entityAt(wall.x, wall.y, state);
-    await handleEntity(occupants[1], bridge, wall, state, options, occupants);
+    await handleEntity(occupants[1], bridge, state, options, occupants);
 }
 async function settleEntityAfterCollapse(entity, state) {
     if (entity.hero) {
@@ -417,6 +421,6 @@ export async function destroyDrawbridgeOccupants(bridge, wall, state, options = 
     if (state.program_state.gameover)
         return;
     if (state.level?.at(onSpan.x, onSpan.y)?.typ === MOAT)
-        await handleEntity(onSpan, bridge, wall, state, options, occupants);
+        await handleEntity(onSpan, bridge, state, options, occupants);
 }
 //# sourceMappingURL=drawbridge_occupants.js.map

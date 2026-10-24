@@ -16,15 +16,16 @@ import { unpunishHero } from './punishment.js';
 import { heroIsDeaf } from './senses.js';
 import { reviveNastyAt } from './revive_nasty.js';
 import { cansee, vision_note_blocker_change, vision_recalc, } from './vision.js';
-function directionFromBridgeToWall(bridge) {
-    const direction = (bridge.drawbridgemask || 0) & DB_DIR;
+// C get_wall_for_db() reads the current mask, even after collapse clears it.
+export function drawbridgeWallPosition({ x, y, location }) {
+    const direction = (location.drawbridgemask || 0) & DB_DIR;
     if (direction === DB_NORTH)
-        return { dx: 0, dy: -1 };
+        return { x, y: y - 1 };
     if (direction === DB_SOUTH)
-        return { dx: 0, dy: 1 };
+        return { x, y: y + 1 };
     if (direction === DB_EAST)
-        return { dx: 1, dy: 0 };
-    return { dx: -1, dy: 0 };
+        return { x: x + 1, y };
+    return { x: x - 1, y };
 }
 export function drawbridgeWallAt(x, y, state = game) {
     const level = state.level;
@@ -33,9 +34,7 @@ export function drawbridgeWallAt(x, y, state = game) {
     const bridge = level.at(x, y);
     if (!bridge || !IS_DRAWBRIDGE(bridge.typ))
         return null;
-    const { dx, dy } = directionFromBridgeToWall(bridge);
-    const wallX = x + dx;
-    const wallY = y + dy;
+    const { x: wallX, y: wallY } = drawbridgeWallPosition({ x, y, location: bridge });
     if (!isok(wallX, wallY))
         return null;
     const location = level.at(wallX, wallY);

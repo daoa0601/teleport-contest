@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DBWALL, DB_FLOOR, DB_LAVA, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, NO_MINVENT } from '../js/const.js';
-import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
+import { DBWALL, DB_EAST, DB_FLOOR, DB_LAVA, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, NO_MINVENT, ROOM, } from '../js/const.js';
+import { closeDrawbridge, destroyDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { loadScoreRecords } from '../js/score_records.js';
@@ -48,6 +48,21 @@ void test('life saving from a portcullis moves the hero to a nearby safe square'
     assert.equal(!!game.program_state.gameover, false);
     assert.equal(amulet.where, 'gone');
     assert.equal(Math.max(Math.abs(game.u.ux - 12), Math.abs(game.u.uy - 9)), 1);
+});
+void test('a fumbling water-walker saved from an east-facing bridge collapse lands north', async () => {
+    bridgeDeathRoom(true, true);
+    requirePlayingGame(game);
+    game.level.requireAt(12, 10).drawbridgemask = DB_EAST | DB_MOAT;
+    game.level.requireAt(12, 9).typ = ROOM;
+    game.level.requireAt(13, 10).typ = DOOR;
+    game.u.waterWalking = true;
+    const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+    await wearHeroAccessory(amulet, 'uamul');
+    await destroyDrawbridge(12, 10);
+    assert.equal(!!game.program_state.gameover, false);
+    assert.equal(amulet.where, 'gone');
+    assert.equal(game.u.ux, 12);
+    assert.equal(game.u.uy, 9);
 });
 void test('a held hero falling from a rising bridge still suffers lava effects', async () => {
     bridgeDeathRoom(true, true);
