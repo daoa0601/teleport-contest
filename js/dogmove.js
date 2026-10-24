@@ -1,4 +1,4 @@
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition } from './monster_location.js';
 import { distmin, isok } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsVampireShifter, } from './monster_data.js';
 import { AT_BREA } from './monster_attack_types.js';
@@ -47,14 +47,6 @@ export function monsterBreathAttack(monster) {
 function isHeroTarget(target, state) {
     return target === state.u;
 }
-function monsterAt(state, x, y, ignored) {
-    return (state.level?.monsters?.find((monster) => monsterHasMapPosition(monster, state) &&
-        monster !== ignored &&
-        !monster.dead &&
-        (monster.mhp ?? 1) > 0 &&
-        monster.mx === x &&
-        monster.my === y) || null);
-}
 function targetPosition(target, state) {
     return isHeroTarget(target, state)
         ? { x: state.u.ux, y: state.u.uy }
@@ -76,10 +68,11 @@ function findTarget(pet, dx, dy, state) {
             break;
         if (x === pet.mux && y === pet.muy)
             return state.u;
-        const target = monsterAt(state, x, y, pet);
+        const target = monsterAtPosition(state.level, x, y);
         if (!target)
             continue;
-        if ((!target.minvis || petSeesInvisible(pet)) && !target.mundetected)
+        if ((!target.minvis || petSeesInvisible(pet)) && !target.mundetected
+            && target.mx === x && target.my === y)
             return target;
     }
     return null;
@@ -98,11 +91,14 @@ function targetHasFriendBehind(pet, target, state) {
             return false;
         if (x === pet.mux && y === pet.muy)
             return true;
-        const friend = monsterAt(state, x, y, pet);
+        const friend = monsterAtPosition(state.level, x, y);
         if (!friend)
             continue;
-        if (friend.mtame && (!friend.minvis || petSeesInvisible(pet)))
-            return true;
+        if (friend.mtame) {
+            if (!friend.minvis || petSeesInvisible(pet))
+                return true;
+            continue;
+        }
         const sound = MONSTER_SOUND[friend.mnum] ?? 0;
         if (sound === MS_LEADER || sound === MS_GUARDIAN)
             return true;
