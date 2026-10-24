@@ -53,6 +53,17 @@ void test('an unknown pet type is reported before game creation and waits for ac
     assert.doesNotMatch(screen(engine), /Unrecognized pet type|Hit space to continue/);
 });
 
+for (const [tabs, column] of [['\t', 16], ['\t\t', 24]] as const) {
+    void test(`an echoed pet option advances tabs to column ${column}`, async () => {
+        const engine = await start(`OPTIONS=${tabs}pettype:lizard`);
+        const sourceLine = screen(engine).split('\n').find(line => line.startsWith('OPTIONS='));
+
+        assert.ok(sourceLine, 'the rejected option line should be visible');
+        assert.equal(sourceLine.indexOf('pettype'), column, sourceLine);
+        assert.match(screen(engine), /Line 3: Unrecognized pet type 'lizard'\./);
+    });
+}
+
 for (const option of ['pettype', 'pet:']) {
     void test(`a missing value for ${option} reports the supplied option spelling`, async () => {
         const engine = await start(`OPTIONS=${option}`);
@@ -128,6 +139,30 @@ void test('a duplicate pet option warns and still applies the later physical lin
     engine.inputGate.feed(' ');
     await engine.runUntilInputNeeded();
     assert.equal(engine.state.preferred_pet, 'd');
+});
+
+for (const options of ['pettype:cat,pet:dog', 'pet:cat,pettype:dog']) {
+    void test(`a duplicate in ${options} retains the pet alias in its warning`, async () => {
+        const engine = await start(`OPTIONS=${options}`);
+
+        assert.match(screen(engine), /Line 3: compound option specified multiple times: pettype \(via alias: pet\)\./);
+        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        engine.inputGate.feed(' ');
+        await engine.runUntilInputNeeded();
+        assert.equal(engine.state.preferred_pet, 'c');
+    });
+}
+
+void test('a pet alias applies to remaining duplicate warnings on its line and resets on the next line', async () => {
+    const engine = await start('OPTIONS=pettype:none,pettype:cat,pet:dog\nOPTIONS=pettype:random');
+    const text = screen(engine);
+
+    assert.equal(text.split('Line 3: compound option specified multiple times: pettype (via alias: pet).').length - 1, 2);
+    assert.match(text, /Line 4: compound option specified multiple times: pettype\.\n/);
+    assert.match(text, /3 errors in \.nethackrc\./);
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.preferred_pet, '');
 });
 
 async function startEnvironment(nethackOptions: string, options = '') {

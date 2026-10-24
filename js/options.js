@@ -287,6 +287,7 @@ function parseConfiguration(rc, result, report, fromFile) {
         if (prefix === undefined)
             continue;
         const optionList = bytes.subarray(new TextEncoder().encode(prefix).length);
+        let usingPetAlias = false;
         for (const optionBytes of configurationOptions(optionList)) {
             if (optionBytes.length > BUFSZ / 2) {
                 addError(`Option too long, max length is ${BUFSZ / 2} characters`);
@@ -372,7 +373,10 @@ function parseConfiguration(rc, result, report, fromFile) {
             // determine_ambiguities() permits three-letter name-option
             // abbreviations. Pettype needs four letters, or the alias "pet".
             if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
-                checkDuplicatePetOption('pettype', bindingOption === 'pet');
+                // C parseoptions() retains using_alias while unwinding the
+                // right-to-left recursion for the remaining options on this line.
+                usingPetAlias ||= bindingOption === 'pet';
+                checkDuplicatePetOption('pettype', usingPetAlias);
                 const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
                 const preference = configuredPetType(value, negated);
                 if (preference !== null) {
