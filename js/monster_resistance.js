@@ -68,11 +68,12 @@ export function monsterHasDrainResistance(monster) {
     return !!(flags & (M2_UNDEAD | M2_WERE | M2_DEMON))
         || monster?.mnum === PM_DEATH
         || monsterIsVampireShifter(monster)
-        || monster?.mnum === PM_BLACK_DRAGON
-        || monsterWearsOneOf(monster, [
-            BLACK_DRAGON_SCALE_MAIL,
-            BLACK_DRAGON_SCALES,
-        ], W_ARM);
+        || artifactForObject(monsterWeapon(monster))?.defense === 'life-drain'
+        || (monster.mnum >= PM_GRAY_DRAGON && monster.mnum <= PM_YELLOW_DRAGON
+            ? monster.mnum === PM_BLACK_DRAGON
+            : monsterWearsOneOf(monster, [
+                BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES,
+            ], W_ARM));
 }
 // C resists_drli(&youmonst), not the broader Drain_resistance property.
 // Direct divine level loss does not accept a shield or generic intrinsic.
