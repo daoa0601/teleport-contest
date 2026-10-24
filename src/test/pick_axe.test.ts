@@ -154,19 +154,25 @@ void test('a mattock can reach a boulder in a known pit', async () => {
     assert.equal(game.context.move, 1);
 });
 
+// C domove_core() passes no destination trap to trapmove(), so a trapped
+// hero climbs out first. trapeffect_pit() treats a joined pit as conjoined
+// only while the hero is still trapped, so the later step is an ordinary fall
+// rather than a stumble over debris.
 void test('digging sideways from a pit joins it to the neighboring pit', async () => {
     const pick = await diggingRoom();
     requirePlayingGame(game);
-    game.u.utrap = 3;
+    game.u.utrap = 1;
     game.u.utraptype = TT_PIT;
     addTrap(requireGameLevel(), PIT, 10, 10, { tseen: true });
     addTrap(requireGameLevel(), PIT, 11, 10, { tseen: true });
     await applyInventoryObject(pick, 'l');
     assert.match(game._pending_message, /clear some debris from between the pits/);
-    const hp = game.u.uhp;
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.utrap, 0);
     await rhack('l'.charCodeAt(0));
     assert.equal(game.u.ux, 11);
-    assert.equal(game.u.uhp, hp);
+    assert.equal(game._pending_message, 'You fall into a pit!');
 });
 
 void test('hitting iron bars wakes a nearby sleeping monster', async () => {
