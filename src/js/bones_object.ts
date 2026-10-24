@@ -12,9 +12,11 @@ import {
     WAX_CANDLE, YUMI,
 } from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
+import { set_corpsenm } from './mklev.js';
 import { OBJECT_TIMER_KIND } from './object_timers.js';
 import { curseObjectState } from './object_state.js';
 import { roomForRoomno } from './room.js';
+import { PM_DOPPELGANGER, revivalReplacement } from './revival_species.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { objectWeight } from './weight.js';
 import { definiteName, objectCombatName } from './objnam.js';
@@ -23,10 +25,6 @@ const HANDED_WEAPONS = new Set([
     BOW, ELVEN_BOW, ORCISH_BOW, YUMI, BOOMERANG,
 ]);
 const G_UNIQ = 0x1000;
-const PM_DOPPELGANGER = 270;
-const PM_HUMAN_ZOMBIE = 244;
-const PM_SHOPKEEPER = 271;
-const SPECIAL_LOCATION_MONSTERS = new Set([123, 272, 275, 276]);
 
 function keepIndividualName(object: GameObject) {
     return !!(object.oartifact || object.artifact)
@@ -46,16 +44,12 @@ function discardUnsafeMonsterTraits(object: GameObject) {
         || !object.oextra?.omonst) return;
     const mnum = object.corpsenm;
     if (mnum === undefined) return;
-    let replacement = null;
-    if (mnum === PM_SHOPKEEPER || SPECIAL_LOCATION_MONSTERS.has(mnum))
-        replacement = PM_HUMAN_ZOMBIE;
-    else if ((MONSTER_GENO[mnum] ?? 0) & G_UNIQ)
-        replacement = PM_DOPPELGANGER;
+    const replacement = revivalReplacement(mnum, null, false);
     if (replacement === null) return;
 
     delete object.oextra.omonst;
     if (replacement === PM_DOPPELGANGER && object.otyp === CORPSE)
-        object.corpsenm = replacement;
+        set_corpsenm(object, replacement);
 }
 
 export function prepareBonesObjectForSave<T extends GameObject | null | undefined>(object: T): T {
