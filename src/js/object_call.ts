@@ -11,6 +11,7 @@ import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { playerName } from './player_name.js';
 import { flush_screen } from './display.js';
 import { objectTypeKnown, repriceDiscoveredGems } from './shk.js';
+import { impossible } from './diagnostics.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -78,8 +79,9 @@ export async function callObjectType(object: GameObject, state: GameState = game
         if (state._objectCallNames?.[object.otyp]) {
             delete state._objectCallNames[object.otyp];
             if (!objectTypeKnown(object, state) && !state._encounteredObjectTypes?.has(object.otyp)) {
-                if (state._objectDiscoveryOrder)
+                if (state._objectDiscoveryOrder?.includes(object.otyp))
                     state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
+                else await impossible('named object not in disco', { state });
                 if (object.oclass === 13) repriceDiscoveredGems(object.otyp, state);
             }
         }

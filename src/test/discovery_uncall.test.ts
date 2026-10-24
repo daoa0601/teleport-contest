@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { A_CHA } from '../js/const.js';
+import { A_CHA, PANICLOG } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { callObjectType } from '../js/object_call.js';
@@ -10,6 +10,7 @@ import { shopObjectUnitCost } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { memoryStorage } from './support/memory-storage.js';
 
 void test('erasing an unencountered gem call name removes its discovery and refreshes the billed price', async () => {
     freshObjectRoom({ hero: { blindTurns: 20 } });
@@ -33,4 +34,19 @@ void test('erasing an unencountered gem call name removes its discovery and refr
     assert.equal(game._objectDiscoveryOrder?.includes(POT_HEALING), true);
     assert.notEqual(oldPrice, shopObjectUnitCost(glass, shopkeeper));
     assert.equal(shopkeeper.eshk.bill[0]?.price, shopObjectUnitCost(glass, shopkeeper));
+});
+
+void test('erasing a name missing from discoveries reports the native consistency error', async () => {
+    freshObjectRoom({ hero: { blindTurns: 20 } });
+    const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS,
+        { typeKnown: false, observed: false, dknown: true });
+    recordObjectCall(glass.otyp, 'shiny');
+    game._objectDiscoveryOrder = [];
+    game.storage = memoryStorage();
+    resetInputState().feed('   \r   ');
+
+    await callObjectType(glass);
+
+    assert.match(game.storage.getItem(PANICLOG) ?? '', /named object not in disco/);
+    assert.equal(game._objectCallNames?.[glass.otyp], undefined);
 });
