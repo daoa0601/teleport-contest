@@ -97,6 +97,52 @@ void test('selection callback diagnostics include the Lua source and calling fun
     assert.equal(lua.getGlobal('continued'), true);
 });
 
+void test('selection callback argument errors identify the line and source that raised them', async t => {
+    const lua = await levelLua(t);
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    const cases = [
+        { source: 'selection.set()', message: 'Selection setpoint error' },
+        { source: 'selection.new():get({x = 1})', message: 'Not a coordinate' },
+        { source: 'selection.new():get({1})', message: 'Not a coordinate' },
+        { source: 'selection.new():get()', message: 'l_selection_getpoint: Incorrect params' },
+        { source: 'selection.line(1)', message: 'selection.line: illegal arguments' },
+        { source: 'selection.rect(1)', message: 'selection.rect: illegal arguments' },
+        { source: 'selection.fillrect(1)', message: 'selection.fillrect: illegal arguments' },
+        { source: 'selection.circle(1)', message: 'wrong parameters' },
+        { source: 'selection.ellipse(1)', message: 'wrong parameters' },
+        { source: 'selection.gradient()', message: 'selection.gradient requires table argument' },
+        { source: 'selection.randline(1)', message: 'wrong parameters' },
+        { source: 'selection.new():iterate(3)', message: 'wrong parameters' },
+        { source: 'selection.describe_size()', message: 'wrong parameters' },
+        { source: 'selection.floodfill()', message: 'wrong parameters' },
+        { source: 'selection.match()', message: 'wrong parameters' },
+        { source: 'selection.new():filter_mapchar("[")', message: 'Erroneous map char' },
+        { source: 'selection.match("..")', message: 'mapfragment needs to have odd height and width' },
+        { source: 'selection.match(".?.")', message: 'mapfragment center must be valid terrain' },
+    ];
+
+    for (const { source, message } of cases) {
+        await t.test(source, async () => {
+            const storage = memoryStorage();
+            game.storage = storage;
+            await lua.executeAsync([
+                'local function fail()',
+                `  ${source}`,
+                'end',
+                'selection.set(1, 0):iterate(fail)',
+            ].join('\n'), '@selection-error.lua');
+
+            const record: unknown = JSON.parse((storage.getItem(PANICLOG) ?? '').trim());
+            assert.ok(record && typeof record === 'object'
+                && 'reason' in record && typeof record.reason === 'string',
+                'the nonfatal callback failure should be logged');
+            assert.ok(record.reason.includes(`${message} (line 2 selection-error.lua)\nstack traceback:`),
+                record.reason);
+        });
+    }
+});
+
 void test('Lua circles and ellipses carve outlines or filled areas relative to their map', async t => {
     const lua = await levelLua(t);
     await lua.executeAsync(`

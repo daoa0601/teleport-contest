@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym_force } from './display.js';
 import { impossible } from './diagnostics.js';
+import { NethackLuaError } from './lua/errors.js';
 import {
     COLNO, ROWNO, ROOMOFFSET,
     STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR,
@@ -674,7 +675,7 @@ export class SpecialSelection {
     filterMapCharacter(character: string, lit = -2) {
         const terrain = mapCharacterType(character);
         if (terrain == null)
-            throw new TypeError('Erroneous map char');
+            throw new NethackLuaError('Erroneous map char');
         return new SpecialSelection(selection_filter_mapchar(
             this.selection, terrain, lit,
         ));
@@ -805,10 +806,10 @@ export function specialSelectionMatch(fragment: string) {
     const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
     const rows = data.split('\n');
     if (rows.at(-1) === '') rows.pop();
-    if (rows.length > MAP_Y_LIM + 1) throw new Error('mapfragment error');
+    if (rows.length > MAP_Y_LIM + 1) throw new NethackLuaError('mapfragment error');
     const width = Math.max(0, ...rows.map(row => row.length));
     if (!(width % 2) || !(rows.length % 2))
-        throw new Error('mapfragment needs to have odd height and width');
+        throw new NethackLuaError('mapfragment needs to have odd height and width');
     const xRadius = Math.trunc(width / 2);
     const yRadius = Math.trunc(rows.length / 2);
     // mapfrag_get() indexes the original buffer with a fixed row stride.
@@ -816,7 +817,7 @@ export function specialSelectionMatch(fragment: string) {
         mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
     const center = terrainAt(xRadius, yRadius);
     if (center === INVALID_TYPE || center === MAX_TYPE)
-        throw new Error('mapfragment center must be valid terrain');
+        throw new NethackLuaError('mapfragment center must be valid terrain');
 
     const selection = selection_new();
     for (let y = 0; y <= ROWNO; y++) {

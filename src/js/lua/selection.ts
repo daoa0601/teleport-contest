@@ -16,6 +16,7 @@ import {
 } from '../selvar.js';
 import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
+import { NethackLuaError } from './errors.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
 import { game } from '../gstate.js';
 import { isRoom } from '../map_types.js';
@@ -100,7 +101,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         };
     };
     const set = async (...args: LuaValue[]) => {
-        if (args.length === 0) throw new TypeError('Selection setpoint error');
+        if (args.length === 0) throw new NethackLuaError('Selection setpoint error');
         const self = args.length === 2 ? undefined : args.shift();
         const selection = self === undefined ? new SpecialSelection() : selectionValue(self);
         const coordinate = args.length === 0 ? null
@@ -116,16 +117,16 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const table = args[0];
         if (args.length === 1 && table instanceof LuaTable) {
             if (table.get('x') != null) {
-                if (table.get('y') == null) throw new TypeError('Not a coordinate');
+                if (table.get('y') == null) throw new NethackLuaError('Not a coordinate');
                 coordinate = { x: luaCoordinate(table.get('x')), y: luaCoordinate(table.get('y')) };
             } else {
-                if (table.length() !== 2) throw new TypeError('Not a coordinate');
+                if (table.length() !== 2) throw new NethackLuaError('Not a coordinate');
                 coordinate = { x: luaCoordinate(table.get(1)), y: luaCoordinate(table.get(2)) };
             }
         } else if (args.length === 2) {
             coordinate = { x: getAxis(args[0]), y: getAxis(args[1]) };
         } else {
-            throw new TypeError('l_selection_getpoint: Incorrect params');
+            throw new NethackLuaError('l_selection_getpoint: Incorrect params');
         }
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selection.selection);
@@ -152,7 +153,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)),
     );
     const grow = (self: LuaValue, direction: LuaValue = 'all', ...extra: LuaValue[]) => {
-        if (extra.length) throw new TypeError('wrong parameters');
+        if (extra.length) throw new NethackLuaError('wrong parameters');
         const name = luaString(direction ?? 'all');
         if (!['all', 'random', 'north', 'south', 'east', 'west'].includes(name))
             throw new TypeError(`Unknown selection growth direction: ${name}`);
@@ -173,7 +174,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     const geometry = (shape: 'line' | 'rect' | 'area', args: LuaValue[]) => {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         if (args.length !== 4)
-            throw new TypeError(`selection.${shape === 'area' ? 'fillrect' : shape}: illegal arguments`);
+            throw new NethackLuaError(`selection.${shape === 'area' ? 'fillrect' : shape}: illegal arguments`);
         const result = self ? selectionValue(self).clone() : new SpecialSelection();
         const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
         if (shape === 'area') {
@@ -193,7 +194,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         const required = circular ? 3 : 4;
         if (args.length !== required && args.length !== required + 1)
-            throw new TypeError('wrong parameters');
+            throw new NethackLuaError('wrong parameters');
         const result = self ? selectionValue(self) : new SpecialSelection();
         const x = luaInteger(args[0]), y = luaInteger(args[1]);
         const radiusX = luaInt(args[2]);
@@ -205,7 +206,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
     const gradient = async (options: LuaValue, ...extra: LuaValue[]) => {
         if (!(options instanceof LuaTable) || extra.length)
-            throw new TypeError('selection.gradient requires table argument');
+            throw new NethackLuaError('selection.gradient requires table argument');
         const type = luaString(options.get('type') ?? 'radial');
         if (type !== 'radial' && type !== 'square')
             throw new TypeError(`Unknown gradient type: ${type}`);
@@ -224,7 +225,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     };
     const randline = (...args: LuaValue[]) => {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
-        if (args.length !== 5) throw new TypeError('wrong parameters');
+        if (args.length !== 5) throw new NethackLuaError('wrong parameters');
         const result = self ? selectionValue(self).clone() : new SpecialSelection();
         const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
         return wrap(specialSelectionRandLine(
@@ -237,7 +238,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
     const iterate = async (self: LuaValue, ...args: LuaValue[]) => {
         const callback = args[0];
         if (args.length !== 1 || callback === undefined || luaType(callback) !== 'function')
-            throw new TypeError('wrong parameters');
+            throw new NethackLuaError('wrong parameters');
         if (!invoke)
             throw new Error('selection.iterate needs a Lua state');
         const selection = selectionValue(self);
@@ -272,16 +273,16 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         randline,
         iterate,
         describe_size: (...args) => {
-            if (args.length !== 1) throw new TypeError('wrong parameters');
+            if (args.length !== 1) throw new NethackLuaError('wrong parameters');
             return selection_size_description(selectionValue(args[0]).selection);
         },
         floodfill: (...args) => {
-            if (args.length !== 2 && args.length !== 3) throw new TypeError('wrong parameters');
+            if (args.length !== 2 && args.length !== 3) throw new NethackLuaError('wrong parameters');
             return wrap(specialSelectionFloodFill(currentContext(),
                 luaInteger(args[0]), luaInteger(args[1]), luaTruthy(args[2])));
         },
         match: (...args) => {
-            if (args.length !== 1) throw new TypeError('wrong parameters');
+            if (args.length !== 1) throw new NethackLuaError('wrong parameters');
             return wrap(specialSelectionMatch(luaString(args[0])));
         },
         room: (...args) => {

@@ -395,7 +395,7 @@ void test('selection geometry and iteration reject unsupported argument counts',
         'selection.grow(selection.new(), "north", 1)',
         'selection.gradient({x = 1, y = 1, maxdist = 0}, 1)',
     ]) {
-        await assert.rejects(state.executeAsync(source), { name: 'TypeError' }, source);
+        await assert.rejects(state.executeAsync(source), source);
     }
 });
 

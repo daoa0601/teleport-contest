@@ -1,4 +1,5 @@
 import { luaChunkId } from './syntax_error.js';
+import { NethackLuaError } from './errors.js';
 
 interface LuaFrame {
     readonly source: string;
@@ -41,8 +42,11 @@ export class LuaTraceback {
 
     remember(error: unknown): void {
         if (!(error instanceof Error) || this.failures.has(error)) return;
-        this.failures.set(error, this.frames.filter(frame => !frame.hidden)
-            .map(frame => ({ ...frame })).reverse());
+        const frames = this.frames.filter(frame => !frame.hidden);
+        const caller = frames.at(-2);
+        if (error instanceof NethackLuaError && caller)
+            error.message += ` (line ${caller.line} ${caller.source})`;
+        this.failures.set(error, frames.map(frame => ({ ...frame })).reverse());
     }
 
     format(error: unknown): string {

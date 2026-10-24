@@ -4,6 +4,7 @@ import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 import { newsym_force } from './display.js';
 import { impossible } from './diagnostics.js';
+import { NethackLuaError } from './lua/errors.js';
 import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
@@ -580,7 +581,7 @@ export class SpecialSelection {
     filterMapCharacter(character, lit = -2) {
         const terrain = mapCharacterType(character);
         if (terrain == null)
-            throw new TypeError('Erroneous map char');
+            throw new NethackLuaError('Erroneous map char');
         return new SpecialSelection(selection_filter_mapchar(this.selection, terrain, lit));
     }
     randomCoordinate(remove = false) {
@@ -693,17 +694,17 @@ export function specialSelectionMatch(fragment) {
     if (rows.at(-1) === '')
         rows.pop();
     if (rows.length > MAP_Y_LIM + 1)
-        throw new Error('mapfragment error');
+        throw new NethackLuaError('mapfragment error');
     const width = Math.max(0, ...rows.map(row => row.length));
     if (!(width % 2) || !(rows.length % 2))
-        throw new Error('mapfragment needs to have odd height and width');
+        throw new NethackLuaError('mapfragment needs to have odd height and width');
     const xRadius = Math.trunc(width / 2);
     const yRadius = Math.trunc(rows.length / 2);
     // mapfrag_get() indexes the original buffer with a fixed row stride.
     const terrainAt = (x, y) => mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
     const center = terrainAt(xRadius, yRadius);
     if (center === INVALID_TYPE || center === MAX_TYPE)
-        throw new Error('mapfragment center must be valid terrain');
+        throw new NethackLuaError('mapfragment center must be valid terrain');
     const selection = selection_new();
     for (let y = 0; y <= ROWNO; y++) {
         for (let x = 1; x < COLNO; x++) {
