@@ -223,7 +223,7 @@ export function parseNethackrc(rc, sources = {}) {
         configErrors: [],
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
-    const fileReport = { source: sources.fileName || '.nethackrc', errors: [], standout: false };
+    const fileReport = { source: sources.fileName || '.nethackrc', errors: [] };
     parseConfiguration(rc, result, fileReport, true);
     result.configErrors.push(fileReport);
     result.commandBindings.finishConfiguration();
@@ -232,7 +232,7 @@ export function parseNethackrc(rc, sources = {}) {
     return result;
 }
 export function parseNethackOptions(options, result) {
-    const report = { source: 'NETHACKOPTIONS', errors: [], standout: !!result.flags.standout };
+    const report = { source: 'NETHACKOPTIONS', errors: [] };
     parseConfiguration(options, result, report, false);
     result.configErrors.push(report);
     result.commandBindings.finishConfiguration();
@@ -244,7 +244,7 @@ export function applyNethackrc(rc, state = game) {
         flags: state.flags, iflags: state.iflags,
         commandBindings: state.commandBindings,
     };
-    const report = { source: 'parse_conf_str', errors: [], standout: !!result.flags.standout };
+    const report = { source: 'parse_conf_str', errors: [] };
     parseConfiguration(rc, result, report, true);
     result.configErrors.push(report);
     if (result.monTelecontrol !== undefined)
@@ -600,8 +600,6 @@ function parseConfiguration(rc, result, report, fromFile) {
             }
         }
     }
-    // config_error_done() waits before the next source can change standout.
-    report.standout = !!result.flags.standout;
     if (paranoiaSeen)
         result.flags.paranoia_bits = paranoiaBits;
     return result;

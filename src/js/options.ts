@@ -244,7 +244,7 @@ export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): 
         configErrors: [],
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
-    const fileReport: ConfigurationErrorReport = { source: sources.fileName || '.nethackrc', errors: [], standout: false };
+    const fileReport: ConfigurationErrorReport = { source: sources.fileName || '.nethackrc', errors: [] };
     parseConfiguration(rc, result, fileReport, true);
     result.configErrors.push(fileReport);
     result.commandBindings.finishConfiguration();
@@ -253,7 +253,7 @@ export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): 
 }
 
 export function parseNethackOptions(options: string, result: NethackConfiguration): ConfigurationErrorReport {
-    const report: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [], standout: !!result.flags.standout };
+    const report: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [] };
     parseConfiguration(options, result, report, false);
     result.configErrors.push(report);
     result.commandBindings.finishConfiguration();
@@ -272,7 +272,7 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
         flags: state.flags, iflags: state.iflags,
         commandBindings: state.commandBindings,
     };
-    const report: ConfigurationErrorReport = { source: 'parse_conf_str', errors: [], standout: !!result.flags.standout };
+    const report: ConfigurationErrorReport = { source: 'parse_conf_str', errors: [] };
     parseConfiguration(rc, result, report, true);
     result.configErrors.push(report);
     if (result.monTelecontrol !== undefined) state._monTelecontrol = result.monTelecontrol;
@@ -583,8 +583,6 @@ function parseConfiguration(
             }
         }
     }
-    // config_error_done() waits before the next source can change standout.
-    report.standout = !!result.flags.standout;
     if (paranoiaSeen) result.flags.paranoia_bits = paranoiaBits;
     return result;
 }
