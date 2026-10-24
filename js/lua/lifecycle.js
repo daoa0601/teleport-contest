@@ -47,7 +47,12 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
                     return luaInteger(args[0]) + rn2(luaInteger(args[1]));
                 throw new TypeError('nh.random expects one or two integers');
             },
-            callback: (...args) => lifecycle.registerCallback(...args),
+            callback: (...args) => {
+                const result = lifecycle.registerCallback(args);
+                return result?.overdrawn
+                    ? impossible('nh.callback counts are wrong', { state: gameState })
+                    : undefined;
+            },
             gamestate: (...args) => changeTutorialState(gameState, args.at(-1) != null && args.at(-1) !== false),
             pline: luaPline,
             text: luaText,
@@ -130,21 +135,26 @@ export class LuaLifecycle {
     }
     // C nhl_callback() stores names in the persistent core, even when the
     // registration comes from a temporary level-generation Lua state.
-    registerCallback(...args) {
+    registerCallback(args) {
         if (!this.core)
             throw new Error('Lua callbacks require an initialized core');
         if (args.length !== 2 && args.length !== 3)
-            return;
+            return null;
         let [name, fn, remove] = args;
         if (![name, fn].every(value => ['string', 'number'].includes(typeof value)))
             throw new TypeError('nh.callback expects an event name and function name');
         name = String(name);
         fn = String(fn);
         if (!isCallbackName(name))
-            return;
+            return null;
         const removing = remove != null && remove !== false;
-        this.callbackCounts.set(name, (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1));
+        const count = (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1);
+        this.callbackCounts.set(name, count);
+        // nhl_callback() reports each removal that drives a count negative
+        // before it asks the core to run nh_callback_rm.
+        const overdrawn = removing && count < 0;
         this.core.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn);
+        return { overdrawn };
     }
     async runCallbacks(gameState, name, ...args) {
         if (!this.core || !this.callbackCounts.get(name))

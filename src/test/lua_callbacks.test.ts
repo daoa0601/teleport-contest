@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
+import { PANICLOG } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
@@ -12,6 +13,7 @@ import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { mklev } from '../js/mklev.js';
 import { OBJECT_NAMES, TIN_WHISTLE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { levelStairs } from './support/level-state.js';
@@ -204,4 +206,18 @@ void test('callbacks registered by a level script survive it and see the levels 
     assert.equal(game.u.uz.dlevel, 8);
     assert.equal(core.getGlobal('departed_depth'), 7);
     assert.equal(core.getGlobal('created_depth'), 8);
+});
+
+void test('removing an unregistered Lua callback reports an impossible count', async t => {
+    freshTurnRoom();
+    game.storage = memoryStorage();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    const core = await startLuaCore(t);
+
+    await core.executeAsync('nh.callback("cmd_before", "never_added", true)');
+    await flushPendingTopline();
+
+    assert.match(game.storage.getItem(PANICLOG) ?? '',
+        /"type":"impossible","reason":"nh\.callback counts are wrong"/);
 });
