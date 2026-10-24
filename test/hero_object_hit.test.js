@@ -3,10 +3,22 @@ import assert from 'node:assert/strict';
 import { artifactByName, discoverArtifact } from '../js/artifacts.js';
 import { game } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
-import { CLUB, ROCK } from '../js/object_data.js';
+import { CLUB, POT_FRUIT_JUICE, ROCK } from '../js/object_data.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a propelled potion hit shatters the bottle instead of applying ordinary missile damage', async () => {
+    freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100 } });
+    const potion = await knownObject(POT_FRUIT_JUICE);
+    const messages = [];
+    const result = await hitHeroWithObject(potion, 6, 20, {
+        rollOne: () => 1, publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(result.hit, true);
+    assert.equal(game.u.uhp, 99);
+    assert.equal(potion.where, 'gone');
+    assert.match(messages[1] ?? '', /crashes on your head and breaks into shards\./);
+});
 void test('a rock striking from above passes harmlessly through a rock-passing hero', async () => {
     freshObjectRoom({ flags: { verbose: true } });
     installPolymorphedHero('xorn', { hitPoints: 40 });

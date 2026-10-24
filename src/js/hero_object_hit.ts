@@ -12,11 +12,12 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM } from './object_data.js';
-import { rnd } from './rng.js';
+import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
@@ -28,6 +29,8 @@ export interface HeroObjectHitOptions {
     state?: GameState;
     publish?: MessagePublisher;
     rollOne?: (sides: number) => number;
+    random?: typeof rn2;
+    rollDice?: typeof d;
     die?: DeathHandler;
     name?: string;
     volley?: HeroProjectileVolley;
@@ -44,6 +47,7 @@ const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
 const RING_CLASS = 4;
+const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
 const M1_UNSOLID = 0x00100000;
 
@@ -51,6 +55,8 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     state = game,
     publish = plineWithContinuation,
     rollOne = rnd,
+    random = rn2,
+    rollDice = d,
     die = finishHeroDeath,
     name: requestedName,
     killer: requestedKiller,
@@ -99,6 +105,11 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
         && material !== undefined && [GEMSTONE, MINERAL].includes(material) && passesRocks) {
         await publish(requestedName === undefined
             ? "It doesn't harm you." : 'It passes harmlessly through you.');
+    } else if (object.oclass === POTION_CLASS) {
+        const impact = await hitHeroWithThrownPotion(object, {
+            state, publish, random, rollOne, rollDice, source: 'propelled',
+        });
+        return { hit: true, died: impact.heroDied };
     } else {
         if (material === SILVER && heroHatesSilver(state)) {
             await publish('The silver sears your flesh!');
