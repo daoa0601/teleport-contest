@@ -141,6 +141,30 @@ void test('POSIX message patterns treat backslash-d as a literal letter', async 
     assert.equal(topline(), '123');
 });
 
+for (const [pattern, hidden, visible] of [
+    ['A \\s+ bell', 'A sss bell', 'A   bell'],
+    ['A \\S+ bell', 'A SSS bell', 'A loud bell'],
+    ['\\w+', 'www', 'word'],
+    ['\\W+', 'WWW', '!!!'],
+    ['\\bbell\\b', 'bbellb', 'bell'],
+    ['\\Bbell\\B', 'BbellB', 'bell'],
+    ['\\<bell\\>', '<bell>', 'bell'],
+    ["\\`bell\\'", "`bell'", 'bell'],
+    ['(bell)\\1', 'bell1', 'bellbell'],
+] as const) {
+    void test(`MSGTYPE treats native escaped characters in ${pattern} as literals`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "^${pattern}$"`);
+
+        await plineWithContinuation(hidden);
+        await plineWithContinuation(visible);
+        await flush_screen(1);
+
+        assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
+        assert.equal(topline(), visible);
+    });
+}
+
 for (const pattern of ['[[.a.]]', '[[=a=]]']) {
     void test(`the POSIX bracket expression ${pattern} matches its character`, async () => {
         freshPlayableRoom();

@@ -117,14 +117,7 @@ function posixRegexDiagnostic(error: SyntaxError): string {
 }
 
 function posixEscape(character: string): string {
-    // glibc's POSIX engine also accepts these word and string boundaries.
-    if (character === '<') return '(?<!\\w)(?=\\w)';
-    if (character === '>') return '(?<=\\w)(?!\\w)';
-    if (character === '`') return '^';
-    if (character === "'") return '(?![\\s\\S])';
-    if (character === 's') return '[ \\t\\r\\n\\v\\f]';
-    if (character === 'S') return '[^ \\t\\r\\n\\v\\f]';
-    // ERE does not interpret JavaScript's \d, \n, \x, or \u escapes.
-    if (/[a-zA-Z0]/.test(character) && !'bBwW'.includes(character)) return character;
-    return `\\${character}`;
+    // The macOS recorder treats escaped letters, digits and non-operators
+    // literally; only JavaScript's expression operators still need escaping.
+    return '\\^$.*+?()[]{}|'.includes(character) ? `\\${character}` : character;
 }
