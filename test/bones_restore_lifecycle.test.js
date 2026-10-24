@@ -5,9 +5,12 @@ import { DOOR, D_NODOOR, HWALL, SHOP_WALL_COST } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
+import { STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';
 import { addShopDamage } from '../js/shop_damage.js';
+import { floorObject } from './support/game-objects.js';
+import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
@@ -29,6 +32,25 @@ void test('bones are abandoned if the storage backend cannot unlink them', async
     await mklev();
     assert.equal(!!game._restoredBones, false);
     assert.equal(storage.length, 1);
+});
+void test('bones consumed by another game during the unlink prompt are abandoned', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    await floorObject(STATUE, 12, 10, { oname: 'Ancestor' });
+    assert.equal(saveBonesLevel(), true);
+    const key = storage.key(0);
+    assert.ok(key, 'saving bones must create a storage entry');
+    bonesRoom(storage);
+    const input = resetInputState();
+    input.beforeRead = () => {
+        if (/Unlink bones\?/.test(game._pending_message))
+            storage.removeItem(key);
+        input.feed('y');
+    };
+    await mklev();
+    assert.equal(floorObjects(requireGameLevel()).some(object => object.oname === 'Ancestor'), false, 'the new level must not retain possessions from bones consumed by another game');
+    assert.equal(!!game._restoredBones, false);
+    assert.equal(storage.length, 0);
 });
 for (const wizard of [false, true]) {
     void test(`unusable bones are discarded${wizard ? ' after only the wizard unlink question' : ' with a reassuring message'}`, async () => {

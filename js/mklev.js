@@ -3512,6 +3512,9 @@ export function deleteBonesLevel() {
         return false;
     try {
         const key = bonesStorageKey();
+        // Native unlink fails if another game has already consumed these bones.
+        if (storage.getItem(key) === null)
+            return false;
         storage.removeItem(key);
         return storage.getItem(key) === null;
     }
