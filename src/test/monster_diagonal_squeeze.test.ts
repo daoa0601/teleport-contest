@@ -15,7 +15,7 @@ for (const species of ['fire elemental', 'air elemental', 'black pudding']) {
         level.requireAt(10, 11).typ = STONE;
         level.requireAt(11, 10).typ = STONE;
 
-        assert.equal(mfndpos(monster, game).some(square => square.x === 11 && square.y === 11),
+        assert.equal((await mfndpos(monster, game)).some(square => square.x === 11 && square.y === 11),
             species !== 'fire elemental',
             'a large fire elemental is unsolid but has no shape that can squeeze through');
     });

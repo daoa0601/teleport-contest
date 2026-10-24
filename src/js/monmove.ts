@@ -1577,11 +1577,11 @@ function monsterCannotSqueezeThrough(monster: Monster, state: PlayingGameState) 
 
 // C mon.c:mfndpos(). Scan x first, then y; finding the real hero updates
 // perception before later squares are classified against the apparent hero.
-export function mfndpos(
+export async function mfndpos(
     monster: Monster,
     state: PlayingGameState,
     flags: number = monAllowFlags(monster, state),
-): MonsterMoveCandidate[] {
+): Promise<MonsterMoveCandidate[]> {
     requirePerceivedHero(monster);
     const positions: MonsterMoveCandidate[] = [];
     const x = monster.mx,
@@ -1749,7 +1749,10 @@ export function mfndpos(
                     continue;
                 const trap = trapAt(state, nx, ny);
                 if (trap) {
-                    if (trap.ttyp <= 0 || trap.ttyp >= TRAPNUM) continue;
+                    if (trap.ttyp <= 0 || trap.ttyp >= TRAPNUM) {
+                        await impossible(`A monster looked at a very strange trap of type ${trap.ttyp}.`, { state });
+                        continue;
+                    }
                     if (
                         trap.ttyp === TELEP_TRAP &&
                         trap.teledest &&
@@ -3188,7 +3191,7 @@ async function movePet(
         };
     }
     const allowFlags = monAllowFlags(monster, state, rollOne, calls);
-    const candidates = mfndpos(monster, state, allowFlags);
+    const candidates = await mfndpos(monster, state, allowFlags);
     const uncursedCount = candidates.filter(
         ({ x, y }) => !(state?.level?.objects?.[x]?.[y] || []).some((object) => object.cursed),
     ).length;
@@ -3649,7 +3652,7 @@ async function moveHostile(
         && dist2(oldx, oldy, monster.mux, monster.muy) <= 8)
         capabilities.canTunnel = false;
     const allowFlags = monAllowFlags(monster, state, rollOne, calls);
-    const candidates = mfndpos(monster, state, allowFlags);
+    const candidates = await mfndpos(monster, state, allowFlags);
     if (!candidates.length && !isUnicorn(monster)) {
         const defense = findMonsterDefensiveItem(monster, state, { tryEscape: true, random });
         if (defense && (await useMonsterDefensiveItem(monster, defense, { state, random, rollDice, rollOne })).nativeResult) {
@@ -4361,7 +4364,7 @@ async function moveSpecial(
         avoid = false;
         approach = 0;
     }
-    const candidates = mfndpos(monster, state, monAllowFlags(monster, state, rollOne, calls));
+    const candidates = await mfndpos(monster, state, monAllowFlags(monster, state, rollOne, calls));
     if (
         monster.isshk &&
         avoid &&

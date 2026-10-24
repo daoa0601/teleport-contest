@@ -33,7 +33,7 @@ for (const ringSlot of [null, 'inventory', 'uleft', 'uright']) {
         assert.deepEqual([game.u.ux, game.u.uy], [14, 10]);
         const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
         monsterLearnsTrap(goblin, trap);
-        assert.equal(mfndpos(goblin, game).some(square => square.x === 11 && square.y === 10), !ringSlot || ringSlot === 'inventory');
+        assert.equal((await mfndpos(goblin, game)).some(square => square.x === 11 && square.y === 10), !ringSlot || ringSlot === 'inventory');
     });
 }
 for (const blockedBy of ['fog genocide', 'protection from shape changers']) {
@@ -45,18 +45,18 @@ for (const blockedBy of ['fog genocide', 'protection from shape changers']) {
         const location = level.requireAt(11, 10);
         location.typ = DOOR;
         location.doormask = D_LOCKED;
-        const canPass = () => {
+        const canPass = async () => {
             requirePlayingGame(game);
-            return mfndpos(wolf, game).some(square => square.x === 11 && square.y === 10);
+            return (await mfndpos(wolf, game)).some(square => square.x === 11 && square.y === 10);
         };
-        assert.equal(canPass(), true);
+        assert.equal(await canPass(), true);
         if (blockedBy === 'fog genocide') {
             assert.ok(game.mvitals);
             game.mvitals[MONSTER_NAME.indexOf('fog cloud')] = { born: 0, died: 0, mvflags: G_GENOD };
         }
         else
             game.u.protectionFromShapeChangers = true;
-        assert.equal(canPass(), false);
+        assert.equal(await canPass(), false);
     });
 }
 void test('a xorn locates an invisible gold carrier for its adjacent attack', async () => {

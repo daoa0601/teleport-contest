@@ -118,17 +118,17 @@ void test('sanctuary blocks entry from outside but does not block a melee destin
     location.typ = ROOM;
     location.roomno = NO_ROOM;
     placeMonsterAt(monster, x - 1, y);
-    const canEnter = () => {
+    const canEnter = async () => {
         requirePlayingGame(game);
-        return mfndpos(monster, game).some(square => square.x === x && square.y === y);
+        return (await mfndpos(monster, game)).some(square => square.x === x && square.y === y);
     };
-    assert.equal(canEnter(), false);
+    assert.equal(await canEnter(), false);
     game.u.ualign.record = -4;
-    assert.equal(canEnter(), true);
+    assert.equal(await canEnter(), true);
     game.u.ualign.record = 10;
     game.u.ux = x;
     game.u.uy = y;
     updateHeroRoomMembership(game);
-    assert.equal(canEnter(), true, 'an adjacent hero can be attacked across the boundary');
+    assert.equal(await canEnter(), true, 'an adjacent hero can be attacked across the boundary');
 });
 //# sourceMappingURL=monster_sanctuary.test.js.map

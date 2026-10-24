@@ -15,8 +15,8 @@ for (const species of ['goblin', 'large kobold', 'gnome lord', 'dwarf lord', 'Wo
         requirePlayingGame(game);
         const zombie = await createMonsterAt('kobold zombie', 10, 10, MM_ANGRY | NO_MINVENT);
         const living = await createMonsterAt(species, 11, 10, MM_ANGRY | NO_MINVENT);
-        assert.ok(mfndpos(zombie, game).some(square => square.x === living.mx && square.y === living.my && square.info & ALLOW_M));
-        assert.ok(mfndpos(living, game).some(square => square.x === zombie.mx && square.y === zombie.my && square.info & ALLOW_M), 'a potential zombie victim can fight back');
+        assert.ok((await mfndpos(zombie, game)).some(square => square.x === living.mx && square.y === living.my && square.info & ALLOW_M));
+        assert.ok((await mfndpos(living, game)).some(square => square.x === zombie.mx && square.y === zombie.my && square.info & ALLOW_M), 'a potential zombie victim can fight back');
     });
 }
 void test('a goblin corpse requested for zombification is scheduled to rise', async () => {

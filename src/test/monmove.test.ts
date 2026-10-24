@@ -353,11 +353,11 @@ void test('an engulfer carries only a form which fits through iron bars', async 
     game.u.uswallow = 1;
     game.u.mtimedone = 0;
 
-    assert.equal(mfndpos(fogCloud, game).some(position =>
+    assert.equal((await mfndpos(fogCloud, game)).some(position =>
         position.x === 11 && position.y === 10), false);
 
     game.u.mtimedone = 10;
     game.u.umonnum = 106;
-    assert.equal(mfndpos(fogCloud, game).some(position =>
+    assert.equal((await mfndpos(fogCloud, game)).some(position =>
         position.x === 11 && position.y === 10), true);
 });

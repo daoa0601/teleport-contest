@@ -306,7 +306,7 @@ void test('movement admits a bulky amorphous carrier through a locked door but r
         assert.equal(monsterCanOoze(monster), false);
         assert.equal(monsterCanFog(monster, game), false);
 
-        const destinations = mfndpos(monster, game);
+        const destinations = await mfndpos(monster, game);
 
         assert.equal(destinations.some(point => point.x === 13 && point.y === 10), species === 'acid blob',
             `${species}: native movement admits an amorphous body independently of can_ooze's inventory rule`);
