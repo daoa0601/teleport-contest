@@ -253,10 +253,10 @@ async function settleLiquid(options, remaining) {
     if (isLavaAt(x, y)) {
         if (!options.jumping || remaining.value >= 2)
             await plineWithContinuation('You move over some lava.', { noRepeat: true });
-        return null;
+        return false;
     }
     if (!isPoolAt(x, y) || game.u.uinwater)
-        return null;
+        return false;
     const staysAboveWater = game.u?.levitating || game.u?.levitation
         || game.u.flying
         || heroHasWaterWalking(game) || options.jumping;
@@ -265,18 +265,22 @@ async function settleLiquid(options, remaining) {
             && (!options.jumping || remaining.value >= 2)) {
             await plineWithContinuation(`You move over ${isMoatAt(x, y) ? 'a moat' : 'a pool'}.`, { noRepeat: true });
         }
-        return null;
+        return false;
     }
     setMulti(0);
     game._helplessReason = null;
     game._helplessDoneMessage = null;
-    return heroLiquidEffects({
+    // C hurtle_step() calls drown() directly, then stops even if a swimmer
+    // survives in place. pooleffects() would check the steed too early.
+    await heroLiquidEffects({
+        entry: 'drown',
         chooseTeleportDestination: options.chooseTeleportDestination ?? null,
         applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
             oldx: from.x, oldy: from.y, newx: to.x, newy: to.y,
             pick, trapOptions: hurtleTrapOptions(options),
         }),
     });
+    return true;
 }
 async function moveOneSquare(x, y, options, remaining) {
     requirePlayingGame(game);
@@ -322,11 +326,10 @@ async function moveOneSquare(x, y, options, remaining) {
     const currentLocation = game.level.at(x, y);
     if (!previousLocation || !currentLocation)
         throw new Error(`Hurtle moved between invalid map cells ${oldx},${oldy} and ${x},${y}`);
-    if (options.jumping && previousLocation.typ !== currentLocation.typ)
+    if (previousLocation.typ !== currentLocation.typ)
         await switchHeroTerrain(game);
     await checkSpecialRoom();
-    const liquid = await settleLiquid(options, remaining);
-    if (liquid?.moved || liquid?.died)
+    if (await settleLiquid(options, remaining))
         return false;
     const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
     if (await triggerLandingTrap(trap, options, remaining))
