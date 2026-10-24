@@ -18,7 +18,8 @@ import { resetHeroFaint } from './hunger.js';
 import { heroIsDeaf } from './senses.js';
 import { heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay } from './command_state.js';
+import { stopHeroOccupation } from './occupation.js';
 import { canSpotMonster, map_invisible } from './display.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { angerMonster } from './monster_anger.js';
@@ -213,9 +214,7 @@ export async function continueVaultGuardArrival(state = game) {
         await removeMonsterFromGame(guard);
         return true;
     }
-    state._occupation = null;
-    if ((state.multi ?? 0) > 0)
-        endVoluntaryMultiTurn(state);
+    await stopHeroOccupation(state);
     await displayMessageWindow();
     const response = await readGuardName();
     if (state.u.ualign?.type === 1 && !response.toLowerCase().startsWith(state.plname.toLowerCase()))

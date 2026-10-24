@@ -78,6 +78,28 @@ void test('a lawful hero loses alignment for lying to a vault guard', async () =
     assert.equal(game.u.ualign.record, 4);
 });
 
+void test('a guard reports interrupted work before asking the hero name', async () => {
+    arrivingGuard();
+    game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
+    const messages: string[] = [];
+    const input = resetInputState();
+    let answered = false;
+    input.beforeRead = () => {
+        const text = game.nhDisplay?.grid.slice(0, 3)
+            .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('') ?? '';
+        messages.push(text);
+        if (text.includes('Hello stranger, who are you?')) {
+            if (!answered) input.feed('TestHero\n');
+            answered = true;
+        } else input.feed(' ');
+    };
+
+    await continueVaultGuardArrival();
+
+    assert.match(messages.join('\n'), /You stop wiping your face\..*\n.*Hello stranger, who are you\?/);
+    assert.equal(game._occupation, null);
+});
+
 void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
     const level = arrivingGuard();
     game._vaultGuardArrivalPending = null;
