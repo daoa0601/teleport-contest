@@ -498,46 +498,45 @@ Continue from the earliest shared native/JavaScript difference and read the
 whole owning C/Lua mechanic. Shared implementations and passing behavior tests
 do not establish completeness.
 
-Fresh native batches 3711-4110 (120,000 sessions, recorded and scored on
+Fresh native batches 3711-4630 (276,000 sessions, recorded and scored on
 Actions) fail only in single sessions, each fixed at its owner: gas clouds over
 boulders, lycanthrope `dmgval()`, mind-blast `fmon` order, exhaustion killer
 format, liquid relocation redraws, `doup()`/`dodown()` move-command state,
 returning-weapon redraws, `getpos()` status flushing, `mintrap()` escape rolls
 for trapped monsters (and every immediate-trap caller, including boiled pools),
-and too-wide `putstr` windows that overlay only their own rows.
+too-wide `putstr` windows that overlay only their own rows, and a caught
+returning weapon counted as worn armor in `passivemm()`. Batches 4071-4630
+have no failures.
 
-Source reviews closed several listed gaps: the inventory-menu case
-`c069e440` matches all 12 screens, menus choose their origin at display time
-from `menu_overlay`, bulk take-off (`A`) and its `reset_occupations()` on
-engulfing are native, shopkeeper pickup quotes (including the deaf list price
-and bill overflow) match `addtobill()`, Astral `gain_guardian_angel()` runs
-from `final_level()`, the genocide listing and its dump rows follow
-`list_genocided()`, and the starting-pet options follow `optfn_pettype()` and
-`makedog()`.
+Source reviews closed the listed gaps for the inventory-menu case `c069e440`,
+menu origins, bulk take-off, shopkeeper pickup quotes, Astral guardian angels,
+the genocide listing, starting-pet options and their configuration errors,
+final attribute descriptions, starting-pony saddles, formatter `impossible()`
+diagnostics (invalid leashes, missing bills) at awaited boundaries, the tourist
+disaster cursors (seed5006 matches every cursor), `getobj()` typed counts and
+NUL cancellation, `dothrow.c` fire/throw dispatch, pet target safety, steed
+relocation and dismount landing, monster movement diagnostics, iron bars,
+hurtle terrain changes, `drown()` pool continuity via `u.dx`/`u.dy`, failed and
+guessed travel steps, and the whole `findtravelpath()` search.
 
-The shared `windows.ts` layout still hardcodes terminal dimensions and needs
-review of native half-screen limits, multiselect page origins, truncation,
-pager widths, and retained-menu clipping on resize.
+Whole-file C audits since then: `vault.c`, `mthrowu.c`, `explode.c`,
+`dbridge.c`, `wizard.c`, `wield.c`, `allmain.c`, `do_name.c`, `getpos.c`,
+`sit.c`, `were.c`/`exper.c`, `worm.c`, `iactions.c`, `draft_message()`
+callers and `chest_trap()`. Files without a whole-file audit include
+`u_init.c`/`role.c`, `rumors.c`, `mondata.c`, `mkmap.c`, `mplayer.c`,
+`bones.c` and `pline.c`.
 
-Continue the naming caller/dependency review. Invalid leash references and
-missing bills still need native `impossible()` output at an awaited boundary;
-the synchronous formatter currently cannot publish those diagnostics. Several
-other callers retain local vowel-only article checks and need source review.
+The shared `windows.ts` layout still hardcodes terminal dimensions; native
+live resize (`resize_tty()`) is unported.
 
-The tourist disaster cursor mismatch remains open. Its random stream and
-screen cells match, but three cursor positions differ; review the shared prompt
-owner before changing it. Do not add case-specific cursor behavior.
-
-The inventory display boundary is implemented; continue reviewing remaining
-`getobj()` callers, admission rules, and typed-count handling against their
-whole native functions. Ranged slot dispatch, shared pet combat, forced steed
-attacks, monster movement permissions, and door/bar actions likewise need
-continued caller/dependency review. Passing behavior tests do not establish
-completeness.
-
-Other known gaps include host-system mail, hardcoded final attribute
-descriptions, dumplog file writing, native configuration-error messages for
-pet options, and starting-pony saddle identification.
+Known open gaps: standalone `remove_worm()`/`wormgone()` leaves the worm head
+mapped; worm flipping clips segments instead of transforming the chain (no
+`#wizfliplevel`); `postmov()`'s accessibility `notice_mon()` hook; returning
+artifacts with an absent attacker; `validvamp()`'s `monpolycontrol` prompt;
+experience-percentage status highlighting; host-system mail; dumplog file
+writing. Two public sessions differ only on screens: the enhance-menu clipping
+in seed0107 and the recorder host's configuration path in seed2200's option
+help.
 
 Run one full suite or corpus at a time. Keep ownership of yielded sessions until
 exit, and terminate owned children if a check is abandoned. Prefer focused
