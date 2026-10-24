@@ -422,9 +422,8 @@ import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from '.
 import {
     doquit,
     finishHeroDeath,
-    vanquishedLines, listGenocided,
+    listGenocided, listVanquished,
 } from './end.js';
-import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import {
     applyHeroContactPassive,
 } from './monster_passive.js';
@@ -4352,13 +4351,7 @@ async function doChronicle() {
 }
 
 async function doVanquished() {
-    if (!hasRecordedMonsterDeaths()) {
-        await pline('No creatures have been vanquished.');
-    } else {
-        await showDisclosureOverlay(vanquishedLines(), {
-            restoreUnderlay: true,
-        });
-    }
+    await listVanquished(game.iflags.menu_requested ? 'A' : 'y');
     game._pending_message = '';
     game.context.move = 0;
 }

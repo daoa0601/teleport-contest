@@ -404,6 +404,22 @@ export function vanquishedLines(ask = false) {
         lines.push(`${total} creatures vanquished.`);
     return lines;
 }
+// C insight.c:dovanquished() -> list_vanquished().  The 'm' command prefix
+// (iflags.menu_requested) passes 'A' and forces the sort-order choice even
+// when nothing has been vanquished yet; Escape there keeps the old order
+// and the (possibly empty) list still follows.
+export async function listVanquished(defquery = 'y') {
+    if (defquery === 'A')
+        await setVanqOrder(true);
+    if (!vanquishedTypeCount()) {
+        if (!game.program_state.gameover)
+            await pline('No creatures have been vanquished.');
+        return;
+    }
+    await showDisclosureOverlay(vanquishedLines(), {
+        restoreUnderlay: true,
+    });
+}
 // C insight.c:num_gone()/num_genocides()/num_extinct(): end-of-game
 // disclosure reports genocides and extinctions together; uniques are
 // never listed, and a species carrying both flags counts once.

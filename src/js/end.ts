@@ -507,6 +507,23 @@ export function vanquishedLines(ask = false): TextMenuEntry[] {
     return lines;
 }
 
+// C insight.c:dovanquished() -> list_vanquished().  The 'm' command prefix
+// (iflags.menu_requested) passes 'A' and forces the sort-order choice even
+// when nothing has been vanquished yet; Escape there keeps the old order
+// and the (possibly empty) list still follows.
+export async function listVanquished(defquery: 'y' | 'A' = 'y'): Promise<void> {
+    if (defquery === 'A') await setVanqOrder(true);
+    if (!vanquishedTypeCount()) {
+        if (!game.program_state.gameover)
+            await pline('No creatures have been vanquished.');
+        return;
+    }
+    await showDisclosureOverlay(vanquishedLines(), {
+        restoreUnderlay: true,
+    });
+}
+
+
 interface GoneSpecies {
     mnum: number;
     genocided: boolean;
