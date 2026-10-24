@@ -8,12 +8,13 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE, DAGGER, ROCK } from '../js/object_data.js';
 import { objectQuantity } from '../js/object_stack.js';
+import { polymonHero } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { UNENCUMBERED, nearCapacity, objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
-import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -228,5 +229,15 @@ void test('a fatal artifact snatch does not go on to anger the disarmed monster'
     assert.match(result.text, /blasted by/u);
     assert.equal(game.program_state.gameover, true);
     assert.equal(result.bugbear.mpeaceful, 1);
+});
+// C apply.c:3213-3231: a golem hero becomes a stone golem before any fatal
+// message, so the snatched corpse stays free and goes into the inventory.
+void test('a flesh golem snatching a cockatrice corpse turns to stone golem and holds it', async () => {
+    const result = await snatchClubFromBugbear(async () => { await polymonHero(MONSTER_NAME.indexOf('flesh golem')); }, async () => await corpseObject(MONSTER_NAME.indexOf('cockatrice'), {}));
+    assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('stone golem'));
+    assert.ok(!game.program_state.gameover);
+    assert.doesNotMatch(result.text, /fatal mistake/u);
+    assert.ok(game.inventory.includes(result.club));
+    assert.equal(floorObjectsAt(result.level, game.u.ux, game.u.uy).includes(result.club), false);
 });
 //# sourceMappingURL=bullwhip_apply.test.js.map
