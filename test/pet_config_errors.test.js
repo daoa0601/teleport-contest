@@ -133,6 +133,32 @@ void test('a pet alias applies to remaining duplicate warnings on its line and r
     await engine.runUntilInputNeeded();
     assert.equal(engine.state.preferred_pet, '');
 });
+for (const alias of ['permablind', '!permadeaf', 'prayconfirm', 'male', 'character:ranger', 'align:neutral', 'colour']) {
+    void test(`a later ${alias} alias adds the pet alias to a duplicate warning`, async () => {
+        const engine = await start(`OPTIONS=pettype:cat,pettype:dog,${alias}`);
+        assert.match(screen(engine), /Line 3: compound option specified multiple times: pettype \(via alias: pet\)\./);
+        assert.match(screen(engine), /1 error in \.nethackrc\./);
+    });
+}
+void test('an alias to the left of duplicate pet options does not affect their warning', async () => {
+    const engine = await start('OPTIONS=permablind,pettype:cat,pettype:dog');
+    assert.match(screen(engine), /Line 3: compound option specified multiple times: pettype\.\n/);
+});
+for (const option of ['dogname', 'catname', 'horsename']) {
+    void test(`a duplicate ${option} after another alias reports its absent native alias`, async () => {
+        const engine = await start(`OPTIONS=${option}:Sirius,${option}:Orion,permablind`);
+        const text = screen(engine).replaceAll('\n', '');
+        assert.ok(text.includes(`compound option specified multiple times: ${option} (via alias: (null)).`), text);
+    });
+}
+void test('parsed file settings are live while a pet error awaits acknowledgment', async () => {
+    const engine = await start('OPTIONS=pettype:none,catname:Mews,!dogname');
+    assert.match(screen(engine), /The dogname option/);
+    assert.equal(engine.state.preferred_pet, 'n');
+    assert.equal(engine.state.flags.catname, 'Mews');
+    assert.equal(engine.state.plname, 'Traveler');
+    assert.equal(engine.state.level, null);
+});
 async function startEnvironment(nethackOptions, options = '') {
     const engine = new Engine({
         seed: 73, datetime: '20260830120000', display: new GameDisplay(null),
@@ -142,6 +168,21 @@ async function startEnvironment(nethackOptions, options = '') {
     await engine.runUntilInputNeeded();
     return engine;
 }
+void test('each configuration source applies settings before its own acknowledgment', async () => {
+    const engine = await startEnvironment('pettype:cat,dogname:Wags,!catname', 'OPTIONS=pettype:none,catname:Mews,!dogname');
+    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.equal(engine.state.preferred_pet, 'n');
+    assert.equal(engine.state.flags.catname, 'Mews');
+    assert.equal(engine.state.flags.dogname, undefined);
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.match(screen(engine), /1 error in NETHACKOPTIONS\./);
+    assert.match(screen(engine), /1 error in \.nethackrc\./);
+    assert.equal(engine.state.preferred_pet, 'c');
+    assert.equal(engine.state.flags.catname, 'Mews');
+    assert.equal(engine.state.flags.dogname, 'Wags');
+    assert.equal(engine.state.level, null);
+});
 void test('environment errors omit file lines and retain the last valid pet preference', async () => {
     const engine = await startEnvironment('pettype:lizard', 'OPTIONS=pettype:cat');
     assert.match(screen(engine), / \* Unrecognized pet type 'lizard'\./);
@@ -207,13 +248,19 @@ void test('spaces before a continuation remain part of a pet name', async () => 
     const engine = await start('OPTIONS=dogname:Sir  \\\nWags');
     assert.equal(engine.state.flags.dogname, 'Sir   Wags');
 });
-void test('spaces before a continuation count toward the option length limit', async () => {
-    const engine = await start(`OPTIONS=dogname:${'a'.repeat(120)} \\\n# finish`);
-    assert.match(screen(engine), /Option too long, max length is 128 characters\./);
-    engine.inputGate.feed(' ');
-    await engine.runUntilInputNeeded();
-    assert.equal(engine.state.flags.dogname, undefined);
-});
+for (const ending of ['# finish', ' \t']) {
+    void test(`a continuation ending with ${JSON.stringify(ending)} trims trailing spaces before the option limit`, async () => {
+        const engine = await start(`OPTIONS=dogname:${'a'.repeat(120)} \t\\\n${ending}`);
+        assert.equal(engine.state.flags.dogname, 'a'.repeat(PL_PSIZ - 1));
+        assert.equal(engine.state.moves, 1);
+        assert.doesNotMatch(screen(engine), /Option too long|Hit space to continue/);
+    });
+    void test(`a continuation ending with ${JSON.stringify(ending)} still rejects a 129-byte option`, async () => {
+        const engine = await start(`OPTIONS=dogname:${'a'.repeat(121)} \t\\\n${ending}`);
+        assert.match(screen(engine), /Option too long, max length is 128 characters\./);
+        assert.equal(engine.state.flags.dogname, undefined);
+    });
+}
 void test('a pet type value keeps the space after its delimiter for native rejection', async () => {
     const engine = await start('OPTIONS=pettype:   dog');
     assert.match(screen(engine), /Unrecognized pet type '   dog'\./);

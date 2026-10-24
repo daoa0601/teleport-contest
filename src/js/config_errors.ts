@@ -20,13 +20,12 @@ export interface ConfigurationErrorReport {
 // Startup parses options before init_nhwindows(), so pline() uses raw_print.
 // Each source ends with wait_synch()/getret(), before asking for a hero name
 // or creating the game windows. It does not use the gameplay message pager.
+// Keep earlier sources visible until the caller leaves configuration startup.
 export async function displayConfigurationErrors(reports: readonly ConfigurationErrorReport[]): Promise<void> {
     const display = game.nhDisplay;
     if (!display) return;
-    let reported = false;
     for (const report of reports) {
         if (!report.errors.length) continue;
-        reported = true;
         let previousLine: number | null = null;
         for (const error of report.errors) {
             if (error.lineNumber !== previousLine) rawConfigurationMessage(`\n${error.sourceLine}`);
@@ -47,7 +46,6 @@ export async function displayConfigurationErrors(reports: readonly Configuration
         do key = await nhgetch();
         while (![27, 32, 10, 13].includes(key));
     }
-    if (reported) display.clearScreen();
 }
 
 function rawConfigurationMessage(message: string): void {

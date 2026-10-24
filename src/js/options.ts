@@ -29,6 +29,14 @@ import {
 type PetPreference = '' | 'c' | 'd' | 'h' | 'n';
 type PetOption = 'pettype' | 'dogname' | 'catname' | 'horsename';
 
+// optlist.h aliases that reach parseoptions()'s alias pass. "customsymbols"
+// already matches its canonical name first.
+const CONFIGURATION_ALIASES = new Set([
+    'character', 'align', 'altkeyhandler', 'permablind', 'colour', 'customcolours',
+    'permadeaf', 'male', 'use_menu_glyphs', 'hicolor', 'prayconfirm', 'pet',
+    'termcolumns', 'use_truecolour', 'videocolours',
+]);
+
 interface ConfigurationSettings {
     configErrors: ConfigurationErrorReport[];
     flags: GameFlags;
@@ -239,13 +247,17 @@ export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): 
     const fileReport: ConfigurationErrorReport = { source: sources.fileName || '.nethackrc', errors: [], standout: false };
     parseConfiguration(rc, result, fileReport, true);
     result.configErrors.push(fileReport);
-    if (sources.nethackOptions != null) {
-        const environmentReport: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [], standout: !!result.flags.standout };
-        parseConfiguration(sources.nethackOptions, result, environmentReport, false);
-        result.configErrors.push(environmentReport);
-    }
     result.commandBindings.finishConfiguration();
+    if (sources.nethackOptions != null) parseNethackOptions(sources.nethackOptions, result);
     return result;
+}
+
+export function parseNethackOptions(options: string, result: NethackConfiguration): ConfigurationErrorReport {
+    const report: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [], standout: !!result.flags.standout };
+    parseConfiguration(options, result, report, false);
+    result.configErrors.push(report);
+    result.commandBindings.finishConfiguration();
+    return report;
 }
 
 type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'commandBindings'> & {
@@ -285,10 +297,12 @@ function parseConfiguration(
         const addError = (message: string) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
         };
-        const checkDuplicatePetOption = (name: PetOption, alias = false) => {
+        const checkDuplicatePetOption = (name: PetOption, usingAlias: boolean) => {
             if (!fromFile) return;
+            // Pet names have no alias; C formats that null pointer as "(null)".
+            const alias = usingAlias ? ` (via alias: ${name === 'pettype' ? 'pet' : '(null)'})` : '';
             if (petOptionsSeen.has(name))
-                addError(`compound option specified multiple times: ${name}${alias ? ' (via alias: pet)' : ''}`);
+                addError(`compound option specified multiple times: ${name}${alias}`);
             petOptionsSeen.add(name);
         };
 
@@ -314,7 +328,7 @@ function parseConfiguration(
         if (prefix === undefined) continue;
         const optionList = bytes.subarray(new TextEncoder().encode(prefix).length);
 
-        let usingPetAlias = false;
+        let usingAlias = false;
         for (const optionBytes of configurationOptions(optionList)) {
             if (optionBytes.length > BUFSZ / 2) {
                 addError(`Option too long, max length is ${BUFSZ / 2} characters`);
@@ -342,8 +356,12 @@ function parseConfiguration(
             }
 
             const colonIdx = stripped.search(/[:=]/);
-            const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
+            const optionName = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trimEnd().toLowerCase();
+            const bindingOption = optionName.trimStart();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            // C retains using_alias while unwinding the right-to-left
+            // recursion, including aliases belonging to other options.
+            usingAlias ||= CONFIGURATION_ALIASES.has(optionName);
             if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
                 && bindingOption !== 'menu_objsyms' && bindingOption !== 'menu_overlay' && bindingOption !== 'menu_tab_sep') {
                 if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), bindingOption);
@@ -396,10 +414,7 @@ function parseConfiguration(
             // determine_ambiguities() permits three-letter name-option
             // abbreviations. Pettype needs four letters, or the alias "pet".
             if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
-                // C parseoptions() retains using_alias while unwinding the
-                // right-to-left recursion for the remaining options on this line.
-                usingPetAlias ||= bindingOption === 'pet';
-                checkDuplicatePetOption('pettype', usingPetAlias);
+                checkDuplicatePetOption('pettype', usingAlias);
                 const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
                 const preference = configuredPetType(value, negated);
                 if (preference !== null) {
@@ -413,7 +428,7 @@ function parseConfiguration(
                 ? (['dogname', 'catname', 'horsename'] as const).find(name => name.startsWith(bindingOption))
                 : undefined;
             if (petNameOption) {
-                checkDuplicatePetOption(petNameOption);
+                checkDuplicatePetOption(petNameOption, usingAlias);
                 if (negated) {
                     addError(`The ${petNameOption} option may not both have a value and be negated.`);
                     continue;
@@ -613,7 +628,11 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
             pending = joined.subarray(0, 4 * BUFSZ - 1);
         }
         if (continued || !pending.length) continue;
-        yield { bytes: pending, sourceLine, lineNumber };
+        // handle_config_section() calls trimspaces() on every completed
+        // statement, including one ended by a comment or blank line.
+        let end = pending.length;
+        while (end > 0 && (pending[end - 1] === 32 || pending[end - 1] === 9)) end--;
+        yield { bytes: pending.subarray(0, end), sourceLine, lineNumber };
         pending = new Uint8Array(0);
     }
 }
