@@ -6,6 +6,7 @@ import { bot, displayMessageWindow, redrawMap, flush_screen, pline, plineWithCon
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
+import { nomul } from './command_state.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
 import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
@@ -831,7 +832,16 @@ async function useContainerActions(container, { held = false, moreContainers = f
         return { spentTime: false, container };
     }
     if (container.otrapped) {
+        if (held) {
+            const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+            await plineWithContinuation(`You open ${name}...`);
+        }
         const trap = await triggerChestTrap(container);
+        if (!trap?.died && (game.multi ?? 0) >= 0) {
+            nomul(-1);
+            game._helplessReason = 'opening a container';
+            game._helplessDoneMessage = '';
+        }
         return {
             spentTime: true,
             stopLooting: true,

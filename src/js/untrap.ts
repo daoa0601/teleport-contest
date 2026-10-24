@@ -15,6 +15,7 @@ import { artifactById } from './artifacts.js';
 import { heroHasMagicKey } from './monster_key.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
+import { heroFingerName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
     DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED,
@@ -862,7 +863,7 @@ async function disarmBox(box: GameObject, {
     if (!force && (heroIsImpaired(state) || heroIsFumbling(state)
         || rollOne(75 + Math.trunc(level_difficulty() / 2)) > chance)) {
         const trap = await triggerChestTrap(box, {
-            state, disarm: true, publish, random, rollDice,
+            state, disarm: true, bodyPart: heroFingerName(state), publish, random, rollDice,
         });
         if (trap?.died) return;
     } else {
