@@ -644,13 +644,21 @@ export async function u_on_downstairs(): Promise<void> {
 // Object probabilities are mutable because gemstone rarity changes with
 // dungeon depth.  This is the level-dependent half of o_init.c.
 let objectProb = OBJECT_PROB.slice();
+export function initializeObjectProbabilities(): void {
+    objectProb = OBJECT_PROB.slice();
+    setGemProbabilities(0);
+}
+
 export function oinit(): void {
-    const firstGem = getObjectClassBounds(GEM_CLASS).first;
-    const lastRealGem = 460;
-    const ledger = Math.min(
+    setGemProbabilities(Math.min(
         ledgerNo(game.u?.uz),
         maxLedgerNo(),
-    );
+    ));
+}
+
+function setGemProbabilities(ledger: number): void {
+    const firstGem = getObjectClassBounds(GEM_CLASS).first;
+    const lastRealGem = 460;
     let first = firstGem;
     for (let j = 0; j < 9 - Math.trunc(ledger / 3); j++) {
         objectProb[first++] = 0;

@@ -6,6 +6,7 @@
 // partial; the implementation below is the source of truth.
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
+import { initializeObjectProbabilities } from './mklev.js';
 import type { TextMenuEntry, TextPage } from './windows.js';
 import { rn2 } from './rng.js';
 import { bot, clearMessageWindow, docrt, flush_screen, plineWithContinuation } from './display.js';
@@ -95,6 +96,7 @@ export function init_objects(): (string | null)[] {
     game._knownObjectTypes = new Set();
     game._objectCallNames = {};
     game._objectPriceQuotes = {};
+    initializeObjectProbabilities();
     return initializeObjectDescriptions();
 }
 
