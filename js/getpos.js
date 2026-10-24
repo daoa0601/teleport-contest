@@ -578,6 +578,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             ? lastDirtyMapCursor() : null;
         for (;;) {
             if (showGoal) {
+                await pline(movePrompt);
                 message = movePrompt;
                 showGoal = false;
             }
@@ -688,8 +689,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 game.iflags.autodescribe = !autoDescription();
                 clearMessageOnExit = true;
                 message = `Automatic description ${game.flags.verbose ? 'of features under cursor ' : ''}is ${autoDescription() ? 'on' : 'off'}.`;
+                await pline(message);
                 if (!autoDescription()) {
-                    await pline(message);
                     await flush_screen(1);
                     // show_goal_msg: the next loop pass pline()s the goal,
                     // which tty pages when it cannot share the notice's line.
@@ -706,18 +707,21 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 validity.cycle = null;
                 message = ['Not limiting targets.', 'Limiting targets to those in sight.',
                     'Limiting targets to those in same area.'][game.iflags.getloc_filter] ?? movePrompt;
+                await pline(message);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.menu')) {
                 clearMessageOnExit = true;
                 game.iflags.getloc_usemenu = !game.iflags.getloc_usemenu;
                 message = `${game.iflags.getloc_usemenu ? 'Using' : 'Not using'} a menu to show possible targets${game.iflags.getloc_usemenu ? " for 'm|M', 'o|O', 'd|D', and 'x|X'" : ''}.`;
+                await pline(message);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.moveskip')) {
                 clearMessageOnExit = true;
                 game.iflags.getloc_moveskip = !game.iflags.getloc_moveskip;
                 message = `${game.iflags.getloc_moveskip ? 'S' : 'Not s'}kipping over similar terrain when fastmoving the cursor.`;
+                await pline(message);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.self')) {
@@ -743,6 +747,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     if (!spots.length) {
                         const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
                         message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
+                        await pline(message);
                         continue;
                     }
                     const spot = await selectGetposMenu(spots, kind);
@@ -787,6 +792,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 clearMessageOnExit = false;
                 return null;
             }
+            await pline(message);
         }
     }
     finally {
