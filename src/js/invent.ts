@@ -35,7 +35,7 @@ import {
     STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE,
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { definiteName, objectCombatName, objectLooksUnique, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -504,25 +504,26 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
     const entries: { key: InventoryActionKey; text: string }[] = [];
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     const stack = item.quan > 1;
+    const plural = objectNameIsPlural(item, state);
     const shoot = ammunitionMatchesLauncher(item, state.uwep);
     if (item === state.uwep || item === state.uswapwep || item === state.uquiver) {
         const quivered = item === state.uquiver;
         const verb = quivered ? 'Quiver' : 'Wield';
         const action = quivered ? 'un-ready' : 'un-wield';
         const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
-        entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
+        entries.push({ key: '-', text: `${verb} '-' to ${action} ${plural ? `these ${noun}s` : `this ${noun}`}` });
     }
     const apply = itemApplyText(item, state);
     if (apply) entries.push({ key: 'a', text: apply });
     if (item.oclass !== COIN_CLASS && item.dknown && !item.oartifact && item.otyp !== SPE_NOVEL) {
         const named = !!(item.oextra?.oname || item.oname);
         entries.push({ key: 'c', text: `${named ? 'Rename or un-name' : 'Name'} ${
-            objectLooksUnique(item, state) ? 'the' : stack ? 'this stack of' : 'this specific'} ${itemName}` });
+            objectLooksUnique(item, state) ? 'the' : plural ? 'this stack of' : 'this specific'} ${itemName}` });
     }
     const callName = state._objectCallNames?.[item.otyp];
     if (item.dknown && objectTypeCallable(item, state) && (!objectTypeKnown(item, state) || callName)) {
         const noun = objectLooksUnique(item, state) ? definiteName(itemName, state)
-            : stack ? itemName : makePlural(itemName);
+            : plural ? itemName : makePlural(itemName);
         entries.push({ key: 'C', text: `${callName ? 'Re-call or un-call' : 'Call'} the type for ${noun}` });
     }
     if (!alreadyWorn) entries.push({ key: 'd', text: `Drop this ${stack ? 'stack' : 'item'}` });
