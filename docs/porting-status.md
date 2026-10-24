@@ -432,7 +432,13 @@ comparison with the previous green run (any newly failing session fails the
 run). `main` is fast-forwarded only to a SHA with a green run. Fresh native
 corpora are recorded and scored by `.github/workflows/fresh-batches.yml`.
 Do not run pool or fresh corpora locally; an eight-worker local pool run froze
-the development machine. Local triage now defaults to four workers.
+the development machine. Local triage now defaults to four workers. CI runs the
+behavior-test files four at a time (`TEST_CONCURRENCY=4`); local `npm test`
+stays serial.
+
+Unit branches land through PRs against `daoa/recovery-architecture`. A PR
+merges only when CI is green, no review thread is open, and the Codex review
+state on the PR is `completed`.
 
 ## Most recent native diagnostics
 
@@ -446,6 +452,16 @@ Verify run on `91120ea9`. No verified random call was lost; the ledgers hold
 350 eval and 363 public functions.
 
 ## Next work
+
+Fresh native batches 4671-4990 (96,000 sessions across all four kind mixes)
+score clean. Current work is a file-by-file audit of the pinned C sources:
+each unit compares one file branch by branch with its port and lands as a PR.
+Audited and merged so far include o_init, selvar, do_name, quest text,
+track/rect, extralev, insight, topten, calendar, restore, role, stairs,
+nhlobj, and a second hack.c pass; cfgfiles is in review. Files without an
+audit yet: nhlua, rnd, hacklib, symbols, glyphs, drawing, files, mdlib,
+coloratt, strutil, date, and second passes over the large mechanics files
+(trap, uhitm, mhitu, zap).
 
 Every eval-sample and pool session completes and public matches every random
 call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
