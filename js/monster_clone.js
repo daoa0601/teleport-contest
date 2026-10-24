@@ -56,6 +56,7 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
         mtrack: [],
     };
     delete clone.mextra;
+    delete clone.wormDetachedSegments;
     delete clone.edog;
     delete clone.emin;
     delete clone.epri;
