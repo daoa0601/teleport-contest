@@ -33,7 +33,7 @@ function valkyrieAtQuestEntrance() {
 void test('the quest leader calls the hero by role leader and home names', async () => {
     valkyrieAtQuestEntrance();
 
-    const call = await prepareMainQuestPortalCall(game);
+    const call = await prepareMainQuestPortalCall({}, game);
     assert.deepEqual(call, [
         'You receive a faint telepathic message from the Norn:',
         'Your help is urgently needed at the Shrine of Destiny!',
@@ -41,6 +41,6 @@ void test('the quest leader calls the hero by role leader and home names', async
         "You couldn't quite make out that last message.",
     ]);
 
-    const reminder = await prepareMainQuestPortalCall(game);
+    const reminder = await prepareMainQuestPortalCall({}, game);
     assert.deepEqual(reminder, ['You again sense the Norn pleading for help.']);
 });

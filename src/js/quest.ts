@@ -270,7 +270,9 @@ export async function prepareQuestArrival({ fromDepth }: {
 // (quest_portal first, then quest_portal_again, or _demand for Rogues).
 // Loading quest.lua consumes nhlib's alignment shuffle before its plines
 // collide with any pending level-teleport message.
-export async function prepareMainQuestPortalCall(g: GameState = game) {
+export async function prepareMainQuestPortalCall({ fromDepth }: {
+    fromDepth?: DungeonLocation;
+} = {}, g: GameState = game) {
     const event = g.u?.uevent || (g.u.uevent = {});
     const status = ensureQuestStatus(g);
     if (event.qcompleted || event.qexpelled || status.leader_is_dead)
@@ -289,6 +291,10 @@ export async function prepareMainQuestPortalCall(g: GameState = game) {
             || (hereIsEnd2 && branch.end1?.dnum === questDnum);
     });
     if (!entrance || currentDnum === questDnum) return null;
+    // do.c delivers the summons only when the previous level was outside
+    // the Quest branch (In_quest(&u.uz0)); the wizard forced-destination
+    // teleport can leave the Quest without using the portal.
+    if (fromDepth?.dnum === questDnum) return null;
 
     const messageId = event.qcalled
         ? g.urole?.key === 'rogue' ? 'quest_portal_demand' : 'quest_portal_again'

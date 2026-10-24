@@ -323,18 +323,18 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         && newDepth.dnum === game.valley_level.dnum
         && newDepth.dlevel === game.valley_level.dlevel;
     // A bones level runs the same arrival block as any other level:
-    // do.c:goto_level() delivers the deferred message and the Valley
-    // lines (do.c:1854-1872) before familiar_level_msg() (do.c:1875) and
-    // the remaining branch messages.  The special-level message never
-    // repeats here: gl.lev_message is transient, so C has none on a
-    // level reloaded from bones.
+    // do.c:goto_level() delivers the special-level message and the
+    // Valley lines (do.c:1856-1872) before familiar_level_msg()
+    // (do.c:1875) and the remaining branch messages.  The special-level
+    // message never applies here: gl.lev_message is transient, so C has
+    // none on a level reloaded from bones.
     const bonesArrival = game._restoredBones;
     if (bonesArrival) {
-        if (postMessage) {
-            await plineWithContinuation(postMessage);
-            postMessage = '';
-            await flushPendingTopline();
-        }
+        // maybe_lvltport_feedback() (do.c:2031) delivers only the
+        // "You materialize" line this early, and beforeGlow() above
+        // already did.  Any other deferred message waits until
+        // goto_level() has returned (deferred_goto(), do.c:2085-2096),
+        // after every arrival line below.
         if (enteredValley) {
             await plineWithContinuation(
                 'You arrive at the Valley of the Dead...',
@@ -374,13 +374,15 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     const questArrival = await prepareQuestArrival({
         fromDepth: oldDepth,
     });
-    // do.c suppresses the summons when arriving through the portal back
-    // from the quest (In_quest(&u.uz0)); every other arrival delivers it,
-    // cached level or not.
-    const questPortalCall = arrival === 'portal' ? null
-        : await prepareMainQuestPortalCall();
+    // do.c suppresses the summons when the previous level was inside the
+    // Quest (In_quest(&u.uz0)); the wizard forced-destination teleport
+    // can leave the Quest without the portal.  Every other arrival
+    // delivers it, cached level or not.
+    const questPortalCall = await prepareMainQuestPortalCall({
+        fromDepth: oldDepth,
+    });
     if (questArrival?.page || questArrival?.line) {
-        if (postMessage) {
+        if (!bonesArrival && postMessage) {
             await plineWithContinuation(postMessage);
             await flushPendingTopline();
         }
@@ -392,7 +394,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         }
     } else {
         if (questArrival) await displayPreparedQuestArrival(questArrival);
-        if (postMessage) await plineWithContinuation(postMessage);
+        if (!bonesArrival && postMessage) await plineWithContinuation(postMessage);
         // do.c:goto_level() announces a newly generated Rogue floor after
         // level-teleport feedback.  tty continuation therefore suspends on
         // the materialization line and exposes the classic Rogue map before
@@ -488,6 +490,13 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         })) return true;
     }
     await autopickupAtHero();
+    // deferred_goto() prints a deferred message that is not the
+    // materialization line only after goto_level() has finished
+    // (do.c:2096); bones arrivals hold it until here.
+    if (bonesArrival && postMessage) {
+        await plineWithContinuation(postMessage);
+        postMessage = '';
+    }
     if (game.program_state?.gameover) return true;
     game.u.uz0 = { ...game.u.uz };
     return true;
