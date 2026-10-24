@@ -250,7 +250,7 @@ const DIRECTION_NAMES = [
 function weaponInsightLines(final: EnlightenmentFinal = 0) {
     const lines: string[] = [];
     const message = (subject: string, present: string, past: string, what: string) =>
-        lines.push(`  ${subject}${final ? past : present}${what}.`);
+        lines.push(contractEnlightenment(`  ${subject}${final ? past : present}${what}.`));
     const are = (what: string) => message('You ', 'are ', 'were ', what);
     const have = (what: string) => message('You ', 'have ', 'had ', what);
     const weapon = game.uwep ?? null;

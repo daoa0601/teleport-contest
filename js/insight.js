@@ -242,7 +242,7 @@ const DIRECTION_NAMES = [
 // table, including two-weapon limits and pending #enhance eligibility.
 function weaponInsightLines(final = 0) {
     const lines = [];
-    const message = (subject, present, past, what) => lines.push(`  ${subject}${final ? past : present}${what}.`);
+    const message = (subject, present, past, what) => lines.push(contractEnlightenment(`  ${subject}${final ? past : present}${what}.`));
     const are = (what) => message('You ', 'are ', 'were ', what);
     const have = (what) => message('You ', 'have ', 'had ', what);
     const weapon = game.uwep ?? null;

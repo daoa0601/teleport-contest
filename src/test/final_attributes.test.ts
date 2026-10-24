@@ -8,14 +8,15 @@ import { advanceHeroPetrification, startHeroPetrification } from '../js/stoning.
 import { advanceHeroSickness, startHeroSickness } from '../js/hero_illness.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { ensureHeroSkills } from '../js/skills.js';
-import { DAGGER, LONG_SWORD, LUCKSTONE } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, LONG_SWORD, LUCKSTONE } from '../js/object_data.js';
 import {
-    ENL_GAMEOVERDEAD, P_BASIC, P_DAGGER, P_LONG_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
+    ENL_GAMEOVERDEAD, M_AP_OBJECT, P_BASIC, POOL, P_DAGGER, P_LONG_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
     SICK_NONVOMITABLE,
 } from '../js/const.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 // Page through end-of-game attribute disclosure for a hero who has died.
 async function deadHeroAttributes(): Promise<string[]> {
@@ -108,4 +109,27 @@ void test('a quitting two-weapon fighter learns each skill limit and stone luck'
     assert.ok(lines.includes('You were lucky.'));
     assert.ok(lines.includes('Good luck did not time out for you.'));
     assert.ok(lines.includes('You survived.'));
+});
+
+void test('a dead eel concealed in water was hiding in the pool', async () => {
+    freshRoomWithPolymorphedHero('giant eel').requireAt(game.u.ux, game.u.uy).typ = POOL;
+    game.u.uundetected = 1;
+    const lines = await deadHeroAttributes();
+    assert.ok(lines.includes('You were hiding in the pool of water.'));
+});
+
+void test('a dead hero disguised as gold was mimicking a gold piece', async () => {
+    freshRoomWithPolymorphedHero('jackal');
+    game.u.m_ap_type = M_AP_OBJECT;
+    game.u.mappearance = GOLD_PIECE;
+    const lines = await deadHeroAttributes();
+    assert.ok(lines.includes('You were mimicking a gold piece.'));
+    assert.ok(!lines.includes('You were hiding.'));
+});
+
+void test('a dead handless hero was not wielding anything, contracted', async () => {
+    freshRoomWithPolymorphedHero('jackal');
+    game.uwep = null;
+    const lines = await deadHeroAttributes();
+    assert.ok(lines.includes("You weren't wielding anything."));
 });
