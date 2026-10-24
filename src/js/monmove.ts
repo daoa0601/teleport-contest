@@ -1853,10 +1853,22 @@ function reduceHeroContactDamage(
 // mhitu.c mdamageu(): subtract from the active body and clamp only down to
 // its maximum. Lethal HP stays negative until done() commits zero, after
 // done_in_by() has announced the death.
-function applyHeroContactDamage(state: PlayingGameState, damage: number) {
+async function applyHeroContactDamage(
+    state: PlayingGameState, damage: number, publish: MessagePublisher = plineWithContinuation,
+) {
     state.context.botl = true;
-    if (Upolyd(state.u)) state.u.mh = Math.min((state.u.mh ?? 1) - damage, state.u.mhmax ?? 1);
-    else state.u.uhp = Math.min(state.u.uhp - damage, state.u.uhpmax);
+    // C mdamageu(): showdamage() prints the post-subtraction, pre-clamp HP.
+    if (Upolyd(state.u)) {
+        state.u.mh = (state.u.mh ?? 1) - damage;
+        if (state.flags.showdamage && damage)
+            await publish(`[HP ${-damage}, ${state.u.mh} left]`);
+        state.u.mh = Math.min(state.u.mh, state.u.mhmax ?? 1);
+    } else {
+        state.u.uhp -= damage;
+        if (state.flags.showdamage && damage)
+            await publish(`[HP ${-damage}, ${state.u.uhp} left]`);
+        state.u.uhp = Math.min(state.u.uhp, state.u.uhpmax);
+    }
 }
 
 // Complete body loss before applying the old form's passive response.
@@ -1868,7 +1880,7 @@ async function finishHeroContactDamage(
     state: PlayingGameState,
     { random = rn2, rollDice = d, publish = plineWithContinuation, die }: MonsterDamageOptions = {},
 ) {
-    applyHeroContactDamage(state, damage);
+    await applyHeroContactDamage(state, damage, publish);
     if (Upolyd(state.u) && state.u.mh < 1) {
         const restored = await returnHeroToHumanForm(state, { publish, ...(die ? { die } : {}) });
         if (restored.died) return { heroDied: true, attackerStopped: true };

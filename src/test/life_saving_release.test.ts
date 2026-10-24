@@ -4,9 +4,10 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROOM, STONE, TT_PIT, W_AMUL } from '../js/const.js';
+import { COLNO, LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROWNO, ROOM, STONE, TT_PIT, W_AMUL } from '../js/const.js';
 import { expelHero } from '../js/hero_expulsion.js';
 import { setHeroGrip } from '../js/hero_grip.js';
+import { installPagerInput } from './support/pager-input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { flushPendingTopline } from '../js/display.js';
@@ -312,11 +313,12 @@ void test('an engulfer expelling a wall-bound hero with nowhere to stand leaves 
         MM_ANGRY | MM_NOGRP | NO_MINVENT);
     game.u.uswallow = 1;
     setHeroGrip(vortex, game);
-    for (let x = 7; x <= 16; x++)
-        for (let y = 6; y <= 14; y++)
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
             requireGameLevel(game).requireAt(x, y).typ = STONE;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /.*/, limit: 8 });
     const messages: string[] = [];
-
     const result = await expelHero(vortex, { publish: async message => { messages.push(message); } });
 
     assert.equal(result.expelled, true);
