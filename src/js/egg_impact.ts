@@ -58,7 +58,7 @@ export function turnEggIntoRock(egg: GameObject): GameObject {
 
 export function explodePyroliskEggAt(x: number, y: number, {
     state = game,
-    heroCaused = true,
+    heroCaused = !state.context.mon_moving,
     publish,
     random,
     rollDice = d,
