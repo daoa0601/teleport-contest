@@ -46,6 +46,9 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+import { propertyIsActive } from './properties.js';
+import { heroHasSlipperyHands } from './slippery_hands.js';
 import { fireDamageObject } from './fire_damage.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -55,12 +58,10 @@ import type { DirectionSelection } from './tty_prompts.js';
 
 type WhipDirection = Pick<DirectionSelection, 'dx' | 'dy' | 'dz'>;
 type WhipAttack = (monster: Monster, x: number, y: number) => boolean | Promise<boolean>;
-type HoldWhippedObject = (object: GameObject) => boolean | Promise<boolean>;
 
 export interface BullwhipOptions {
     state?: GameState;
     attackMonster?: WhipAttack;
-    holdObject?: HoldWhippedObject;
 }
 
 const PM_GRID_BUG = 116;
@@ -102,11 +103,7 @@ function isTwoHanded(object: GameObject) {
 }
 
 function heroIsFumbling(state: GameState) {
-    return !!(state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0);
-}
-
-function heroIsGlib(state: GameState) {
-    return (state.u?.glibTurns ?? 0) > 0 || !!state.u?.glib;
+    return propertyIsActive('fumbling', state);
 }
 
 function heroIsAirborne(state: GameState) {
@@ -200,12 +197,13 @@ async function snatchPetrifyingCorpse(weapon: GameObject, state: GameState) {
     return petrification.died;
 }
 
+/** Returns true when the hero died during the disarm (snatch death ends the game). */
 async function disarmMonster(
-    monster: Monster, weapon: GameObject, proficiency: number,
-    holdObject: HoldWhippedObject, state: GameState,
-) {
+    monster: Monster, weapon: GameObject, proficiency: number, state: GameState,
+): Promise<boolean> {
+    // C apply.c:3156: a fumbling hero keeps hold only on !rn2(10).
     let gotWeapon = proficiency > 0
-        && (!heroIsFumbling(state) || rn2(10) !== 0);
+        && (!heroIsFumbling(state) || rn2(10) === 0);
     const hand = monsterHandName(monster.mnum);
     const hands = isTwoHanded(weapon) ? makePlural(hand) : hand;
     observeObjectForNaming(weapon, { state });
@@ -221,7 +219,7 @@ async function disarmMonster(
     }
     if (!gotWeapon) {
         await pline('The bullwhip slips free.');
-        return;
+        return false;
     }
 
     // C apply.c:3175-3177: obj_extract_self() + possibly_unwield() +
@@ -243,11 +241,14 @@ async function disarmMonster(
     case 3:
         observeObjectForNaming(weapon, { state });
         await plineWithContinuation(`You snatch ${objectWithArticle(weapon)}!`);
-        if (await snatchPetrifyingCorpse(weapon, state)) break;
-        if (!await holdObject(weapon)) {
-            await placeObject(weapon, state.u.ux, state.u.uy);
-            await stack_object(weapon, state);
-        }
+        if (await snatchPetrifyingCorpse(weapon, state)) return true;
+        // C apply.c:3230: hold_another_object() owns fumbling, slot, and
+        // capacity refusal, dropping the weapon at the hero's feet.  A fatal
+        // artifact blast ends the game there (artifact.c:958), before
+        // use_whip()'s trailing wakeup().
+        if ((await holdAnotherObject(weapon, {
+            state, dropMessage: `You drop ${inventoryItemDescription(weapon)}!`,
+        })).heroDied) return true;
         break;
     default:
         observeObjectForNaming(weapon, { state });
@@ -265,6 +266,7 @@ async function disarmMonster(
         await stack_object(weapon, state);
         break;
     }
+    return false;
 }
 
 function pitAnchor(targetX: number, targetY: number, monster: Monster | null, state: GameState) {
@@ -302,13 +304,13 @@ async function moveHeroOutOfPit(destination: Position, state: GameState) {
 
 async function escapePit(
     targetX: number, targetY: number, monster: Monster | null, proficiency: number,
-    attackMonster: WhipAttack, holdObject: HoldWhippedObject, state: GameState,
+    attackMonster: WhipAttack, state: GameState,
 ) {
     const anchor = pitAnchor(targetX, targetY, monster, state);
     if (!anchor) {
         if (monster) {
             await attackMonsterWithWhip(
-                monster, targetX, targetY, proficiency, attackMonster, holdObject, state,
+                monster, targetX, targetY, proficiency, attackMonster, state,
             );
             return;
         }
@@ -346,7 +348,7 @@ async function revealWhipTarget(monster: Monster, x: number, y: number, state: G
 
 async function attackMonsterWithWhip(
     monster: Monster, x: number, y: number, proficiency: number, attackMonster: WhipAttack,
-    holdObject: HoldWhippedObject, state: GameState,
+    state: GameState,
 ) {
     const spottedBefore = canSpotMonster(monster);
     if (!spottedBefore) {
@@ -356,9 +358,7 @@ async function attackMonsterWithWhip(
     }
     const weapon = spottedBefore ? monsterWieldedWeapon(monster) : null;
     if (weapon) {
-        await disarmMonster(
-            monster, weapon, proficiency, holdObject, state,
-        );
+        if (await disarmMonster(monster, weapon, proficiency, state)) return;
         await wakeAttackedMonster(monster);
         return;
     }
@@ -383,7 +383,6 @@ export async function useBullwhip(
     {
         state = game,
         attackMonster = async () => false,
-        holdObject = async () => false,
     }: BullwhipOptions = {},
 ): Promise<{ spentTime: boolean }> {
     const hero = state.u;
@@ -451,17 +450,17 @@ export async function useBullwhip(
         }
         await damageHeroWithWhip(whip, state);
         return { spentTime: true };
-    } else if ((heroIsFumbling(state) || heroIsGlib(state)) && rn2(5) === 0) {
+    } else if ((heroIsFumbling(state) || heroHasSlipperyHands(state)) && rn2(5) === 0) {
         await pline(`The bullwhip slips out of your ${heroHandName(state)}.`);
         await dropInventoryObjectAtHero(whip, { state });
     } else if (hero.utrap && hero.utraptype === TT_PIT) {
         await escapePit(
             targetX, targetY, monster, proficiency,
-            attackMonster, holdObject, state,
+            attackMonster, state,
         );
     } else if (monster) {
         await attackMonsterWithWhip(
-            monster, targetX, targetY, proficiency, attackMonster, holdObject, state,
+            monster, targetX, targetY, proficiency, attackMonster, state,
         );
     } else if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)) {
         await pline('You snap your whip through thin air.');

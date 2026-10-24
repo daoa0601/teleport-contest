@@ -6,14 +6,19 @@ import { rhack } from '../js/cmd.js';
 import { TT_PIT, W_WEP } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE } from '../js/object_data.js';
+import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE, DAGGER, ROCK } from '../js/object_data.js';
+import { objectQuantity } from '../js/object_stack.js';
+import { polymonHero } from '../js/polyself.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { UNENCUMBERED, nearCapacity, objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
-import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { memoryStorage } from './support/memory-storage.js';
 void test('applying an unwielded bullwhip wields it before asking for direction', async () => {
     freshPlayableRoom({ role: 'archeologist' });
     requirePlayingGame(game);
@@ -113,9 +118,7 @@ void test('a whip cannot acquire a floor stack when the hero is overloaded', asy
     for (let seed = 1n; seed <= 30n; seed++) {
         initRng(seed);
         pushKeys(' '.repeat(8));
-        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 }, {
-            holdObject: async (object) => { game.inventory.push(object); return true; },
-        });
+        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 });
         assert.equal(clubs.quan, 3);
         assert.equal(game.inventory.some(object => object.otyp === CLUB), false);
     }
@@ -141,5 +144,129 @@ void test('a whip revives a Rider corpse with remote acquisition feedback', asyn
     assert.equal(floorObjectsAt(level, 10, 10).includes(corpse), false);
     assert.ok(level.monsters.some(monster => monster.mnum === rider && monster.mhp > 0));
     assert.match(messages.join('\n'), /At your attempted acquisition, the corpse suddenly moves\.\.\./);
+});
+// C apply.c:3230 hands a snatched weapon to invent.c:hold_another_object(),
+// whose fumbling, slot, and burden refusals drop it at the hero's feet.
+async function snatchClubFromBugbear(prepare, makeWeapon = async () => await knownObject(CLUB, {}), peaceful = false) {
+    for (let seed = 1n; seed <= 200n; seed++) {
+        const level = freshPlayableRoom({
+            role: 'archeologist',
+            hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } },
+        });
+        requirePlayingGame(game);
+        const whip = await addInventoryObject(BULLWHIP, {
+            invlet: 'a', spe: 2, wielded: true, owornmask: W_WEP,
+        });
+        game.uwep = game.u.uwep = whip;
+        await prepare();
+        const club = await makeWeapon();
+        const bugbear = await createMonsterAt('bugbear', 11, 10);
+        bugbear.mpeaceful = peaceful ? 1 : 0;
+        await equipMonsterObject(bugbear, club, W_WEP);
+        const messages = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        initRng(seed);
+        pushKeys(' '.repeat(8));
+        await useBullwhip(whip, { dx: 1, dy: 0, dz: 0 });
+        messages.push(game._pending_message);
+        const text = messages.join('\n');
+        if (/You snatch/u.test(text))
+            return { bugbear, club, level, text };
+    }
+    throw new Error('No seed reached the bullwhip snatch.');
+}
+function assertDroppedAtFeet(result) {
+    assert.equal(game.inventory.includes(result.club), false);
+    assert.ok(floorObjectsAt(result.level, game.u.ux, game.u.uy).includes(result.club));
+    assert.match(result.text, /You drop [^\n]*club!/u);
+}
+void test('a snatched weapon is dropped when every inventory slot is taken', async () => {
+    const result = await snatchClubFromBugbear(async () => {
+        const letters = 'bcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        for (const [index, invlet] of [...letters].entries())
+            await addInventoryObject(DAGGER, { invlet, spe: index - 25 });
+    });
+    assertDroppedAtFeet(result);
+});
+void test('a snatched weapon is dropped when it would exceed the pickup burden', async () => {
+    const result = await snatchClubFromBugbear(async () => {
+        game.flags.pickup_burden = UNENCUMBERED;
+        const rocks = await addInventoryObject(ROCK, { quantity: 1 });
+        const setRocks = (count) => {
+            rocks.quan = rocks.quantity = count;
+            rocks.owt = objectWeight(rocks);
+        };
+        while (nearCapacity(game) === UNENCUMBERED)
+            setRocks(objectQuantity(rocks) + 1);
+        setRocks(objectQuantity(rocks) - 1);
+        assert.equal(nearCapacity(game), UNENCUMBERED);
+    });
+    assertDroppedAtFeet(result);
+});
+void test('a fumbling hero drops a snatched weapon', async () => {
+    const result = await snatchClubFromBugbear(() => {
+        grantIntrinsicProperty('fumbling', 'outside', game);
+    });
+    assertDroppedAtFeet(result);
+});
+void test('a fumbling hero rarely keeps a disarmed weapon in the bullwhip', async () => {
+    let wraps = 0;
+    let snatches = 0;
+    for (let seed = 1n; seed <= 120n; seed++) {
+        freshPlayableRoom({ role: 'archeologist', hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } } });
+        requirePlayingGame(game);
+        const whip = await addInventoryObject(BULLWHIP, { invlet: 'a', spe: 2, wielded: true, owornmask: W_WEP });
+        game.uwep = game.u.uwep = whip;
+        grantIntrinsicProperty('fumbling', 'outside', game);
+        const bugbear = await createMonsterAt('bugbear', 11, 10);
+        bugbear.mpeaceful = 0;
+        await equipMonsterObject(bugbear, await knownObject(CLUB, {}), W_WEP);
+        const messages = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        initRng(seed);
+        pushKeys(' '.repeat(8));
+        await useBullwhip(whip, { dx: 1, dy: 0, dz: 0 });
+        messages.push(game._pending_message);
+        const text = messages.join('\n');
+        if (/You wrap your bullwhip/u.test(text))
+            wraps++;
+        if (/You snatch|yank|is snatched|You pull/u.test(text))
+            snatches++;
+    }
+    // C apply.c:3156: proficient && (!Fumbling || !rn2(10)) keeps hold one time in ten.
+    assert.ok(wraps >= 30, `expected many wraps, got ${wraps}`);
+    assert.ok(snatches * 3 < wraps, `fumbling kept hold ${snatches} of ${wraps} times`);
+});
+void test('slippery fingers do not stop a snatched weapon from being held', async () => {
+    const result = await snatchClubFromBugbear(() => { game.u.glibTurns = 20; });
+    assert.ok(game.inventory.includes(result.club));
+    assert.match(result.text, /[a-zA-Z] - [^\n]*club/u);
+});
+// C artifact.c:958 losehp() ends the game inside hold_another_object(), so
+// use_whip() never reaches its trailing wakeup() (apply.c:3261).
+void test('a fatal artifact snatch does not go on to anger the disarmed monster', async () => {
+    const result = await snatchClubFromBugbear(() => {
+        game.u.ualign = { type: 1, record: 10 };
+        game.u.uhp = 1;
+        game.flags.bones = false;
+        game.flags.disclose = '-i -a -v -c -o';
+        game.flags.tombstone = false;
+        game.storage = memoryStorage();
+    }, async () => await artifactObject('Stormbringer', {}), true);
+    assert.match(result.text, /blasted by/u);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(result.bugbear.mpeaceful, 1);
+});
+// C apply.c:3213-3231: a golem hero becomes a stone golem before any fatal
+// message, so the snatched corpse stays free and goes into the inventory.
+void test('a flesh golem snatching a cockatrice corpse turns to stone golem and holds it', async () => {
+    const result = await snatchClubFromBugbear(async () => { await polymonHero(MONSTER_NAME.indexOf('flesh golem')); }, async () => await corpseObject(MONSTER_NAME.indexOf('cockatrice'), {}));
+    assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('stone golem'));
+    assert.ok(!game.program_state.gameover);
+    assert.doesNotMatch(result.text, /fatal mistake/u);
+    assert.ok(game.inventory.includes(result.club));
+    assert.equal(floorObjectsAt(result.level, game.u.ux, game.u.uy).includes(result.club), false);
 });
 //# sourceMappingURL=bullwhip_apply.test.js.map
