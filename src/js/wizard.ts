@@ -79,7 +79,8 @@ function monsterHelpless(monster: Monster): boolean {
 function recallMigratingWizard(): Promise<Monster | null> | null {
     // C wizard.c:resurrect() migrating_mons scan.  Returns a placed wizard
     // or null; placement failure re-queues the monster for later attempts.
-    for (const candidate of [...(game._migratingMonsters || [])]) {
+    // Migration arrays append where C prepends to migrating_mons.
+    for (const candidate of [...(game._migratingMonsters ?? [])].reverse()) {
         if (!candidate.iswiz) continue;
         // if he has the Amulet, he won't bring it to you
         if (monsterCarriesAmulet(candidate)) continue;
