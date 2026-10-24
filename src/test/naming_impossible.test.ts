@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { NO_MINVENT, PANICLOG } from '../js/const.js';
+import { FOUNTAIN, NO_MINVENT, PANICLOG } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { FUZZER_IMPOSSIBLE_PANIC, impossible } from '../js/diagnostics.js';
@@ -100,6 +100,29 @@ void test('a missing leash stays attached while its impossible() report awaits a
     assert.ok(diagnosticPages > 0, 'the impossible() report must request acknowledgment');
     assert.equal(sawMenu, true);
     assert.equal(leash.leashmon, 0);
+});
+
+void test('dip reports a missing leash once before shortening its long name', async () => {
+    const level = freshPlayableRoom({ flags: { verbose: true } });
+    level.requireAt(game.u.ux, game.u.uy).typ = FOUNTAIN;
+    game.storage = memoryStorage();
+    const leash = await addInventoryObject(LEASH, {
+        leashmon: 4242,
+        oextra: { oname: 'a keepsake from the long journey through the mountains' },
+    });
+    const input = resetInputState();
+    const screens = recordScreens(input);
+    input.feed(`dip\n${leash.invlet}`);
+
+    await rhack('#'.charCodeAt(0));
+
+    const diagnostic = firstScreenIndex(screens, /leashed monster #4242 not found/);
+    const question = firstScreenIndex(screens, /Dip the leash into the fountain\?/);
+    assert.ok(diagnostic < question, 'the repair finishes before the shortened dip question');
+    assert.equal(leash.leashmon, 0);
+    assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);
+    assert.equal(game.context.move, 0, 'declining to dip leaves the leash in inventory');
+    assert.equal(game.inventory.includes(leash), true);
 });
 
 void test('an unpaid object missing from the bill reports unpaid_cost impossible() before the menu', async () => {
