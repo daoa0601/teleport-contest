@@ -215,6 +215,20 @@ export function luaCheckString(argument: number, value: LuaValue | undefined): s
         `string expected, got ${value === undefined ? 'no value' : luaType(value)}`);
 }
 
+// luaL_checkinteger() converts integral numbers and numeric strings and
+// raises lauxlib's bad-argument error for anything else.
+export function luaCheckInteger(argument: number, value: LuaValue | undefined): number {
+    const integral = (number: number): number => {
+        if (Number.isInteger(number)) return number;
+        throw new LuaArgumentError(argument, 'number has no integer representation');
+    };
+    if (typeof value === 'number') return integral(value);
+    if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)))
+        return integral(Number(value));
+    throw new LuaArgumentError(argument,
+        `number expected, got ${value === undefined ? 'no value' : luaType(value)}`);
+}
+
 function luaString(value: LuaResult): string {
     value = first(value);
     if (value === null || value === undefined) return 'nil';

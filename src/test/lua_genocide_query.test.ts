@@ -59,4 +59,9 @@ void test('nh.is_genocided rejects extra arguments', async t => {
 
     await assert.rejects(lua.executeAsync('nh.is_genocided("vampire", true)'),
         /Wrong args \(line 1/);
+    // nhl_is_genocided() reads its name through luaL_checkstring.
+    await assert.rejects(lua.executeAsync('nh.is_genocided(nil)'),
+        /bad argument #1 to 'is_genocided' \(string expected, got nil\)/);
+    await assert.rejects(lua.executeAsync('nh.is_genocided({})'),
+        /bad argument #1 to 'is_genocided' \(string expected, got table\)/);
 });

@@ -60,7 +60,9 @@ void test('nh.start_timer_at ignores object timer types like nhlua.c', async (t)
     // luaL_checkoption() reports the invalid name through luaL_argerror
     // with the stack index nhl_get_timertype() was given.
     await assert.rejects(lua.executeAsync('nh.start_timer_at(0, 0, "melt", 10)'), /bad argument #-2 to 'start_timer_at' \(invalid option 'melt'\)/);
-    await assert.rejects(lua.executeAsync('nh.start_timer_at(5)'), /bad argument #-2 to 'start_timer_at' \(string expected, got no value\)/);
+    // With one argument, Lua stack index -2 is the called function itself.
+    await assert.rejects(lua.executeAsync('nh.start_timer_at(5)'), /bad argument #-2 to 'start_timer_at' \(string expected, got function\)/);
+    await assert.rejects(lua.executeAsync('nh.start_timer_at()'), /bad argument #-2 to 'start_timer_at' \(string expected, got no value\)/);
     await assert.rejects(lua.executeAsync('nh.start_timer_at(0, 0, 8, 10)'), /bad argument #-2 to 'start_timer_at' \(invalid option '8'\)/);
 });
 void test('nh.start_timer_at accepts coordinate tables and lua_tointeger delays', async (t) => {
@@ -81,6 +83,32 @@ void test('nh.start_timer_at accepts coordinate tables and lua_tointeger delays'
     `);
     await runDueTimers();
     assert.equal(game.level.requireAt(10, 5).typ, MOAT, 'a zeroed delay melts the ice without waiting');
+    assert.equal(game.level.requireAt(11, 5).typ, ICE);
+});
+void test('nh.start_timer_at coordinate tables validate like get_coord', async (t) => {
+    freshGame({ flags: { bones: false } });
+    requirePlayingGame(game);
+    initRng(739n);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    await mklev();
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua, 'ordinary level generation loads the Lua level API');
+    await lua.executeAsync('des.map({ map = "II", x = 10, y = 5 })');
+    // get_coord() converts x with luaL_checkinteger before reading y.
+    await assert.rejects(lua.executeAsync('nh.start_timer_at({ x = {} }, "melt-ice", 10)'), /bad argument #-1 to 'start_timer_at' \(number expected, got table\)/);
+    await assert.rejects(lua.executeAsync('nh.start_timer_at({ x = "home" }, "melt-ice", 10)'), /bad argument #-1 to 'start_timer_at' \(number expected, got string\)/);
+    await assert.rejects(lua.executeAsync('nh.start_timer_at({ x = 0 }, "melt-ice", 10)'), /Not a coordinate \(line 1/);
+    // Two-entry array coordinates: get_table_intarray_entry() converts
+    // numbers with lua_tointeger and reports the C's hardcoded entry
+    // number for anything else.
+    await assert.rejects(lua.executeAsync('nh.start_timer_at({ "a", 0 }, "melt-ice", 10)'), /Array entry #1 is string, expected number \(line 1/);
+    await assert.rejects(lua.executeAsync('nh.start_timer_at({ 0 }, "melt-ice", 10)'), /Not a coordinate \(line 1/);
+    // A non-integral array entry becomes zero, like lua_tointeger().
+    await lua.executeAsync('nh.start_timer_at({ 1.5, 0 }, "melt-ice", 0)');
+    await runDueTimers();
+    assert.equal(game.level.requireAt(10, 5).typ, MOAT, 'the non-integral entry reads as coordinate zero');
     assert.equal(game.level.requireAt(11, 5).typ, ICE);
 });
 //# sourceMappingURL=lua_spot_timers.test.js.map

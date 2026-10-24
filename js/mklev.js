@@ -43,7 +43,7 @@ import { luaInteger, luaString, luaToInteger } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
-import { luaTableToArray, objectToLuaTable, LuaTable, luaCheckString, } from './lua/runtime.js';
+import { luaTableToArray, objectToLuaTable, LuaTable, luaCheckString, luaCheckInteger, luaType, } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
@@ -6710,16 +6710,30 @@ function luaTimerCoordinates(args) {
         const table = args[0];
         const x = table.get('x');
         if (x != null) {
+            // get_coord() converts x with luaL_checkinteger before it
+            // looks for y at all.
+            const xValue = luaCheckInteger(-1, x);
             const y = table.get('y');
             if (y == null)
                 throw new NethackLuaError('Not a coordinate');
-            return { x: luaInteger(x), y: luaInteger(y) };
+            return { x: xValue, y: luaCheckInteger(-1, y) };
         }
         if (table.length() !== 2)
             throw new NethackLuaError('Not a coordinate');
-        return { x: luaInteger(table.get(1)), y: luaInteger(table.get(2)) };
+        return { x: luaTimerArrayEntry(table, 1), y: luaTimerArrayEntry(table, 2) };
     }
     throw new NethackLuaError('nhl_timer_start_at: Wrong args');
+}
+// sp_lev.c:get_table_intarray_entry(): numbers and numeric strings
+// convert with lua_tointeger laxness, everything else raises nhl_error.
+// The C message hardcodes entry number 1 for both positions.
+function luaTimerArrayEntry(table, entry) {
+    const value = table.get(entry);
+    if (typeof value === 'number'
+        || (typeof value === 'string' && value.trim() !== ''
+            && !Number.isNaN(Number(value))))
+        return luaToInteger(value);
+    throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
 }
 function createLuaLevelSession() {
     const wholeLevel = {
@@ -7028,7 +7042,7 @@ function createLuaLevelSession() {
                     throw new NethackLuaError('Wrong args');
                 // C nhl_is_genocided() resolves names with name_to_mon(),
                 // which accepts articles, plurals, and alternate spellings.
-                const mndx = nameToMonster(luaString(args[0]));
+                const mndx = nameToMonster(luaCheckString(1, args[0]));
                 return mndx >= 0
                     && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
             },
@@ -7043,6 +7057,12 @@ function createLuaLevelSession() {
                 // lauxlib's argument error carrying that index; only
                 // melt-ice is a position timer (timer_is_pos()).
                 const timerIndex = -2;
+                if (args.length === 1) {
+                    // With one argument, stack index -2 holds the called
+                    // function itself; Lua 5.4 negative indices do not
+                    // check stack bounds.
+                    throw new LuaArgumentError(timerIndex, 'string expected, got function');
+                }
                 const timerName = luaCheckString(timerIndex, args[args.length - 2]);
                 const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
                 if (timerType < 0)

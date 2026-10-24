@@ -51,10 +51,15 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
                 throw new NethackLuaError('Wrong args');
             },
             callback: (...args) => {
-                const result = lifecycle.registerCallback(args);
-                return result?.overdrawn
-                    ? impossible('nh.callback counts are wrong', { state: gameState })
-                    : undefined;
+                const registration = lifecycle.registerCallback(args);
+                if (!registration)
+                    return undefined;
+                if (!registration.overdrawn) {
+                    registration.run();
+                    return undefined;
+                }
+                return impossible('nh.callback counts are wrong', { state: gameState })
+                    .then(() => registration.run());
             },
             gamestate: (...args) => changeTutorialState(gameState, args.at(-1) != null && args.at(-1) !== false),
             pline: luaPline,
@@ -160,10 +165,12 @@ export class LuaLifecycle {
         const count = (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1);
         this.callbackCounts.set(name, count);
         // nhl_callback() reports each removal that drives a count negative
-        // before it asks the core to run nh_callback_rm.
-        const overdrawn = removing && count < 0;
-        this.core.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn);
-        return { overdrawn };
+        // and only then asks the core to run nh_callback_rm; run() is the
+        // second half so the caller can report between the two steps.
+        return {
+            overdrawn: removing && count < 0,
+            run: () => this.core?.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn),
+        };
     }
     async runCallbacks(gameState, name, ...args) {
         if (!this.core || !this.callbackCounts.get(name))
