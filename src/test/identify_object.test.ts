@@ -48,7 +48,7 @@ void test('full identification reveals an object and its type', async () => {
     assert.ok(game._knownObjectTypes.has(RIN_CONFLICT));
     assert.ok(game._encounteredObjectTypes !== null && game._encounteredObjectTypes !== undefined);
     assert.ok(game._encounteredObjectTypes.has(RIN_CONFLICT));
-    assert.match(inventoryItemDescription(ring), /ring of conflict/);
+    assert.match(await inventoryItemDescription(ring), /ring of conflict/);
 });
 
 void test('a fully identified generated tool uses its canonical name', async () => {
@@ -57,7 +57,7 @@ void test('a fully identified generated tool uses its canonical name', async () 
 
     fullyIdentifyObject(saddle);
 
-    assert.match(inventoryItemDescription(saddle), /saddle/);
+    assert.match(await inventoryItemDescription(saddle), /saddle/);
 });
 
 void test('full identification does not observe an object while hallucinating', async () => {
@@ -172,14 +172,14 @@ void test('identifying a baby dragon egg teaches the adult egg species',
 
         await identifyPack(0);
 
-        assert.match(inventoryItemDescription(babyEgg),
+        assert.match(await inventoryItemDescription(babyEgg),
             /baby gray dragon egg/);
         assert.equal(
             (game.mvitals[babyDragon]?.mvflags ?? 0) & MV_KNOWS_EGG,
             0,
         );
         assert.ok((game.mvitals[adultDragon]?.mvflags ?? 0) & MV_KNOWS_EGG);
-        assert.match(inventoryItemDescription(adultEgg), /gray dragon egg/);
+        assert.match(await inventoryItemDescription(adultEgg), /gray dragon egg/);
     });
 
 void test('identifyPack teaches an egg species and all such eggs use its name',
@@ -205,7 +205,7 @@ void test('identifyPack teaches an egg species and all such eggs use its name',
         await identifyPack(0);
 
         assert.ok((game.mvitals[grayDragon]?.mvflags ?? 0) & MV_KNOWS_EGG);
-        assert.match(inventoryItemDescription(carriedEggs),
+        assert.match(await inventoryItemDescription(carriedEggs),
             /2 .*gray dragon eggs/);
-        assert.match(inventoryItemDescription(otherEgg), /gray dragon egg/);
+        assert.match(await inventoryItemDescription(otherEgg), /gray dragon egg/);
     });

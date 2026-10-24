@@ -63,12 +63,12 @@ function isAdjacentToHero(monster, state) {
     const dy = monster.my - (state.u?.uy ?? monster.my);
     return dx * dx + dy * dy <= 2;
 }
-function floorObjectName(x, y, state) {
+async function floorObjectName(x, y, state) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object)
         return null;
     observeObjectForNaming(object, { state });
-    return floorObjectDescription(object);
+    return await floorObjectDescription(object);
 }
 async function publishHiddenMonster(monster, state) {
     const blind = heroIsBlind(state);
@@ -88,7 +88,7 @@ async function publishHiddenMonster(monster, state) {
         await plineWithContinuation("Wait!  There's a hidden monster there!");
         return;
     }
-    const cover = floorObjectName(monster.mx, monster.my, state);
+    const cover = await floorObjectName(monster.mx, monster.my, state);
     if (cover) {
         await plineWithContinuation(`Wait!  There's ${visibleName
             ? withIndefiniteArticle(visibleName) : 'something'} hiding under ${cover}!`);

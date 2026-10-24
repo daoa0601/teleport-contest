@@ -407,7 +407,7 @@ void test('destroy armor charges the original price of eroded unpaid armor', asy
         { prompt: /ring mail \(unpaid, \d+ zorkmids\)/, keys: ' ' },
     ]);
     wearHeroArmor(armor);
-    const price = unpaidObjectCost(armor);
+    const price = await unpaidObjectCost(armor);
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR);
     armorEffectInput();
 
@@ -415,7 +415,7 @@ void test('destroy armor charges the original price of eroded unpaid armor', asy
 
     assert.ok(price > 0);
     assert.ok(!armor.unpaid);
-    assert.equal(itemizedShopBill(shopkeeper).reduce((sum, item) => sum + item.price, 0), price);
+    assert.equal((await itemizedShopBill(shopkeeper)).reduce((sum, item) => sum + item.price, 0), price);
 });
 
 void test('armor mutation waits until the previous visible message has been acknowledged', async () => {

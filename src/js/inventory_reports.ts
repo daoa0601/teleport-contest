@@ -101,7 +101,7 @@ async function reportWallet(): Promise<void> {
 async function describeCarriedObject(object: GameObject): Promise<void> {
     if (game.flags.fixinv === false) reassignInventoryLetters();
     observeObjectForNaming(object);
-    await pline(`${object.invlet} - ${inventoryItemDescription(object, {
+    await pline(`${object.invlet} - ${await inventoryItemDescription(object, {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
 }
@@ -153,7 +153,7 @@ async function reportSubset(items: readonly GameObject[] | null, inuse = true, a
                 observeObjectForNaming(object);
                 consumeHallucinatedMenuObjectGlyph(object);
             }
-            const text = object ? inventoryItemDescription(object, {
+            const text = object ? await inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))} (no weapon)`;
             const item = { key: object?.invlet ?? '-', text };
@@ -251,18 +251,21 @@ async function typeInventory(): Promise<InventoryAction | null> {
     }
     const sorted = sortObjects(candidates, { mode: lootSortMode({ inventoryLetters: game.flags.fixinv !== false }) });
     const order = [...inventoryClassOrder(), 17];
-    const sections: PageLocalMultiSelectSection<GameObject>[] = order.flatMap(oclass => {
+    const sections: PageLocalMultiSelectSection<GameObject>[] = [];
+    for (const oclass of order) {
         const objects = sorted.filter(object => object.oclass === oclass);
-        if (!objects.length) return [];
-        return [{ heading: objectClassHeading(oclass), items: objects.map(object => {
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
-            return { ...(game.flags.fixinv !== false ? { key: object.invlet ?? '#' }
+            items.push({ ...(game.flags.fixinv !== false ? { key: object.invlet ?? '#' }
                 : object === sorted[0] && object.oclass === 12 ? { key: '$' } : {}),
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: object,
-                text: inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) };
-        }) }];
-    });
+                text: await inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
     const selected = await showMultiSelectWindow({ title: '',
         introLines: status ? [`Items ${(before || after).trim()}:`] : [],
         sections, pageLocalKeys: true, pickOne: true });
@@ -288,7 +291,7 @@ async function inventoryCategoryMenu(classes: readonly number[], unpaid: boolean
             text: key === 'X' ? 'Items of unknown Bless/Curse status' : `Items known to be ${
                 key === 'B' ? 'Blessed' : key === 'C' ? 'Cursed' : 'Uncursed'}` })),
         ...(picked.length ? [{ key: 'P', text: picked.length === 1 && picked[0]
-            ? `Just picked up: ${inventoryItemDescription(picked[0])}` : 'Items you just picked up' }] : []),
+            ? `Just picked up: ${await inventoryItemDescription(picked[0])}` : 'Items you just picked up' }] : []),
     ];
     const separator: MenuLabel = { selectable: false, text: '' };
     const selected = await showMultiSelectWindow<string | number>({ title: prompt, pickOne: true,
@@ -323,12 +326,12 @@ async function showBill(bill: readonly BillLine[]): Promise<void> {
     let total = 0;
     for (const line of bill) {
         if (!line.object && total) lines.push('');
-        lines.push(pricedInventoryLine(line.object, line.object ? 'x' : '$', line.price,
+        lines.push(await pricedInventoryLine(line.object, line.object ? 'x' : '$', line.price,
             line.object ? null : 'usage charges and/or other fees',
             { quantity: line.quantity, useInvlet: false, distant: false }));
         total += line.price;
     }
-    lines.push('', pricedInventoryLine(null, '*', total, 'Total:'));
+    lines.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
     await showTextMenuOverlay(lines);
 }
 
@@ -336,7 +339,7 @@ async function showUnpaid(carried: readonly GameObject[], floor: number, buried:
     const extra = floor + buried;
     const first = carried[0];
     if (first && carried.length === 1 && !extra && !unknownContainer(first)) {
-        await pline(pricedInventoryLine(first, first.where === 'inventory' ? first.invlet ?? '#' : '>', unpaidObjectCost(first)));
+        await pline(await pricedInventoryLine(first, first.where === 'inventory' ? first.invlet ?? '#' : '>', await unpaidObjectCost(first)));
         return;
     }
     if (game.flags.fixinv === false) reassignInventoryLetters();
@@ -347,9 +350,9 @@ async function showUnpaid(carried: readonly GameObject[], floor: number, buried:
         const objects = top.filter(object => oclass === null || object.oclass === oclass);
         if (objects.length && oclass !== null) lines.push(`Unpaid ${objectClassHeading(oclass)}`);
         for (const object of objects) {
-            const price = unpaidObjectCost(object);
+            const price = await unpaidObjectCost(object);
             total += price;
-            lines.push(pricedInventoryLine(object, object.invlet ?? '#', price));
+            lines.push(await pricedInventoryLine(object, object.invlet ?? '#', price));
         }
     }
     if (carried.length > top.length) {
@@ -357,14 +360,18 @@ async function showUnpaid(carried: readonly GameObject[], floor: number, buried:
         for (const container of game.inventory) {
             const contents = unpaidObjects(container.contents ?? []);
             if (!container.contents?.length) continue;
-            const price = contents.reduce((sum, object) => sum + unpaidObjectCost(object), 0);
-            total += price;
-            if (container.cknown) for (const object of contents)
-                lines.push(pricedInventoryLine(object, '>', unpaidObjectCost(object)));
-            else lines.push(pricedInventoryLine(null, '>', price, `${possessiveName(objectName(container))} contents`));
+            let price = 0;
+            for (const object of contents) {
+                const cost = await unpaidObjectCost(object);
+                price += cost;
+                total += cost;
+                if (container.cknown) lines.push(await pricedInventoryLine(object, '>', cost));
+            }
+            if (!container.cknown)
+                lines.push(await pricedInventoryLine(null, '>', price, `${possessiveName(objectName(container))} contents`));
         }
     }
-    if (carried.length) lines.push('', pricedInventoryLine(null, '*', total, 'Total:'));
+    if (carried.length) lines.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
     if (extra) {
         const verb = extra > 1 ? 'are' : 'is';
         const where = !buried ? 'on the floor' : !floor ? 'under the floor' : 'on or under the floor';
@@ -383,19 +390,19 @@ function unknownContainer(object: GameObject): boolean {
     return false;
 }
 
-function pricedInventoryLine(object: GameObject | null, letter: string, price: number,
+async function pricedInventoryLine(object: GameObject | null, letter: string, price: number,
     text: string | null = null, { quantity = 0, useInvlet = true, distant = true }:
-    { quantity?: number; useInvlet?: boolean; distant?: boolean } = {}): string {
+    { quantity?: number; useInvlet?: boolean; distant?: boolean } = {}): Promise<string> {
     const suppress = game.iflags.suppress_price;
     game.iflags.suppress_price = true;
     const saved = object?.quan;
     try {
         if (object) {
             if (quantity) object.quan = quantity;
-            if (distant) text ??= distantObjectName(object, inventoryItemDescription);
+            if (distant) text ??= await distantObjectName(object, inventoryItemDescription);
             else {
                 observeObjectForNaming(object);
-                text ??= inventoryItemDescription(object);
+                text ??= await inventoryItemDescription(object);
             }
             if (useInvlet && game.flags.fixinv !== false && letter !== '>') letter = object.invlet ?? letter;
         }

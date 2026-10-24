@@ -69,7 +69,7 @@ for (const cause of ['departure', 'environment', 'hero', 'genocide']) {
         assert.equal(game.level.damagelist.length, 0);
         assert.equal(!!purchase.unpaid, false);
         assert.equal(!!owned.no_charge, false);
-        assert.equal(itemizedShopBill(shopkeeper).length, 0);
+        assert.equal((await itemizedShopBill(shopkeeper)).length, 0);
         assert.ok(!game.u.ushops.includes(roomno));
         assert.ok(room.rtype >= SHOPBASE);
         assert.equal(!!game.level.flags.has_shop, true);
@@ -102,7 +102,7 @@ void test('a keeper leaving a different shop only clears shallow floor ownership
     assert.equal(!!content.no_charge, true);
     assert.equal(!!buried.no_charge, true);
     assert.equal(east.room.resident, east.shopkeeper);
-    assert.ok(itemizedShopBill(east.shopkeeper).some(item => item.object === used));
+    assert.ok((await itemizedShopBill(east.shopkeeper)).some(item => item.object === used));
 });
 
 void test('a shared shop boundary settles the departing keeper even when its room is not first', async () => {

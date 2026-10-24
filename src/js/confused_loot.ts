@@ -25,7 +25,7 @@ export async function reverseLoot(): Promise<boolean> {
         for (const object of game.inventory) {
             if (!rn2(remaining + 1)) {
                 observeObjectForNaming(object);
-                await pline(`You find old loot: ${object.invlet} - ${inventoryItemDescription(
+                await pline(`You find old loot: ${object.invlet} - ${await inventoryItemDescription(
                     object, { primaryHandDetail: inventoryPrimaryHandDetail(object) })}.`);
                 return true;
             }
@@ -63,7 +63,7 @@ export async function reverseLoot(): Promise<boolean> {
             await pline('The exchequer accepts your contribution.');
             if (!rn2(10)) square.looted = T_LOOTED;
         } else {
-            await pline(`You drop ${inventoryItemDescription(gold)}.`);
+            await pline(`You drop ${await inventoryItemDescription(gold)}.`);
             await dropInventoryObjectAtHero(gold);
         }
     }

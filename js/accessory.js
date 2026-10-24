@@ -135,7 +135,7 @@ export async function wearHeroAccessory(object, slot, state = game) {
     return property || null;
 }
 async function showWornAmulet(object, state) {
-    const message = objectWearMessage(object, state);
+    const message = await objectWearMessage(object, state);
     if (message)
         await plineWithContinuation(message);
 }
@@ -277,7 +277,7 @@ async function removeAmulet(object, state) {
         && !state.u._propertySources?.sleepy?.carried.length) {
         setPropertyTimeout('sleepy', 0, state);
     }
-    const message = armorOffMessage(object, state);
+    const message = await armorOffMessage(object, state);
     if (message)
         await plineWithContinuation(message);
     if (object.otyp === AMULET_OF_ESP)

@@ -2420,7 +2420,7 @@ async function doherecmdmenu() {
     if (floorObject) {
         if (pile.length === 1 || isContainer(floorObject) || floorObject.oclass === 7)
             observeObjectForNaming(floorObject);
-        const description = floorObjectDescription(floorObject);
+        const description = await floorObjectDescription(floorObject);
         add(`Pick up ${pile.length > 1 ? 'items' : description}`);
         if ([
             LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
@@ -2728,7 +2728,7 @@ async function doswapweapon() {
     else if (oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
         observeObjectForNaming(oldPrimary);
-        await plineWithContinuation(`${oldPrimary.invlet} - ${inventoryItemDescription(oldPrimary)}.`);
+        await plineWithContinuation(`${oldPrimary.invlet} - ${await inventoryItemDescription(oldPrimary)}.`);
     }
     else {
         await plineWithContinuation('You have no secondary weapon readied.');
@@ -3785,7 +3785,7 @@ async function doadjust(selected = null, splitting = null) {
         if (game.flags.fixinv === false)
             reassignInventoryLetters();
         observeObjectForNaming(purse);
-        await pline(`${action}: $ - ${inventoryItemDescription(purse)}.`);
+        await pline(`${action}: $ - ${await inventoryItemDescription(purse)}.`);
         game.context.move = 0;
         return;
     }
@@ -3918,11 +3918,11 @@ async function doadjust(selected = null, splitting = null) {
         reassignInventoryLetters();
     game._pending_message = '';
     observeObjectForNaming(object);
-    await pline(`${action} ${object.invlet} - ${inventoryItemDescription(object, {
+    await pline(`${action} ${object.invlet} - ${await inventoryItemDescription(object, {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
     if (bumped)
-        await plineWithContinuation(`Moving: ${bumped.invlet} - ${inventoryItemDescription(bumped)}.`);
+        await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
     game.context.move = 0;
 }
 // C ref: pray.c:doturn().
@@ -4303,11 +4303,11 @@ function inventoryCommandLetter(item) {
         throw new TypeError(`Carried object ${item.o_id} has no inventory letter`);
     return item.invlet;
 }
-function wizardIdentifyDescription(item, primaryHandDetail) {
+async function wizardIdentifyDescription(item, primaryHandDetail) {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
     try {
-        return inventoryItemDescription(item, { primaryHandDetail });
+        return await inventoryItemDescription(item, { primaryHandDetail });
     }
     finally {
         if (override === undefined)
@@ -4335,20 +4335,24 @@ async function wizIdentify() {
         game.context.move = 0;
         return;
     }
-    const sections = pickupClassOrder().map(heading => ({
-        heading,
-        items: unidentified
+    const sections = [];
+    for (const heading of pickupClassOrder()) {
+        const objects = unidentified
             .filter(item => pickupObjectClass(item) === heading)
-            .sort((a, b) => inventoryCommandLetter(a).localeCompare(inventoryCommandLetter(b)))
-            .map(item => {
+            .sort((a, b) => inventoryCommandLetter(a).localeCompare(inventoryCommandLetter(b)));
+        if (!objects.length)
+            continue;
+        const items = [];
+        for (const item of objects) {
             observeObjectForNaming(item);
-            return {
+            items.push({
                 key: inventoryCommandLetter(item),
-                text: wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
+                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
                 value: item,
-            };
-        }),
-    })).filter(section => section.items.length);
+            });
+        }
+        sections.push({ heading, items });
+    }
     const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
     const window = tty_create_nhwindow(NHW_MENU);
     let selected;
@@ -4393,7 +4397,7 @@ async function wizIdentify() {
         if (learnedType)
             await exerciseAttribute(A_WIS, true);
         observeObjectForNaming(item);
-        await plineWithContinuation(`${item.invlet} - ${inventoryItemDescription(item, {
+        await plineWithContinuation(`${item.invlet} - ${await inventoryItemDescription(item, {
             primaryHandDetail: inventoryPrimaryHandDetail(item),
         })}.`);
     }
@@ -5142,7 +5146,7 @@ async function putOnAccessoryObject(object) {
     // Sink effects can remove the ring inside Ring_on().
     if (game.uleft === object || game.uright === object) {
         observeObjectForNaming(object);
-        await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+        await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object)}.`);
     }
     game.context.move = 1;
 }
@@ -5155,7 +5159,7 @@ export async function finishArmorRemoval(object, { silent = false } = {}) {
     await removeHeroArmor(object, game, { deferArmorClass: true });
     if (silent || game.flags?.verbose === false)
         return '';
-    return armorOffMessage(object, game);
+    return await armorOffMessage(object, game);
 }
 // C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
 // T suggests armor and R suggests accessories; either accepts the other kind.
@@ -5227,7 +5231,7 @@ async function removeWornItem(action, itemAction = false) {
         // the slot first and reports afterwards, without a suffix.
         const ring = object === game.uleft || object === game.uright;
         if (ring && game.flags?.verbose !== false) {
-            await plineWithContinuation(armorOffMessage(object, game));
+            await plineWithContinuation(await armorOffMessage(object, game));
         }
         await removeHeroAccessory(object, game);
         game.context.move = 1;
@@ -5305,7 +5309,7 @@ async function putOnArmorObject(object) {
     else {
         await finishHeroHelplessness('');
         object._armorApplied = true;
-        const onMessage = objectWearMessage(object);
+        const onMessage = await objectWearMessage(object);
         if (onMessage)
             await plineWithContinuation(onMessage);
     }
@@ -6216,7 +6220,7 @@ async function doquiverCore(verb) {
     if (verb !== 'fire')
         await setQuiverObject(item, game);
     observeObjectForNaming(item);
-    const description = inventoryItemDescription(item);
+    const description = await inventoryItemDescription(item);
     await plineWithContinuation(verb === 'fire'
         ? `You ready: ${item.invlet} - ${description}.`
         : `${item.invlet} - ${description}.`);
@@ -6282,7 +6286,7 @@ async function dofire(cannedShotLimit = null) {
                 const wasReady = fireObject.ready;
                 fireObject.ready = false;
                 observeObjectForNaming(fireObject);
-                await pline(`You ready: ${fireObject.invlet} - ${inventoryItemDescription(fireObject)}.`);
+                await pline(`You ready: ${fireObject.invlet} - ${await inventoryItemDescription(fireObject)}.`);
                 if (wasReady === undefined)
                     delete fireObject.ready;
                 else

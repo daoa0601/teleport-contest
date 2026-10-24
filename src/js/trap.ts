@@ -266,7 +266,7 @@ export async function destroyLavaFloorObjects(
                     await publish(object.quan === 1 ? 'It burns up!' : 'They burn up!');
                 } else {
                     observeObjectForNaming(object, { state });
-                    await publish(formatSeenMessage(`${fullObjectDescription(object, { state })} hit lava and burn up!`, state));
+                    await publish(formatSeenMessage(`${await fullObjectDescription(object, { state })} hit lava and burn up!`, state));
                 }
             }
             await delobj(object, state, random);

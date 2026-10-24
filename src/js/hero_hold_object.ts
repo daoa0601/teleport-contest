@@ -104,7 +104,7 @@ export async function holdAnotherObject(object: GameObject, {
         await setQuiverObject(object, state);
     if (holdMessage !== null || dropMessage !== null) {
         if (state.flags.fixinv === false) reassignInventoryLetters();
-        await publish(heldInventoryMessage(object, count, holdMessage, state));
+        await publish(await heldInventoryMessage(object, count, holdMessage, state));
     }
     await reportHeroEncumbrance(state);
     return { object, heroDied: !!state.program_state?.gameover };
@@ -112,9 +112,9 @@ export async function holdAnotherObject(object: GameObject, {
 
 // C prinv()/xprname(): name only the acquired quantity, while retaining
 // the actual inventory identity for wielded, worn, and quivered descriptions.
-function heldInventoryMessage(
+async function heldInventoryMessage(
     object: GameObject, count: number, prefix: string | null, state: GameState,
-): string {
+): Promise<string> {
     const letter = object.invlet;
     if (!letter) throw new Error(`Held object ${object.o_id} has no inventory letter`);
     const total = objectQuantity(object);
@@ -127,7 +127,7 @@ function heldInventoryMessage(
     object.quan = count || total;
     object.quantity = object.quan;
     try {
-        description = inventoryItemDescription(object);
+        description = await inventoryItemDescription(object);
     } finally {
         object.quan = total;
         if (savedQuantity === undefined) delete object.quantity;

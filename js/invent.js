@@ -193,7 +193,7 @@ async function identifyTraditionally(limit) {
         if (answer === null)
             continue;
         if (answer.includes('i')) {
-            await showInventoryWindow(inventorySections(candidates, false), { pickMode: PICK_ONE });
+            await showInventoryWindow(await inventorySections(candidates, false), { pickMode: PICK_ONE });
             continue;
         }
         const categories = await parseIdentificationCategories(answer);
@@ -222,7 +222,7 @@ async function identifyTraditionally(limit) {
                         const letter = game.flags.fixinv === false
                             ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
                             : object.invlet;
-                        const description = inventoryItemDescription(object, {
+                        const description = await inventoryItemDescription(object, {
                             primaryHandDetail: inventoryPrimaryHandDetail(object),
                         });
                         await flushPendingTopline();
@@ -252,7 +252,7 @@ async function identifyTraditionally(limit) {
 async function identificationMenu(candidates, first) {
     await flushPendingTopline();
     clearMessageWindow();
-    const sections = inventorySections(candidates, false).map(section => ({
+    const sections = (await inventorySections(candidates, false)).map(section => ({
         ...section,
         items: section.items.map(item => {
             if (item.key === undefined)
@@ -271,7 +271,7 @@ async function identificationMenu(candidates, first) {
 async function identifyAndDescribe(object) {
     fullyIdentifyObject(object);
     observeObjectForNaming(object);
-    await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object, {
+    await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object, {
         primaryHandDetail: inventoryPrimaryHandDetail(object),
     })}.`);
 }
@@ -331,8 +331,8 @@ export function bucAdjectiveForName(item) {
 export function inventoryPrimaryHandDetail(item) {
     return primaryHandDescriptionDetail(item);
 }
-export function inventoryItemDescription(item, options = {}) {
-    return objectDescription(item, options);
+export async function inventoryItemDescription(item, options = {}) {
+    return await objectDescription(item, options);
 }
 export async function consumeInventoryItem(item, state = game) {
     requireLiveGame(state);
@@ -346,11 +346,11 @@ export async function consumeInventoryItem(item, state = game) {
     }
     await useUpInventoryStack(item, state);
 }
-function rerollItemDescription(item) {
+async function rerollItemDescription(item) {
     // invent.c:reroll_menu() brackets distant_name(doname) with
     // override_ID.  Identify a temporary view rather than mutating the live
     // object or discovery tables for a character which might be rejected.
-    return inventoryItemDescription({
+    return await inventoryItemDescription({
         ...item,
         known: true,
         bknown: true,
@@ -386,14 +386,16 @@ async function rerollFallbackPrompt() {
 export async function rerollMenu() {
     const acceptKey = game.flags?.lootabc ? 'a' : 'p';
     const rerollKey = game.flags?.lootabc ? 'b' : 'r';
+    const descriptions = [];
+    for (const item of game.inventory || []) {
+        observeObjectForNaming(item, { distant: true });
+        descriptions.push(await rerollItemDescription(item));
+    }
     const entries = [
         { key: acceptKey, text: 'start the game with this character' },
         { key: rerollKey, text: 'reroll another character' },
         '',
-        ...(game.inventory || []).map(item => {
-            observeObjectForNaming(item, { distant: true });
-            return rerollItemDescription(item);
-        }),
+        ...descriptions,
         '',
         rerollAttributeLine(),
     ];
@@ -412,10 +414,10 @@ export async function rerollMenu() {
     }
     return reroll;
 }
-function inventorySections(items = game.inventory || [], includeGold = true) {
-    return inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
+async function inventorySections(items = game.inventory || [], includeGold = true) {
+    return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
 }
-function inventorySectionsInOrder(items, includeGold = true) {
+async function inventorySectionsInOrder(items, includeGold = true) {
     const grouped = new Map();
     for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS)
@@ -430,7 +432,7 @@ function inventorySectionsInOrder(items, includeGold = true) {
         }
         section.push({
             ...(item.invlet == null ? {} : { key: item.invlet }),
-            text: inventoryItemDescription(item, {
+            text: await inventoryItemDescription(item, {
                 primaryHandDetail: inventoryPrimaryHandDetail(item),
             }),
         });
@@ -750,7 +752,7 @@ export async function selectUsedInventoryLetter(avoidLetter) {
     // not reorder items within a class, even when it sorts other menus.
     const ordered = game.flags.sortpack === false ? items
         : inventoryClassOrder().flatMap(oclass => items.filter(item => item.oclass === oclass));
-    const result = await showInventoryWindow(inventorySectionsInOrder(ordered), {
+    const result = await showInventoryWindow(await inventorySectionsInOrder(ordered), {
         title: 'Inventory letters used:', pickMode: PICK_ONE,
     });
     return result.key;
@@ -810,13 +812,13 @@ export async function selectInventoryObject({ letters, includeGold = true, title
         const letter = item ? item.invlet : '-';
         if (!letter)
             throw new Error('A carried inventory choice has no letter');
-        const description = item ? inventoryItemDescription(item, {
+        const description = item ? await inventoryItemDescription(item, {
             primaryHandDetail: inventoryPrimaryHandDetail(item),
         }) : extraChoice;
         const key = await showMessageMenu(letter, item ? pickMode : PICK_ONE, `${letter} - ${description}.`);
         return { key, count: null };
     }
-    const sections = inventorySections(visible, true);
+    const sections = await inventorySections(visible, true);
     if (extraChoice && !wizardIdentification)
         sections.unshift({
             heading: game.flags.sortpack === false ? null : 'Miscellaneous',

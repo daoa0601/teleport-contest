@@ -184,7 +184,7 @@ async function dipInPolymorph(object, potion) {
     if (replacement.otyp !== oldType) {
         learnObjectType(POT_POLYMORPH);
         await consumeInventoryItem(potion);
-        await pline(`${replacement.invlet} - ${inventoryItemDescription(replacement)}.`);
+        await pline(`${replacement.invlet} - ${await inventoryItemDescription(replacement)}.`);
     }
     else {
         await pline('Nothing seems to happen.');

@@ -87,7 +87,7 @@ async function stealItems(monster, context) {
             const possessive = monsterPossessive(monster, { state });
             await publish(`${subject} finishes taking off ${possessive} suit.`);
         }
-        const description = inventoryItemDescription(object);
+        const description = await inventoryItemDescription(object);
         const held = await holdAnotherObject(object, {
             state, publish, holdMessage: 'You steal: ',
             dropMessage: `You snatched but dropped ${description}.`,

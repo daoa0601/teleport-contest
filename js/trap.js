@@ -155,7 +155,7 @@ export async function destroyLavaFloorObjects(objects, { state = game, publish =
                 }
                 else {
                     observeObjectForNaming(object, { state });
-                    await publish(formatSeenMessage(`${fullObjectDescription(object, { state })} hit lava and burn up!`, state));
+                    await publish(formatSeenMessage(`${await fullObjectDescription(object, { state })} hit lava and burn up!`, state));
                 }
             }
             await delobj(object, state, random);

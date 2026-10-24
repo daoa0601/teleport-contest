@@ -23,9 +23,9 @@ void test('a newly created corpse has a species name without learning its object
     set_corpsenm(body, MONSTER_NAME.indexOf('jackal'));
     body.dknown = false;
 
-    assert.equal(inventoryItemDescription(body), 'a jackal corpse');
+    assert.equal(await inventoryItemDescription(body), 'a jackal corpse');
     body.quan = 2;
-    assert.equal(inventoryItemDescription(body), '2 jackal corpses');
+    assert.equal(await inventoryItemDescription(body), '2 jackal corpses');
     assert.equal(game._knownObjectTypes?.has(CORPSE) ?? false, false);
 });
 
@@ -81,7 +81,9 @@ void test('same-sex corpse admission merges while opposite-sex admission keeps a
     }
 
     assert.ok(box.contents);
-    assert.deepEqual(box.contents.map((object) => inventoryItemDescription(object)).sort(), [
+    const names = [];
+    for (const object of box.contents) names.push(await inventoryItemDescription(object));
+    assert.deepEqual(names.sort(), [
         '2 jackal corpses',
         'a jackal corpse',
     ]);
@@ -123,7 +125,7 @@ for (const [species, expected] of [
         body.oeaten = 1;
         body.bknown = true;
 
-        assert.equal(inventoryItemDescription(body), expected);
+        assert.equal(await inventoryItemDescription(body), expected);
     });
 }
 
@@ -142,7 +144,7 @@ void test('unique and personally named corpses preserve their definite and posse
     const body = await mksobj(CORPSE, false, false);
     set_corpsenm(body, MONSTER_NAME.indexOf('Oracle'));
     body.quan = 2;
-    assert.equal(inventoryItemDescription(body), "the Oracle's 2 corpses");
+    assert.equal(await inventoryItemDescription(body), "the Oracle's 2 corpses");
     assert.equal(foodObjectName(body, { definite: true }), "the Oracle's corpse");
     set_corpsenm(body, MONSTER_NAME.indexOf('Medusa'));
     assert.equal(foodObjectName(body, { definite: true }), "Medusa's corpse");

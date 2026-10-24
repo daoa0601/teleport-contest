@@ -1,4 +1,5 @@
 import { heroLocomotion } from './hero_locomotion.js';
+import { impossible } from './diagnostics.js';
 // shk.js — Runtime shop ownership and entry policy.
 // C refs: hack.c move_update()/check_special_room(), shk.c inhishop(),
 // shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
@@ -827,13 +828,15 @@ export async function chargeAlteredUnpaidObject(object, verb, state = game) {
 }
 // C shk.c:unpaid_cost(). The root keeps its agreed bill price; contents
 // use the current shop valuation, and a partially used stack uses its live count.
-export function unpaidObjectCost(object, state = game, costType = 'object') {
+export async function unpaidObjectCost(object, state = game, costType = 'object') {
     let price = 0;
+    let resident = null;
+    let billed = null;
     for (const roomno of state.u.ushops ?? []) {
-        const resident = shopResident(roomno, state);
+        resident = shopResident(roomno, state);
         if (!resident)
             continue;
-        const billed = billForObject(object, state, resident);
+        billed = billForObject(object, state, resident);
         if (billed)
             price = billed.entry.price * (costType === 'single' ? 1 : object.quan);
         if (costType === 'contents' && object.contents?.length)
@@ -841,6 +844,9 @@ export function unpaidObjectCost(object, state = game, costType = 'object') {
         if (billed || (!object.unpaid && price))
             break;
     }
+    // Native tests the last shopkeeper examined; none outside a shop.
+    if (!resident || (object.unpaid && !billed))
+        await impossible("unpaid_cost: object wasn't on any bill.", { state });
     return price;
 }
 // C shk.c:alter_cost(). An improvement can raise a bill, never lower it.

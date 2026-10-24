@@ -38,7 +38,7 @@ for (const role of ['wizard', 'caveman'] as const) {
         assert.ok(hat.invlet);
         resetInputState().feed(hat.invlet);
         await rhack('W'.charCodeAt(0));
-        assert.match(inventoryItemDescription(hat), /\(being donned\)$/);
+        assert.match(await inventoryItemDescription(hat), /\(being donned\)$/);
         assert.equal(currentAttribute(A_CHA), charisma);
 
         await disintegrateWornArmor(hat);

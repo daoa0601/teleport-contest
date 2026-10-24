@@ -43,16 +43,18 @@ export async function lookInsideSwallower(monster: Monster): Promise<void> {
     const sections: InventorySection<GameObject>[] = [];
     let first = true;
     for (const oclass of [...inventoryClassOrder(), 17, 0]) {
-        const items = ordered.filter(object => object.oclass === oclass);
-        if (!items.length) continue;
-        sections.push({ heading: objectClassHeading(oclass), items: items.map(object => {
+        const objects = ordered.filter(object => object.oclass === oclass);
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
             const firstGold = first && object.otyp === GOLD_PIECE;
             first = false;
-            return { ...(firstGold ? { key: '$' } : {}),
-                text: inventoryItemDescription(object), value: object };
-        }) });
+            items.push({ ...(firstGold ? { key: '$' } : {}),
+                text: await inventoryItemDescription(object), value: object });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
     }
     // query_objlist() attaches a monster glyph even though tty only shows text.
     transientMonsterGlyph({ mnum: heroSpecies(game),

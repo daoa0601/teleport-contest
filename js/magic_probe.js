@@ -27,7 +27,10 @@ export async function probeMonster(monster, { state = game, onHead = true, x = m
     }
     probeObjectChain(inventory, { state });
     const name = monsterName(monster, { state, capitalized: true, suppressIt: true });
-    await showInventoryWindow([{ heading: '', items: inventory.map(object => ({ text: inventoryItemDescription(object) })) }], {
+    const items = [];
+    for (const object of inventory)
+        items.push({ text: await inventoryItemDescription(object) });
+    await showInventoryWindow([{ heading: '', items }], {
         title: `${possessiveName(name)} possessions:`,
     });
 }
@@ -64,7 +67,10 @@ export async function probeObject(object, { state = game } = {}) {
         else {
             for (const content of object.contents)
                 observeObject(content, state);
-            await showInventoryWindow([{ heading: '', items: object.contents.map(content => ({ text: inventoryItemDescription(content) })) }], { title: `Contents of ${name}:` });
+            const items = [];
+            for (const content of object.contents)
+                items.push({ text: await inventoryItemDescription(content) });
+            await showInventoryWindow([{ heading: '', items }], { title: `Contents of ${name}:` });
         }
         learned = true;
     }

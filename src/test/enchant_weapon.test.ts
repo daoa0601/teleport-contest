@@ -60,7 +60,7 @@ void test('enchant weapon fuses a stack of worm teeth into one uncursed crysknif
     assert.equal(teeth.cursed, false);
     assert.ok(!teeth.oerodeproof);
     assert.equal(teeth.owt, objectWeight(teeth));
-    assert.match(inventoryItemDescription(teeth), /crysknife/);
+    assert.match(await inventoryItemDescription(teeth), /crysknife/);
     assert.equal(game.uwep, teeth);
 });
 
@@ -157,7 +157,7 @@ void test('cursed enchantment dulls a crysknife without changing its enchantment
     assert.equal(knife.spe, 2);
     assert.ok(!knife.oerodeproof);
     assert.equal(knife.owt, objectWeight(knife));
-    assert.match(inventoryItemDescription(knife), /worm tooth/);
+    assert.match(await inventoryItemDescription(knife), /worm tooth/);
 });
 
 void test('restricted artifacts resist cursed enchantment', async () => {
@@ -299,14 +299,14 @@ void test('improving an unpaid weapon raises its price without settling its bill
     pushKeys(' ');
     await pickupAtHero();
     await setPrimaryWeapon(sword);
-    const before = unpaidObjectCost(sword);
+    const before = await unpaidObjectCost(sword);
     const scroll = await addInventoryObject(SCR_ENCHANT_WEAPON);
 
     await readInventoryObject(scroll, '      ');
 
     assert.equal(sword.spe, 1);
     assert.ok(sword.unpaid);
-    assert.ok(unpaidObjectCost(sword) > before);
+    assert.ok(await unpaidObjectCost(sword) > before);
 });
 
 void test('degrading an unpaid crysknife charges its old value before transformation', async () => {
@@ -324,7 +324,7 @@ void test('degrading an unpaid crysknife charges its old value before transforma
     await setPrimaryWeapon(knife);
     await readInventoryObject(uncurse, '      ');
     assert.equal(knife.otyp, CRYSKNIFE);
-    const before = unpaidObjectCost(knife);
+    const before = await unpaidObjectCost(knife);
     assert.ok(before > 0, 'the billed crysknife must carry a real price');
     // The sharpen flow leaves queued pager keys; a clean queue keeps the
     // second read's selection honest.
@@ -335,7 +335,7 @@ void test('degrading an unpaid crysknife charges its old value before transforma
 
     assert.equal(knife.otyp, WORM_TOOTH);
     assert.ok(!knife.unpaid);
-    const amountOwed = itemizedShopBill(shopkeeper)
+    const amountOwed = (await itemizedShopBill(shopkeeper))
         .reduce((total, item) => total + item.price, 0);
     assert.equal(amountOwed, before);
 });
@@ -501,7 +501,7 @@ void test('evaporating an unpaid weapon leaves its full purchase price owed', as
         pushKeys(' ');
         await pickupAtHero();
         await setPrimaryWeapon(sword);
-        const price = unpaidObjectCost(sword);
+        const price = await unpaidObjectCost(sword);
         const scroll = await addInventoryObject(SCR_ENCHANT_WEAPON);
         initRng(BigInt(seed));
 
@@ -509,7 +509,7 @@ void test('evaporating an unpaid weapon leaves its full purchase price owed', as
 
         if (!game.inventory.includes(sword)) {
             destroyed++;
-            const amountOwed = itemizedShopBill(shopkeeper)
+            const amountOwed = (await itemizedShopBill(shopkeeper))
                 .reduce((total, item) => total + item.price, 0);
             assert.equal(amountOwed, price);
             assert.equal(game.uwep, null);

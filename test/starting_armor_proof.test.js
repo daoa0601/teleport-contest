@@ -15,7 +15,7 @@ void test('Samurai startup supplies known lacquered armor which resists rust and
     const rust = await erodeObject(armor, 'rust');
     const corrosion = await erodeObject(armor, 'corrosion');
     assert.equal(state.uarm, armor);
-    assert.match(inventoryItemDescription(armor), /rustproof \+0 splint mail \(being worn\)/);
+    assert.match(await inventoryItemDescription(armor), /rustproof \+0 splint mail \(being worn\)/);
     assert.equal(rust, 'nothing');
     assert.equal(corrosion, 'nothing');
     assert.equal(armor.oeroded ?? 0, 0);
@@ -36,7 +36,7 @@ for (const { moves, quest, description } of [
         assert.equal(armor.rknown, true);
         assert.equal(armor.oeroded ?? 0, 0);
         assert.equal(armor.oeroded2 ?? 0, 0);
-        assert.match(inventoryItemDescription(armor), /rustproof.*splint mail/);
+        assert.match(await inventoryItemDescription(armor), /rustproof.*splint mail/);
     });
 }
 void test('a Samurai does not recognize ordinary later splint mail as lacquered', async () => {
@@ -45,7 +45,7 @@ void test('a Samurai does not recognize ordinary later splint mail as lacquered'
     game.u.uz = { dnum: 0, dlevel: 8 };
     const armor = await mksobj(SPLINT_MAIL, true, false);
     assert.equal(Boolean(armor.rknown), false);
-    assert.doesNotMatch(inventoryItemDescription(armor), /rustproof/);
+    assert.doesNotMatch(await inventoryItemDescription(armor), /rustproof/);
 });
 void test('acquiring splint mail does not grant a Knight Samurai lacquer', async () => {
     const state = await completeHeroStartup({ role: 'knight', alignment: 'lawful' });
@@ -58,7 +58,7 @@ void test('acquiring splint mail does not grant a Knight Samurai lacquer', async
     assert.equal(result, 'damaged');
     assert.equal(armor.oeroded, 1);
     assert.match(messages.join('\n'), /rusts/);
-    assert.doesNotMatch(inventoryItemDescription(armor), /rustproof/);
+    assert.doesNotMatch(await inventoryItemDescription(armor), /rustproof/);
 });
 void test('Samurai lacquer does not apply to other armor or uninitialized objects', async () => {
     freshObjectRoom({ role: 'samurai', moves: 1 });
@@ -66,8 +66,8 @@ void test('Samurai lacquer does not apply to other armor or uninitialized object
     const uninitializedSplintMail = await mksobj(SPLINT_MAIL, false, false);
     assert.equal(Boolean(ringMail.oerodeproof), false);
     assert.equal(Boolean(uninitializedSplintMail.oerodeproof), false);
-    assert.doesNotMatch(inventoryItemDescription(ringMail), /rustproof/);
-    assert.doesNotMatch(inventoryItemDescription(uninitializedSplintMail), /rustproof/);
+    assert.doesNotMatch(await inventoryItemDescription(ringMail), /rustproof/);
+    assert.doesNotMatch(await inventoryItemDescription(uninitializedSplintMail), /rustproof/);
 });
 void test('randomly generated armor retains damage, grease, and proofing as physical state', async () => {
     freshObjectRoom({ role: 'wizard', moves: 80, gameplaySeed: 741n });
@@ -90,10 +90,10 @@ void test('randomly generated armor retains damage, grease, and proofing as phys
     assert.ok(corroded, 'the generated armor sample contains visible corrosion');
     assert.ok(greased, 'the generated armor sample contains a grease coating');
     assert.ok(proofed, 'the generated armor sample contains hidden erosion proofing');
-    assert.match(inventoryItemDescription(rusty), /rusty/);
-    assert.match(inventoryItemDescription(corroded), /corroded/);
-    assert.match(inventoryItemDescription(greased), /greased/);
-    assert.doesNotMatch(inventoryItemDescription(proofed), /rustproof/);
+    assert.match(await inventoryItemDescription(rusty), /rusty/);
+    assert.match(await inventoryItemDescription(corroded), /corroded/);
+    assert.match(await inventoryItemDescription(greased), /greased/);
+    assert.doesNotMatch(await inventoryItemDescription(proofed), /rustproof/);
     const rustBeforeGrease = greased.oeroded ?? 0;
     const greaseResult = await erodeObject(greased, 'rust', { random: () => 0 });
     const proofResult = await erodeObject(proofed, 'corrosion');
@@ -103,7 +103,7 @@ void test('randomly generated armor retains damage, grease, and proofing as phys
     assert.equal(proofResult, 'nothing');
     assert.equal(proofed.oeroded2 ?? 0, 0);
     assert.equal(proofed.rknown, true);
-    assert.match(inventoryItemDescription(proofed), /rustproof/);
+    assert.match(await inventoryItemDescription(proofed), /rustproof/);
 });
 void test('plastic weapons can be generated burnt and can burn further without rotting', async () => {
     freshObjectRoom({ moves: 80, gameplaySeed: 953n });
@@ -115,7 +115,7 @@ void test('plastic weapons can be generated burnt and can burn further without r
             burned = weapon;
     }
     assert.ok(burned, 'the generated rubber hoses include one with incomplete fire damage');
-    assert.match(inventoryItemDescription(burned), /burnt/);
+    assert.match(await inventoryItemDescription(burned), /burnt/);
     const oldBurnDamage = burned.oeroded ?? 0;
     const fire = await erodeObject(burned, 'burn', { luckRandom: () => 1 });
     const rot = await erodeObject(burned, 'rot');

@@ -18,7 +18,7 @@ void test('ordinary rocks are recognized without acquiring type knowledge', asyn
     await addCreatedInventoryItem(rocks);
 
     assert.equal(objectName(rocks), 'rock');
-    assert.equal(inventoryItemDescription(rocks), '3 rocks');
+    assert.equal(await inventoryItemDescription(rocks), '3 rocks');
 });
 
 for (const [type, appearance, noun] of [
@@ -60,7 +60,7 @@ for (const [type, name] of [
         assert.equal(objectName(object), name);
         assert.equal(minimalObjectName(object), name);
         assert.equal(objectCombatName(object), name);
-        assert.equal(inventoryItemDescription(object), `a ${name}`);
+        assert.equal(await inventoryItemDescription(object), `a ${name}`);
     });
 }
 
@@ -73,8 +73,8 @@ void test('named gemstones pluralize the noun while preserving the individual na
 
     assert.equal(objectCombatName(rubies), 'rubies named Ember');
     assert.equal(objectCombatName(jades), 'jade stones named River');
-    assert.equal(inventoryItemDescription(rubies), '2 rubies named Ember');
-    assert.equal(inventoryItemDescription(jades), '3 jade stones named River');
+    assert.equal(await inventoryItemDescription(rubies), '2 rubies named Ember');
+    assert.equal(await inventoryItemDescription(jades), '3 jade stones named River');
 });
 
 void test('inventory displays real gem identities and quantities after appearance and discovery changes', async () => {

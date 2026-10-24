@@ -138,7 +138,7 @@ export async function pickLock(tool, { state = game, target = null, container = 
         return true;
     }
     if (heroHasNoHands(state)) {
-        await pline(`You can't hold ${tool ? inventoryItemDescription(tool) : 'that'} -- you have no hands!`);
+        await pline(`You can't hold ${tool ? await inventoryItemDescription(tool) : 'that'} -- you have no hands!`);
         return false;
     }
     if (state.u.uswallow) {
@@ -203,7 +203,7 @@ async function pickBoxLock(tool, container, automatic, state) {
             const verb = box.obroken ? 'fix its lock' : !box.olocked ? 'lock it'
                 : tool?.otyp === LOCK_PICK ? 'pick its lock' : 'unlock it';
             observeObjectForNaming(box, { state });
-            const description = inventoryItemDescription(box);
+            const description = await inventoryItemDescription(box);
             box.lknown = true;
             const answer = await promptYesNoQuit(`There is ${description} here; ${verb}?`);
             if (answer === 'q')

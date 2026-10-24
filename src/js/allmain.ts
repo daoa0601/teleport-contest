@@ -1746,13 +1746,13 @@ function addHeroMovementRation(state: GameState, amount: number): void {
     );
 }
 
-function reluctantPetMessage(monster: Monster, movement: MonsterMovement): string {
+async function reluctantPetMessage(monster: Monster, movement: MonsterMovement): Promise<string> {
     const game = requireInitializedGame();
     const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
     const rememberedObject = game.level?.at(movement.x, movement.y)?.remembered_glyph?.kind === 'object';
     const top = !heroIsHallucinating(game) && game.level?.flags.hero_memory && rememberedObject
         ? pile[0] : undefined;
-    const objectName = top ? distantMonsterObjectName(top) : 'something';
+    const objectName = top ? await distantMonsterObjectName(top) : 'something';
     const verb = verbForSubject(null, monsterLocomotion(monster.mnum, 'step'));
     const subject = monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true });
     const preposition = monsterFliesOrFloats(monster) ? 'over' : 'onto';
@@ -1840,10 +1840,10 @@ function wornItemRemover(monster: Monster, state: GameState): string {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });
 }
 
-function wornTheftObjectDescription(object: GameObject): string {
+async function wornTheftObjectDescription(object: GameObject): Promise<string> {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
-    let description = inventoryItemDescription(object)
+    let description = (await inventoryItemDescription(object))
         .replace(/^(?:the|an|a) /, object === game.uchain ? 'the ' : 'your ')
         .replace(' (being worn)', '')
         .replace(' (alternate weapon; not wielded)', '');
@@ -1937,7 +1937,7 @@ async function resolveDeferredHeroItemTheft(
     if (!object) {
         if (!animal && game.uchain && draw(4)) {
             await plineWithContinuation(`${wornItemRemover(monster, game)} takes off ${
-                wornTheftObjectDescription(game.uchain)}.`);
+                await wornTheftObjectDescription(game.uchain)}.`);
             await removeWornHeroItem(game.uchain, game);
         } else if (!animal && game.u.utrap && game.u.utraptype === TT_BURIEDBALL && !draw(4)) {
             await plineWithContinuation(`${subject} takes off your unseen chain.`);
@@ -2052,7 +2052,7 @@ async function resolveDeferredHeroItemTheft(
     const removalItem = object === game.uball && game.uchain ? game.uchain : object;
     if (!charmed && (wasWeapon || stillWorn)) {
         observeObjectForNaming(removalItem);
-        const description = wornTheftObjectDescription(removalItem);
+        const description = await wornTheftObjectDescription(removalItem);
         const verb = removalItem === object && wasWeapon ? 'disarms'
             : wasAccessory ? 'removes' : 'takes off';
         // worn_item_removal() names the thief again with Some_Monnam().
@@ -2085,7 +2085,7 @@ async function resolveDeferredHeroItemTheft(
         return true;
     }
     observeObjectForNaming(object);
-    const stolenObjectDescription = inventoryItemDescription(object);
+    const stolenObjectDescription = await inventoryItemDescription(object);
     const thief = charmed || (game._lastPlineKind === PLNMSG_MON_TAKES_OFF_ITEM
         && MONSTER_SYMBOL[monster.mnum] === 14) ? 'She' : subject;
     // urgent_pline() does not force a pager for its newly installed line.
@@ -2151,7 +2151,7 @@ async function finishDelayedArmorTheft(thief: Monster, object: GameObject, state
     unlinkObject(object, state);
     await finishInventoryRemoval(object, state);
     observeObjectForNaming(object, { state });
-    await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${inventoryItemDescription(object)}!`);
+    await plineWithContinuation(`${monsterName(thief, { state, capitalized: true })} steals ${await inventoryItemDescription(object)}!`);
     await addObjectToMonsterInventory(thief, object, state);
     await makeMonsterFlee(thief, { state, announce: false });
     if (!await reportMonsterTeleportRestriction(thief, { state }))
@@ -2170,9 +2170,9 @@ async function presentMonsterCuss(action: MonsterAction): Promise<void> {
 }
 
 
-function distantMonsterObjectName(object: GameObject): string {
+async function distantMonsterObjectName(object: GameObject): Promise<string> {
     observeDistantObjectForNaming(object);
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 
 
@@ -3253,7 +3253,7 @@ async function presentMonsterPickups(action: MonsterMovementAction, game: Playin
     if (movement?.pickedUp
         && cansee(movement.oldx, movement.oldy)) {
         observeDistantObjectForNaming(movement.pickedUp);
-        const name = inventoryItemDescription(movement.pickedUp);
+        const name = await inventoryItemDescription(movement.pickedUp);
         if (game.flags.verbose !== false) {
             await plineWithContinuation(
                 `${visibleMonsterSubject(monster)} picks up ${name}.`,
@@ -3271,7 +3271,7 @@ async function presentPetMovementPrelude(
     if (movement?.deferredPetMove) {
         if (movement.pickedUp && cansee(movement.oldx, movement.oldy)) {
             observeDistantObjectForNaming(movement.pickedUp);
-            const name = inventoryItemDescription(movement.pickedUp);
+            const name = await inventoryItemDescription(movement.pickedUp);
             if (game.flags.verbose !== false) {
                 await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} picks up ${name}.`,
@@ -3297,7 +3297,7 @@ async function presentPetMovementPrelude(
     }
     if (movement.deferredPetReluctance) {
         if (actorWasOpticallySeen || canSeeMonster(monster))
-            await plineWithContinuation(reluctantPetMessage(monster, movement));
+            await plineWithContinuation(await reluctantPetMessage(monster, movement));
         await resumeDeferredPetReluctance(action, game);
     }
 }

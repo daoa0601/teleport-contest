@@ -23,7 +23,7 @@ export async function reverseLoot() {
         for (const object of game.inventory) {
             if (!rn2(remaining + 1)) {
                 observeObjectForNaming(object);
-                await pline(`You find old loot: ${object.invlet} - ${inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) })}.`);
+                await pline(`You find old loot: ${object.invlet} - ${await inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) })}.`);
                 return true;
             }
             remaining--;
@@ -67,7 +67,7 @@ export async function reverseLoot() {
                 square.looted = T_LOOTED;
         }
         else {
-            await pline(`You drop ${inventoryItemDescription(gold)}.`);
+            await pline(`You drop ${await inventoryItemDescription(gold)}.`);
             await dropInventoryObjectAtHero(gold);
         }
     }

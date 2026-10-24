@@ -401,7 +401,7 @@ async function displayBuriedInventory(x, y, state) {
             if (!object)
                 throw new Error('A visible one-object pile must contain its object.');
             const plural = objectNameIsPlural(object, state);
-            await pline(`There ${plural ? 'are' : 'is'} ${inventoryItemDescription(object)} under the ${liquid} here.`);
+            await pline(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
             underwhat = plural || armorUsesPairGrammar(OBJECT_NAMES[object.otyp] ?? '') ? 'under them' : 'beneath it';
         }
         else {
@@ -417,15 +417,16 @@ async function displayBuriedInventory(x, y, state) {
     return count + buried.length;
 }
 async function showProbeObjects(objects, title, groupByClass = false) {
-    const item = (object) => {
-        consumeHallucinatedMenuObjectGlyph(object);
-        return { text: inventoryItemDescription(object) };
-    };
-    const sections = groupByClass
-        ? pickupClassOrder().map(heading => ({ heading,
-            items: objects.filter(object => pickupObjectClass(object) === heading).map(item),
-        }))
-        : [{ heading: '', items: objects.map(item) }];
+    const sections = [];
+    for (const heading of groupByClass ? pickupClassOrder() : ['']) {
+        const members = groupByClass ? objects.filter(object => pickupObjectClass(object) === heading) : objects;
+        const items = [];
+        for (const object of members) {
+            consumeHallucinatedMenuObjectGlyph(object);
+            items.push({ text: await inventoryItemDescription(object) });
+        }
+        sections.push({ heading, items });
+    }
     await showInventoryWindow(sections, { title });
 }
 //# sourceMappingURL=wand_effects.js.map

@@ -36,7 +36,7 @@ export async function dropBoulderOnHero({ state = game, confused = false, helmet
     const object = await fallingRock(confused);
     let damage = 0;
     if (canBeHit({ mnum: heroSpecies(state) }) && !state.u.passesWalls) {
-        await plineWithContinuation(`You are hit by ${fallingRockName(object, state)}!`);
+        await plineWithContinuation(`You are hit by ${await fallingRockName(object, state)}!`);
         damage = rollPhysicalWeaponDamageAgainstHero(object, state) * object.quan;
         const helmet = state.uarmh || state.u.uarmh;
         if (helmet && helmetProtects) {
@@ -68,7 +68,7 @@ export async function dropBoulderOnMonster(x, y, { state = game, confused = fals
         // C rechecks canspotmon() after each pline(), whose pending vision
         // recalculation can hide the target behind boulders that just fell.
         if (cansee(x, y)) {
-            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${fallingRockName(object, state)}!`);
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${await fallingRockName(object, state)}!`);
             if (monster.minvis && !canSpotMonster(monster))
                 map_invisible(x, y);
         }
@@ -125,9 +125,9 @@ async function fallingRock(confused) {
 }
 // C doname() observes the falling object, so later blind feeling still
 // calls seen rocks "rocks" rather than "stones".
-function fallingRockName(object, state) {
+async function fallingRockName(object, state) {
     observeObjectForNaming(object, { state });
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 async function landFallingRock(object, x, y, state) {
     await landFloorObject(object, x, y, { state, verb: 'fall' });

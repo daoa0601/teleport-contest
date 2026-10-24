@@ -7,9 +7,9 @@ import { simpleObjectNameWithArticle, observeObjectForNaming, } from './objnam.j
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 const COIN_CLASS = 12;
-function objectDescription(object, state) {
+async function objectDescription(object, state) {
     return state === game
-        ? inventoryItemDescription(object)
+        ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
 }
 function capitalize(value) {
@@ -35,7 +35,7 @@ export async function landObjectOnAltar(object, { state = game, monsterMoving = 
     }
     const quantity = object.quan ?? object.quantity ?? 1;
     observeObjectForNaming(object, { state });
-    const description = objectDescription(object, state);
+    const description = await objectDescription(object, state);
     const plural = quantity > 1;
     const hallucinating = heroIsHallucinating(state);
     if (object.blessed || object.cursed) {

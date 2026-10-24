@@ -122,13 +122,13 @@ async function lookAtObjects(objects) {
         return;
     if (objects.length === 1) {
         observeObjectForNaming(first);
-        await pline(objectDescription(first));
+        await pline(await objectDescription(first));
         return;
     }
     const lines = [''];
     for (const object of objects) {
         observeObjectForNaming(object);
-        lines.push(objectDescription(object));
+        lines.push(await objectDescription(object));
     }
     await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }

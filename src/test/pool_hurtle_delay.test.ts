@@ -154,7 +154,7 @@ for (const action of ['wear', 'remove']) {
         await hurtleHero(1, 0, 1);
         await finishAtCommandInput(input, () => moveloop_core(), /.*/);
         assert.equal(game.u.uinwater, 1);
-        assert.match(inventoryItemDescription(boots), /\(being (?:donned|doffed)\)$/);
+        assert.match(await inventoryItemDescription(boots), /\(being (?:donned|doffed)\)$/);
 
         const started = game.moves;
         input.feed('#pray\ny');
@@ -172,6 +172,6 @@ for (const action of ['wear', 'remove']) {
         assert.equal(game.uarmf, boots, 'Replacing the callback leaves the boots worn');
         assert.equal(boots.worn, true);
         assert.equal(boots.known, false, 'Prayer must not finish Boots_on() or Boots_off()');
-        assert.match(inventoryItemDescription(boots), /\(being worn\)$/);
+        assert.match(await inventoryItemDescription(boots), /\(being worn\)$/);
     });
 }

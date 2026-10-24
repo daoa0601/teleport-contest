@@ -30,12 +30,12 @@ void test('tin contents depend on individual knowledge instead of recognizing th
         initialize: false, corpsenm: species('lichen'),
         typeKnown: true, known: false, bknown: false,
     });
-    assert.equal(inventoryItemDescription(hidden), 'a tin');
+    assert.equal(await inventoryItemDescription(hidden), 'a tin');
     const identified = await addInventoryObject(TIN, {
         initialize: false, corpsenm: species('kobold'),
         typeKnown: false, known: true, bknown: false,
     });
-    assert.equal(inventoryItemDescription(identified), 'a tin of kobold meat');
+    assert.equal(await inventoryItemDescription(identified), 'a tin of kobold meat');
 });
 function room(t, answers = [], options = {}) {
     freshObjectRoom({ gameplaySeed: 71n, role: 'wizard', ...options });
@@ -356,13 +356,13 @@ void test('identified preparation names reflect curse and nonrotting species', a
     room(t);
     requirePlayingGame(game);
     const food = await tin({ spe: -4, known: true, cknown: true });
-    assert.match(inventoryItemDescription(food), /tin of french fried lichen/);
+    assert.match(await inventoryItemDescription(food), /tin of french fried lichen/);
     food.cursed = true;
     assert.equal(tinVariety(food, true), HOMEMADE_TIN);
-    assert.match(inventoryItemDescription(food), /homemade tin of lichen/);
+    assert.match(await inventoryItemDescription(food), /homemade tin of lichen/);
     food.corpsenm = species('newt');
     assert.equal(tinVariety(food, true), ROTTEN_TIN);
-    assert.match(inventoryItemDescription(food), /rotten tin of newt meat/);
+    assert.match(await inventoryItemDescription(food), /rotten tin of newt meat/);
     food.spe = 1;
     assert.equal(tinVariety(food, true), SPINACH_TIN);
 });

@@ -264,7 +264,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
     case 'bugle':
         if (seen) {
             observeObjectForNaming(choice.object, { state });
-            await publish(`${subject()} plays ${inventoryItemDescription(choice.object)}!`);
+            await publish(`${subject()} plays ${await inventoryItemDescription(choice.object)}!`);
         } else if (!heroIsDeaf(state)) {
             const message = formatHeardMessage('a bugle playing reveille!', state);
             if (message) await publish(message);

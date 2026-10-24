@@ -4,11 +4,11 @@ import { currency } from './currency.js';
 import { game } from './gstate.js';
 import { priceQuoteSuffix, recordObjectPriceQuote } from './object_knowledge.js';
 import { getCostOfShopItem, objectIsUnpaid, objectTypeKnown, unpaidObjectCost, } from './shk.js';
-export function objectDescriptionPrice(object, { state = game, withPrice = false, } = {}) {
+export async function objectDescriptionPrice(object, { state = game, withPrice = false, } = {}) {
     if (state.iflags.suppress_price || state.program_state.restoring)
         return '';
     if (objectIsUnpaid(object)) {
-        const price = unpaidObjectCost(object, state, 'contents');
+        const price = await unpaidObjectCost(object, state, 'contents');
         return quotedPriceSuffix(object, object.unpaid ? 'unpaid' : 'contents', price, state);
     }
     if (withPrice) {

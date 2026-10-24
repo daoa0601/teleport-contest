@@ -76,7 +76,7 @@ async function eatMetal(monster, context) {
             object.oerodeproof = false;
             monster.mstun = 1;
             if (visible) {
-                const name = distantMealName(object, state);
+                const name = await distantMealName(object, state);
                 if (state.flags.verbose)
                     await publish(`${monsterName(monster, { state, capitalized: true })} spits ${name} out in disgust!`);
             }
@@ -120,7 +120,7 @@ async function eatOrEngulfPile(monster, context) {
             || (petrifyingFood(object) && !monsterHasStoneResistance(monster))
             || (object.otyp === GLOB_OF_GREEN_SLIME && !monsterIsSlimeproof(monster))) {
             engulfed++;
-            const name = distantMealName(object, state);
+            const name = await distantMealName(object, state);
             if (engulfed === 1)
                 engulfMessage = `${monsterName(monster, { state, capitalized: true })} engulfs ${name}.`;
             else if (engulfed === 2)
@@ -208,13 +208,13 @@ function poisonousObject(object, monster) {
 function petrifyingFood(object) {
     return [CORPSE, EGG, TIN].includes(object.otyp) && fleshPetrifies(object.corpsenm);
 }
-function distantMealName(object, state) {
+async function distantMealName(object, state) {
     observeDistantObjectForNaming(object, state);
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 async function describeEating(monster, object, { state, publish }) {
     // Naming can identify an object even when verbose prose is disabled.
-    const name = distantMealName(object, state);
+    const name = await distantMealName(object, state);
     if (state.flags.verbose)
         await publish(`${monsterName(monster, { state, capitalized: true })} eats ${name}!`);
 }

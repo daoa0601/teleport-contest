@@ -48,14 +48,14 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
     const petrifier = (object.otyp === EGG || object.otyp === CORPSE)
         && touchPetrifies(object.corpsenm);
     if (hasCeiling && hitsRoof && objectBreaksOnImpact(object, random)) {
-        await publish(`${fallingObjectSubject(object, state)} hits the ${ceiling}.`);
+        await publish(`${await fallingObjectSubject(object, state)} hits the ${ceiling}.`);
         const broken = await breakObject();
         if (broken.destroyed || state.program_state.gameover)
             return null;
         return hitFloor(false);
     }
     const action = !hasCeiling ? 'flies up into' : hitsRoof ? 'hits' : 'almost hits';
-    await publish(`${fallingObjectSubject(object, state)} ${action} the ${ceiling}, then falls back on top of your ${heroHeadName(state)}.`);
+    await publish(`${await fallingObjectSubject(object, state)} ${action} the ${ceiling}, then falls back on top of your ${heroHeadName(state)}.`);
     if (object.oclass === POTION_CLASS) {
         await hitHeroWithThrownPotion(object, { state, publish, random, rollOne });
         return null;
@@ -149,9 +149,9 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
         await loseHeroHp(damage, 'falling object', { state, publish });
     return landed;
 }
-function fallingObjectSubject(object, state) {
+async function fallingObjectSubject(object, state) {
     observeObjectForNaming(object, { state });
-    const name = objectDescription(object, { state });
+    const name = await objectDescription(object, { state });
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 async function petrifyFromFallingObject(object, helmet, state, publish) {

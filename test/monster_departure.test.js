@@ -52,7 +52,7 @@ void test('removing a keeper after game over clears its room ownership and outst
     addShopDamage(13, 10, 20);
     assert.equal(game.inventory.includes(purchase), true);
     assert.equal(purchase.unpaid, true);
-    assert.equal(itemizedShopBill(shopkeeper).length, 2);
+    assert.equal((await itemizedShopBill(shopkeeper)).length, 2);
     assert.ok(game.u.ushops.includes(roomno));
     game.program_state.gameover = true;
     const result = await removeMonsterFromGame(shopkeeper);
@@ -63,7 +63,7 @@ void test('removing a keeper after game over clears its room ownership and outst
     assert.equal(purchase.unpaid, false);
     assert.equal(used.where, 'gone');
     assert.equal(owned.no_charge, false);
-    assert.equal(itemizedShopBill(shopkeeper).length, 0);
+    assert.equal((await itemizedShopBill(shopkeeper)).length, 0);
     assert.equal(level.damagelist?.length, 0);
     assert.equal(game.u.ushops.includes(roomno), false);
 });

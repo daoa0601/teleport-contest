@@ -49,8 +49,8 @@ const DIAGONAL_DIRECTIONS = [
 function quantityOf(object) {
     return object?.quan ?? object?.quantity ?? 1;
 }
-function objectWithArticle(object) {
-    const description = inventoryItemDescription(object)
+async function objectWithArticle(object) {
+    const description = (await inventoryItemDescription(object))
         .replace(/ \([^)]*\)$/u, '');
     return description;
 }
@@ -119,7 +119,7 @@ async function snagFloorObject(proficiency, state) {
     if (!object || !proficiency)
         return false;
     observeObjectForNaming(object, { state });
-    await pline(`You wrap your bullwhip around ${objectWithArticle(object)} on the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
+    await pline(`You wrap your bullwhip around ${await objectWithArticle(object)} on the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
     if (rnl(6) !== 0) {
         await pline('The bullwhip slips free.');
         return true;
@@ -162,7 +162,7 @@ async function disarmMonster(monster, weapon, proficiency, state) {
     const hand = monsterHandName(monster.mnum);
     const hands = isTwoHanded(weapon) ? makePlural(hand) : hand;
     observeObjectForNaming(weapon, { state });
-    await pline(`You wrap your bullwhip around ${objectWithArticle(weapon)}.`);
+    await pline(`You wrap your bullwhip around ${await objectWithArticle(weapon)}.`);
     if (gotWeapon && weapon.cursed) {
         const wasKnown = !!weapon.bknown;
         weapon.bknown = true;
@@ -185,13 +185,13 @@ async function disarmMonster(monster, weapon, proficiency, state) {
     switch (rn2(proficiency + 1)) {
         case 2:
             observeObjectForNaming(weapon, { state });
-            await plineWithContinuation(`You yank ${objectWithArticle(weapon)} to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
+            await plineWithContinuation(`You yank ${await objectWithArticle(weapon)} to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
             await placeObject(weapon, state.u.ux, state.u.uy);
             await stack_object(weapon, state);
             break;
         case 3:
             observeObjectForNaming(weapon, { state });
-            await plineWithContinuation(`You snatch ${objectWithArticle(weapon)}!`);
+            await plineWithContinuation(`You snatch ${await objectWithArticle(weapon)}!`);
             if (await snatchPetrifyingCorpse(weapon, state))
                 return true;
             // C apply.c:3230: hold_another_object() owns fumbling, slot, and
@@ -199,13 +199,13 @@ async function disarmMonster(monster, weapon, proficiency, state) {
             // artifact blast ends the game there (artifact.c:958), before
             // use_whip()'s trailing wakeup().
             if ((await holdAnotherObject(weapon, {
-                state, dropMessage: `You drop ${inventoryItemDescription(weapon)}!`,
+                state, dropMessage: `You drop ${await inventoryItemDescription(weapon)}!`,
             })).heroDied)
                 return true;
             break;
         default:
             observeObjectForNaming(weapon, { state });
-            await plineWithContinuation(`You yank ${objectWithArticle(weapon)} from ${possessive(monsterObject(monster))} ${hands}!`);
+            await plineWithContinuation(`You yank ${await objectWithArticle(weapon)} from ${possessive(monsterObject(monster))} ${hands}!`);
             // C apply.c:3237-3238: obj_no_longer_held() runs before
             // place_object(); the release repeats inside the placement owner
             // by design — a fixed crysknife can survive the first release and

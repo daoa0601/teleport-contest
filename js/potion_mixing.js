@@ -126,7 +126,7 @@ export async function neutralizePotion(object, potion) {
 async function holdPotion(potion, dropPrefix) {
     const burden = game.flags.pickup_burden;
     game.flags.pickup_burden = Math.max(nearCapacity(game), pickupBurden(game));
-    const description = inventoryItemDescription(potion);
+    const description = await inventoryItemDescription(potion);
     unlinkObject(potion);
     try {
         await holdAnotherObject(potion, { dropMessage: `${dropPrefix} ${description}!` });

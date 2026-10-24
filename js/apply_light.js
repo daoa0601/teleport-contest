@@ -224,7 +224,7 @@ export async function lightCocktail(object, { state = game } = {}) {
         unlinkObject(object, state);
         object.nomerge = true;
         const held = await holdAnotherObject(object, {
-            state, dropMessage: `You drop ${inventoryItemDescription(object)}!`,
+            state, dropMessage: `You drop ${await inventoryItemDescription(object)}!`,
         });
         if (held.object)
             held.object.nomerge = false;

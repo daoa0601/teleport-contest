@@ -132,13 +132,13 @@ void test('a consumed purchase can be paid after saving and restoring', async ()
     assert.equal(restoreGame('BillSaver', storage), true);
     const keeper = game.level.monsters.find(monster => monster.m_id === keeperId);
     assert.ok(keeper);
-    const [purchase] = itemizedShopBill(keeper);
+    const [purchase] = await itemizedShopBill(keeper);
     assert.ok(purchase);
     const purse = heroGoldAmount(game);
     assert.equal(await buyShopBillItem(keeper, purchase), 'paid');
     assert.equal(heroGoldAmount(game), purse - purchase.price);
     assert.equal(purchase.object.where, 'gone');
-    assert.equal(itemizedShopBill(keeper).length, 0);
+    assert.equal((await itemizedShopBill(keeper)).length, 0);
 });
 void test('hero death settles nested purchases and frees used-up bill identities', async () => {
     const { west, east } = await twoShops();

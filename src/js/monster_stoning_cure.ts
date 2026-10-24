@@ -116,9 +116,9 @@ async function describeCure(
         const verb = cure.otyp === POT_ACID
             ? 'quaffs' : tinned ? 'opens and eats the contents of' : 'eats';
         const subject = monsterName(monster, { state, capitalized: true });
-        const name = distantObjectName(cure, object => inventoryItemDescription({
+        const name = await distantObjectName(cure, async object => (await inventoryItemDescription({
             ...object, quan: 1, quantity: 1,
-        }), state);
+        })), state);
         await publish(`${subject} ${verb} ${name}.`);
     } else if (!heroIsDeaf(state)) {
         const heard = formatHeardMessage(cure.otyp === POT_ACID ? 'drinking.' : 'chewing.', state);

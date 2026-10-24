@@ -25,7 +25,7 @@ void test('known egg contents name their species without acquired egg-type knowl
     egg.quan = 2;
     egg.known = true;
     await addCreatedInventoryItem(egg);
-    assert.equal(inventoryItemDescription(egg), '2 cockatrice eggs');
+    assert.equal(await inventoryItemDescription(egg), '2 cockatrice eggs');
 });
 function freshEggState(seed) {
     freshObjectRoom({

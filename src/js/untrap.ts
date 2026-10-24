@@ -797,13 +797,13 @@ async function handleBoxes(boxes: GameObject[], {
     for (const box of boxes) {
         const known = box.tknown && box.dknown;
         if (!known) observeObjectForNaming(box, { state });
-        const answer = await ask(objectQuestion(box, {
+        const answer = await ask(await objectQuestion(box, {
             prefix: known ? 'Disarm this ' : 'There is ',
             suffix: known ? '' : ' here.  Check it for traps?',
             fallback: 'a box',
-            format: (object, nameState) => known
+            format: async (object, nameState) => known
                 ? objectCombatName(object, { state: nameState, includeCorpseSpecies: false })
-                : objectDescription(object, { state: nameState }),
+                : await objectDescription(object, { state: nameState }),
             shortFormat: simpleObjectNameWithArticle,
         }, state));
         if (answer === 'q') return false;

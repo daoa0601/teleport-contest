@@ -7,7 +7,7 @@ import {
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { releaseObjectLeash } from './monster_leash.js';
+import { impossible } from './diagnostics.js';
 import { monsterName } from './monster_name.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, FIGURINE,
@@ -28,14 +28,14 @@ export interface ObjectClassDescription {
     suffix: string;
 }
 
-export function objectClassDescription(
+export async function objectClassDescription(
     item: GameObject, state: GameState = game,
-): ObjectClassDescription {
+): Promise<ObjectClassDescription> {
     const details: ObjectClassDescription = { prefix: [], suffix: '' };
     const known = item.known || item.overrideIdentified || state.iflags.override_ID;
     switch (item.oclass) {
         case TOOL_CLASS:
-            if (!isWeaponTool(item)) describeTool(item, details, !!known, state);
+            if (!isWeaponTool(item)) await describeTool(item, details, !!known, state);
             break;
         case FOOD_CLASS:
             if (item.oeaten) details.prefix.push('partly eaten');
@@ -61,21 +61,20 @@ export function objectClassDescription(
     return details;
 }
 
-function describeTool(
+async function describeTool(
     item: GameObject, details: ObjectClassDescription, known: boolean, state: GameState,
-): void {
+): Promise<void> {
     // The native worn-tool branch ends before attachment, fuel, or charges.
     if ((item.owornmask ?? 0) & (W_TOOL | W_SADDLE)) return;
     if (item.otyp === LEASH && item.leashmon) {
-        const monster = state.level?.monsters.find(actor => actor.m_id === item.leashmon);
-        if (monster && monster.mhp > 0)
+        const monster = state.level?.monsters.find(actor => actor.m_id === item.leashmon && actor.mhp > 0);
+        if (monster) {
             details.suffix = ` (attached to ${monsterName(monster, {
                 state, article: 'your', suppressIt: true,
             })})`;
-        else {
-            // Native impossible() needs an awaited naming boundary; repair
-            // the stale link without introducing deferred diagnostic state.
-            releaseObjectLeash(item, state);
+        } else {
+            await impossible(`leashed monster #${item.leashmon} not found`, { state });
+            item.leashmon = 0;
         }
         return;
     }

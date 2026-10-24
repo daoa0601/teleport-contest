@@ -45,7 +45,7 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
         const replacement = game.uarmf || game.u.uarmf;
         if (replacement) {
             observeObjectForNaming(replacement);
-            await plineWithContinuation(`${replacement.invlet} - ${inventoryItemDescription(replacement)}.`);
+            await plineWithContinuation(`${replacement.invlet} - ${await inventoryItemDescription(replacement)}.`);
         }
         return;
     }

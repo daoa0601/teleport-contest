@@ -307,7 +307,7 @@ for (const sight of ['sighted', 'blind', 'hallucinating'] as const) {
         assert.ok(!messages[0].includes('healing'), 'an appearance is not a type identification');
         game.u.hallucinationTurns = 0;
         setHeroBlindnessTurns(20);
-        assert.equal(inventoryItemDescription(potion).includes('called nectar'), sight === 'sighted',
+        assert.equal((await inventoryItemDescription(potion)).includes('called nectar'), sight === 'sighted',
             'the surviving copy remembers an appearance only if it could really be seen');
     });
 }

@@ -514,7 +514,7 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
     if (hit.armorToDisintegrate) {
         if (visible) {
             const owner = possessiveName(nameTarget());
-            const armor = distantObjectName(hit.armorToDisintegrate, object => objectName(object, state), state);
+            const armor = await distantObjectName(hit.armorToDisintegrate, object => objectName(object, state), state);
             await publish(`${owner} ${armor} is disintegrated!`);
         }
         await destroyObjectFromMonsterInventory(monster, hit.armorToDisintegrate, state);

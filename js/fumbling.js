@@ -60,7 +60,7 @@ export async function slipOrTrip(publish = plineWithContinuation) {
             what = top.quan === 1 ? 'it' : hallucinating ? 'they' : 'them';
         else if (top.dknown || !heroIsBlind(game)) {
             observeObjectForNaming(top);
-            what = objectDescription(top, { state: game });
+            what = await objectDescription(top, { state: game });
         }
         else {
             const rocks = pile.find(object => object.otyp === ROCK);

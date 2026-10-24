@@ -22,9 +22,9 @@ interface AltarLandingOptions {
 
 const COIN_CLASS = 12;
 
-function objectDescription(object: GameObject, state: GameState): string {
+async function objectDescription(object: GameObject, state: GameState): Promise<string> {
     return state === game
-        ? inventoryItemDescription(object)
+        ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
 }
 
@@ -59,7 +59,7 @@ export async function landObjectOnAltar(
 
     const quantity = object.quan ?? object.quantity ?? 1;
     observeObjectForNaming(object, { state });
-    const description = objectDescription(object, state);
+    const description = await objectDescription(object, state);
     const plural = quantity > 1;
     const hallucinating = heroIsHallucinating(state);
     if (object.blessed || object.cursed) {

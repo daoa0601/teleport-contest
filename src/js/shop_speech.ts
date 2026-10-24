@@ -26,7 +26,7 @@ export async function nameShopTransaction(keeper: Shopkeeper, object: GameObject
         learnObjectType(object.otyp, state);
     }
     observeObjectForNaming(object, { state });
-    const name = paymentObjectDescription(object, object.quan, { state });
+    const name = await paymentObjectDescription(object, object.quan, { state });
     if (wasUnknown) {
         const subject = name.charAt(0).toUpperCase() + name.slice(1);
         await publish(`${subject}; you ${describe(object.quan > 1 ? 'them' : 'it')}`);

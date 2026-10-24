@@ -4512,7 +4512,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 }
                 else {
                     observeObjectForNaming(object, { state });
-                    what = objectDescription(object, { state });
+                    what = await objectDescription(object, { state });
                 }
                 const name = canonicalMonsterName(monster, { state, article: 'a', capitalized: true });
                 return {

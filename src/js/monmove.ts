@@ -5522,7 +5522,7 @@ async function beginHeroAttackSlot(
                     what = 'the water';
                 } else {
                     observeObjectForNaming(object, { state });
-                    what = objectDescription(object, { state });
+                    what = await objectDescription(object, { state });
                 }
                 const name = canonicalMonsterName(monster, { state, article: 'a', capitalized: true });
                 return {

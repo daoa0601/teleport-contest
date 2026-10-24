@@ -665,10 +665,10 @@ void test('using a wet towel updates the visible wetness name without changing w
     requirePlayingGame(game);
     const object = await towel({ spe: 3 });
     const weight = object.owt;
-    assert.match(inventoryItemDescription(object), /wet towel/);
+    assert.match(await inventoryItemDescription(object), /wet towel/);
     await useTowel(object);
     assert.equal(object.spe, 2);
-    assert.match(inventoryItemDescription(object), /moist towel/);
+    assert.match(await inventoryItemDescription(object), /moist towel/);
     assert.equal(object.owt, weight);
 });
 void test('wizard towel names expose the remaining wetness', async () => {

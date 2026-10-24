@@ -9,13 +9,13 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import type { GameObject } from './object_types.js';
 import { objectHasPersonalName, objectName, observeObjectForNaming } from './objnam.js';
 
-export function objectWearMessage(object: GameObject, state: GameState = game): string | null {
+export async function objectWearMessage(object: GameObject, state: GameState = game): Promise<string | null> {
     const mask = object.owornmask ?? 0;
     const verbose = state.flags.verbose !== false;
     const inventoryFeedback = !!(mask & (W_RING | W_AMUL)) || !!(mask & W_TOOL) && !verbose;
     if (!inventoryFeedback && !verbose) return null;
     observeObjectForNaming(object, { state });
-    if (inventoryFeedback) return `${object.invlet} - ${objectDescription(object, { state })}.`;
+    if (inventoryFeedback) return `${object.invlet} - ${await objectDescription(object, { state })}.`;
     const noun = objectName(object, state);
     const name = objectHasPersonalName(object, state) ? `the ${noun}` : withIndefiniteArticle(noun);
     const how = object.otyp === TOWEL ? ` around your ${heroHeadName(state)}` : '';

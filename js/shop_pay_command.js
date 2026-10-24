@@ -99,7 +99,7 @@ export async function dopay() {
         return;
     }
     if (keeper === resident) {
-        const purchase = minimumShopPurchase(keeper);
+        const purchase = await minimumShopPurchase(keeper);
         if (purchase && heroGoldAmount(game) + (keeper.eshk?.credit ?? 0) < purchase.price) {
             const items = purchase.multipleItems ? ' any of the items' : ' the item';
             const bill = (keeper.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
@@ -112,7 +112,7 @@ export async function dopay() {
             return;
         }
     }
-    const billed = itemizedShopBill(keeper);
+    const billed = await itemizedShopBill(keeper);
     if (!billed.length) {
         if (!paid) {
             await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
@@ -126,7 +126,7 @@ export async function dopay() {
         game.context.move = 1;
         return;
     }
-    const selection = await chooseBilledItems(billed, minimumShopPurchase(keeper)?.multipleItems ?? false);
+    const selection = await chooseBilledItems(billed, (await minimumShopPurchase(keeper))?.multipleItems ?? false);
     let paidForItem = false;
     let finished = true;
     // Native queued selection buys in bill order, regardless of selection order.
@@ -177,14 +177,22 @@ async function paymentMenu(billed) {
     const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
     const used = billed.filter(item => item.kind === 'used');
     const intact = billed.filter(item => item.kind !== 'used');
-    const sections = [used, intact].filter(items => items.length).map(items => ({
-        heading: used.length ? `${items === used ? 'Used up' : 'Unpaid'} item${items.length > 1 ? 's' : ''}:` : '',
-        items: items.map(item => ({
-            key: String.fromCharCode(97 + billed.indexOf(item)),
-            text: `${String(item.price).padStart(priceWidth)} Zm, ${paymentObjectDescription(item.object, item.quantity)}`,
-            value: item,
-        })),
-    }));
+    const sections = [];
+    for (const group of [used, intact]) {
+        if (!group.length)
+            continue;
+        const items = [];
+        for (const item of group)
+            items.push({
+                key: String.fromCharCode(97 + billed.indexOf(item)),
+                text: `${String(item.price).padStart(priceWidth)} Zm, ${await paymentObjectDescription(item.object, item.quantity)}`,
+                value: item,
+            });
+        sections.push({
+            heading: used.length ? `${group === used ? 'Used up' : 'Unpaid'} item${group.length > 1 ? 's' : ''}:` : '',
+            items,
+        });
+    }
     game._pending_message = '';
     await flush_screen(1);
     return await showMultiSelectWindow({

@@ -72,7 +72,7 @@ for (const removing of [false, true]) {
 
         assert.ok(scorpion.minvent.includes(mitre));
         assert.equal(game.uarm, armor, 'Only the stolen armor is removed');
-        assert.match(inventoryItemDescription(armor), removing ? /\(being doffed\)$/ : /\(being donned\)$/);
+        assert.match(await inventoryItemDescription(armor), removing ? /\(being doffed\)$/ : /\(being donned\)$/);
         assert.doesNotMatch([...messages, game._pending_message].join('\n'), /You stop (?:putting on|taking off)/);
     });
 }

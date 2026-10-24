@@ -26,10 +26,10 @@ import { deallocateObject } from './object_delete.js';
 import { impossible } from './diagnostics.js';
 import { monsterHasNoLimbs } from './monster_data.js';
 
-export function minimumShopPurchase(resident: Monster, state: GameState = game): {
+export async function minimumShopPurchase(resident: Monster, state: GameState = game): Promise<{
     price: number; multipleItems: boolean;
-} | null {
-    const bill = itemizedShopBill(resident, state);
+} | null> {
+    const bill = await itemizedShopBill(resident, state);
     if (!bill.length || !hasShopBill(resident)) return null;
     return {
         price: Math.min(...bill.map(item => item.price)),
@@ -40,7 +40,7 @@ export function minimumShopPurchase(resident: Monster, state: GameState = game):
 
 // Contents share one entry for their outermost container. Used portions stay
 // separate, so they can be paid before buying the remaining contained goods.
-export function itemizedShopBill(resident: Monster | null | undefined, state: GameState = game): ShopBillItem[] {
+export async function itemizedShopBill(resident: Monster | null | undefined, state: GameState = game): Promise<ShopBillItem[]> {
     if (!hasShopBill(resident)) return [];
     const objects = objectsInTimerGraph(state);
     const bill: ShopBillItem[] = [];
@@ -68,7 +68,7 @@ export function itemizedShopBill(resident: Monster | null | undefined, state: Ga
                 continue;
             }
             bill.push({ object: container, kind, quantity: 1,
-                price: unpaidObjectCost(container, state, 'contents'),
+                price: await unpaidObjectCost(container, state, 'contents'),
                 billIndex: container.unpaid ? billIndex : -1 });
         } else {
             bill.push({ object, kind: 'intact', quantity: object.quan,
@@ -99,7 +99,7 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         item.object.quan = item.quantity;
         state.iflags.suppress_price = true;
         try {
-            declined = await promptYesNo(paymentQuestion(item.object, item.price, state)) === 'n';
+            declined = await promptYesNo(await paymentQuestion(item.object, item.price, state)) === 'n';
         } finally {
             item.object.quan = originalQuantity;
             if (originalSuppressPrice === undefined) delete state.iflags.suppress_price;
@@ -177,14 +177,14 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
 // C dopayobj(): safe_qbuf() reserves the price and question before shortening
 // the doname() description. Keep the same object for equipment annotations,
 // and restore the temporary naming fields before asking for input.
-function paymentQuestion(object: GameObject, price: number, state: GameState): string {
+async function paymentQuestion(object: GameObject, price: number, state: GameState): Promise<string> {
     const suffix = ` for ${price} ${currency(price, { state })}.  Pay?`;
     const limit = QBUFSZ - 1 - suffix.length;
-    const describe = (nameState: GameState): string => {
-        const name = objectDescription(object, { state: nameState });
+    const describe = async (nameState: GameState): Promise<string> => {
+        const name = await objectDescription(object, { state: nameState });
         return object.quan === 1 ? name.charAt(0).toUpperCase() + name.slice(1) : name;
     };
-    let name = describe(state);
+    let name = await describe(state);
     if (name.length <= limit) return name + suffix;
 
     // C short_oname() tries each user name separately, then both together.
@@ -195,7 +195,7 @@ function paymentQuestion(object: GameObject, price: number, state: GameState): s
             ...state._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
         } } : state;
     if (shortCallState !== state) {
-        name = describe(shortCallState);
+        name = await describe(shortCallState);
         if (name.length <= limit) return name + suffix;
     }
     const shortPersonalName = personalName && personalName.length >= 12
@@ -204,13 +204,13 @@ function paymentQuestion(object: GameObject, price: number, state: GameState): s
     try {
         if (shortPersonalName) {
             object.oextra = { ...oextra, oname: shortPersonalName };
-            name = describe(state);
+            name = await describe(state);
             if (name.length <= limit) return name + suffix;
         }
         const shortenBoth = shortCallState !== state && shortPersonalName !== null;
         const nameState = shortenBoth ? shortCallState : state;
         if (shortenBoth) {
-            name = describe(nameState);
+            name = await describe(nameState);
             if (name.length <= limit) return name + suffix;
         } else if (oextra === undefined) delete object.oextra;
         else object.oextra = oextra;
@@ -219,7 +219,7 @@ function paymentQuestion(object: GameObject, price: number, state: GameState): s
         // physical details; native restores each separate attempt first.
         object.bknown = object.rknown = object.greased = false;
         object.oeroded = object.oeroded2 = 0;
-        name = describe(nameState);
+        name = await describe(nameState);
         if (name.length > limit) name = simpleObjectNameWithArticle(object, nameState);
         if (name.length > limit) name = object.quan === 1 ? 'that' : 'those';
         return name + suffix;
@@ -253,7 +253,7 @@ async function checkPurchaseFunds(resident: BilledShopkeeper, item: ShopBillItem
     item.object.quan = item.quantity;
     try {
         await plineWithContinuation(`You don't${hiddenGold(state, true) ? ' seem to' : ''} have gold${
-            resident.eshk.credit ? ' or credit' : ''} enough to pay for ${paymentObjectDescription(item.object, item.quantity, { state })}.`);
+            resident.eshk.credit ? ' or credit' : ''} enough to pay for ${await paymentObjectDescription(item.object, item.quantity, { state })}.`);
     } finally {
         item.object.quan = originalQuantity;
     }

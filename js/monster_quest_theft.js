@@ -42,7 +42,7 @@ export async function stealHeroQuestObject(monster, state, publish, random, roll
     if (state.program_state.gameover)
         return;
     observeObjectForNaming(object, { state });
-    const name = inventoryItemDescription(object);
+    const name = await inventoryItemDescription(object);
     await addObjectToMonsterInventory(monster, object, state);
     await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} steals ${name}!`);
     if (((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x02000000)
@@ -67,7 +67,7 @@ function chooseQuestTheftTarget(monster, state, rollOne) {
 }
 async function removeForQuestTheft(monster, object, state, publish) {
     observeObjectForNaming(object, { state });
-    const description = inventoryItemDescription(object)
+    const description = (await inventoryItemDescription(object))
         .replace(/^(?:the|an|a) /, object === state.uchain ? 'the ' : 'your ')
         .replace(' (being worn)', '').replace(' (alternate weapon; not wielded)', '')
         .replace(/ \(on (left|right) hand\)/, ' (from $1 hand)');

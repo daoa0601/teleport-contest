@@ -14,14 +14,14 @@ import { costlySpot } from './shk.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 const STRANGE_OBJECT = 0;
 export async function objectAtMapDescription(x, y, glyph, state = game, style = 'farlook') {
-    return await withMapObject(x, y, glyph, (object, temporary) => {
+    return await withMapObject(x, y, glyph, async (object, temporary) => {
         if (style === 'hidden') {
             const noun = minimalObjectName(object, state);
             return object.quan === 1 ? withIndefiniteArticle(noun) : makePlural(noun);
         }
         const withPrice = object.dknown;
-        const description = distantObjectName(object, item => item.otyp === STRANGE_OBJECT ? 'strange object'
-            : objectDescription(item, { state, withPrice, vagueQuantity: true }), state);
+        const description = await distantObjectName(object, async (item) => item.otyp === STRANGE_OBJECT ? 'strange object'
+            : await objectDescription(item, { state, withPrice, vagueQuantity: true }), state);
         return description + placementSuffix(temporary ? null : object, x, y, state);
     }, state) ?? 'something';
 }

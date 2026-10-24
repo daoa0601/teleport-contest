@@ -200,7 +200,7 @@ export async function hitFloorWithObject(object, { verbose = true, state = game,
                 surf = 'edge of the pit';
         }
         observeObjectForNaming(object, { state });
-        const description = inventoryItemDescription(object);
+        const description = await inventoryItemDescription(object);
         await publish(`${description.charAt(0).toUpperCase()}${description.slice(1)} `
             + `${verb} the ${surf}.`);
     }

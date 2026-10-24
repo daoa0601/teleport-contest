@@ -54,10 +54,10 @@ function paniclog(type: 'panic' | 'impossible', reason: string, state: GameState
 
 export async function impossible(reason: string, { state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
+    reason = diagnosticReason(reason);
     if (state.program_state.in_impossible)
         await panic('impossible called impossible', { state });
     state.program_state.in_impossible = true;
-    reason = diagnosticReason(reason);
     paniclog('impossible', reason, state);
     if (fuzzerMode(state) === FUZZER_IMPOSSIBLE_PANIC)
         await panic(reason, { state });

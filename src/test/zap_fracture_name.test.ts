@@ -27,6 +27,6 @@ void test('striking a named statue leaves ordinary unnamed rocks', async () => {
 
     assert.equal(statue.otyp, ROCK);
     assert.equal(statue.where, 'floor');
-    assert.match(inventoryItemDescription(statue), /rocks|stones/);
-    assert.doesNotMatch(inventoryItemDescription(statue), /Masterpiece/);
+    assert.match(await inventoryItemDescription(statue), /rocks|stones/);
+    assert.doesNotMatch(await inventoryItemDescription(statue), /Masterpiece/);
 });

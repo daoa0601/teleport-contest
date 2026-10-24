@@ -87,7 +87,7 @@ void test('an exploding unknown see-invisible potion can be called before it is 
     assert.equal(game.inventory.includes(source), false);
     assert.ok(game.u.uhp < 40);
     assert.equal(game._objectCallNames?.[POT_SEE_INVISIBLE], 'veil');
-    assert.match(inventoryItemDescription(sibling), /potion called veil/);
+    assert.match(await inventoryItemDescription(sibling), /potion called veil/);
     assert.equal(game._knownObjectTypes?.has(POT_SEE_INVISIBLE) ?? false, false);
     assert.equal(game.context.move, 1);
 });

@@ -29,6 +29,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
+import { createStaffedShop } from './support/shop.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
@@ -328,7 +329,7 @@ void test('a welded-weapon wield refusal discards interrupted disrobing', async 
 
     assert.equal(game.uarm, suit, 'a new cancelled selection leaves the interrupted suit worn');
     assert.equal(game.uarmf, boots, 'a new cancelled selection leaves the pending boots worn');
-    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
     assert.equal(game.uwep, dagger);
 });
 
@@ -474,7 +475,7 @@ for (const armorType of [SMALL_SHIELD, GAUNTLETS_OF_POWER]) {
         pushKeys(armor.invlet);
         await rhack('W'.charCodeAt(0));
         assert.equal(armor.worn, true);
-        assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+        assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
         await takeOff('\x1b');
         await work(8);
 
@@ -536,7 +537,7 @@ void test('successfully dropping another item discards interrupted bulk removal'
     await rhack('d'.charCodeAt(0));
 
     assert.equal(dagger.where, 'floor');
-    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
     await takeOff('\x1b');
     await work(5);
     assert.equal(game.uarm, suit, 'a new cancelled selection does not resume discarded removal');
@@ -581,6 +582,9 @@ for (const selector of ['.', '@']) {
     void test(`bulk category selection with ${selector} preserves paid equipment and mixed BUC states`, async () => {
         freshObjectRoom({ flags: { menu_style: MENU_FULL, verbose: false } });
         const shield = await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        await createStaffedShop({ bill: [
+            { bo_id: shield.o_id, bquan: 1, price: 10, useup: false },
+        ] });
         const cloak = await addInventoryObject(LEATHER_CLOAK, { blessed: true });
         const ring = await addInventoryObject(RIN_PROTECTION, { bknown: false });
         wearHeroArmor(shield);
@@ -666,7 +670,7 @@ void test('armor cursed during bulk removal remains described as being doffed in
     assert.ok(messages.some(message => /You were wearing .*ring mail \(being doffed\)\./.test(message)),
         `Expected the doffing annotation in the removal message: ${messages.join('; ')}`);
     assert.equal(game.uarm, suit);
-    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
 });
 
 void test('traditional takeoff can select a class and accept all its worn items', async () => {
@@ -700,7 +704,10 @@ for (const categories of ['$u', 'u$', '$uU', 'uU$']) {
     void test(`traditional takeoff ${categories} ${categories.includes('U') ? 'admits' : 'preserves'} paid quivered gold`, async () => {
         freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
         const gold = await addInventoryObject(GOLD_PIECE, { quan: 20 });
-        await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        const shield = await addInventoryObject(SMALL_SHIELD, { unpaid: true });
+        await createStaffedShop({ bill: [
+            { bo_id: shield.o_id, bquan: 1, price: 10, useup: false },
+        ] });
         await setQuiverObject(gold);
 
         await takeOff(`${categories}\ny`);
@@ -748,10 +755,10 @@ void test('changing location discards interrupted bulk removal', async () => {
     wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await work(1);
-    assert.match(inventoryItemDescription(suit), /\(being doffed\)$/);
+    assert.match(await inventoryItemDescription(suit), /\(being doffed\)$/);
     await stopHeroOccupation(game, async () => {});
     await rhack('l'.charCodeAt(0));
-    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
     assert.equal(game.uarm, suit);
 });
 
@@ -776,7 +783,7 @@ void test('a peaceful monster refusing to swap onto a trap discards interrupted 
     assert.equal(game.u.ux, ux);
     assert.equal(game.u.uy, uy);
     assert.equal(monster.mx, ux + 1);
-    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
     resetInputState();
     await takeOff('\x1b');
     await work(6);
@@ -804,7 +811,7 @@ void test('interrupted armor is described as being doffed until its removal fini
     wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await stopHeroOccupation(game, async () => {});
-    assert.match(inventoryItemDescription(suit), /\(being doffed\)$/);
+    assert.match(await inventoryItemDescription(suit), /\(being doffed\)$/);
 });
 
 void test('saved bulk removal resumes after restore without losing its remaining work', async () => {
@@ -1186,8 +1193,8 @@ void test('a hostile monster arriving next to the hero stops disrobing and A res
     assert.ok(messages.some(message => /You stop disrobing\./.test(message)), messages.join(' | '));
     assert.equal(game.uarm, suit);
     assert.equal(game.uarmf, boots);
-    assert.match(inventoryItemDescription(suit), /\(being doffed\)$/);
-    assert.match(inventoryItemDescription(boots), /\(being worn\)$/);
+    assert.match(await inventoryItemDescription(suit), /\(being doffed\)$/);
+    assert.match(await inventoryItemDescription(boots), /\(being worn\)$/);
 
     monster.mpeaceful = true;
     resetInputState();
@@ -1200,7 +1207,7 @@ void test('a hostile monster arriving next to the hero stops disrobing and A res
     }
     assert.equal(game.uarm, null, 'the suit comes off first despite being selected second');
     assert.equal(game.uarmf, boots);
-    assert.match(inventoryItemDescription(boots), /\(being doffed\)$/);
+    assert.match(await inventoryItemDescription(boots), /\(being doffed\)$/);
     while (game.uarmf && turns < 15) {
         await work(1);
         turns++;
@@ -1218,7 +1225,7 @@ void test('being engulfed discards interrupted bulk removal', async () => {
     await takeOff(`${suit.invlet}\n`);
     await work(1);
     await stopHeroOccupation(game, async () => {});
-    assert.match(inventoryItemDescription(suit), /\(being doffed\)$/);
+    assert.match(await inventoryItemDescription(suit), /\(being doffed\)$/);
     initRng(1n);
     pushKeys(' '.repeat(10));
     game.u.ustuck = monster;
@@ -1227,7 +1234,7 @@ void test('being engulfed discards interrupted bulk removal', async () => {
         damageType: AD_DGST, engulfOldX: ux - 1, engulfOldY: uy,
     });
     assert.equal(capture.captured, true);
-    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
     resetInputState();
     await takeOff('\x1b');
     assert.notEqual(game._pending_message, 'You continue disrobing.');

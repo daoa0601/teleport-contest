@@ -130,12 +130,12 @@ export function isContainer(object: Pick<GameObject, 'otyp'> | null | undefined)
 
 const quantity = objectQuantity;
 
-function objectDescription(object: GameObject, primaryHandDetail: ReturnType<typeof inventoryPrimaryHandDetail> = null): string {
+async function objectDescription(object: GameObject, primaryHandDetail: ReturnType<typeof inventoryPrimaryHandDetail> = null): Promise<string> {
     if (object.otyp === GOLD_PIECE) {
         const amount = quantity(object);
         return `${amount} gold piece${amount === 1 ? '' : 's'}`;
     }
-    return inventoryItemDescription(object, { primaryHandDetail });
+    return await inventoryItemDescription(object, { primaryHandDetail });
 }
 
 function className(object: GameObject): string {
@@ -167,7 +167,7 @@ function bucCategory(object: GameObject): 'B' | 'C' | 'U' | 'X' {
 
 // C pickup.c:query_category(), for menu_loot's ALL_TYPES/UNPAID/BUCX/
 // CHOOSE_ALL/JUSTPICKED flags. Special filters stay out of menu inversion.
-function categoryChoices(objects: readonly GameObject[]): MultiSelectItem<ContainerCategory>[] {
+async function categoryChoices(objects: readonly GameObject[]): Promise<MultiSelectItem<ContainerCategory>[]> {
     const groups = objectsByClass(objects);
     const showAll = groups.length > 1;
     const verifyAll = !!((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL);
@@ -213,7 +213,7 @@ function categoryChoices(objects: readonly GameObject[]): MultiSelectItem<Contai
     const justPicked = objects.filter(object => object.pickup_prev);
     const onePicked = justPicked.length === 1 ? justPicked[0] : null;
     if (justPicked.length) special.push({
-        key: 'P', text: onePicked ? `Just picked up: ${objectDescription(
+        key: 'P', text: onePicked ? `Just picked up: ${await objectDescription(
             onePicked, inventoryPrimaryHandDetail(onePicked),
         )}`
             : 'Items you just picked up', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
@@ -254,7 +254,7 @@ export async function chooseObjectCategories(title: string, objects: readonly Ga
         return { matchers: [object => className(object) === onlyGroup.name], autoSelect: false };
 
     const selected = await showMultiSelectWindow({
-        title, sections: [{ heading: '', items: categoryChoices(objects) }], omitHeadings: true,
+        title, sections: [{ heading: '', items: await categoryChoices(objects) }], omitHeadings: true,
         returnCounts: true,
     });
     let autoSelect = selected.some(choice => choice.value.filter === 'auto');
@@ -283,7 +283,7 @@ function matchingObjects(objects: readonly GameObject[], matchers: readonly Obje
     return objects.filter(object => matchers.some(matches => matches(object)));
 }
 
-function selectionSections(objects: readonly GameObject[], useInventoryLetters: boolean): MultiSelectSection<GameObject>[] {
+async function selectionSections(objects: readonly GameObject[], useInventoryLetters: boolean): Promise<MultiSelectSection<GameObject>[]> {
     const ordered = sortObjects(objects, {
         mode: lootSortMode({ inventoryLetters: useInventoryLetters }),
     });
@@ -291,24 +291,27 @@ function selectionSections(objects: readonly GameObject[], useInventoryLetters: 
     let nextLetter = 0;
     const groups = game.flags.sortpack === false ? [{ name: null, members: ordered }]
         : objectsByClass(ordered);
-    return groups.map(group => ({
-        heading: group.name,
-        items: group.members.map(object => ({
+    const sections: MultiSelectSection<GameObject>[] = [];
+    for (const group of groups) {
+        const items = [];
+        for (const object of group.members) items.push({
             key: object.otyp === GOLD_PIECE ? '$'
                 : useInventoryLetters && object.invlet
                     ? object.invlet
                     : String.fromCharCode(97 + nextLetter++),
-            text: objectDescription(object, inventoryPrimaryHandDetail(object)),
+            text: await objectDescription(object, inventoryPrimaryHandDetail(object)),
             value: object,
-        })),
-    }));
+        });
+        sections.push({ heading: group.name, items });
+    }
+    return sections;
 }
 
 async function chooseObjects(title: string, objects: readonly GameObject[], useInventoryLetters: boolean): Promise<CountedSelection<GameObject>[]> {
     if (!objects.length) return [];
     return showMultiSelectWindow({
         title,
-        sections: selectionSections(objects, useInventoryLetters),
+        sections: await selectionSections(objects, useInventoryLetters),
         omitHeadings: game.flags.sortpack === false,
         returnCounts: true,
     });
@@ -371,8 +374,8 @@ export async function explodeBag(container: GameObject, trigger: GameObject, sta
     { tipping?: boolean; triggerHeld?: boolean; rebillTrigger?: boolean } = {}): Promise<ContainerTransferResult> {
     observeObjectForNaming(trigger, { state });
     await plineWithContinuation(
-        tipping ? `As ${objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
-            : `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`,
+        tipping ? `As ${await objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
+            : `As you put ${await objectDescription(trigger)} inside, you are blasted by a magical explosion!`,
         { urgent: true },
     );
     if (rebillTrigger)
@@ -404,7 +407,7 @@ export async function loseMagicBagItem(object: GameObject, held: boolean, state:
         const known = object.dknown;
         // The message uses prior knowledge, but doname() observes the item.
         observeObjectForNaming(object, { state });
-        const name = objectDescription(object);
+        const name = await objectDescription(object);
         await plineWithContinuation(known
             ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object, state) ? 'have' : 'has'} vanished!`
             : `You ${heroIsBlind(state) ? 'notice' : 'see'} ${name} disappear!`);
@@ -561,7 +564,7 @@ export async function putIntoContainer(
 
     observeObjectForNaming(container, { state });
     observeObjectForNaming(object, { state });
-    const message = `You put ${objectDescription(object)} into the ${objectCombatName(container, { state })}.`;
+    const message = `You put ${await objectDescription(object)} into the ${objectCombatName(container, { state })}.`;
     await plineWithContinuation(message);
     if (floorShop && object.oclass === 12)
         await sellHeroDroppedObject(object, container.ox, container.oy, state);
@@ -630,7 +633,7 @@ export async function takeFromContainer(
     const merged = addedCount < quantity(carried);
     const total = merged ? state.flags.verbose === false ? ''
         : ` (${quantity(carried)} in total).` : '.';
-    const description = `${carried.invlet || '$'} - ${objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
+    const description = `${carried.invlet || '$'} - ${await objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
     return {
         moved: true,
         message: pickupInventoryMessage(description, 'removing', state),
@@ -670,9 +673,9 @@ async function lootTraditionally(container: GameObject, putIn: boolean, resetPic
                     observeObjectForNaming(object);
                     const letter = game.flags.fixinv === false ? String.fromCharCode(letterCode) : object.invlet ?? '#';
                     const itemPrefix = putIn ? `${letter} - ` : '';
-                    const question = objectQuestion(object, {
+                    const question = await objectQuestion(object, {
                         prefix: first ? `${putIn ? 'Put in' : 'Take out'}: ` : '', suffix: '?', fallback: 'item',
-                        format: (item, state) => `${itemPrefix}${describeObject(item, { state })}`,
+                        format: async (item, state) => `${itemPrefix}${await describeObject(item, { state })}`,
                         shortFormat: (item, state) => `${itemPrefix}${simpleObjectNameWithArticle(item, state)}`,
                     });
                     first = false;
@@ -817,10 +820,10 @@ async function chooseAction(container: GameObject, usedTime: boolean, moreContai
     const mayTakeOut = hasContents || !container.cknown;
     const mayPutIn = (game.inventory || []).some(object => object !== container);
     const title = mayTakeOut
-        ? ownedObjectQuestion(container, {
+        ? await ownedObjectQuestion(container, {
             prefix: 'Do what with ', suffix: '?', fallback: 'it', capitalized: false,
         })
-        : ownedObjectQuestion(container, {
+        : await ownedObjectQuestion(container, {
             prefix: '', suffix: ' is empty.  Do what with it?', fallback: 'This', capitalized: true,
         });
     const menuStyle = game.flags.menu_style ?? MENU_FULL;

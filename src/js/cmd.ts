@@ -2531,7 +2531,7 @@ async function doherecmdmenu() {
     if (floorObject) {
         if (pile.length === 1 || isContainer(floorObject) || floorObject.oclass === 7)
             observeObjectForNaming(floorObject);
-        const description = floorObjectDescription(floorObject);
+        const description = await floorObjectDescription(floorObject);
         add(`Pick up ${pile.length > 1 ? 'items' : description}`);
         if ([
             LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
@@ -2776,7 +2776,7 @@ async function doswapweapon() {
         observeObjectForNaming(oldPrimary);
         await plineWithContinuation(
             `${oldPrimary.invlet} - ${
-                inventoryItemDescription(oldPrimary)}.`,
+                await inventoryItemDescription(oldPrimary)}.`,
         );
     } else {
         await plineWithContinuation('You have no secondary weapon readied.');
@@ -3824,7 +3824,7 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
         game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
         if (game.flags.fixinv === false) reassignInventoryLetters();
         observeObjectForNaming(purse);
-        await pline(`${action}: $ - ${inventoryItemDescription(purse)}.`);
+        await pline(`${action}: $ - ${await inventoryItemDescription(purse)}.`);
         game.context.move = 0;
         return;
     }
@@ -3952,11 +3952,11 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
     observeObjectForNaming(object);
     await pline(
         `${action} ${object.invlet} - ${
-            inventoryItemDescription(object, {
+            await inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             })}.`,
     );
-    if (bumped) await plineWithContinuation(`Moving: ${bumped.invlet} - ${inventoryItemDescription(bumped)}.`);
+    if (bumped) await plineWithContinuation(`Moving: ${bumped.invlet} - ${await inventoryItemDescription(bumped)}.`);
     game.context.move = 0;
 }
 
@@ -4323,11 +4323,11 @@ function inventoryCommandLetter(item: GameObject): string {
     return item.invlet;
 }
 
-function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): string {
+async function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): Promise<string> {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
     try {
-        return inventoryItemDescription(item, { primaryHandDetail });
+        return await inventoryItemDescription(item, { primaryHandDetail });
     } finally {
         if (override === undefined) delete game.iflags.override_ID;
         else game.iflags.override_ID = override;
@@ -4354,20 +4354,23 @@ async function wizIdentify(): Promise<void> {
         return;
     }
 
-    const sections = pickupClassOrder().map(heading => ({
-        heading,
-        items: unidentified
+    const sections = [];
+    for (const heading of pickupClassOrder()) {
+        const objects = unidentified
             .filter(item => pickupObjectClass(item) === heading)
-            .sort((a, b) => inventoryCommandLetter(a).localeCompare(inventoryCommandLetter(b)))
-            .map(item => {
-                observeObjectForNaming(item);
-                return {
-                    key: inventoryCommandLetter(item),
-                    text: wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
-                    value: item,
-                };
-            }),
-    })).filter(section => section.items.length);
+            .sort((a, b) => inventoryCommandLetter(a).localeCompare(inventoryCommandLetter(b)));
+        if (!objects.length) continue;
+        const items = [];
+        for (const item of objects) {
+            observeObjectForNaming(item);
+            items.push({
+                key: inventoryCommandLetter(item),
+                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
+                value: item,
+            });
+        }
+        sections.push({ heading, items });
+    }
     const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
     const window = tty_create_nhwindow<GameObject | 'all'>(NHW_MENU);
     let selected: (GameObject | 'all')[];
@@ -4412,7 +4415,7 @@ async function wizIdentify(): Promise<void> {
         if (learnedType) await exerciseAttribute(A_WIS, true);
         observeObjectForNaming(item);
         await plineWithContinuation(
-            `${item.invlet} - ${inventoryItemDescription(item, {
+            `${item.invlet} - ${await inventoryItemDescription(item, {
                 primaryHandDetail: inventoryPrimaryHandDetail(item),
             })}.`,
         );
@@ -5169,7 +5172,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
     // Sink effects can remove the ring inside Ring_on().
     if (game.uleft === object || game.uright === object) {
         observeObjectForNaming(object);
-        await plineWithContinuation(`${object.invlet} - ${inventoryItemDescription(object)}.`);
+        await plineWithContinuation(`${object.invlet} - ${await inventoryItemDescription(object)}.`);
     }
     game.context.move = 1;
 }
@@ -5185,7 +5188,7 @@ export async function finishArmorRemoval(
 ): Promise<string> {
     await removeHeroArmor(object, game, { deferArmorClass: true });
     if (silent || game.flags?.verbose === false) return '';
-    return armorOffMessage(object, game);
+    return await armorOffMessage(object, game);
 }
 
 // C do_wear.c:dotakeoff()/doremring() share armor_or_accessory_off().
@@ -5262,7 +5265,7 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
         // the slot first and reports afterwards, without a suffix.
         const ring = object === game.uleft || object === game.uright;
         if (ring && game.flags?.verbose !== false) {
-            await plineWithContinuation(armorOffMessage(object, game));
+            await plineWithContinuation(await armorOffMessage(object, game));
         }
         await removeHeroAccessory(object, game);
         game.context.move = 1;
@@ -5343,7 +5346,7 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
     } else {
         await finishHeroHelplessness('');
         object._armorApplied = true;
-        const onMessage = objectWearMessage(object);
+        const onMessage = await objectWearMessage(object);
         if (onMessage) await plineWithContinuation(onMessage);
     }
     // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
@@ -6267,7 +6270,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     }
     if (verb !== 'fire') await setQuiverObject(item, game);
     observeObjectForNaming(item);
-    const description = inventoryItemDescription(item);
+    const description = await inventoryItemDescription(item);
     await plineWithContinuation(verb === 'fire'
         ? `You ready: ${item.invlet} - ${description}.`
         : `${item.invlet} - ${description}.`);
@@ -6335,7 +6338,7 @@ async function dofire(cannedShotLimit: number | null = null): Promise<void> {
                 observeObjectForNaming(fireObject);
                 await pline(
                     `You ready: ${fireObject.invlet} - ${
-                        inventoryItemDescription(fireObject)}.`,
+                        await inventoryItemDescription(fireObject)}.`,
                 );
                 if (wasReady === undefined) delete fireObject.ready;
                 else fireObject.ready = wasReady;

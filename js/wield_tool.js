@@ -75,7 +75,7 @@ export async function wieldTool(object, verb = 'wield', { swapWeapons } = {}, st
             await readyHeroWeapon(object, state);
         }
         else {
-            await plineWithContinuation(`You now wield ${inventoryItemDescription(object)}.`);
+            await plineWithContinuation(`You now wield ${await inventoryItemDescription(object)}.`);
             await setPrimaryWeapon(object, state);
         }
         if (state.flags?.pushweapon && current && state.uwep !== current)

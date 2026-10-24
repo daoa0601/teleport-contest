@@ -168,9 +168,9 @@ async function pickUpTraditionally(source, count) {
         let amount = objectQuantity(object);
         if (!all) {
             observeObjectForNaming(object);
-            const question = objectQuestion(object, {
+            const question = await objectQuestion(object, {
                 prefix: 'Pick up ', suffix: '?', fallback: 'something',
-                format: (item, state) => objectDescription(item, { state }), shortFormat: simpleObjectNameWithArticle,
+                format: async (item, state) => (await objectDescription(item, { state })), shortFormat: simpleObjectNameWithArticle,
             });
             const response = await yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y');
             if (response.answer === 'q')
@@ -235,7 +235,7 @@ async function choosePickupObjects(source, objects, count, { autoSelect = true, 
             menuItems.push({
                 key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
-                text: pricedFloorObjectDescription(object),
+                text: await pricedFloorObjectDescription(object),
                 value: object,
             });
         }
@@ -365,7 +365,7 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
         const added = await addPickedInventoryObject(object);
         if (remote)
             await remoteBurglary(source.x, source.y);
-        const message = pickedInventoryDescription(added.object, lift.count);
+        const message = await pickedInventoryDescription(added.object, lift.count);
         await plineWithContinuation(pickupInventoryMessage(message, 'lifting'));
         const ghostlyMessage = finishGhostlyPickup(added.object, game);
         if (ghostlyMessage)
@@ -399,7 +399,7 @@ export async function addPickedInventoryObject(object) {
     return { object: carried, count };
 }
 // C pickup_prinv(): format after pick_obj() has settled remote shop billing.
-function pickedInventoryDescription(carried, count) {
+async function pickedInventoryDescription(carried, count) {
     const picked = { ...carried, quan: count, quantity: count };
     // Native pickup suppresses the primary-hand annotation when the new
     // objects merged into the wielded stack; other slot annotations remain.
@@ -408,7 +408,7 @@ function pickedInventoryDescription(carried, count) {
     const merged = count < objectQuantity(carried);
     const total = merged ? game.flags.verbose === false ? ''
         : ` (${objectQuantity(carried)} in total).` : '.';
-    return `${carried.invlet} - ${floorObjectDescription(picked)}${total}`;
+    return `${carried.invlet} - ${await floorObjectDescription(picked)}${total}`;
 }
 function pickupSourceAtHero() {
     const x = game.u?.ux, y = game.u?.uy;

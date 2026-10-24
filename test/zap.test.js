@@ -50,7 +50,7 @@ void test('using an identified wand leaves its remaining charge count visible', 
     game.inventory = [wand];
     pushKey('a');
     await rhack('z'.charCodeAt(0));
-    assert.match(inventoryItemDescription(wand), /\(0:1\)/);
+    assert.match(await inventoryItemDescription(wand), /\(0:1\)/);
 });
 void test('sleep resistance prevents self-zap helplessness', async () => {
     freshGameplayRoom();

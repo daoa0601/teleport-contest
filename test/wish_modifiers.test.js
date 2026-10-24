@@ -36,7 +36,7 @@ void test('a partly eaten wish supplies half the food nutrition', async () => {
     const ration = await wish('partly eaten food ration');
     assert.equal(ration.otyp, FOOD_RATION);
     assert.equal(ration.oeaten, 400);
-    assert.match(inventoryItemDescription(ration), /partly eaten food ration/);
+    assert.match(await inventoryItemDescription(ration), /partly eaten food ration/);
 });
 void test('a diluted wish changes the potion and its inventory name', async () => {
     freshObjectRoom();
@@ -44,7 +44,7 @@ void test('a diluted wish changes the potion and its inventory name', async () =
     assert.equal(potion.otyp, POT_HEALING);
     assert.equal(potion.odiluted, true);
     observeObjectForNaming(potion);
-    assert.match(inventoryItemDescription(potion), /diluted/);
+    assert.match(await inventoryItemDescription(potion), /diluted/);
 });
 void test('a lit candle starts burning with a full supply of fuel', async () => {
     freshObjectRoom();
@@ -52,7 +52,7 @@ void test('a lit candle starts burning with a full supply of fuel', async () => 
     assert.equal(candle.otyp, WAX_CANDLE);
     assert.equal(candle.lamplit, true);
     assert.ok(candle.objectTimers?.some(timer => timer.kind === 'burn-object'));
-    const description = inventoryItemDescription(candle);
+    const description = await inventoryItemDescription(candle);
     assert.match(description, /\(lit\)/);
     assert.doesNotMatch(description, /partly used/);
 });
@@ -61,7 +61,7 @@ void test('a wet towel wish selects native wetness and shows it in inventory', a
     const towel = await wish('wet towel');
     assert.equal(towel.otyp, TOWEL);
     assert.ok(towel.spe >= 3 && towel.spe <= 5);
-    assert.match(inventoryItemDescription(towel), /wet towel/);
+    assert.match(await inventoryItemDescription(towel), /wet towel/);
 });
 void test('pair wording doubles a count of stackable objects', async () => {
     freshObjectRoom();

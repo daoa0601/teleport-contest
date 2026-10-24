@@ -17,6 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createStaffedShop } from './support/shop.js';
 for (const { artifact, sight, detail } of [
     { artifact: 'Sunsword', sight: 'normal', detail: ', brightly lit' },
     { artifact: 'Sunsword', sight: 'blind', detail: '' },
@@ -165,6 +166,9 @@ void test('traditional take-out supports an item-menu fallback with an unpaid fi
     const arrow = await knownObject(ARROW, { where: 'contained', container: sack, unpaid: true });
     const food = await knownObject(FOOD_RATION, { where: 'contained', container: sack });
     sack.contents = [arrow, food];
+    await createStaffedShop({ bill: [
+            { bo_id: arrow.o_id, bquan: 1, price: 1, useup: false },
+        ] });
     pushKeys('oum\na\n' + ' '.repeat(12));
     const result = await useContainer(sack, { held: true });
     assert.equal(arrow.where, 'inventory');

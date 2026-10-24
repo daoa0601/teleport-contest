@@ -18,7 +18,8 @@ export async function quoteShopGoods(): Promise<boolean> {
     if (!spot || !spot.resident.mpeaceful || shopkeeperIsMuted(spot.resident)) return false;
     const goods = game.level?.objects[game.u.ux]?.[game.u.uy]?.filter(object => object.oclass !== 12) ?? [];
     if (!goods.length) return false;
-    const quotes = goods.map(object => {
+    const quotes = [];
+    for (const object of goods) {
         let cost = object.no_charge || object === game.uball || object === game.uchain
             ? 0 : shopObjectUnitCost(object, spot.resident);
         const contentsOnly = !cost;
@@ -26,11 +27,11 @@ export async function quoteShopGoods(): Promise<boolean> {
             cost += containedBuyCost(object, spot.resident, { unpaidOnly: false });
         if (object.globby) cost *= objectPricingUnits(object);
         observeObjectForNaming(object);
-        const name = `${cost && contentsOnly ? 'the contents of ' : ''}${objectDescription(object)}`;
+        const name = `${cost && contentsOnly ? 'the contents of ' : ''}${await objectDescription(object)}`;
         const each = object.quan > 1 ? ' each' : '';
-        return { object, cost, contentsOnly, each, name,
-            line: `${name}, ${cost ? `${cost} ${currency(cost)}${each}` : 'no charge'}` };
-    });
+        quotes.push({ object, cost, contentsOnly, each, name,
+            line: `${name}, ${cost ? `${cost} ${currency(cost)}${each}` : 'no charge'}` });
+    }
     const quote = quotes[0];
     if (!quote) throw new Error('Shop goods disappeared during a price quote.');
     if (quotes.length > 1) {
@@ -39,7 +40,7 @@ export async function quoteShopGoods(): Promise<boolean> {
     } else if (!quote.cost) {
         await plineWithContinuation(`"${capitalize(quote.line)}!"`);
     } else {
-        const name = `${quote.contentsOnly ? 'the contents of ' : ''}${objectDescription(quote.object)}`;
+        const name = `${quote.contentsOnly ? 'the contents of ' : ''}${await objectDescription(quote.object)}`;
         await plineWithContinuation(`"${capitalize(name)}, price ${quote.cost} ${currency(quote.cost)}${quote.each}${
             quote.contentsOnly ? '.' : embellish(quote.object, quote.cost)}"`);
     }

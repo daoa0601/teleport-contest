@@ -50,7 +50,7 @@ void test('a life-saving amulet remains payable after it crumbles', async () => 
     const amulet = await floorObject(AMULET_OF_LIFE_SAVING, 10, 10);
     const input = resetInputState();
     await dismissRecoveryPagers(input, pickupAtHero());
-    const price = unpaidObjectCost(amulet);
+    const price = await unpaidObjectCost(amulet);
     assert.ok(price > 0);
     await dismissRecoveryPagers(input, flushPendingTopline());
     await dismissRecoveryPagers(input, wearHeroAccessory(amulet, 'uamul'));
@@ -60,7 +60,7 @@ void test('a life-saving amulet remains payable after it crumbles', async () => 
     assert.ok(game.u.uhp > 0);
     assert.ok(!game.inventory.includes(amulet));
     assert.equal(game.uamul, null);
-    const amountOwed = itemizedShopBill(shopkeeper)
+    const amountOwed = (await itemizedShopBill(shopkeeper))
         .reduce((total, item) => total + item.price, 0);
     assert.equal(amountOwed, price);
 });
@@ -191,7 +191,7 @@ void test('refusing a fatal shopkeeper attack leaves the unpaid purchase payable
     const purchase = await floorObject(DAGGER, 10, 10);
     await dismissRecoveryPagers(input, pickupAtHero());
     rileShopkeeper(shopkeeper);
-    const price = unpaidObjectCost(purchase);
+    const price = await unpaidObjectCost(purchase);
     assert.ok(price > 0);
     shopkeeper.movement = 12;
     game.flags.debug = true;
@@ -216,7 +216,7 @@ void test('refusing a fatal shopkeeper attack leaves the unpaid purchase payable
     assert.equal(game.u.umortality, 1);
     assert.notEqual(game.program_state.gameover, true);
     assert.equal(purchase.unpaid, true);
-    assert.equal(unpaidObjectCost(purchase), price);
+    assert.equal(await unpaidObjectCost(purchase), price);
 });
 
 for (const species of ['shopkeeper', 'ghost']) {

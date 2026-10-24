@@ -196,7 +196,7 @@ void test('identifying a wished wand reveals its real recharge count', async () 
     await identifyPack(0);
     const firstWishedObject = game.inventory[0];
     assert.ok(firstWishedObject);
-    assert.match(inventoryItemDescription(firstWishedObject), /\(2:7\)/);
+    assert.match(await inventoryItemDescription(firstWishedObject), /\(2:7\)/);
 });
 void test('a chest cannot receive a weapon enchantment', async () => {
     freshObjectRoom();

@@ -101,17 +101,20 @@ async function chooseDroppedObjects(objects: readonly GameObject[]) {
     if (!objects.length) return [];
     const sorted = sortObjects(objects, { mode: lootSortMode({ inventoryLetters: true }) });
     // menu_drop() passes INVORDER_SORT even when sortpack is disabled.
-    const sections: MultiSelectSection<GameObject>[] = [...inventoryClassOrder(), 17].flatMap(oclass => {
+    const sections: MultiSelectSection<GameObject>[] = [];
+    for (const oclass of [...inventoryClassOrder(), 17]) {
         const members = sorted.filter(object => object.oclass === oclass);
-        if (!members.length) return [];
-        return [{ heading: objectClassHeading(oclass), items: members.map(object => {
+        if (!members.length) continue;
+        const items = [];
+        for (const object of members) {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
-            return { key: object.invlet ?? '#', value: object,
+            items.push({ key: object.invlet ?? '#', value: object,
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '',
-                text: objectDescription(object, { withPrice: true }) };
-        }) }];
-    });
+                text: await objectDescription(object, { withPrice: true }) });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
     const underlay = snapshotMenuUnderlay();
     try {
         return await showMultiSelectWindow({
@@ -225,9 +228,9 @@ async function dropTraditionally(selection: TraditionalDropSelection): Promise<n
                     observeObjectForNaming(object);
                     const letter = game.flags.fixinv !== false ? object.invlet ?? '#'
                         : String.fromCharCode(letterCode);
-                    const question = objectQuestion(object, {
+                    const question = await objectQuestion(object, {
                         prefix: '', suffix: '?', fallback: 'item',
-                        format: (item, state) => `${letter} - ${objectDescription(item, { state })}`,
+                        format: async (item, state) => `${letter} - ${await objectDescription(item, { state })}`,
                         shortFormat: (item, state) => `${letter} - ${simpleObjectNameWithArticle(item, state)}`,
                     });
                     const response = await tty_yn_function(question,

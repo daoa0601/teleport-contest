@@ -136,7 +136,7 @@ export async function dropHeroObject(
                 ? `${ownerText} ${
                     (object.quan > 1 ? `${object.quan} ` : '')
                     + objectName(object, state)}`
-                : inventoryItemDescription(object);
+                : await inventoryItemDescription(object);
             await publish(`You drop ${description} into ${into}.`);
         }
     } else {
@@ -153,7 +153,7 @@ export async function dropHeroObject(
             const levhack = beginLevitatingArtifactDrop(object, state);
             if (state.flags?.verbose !== false) {
                 observeObjectForNaming(object, { state });
-                await publish(`You drop ${inventoryItemDescription(object)}.`);
+                await publish(`You drop ${await inventoryItemDescription(object)}.`);
             }
             await freeInventoryObject(object, state);
             // the finesse exists precisely because freeinv can end badly;
@@ -169,7 +169,7 @@ export async function dropHeroObject(
         if (!(dropLocation && IS_ALTAR(dropLocation.typ))
             && state.flags?.verbose !== false) {
             observeObjectForNaming(object, { state });
-            await publish(`You drop ${inventoryItemDescription(object)}.`);
+            await publish(`You drop ${await inventoryItemDescription(object)}.`);
         }
     }
 

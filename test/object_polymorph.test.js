@@ -166,7 +166,7 @@ void test('shuddered shop goods retain their used-up bill', async () => {
     const arrows = await floorObject(ARROW, 12, 10, { quan: 12 });
     installPagerInput(resetInputState(), { expected: /owe|arrows|zorkmids/i, limit: 1 });
     await do_osshock(arrows);
-    const bill = itemizedShopBill(shopkeeper);
+    const bill = await itemizedShopBill(shopkeeper);
     assert.equal(bill.length, 1);
     assert.ok(bill[0]);
     assert.equal(bill[0].kind, 'used');
@@ -185,7 +185,7 @@ void test('an unpaid replacement retains the old bill identity and angers its ow
     assert.equal(shopkeeper.eshk.following, 1);
     assert.equal(ration.where, 'inventory');
     assert.equal(dagger.where, 'onbill');
-    assert.ok(itemizedShopBill(shopkeeper).some(item => item.object === dagger && item.kind === 'used'));
+    assert.ok((await itemizedShopBill(shopkeeper)).some(item => item.object === dagger && item.kind === 'used'));
 });
 void test('gold material makes a real golem and consumes the pile', async () => {
     freshObjectRoom({ gameplaySeed: 13n });

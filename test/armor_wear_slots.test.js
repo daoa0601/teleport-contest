@@ -18,7 +18,7 @@ void test('putting on named zero-delay armor uses its noun without inventory det
     await rhack('W'.charCodeAt(0));
     assert.equal(game._pending_message, 'You are now wearing a small shield named Shelter.');
     assert.equal(game.uarms, shield);
-    assert.equal(inventoryItemDescription(shield), 'a blessed +2 small shield named Shelter (being worn)');
+    assert.equal(await inventoryItemDescription(shield), 'a blessed +2 small shield named Shelter (being worn)');
 });
 void test('nonverbose zero-delay armor wear keeps its state change without the verbose message', async () => {
     freshObjectRoom({ flags: { verbose: false } });
@@ -41,7 +41,7 @@ void test('wearing cursed wielded armor frees the hand before its dressing delay
     assert.equal(armor.owornmask, W_ARM);
     assert.equal(armor.wielded, false);
     assert.equal(armor.known, false);
-    assert.match(inventoryItemDescription(armor), /\(being donned\)$/);
+    assert.match(await inventoryItemDescription(armor), /\(being donned\)$/);
     assert.equal(game.context.move, 1);
 });
 void test('wearing an alternate cloak removes its alternate slot and finishes immediately', async () => {
@@ -56,7 +56,7 @@ void test('wearing an alternate cloak removes its alternate slot and finishes im
     assert.equal(cloak.owornmask, W_ARMC);
     assert.equal(cloak.alternate, false);
     assert.equal(cloak.known, true);
-    assert.match(inventoryItemDescription(cloak), /\(being worn\)$/);
+    assert.match(await inventoryItemDescription(cloak), /\(being worn\)$/);
     assert.equal(game.context.move, 1);
 });
 void test('wearing readied armor clears only the quiver and keeps an unrelated welded weapon', async () => {
@@ -74,7 +74,7 @@ void test('wearing readied armor clears only the quiver and keeps an unrelated w
     assert.equal(game.uarm, armor);
     assert.equal(armor.owornmask, W_ARM);
     assert.equal(armor.ready, false);
-    assert.match(inventoryItemDescription(armor), /\(being donned\)$/);
+    assert.match(await inventoryItemDescription(armor), /\(being donned\)$/);
     assert.equal(game.uwep, sword);
     assert.equal(sword.owornmask, W_WEP);
     assert.equal(game.uswapwep, dagger);

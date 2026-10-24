@@ -27,7 +27,7 @@ void test('a newly generated domestic mount can start with a worn saddle', async
     assert.ok(pony !== null && pony !== undefined);
     assert.equal(saddle.leashmon, pony.m_id);
     assert.ok(pony.minvent.includes(saddle));
-    assert.match(inventoryItemDescription(saddle), /(?:blessed|uncursed|cursed).*saddle/);
+    assert.match(await inventoryItemDescription(saddle), /(?:blessed|uncursed|cursed).*saddle/);
 });
 void test('NO_MINVENT domestic mounts do not receive a starting saddle', async () => {
     freshObjectRoom();

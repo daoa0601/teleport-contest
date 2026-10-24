@@ -117,7 +117,7 @@ async function publishBreakMessage(object: GameObject, visible: boolean, publish
         || [LENSES, MIRROR, CRYSTAL_BALL, EXPENSIVE_CAMERA].includes(object.otyp)
         ? ' into a thousand pieces' : '';
     observeObjectForNaming(object, { state });
-    const description = objectDescription(object, { state });
+    const description = await objectDescription(object, { state });
     const subject = description.charAt(0).toUpperCase() + description.slice(1);
     await publish(`${subject} ${
         quantity === 1 ? 'shatters' : 'shatter'

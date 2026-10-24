@@ -127,7 +127,7 @@ export async function selectFoodToEat({ state = game } = {}) {
             }
             observeObjectForNaming(object, { state });
             const one = objectQuantity(object) === 1;
-            const answer = await askFloorFood(`There ${one ? 'is' : 'are'} ${inventoryItemDescription(object)} here; eat ${one ? 'it' : 'one'}?`);
+            const answer = await askFloorFood(`There ${one ? 'is' : 'are'} ${await inventoryItemDescription(object)} here; eat ${one ? 'it' : 'one'}?`);
             if (answer === 'y')
                 return object;
             if (answer === 'q')

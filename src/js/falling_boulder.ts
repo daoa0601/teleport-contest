@@ -62,7 +62,7 @@ export async function dropBoulderOnHero({
     const object = await fallingRock(confused);
     let damage = 0;
     if (canBeHit({ mnum: heroSpecies(state) }) && !state.u.passesWalls) {
-        await plineWithContinuation(`You are hit by ${fallingRockName(object, state)}!`);
+        await plineWithContinuation(`You are hit by ${await fallingRockName(object, state)}!`);
         damage = rollPhysicalWeaponDamageAgainstHero(object, state) * object.quan;
         const helmet = state.uarmh || state.u.uarmh;
         if (helmet && helmetProtects) {
@@ -96,7 +96,7 @@ export async function dropBoulderOnMonster(x: number, y: number, {
         // C rechecks canspotmon() after each pline(), whose pending vision
         // recalculation can hide the target behind boulders that just fell.
         if (cansee(x, y)) {
-            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${fallingRockName(object, state)}!`);
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${await fallingRockName(object, state)}!`);
             if (monster.minvis && !canSpotMonster(monster)) map_invisible(x, y);
         } else if (swallowsHero) {
             await hear(`something hit ${possessiveName(monsterName(monster, { state }))} ${monsterStomachName(monster.mnum)} over your ${heroHeadName(state)}!`, state);
@@ -147,9 +147,9 @@ async function fallingRock(confused: boolean): Promise<GameObject> {
 
 // C doname() observes the falling object, so later blind feeling still
 // calls seen rocks "rocks" rather than "stones".
-function fallingRockName(object: GameObject, state: GameState): string {
+async function fallingRockName(object: GameObject, state: GameState): Promise<string> {
     observeObjectForNaming(object, { state });
-    return inventoryItemDescription(object);
+    return await inventoryItemDescription(object);
 }
 
 async function landFallingRock(object: GameObject, x: number, y: number, state: PlayingGameState): Promise<void> {

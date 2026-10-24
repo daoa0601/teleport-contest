@@ -88,7 +88,7 @@ export async function useMonsterOffensiveItem(
             observeObject(object, state);
             const subject = monsterName(monster, { state, capitalized: true });
             observeObjectForNaming(object, { state });
-            const name = inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
+            const name = await inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
             await publish(`${subject} hurls ${name}!`);
         }
         const target = aimedPosition(monster);

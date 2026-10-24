@@ -79,7 +79,7 @@ export async function doforce(state = game) {
         if (box.obroken || !box.olocked) {
             box.lknown = false;
             const condition = box.obroken ? 'broken' : 'unlocked';
-            await plineWithContinuation(`There is ${inventoryItemDescription(box)} here, but its lock is `
+            await plineWithContinuation(`There is ${await inventoryItemDescription(box)} here, but its lock is `
                 + `already ${condition}.`);
             box.lknown = true;
             reportedOpenBox = true;
@@ -87,7 +87,7 @@ export async function doforce(state = game) {
         }
         if (reportedOpenBox)
             await flushPendingTopline();
-        const description = inventoryItemDescription(box);
+        const description = await inventoryItemDescription(box);
         box.lknown = true;
         const answer = await promptYesNoQuit(`There is ${description} here; force its lock?`);
         if (answer === 'q') {

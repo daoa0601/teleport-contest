@@ -12,6 +12,7 @@ import {
     WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { resetInputState } from '../js/input.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
@@ -124,6 +125,8 @@ void test('breaking unpaid goods outside every shop retains a used-up bill rathe
     const { shopkeeper } = await createStaffedShop({
         left: 12, right: 16, keeperX: 14, keeperY: 10, bill: [entry],
     });
+    // doname() cannot look up a price outside the hero's current shops.
+    resetInputState().feed(' ');
 
     await breakFloorObject(potion, {
         x: game.u.ux, y: game.u.uy, fromInventory: true,
@@ -133,7 +136,7 @@ void test('breaking unpaid goods outside every shop retains a used-up bill rathe
     assert.equal(shopkeeper.eshk.debit, 0);
     assert.equal(shopkeeper.eshk.bill.length, 1);
     assert.equal(entry.useup, true);
-    assert.ok(itemizedShopBill(shopkeeper).some(item => item.object === potion));
+    assert.ok((await itemizedShopBill(shopkeeper)).some(item => item.object === potion));
     assert.equal(potion.where, 'onbill');
     assert.equal(potion.unpaid, false);
 });

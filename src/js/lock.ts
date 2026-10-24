@@ -96,7 +96,7 @@ export async function doforce(state: GameState = game): Promise<void> {
             box.lknown = false;
             const condition = box.obroken ? 'broken' : 'unlocked';
             await plineWithContinuation(
-                `There is ${inventoryItemDescription(box)} here, but its lock is `
+                `There is ${await inventoryItemDescription(box)} here, but its lock is `
                 + `already ${condition}.`,
             );
             box.lknown = true;
@@ -105,7 +105,7 @@ export async function doforce(state: GameState = game): Promise<void> {
         }
 
         if (reportedOpenBox) await flushPendingTopline();
-        const description = inventoryItemDescription(box);
+        const description = await inventoryItemDescription(box);
         box.lknown = true;
         const answer = await promptYesNoQuit(`There is ${description} here; force its lock?`);
         if (answer === 'q') {

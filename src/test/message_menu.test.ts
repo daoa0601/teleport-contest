@@ -162,3 +162,51 @@ void test('a nonselectable singleton is ordinary prose without a forced More pro
     await flush_screen(1);
     assert.equal(rowText(0), 'b - an uncursed dagger.');
 });
+
+// C tty_message_menu() sets dismiss_more before tty_putstr(), so the More
+// prompt for an older message that cannot share the line accepts the letter.
+const olderMessage = 'You see here a long row of carefully stacked dusty spellbooks.';
+
+void test('the item letter dismisses an older message before the singleton is shown', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    await plineWithContinuation(olderMessage);
+
+    const selected = await answerPrompts(
+        showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input,
+        [
+            { prompt: /spellbooks\.--More--/, keys: 'b' },
+            { prompt: /^b - an uncursed dagger\.--More--/, keys: 'b' },
+        ],
+    );
+
+    assert.equal(selected, 'b'.charCodeAt(0));
+    assert.equal(rowText(0), '');
+});
+
+for (const { name, key, selected } of [
+    { name: 'the item letter followed by Space', key: 'b ', selected: 0 },
+    { name: 'Escape', key: '\x1b', selected: 27 },
+    { name: 'Space', key: ' ', selected: 0 },
+]) {
+    void test(`Escape at older prose still shows the singleton for ${name} to answer`, async () => {
+        freshObjectRoom();
+        const input = resetInputState();
+        await plineWithContinuation(olderMessage);
+
+        const result = await answerPrompts(
+            showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input,
+            [
+                { prompt: /spellbooks\.--More--/, keys: '\x1b' },
+                { prompt: /^b - an uncursed dagger\.--More--/, keys: key },
+            ],
+        );
+
+        assert.equal(result, selected);
+        assert.equal(rowText(0), '');
+        await plineWithContinuation('You keep your dagger.');
+        await flush_screen(1);
+
+        assert.equal(rowText(0), 'You keep your dagger.');
+    });
+}

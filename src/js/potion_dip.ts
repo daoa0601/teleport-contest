@@ -38,7 +38,7 @@ export async function dip({
     if (object !== 'hands' && await reportCoveredEquipment(object)) { game.context.move = 0; return; }
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     let declinedSource = false;
-    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : dipTargetDescription(object);
+    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : await dipTargetDescription(object);
     const target = game.flags.verbose ? description : dipTargetPronoun(object);
     if (!game.iflags.menu_requested && heroCanReachFloor(game) && location.typ === FOUNTAIN) {
         if (await promptYesNo(`Dip ${target} into the fountain?`, 'n') === 'y') {
@@ -151,13 +151,13 @@ function dipTargetPronoun(object: DipTarget): string {
         || slot === 'uarmg' || slot === 'uarmf' ? 'them' : 'it';
 }
 
-function dipTargetDescription(object: GameObject): string {
+async function dipTargetDescription(object: GameObject): Promise<string> {
     observeObjectForNaming(object);
-    const full = inventoryItemDescription(object);
+    const full = await inventoryItemDescription(object);
     if (full.length <= 49) return full;
     const shortened = { ...object, bknown: false, rknown: false,
         greased: false, oeroded: 0, oeroded2: 0 };
     delete shortened.buc;
-    const name = inventoryItemDescription(shortened);
+    const name = await inventoryItemDescription(shortened);
     return name.length <= 49 ? name : `the ${simpleObjectName(object)}`;
 }

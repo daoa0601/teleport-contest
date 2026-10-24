@@ -95,7 +95,7 @@ export async function doeat() {
                 return;
             }
         } else {
-            await pline(`You ${meal.reqtime === 1 ? 'eat' : 'begin eating'} ${inventoryItemDescription(food)}.`);
+            await pline(`You ${meal.reqtime === 1 ? 'eat' : 'begin eating'} ${await inventoryItemDescription(food)}.`);
         }
     }
     const nutrition = foodNutrition(food);

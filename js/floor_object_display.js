@@ -7,7 +7,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
 import { readEngravingAt } from './engrave.js';
 import { stopRun } from './runmode.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
@@ -128,7 +128,7 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
             await plineWithContinuation(featureDescription);
         await readFloorEngraving(game.u.ux, game.u.uy);
         observeObjectForNaming(first);
-        await plineWithContinuation(`You ${heroIsBlind() ? 'feel' : 'see'} here ${pricedFloorObjectDescription(first)}.`);
+        await plineWithContinuation(`You ${heroIsBlind() ? 'feel' : 'see'} here ${await pricedFloorObjectDescription(first)}.`);
         game._lastPlineKind = PLNMSG_ONE_ITEM_HERE;
         return await feelPetrifyingCorpse(first);
     }
@@ -140,19 +140,25 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
         clearMessageWindow();
     await flush_screen(1);
     const display = requireGameDisplay();
-    const underlay = snapshotMenuUnderlay();
     const pileLocation = heroIsBlind() ? 'you feel here' : 'are here';
     const descriptions = [];
     let touchedCorpse = null;
     for (const object of objects) {
         observeObjectForNaming(object);
         if (willFeelPetrifyingCorpse(object)) {
-            descriptions.push(`${floorObjectDescription(object)}...`);
+            descriptions.push(`${await floorObjectDescription(object)}...`);
             touchedCorpse = object;
             break;
         }
-        descriptions.push(pricedFloorObjectDescription(object));
+        descriptions.push(await pricedFloorObjectDescription(object));
     }
+    if (game._pending_message) {
+        await displayMessageWindow();
+        // tty_display_nhwindow() clears WIN_MESSAGE before a corner window,
+        // even when WIN_STOP prevented acknowledging its remaining text.
+        clearMessageWindow();
+    }
+    const underlay = snapshotMenuUnderlay();
     const content = [
         ...(featureDescription ? [featureDescription, ''] : []),
         `${pickedSome ? 'Other things' : 'Things'} that ${pileLocation}:`,
@@ -191,10 +197,10 @@ async function showFloorPileCorner(display, lines) {
         key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
 }
-export function pricedFloorObjectDescription(object) {
-    return objectDescription(object, { withPrice: true });
+export async function pricedFloorObjectDescription(object) {
+    return await objectDescription(object, { withPrice: true });
 }
-export function floorObjectDescription(object) {
-    return objectDescription(object);
+export async function floorObjectDescription(object) {
+    return await objectDescription(object);
 }
 //# sourceMappingURL=floor_object_display.js.map

@@ -9,13 +9,13 @@ import {
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
-export function objectDescriptionPrice(object: GameObject, {
+export async function objectDescriptionPrice(object: GameObject, {
     state = game, withPrice = false,
-}: { state?: GameState; withPrice?: boolean } = {}): string {
+}: { state?: GameState; withPrice?: boolean } = {}): Promise<string> {
     if (state.iflags.suppress_price || state.program_state.restoring) return '';
 
     if (objectIsUnpaid(object)) {
-        const price = unpaidObjectCost(object, state, 'contents');
+        const price = await unpaidObjectCost(object, state, 'contents');
         return quotedPriceSuffix(object, object.unpaid ? 'unpaid' : 'contents', price, state);
     }
     if (withPrice) {

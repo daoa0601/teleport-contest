@@ -294,7 +294,7 @@ async function hitHero(node, state, options) {
         }
         return result.hit;
     }
-    const name = object.quan > 1 ? objectDescription(object, { state })
+    const name = object.quan > 1 ? await objectDescription(object, { state })
         : withIndefiniteArticle(objectCombatName(object, { state }));
     const terse = heroIsBlind(state) || !state.flags.verbose;
     const threshold = state.u.uac + attack;

@@ -337,7 +337,7 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
         }
         return result.hit;
     }
-    const name = object.quan > 1 ? objectDescription(object, { state })
+    const name = object.quan > 1 ? await objectDescription(object, { state })
         : withIndefiniteArticle(objectCombatName(object, { state }));
     const terse = heroIsBlind(state) || !state.flags.verbose;
     const threshold = state.u.uac + attack;

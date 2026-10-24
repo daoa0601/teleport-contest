@@ -193,7 +193,7 @@ function monsterCarrierDescription(monster: Monster, state: GameState) {
     return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
 }
 
-function familiarPresentation(
+async function familiarPresentation(
     monster: Monster, figurine: GameObject, location: FigurineLocation, overdue: boolean,
     state: GameState,
 ) {
@@ -209,7 +209,7 @@ function familiarPresentation(
         if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL
             && shelter) {
             ending = ` and ${figurineLocomotion(monster.mnum, 'crawl')} under ${
-                objectDescription(shelter, { state })
+                await objectDescription(shelter, { state })
             }`;
         } else if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             || MONSTER_SYMBOL[monster.mnum] === S_EEL) {
@@ -295,7 +295,7 @@ export async function runClaimedFigurineTimer(
     }
 
     const overdue = claimed.timer.deadline !== currentTurn;
-    const message = familiarPresentation(
+    const message = await familiarPresentation(
         monster, figurine, { ...location, x: position.x, y: position.y },
         overdue, state,
     );

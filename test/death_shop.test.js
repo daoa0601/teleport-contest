@@ -88,7 +88,7 @@ for (const recovery of ['life saving', 'debug refusal']) {
         const { state, shopkeeper, dagger } = await deathShop({ debug: recovery === 'debug refusal' });
         const debt = shopkeeper.eshk.debit;
         const billCount = shopkeeper.eshk.billct;
-        const price = unpaidObjectCost(dagger);
+        const price = await unpaidObjectCost(dagger);
         if (recovery === 'life saving') {
             const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
             await wearHeroAccessory(amulet, 'uamul');
@@ -116,7 +116,7 @@ for (const recovery of ['life saving', 'debug refusal']) {
         assert.equal(shopkeeper.eshk.debit, debt);
         assert.equal(shopkeeper.eshk.billct, billCount);
         assert.equal(dagger.unpaid, true);
-        assert.equal(unpaidObjectCost(dagger), price);
+        assert.equal(await unpaidObjectCost(dagger), price);
         assert.ok(state.inventory.includes(dagger));
     });
 }

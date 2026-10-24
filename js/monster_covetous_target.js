@@ -116,7 +116,7 @@ export async function pursueCovetousTarget(monster, target, state) {
         if (cansee(monster.mx, monster.my)) {
             const subject = monsterName(monster, { state, capitalized: true });
             observeDistantObjectForNaming(target.object, state);
-            const object = objectDescription(target.object, { state });
+            const object = await objectDescription(target.object, { state });
             await plineWithContinuation(`${subject} picks up ${object}.`);
         }
         remove_object(target.object, state);

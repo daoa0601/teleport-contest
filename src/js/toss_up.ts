@@ -64,14 +64,14 @@ export async function tossObjectUp(object: GameObject, {
         && touchPetrifies(object.corpsenm);
 
     if (hasCeiling && hitsRoof && objectBreaksOnImpact(object, random)) {
-        await publish(`${fallingObjectSubject(object, state)} hits the ${ceiling}.`);
+        await publish(`${await fallingObjectSubject(object, state)} hits the ${ceiling}.`);
         const broken = await breakObject();
         if (broken.destroyed || state.program_state.gameover) return null;
         return hitFloor(false);
     }
 
     const action = !hasCeiling ? 'flies up into' : hitsRoof ? 'hits' : 'almost hits';
-    await publish(`${fallingObjectSubject(object, state)} ${action} the ${ceiling}, then falls back on top of your ${heroHeadName(state)}.`);
+    await publish(`${await fallingObjectSubject(object, state)} ${action} the ${ceiling}, then falls back on top of your ${heroHeadName(state)}.`);
 
     if (object.oclass === POTION_CLASS) {
         await hitHeroWithThrownPotion(object, { state, publish, random, rollOne });
@@ -153,9 +153,9 @@ export async function tossObjectUp(object: GameObject, {
     return landed;
 }
 
-function fallingObjectSubject(object: GameObject, state: GameState): string {
+async function fallingObjectSubject(object: GameObject, state: GameState): Promise<string> {
     observeObjectForNaming(object, { state });
-    const name = objectDescription(object, { state });
+    const name = await objectDescription(object, { state });
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
