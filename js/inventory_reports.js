@@ -213,7 +213,8 @@ async function typeInventory() {
         if (types.length > 1) {
             for (;;) {
                 const key = await promptKey(`${prompt} [${types}] `);
-                if ([27, 32, 10, 13].includes(key)) {
+                // tty_yn_function() maps these keys to the NUL default.
+                if ([0, 27, 32, 10, 13].includes(key)) {
                     clearMessageWindow();
                     return null;
                 }

@@ -104,7 +104,8 @@ export async function promptDirection(readKey: DirectionKeyReader = readDirectio
             hero.dx = hero.dy = 0;
             hero.dz = direction === '<' ? -1 : 1;
         } else {
-            if ([27, 32, 10, 13].includes(code)) return null;
+            // C getdir() skips invalid-direction help for all quitchars, including NUL.
+            if ([0, 27, 32, 10, 13].includes(code)) return null;
             const helpRequested = code === game.commandBindings.specialKey('getdir.help');
             if (helpRequested || game.flags?.cmdassist !== false) {
                 await showTextPages([directionAssistPage(!helpRequested)], {
