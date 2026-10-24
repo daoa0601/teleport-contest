@@ -16,7 +16,7 @@ import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
-import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING } from './const.js';
+import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './weapon_type.js';
@@ -187,6 +187,16 @@ export function restoreGame(name, storage = game.storage) {
         if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
             return false;
         requireInitializedHero(snapshot.state.u);
+        // C restgamestate() refuses a save whose hero was not healthy enough
+        // to survive restoration; dorecover() then discards the save file and
+        // the game starts over rather than resurrecting the dead character.
+        const savedHero = snapshot.state.u;
+        if ((savedHero.uhp ?? 0) <= 0
+            && (!Upolyd(savedHero) || (savedHero.mh ?? 0) <= 0)) {
+            rawPrint('You were not healthy enough to survive restoration.');
+            storage.removeItem?.(key);
+            return false;
+        }
         restoreSavedMonsters(snapshot.state);
         // C restgamestate() reads ubirthday back from its local-time text.
         const birthday = snapshot.state.ubirthday === undefined

@@ -59,6 +59,7 @@ import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, telepo
 import { monsterAtPosition } from './monster_location.js';
 import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
+import { restoreMonsterShape } from './monster_polymorph.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -528,6 +529,15 @@ export async function restoregamePreamble() {
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
     game._encumbranceLevel = 0;
+
+    // C getlev() closes dorecover() by restoring every monster on the
+    // current level: elapsed time is zero at a plain restore, so the pass
+    // is restore_cham() alone. Births append in the port, whereas C's fmon
+    // chain keeps the newest monster first.
+    for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+        await restoreMonsterShape(monster, game);
+        if (game.program_state.gameover) return;
+    }
 
     // C dorecover() rebuilds the unsaved vision state before docrt() and
     // welcome(). Search and monster feedback use that same live sight.
