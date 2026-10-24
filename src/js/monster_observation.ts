@@ -1,8 +1,9 @@
 // C mon.c:see_monster_closeup(). Photographs record a species once.
-import { M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE } from './const.js';
-import { canSenseMonster } from './display.js';
+import { isok, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE } from './const.js';
+import { canSeeMonster, canSenseMonster } from './display.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { MONSTER_NAME } from './monster_data.js';
+import { monsterAtPosition } from './monster_location.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { heroIsAmphibious } from './hero_species.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -14,6 +15,33 @@ interface ObservationOptions {
     photo?: boolean;
     onHead?: boolean;
     state?: GameState;
+}
+
+// C mon.c:see_nearby_monsters(). Only a completed timed action records
+// nearby species; ordinary map redraws do not add to the close-up count.
+export async function seeNearbyMonsters(state: GameState = game): Promise<void> {
+    const hero = state.u;
+    if (!state.level || heroIsHallucinating(state)
+        || heroIsBlind(state) && !hero.telepathy) return;
+    for (let x = hero.ux - 1; x <= hero.ux + 1; x++) {
+        for (let y = hero.uy - 1; y <= hero.uy + 1; y++) {
+            if (!isok(x, y)) continue;
+            const monster: Monster | null = monsterAtPosition(state.level, x, y);
+            if (!monster) continue;
+            const species = M_AP_TYPE(monster) === M_AP_MONSTER
+                ? monster.mappearance : monster.mnum;
+            if (species === undefined) throw new Error(`Monster ${monster.m_id} has no disguise species`);
+            if (state.mvitals?.[species]?.seen_close) continue;
+            if (canSeeMonster(monster) || monster.mundetected && canSenseMonster(monster)) {
+                state.bhitpos.x = x;
+                state.bhitpos.y = y;
+                state.notonhead = x !== monster.mx || y !== monster.my;
+                await seeMonsterCloseup(monster, {
+                    onHead: !state.notonhead, state,
+                });
+            }
+        }
+    }
 }
 
 export async function seeMonsterCloseup(

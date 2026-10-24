@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
+import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { mklev } from '../js/mklev.js';
-import { TIN_WHISTLE } from '../js/object_data.js';
+import { OBJECT_NAMES, TIN_WHISTLE } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installPagerInput } from './support/pager-input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { levelStairs } from './support/level-state.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -92,6 +95,29 @@ void test('Lua end-turn callbacks run after a command that does not use game tim
 
     assert.equal(game.moves, turn);
     assert.match(game._pending_message, /You survey your surroundings/);
+});
+
+void test('Lua end-turn effects continue while the hero is putting on armor', async t => {
+    const input = freshTurnRoom();
+    const armor = await addInventoryObject(OBJECT_NAMES.indexOf('plate mail'), { initialize: false });
+    const core = await startLuaCore(t);
+    core.execute(`
+        function while_dressing()
+            nh.pline("The dungeon echoes.")
+            return true
+        end
+        nh.callback("end_turn", "while_dressing")
+    `);
+    installPagerInput(input, { expected: /The dungeon echoes\./, limit: 2 });
+    input.feed(`W${armor.invlet}`);
+    await moveloop_core();
+    await flushPendingTopline();
+    assert.ok(game.multi < 0, 'Putting on plate mail must leave a dressing delay');
+
+    await moveloop_core();
+
+    assert.ok(game.multi < 0, 'The armor is still being put on');
+    assert.match(game._pending_message, /The dungeon echoes\./);
 });
 
 void test('a Lua world-turn hook grants an item only when global time advances', async t => {

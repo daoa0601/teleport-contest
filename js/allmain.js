@@ -25,7 +25,8 @@ import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearBypasses } from './object_bypass.js';
-import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { clearSplitObjects } from './object_stack.js';
+import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
@@ -40,6 +41,7 @@ import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
+import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
@@ -103,7 +105,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -123,9 +125,10 @@ import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, 
 import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
-import { nativeRoleAt } from './roles.js';
+import { aligns, nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
-import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
+import { recordGameLogEvent } from './gamelog.js';
+import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, selectHeroItemForTheft, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, beginMonsterDochug, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
@@ -137,7 +140,7 @@ import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
+import { heroHasOlfaction, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, sicknessDialogue, vomitingDialogue, } from './hero_illness.js';
 import { advanceHeroSliming, clearHeroSliming, finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime, slimeDialogue, } from './slime.js';
@@ -164,7 +167,7 @@ import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, } from './shk.js';
 import { inventoryItemDescription, rerollMenu, } from './invent.js';
-import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
+import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
@@ -251,16 +254,50 @@ async function showLegacy() {
     d.setCursor(left + 8, 17);
     await nhgetch();
 }
-function welcomeText() {
+// C allmain.c:welcome(). Greeting, chronicle entry, and restore reminders
+// share the hero's innate identity even while another body is active.
+export async function welcome(newGame) {
     const g = requireInitializedGame();
-    const align = g.initAlignment?.name || 'neutral';
-    const gender = g.flags?.female ? 'female' : 'male';
-    const race = g.urace?.adj || 'human';
-    const role = g.flags?.female && g.urole?.name?.f
-        ? g.urole.name.f : g.urole?.name?.m || 'Adventurer';
-    const identity = ['caveman', 'priest', 'valkyrie'].includes(g.urole?.key)
-        ? `${align} ${race} ${role}` : `${align} ${gender} ${race} ${role}`;
-    return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${identity}.`;
+    await currentLuaLifecycle().callCore(g, newGame ? 'start_new_game' : 'restore_old_game');
+    if (!newGame && Upolyd(g.u) && heroHasBeenGenocided(g)) {
+        await plineWithContinuation(`You're back, but you still feel ${feelingAfterSelfGenocide(g)} inside.`);
+        return;
+    }
+    if (heroIsHallucinating(g))
+        await plineWithContinuation('NetHack is filmed in front of an undead studio audience.');
+    const female = !!(Upolyd(g.u) ? g.u.mfemale : g.flags.female);
+    const currentAlignment = g.u.ualignbase[A_CURRENT];
+    const adrift = g.u.ualign.type !== currentAlignment;
+    const identity = [];
+    if (newGame || currentAlignment !== g.u.ualignbase[A_ORIGINAL] || adrift) {
+        const alignment = adrift ? g.u.ualign.type : currentAlignment;
+        if (adrift)
+            identity.push('adrift');
+        identity.push(aligns.find(entry => entry.value === alignment)?.name ?? 'unaligned');
+    }
+    const genderedRole = g.urole.name.f !== g.urole.name.m;
+    const describeGender = newGame ? g.urole.key !== 'valkyrie'
+        : Number(female) !== (g.flags.initgend ?? 0);
+    if (!genderedRole && describeGender)
+        identity.push(female ? 'female' : 'male');
+    identity.push(g.urace.adj, female ? g.urole.name.f : g.urole.name.m);
+    const description = identity.join(' ');
+    const name = g.plname;
+    await plineWithContinuation(newGame
+        ? `${g.urole.greeting} ${name}, welcome to NetHack!  You are a ${description}.`
+        : `${g.urole.greeting} ${name}, the ${description}, welcome back to NetHack!`);
+    if (newGame) {
+        recordGameLogEvent(`${name} the ${description} entered the dungeon`, { state: g });
+        return;
+    }
+    const temperature = g.level.flags.temperature ?? 0;
+    if (temperature)
+        await plineWithContinuation(`It is ${temperature > 0 ? 'hot' : 'cold'} here.`);
+    if (In_hell(g.u.uz) && temperature > 0)
+        await plineWithContinuation(`You ${heroHasOlfaction(g) ? 'smell' : 'sense'} smoke...`);
+    const annotation = g._levelAnnotations?.get(`${g.u.uz.dnum}:${g.u.uz.dlevel}`);
+    if (annotation)
+        await plineWithContinuation(`You remember this level as ${annotation}.`);
 }
 async function showInlineMore(message) {
     await plineWithContinuation(message);
@@ -320,13 +357,9 @@ export async function restoregamePreamble() {
     // welcome(). Search and monster feedback use that same live sight.
     vision_reset_new_level();
     await docrt();
-    const race = game.urace?.adj || game.urace?.noun || 'human';
-    const role = game.flags?.female && game.urole?.name?.f
-        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
-    const greeting = `${game.urole.greeting} ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
     // The first flush paints the display state restored with the level.
     await bot();
-    await plineWithContinuation(greeting);
+    await welcome(false);
     await checkSpecialRoom();
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
@@ -485,13 +518,13 @@ function appendTurnMessage(message) {
 // but must not stop independent occupations such as eating, lock-picking, or
 // spellbook study.  This port represents both kinds in `_occupation`, so keep
 // the distinction at the interruption boundary.
-function interruptCountedActivity(message) {
+async function interruptCountedActivity(message) {
     const game = requireInitializedGame();
     if (!(game.multi > 0) || game.context.travel || game.context.run)
         return;
     endVoluntaryMultiTurn(game);
     if (game.flags?.verbose !== false && game._lastPlineMessage !== message) {
-        appendTurnMessage(message);
+        await plineWithContinuation(message);
     }
 }
 // C ref: allmain.c's `once-per-hero-took-time` tail, after the movement-ration
@@ -553,21 +586,20 @@ async function finishInitialTurnMaintenanceRng(sourceTurn) {
     if (!rn2(40 + currentAttribute(A_DEX) * 3))
         wipeHeroEngraving(rnd(3));
     // allmain.c's demigod intervention clock advances after engraving wear
-    // and before environmental level motion.  Nervous outcomes 0/1 are
-    // synchronous; outcome2's black-glow pline can suspend before rndcurse,
-    // reset, environment, and once-per-action scheduling.
+    // and before environmental level motion. Each announcement waits only
+    // when pline() needs input, before curses or the next intervention roll.
     if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
         if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0)
             game.u.udg_cnt--;
         if ((game.u.udg_cnt ?? 0) === 0) {
             const intervention = Is_astralevel(game.u.uz) ? rnd(4) : rn2(6);
             if (intervention <= 1) {
-                appendTurnMessage(formatFeltMessage('vaguely nervous.'));
+                await plineWithContinuation(formatFeltMessage('vaguely nervous.'));
                 delete game._unresolvedDemigodIntervention;
             }
             else if (intervention === 2) {
                 if (!heroIsBlind(game))
-                    appendTurnMessage(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
+                    await plineWithContinuation(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
                 game._pendingDemigodIntervention = {
                     kind: intervention, sourceTurn,
                 };
@@ -727,7 +759,7 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
     // that exact source stack resumes.
     const recoveryCapacity = game.u.invulnerable ? UNENCUMBERED : capacity;
     if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
-        interruptCountedActivity('You are in full health.');
+        await interruptCountedActivity('You are in full health.');
     if (game.program_state.gameover)
         return { kind: 'complete', moveAmount };
     // C moveloop_core(): moving around while Strained or worse is hard work.
@@ -738,20 +770,19 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
         const level = game.u?.ulevel ?? 1;
         const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
         const interval = Math.max(1, Math.trunc(((30 + 8 - level) * roleFactor) / 6));
-        const energyRegeneration = !!(game.u?.energyRegeneration
-            || game.u?.energyRegenerationIntrinsic
-            || game.u?.energyRegenerationExtrinsic);
+        const energyRegeneration = propertyIsActive('energyRegeneration', game);
         if ((recoveryCapacity < MOD_ENCUMBER
             && sourceTurn % interval === 0)
             || energyRegeneration) {
-            const attributes = game.u?.acurr?.a || [];
-            let upper = Math.trunc(((attributes[A_WIS] ?? 0) + (attributes[A_INT] ?? 0)) / 15) + 1;
-            if (game.u?.magicalBreathingExtrinsic)
+            let upper = Math.trunc((currentAttribute(A_WIS, game) + currentAttribute(A_INT, game)) / 15) + 1;
+            if (hasWornProperty('magicalBreathing', game)
+                || hasCarriedProperty('magicalBreathing', null, game)
+                || hasInvokedProperty('magicalBreathing', game))
                 upper += 2;
             game.u.uen = Math.min(game.u.uenmax, game.u.uen + 1 + rn2(upper));
             game.context.botl = true;
             if (game.u.uen === game.u.uenmax)
-                interruptCountedActivity('You feel full of energy.');
+                await interruptCountedActivity('You feel full of energy.');
         }
     }
     await rollHeroTeleportitis();
@@ -931,6 +962,12 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferA
     addHeroMovementRation(game, moveAmount);
     setTrack(game);
     game.moves = (game.moves || 1) + 1;
+    if (game.moves >= 1000000000) {
+        await flushPendingTopline();
+        await plineWithContinuation('The dungeon capitulates.', { urgent: true });
+        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+        return { kind: 'complete', moveAmount };
+    }
     if (game.flags.time && !game.context.run)
         game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
@@ -1373,7 +1410,6 @@ async function advanceWorldTurn() {
         const intervention = game._pendingDemigodIntervention;
         game._pendingDemigodIntervention = null;
         if (intervention.kind === 2) {
-            await waitForCurrentMonsterMore();
             const heroAttack = { deferredCurseItems: true };
             await resolveDeferredHeroCurseItems(heroAttack);
             delete game._unresolvedDemigodIntervention;
@@ -3507,9 +3543,7 @@ export async function newgame() {
         rewindEngravingsForSave(g.level);
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
-    await plineWithContinuation(welcomeText());
-    // welcome(TRUE) records entry after its greeting has finished.
-    recordGameLogEvent(initialDungeonEntryText(g), { state: g, turn: 1 });
+    await welcome(true);
     if (g.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
@@ -3563,7 +3597,13 @@ export async function moveloop_core() {
         await settleHeroLiquidAfterAction();
         if (g.program_state?.gameover)
             return;
+        if (g.u.uinwater || g.underwater)
+            await under_water(0);
+        else if (g.u.uburied)
+            await under_ground(0);
+        await seeNearbyMonsters(g);
     }
+    clearSplitObjects(g);
     // allmain.c's once-per-player-input Amulet check follows all elapsed
     // monster/global work and precedes find_ac()/vision/input.  A level
     // teleport can finish several arrival pagers before returning here; the
@@ -3576,14 +3616,6 @@ export async function moveloop_core() {
     if (g._armorClassDirty && !g._heroTimePending) {
         findArmorClass(g);
         g._armorClassDirty = false;
-    }
-    if (currentMulti(g) < 0 && pendingArmorAction(g)) {
-        // A delayed action spends movement without reading another command.
-        g.u.umoved = false;
-        g.context.move = 1;
-        g.u.umovement = (g.u.umovement ?? 12) - 12;
-        g._heroTimePending = true;
-        return;
     }
     if (g._vaultGuardArrivalPending) {
         await continueVaultGuardArrival(g);
@@ -3603,7 +3635,7 @@ export async function moveloop_core() {
     // across warning boundaries and leave vision_full_recalc set, so this
     // source order is display-RNG-visible under Hallucination.
     const hallucinatingNow = heroIsHallucinating(g);
-    if (!g.context?.mv) {
+    if (!g.context.mv || heroIsBlind(g)) {
         // The see_* calls remain in place while swallowed (newsym suppresses
         // them), then swallowed(0) refreshes the eight-cell stomach projection
         // from the same display RNG stream.
@@ -3614,16 +3646,16 @@ export async function moveloop_core() {
             if (g.u?.uswallow)
                 swallowed(false);
         }
-        else if (g.u?.warning
+        else if (g.u?.warning || g.u.warnOfMonster
             || (g.u?.unblind_telepat_range ?? -1) >= 0
             || g.level?.regions?.some(region => region.visible
                 && region.ttl !== -2)) {
             await see_monsters();
         }
-    }
-    if (g.vision_full_recalc) {
-        vision_recalc(0);
-        g.vision_full_recalc = 0;
+        if (g.vision_full_recalc) {
+            vision_recalc(0);
+            g.vision_full_recalc = 0;
+        }
     }
     // C runs bot() or timebot() here and then curs_on_u(), whose
     // flush_screen() draws the buffered map, only when the status changed.

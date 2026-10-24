@@ -162,9 +162,6 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     displacedBlocked?: boolean;
     clairvoyanceBlocked?: boolean;
     extrinsicJumping?: boolean;
-    energyRegenerationExtrinsic?: boolean;
-    energyRegenerationIntrinsic?: boolean;
-    magicalBreathingExtrinsic?: boolean;
     stealthExtrinsic?: boolean;
     stealthIntrinsic?: boolean;
     regenerationIntrinsic?: boolean;
