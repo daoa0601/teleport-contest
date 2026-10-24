@@ -184,21 +184,29 @@ void test('the item letter dismisses an older message before the singleton is sh
     assert.equal(rowText(0), '');
 });
 
-void test('Escape at an older message cancels the singleton and allows later ordinary messages', async () => {
-    freshObjectRoom();
-    const input = resetInputState();
-    await plineWithContinuation(olderMessage);
+for (const { name, key, selected } of [
+    { name: 'the item letter', key: 'b', selected: 'b'.charCodeAt(0) },
+    { name: 'Escape', key: '\x1b', selected: 27 },
+    { name: 'Space', key: ' ', selected: 0 },
+]) {
+    void test(`Escape at older prose still shows the singleton for ${name} to answer`, async () => {
+        freshObjectRoom();
+        const input = resetInputState();
+        await plineWithContinuation(olderMessage);
 
-    const selected = await answerPrompts(
-        showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input,
-        [{ prompt: /spellbooks\.--More--/, keys: '\x1b' }],
-    );
+        const result = await answerPrompts(
+            showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input,
+            [
+                { prompt: /spellbooks\.--More--/, keys: '\x1b' },
+                { prompt: /^b - an uncursed dagger\.--More--/, keys: key },
+            ],
+        );
 
-    assert.equal(selected, 27);
-    assert.doesNotMatch(rowText(0), /dagger/);
+        assert.equal(result, selected);
+        assert.equal(rowText(0), '');
+        await plineWithContinuation('You keep your dagger.');
+        await flush_screen(1);
 
-    await plineWithContinuation('You keep your dagger.');
-    await flush_screen(1);
-
-    assert.equal(rowText(0), 'You keep your dagger.');
-});
+        assert.equal(rowText(0), 'You keep your dagger.');
+    });
+}

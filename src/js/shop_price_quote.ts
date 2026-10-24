@@ -2,6 +2,7 @@
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { plineWithContinuation } from './display.js';
+import { publishDeferredImpossibles } from './diagnostics.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, objectTypeKnown, shopObjectUnitCost } from './shk.js';
 import { containedBuyCost, objectPricingUnits, shopkeeperIsMuted } from './shop_loss.js';
@@ -18,7 +19,8 @@ export async function quoteShopGoods(): Promise<boolean> {
     if (!spot || !spot.resident.mpeaceful || shopkeeperIsMuted(spot.resident)) return false;
     const goods = game.level?.objects[game.u.ux]?.[game.u.uy]?.filter(object => object.oclass !== 12) ?? [];
     if (!goods.length) return false;
-    const quotes = goods.map(object => {
+    const quotes = [];
+    for (const object of goods) {
         let cost = object.no_charge || object === game.uball || object === game.uchain
             ? 0 : shopObjectUnitCost(object, spot.resident);
         const contentsOnly = !cost;
@@ -27,10 +29,13 @@ export async function quoteShopGoods(): Promise<boolean> {
         if (object.globby) cost *= objectPricingUnits(object);
         observeObjectForNaming(object);
         const name = `${cost && contentsOnly ? 'the contents of ' : ''}${objectDescription(object)}`;
+        // doname() finishes its report and repairs stale links before a later
+        // naming call, including the second name used for a single-item quote.
+        await publishDeferredImpossibles();
         const each = object.quan > 1 ? ' each' : '';
-        return { object, cost, contentsOnly, each, name,
-            line: `${name}, ${cost ? `${cost} ${currency(cost)}${each}` : 'no charge'}` };
-    });
+        quotes.push({ object, cost, contentsOnly, each, name,
+            line: `${name}, ${cost ? `${cost} ${currency(cost)}${each}` : 'no charge'}` });
+    }
     const quote = quotes[0];
     if (!quote) throw new Error('Shop goods disappeared during a price quote.');
     if (quotes.length > 1) {

@@ -2831,12 +2831,9 @@ export async function showMessageMenu(letter, pickMode, message) {
     const menuLetter = letter.charCodeAt(0);
     if (pending && message.length + pending.length + 3 < columns - 8)
         message = `${pending}  ${message}`;
-    else if (pending && await pageTopline(pending, { dismissKey: menuLetter }) === 27) {
-        // WIN_STOP skips the choice's own display; morc cancels the prompt.
-        if (game.nhDisplay)
-            game.nhDisplay.stoppedTopline = message;
-        game._suppressMessagesUntilInput = false;
-        return 27;
+    else if (pending) {
+        // update_topl() still draws the incoming choice after Escape at older prose.
+        await pageTopline(pending, { dismissKey: menuLetter });
     }
     game._pending_message = message;
     game._retained_message = '';
@@ -2918,6 +2915,8 @@ export async function flushPendingTopline() {
 // C tty_display_nhwindow(WIN_MESSAGE): unlike a direct more(), the window
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
 export async function displayMessageWindow() {
+    // Formatting reports precede the window, even if earlier prose was stopped.
+    await publishDeferredImpossibles();
     if (game._suppressMessagesUntilInput)
         return null;
     const dismissal = await flushPendingTopline();
