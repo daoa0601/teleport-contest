@@ -547,7 +547,7 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, was
                 await placeHeroOnLevel(portal.tx, portal.ty);
             }
             else
-                await placeHeroAtRandomArrival(game.level.upTeleportRegion, true);
+                await placeHeroAtRandomArrival(game.level.downTeleportRegion);
         }
         else {
             if (wasInsideWizardTower && levelIsWizardTower())

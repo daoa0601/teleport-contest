@@ -598,7 +598,7 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
             if (portal) {
                 seeTrap(portal);
                 await placeHeroOnLevel(portal.tx, portal.ty);
-            } else await placeHeroAtRandomArrival(game.level.upTeleportRegion, true);
+            } else await placeHeroAtRandomArrival(game.level.downTeleportRegion);
         } else {
             if (wasInsideWizardTower && levelIsWizardTower())
                 await placeHeroAtRandomArrival(game._activeSpecialLevel?.downTeleportExclude);
