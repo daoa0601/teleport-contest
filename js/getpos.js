@@ -327,7 +327,7 @@ async function selectGetposMenu(spots, kind) {
         }
         // getpos_menu() supplies an end_menu prompt, so the tty owner applies
         // the configured prompt attributes and color while items stay plain.
-        tty_end_menu(window, `Pick ${withIndefiniteArticle(name)}${filter}`);
+        tty_end_menu(window, `Pick ${withIndefiniteArticle(name)}${filter}${game.iflags.getloc_travelmode ? ' for travel destination' : ''}`);
         const result = await tty_select_menu(window, PICK_ONE);
         if (result.cancelled)
             return null;

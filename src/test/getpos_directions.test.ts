@@ -39,4 +39,3 @@ for (const prefix of ['g', 'G']) {
         assert.equal(selected?.x, 11);
     });
 }
-

@@ -67,6 +67,22 @@ void test('getpos can use a menu to choose a shown monster', async () => {
     assert.equal(selected?.y, 10);
 });
 
+void test('target menus identify their travel-destination purpose', async () => {
+    freshObjectRoom({ iflags: { getloc_travelmode: true, getloc_usemenu: true } });
+    await createMonsterAt('kitten', 11, 10);
+    newsym(11, 10);
+    const input = resetInputState();
+    input.feed('m');
+
+    const selected = await answerPrompts(selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+    }), input, [
+        { prompt: /Pick a monster for travel destination/, keys: 'a.' },
+    ]);
+
+    assert.equal(selected?.x, 11);
+});
+
 void test('quick-look menus gather the new area after reversing direction in a doorway', async () => {
     const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
     for (let y = 6; y <= 14; y++) {
