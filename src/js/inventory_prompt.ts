@@ -4,12 +4,14 @@ import { ingSuffix } from './hacklib.js';
 
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
-import { heroGoldAmount } from './hero_gold.js';
 import { selectInventoryObject } from './invent.js';
 import { clearCommandKeys, nhgetch, takeCommandKey } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { rn2 } from './rng.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import {
+    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT,
+    GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
+} from './const.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
 import { splitObjectStack } from './object_stack.js';
 import { isWeldedPrimary } from './weapon_slots.js';
@@ -18,80 +20,113 @@ import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 
 export type InventoryClassification = 0 | 1 | 2 | 3 | 4 | 5;
 
-export interface InventoryPromptOptions {
-    verb: string;
-    classify?: (object: GameObject) => InventoryClassification;
-    allowGold?: boolean;
-    allowNone?: boolean;
-    noneDescription?: string;
-    noneSuggested?: boolean;
-    allowMenu?: boolean;
+export interface GetobjOptions {
+    // GETOBJ_PROMPT: ask even when nothing is a likely candidate.
+    forcePrompt?: boolean;
+    // GETOBJ_ALLOWCNT: accept a typed or menu count.
     allowCount?: boolean;
-    menuItems?: readonly GameObject[];
+    // The callback's answer for HANDS_SYM, obj_ok((struct obj *) 0).
+    hands?: InventoryClassification;
+    // getobj_hands_txt(): the '-' menu entry, when hands are allowed.
+    handsText?: string;
 }
 
 export type InventoryObjectSelection = {
     cancelled: true;
     object: null;
-    gold: false;
     none: false;
     count: 0 | null;
 } | {
     cancelled: false;
     object: GameObject;
-    gold: false;
     none: false;
     count: number | null;
 } | {
     cancelled: false;
     object: null;
-    gold: false;
     none: true;
-    count: number | null;
-} | {
-    cancelled: false;
-    object: null;
-    gold: true;
-    none: false;
     count: number | null;
 };
 
-// C getobj(): suggestions control the prompt and '?' subset, not what a
-// typed inventory letter or '*' may select. Downplayed items keep a command
-// available even when nothing is suggested.
-export async function chooseInventoryObject(verb: string, classify: (object: GameObject) => InventoryClassification, {
-    forcePrompt = false, emptyMessage, allowCount = false,
-}: { forcePrompt?: boolean; emptyMessage?: string; allowCount?: boolean } = {}): Promise<GameObject | null> {
-    const repeated = takeRepeatedInventorySelection(classify, allowCount, false);
-    if (repeated) return selectedInventoryObject(repeated);
-    const queuedKey = takeCommandKey();
-    if (queuedKey !== undefined) {
-        const object = game.inventory.find(candidate =>
-            candidate.invlet === String.fromCharCode(queuedKey)
-            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
-        if (!object) clearCommandKeys();
-        return object ?? null;
+const CANCELLED: InventoryObjectSelection = { cancelled: true, object: null, none: false, count: null };
+const HANDS: InventoryObjectSelection = { cancelled: false, object: null, none: true, count: null };
+const COIN_CLASS = 12;
+const HANDS_SYM = 45, QUESTION = 63, ASTERISK = 42, ESCAPE = 27;
+const QUITCHARS = [32, 13, 10, ESCAPE];
+
+function admitsChoice(classification: InventoryClassification): boolean {
+    return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
+}
+
+// C invent.c:getobj().  The callback classifies HANDS_SYM and each carried
+// object; suggestions shape the prompt and its '?' subset, downplayed
+// choices force the prompt, and any carried letter may still be typed.
+// The returned count has not been split off; callers which need native
+// split_otmp behavior use chooseInventoryObject().
+export async function getobj(
+    word: string,
+    classify: (object: GameObject) => InventoryClassification,
+    { forcePrompt = false, allowCount = false, hands = GETOBJ_EXCLUDE, handsText = 'your hands' }: GetobjOptions = {},
+): Promise<InventoryObjectSelection> {
+    const queued = takeQueuedInventorySelection(classify, allowCount, hands);
+    if (queued) return queued;
+
+    let allowNone = false, handsSuggested = false, handsDownplayed = false, inaccessible = 0;
+    switch (hands) {
+    case GETOBJ_SUGGEST:
+        allowNone = handsSuggested = true;
+        break;
+    case GETOBJ_DOWNPLAY:
+    case GETOBJ_EXCLUDE_INACCESS:
+    case GETOBJ_EXCLUDE_SELECTABLE:
+        allowNone = handsDownplayed = true;
+        break;
+    case GETOBJ_EXCLUDE_NONINVENT:
+        forcePrompt = false;
+        inaccessible++;
+        break;
+    case GETOBJ_EXCLUDE:
+        break;
     }
     if (game.flags?.fixinv === false) reassignInventoryLetters();
-    const inventory = [...(game.inventory || [])]
+    const sorted = [...game.inventory]
         .sort((left, right) => inventoryLetterOrder(left.invlet) - inventoryLetterOrder(right.invlet));
-    const suggested = inventory.filter(object => classify(object) === GETOBJ_SUGGEST);
-    const downplayed = inventory.filter(object => classify(object) === GETOBJ_DOWNPLAY);
-    if (!suggested.length && !downplayed.length && !forcePrompt) {
-        const inaccessible = inventory.some(object => classify(object) === GETOBJ_EXCLUDE_INACCESS);
-        await pline(emptyMessage ?? `You don't have anything ${inaccessible ? 'else ' : ''}to ${verb}.`);
-        return null;
+    const suggested: GameObject[] = [], downplayed: GameObject[] = [];
+    for (const object of sorted) {
+        const classification = classify(object);
+        if (classification === GETOBJ_EXCLUDE_INACCESS) inaccessible++;
+        else if (classification === GETOBJ_DOWNPLAY) {
+            forcePrompt = true;
+            downplayed.push(object);
+        } else if (classification === GETOBJ_SUGGEST) suggested.push(object);
+    }
+    if (!suggested.length && !forcePrompt && !allowNone) {
+        await pline(`You don't have anything ${inaccessible ? 'else ' : ''}to ${word}.`);
+        return CANCELLED;
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-    const choices = letters ? `${letters} or ?*` : '*';
-    const menuItems = suggested.length ? suggested : downplayed.length ? downplayed : inventory;
-    const selection = await promptInventoryObject(
-        `What do you want to ${verb}? [${choices}] `, inventory, {
-            verb, classify, allowCount,
-            allowMenu: true,
-            allowGold: inventory.some(object => object.oclass === 12), menuItems,
-        });
-    return selectedInventoryObject(selection);
+    const buf = handsSuggested ? letters ? `- ${letters}` : '-' : letters;
+    const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}] `;
+    const selection = await chooseGetobjLetter(word, prompt, classify, {
+        allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed,
+    });
+    if (selection.object && classify(selection.object) === GETOBJ_EXCLUDE) {
+        await sillyThing(word, selection.object);
+        return CANCELLED;
+    }
+    // split_otmp: an explicit zero count selects nothing.
+    if (selection.object && selection.count === 0) return { ...CANCELLED, count: 0 };
+    return selection;
+}
+
+// getobj() followed by its split_otmp tail, for callers which take the
+// object getobj() returns; hands are not a choice for these callbacks.
+export async function chooseInventoryObject(
+    word: string,
+    classify: (object: GameObject) => InventoryClassification,
+    options: Omit<GetobjOptions, 'handsText'> = {},
+): Promise<GameObject | null> {
+    return selectedInventoryObject(await getobj(word, classify, options));
 }
 
 function selectedInventoryObject(selection: InventoryObjectSelection): GameObject | null {
@@ -106,34 +141,184 @@ function selectedInventoryObject(selection: InventoryObjectSelection): GameObjec
     return object;
 }
 
-// C getobj() resolves CQ_REPEAT before reassign(): a consumed letter must
-// not become a different possession merely because fixinv is disabled.
-function takeRepeatedInventorySelection(
+// C getobj() pops CQ_REPEAT (during #repeat) or CQ_CANNED entries before
+// reassign(): a queued letter must not become a different possession merely
+// because fixinv is disabled.  Unmatched canned keys discard the queue.
+function takeQueuedInventorySelection(
     classify: (object: GameObject) => InventoryClassification,
     allowCount: boolean,
-    allowNone: boolean,
+    hands: InventoryClassification,
 ): InventoryObjectSelection | undefined {
     let repeated = takeRepeatCommand();
-    if (!repeated) return undefined;
+    let key: number | undefined;
     let count: number | null = null;
-    if (repeated.kind === 'count') {
-        if (!allowCount)
-            return { cancelled: true, object: null, gold: false, none: false, count: null };
-        count = repeated.count;
-        repeated = takeRepeatCommand();
+    if (repeated) {
+        if (repeated.kind === 'count') {
+            if (!allowCount) return CANCELLED;
+            count = repeated.count;
+            repeated = takeRepeatCommand();
+        }
+        if (repeated?.kind !== 'key') return CANCELLED;
+        key = repeated.key;
+    } else {
+        key = takeCommandKey();
+        if (key === undefined) return undefined;
     }
-    if (repeated?.kind !== 'key')
-        return { cancelled: true, object: null, gold: false, none: false, count: null };
-    const letter = String.fromCharCode(repeated.key);
-    const object = game.inventory.find(candidate => candidate.invlet === letter
-        && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
-    if (object) return {
-        cancelled: false, object, gold: false, none: false,
-        count: count !== null && count > 0 && count < object.quan ? count : null,
-    };
-    if (allowNone && letter === '-')
-        return { cancelled: false, object: null, gold: false, none: true, count: null };
-    return { cancelled: true, object: null, gold: false, none: false, count: null };
+    if (key === HANDS_SYM) {
+        if (admitsChoice(hands)) return HANDS;
+    } else {
+        const letter = String.fromCharCode(key);
+        const object = game.inventory.find(candidate => candidate.invlet === letter
+            && admitsChoice(classify(candidate)));
+        if (object) return {
+            cancelled: false, object, none: false,
+            count: count !== null && count > 0 && count < object.quan ? count : null,
+        };
+    }
+    if (!repeated) clearCommandKeys();
+    return CANCELLED;
+}
+
+interface GetobjChoices {
+    allowCount: boolean;
+    allowNone: boolean;
+    handsSuggested: boolean;
+    handsDownplayed: boolean;
+    handsText: string;
+    suggested: readonly GameObject[];
+    downplayed: readonly GameObject[];
+}
+
+// The interactive loop of C getobj(), up to its final silly_thing() check.
+async function chooseGetobjLetter(
+    word: string,
+    prompt: string,
+    classify: (object: GameObject) => InventoryClassification,
+    { allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed }: GetobjChoices,
+): Promise<InventoryObjectSelection> {
+    const forcedMenu = !!game.flags.force_invmenu;
+    let oneloop = false;
+    let key = 0;
+    for (;;) {
+        let count: number | null = null;
+        // A forced-menu retry reuses its letter without answering a query.
+        let answered = !forcedMenu || !oneloop;
+        if (forcedMenu) {
+            // The first forced menu lists likely candidates; a rejected
+            // count retries the letter already chosen from it.
+            if (!oneloop) key = suggested.length || downplayed.length || handsDownplayed ? QUESTION : ASTERISK;
+            oneloop = true;
+        } else key = await askInventoryPrompt(prompt);
+        if (key >= 48 && key <= 57) {
+            if (!allowCount) {
+                await pline('No count allowed with this command.');
+                continue;
+            }
+            const counted = await readInventoryCount(key);
+            key = counted.key;
+            if (counted.count) count = counted.count;
+        }
+        if (QUITCHARS.includes(key)) {
+            // C getobj(): a silent cancellation leaves the question painted.
+            if (game.flags?.verbose !== false) await neverMind();
+            return CANCELLED;
+        }
+        if (key === HANDS_SYM) {
+            game._pending_message = '';
+            if (!allowNone) await mimeInventoryAction(word);
+            return allowNone ? { cancelled: false, object: null, none: true, count } : CANCELLED;
+        }
+        while (key === QUESTION || key === ASTERISK) {
+            // '?' lists the suggested letters, or the downplayed ones
+            // (headed by '-') when nothing is suggested; '*' lists all.
+            const useAlternates = key === QUESTION && !suggested.length
+                && (downplayed.length > 0 || handsDownplayed);
+            const items = key === ASTERISK ? undefined : useAlternates ? downplayed : suggested;
+            const extraChoice = allowNone && (key === ASTERISK
+                || useAlternates && handsDownplayed || handsSuggested) ? handsText : null;
+            const letterCount = (items?.length ?? 0) + (useAlternates && handsDownplayed ? 1 : 0);
+            const listed = items !== undefined && letterCount > 0;
+            answered = true;
+            const selection = await selectInventoryObject({
+                ...(items?.length ? { items } : {}),
+                ...(extraChoice ? { extraChoice } : {}),
+                ...(forcedMenu ? {
+                    title: `What do you want to ${word}?`,
+                    menuOptions: allowNone && !extraChoice || listed && letterCount < game.inventory.length
+                        ? [{ key: '*', text: '(list everything)' }]
+                        : !listed ? [{ key: '?', text: '(list likely candidates)' }] : [],
+                } : {}),
+            });
+            key = selection.key;
+            if (key === 0) break;
+            if (key === HANDS_SYM) {
+                game._pending_message = '';
+                return HANDS;
+            }
+            if (key === ESCAPE) {
+                if (game.flags?.verbose !== false) await neverMind();
+                return CANCELLED;
+            }
+            // The native singleton returns count -1 (all), which does not
+            // replace a count already entered before '?'.
+            if (key !== QUESTION && key !== ASTERISK && allowCount && selection.count !== null)
+                count = selection.count;
+        }
+        if (key === 0) {
+            if (oneloop) return CANCELLED;
+            continue;
+        }
+        // C tty_yn_function() marks an answered prompt as already read.
+        // A one-line query stays painted through a silent action. Wrapped
+        // queries have already been erased by promptKey()'s tty cleanup.
+        if (answered) game._pending_message = '';
+        const letter = String.fromCharCode(key);
+        const object = game.inventory.find(candidate => candidate.invlet === letter) ?? null;
+        if (letter === '$' || object?.oclass === COIN_CLASS) {
+            if (object && classify(object) === GETOBJ_EXCLUDE) {
+                await pline(`You cannot ${word} gold.`);
+                return CANCELLED;
+            }
+            if (count !== null && count <= 0) return CANCELLED;
+        }
+        if (count !== null && word === 'throw') {
+            if (!object) return CANCELLED;
+            const coins = object.oclass === COIN_CLASS;
+            if (count > 1 && (!coins || count > object.quan)) {
+                await pline(count > object.quan ? `You only have ${object.quan}${
+                    !coins && object.quan > 1 ? ' and can only throw one at a time' : ''}.`
+                    : 'You can only throw one at a time.');
+                continue;
+            }
+        }
+        game.context.botl = true;
+        if (object) rememberObjectChoice(key, count);
+        if (!object) {
+            await pline("You don't have that object.");
+            if (game._inDoAgain) return CANCELLED;
+            continue;
+        }
+        if (count !== null && object.quan < count) {
+            await pline(`You don't have that many!  You have only ${object.quan}.`);
+            if (game._inDoAgain) return CANCELLED;
+            continue;
+        }
+        return { cancelled: false, object, none: false, count };
+    }
+}
+
+async function neverMind(): Promise<void> {
+    game._pending_message = '';
+    game._retained_message = '';
+    await pline('Never mind.');
+}
+
+// C invent.c:silly_thing().
+async function sillyThing(word: string, object: GameObject): Promise<void> {
+    await pline(word === 'call' && (object.otyp === AMULET_OF_YENDOR
+        || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known)
+        ? "The Amulet doesn't like being called names."
+        : `That is a silly thing to ${word}.`);
 }
 
 // C invent.c:mime_action(): '-' without a hands option is an action mime.
@@ -202,177 +387,6 @@ export function compactInventoryLetters(letters: string): string {
         start = end + 1;
     }
     return compact;
-}
-
-export async function promptInventoryObject(prompt: string, eligible: readonly GameObject[], {
-    verb,
-    allowGold = false,
-    classify = object => eligible.includes(object) || allowGold && object.oclass === 12
-        ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
-    allowNone = false,
-    noneDescription,
-    noneSuggested = allowNone,
-    allowMenu = false,
-    allowCount = false,
-    menuItems = eligible,
-}: InventoryPromptOptions): Promise<InventoryObjectSelection> {
-    const repeated = takeRepeatedInventorySelection(classify, allowCount, allowNone);
-    if (repeated) return repeated;
-    // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
-    // choice neither acknowledges unread prose nor paints an item question.
-    const queuedKey = takeCommandKey();
-    if (queuedKey !== undefined) {
-        const letter = String.fromCharCode(queuedKey);
-        const object = game.inventory.find(candidate => candidate.invlet === letter
-            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
-        if (object) return { cancelled: false, object, gold: false, none: false, count: null };
-        if (allowNone && letter === '-')
-            return { cancelled: false, object: null, gold: false, none: true, count: null };
-        if (allowGold && letter === '$' && heroGoldAmount(game) > 0)
-            return { cancelled: false, object: null, gold: true, none: false, count: null };
-        clearCommandKeys();
-        return { cancelled: true, object: null, gold: false, none: false, count: null };
-    }
-    const forcedMenu = allowMenu && game.flags.force_invmenu;
-    let key = forcedMenu ? menuItems.length ? 63 : 42 : await askInventoryPrompt(prompt);
-    let count: number | null = null;
-    for (;;) {
-        if (!allowCount && key >= 48 && key <= 57) {
-            await pline('No count allowed with this command.');
-            key = await askInventoryPrompt(prompt);
-            continue;
-        }
-        if (allowCount && key >= 48 && key <= 57) {
-            const counted = await readInventoryCount(key);
-            key = counted.key;
-            count = counted.count || null;
-        }
-        const cancelled = [27, 32, 10, 13].includes(key);
-        if (cancelled) {
-            // C getobj(): a silent cancellation leaves the question painted.
-            if (game.flags?.verbose !== false) {
-                game._pending_message = '';
-                game._retained_message = '';
-                await pline('Never mind.');
-            }
-            return {
-                cancelled: true,
-                object: null,
-                gold: false,
-                none: false,
-                count: null,
-            };
-        }
-        if (allowMenu && (key === 63 || key === 42)) {
-            const extraChoice = allowNone && (key === 42 || noneSuggested || menuItems.length === 0)
-                ? noneDescription : undefined;
-            const selection = await selectInventoryObject({
-                ...(key === 63 ? { items: menuItems } : {}),
-                ...(forcedMenu ? {
-                    title: `What do you want to ${verb}?`,
-                    menuOptions: key === 42
-                        ? [{ key: '?', text: '(list likely candidates)' }]
-                        : menuItems.length < eligible.length || (allowNone && !extraChoice)
-                            ? [{ key: '*', text: '(list everything)' }] : [],
-                } : {}),
-                ...(extraChoice ? { extraChoice } : {}),
-            });
-            key = selection.key;
-            if (key === 0) {
-                if (forcedMenu)
-                    return { cancelled: true, object: null, gold: false, none: false, count: null };
-                count = null;
-                key = await askInventoryPrompt(prompt);
-                continue;
-            }
-            // The native singleton returns count -1 (all), which does not
-            // replace a count already entered before '?'.
-            if (allowCount && selection.count !== null) count = selection.count;
-            continue;
-        }
-        // C tty_yn_function() marks an answered prompt as already read.
-        // A one-line query stays painted through a silent action. Wrapped
-        // queries have already been erased by promptKey()'s tty cleanup.
-        game._pending_message = '';
-        const letter = String.fromCharCode(key);
-        if (letter === '-') {
-            if (!allowNone) await mimeInventoryAction(verb);
-            return allowNone ? { cancelled: false, object: null, gold: false, none: true, count }
-                : { cancelled: true, object: null, gold: false, none: false, count: null };
-        }
-        const object = game.inventory.find(candidate => candidate.invlet === letter);
-        if (!object && count !== null && verb === 'throw')
-            return { cancelled: true, object: null, gold: false, none: false, count: null };
-        if (object) {
-            const classification = classify(object);
-            // Interactive getobj() requests status even for non-gold items;
-            // its gold rejection and canned/hands choices return earlier.
-            if (object.oclass !== 12 || classification !== GETOBJ_EXCLUDE)
-                game.context.botl = true;
-            if (classification === GETOBJ_EXCLUDE) {
-                await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
-                    : verb === 'call' && (object.otyp === AMULET_OF_YENDOR
-                        || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known)
-                        ? "The Amulet doesn't like being called names."
-                        : `That is a silly thing to ${verb}.`);
-                return { cancelled: true, object: null, gold: false, none: false, count: null };
-            }
-            if (count === 0) {
-                return {
-                    cancelled: true, object: null, gold: false,
-                    none: false, count: 0,
-                };
-            }
-            const quantity = object.quantity ?? object.quan ?? 1;
-            if (count !== null && verb === 'throw' && count > 1
-                && (object.oclass !== 12 || count > quantity)) {
-                await pline(count > quantity ? `You only have ${quantity}${
-                    object.oclass !== 12 && quantity > 1 ? ' and can only throw one at a time' : ''}.`
-                    : 'You can only throw one at a time.');
-                // C getobj() keeps the selected letter after the first forced
-                // menu, so its retry uses that object without the rejected count.
-                if (forcedMenu)
-                    return { cancelled: false, object, gold: false, none: false, count: null };
-                key = await askInventoryPrompt(prompt);
-                count = null;
-                continue;
-            }
-            rememberObjectChoice(key, count);
-            if (count !== null && count > quantity) {
-                await pline(
-                    `You don't have that many!  You have only ${quantity}.`,
-                );
-                // C getobj() keeps the forced-menu letter and drops the count.
-                if (forcedMenu)
-                    return { cancelled: false, object, gold: false, none: false, count: null };
-                key = await askInventoryPrompt(prompt);
-                count = null;
-                continue;
-            }
-            return {
-                cancelled: false,
-                object,
-                gold: false,
-                none: false,
-                count,
-            };
-        }
-        if (allowGold && letter === '$' && heroGoldAmount(game) > 0) {
-            game.context.botl = true;
-            return {
-                cancelled: false,
-                object: null,
-                gold: true,
-                none: false,
-                count,
-            };
-        }
-
-        game.context.botl = true;
-        await pline("You don't have that object.");
-        key = await askInventoryPrompt(prompt);
-        count = null;
-    }
 }
 
 // C cmd.c:get_count(): only a positive typed count is passed on by getobj.

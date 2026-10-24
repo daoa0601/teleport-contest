@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { selectInventoryObject } from '../js/invent.js';
-import { chooseInventoryObject, promptInventoryObject } from '../js/inventory_prompt.js';
+import { chooseInventoryObject, getobj } from '../js/inventory_prompt.js';
 import { ARROW, DAGGER, DART, FOOD_RATION, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -92,7 +92,7 @@ void test('a count entered before question mark survives single-item selection',
     freshObjectRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 8 });
     const input = resetInputState();
-    const selected = await answerPrompts(promptInventoryObject('What do you want to drop? [a or ?*] ', game.inventory, { verb: 'drop', allowMenu: true, allowCount: true }), input, [
+    const selected = await answerPrompts(getobj('drop', () => GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true }), input, [
         { prompt: /What do you want to drop\?/, keys: '3?' },
         { prompt: /a - 8 [^\n]*arrows\.--More--/, keys: arrows.invlet },
     ]);

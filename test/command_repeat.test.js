@@ -134,9 +134,10 @@ for (const command of ['d', '#drop\n']) {
         assert.equal(await nhgetch(), 27, 'repeat must not reopen the drop prompt');
     });
 }
-void test('trying to drop from an empty inventory clears recall', async () => {
+void test('cancelling a drop from an empty inventory clears recall', async () => {
     const input = freshTurnRoom();
-    input.feed('d\x01');
+    // dodrop() uses GETOBJ_PROMPT, so even an empty pack is asked about.
+    input.feed('d\x1b\x01');
     await rhack(0);
     await rhack(0);
     assert.equal(game._pending_message, 'There is no command available to repeat.');

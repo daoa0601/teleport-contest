@@ -169,7 +169,7 @@ import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import {
     chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder,
-    promptInventoryObject, reassignInventoryLetters,
+    getobj, reassignInventoryLetters,
 } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import {
@@ -5349,24 +5349,14 @@ async function dowield(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const weapons = (game.inventory || []).filter(object =>
-        object.oclass === 2 || isWeaponTool(object))
-        .sort((left, right) => inventoryLetterRank(left) - inventoryLetterRank(right));
-    const letters = weapons.map(object => object.invlet).join('');
-    const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
-    const prompt = `What do you want to wield? [${choices} or ?*] `;
     clearSplitObjects();
-    const selection = await promptInventoryObject(
-        prompt, game.inventory || [], {
-            verb: 'wield',
-            classify: object => object.oclass === 12 ? GETOBJ_EXCLUDE
-                : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
-            allowNone: true, allowMenu: true, allowCount: true,
-            menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
-            noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${
-                makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
-        },
-    );
+    // C wield.c:wield_ok(): hands are a likely candidate; coins are excluded.
+    const selection = await getobj('wield', object => object.oclass === 12 ? GETOBJ_EXCLUDE
+        : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
+        forcePrompt: true, allowCount: true, hands: GETOBJ_SUGGEST,
+        handsText: `your ${game.uarmg ? 'gloved' : 'bare'} ${
+            makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
+    });
     if (selection.cancelled) {
         game.context.move = 0;
         return;
@@ -5542,38 +5532,12 @@ async function dodrop(): Promise<void> {
     const inShop = !!game.u?.ushops?.[0];
     if (inShop) setSellDisposition(SELL_DELIBERATE);
     try {
-        const inventory = game.inventory || [];
-        const gold = heroGoldObject(game);
-        if (!inventory.length) {
-            await pline("You don't have anything to drop.");
-            resetCommandVariables(true);
-            return;
-        }
-        const letters = inventory.filter(object => object !== gold)
-            .map(object => object.invlet).join('');
-        const prompt = `What do you want to drop? [${gold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
-        const selection = await promptInventoryObject(prompt, inventory, {
-            verb: 'drop',
-            allowGold: true, allowMenu: true, allowCount: true,
-        });
-        if (selection.cancelled) {
-            resetCommandVariables(true);
-            return;
-        }
-        let object = selection.gold ? gold : selection.object;
+        // C do.c:dodrop(): getobj("drop", any_obj_ok, PROMPT | ALLOWCNT).
+        // A cursed loadstone keeps the requested count for canletgo().
+        const object = await chooseInventoryObject('drop', () => GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
         if (!object) {
             resetCommandVariables(true);
             return;
-        }
-        if (selection.count !== null
-            && selection.count < objectQuantity(object)) {
-            if (object.otyp === LOADSTONE && object.cursed) {
-                // C getobj() preserves the requested count for canletgo's
-                // "any of" refusal; this stack must not be split.
-                object.corpsenm = selection.count;
-            } else if (!isWeldedPrimary(object)) {
-                object = splitCarriedStack(object, selection.count);
-            }
         }
         const spentTime = await dropHeroObject(object, {
             state: game, publish: plineWithContinuation,
@@ -6162,21 +6126,13 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
         return { item: null, spentTime: false, cancelled: false };
     }
     clearSplitObjects();
-    const suggestions = game.inventory.filter(item => readySuggestion(item, game));
-    const letters = suggestions.map(item => item.invlet).join('');
-    const noneSuggested = !!game.uquiver;
-    const choices = `${noneSuggested ? '- ' : ''}${compactInventoryLetters(letters)}`.trim();
-    const prompt = `What do you want to ${verb}? [${choices ? `${choices} or ?*` : '*'}] `;
-    const selection = await promptInventoryObject(
-        prompt, game.inventory || [], {
-            verb,
-            allowNone: true, allowMenu: true, allowCount: true,
-            menuItems: suggestions, noneSuggested,
-            noneDescription: verb === 'ready'
-                ? `empty quiver${game.uquiver ? '' : ' (nothing readied)'}`
-                : `your ${makePlural(heroHandName(game))}`,
-        },
-    );
+    // C wield.c:ready_ok(): '-' empties the quiver and is suggested only
+    // while something is readied.
+    const selection = await getobj(verb, item => readySuggestion(item, game) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
+        forcePrompt: true, allowCount: true, hands: game.uquiver ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
+        handsText: verb === 'ready' ? `empty quiver${game.uquiver ? '' : ' (nothing readied)'}`
+            : `your ${makePlural(heroHandName(game))}`,
+    });
     if (selection.cancelled) {
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: true };

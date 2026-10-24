@@ -1,12 +1,12 @@
 import { washHands } from './dip_water.js';
 import { armorSlotFor } from './armor.js';
-import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST, SINK } from './const.js';
+import { FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, SINK, } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { plineWithContinuation as pline } from './display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectQuantity } from './object_stack.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
@@ -72,8 +72,9 @@ export async function dip({ fountain, }) {
         }
         declinedSource = true;
     }
+    // drink_ok() reports a declined floor source as GETOBJ_EXCLUDE_NONINVENT.
     const potion = await chooseInventoryObject(`dip ${target} into`, potionClassification, {
-        emptyMessage: `You don't have anything${declinedSource ? ' else' : ''} to dip into.`,
+        hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE,
     });
     if (!potion) {
         game.context.move = 0;
@@ -101,25 +102,19 @@ async function finishDip(object, potion) {
     await pline(`You can't fit your ${heroHandName()} into the mouth of the bottle!`);
     return false;
 }
+// C dip_ok() downplays hands; dip_hands_ok() suggests them instead when
+// slippery hands could be washed in the water source here.
 async function chooseDipTarget(verb, floorWater = true) {
     requirePlayingGame(game);
     const location = game.level.requireAt(game.u.ux, game.u.uy);
-    const handsSuggested = floorWater && !game.iflags.menu_requested && !!game.u.glibTurns
-        && heroCanReachFloor(game) && (location.typ === FOUNTAIN || location.typ === SINK
-        || isPoolAt(game.u.ux, game.u.uy));
-    const inventory = [...game.inventory].sort((a, b) => inventoryLetterOrder(a.invlet) - inventoryLetterOrder(b.invlet));
-    const suggested = inventory.filter(item => dipClassification(item) === GETOBJ_SUGGEST);
-    const letters = compactInventoryLetters(suggested.map(item => item.invlet).join(''));
-    const choices = `${handsSuggested ? '-' : ''}${letters}`;
-    const selection = await promptInventoryObject(`What do you want to ${verb}? [${choices ? `${choices} or ?*` : '*'}] `, inventory, { verb, classify: dipClassification, allowNone: true, noneSuggested: handsSuggested,
-        noneDescription: 'your hands', allowMenu: true, menuItems: suggested });
-    if (selection.none)
-        return 'hands';
-    if (selection.object?.oclass === 12) {
-        await pline('You cannot dip gold.');
-        return null;
-    }
-    return selection.object;
+    const atHere = floorWater && !game.iflags.menu_requested && (location.typ === FOUNTAIN
+        || location.typ === SINK || isPoolAt(game.u.ux, game.u.uy));
+    const handsSuggested = atHere && !!game.u.glibTurns && heroCanReachFloor(game);
+    const selection = await getobj(verb, dipClassification, {
+        forcePrompt: true, hands: handsSuggested ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
+        handsText: `your ${makePlural(heroHandName())}`,
+    });
+    return selection.none ? 'hands' : selection.object;
 }
 function dipClassification(object) {
     if (object.oclass === 12)

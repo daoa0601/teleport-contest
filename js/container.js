@@ -12,7 +12,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { objectDescription as describeObject } from './object_description.js';
-import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
+import { getobj } from './inventory_prompt.js';
 import { definiteObjectAction, definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
@@ -47,7 +47,6 @@ import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { currency } from './currency.js';
 import { warnAboutRemovedPick } from './container_shop.js';
-import { heroGoldObject } from './hero_gold.js';
 import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import { restoreMenuUnderlay, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, SORTLOOT_INVLET, } from './const.js';
@@ -698,11 +697,10 @@ async function putSelectedObjects(container, stashOne = false, retry = null) {
     let selected;
     let spentTime = false;
     if (stashOne) {
-        const letters = compactInventoryLetters(candidates.map(object => object.invlet).join(''));
-        const choice = await promptInventoryObject(`What do you want to stash? [${letters} or ?*] `, game.inventory, { verb: 'stash', allowCount: true, allowGold: true, allowMenu: true,
-            menuItems: candidates, classify: object => object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST });
-        const object = choice.gold ? heroGoldObject(game) : choice.object;
-        if (choice.cancelled || !object)
+        // C pickup.c:stash_ok(): ck_bag() leaves the container selectable.
+        const choice = await getobj('stash', object => object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
+        const object = choice.object;
+        if (!object)
             return { results: [], spentTime: false };
         // getobj() leaves unsplittable objects whole for in_container's refusal.
         const unsplittable = (object.otyp === LOADSTONE && object.cursed) || weldedPrimary(object, game);

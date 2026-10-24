@@ -8,10 +8,8 @@ import { setMulti } from './command_state.js';
 import { plineWithContinuation as pline, newsym } from './display.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
-import {
-    compactInventoryLetters, inventoryLetterOrder, promptInventoryObject,
-    reassignInventoryLetters,
-} from './inventory_prompt.js';
+import { getobj } from './inventory_prompt.js';
+import type { InventoryClassification } from './inventory_prompt.js';
 import { disturbGrave } from './grave.js';
 import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -157,7 +155,7 @@ async function heroCanEngrave(state: GameState): Promise<boolean> {
 
 // C engrave.c stylus_ok(): the getobj() callback classifying each object and
 // the bare-hand alternative.
-function stylusClass(object: GameObject): number {
+function stylusClass(object: GameObject): InventoryClassification {
     if (object.oclass === WEAPON_CLASS || object.oclass === WAND_CLASS
         || object.oclass === GEM_CLASS || object.oclass === RING_CLASS)
         return GETOBJ_SUGGEST;
@@ -167,71 +165,13 @@ function stylusClass(object: GameObject): number {
     return GETOBJ_DOWNPLAY;
 }
 
-// C invent.c getobj("write with", stylus_ok, GETOBJ_PROMPT).  The suggested
-// letters follow sortloot(SORTLOOT_INVLET) order ($, a-z, A-Z);
-// stylus_ok(NULL) is GETOBJ_SUGGEST, so '-' leads the displayed choices and
-// stays selectable even with an otherwise empty suggestion set.
+// C engrave.c doengrave(): getobj("write with", stylus_ok, GETOBJ_PROMPT).
+// stylus_ok(NULL) is GETOBJ_SUGGEST, so '-' leads the displayed choices.
 async function chooseStylus(state: GameState): Promise<GameObject | 'hands' | null> {
-    // getobj() consumes canned choices before reassigning letters or
-    // opening a menu. stylus_ok() admits every carried object and hands.
-    const queuedKey = takeCommandKey();
-    if (queuedKey !== undefined) {
-        if (queuedKey === '-'.charCodeAt(0)) return 'hands';
-        const object = state.inventory.find(candidate =>
-            candidate.invlet === String.fromCharCode(queuedKey));
-        if (!object) clearCommandKeys();
-        return object ?? null;
-    }
-    if (state.flags?.fixinv === false) reassignInventoryLetters();
-    const inventory = [...(state.inventory || [])]
-        .sort((left, right) => inventoryLetterOrder(left.invlet)
-            - inventoryLetterOrder(right.invlet));
-    const suggested = inventory.filter(object => stylusClass(object) === GETOBJ_SUGGEST);
-    // C getobj(): force_invmenu skips the letter prompt and answers the
-    // question from the inventory menu, with the fingertip as its '-' entry.
-    if (state.flags?.force_invmenu) {
-        let showAll = false;
-        for (;;) {
-            const items = showAll || !suggested.length ? inventory : suggested;
-            const menuOptions = showAll
-                ? [{ key: '?', text: '(list likely candidates)' }]
-                : items.length < inventory.length
-                    ? [{ key: '*', text: '(list everything)' }] : [];
-            const { key } = await selectInventoryObject({
-                items, menuOptions,
-                extraChoice: `your ${heroFingerTipName(state)}`,
-                title: 'What do you want to write with?',
-            });
-            if (key === 42 || key === 63) {
-                showAll = key === 42;
-                continue;
-            }
-            if (key === 27 && state.flags?.verbose !== false)
-                await pline('Never mind.');
-            if (key === '-'.charCodeAt(0)) return 'hands';
-            const object = inventory.find(
-                object => object.invlet === String.fromCharCode(key)) ?? null;
-            if (object) state.context.botl = true;
-            return object;
-        }
-    }
-    const letters = compactInventoryLetters(
-        suggested.map(object => object.invlet ?? '').join(''));
-    // C getobj(): "- " plus the suggested letters, then the ?* alternatives.
-    const choices = letters ? `- ${letters}` : '-';
-    const selection = await promptInventoryObject(
-        `What do you want to write with? [${choices} or ?*] `,
-        inventory, {
-            verb: 'write with',
-            allowMenu: true,
-            allowNone: true,
-            noneDescription: `your ${heroFingerTipName(state)}`,
-            menuItems: suggested.length ? suggested : inventory,
-        },
-    );
-    if (selection.cancelled) return null;
-    if (selection.none) return 'hands';
-    return selection.object;
+    const selection = await getobj('write with', stylusClass, {
+        forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${heroFingerTipName(state)}`,
+    });
+    return selection.none ? 'hands' : selection.object;
 }
 
 // C hacklib.c xcrypt() over the engrave.c blind_writing[] table.

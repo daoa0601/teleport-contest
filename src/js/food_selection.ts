@@ -1,7 +1,7 @@
 // C eat.c:is_edible(), eat_ok(), and floorfood() for the eat command.
 
 import {
-    BEAR_TRAP, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
+    BEAR_TRAP, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
     IRONBARS, TT_BEARTRAP, W_NONDIGGABLE,
 } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -138,7 +138,7 @@ export async function selectFoodToEat({ state = game }: { state?: GameState } = 
     }
     return chooseInventoryObject('eat', object => isEdibleFood(object, state)
         ? GETOBJ_SUGGEST : object.oclass === COIN_CLASS ? GETOBJ_EXCLUDE : GETOBJ_EXCLUDE_SELECTABLE,
-    { emptyMessage: `You don't have anything${declinedFloorFood ? ' else' : ''} to eat.` });
+    { hands: declinedFloorFood ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
 }
 
 function canSelectFloorFood(state: PlayingGameState): boolean {

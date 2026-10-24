@@ -1,5 +1,5 @@
 // C potion.c:dodrink()/dopotion(). Effects are shared with spells and digestion.
-import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SINK } from './const.js';
+import { FOUNTAIN, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, SINK } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { addExperience } from './exper.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -51,11 +51,8 @@ export async function quaff({ state = game } = {}) {
             declinedSource = true;
         }
     }
-    if (declinedSource && !state.inventory.some(object => object.oclass === 8)) {
-        await pline("You don't have anything else to drink.");
-        return { ...outcome(false, state), cancelled: true };
-    }
-    let source = await chooseInventoryObject('drink', object => object.oclass === 8 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE);
+    // drink_ok() reports a declined floor source as GETOBJ_EXCLUDE_NONINVENT.
+    let source = await chooseInventoryObject('drink', object => object.oclass === 8 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
     if (!source)
         return { ...outcome(false, state), cancelled: true };
     if (source.owornmask) {

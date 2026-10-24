@@ -5,11 +5,12 @@ import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const
 import { plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
-import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } from './inventory_prompt.js';
+import { getobj } from './inventory_prompt.js';
 import { consumeObjectCharge } from './object_charge.js';
 import { CORPSE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { definiteObjectAction, objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
+import { heroHasNoHands } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { carriedObjectOwner } from './shk.js';
@@ -31,18 +32,10 @@ export async function useGrease(can: GameObject): Promise<boolean> {
         await dropGrease(can);
         return true;
     }
-    const inventory = [...game.inventory].sort((a, b) => inventoryLetterOrder(a.invlet) - inventoryLetterOrder(b.invlet));
-    const suggested = inventory.filter(object => greaseSuggestion(object) === GETOBJ_SUGGEST);
-    const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-    const selection = await promptInventoryObject(`What do you want to grease? [- ${letters} or ?*] `, inventory, {
-        verb: 'grease', classify: greaseSuggestion, allowNone: true,
-        noneDescription: `your ${fingers(false)}`, allowMenu: true, allowGold: true, menuItems: suggested,
+    const selection = await getobj('grease', greaseSuggestion, {
+        forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${fingers(false)}`,
     });
     if (selection.cancelled) return false;
-    if (selection.gold || selection.object?.oclass === 12) {
-        await pline('You cannot grease gold.');
-        return false;
-    }
     const target = selection.object;
     if (target) {
         const covering = coveringEquipment(target);
@@ -62,7 +55,7 @@ export async function useGrease(can: GameObject): Promise<boolean> {
         if (target.otyp !== CORPSE) observeObjectForNaming(target);
         await pline(`You cover ${ownedObjectName(target, game, { capitalized: false })} with a thick layer of grease.`);
         target.greased = true;
-        if (can.cursed) {
+        if (can.cursed && !heroHasNoHands(game)) {
             setSlipperyHands(old + rn1(6, 10));
             await pline(`Some of the grease gets all over your ${fingers(true)}.`);
         }
