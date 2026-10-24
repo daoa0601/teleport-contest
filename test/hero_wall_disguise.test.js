@@ -6,6 +6,7 @@ import { flush_screen, glyphAt, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { CLR_BLUE, CLR_BROWN, CLR_GRAY, CLR_RED, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 void test('real Fort Ludios walls use the yellow DECgraphics color', async () => {
     const level = freshObjectRoom();
@@ -46,6 +47,45 @@ for (const { branch, hellish } of [
         assert.equal(cell?.color, NO_COLOR);
     });
 }
+for (const symset of ['DECgraphics', 'curses', 'IBMgraphics', 'IBMGraphics_1', 'IBMGraphics_2']) {
+    for (const { branch, color } of [
+        { branch: 'The Gnomish Mines', color: CLR_BROWN },
+        { branch: 'Gehennom', color: CLR_RED },
+    ]) {
+        void test(`${symset} colors real ${branch} walls`, async () => {
+            const level = freshObjectRoom();
+            requirePlayingGame(game);
+            game.symset = symset;
+            game.dungeons = [createDungeon({ dname: branch, flags: { hellish: branch === 'Gehennom' } })];
+            level.requireAt(10, 9).typ = HWALL;
+            newsym(10, 9);
+            await flush_screen(1);
+            assert.equal(requireScreenCell(9, 10).color, color);
+        });
+    }
+}
+for (const symset of ['plain', 'MACgraphics']) {
+    void test(`${symset} leaves real Mines walls gray`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        game.symset = symset;
+        game.dungeons = [createDungeon({ dname: 'The Gnomish Mines' })];
+        level.requireAt(10, 9).typ = HWALL;
+        newsym(10, 9);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(9, 10).color, NO_COLOR);
+    });
+}
+void test('curses Mines wall colors respect the color option', async () => {
+    const level = freshObjectRoom({ flags: { color: false } });
+    requirePlayingGame(game);
+    game.symset = 'curses';
+    game.dungeons = [createDungeon({ dname: 'The Gnomish Mines' })];
+    level.requireAt(10, 9).typ = HWALL;
+    newsym(10, 9);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(9, 10).color, NO_COLOR);
+});
 for (const { branch, offset, color } of [
     { branch: 'The Gnomish Mines', offset: GlyphOffset.cmapMines, color: CLR_BROWN },
     { branch: 'Gehennom', offset: GlyphOffset.cmapGehennom, color: CLR_RED },

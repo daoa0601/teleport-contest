@@ -794,18 +794,17 @@ function terrainGlyphAppearance(loc, x, y) {
     const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
-    // C selects wall glyphs by branch, independently of puzzle completion.
-    // Branch wall colors come from dat/symbols G_ glyph customizations, which
-    // only a symset such as DECgraphics loads; wallcolors[] stays gray under
-    // the default set.
+    // symbols.c:load_symset() applies these sets' G_ wall colors independently
+    // of character handling; the default set leaves wallcolors[] gray.
+    const hasBranchWallColors = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i.test(game.symset ?? '');
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
     const wallColor = rogue ? NO_COLOR
         : In_sokoban(game.u?.uz)
             ? (dec ? CLR_BLUE : NO_COLOR)
-            : dec && inMines ? CLR_BROWN
-                : dec && inHell ? CLR_RED
+            : hasBranchWallColors && inMines ? CLR_BROWN
+                : hasBranchWallColors && inHell ? CLR_RED
                     : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
         case STONE: return { ch: ' ', color: NO_COLOR, dec: false };
