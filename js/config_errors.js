@@ -13,10 +13,12 @@ export async function displayConfigurationErrors(reports) {
     if (!display)
         return;
     for (const report of reports) {
-        if (!report.errors.length)
-            continue;
         let previousLine = null;
         for (const error of report.errors) {
+            if (error.raw) {
+                rawConfigurationMessage(error.message);
+                continue;
+            }
             if (error.lineNumber !== previousLine)
                 rawConfigurationMessage(`\n${error.sourceLine}`);
             previousLine = error.lineNumber;
@@ -24,7 +26,11 @@ export async function displayConfigurationErrors(reports) {
             const punctuation = /[.!?]$/.test(error.message) ? '' : '.';
             rawConfigurationMessage(` * ${line}${error.message}${punctuation}`);
         }
-        const count = report.errors.length;
+        const count = report.errors.filter(error => !error.raw).length;
+        // C config_error_done() prints its summary (and waits) only when at
+        // least one config_error_add() fired; raw diagnostics never count.
+        if (!count)
+            continue;
         rawConfigurationMessage(`\n${count} error${count === 1 ? '' : 's'} in ${report.source}.\n`);
         // C wintty.c:getret() prints one more newline, then xwaitforspace().
         rawPrint('');

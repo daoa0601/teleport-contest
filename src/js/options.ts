@@ -6,13 +6,17 @@ import type { CharacterFacet } from './character_choices.js';
 import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
 import type { CharacterFilters } from './character_filters.js';
 import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
+import { NATIVE_COMMANDS } from './command_data.js';
+import { setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
+import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import type { ConfigurationErrorReport } from './config_errors.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
-import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
-import { setWarningSymbols } from './warning_symbols.js';
+import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
+import { findRole, randomCharacterOption } from './roles.js';
+import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
@@ -25,7 +29,7 @@ import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    BUFSZ, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
+    BUFSZ, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -288,6 +292,243 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     return result;
 }
 
+// C cfgfiles.c:parse_config_line()'s config_line_stmt[] table. SYSCF-only
+// rows are never reached while reading an rc file. The numeric length is the
+// minimum abbreviation, matched case-insensitively against the statement
+// name (match_varname() → match_optname(..., val_allowed=TRUE)).
+const CONFIG_STATEMENTS = [
+    ['OPTIONS', 4], ['AUTOPICKUP_EXCEPTION', 5], ['BINDINGS', 4],
+    ['AUTOCOMPLETE', 5], ['MSGTYPE', 7], ['HACKDIR', 4], ['LEVELDIR', 4],
+    ['LEVELS', 4], ['SAVEDIR', 4], ['BONESDIR', 5], ['DATADIR', 4],
+    ['SCOREDIR', 4], ['LOCKDIR', 4], ['CONFIGDIR', 4], ['TROUBLEDIR', 4],
+    ['NAME', 4], ['ROLE', 4], ['CHARACTER', 4], ['dogname', 3], ['catname', 3],
+    ['BOULDER', 3], ['MENUCOLOR', 9], ['HILITE_STATUS', 6], ['WARNINGS', 5],
+    ['ROGUESYMBOLS', 4], ['SYMBOLS', 4], ['WIZKIT', 6], ['QT_TILEWIDTH', 12],
+    ['QT_TILEHEIGHT', 13], ['QT_FONTSIZE', 11], ['QT_COMPACT', 10],
+] as const;
+
+type ConfigStatementName = typeof CONFIG_STATEMENTS[number][0];
+
+interface ParsedConfigStatement {
+    // Lowercased statement name with the value split off at the first
+    // ':' or '=' (whitespace before it ignored), from mungspaces() output.
+    name: string;
+    // Value bytes from the munged line, with one space after the delimiter
+    // skipped, as parse_config_line() passes `bufp` to most handlers.
+    valueBytes: Uint8Array;
+    valueText: string;
+    // C passes the original, uncondensed line to cnf_line_OPTIONS(), which
+    // finds its own delimiter and skips nothing after it.
+    optionBytes: Uint8Array;
+}
+
+// C hacklib.c:mungspaces(): tabs become spaces, runs of spaces collapse to
+// one, and leading/trailing spaces vanish. Line framing already trimmed the
+// statement, so an all-space result cannot reach this point.
+function mungSpaces(bytes: Uint8Array): Uint8Array {
+    const out: number[] = [];
+    let pendingSpace = false;
+    for (const byte of bytes) {
+        if (byte === 32 || byte === 9) {
+            pendingSpace = out.length > 0;
+            continue;
+        }
+        if (pendingSpace && out.length) out.push(32);
+        pendingSpace = false;
+        out.push(byte);
+    }
+    return new Uint8Array(out);
+}
+
+function parseConfigStatement(bytes: Uint8Array): ParsedConfigStatement | null {
+    const munged = mungSpaces(bytes);
+    const delimiter = munged.findIndex(byte => byte === 58 || byte === 61);
+    if (delimiter < 0) return null;
+    let nameEnd = delimiter;
+    while (nameEnd > 0 && munged[nameEnd - 1] === 32) nameEnd--;
+    let valueStart = delimiter + 1;
+    if (munged[valueStart] === 32) valueStart++;
+    let rawDelimiter = -1;
+    for (let index = 0; index < bytes.length; index++) {
+        if (bytes[index] === 58 || bytes[index] === 61) { rawDelimiter = index; break; }
+    }
+    const valueBytes = munged.subarray(valueStart);
+    return {
+        name: new TextDecoder().decode(munged.subarray(0, nameEnd)).toLowerCase(),
+        valueBytes,
+        valueText: new TextDecoder().decode(valueBytes),
+        optionBytes: bytes.subarray(rawDelimiter + 1),
+    };
+}
+
+function matchConfigStatement(name: string): ConfigStatementName | null {
+    for (const [statement, minimum] of CONFIG_STATEMENTS) {
+        if (name.length >= minimum && statement.toLowerCase().startsWith(name)) return statement;
+    }
+    return null;
+}
+
+// C's uchar list parser (cfgfiles.c:get_uchars()). Zeros are stored unless
+// the list is being modified in place; parsing stops at the first character
+// that is neither a digit nor whitespace, or once `size` values were read.
+function parseUcharList(
+    bytes: Uint8Array, size: number, modifyInPlace: boolean,
+): { values: number[]; syntaxError: boolean } {
+    const values: number[] = [];
+    let number = 0;
+    let haveNumber = false;
+    let index = 0;
+    for (;;) {
+        const byte = bytes[index];
+        if (byte === 32 || byte === 9 || byte === 10 || byte === undefined) {
+            if (haveNumber) {
+                if (number !== 0 || !modifyInPlace) values.push(number & 0xFF);
+                number = 0;
+                haveNumber = false;
+            }
+            if (values.length === size || byte === undefined)
+                return { values, syntaxError: false };
+            index++;
+        } else if (byte >= 48 && byte <= 57) {
+            haveNumber = true;
+            number = number * 10 + (byte - 48);
+            index++;
+        } else {
+            return { values, syntaxError: true };
+        }
+    }
+}
+
+// C cmd.c:parseautocomplete(): splits on the first comma, else the first
+// colon, processes the remainder first, then requires an exact (case
+// sensitive) extended-command name.
+function parseAutocompleteStatement(value: string, addRawError: (message: string) => void): void {
+    let separator = value.indexOf(',');
+    if (separator < 0) separator = value.indexOf(':');
+    if (separator >= 0) {
+        parseAutocompleteStatement(value.slice(separator + 1), addRawError);
+        value = value.slice(0, separator);
+    }
+    value = value.replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
+    if (!value) return;
+    let condition = true;
+    if (value.startsWith('!')) {
+        value = value.slice(1).replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
+        condition = false;
+    }
+    if (!NATIVE_COMMANDS.some(command => command.name === value)) {
+        addRawError(`Bad autocomplete: invalid extended command '${value}'.`);
+        return;
+    }
+    setCommandAutocomplete(value, condition);
+}
+
+function handleConfigStatement(
+    statement: ConfigStatementName,
+    parsed: ParsedConfigStatement,
+    result: ConfigurationSettings,
+    addError: (message: string) => void,
+    addRawError: (message: string) => void,
+): void {
+    switch (statement) {
+    // Accepted by the C table but without observable effect in this port:
+    // path prefixes are ignored on this platform, and MENUCOLOR,
+    // HILITE_STATUS, SYMBOLS/ROGUESYMBOLS, AUTOPICKUP_EXCEPTION, and WIZKIT
+    // feed display or file subsystems that are not implemented.
+    case 'AUTOPICKUP_EXCEPTION':
+    case 'HACKDIR': case 'LEVELDIR': case 'LEVELS': case 'SAVEDIR':
+    case 'BONESDIR': case 'DATADIR': case 'SCOREDIR': case 'LOCKDIR':
+    case 'CONFIGDIR': case 'TROUBLEDIR': case 'MENUCOLOR': case 'HILITE_STATUS':
+    case 'ROGUESYMBOLS': case 'SYMBOLS': case 'WIZKIT':
+    case 'QT_TILEWIDTH': case 'QT_TILEHEIGHT': case 'QT_FONTSIZE': case 'QT_COMPACT':
+        break;
+    case 'BINDINGS':
+        for (const field of bindingFields(parsed.valueText)) {
+            const separator = field.indexOf(':');
+            if (separator < 0) continue;
+            const code = bindingKeyCode(field.slice(0, separator));
+            const command = field.slice(separator + 1).trim();
+            if (code && command && !result.commandBindings.bindSpecialKey(code, command)
+                && !result.commandBindings.bindMenuKey(code, command))
+                result.commandBindings.bindKey(code, command);
+        }
+        break;
+    case 'AUTOCOMPLETE':
+        parseAutocompleteStatement(parsed.valueText, addRawError);
+        break;
+    case 'MSGTYPE': {
+        const error = addMessageTypeRule(parsed.valueText, result.iflags.messageTypes ??= []);
+        if (error) addError(error);
+        break;
+    }
+    case 'NAME':
+        result.name = parsed.valueText.slice(0, PL_NSIZ - 1);
+        break;
+    case 'ROLE':
+    case 'CHARACTER':
+        // cnf_line_ROLE() silently keeps the previous role when str2role()
+        // does not recognize the value; findRole() returns null for an empty
+        // value, which likewise leaves the role unset.
+        if (findRole(parsed.valueText) || randomCharacterOption(parsed.valueText))
+            result.role = parsed.valueText;
+        break;
+    case 'dogname':
+    case 'catname':
+        // Unlike the dogname/catname options, the statements copy the munged
+        // bytes without sanitize_name(); keep the same byte-string form the
+        // options produce.
+        result.flags[statement] = String.fromCharCode(...parsed.valueBytes.subarray(0, PL_PSIZ - 1));
+        break;
+    case 'WARNINGS': {
+        const { values, syntaxError } = parseUcharList(parsed.valueBytes, WARNCOUNT, false);
+        if (syntaxError) addRawError('Syntax error in WARNINGS');
+        else assignWarningSymbols(values, result.iflags);
+        break;
+    }
+    case 'BOULDER': {
+        // The parsed override would replace the boulder symbol; no symbol
+        // override table exists in this port, so only the diagnostic is
+        // observable.
+        const { syntaxError } = parseUcharList(parsed.valueBytes, 1, true);
+        if (syntaxError) addRawError('Syntax error in BOULDER');
+        break;
+    }
+    case 'OPTIONS':
+        break;
+    }
+}
+
+// C cfgfiles.c:is_config_section(): "[name]" optionally followed by spaces
+// and a '#comment'. Returns undefined when the line is not a section header.
+function configSectionName(statement: string): string | undefined {
+    const trimmed = statement.replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
+    if (!trimmed.startsWith('[')) return undefined;
+    const close = trimmed.indexOf(']');
+    if (close < 0) return undefined;
+    let tail = close + 1;
+    while (trimmed[tail] === ' ') tail++;
+    if (tail < trimmed.length && trimmed[tail] !== '#') return undefined;
+    return trimmed.slice(1, close).replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
+}
+
+// C cfgfiles.c:choose_random_part(): consumes one core rn2() for the choice,
+// then extracts the chosen part verbatim; an empty part selects nothing.
+function chooseRandomPart(value: string): string | null {
+    let parts = 1;
+    for (const character of value) if (character === ',') parts++;
+    let remaining = rn2(parts);
+    let index = 0;
+    while (remaining > 0 && index < value.length) {
+        index++;
+        if (value[index] === ',') remaining--;
+    }
+    if (index >= value.length) return null;
+    if (value[index] === ',') index++;
+    let end = index;
+    while (end < value.length && value[end] !== ',') end++;
+    return end > index ? value.slice(index, end) : null;
+}
+
 // parse_config_line() always parses OPTIONS in initial/config-file mode,
 // including Lua fragments. Only full startup performs final reconciliation.
 function parseConfiguration(
@@ -305,6 +546,9 @@ function parseConfiguration(
         const addError = (message: string) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
         };
+        const addRawError = (message: string) => {
+            report.errors.push({ sourceLine, lineNumber, message, raw: true });
+        };
         const checkDuplicatePetOption = (name: PetOption, usingAlias: boolean) => {
             if (!fromFile) return;
             // Pet names have no alias; C formats that null pointer as "(null)".
@@ -314,33 +558,30 @@ function parseConfiguration(
             petOptionsSeen.add(name);
         };
 
-        // parse_config_line() condenses whitespace for BINDINGS, but passes
-        // the original OPTIONS statement to cnf_line_OPTIONS().
-        const text = new TextDecoder().decode(bytes);
-        const line = text.replace(/[ \t]+/g, ' ').trim();
-        const messageType = fromFile ? line.match(/^MSGTYPE\s*[:=]\s*(.*)$/i) : null;
-        if (messageType?.[1] !== undefined) {
-            const error = addMessageTypeRule(messageType[1], result.iflags.messageTypes ??= []);
-            if (error) addError(error);
-            continue;
-        }
-        const bindMatch = fromFile ? line.match(/^(?:BIND|BINDINGS)=(.+)$/i) : null;
-        if (bindMatch?.[1]) {
-            for (const field of bindingFields(bindMatch[1])) {
-                const separator = field.indexOf(':');
-                if (separator < 0) continue;
-                const code = bindingKeyCode(field.slice(0, separator));
-                const command = field.slice(separator + 1).trim();
-                if (code && command && !result.commandBindings.bindSpecialKey(code, command)
-                    && !result.commandBindings.bindMenuKey(code, command))
-                    result.commandBindings.bindKey(code, command);
+        // parse_config_line() condenses whitespace for every statement name
+        // and value, but passes the original OPTIONS statement to
+        // cnf_line_OPTIONS().
+        let optionList: Uint8Array;
+        if (fromFile) {
+            const statement = parseConfigStatement(bytes);
+            if (!statement) {
+                addError("Not a config statement, missing '='");
+                continue;
             }
-            continue;
+            const match = matchConfigStatement(statement.name);
+            if (!match) {
+                addError('Unknown config statement');
+                continue;
+            }
+            if (match !== 'OPTIONS') {
+                handleConfigStatement(match, statement, result, addError, addRawError);
+                continue;
+            }
+            optionList = statement.optionBytes;
+        } else {
+            optionList = bytes;
         }
 
-        const prefix = fromFile ? text.match(/^OPTIONS\s*[:=]/i)?.[0] : '';
-        if (prefix === undefined) continue;
-        const optionList = bytes.subarray(new TextEncoder().encode(prefix).length);
 
         let usingAlias = false;
         for (const optionBytes of configurationOptions(optionList)) {
@@ -712,6 +953,9 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
     let pending = new Uint8Array(0);
     let lineNumber = 0;
     let sourceLine = '';
+    // cfgfiles.c:gc.config_section_chosen / config_section_current.
+    let sectionChosen: string | null = null;
+    let sectionCurrent: string | null = null;
     const physicalLines = rc.split('\n');
     for (const [index, raw] of physicalLines.entries()) {
         const length = new TextEncoder().encode(raw).length;
@@ -748,6 +992,50 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
         // statement, including one ended by a comment or blank line.
         let end = pending.length;
         while (end > 0 && (pending[end - 1] === 32 || pending[end - 1] === 9)) end--;
+        const statement = new TextDecoder().decode(pending.subarray(0, end));
+
+        // C cfgfiles.c:handle_config_section() consumes section headers and
+        // drops statements that belong to another section.
+        const section = configSectionName(statement);
+        if (section !== undefined) {
+            if (sectionChosen === null) {
+                report.errors.push({ sourceLine, lineNumber,
+                    message: `Section "[${section}]" without CHOOSE` });
+            } else if (section) {
+                sectionCurrent = section;
+            } else {
+                sectionChosen = null;
+                sectionCurrent = null;
+            }
+            pending = new Uint8Array(0);
+            continue;
+        }
+        if (sectionCurrent !== null && sectionCurrent !== sectionChosen) {
+            pending = new Uint8Array(0);
+            continue;
+        }
+
+        // CHOOSE= is handled before any statement; its value keeps the raw
+        // spacing after the delimiter, and the section choice consumes one
+        // core rn2() (cfgfiles.c:choose_random_part()).
+        const delimiter = statement.search(/[:=]/);
+        let nameEnd = delimiter < 0 ? statement.length : delimiter;
+        while (nameEnd > 0 && (statement[nameEnd - 1] === ' '
+            || statement[nameEnd - 1] === '\t')) nameEnd--;
+        const name = statement.slice(0, nameEnd).toLowerCase();
+        if (name.length >= 6 && 'choose'.startsWith(name)) {
+            if (delimiter < 0) {
+                report.errors.push({ sourceLine, lineNumber,
+                    message: 'Format is CHOOSE=section1,section2,...' });
+            } else {
+                const chosen = chooseRandomPart(statement.slice(delimiter + 1));
+                if (chosen !== null) sectionChosen = chosen;
+                else report.errors.push({ sourceLine, lineNumber,
+                    message: 'No config section to choose' });
+            }
+            pending = new Uint8Array(0);
+            continue;
+        }
         yield { bytes: pending.subarray(0, end), sourceLine, lineNumber };
         pending = new Uint8Array(0);
     }
