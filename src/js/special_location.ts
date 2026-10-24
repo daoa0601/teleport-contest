@@ -28,16 +28,23 @@ type LocationFilter = (location: MapLocation, x: number, y: number) => boolean;
 
 export async function getLocationCoord(context: LocationContext, coordinate: Position | null,
     humidity: number, filter?: LocationFilter): Promise<Position> {
-    const random = coordinate === null || (coordinate.x === -1 && coordinate.y === -1);
     // sp_lev.h packs explicit axes as unsigned bytes; only (-1, -1)
     // denotes a random coordinate at the Lua boundary.
-    const input = coordinate === null || random ? { x: -1, y: -1 }
-        : { x: coordinate.x & 0xff, y: coordinate.y & 0xff };
+    if (coordinate && (coordinate.x !== -1 || coordinate.y !== -1))
+        return await getPackedLocationCoord(context, coordinate, humidity, filter);
+    const input = { x: -1, y: -1 };
     const point = await getLocation(context, input,
-        humidity | (random ? NO_LOC_WARN : 0), filter);
-    if (random && point.x === -1 && point.y === -1)
+        humidity | NO_LOC_WARN, filter);
+    if (point.x === -1 && point.y === -1)
         return await getLocation(context, point, humidity, filter);
     return point;
+}
+
+// Callers which always use SP_COORD_PACK do not recognize the random sentinel.
+export async function getPackedLocationCoord(context: LocationContext, coordinate: Position,
+    humidity: number, filter?: LocationFilter): Promise<Position> {
+    return await getLocation(context,
+        { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
 }
 
 export async function getLocation(context: LocationContext, coordinate: Position,
