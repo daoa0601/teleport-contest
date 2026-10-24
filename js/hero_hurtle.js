@@ -6,7 +6,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { nomul, setMulti } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from './ball.js';
-import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
+import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { heroTestMove } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -68,7 +68,7 @@ function wallPassage(location) {
     return {
         hasAbility,
         mayPass: hasAbility
-            && !((location.wall_info ?? 0) & W_NONPASSWALL),
+            && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL)),
     };
 }
 function obstacleReason(location, openDoorFrame) {

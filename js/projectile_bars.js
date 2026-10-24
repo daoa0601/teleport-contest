@@ -5,17 +5,20 @@ import { CORR, DOOR, P_BOW, P_CROSSBOW, P_DART, P_KNIFE, P_SHURIKEN, P_SPEAR, RO
 import { newsym, plineWithContinuation } from './display.js';
 import { specialLevelAt } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { breakFloorObject } from './object_breakage.js';
+import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import { BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
+import { splitObjectStack } from './object_stack.js';
 import { harmlessMissile } from './projectile.js';
 import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { cansee } from './vision.js';
+import { setPrimaryWeapon } from './weapon_slots.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -37,15 +40,43 @@ const SMALL_TOOLS = new Set([
     SKELETON_KEY, LOCK_PICK, CREDIT_CARD, TALLOW_CANDLE, WAX_CANDLE,
     LENSES, TIN_WHISTLE, MAGIC_WHISTLE,
 ]);
-export async function projectileHitsIronBars(object, { x, y, barsX, barsY, forceHit = false, heroCaused = false, state = game, publish = plineWithContinuation, random = rn2, }) {
+export async function projectileHitsIronBars(object, { forceHit = false, heroCaused = false, ...options }) {
     if (!forceHit && !objectHitsBars(object))
         return { blocked: false, destroyed: false, heroDied: false };
+    return hitIronBars(object, { kind: 'projectile', heroCaused }, options);
+}
+// C hack.c:domove_fight_ironbars(). Decide breakage before removing the
+// wielded object, so only one item breaks and the remaining stack stays held.
+export async function strikeIronBarsWithWeapon(weapon, x, y, state = game) {
+    const breaksOnImpact = objectBreaksOnImpact(weapon);
+    let object = weapon;
+    if (breaksOnImpact) {
+        if (weapon.quan > 1) {
+            const split = splitObjectStack(weapon, 1, state);
+            if (!split)
+                throw new Error('A wielded stack hitting bars could not be split.');
+            object = split;
+        }
+        else {
+            await setPrimaryWeapon(null, state);
+        }
+        await freeInventoryObject(object, state);
+    }
+    await hitIronBars(object, { kind: 'wielded', breaksOnImpact }, {
+        x: state.u.ux, y: state.u.uy, barsX: x, barsY: y, state,
+    });
+}
+async function hitIronBars(object, attack, { x, y, barsX, barsY, state = game, publish = plineWithContinuation, random = rn2, }) {
     const level = requireGameLevel(state);
     const bars = level.requireAt(barsX, barsY);
     const nondiggable = (bars.wall_info & W_NONDIGGABLE) !== 0;
-    const broken = await breakFloorObject(object, {
-        x, y, state, publish, random, heroCaused,
-    });
+    const heroCaused = attack.kind === 'wielded' || attack.heroCaused;
+    const breakOptions = { x, y, state, publish, random, heroCaused };
+    const broken = attack.kind === 'projectile'
+        ? await breakFloorObject(object, breakOptions)
+        : attack.breaksOnImpact
+            ? await breakObjectAtLocation(object, { ...breakOptions, fromInventory: true })
+            : { destroyed: false, observed: false };
     if (broken.heroDied || state.program_state.gameover)
         return { blocked: true, destroyed: broken.destroyed, heroDied: true };
     if (broken.destroyed) {
@@ -75,7 +106,8 @@ export async function projectileHitsIronBars(object, { x, y, barsX, barsY, force
         const strength = currentStrength(state);
         const enchantment = object.otyp === HEAVY_IRON_BALL
             ? Math.trunc(object.owt / WT_IRON_BALL_INCR) : object.spe;
-        if (random(Math.max(2, 60 - strength - enchantment)) === 0) {
+        const chance = (attack.kind === 'wielded' ? 40 : 60) - strength - enchantment;
+        if (random(Math.max(2, chance)) === 0) {
             await publish('You break the bars apart!');
             await dissolveBars(barsX, barsY, state);
             noise *= 2;

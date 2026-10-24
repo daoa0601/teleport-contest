@@ -11,7 +11,7 @@ import {
 } from './ball.js';
 import {
     D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
-    IS_OBSTRUCTED, Is_waterlevel, KILLED_BY,
+    IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY,
     MAGIC_PORTAL, TREE,
     TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
     VIBRATING_SQUARE, W_NONPASSWALL,
@@ -135,7 +135,7 @@ function wallPassage(location: MapLocation) {
     return {
         hasAbility,
         mayPass: hasAbility
-            && !((location.wall_info ?? 0) & W_NONPASSWALL),
+            && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL)),
     };
 }
 
