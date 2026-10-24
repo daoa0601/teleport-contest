@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP, HWALL, SQKY_BOARD, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { CAN_OF_GREASE, MACE } from '../js/object_data.js';
+import { CAN_OF_GREASE, DART, MACE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { initializePet } from '../js/dog.js';
@@ -112,23 +112,31 @@ void test('repairing a squeaky board with shop grease bills one charge', async (
 // C trap.c:5581 -> objnam.c bare_artifactname(uwep): the fiery-blade
 // message names the primary weapon even when the burning blade is the
 // secondary. xname() observes a non-artifact primary and keeps its given name.
-void test("a fiery secondary blade names and observes the primary weapon while burning a web", async () => {
-    const level = freshPlayableRoom({});
-    const web = addTrap(level, WEB, 11, 10, { tseen: true });
-    const mace = await addInventoryObject(MACE, { oname: 'Bob', dknown: false, observed: false });
-    await setPrimaryWeapon(mace);
-    const fireBrand = await addInventoryItem(await artifactObject('Fire Brand'));
-    game.u.twoweap = true;
-    game.uswapwep = game.u.uswapwep = fireBrand;
-    const messages = [];
-    initRng(1n);
-    await untrap({
-        chooseDirection: direction(1, 0),
-        publish: message => { messages.push(message); },
-        ask: async () => 'n',
+for (const { type, quantity, poisoned, name } of [
+    { type: MACE, quantity: 1, poisoned: false, name: 'mace named Bob' },
+    { type: DART, quantity: 3, poisoned: true, name: 'poisoned darts named Bob' },
+]) {
+    void test(`a fiery secondary blade names and observes ${name} while burning a web`, async () => {
+        const level = freshPlayableRoom({});
+        const web = addTrap(level, WEB, 11, 10, { tseen: true });
+        const primary = await addInventoryObject(type, {
+            oname: 'Bob', dknown: false, observed: false,
+            quan: quantity, quantity, opoisoned: poisoned,
+        });
+        await setPrimaryWeapon(primary);
+        const fireBrand = await addInventoryItem(await artifactObject('Fire Brand'));
+        game.u.twoweap = true;
+        game.uswapwep = game.u.uswapwep = fireBrand;
+        const messages = [];
+        initRng(1n);
+        await untrap({
+            chooseDirection: direction(1, 0),
+            publish: message => { messages.push(message); },
+            ask: async () => 'n',
+        });
+        assert.equal(messages[0], `${name} burns through the web!`);
+        assert.equal(primary.dknown, true, 'naming a visible weapon recognizes its appearance');
+        assert.equal(level.traps.includes(web), false);
     });
-    assert.equal(messages[0], 'mace named Bob burns through the web!');
-    assert.equal(mace.dknown, true, 'naming a visible weapon recognizes its appearance');
-    assert.equal(level.traps.includes(web), false);
-});
+}
 //# sourceMappingURL=untrap_audit_details.test.js.map

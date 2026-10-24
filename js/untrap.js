@@ -50,7 +50,7 @@ import { promptDirection } from './tty_prompts.js';
 import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight, } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
-import { observeObjectForNaming, definiteName, objectCombatName, objectName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
+import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -301,8 +301,7 @@ function bareArtifactOrPlainName(weapon, state) {
         return artifact.name.replace(/^The /, 'the ');
     if (!weapon)
         return '';
-    observeObjectForNaming(weapon, { state });
-    return objectName(weapon, state);
+    return objectCombatName(weapon, { state, includeCorpseSpecies: false });
 }
 function untrapFailureRoll(trap, state, random) {
     let chance = 3;
