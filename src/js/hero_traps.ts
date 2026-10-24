@@ -68,7 +68,7 @@ import {
 } from './monster_data.js';
 import {
     ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL,
-    OBJECT_NAMES, ROCK,
+    CORPSE, OBJECT_NAMES, ROCK, SADDLE,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
@@ -376,28 +376,82 @@ async function triggerWeb(
     }
 }
 
-async function triggerLandmine(trap: Trap, { failedUntrap = false, forceTrap = false } = {}) {
+// C trap.c:trapeffect_landmine() guards steedintrap() with a static
+// recursive_mine flag: the dying steed's dismount must not re-enter the
+// still-armed mine before it is converted to a pit.
+let landmineSteedHitInProgress = false;
+
+// C trap.c:keep_saddle_with_steedcorpse(): the blast can scatter the dead
+// steed's corpse away from the saddle; the captured saddle follows the
+// corpse.  C walks fobj and each container's contents; the corpse keeps its
+// omonst traits because a steed is tame.
+async function keepSaddleWithSteedcorpse(steedMid: number, saddle: GameObject): Promise<void> {
+    if (saddle.where !== 'floor') return; // the blast may destroy the saddle
+    const visit = async (objects: GameObject[] | null | undefined): Promise<boolean> => {
+        for (const object of [...(objects || [])]) {
+            if (object.otyp === CORPSE && object.oextra?.omonst?.m_id === steedMid) {
+                remove_object(saddle, game);
+                await placeObject(saddle, object.ox, object.oy, game);
+                await stack_object(saddle, game);
+                return true;
+            }
+            if (await visit(object.contents)) return true;
+        }
+        return false;
+    };
+    for (const column of game.level?.objects ?? []) {
+        if (!column) continue;
+        for (const pile of column) if (await visit(pile)) return;
+    }
+}
+
+async function triggerLandmine(trap: Trap, {
+    failedUntrap = false, forceTrap = false, forceBungle = false,
+} = {}) {
     const hero = game.u;
     let damage = rnd(16);
     if (heroWearsIronShoes()) damage = Math.trunc((damage + 3) / 4);
-    const airborne = !failedUntrap && !forceTrap && (hero.levitating || game.levitating
+    const forcetrap = forceTrap || failedUntrap;
+    const airborne = !forcetrap && (hero.levitating || game.levitating
         || hero.flying || game.flying);
+    let steedMid = 0;
+    let saddle: GameObject | null = null;
     if (airborne) {
         const alreadySeen = !!trap.tseen;
         if (!alreadySeen && rn2(3) !== 0) return;
         feelTrap(trap);
-        await plineWithContinuation(alreadySeen
-            ? 'There is a trigger in a pile of soil below you.'
-            : 'You discover a trigger in a pile of soil below you.');
+        await plineWithContinuation(`${alreadySeen ? 'There is' : 'You discover'} ${
+            trap.madeby_u ? 'the trigger of your mine' : 'a trigger'} in a pile of soil below you.`);
         if (alreadySeen && rn2(3) !== 0) return;
-        await plineWithContinuation('The air currents set the land mine off!');
+        await plineWithContinuation(`KAABLAMM!!!  ${
+            forceBungle ? 'Your inept attempt sets' : 'The air currents set'} ${
+            alreadySeen ? `${trap.madeby_u ? 'your' : 'a'} land mine` : 'it'} off!`);
     } else {
+        if (landmineSteedHitInProgress) return;
         feelTrap(trap);
         await plineWithContinuation(
-            `KAABLAMM!!!  You triggered ${
-                trap.madeby_u ? 'your' : 'a'
-            } land mine!`,
+            `KAABLAMM!!!  You triggered ${trap.madeby_u ? 'your' : 'a'} land mine!`,
         );
+        const steed = hero.usteed;
+        if (steed) steedMid = steed.m_id;
+        landmineSteedHitInProgress = true;
+        try {
+            if (steed) {
+                // C steedintrap() LANDMINE: thitm(0, steed, NULL, rnd(16), FALSE).
+                // m_detach() dismounts a dying steed; steedintrap()'s own
+                // dismount_steed() then finds no steed.
+                steed.mx = hero.ux;
+                steed.my = hero.uy;
+                if (steed.mhp > 0) steed.mhp -= rnd(16);
+                if (steed.mhp <= 0) {
+                    await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
+                }
+            }
+        } finally {
+            landmineSteedHitInProgress = false;
+        }
+        if (game.program_state.gameover) return;
+        saddle = objectAtHero(SADDLE);
         await woundHeroLegs('left', rn2(35) + 41);
         await woundHeroLegs('right', rn2(35) + 41);
         await exerciseAttribute(A_DEX, false);
@@ -428,6 +482,7 @@ async function triggerLandmine(trap: Trap, { failedUntrap = false, forceTrap = f
         }),
     });
     if (game.program_state.gameover) return;
+    if (steedMid && saddle && !hero.usteed) await keepSaddleWithSteedcorpse(steedMid, saddle);
     newsym(hero.ux, hero.uy);
     const landing = await triggerHeroTrapAt(hero.ux, hero.uy, { recursiveTrap: true });
     if (landing.died) return;
@@ -1347,7 +1402,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         await activateStatueTrapAt(trap.tx, trap.ty);
         break;
     case LANDMINE:
-        await triggerLandmine(trap, { failedUntrap, forceTrap });
+        await triggerLandmine(trap, { failedUntrap, forceTrap, forceBungle });
         break;
     case VIBRATING_SQUARE:
         feelTrap(trap);
