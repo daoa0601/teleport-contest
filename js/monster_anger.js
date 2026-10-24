@@ -98,7 +98,7 @@ export function aggravateMonsters(state = game, random = rn2) {
             & ~(STRAT_WAITFORU | STRAT_APPEARMSG);
         monster.msleeping = 0;
         let unfroze = false;
-        if (monster.mcanmove === 0 && random(5) === 0) {
+        if (!monster.mcanmove && random(5) === 0) {
             monster.mfrozen = 0;
             monster.mcanmove = 1;
             unfroze = true;
