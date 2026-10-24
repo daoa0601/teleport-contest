@@ -41,6 +41,8 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { createDesBindings, mapOrigin, objectTypeForName, tablePoint, } from './lua/des.js';
 import { luaInteger, luaString } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
+import { NethackLuaError } from './lua/errors.js';
+import { nameToMonster } from './mondata.js';
 import { luaTableToArray, objectToLuaTable, } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
@@ -6990,9 +6992,12 @@ function createLuaLevelSession() {
     const bindings = {
         nh: {
             debug_themerm: () => null,
-            is_genocided: name => {
-                const target = String(name).toLowerCase();
-                const mndx = MONSTER_NAME.findIndex(candidate => candidate?.toLowerCase() === target);
+            is_genocided: (...args) => {
+                if (args.length !== 1)
+                    throw new NethackLuaError('Wrong args');
+                // C nhl_is_genocided() resolves names with name_to_mon(),
+                // which accepts articles, plurals, and alternate spellings.
+                const mndx = nameToMonster(luaString(args[0]));
                 return mndx >= 0
                     && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
             },
