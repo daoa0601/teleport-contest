@@ -629,16 +629,22 @@ function findGuessedTravelDirection(targetX, targetY, g = game) {
     const dx = Math.sign(targetX - originX);
     const dy = Math.sign(targetY - originY);
     return travelStepAllowed(originX, originY, originX + dx, originY + dy, g)
-        ? { dx, dy } : null;
+        ? { dx, dy } : { dx: 0, dy: 0 };
 }
 export function findTravelDirection(state = game._runState, g = game) {
     if (!state || state.mode !== 8 || !g.u || !g.level)
         return null;
     const { targetX, targetY } = state;
-    if (g.u.ux === targetX && g.u.uy === targetY)
+    const direction = g.u.ux === targetX && g.u.uy === targetY
+        ? { dx: 0, dy: 0 }
+        : findDirectTravelDirection(targetX, targetY, g)
+            || findGuessedTravelDirection(targetX, targetY, g);
+    if (!direction)
         return null;
-    return findDirectTravelDirection(targetX, targetY, g)
-        || findGuessedTravelDirection(targetX, targetY, g);
+    // findtravelpath() stores even a blocked guess's zero direction.
+    g.u.dx = direction.dx;
+    g.u.dy = direction.dy;
+    return direction.dx || direction.dy ? direction : null;
 }
 function canSeeRunMonster(monster, x, y, g = game) {
     if (g === game)
@@ -847,6 +853,8 @@ export async function lookaroundRun(state = game._runState, g = game) {
             state.lastStrTurn = turn;
             state.dx = x0 - u.ux;
             state.dy = y0 - u.uy;
+            u.dx = state.dx;
+            u.dy = state.dy;
         }
     }
     return true;

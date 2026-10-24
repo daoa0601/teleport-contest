@@ -610,13 +610,6 @@ async function emergencyDisrobe(state, random) {
         findArmorClass(state);
     return { escaped: true, dropped };
 }
-function heroMovedWithinPool(state, x, y) {
-    if (!state.u?.uinwater)
-        return false;
-    const previousX = Number.isInteger(state.u.ux0) ? state.u.ux0 : x;
-    const previousY = Number.isInteger(state.u.uy0) ? state.u.uy0 : y;
-    return isPoolAt(previousX, previousY, state);
-}
 async function wakeHeroForCrawl(state, publish) {
     if (state.u.usleep)
         await finishHeroHelplessness('Suddenly you wake up!', state, publish);
@@ -803,7 +796,9 @@ export async function heroLiquidEffects(options = {}) {
     const waterWall = location.typ === WATER;
     let canLiveUnderwater = heroCanLiveUnderwater(state);
     let stayingInPool = false;
-    if (heroMovedWithinPool(state, x, y) && canLiveUnderwater) {
+    // drown() uses the retained direction, including zero, after relocation.
+    if (u.uinwater && isPoolAt(x - (u.dx ?? 0), y - (u.dy ?? 0), state)
+        && canLiveUnderwater) {
         if (random(5) !== 0)
             return { entered: true, moved: false, died: false };
         stayingInPool = true;

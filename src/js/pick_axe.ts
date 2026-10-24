@@ -19,6 +19,7 @@ import {
     KILLED_BY,
     LANDMINE,
     LAVAWALL,
+    N_DIRS_Z,
     SHOPBASE,
     TT_PIT,
     TT_WEB,
@@ -26,8 +27,6 @@ import {
     is_hole,
     is_pit,
     isok,
-    xdir,
-    ydir,
 } from './const.js';
 import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -86,17 +85,6 @@ interface PickAxeOptions extends PickAxeDirectionOptions {
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
-// hack.h orders DIR_DOWN before DIR_UP after the eight compass directions.
-const DIRECTION_KEYS = ['h', 'y', 'k', 'u', 'l', 'n', 'j', 'b', '>', '<'];
-
-function compassVector(direction: number) {
-    const dx = xdir[direction],
-        dy = ydir[direction];
-    if (dx === undefined || dy === undefined)
-        throw new RangeError(`Unknown compass direction ${direction}`);
-    return { dx, dy };
-}
-
 function requirePickAxeDirection(hero: Hero): asserts hero is Hero & PickAxeDirection {
     if (hero.dx === undefined || hero.dy === undefined || hero.dz === undefined)
         throw new Error('Using a pick-axe requires a chosen direction.');
@@ -123,18 +111,34 @@ function impaired(state: GameState) {
     );
 }
 
-function suggestedDirections(tool: GameObject, state: GameState) {
+function prepareDiggingDirections(tool: GameObject, state: GameState) {
     const hero = state.u;
     const downOK = heroCanReachFloor(state);
-    return DIRECTION_KEYS.filter((key, direction) => {
-        if (hero.uswallow) return true;
-        if (direction >= 8) return (direction === 8) === downOK;
-        const vector = compassVector(direction);
-        if (hero.umonnum === GRID_BUG && vector.dx && vector.dy) return false;
-        const x = hero.ux + vector.dx,
-            y = hero.uy + vector.dy;
-        return isok(x, y) && diggingTarget(tool, x, y, state) !== DIGTYP_UNDIGGABLE;
-    }).join('');
+    const keys: string[] = [];
+    for (let direction = 0; direction < N_DIRS_Z; direction++) {
+        const key = state.commandBindings.keyForDirection(direction);
+        if (!hero.uswallow) {
+            // Native movecmd() changes the hero's direction for each hint,
+            // even when getdir() will subsequently be cancelled.
+            const movement = state.commandBindings.movementForKey(key, 0);
+            hero.dz = movement?.dz ?? 0;
+            if (movement) {
+                hero.dx = movement.dx;
+                hero.dy = movement.dy;
+            }
+            if (movement && !movement.dz) {
+                if (hero.umonnum === GRID_BUG && movement.dx && movement.dy) {
+                    hero.dx = hero.dy = 0;
+                    continue;
+                }
+                const x = hero.ux + movement.dx, y = hero.uy + movement.dy;
+                if (!isok(x, y) || diggingTarget(tool, x, y, state) === DIGTYP_UNDIGGABLE)
+                    continue;
+            } else if ((hero.dz > 0) !== downOK) continue;
+        }
+        keys.push(String.fromCharCode(key));
+    }
+    return keys.join('').split('\0')[0] ?? '';
 }
 
 function tendedShopAt(monster: Monster, state: GameState) {
@@ -296,7 +300,7 @@ export async function usePickAxe(
         return { spentTime: false };
     }
     const direction = await readDirection(
-        `In what direction do you want to ${verb}? [${suggestedDirections(tool, state)}]`,
+        `In what direction do you want to ${verb}? [${prepareDiggingDirections(tool, state)}]`,
     );
     if (!direction) return { spentTime: false, cancelled: true };
     const hero = state.u;
