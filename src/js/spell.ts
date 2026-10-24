@@ -23,14 +23,15 @@ import { mksobj } from './mklev.js';
 import { deleteObject } from './object_delete.js';
 import { useHeroSkill } from './skills.js';
 import { castChainLightning, castSkilledElementalSpell } from './spell_attack_effects.js';
-import { checkSpellCast, currentSpellKnowledge, liveSpellSkill, spellSkillType } from './spell_casting_rules.js';
+import { checkSpellCast, currentSpellKnowledge, liveSpellSkill } from './spell_casting_rules.js';
+import { spellCategory, spellSkillType } from './spell_school.js';
 import { selectSpellToCast, selectWizardSpell, viewKnownSpells } from './spell_menu.js';
 import { castCureBlindness, castCureSickness, castProtection } from './spell_misc_effects.js';
 import { applyPotionSpell } from './spell_potion_effects.js';
 import { applyScrollEffects } from './scroll_effects.js';
 import { applyWandEffect } from './wand_effects.js';
 import {
-    CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
+    CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR,
     SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD,
     SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER,
@@ -67,7 +68,7 @@ export function forceLearnSpell(otyp: number, state: GameState = game): string |
 }
 
 export function createMemorizedSpell(otyp: number, knowledge: number, state: GameState): MemorizedSpell {
-    const category = OBJECT_SPELL_CATEGORY[otyp];
+    const category = spellCategory(otyp, state);
     const name = OBJECT_NAMES[otyp];
     if (category == null || name == null) throw new RangeError(`Object type ${otyp} is not a spellbook.`);
     return {
@@ -107,7 +108,7 @@ export async function castSpell(otyp: number, { atSelf = false, force = false, s
     const handled = await applySpellEffect(source, skill, atSelf, state);
     if (state.program_state.gameover) return { spentTime: true, heroDied: true };
     if (handled && !force)
-        await useHeroSkill(spellSkillType(otyp), spellLevel(otyp), { state });
+        await useHeroSkill(spellSkillType(otyp, state), spellLevel(otyp), { state });
     await deleteObject(source, state);
     state.context.move = Number(handled);
     return { spentTime: handled, heroDied: false };

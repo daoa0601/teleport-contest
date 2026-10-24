@@ -3,7 +3,7 @@ import type { InputGate } from '../../js/input.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { P_BASIC } from '../../js/const.js';
 import { forceLearnSpell } from '../../js/spell.js';
-import { spellSkillType } from '../../js/spell_casting_rules.js';
+import { spellSkillType } from '../../js/spell_school.js';
 import { flushPendingTopline } from '../../js/display.js';
 import { resetInputState } from '../../js/input.js';
 import {
@@ -22,7 +22,7 @@ export async function learnSpell(type: number, { skill = P_BASIC, state = game }
 
 export async function trainSpellSkill(type: number, skill: number, { state = game, input }: SpellTrainingOptions = {}) {
     requirePlayingGame(state);
-    const proficiency = spellSkillType(type);
+    const proficiency = spellSkillType(type, state);
     if (proficiency === undefined) throw new RangeError(`Object ${type} is not a spell`);
     const skills = ensureHeroSkills(state);
     if (!skills) throw new Error('Spell training requires initialized hero skills');

@@ -15,6 +15,7 @@ import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';
 import { ATR_INVERSE } from './terminal.js';
 import { rn2 } from './rng.js';
+import { spellSkillType } from './spell_school.js';
 import type { GameState } from './game_state.js';
 import type { HeroSkill } from './hero_types.js';
 import type { RoleKey } from './roles.js';
@@ -151,8 +152,8 @@ function roleMaximums(game: GameState): ReadonlyMap<number, number> | null {
 
 // Startup precedes skill_init(); admission uses the role's skill list.
 export function roleAllowsSpellbook(otyp: number, state: GameState): boolean {
-    const skill = OBJECT_SUBTYPE[otyp];
-    return skill !== undefined && skill >= P_FIRST_SPELL
+    const skill = spellSkillType(otyp, state);
+    return skill >= P_FIRST_SPELL
         && skill <= P_LAST_SPELL && !!roleMaximums(state)?.has(skill);
 }
 
@@ -539,9 +540,9 @@ function identifySpellbooksForSkills(state: GameState): void {
     const skills = initializedSkills(state);
     for (let type = 0; type < OBJECT_SPELL_CATEGORY.length; type++) {
         if (!OBJECT_SPELL_CATEGORY[type]) continue;
-        const category = OBJECT_SUBTYPE[type];
+        const category = spellSkillType(type, state);
         const spellLevel = OBJECT_SPELL_LEVEL[type];
-        if (category === undefined || spellLevel === undefined)
+        if (spellLevel === undefined)
             throw new Error(`Spellbook ${type} has incomplete skill data`);
         const skill = requiredSkill(skills, category).skill;
         const level = skill >= P_EXPERT ? 7 : skill === P_SKILLED ? 5

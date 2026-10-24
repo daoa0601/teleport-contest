@@ -46,7 +46,7 @@ import { definiteName, objectCombatName, objectNameIsPlural } from './objnam.js'
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
-import { spellSkillType } from './spell_casting_rules.js';
+import { spellSkillType } from './spell_school.js';
 import { ensureHeroSkills } from './skills.js';
 import { depth } from './hacklib.js';
 import { gotoLevel } from './level_change.js';
@@ -383,7 +383,7 @@ async function invokeBlindingRay(object: GameObject, state: GameState, publish: 
 
 async function invokeStorm(power: 'snowstorm' | 'firestorm', state: GameState) {
     const spell = power === 'snowstorm' ? SPE_CONE_OF_COLD : SPE_FIREBALL;
-    const skill = ensureHeroSkills(state)?.[spellSkillType(spell)];
+    const skill = ensureHeroSkills(state)?.[spellSkillType(spell, state)];
     if (!skill) throw new Error('Artifact storm requires initialized spell skills');
     const previous = skill.skill;
     skill.skill = P_EXPERT;
