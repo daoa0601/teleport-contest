@@ -737,9 +737,8 @@ async function leaveWater({ state, location, publish, }) {
 // default.  entry 'float-down' (C trap.c:float_down() -> drown()/
 // lava_effects()) skips the spoteffects-only stages: leaving water, the
 // mounted-steed dismount, and the ceiling-hider check, none of which the
-// direct drown()/lava_effects() calls perform.  Entry 'drown' also skips
-// their terrain-entry guards: a submerged hero still drowns while held
-// by a monster or wearing water-walking boots (C Amulet_off()).
+// direct drown()/lava_effects() calls perform. Entries 'drown' and 'lava'
+// also skip their terrain-entry guards, including being held by a monster.
 export async function heroLiquidEffects(options = {}) {
     const { state = game, publish = plineWithContinuation, random = rn2, recalculateVision = vision_recalc, resetVision = vision_reset, repaint = newsym, rollDice = d, rollOne = rnd, chooseTeleportDestination = null, applyLandingEffects = async () => { }, die = finishLiquidDeath, entry = 'spot-effects', } = options;
     const fromFloatDown = entry === 'float-down';
@@ -752,6 +751,11 @@ export async function heroLiquidEffects(options = {}) {
     let location = state.level?.at?.(x, y);
     if (!u || !location)
         return null;
+    if (entry === 'lava')
+        return heroLavaEffects({
+            state, location, publish, random, rollDice, rollOne,
+            repaint, resetVision, recalculateVision, applyLandingEffects, die,
+        });
     if (entry !== 'drown') {
         const leftWater = fromFloatDown ? false : await leaveWater({ state, location, publish });
         const airborne = u.levitating || u.levitation

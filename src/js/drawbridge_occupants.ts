@@ -287,7 +287,12 @@ async function dieMovingEntity(
 ): Promise<void> {
     if (entity.hero && killer === 'fell from a drawbridge'
         && isPoolOrLavaAt(entity.x, entity.y, state)) {
-        await heroLiquidEffects({ state, entry: isPoolAt(entity.x, entity.y, state) ? 'drown' : 'float-down' });
+        await heroLiquidEffects({
+            state, entry: isPoolAt(entity.x, entity.y, state) ? 'drown' : 'lava',
+            applyLandingEffects: ({ from, to, pick }) => finishDestinationSpotEffects({
+                oldx: from.x, oldy: from.y, newx: to.x, newy: to.y, pick: pick ?? true,
+            }),
+        });
         entity.x = state.u.ux;
         entity.y = state.u.uy;
     } else {

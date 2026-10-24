@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DBWALL, DB_FLOOR, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP } from '../js/const.js';
+import { DBWALL, DB_FLOOR, DB_LAVA, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, NO_MINVENT } from '../js/const.js';
 import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -11,6 +11,7 @@ import { createDungeon } from './support/topology.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 function bridgeDeathRoom(open, onSpan) {
     const level = freshGameplayRoom({ right: 60, top: 2, bottom: 18,
         heroX: 12, heroY: onSpan ? 10 : 9, hero: { urexp: 100 },
@@ -47,5 +48,15 @@ void test('life saving from a portcullis moves the hero to a nearby safe square'
     assert.equal(!!game.program_state.gameover, false);
     assert.equal(amulet.where, 'gone');
     assert.equal(Math.max(Math.abs(game.u.ux - 12), Math.abs(game.u.uy - 9)), 1);
+});
+void test('a held hero falling from a rising bridge still suffers lava effects', async () => {
+    bridgeDeathRoom(true, true);
+    requirePlayingGame(game);
+    game.level.requireAt(12, 10).drawbridgemask = DB_NORTH | DB_LAVA;
+    game.u.ustuck = await createMonsterAt('large mimic', 13, 10, NO_MINVENT);
+    await createMonsterAt('xorn', 12, 9, NO_MINVENT);
+    await closeDrawbridge(12, 10);
+    assert.equal(game.program_state.gameover, true);
+    assert.match(loadScoreRecords()[0]?.death ?? '', /molten lava/);
 });
 //# sourceMappingURL=dbridge_death.test.js.map
