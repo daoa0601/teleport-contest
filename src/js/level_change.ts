@@ -33,7 +33,7 @@ import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
-import { mklev, oinit, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
+import { mklev, oinit, place_lregion, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js';
 import { dungeonBuildsUp, level_difficulty, specialPrototypeAt,
     recordMappedOverviewState, recordOverviewBranch, markOverviewUnreachable,
     insideWizardTower, levelIsWizardTower } from './dungeon.js';
@@ -499,8 +499,17 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
                 await placeHeroOnLevel(stairs.sx, stairs.sy);
                 stairs.u_traversed = true;
             } else {
-                if (up) await u_on_downstairs();
-                else await u_on_upstairs();
+                // C do.c:goto_level(): without the return stairway, a
+                // branch arrival goes straight to the special staircase
+                // instead of any regular stairway in the travel direction.
+                const newdungeon = game.u.uz.dnum !== from.dnum;
+                if (up) {
+                    if (newdungeon) await u_on_sstairs(1);
+                    else await u_on_downstairs();
+                } else {
+                    if (newdungeon) await u_on_sstairs(0);
+                    else await u_on_upstairs();
+                }
                 await placeHeroOnLevel(game.u.ux, game.u.uy);
             }
             if (await applyStairTravelEffects(up, ladder)) return true;
