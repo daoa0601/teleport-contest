@@ -10,7 +10,8 @@ import { remove_object } from './floor_object.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { MONSTER_FLAGS3, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { questMonsterFlags3 } from './role_monsters.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import type { Monster } from './monster_types.js';
@@ -66,7 +67,7 @@ function decideCovetousStrategy(monster: Monster, state: PlayingGameState): Cove
         : [WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM, WANTS_ARTIFACT]));
     let goal: Position | undefined;
     for (const mask of masks) {
-        if (!((MONSTER_FLAGS3[monster.mnum] ?? 0) & mask)) continue;
+        if (!(questMonsterFlags3(monster.mnum, state) & mask)) continue;
         const target = findCovetousTarget(monster, mask, state);
         if (target) {
             return { strategy: { kind: 'target', target }, goal: { ...target.position } };
@@ -77,7 +78,7 @@ function decideCovetousStrategy(monster: Monster, state: PlayingGameState): Cove
 }
 
 function findCovetousTarget(monster: Monster, mask: number, state: PlayingGameState): CovetousTarget | null {
-    if (!((MONSTER_FLAGS3[monster.mnum] ?? 0) & mask)) return null;
+    if (!(questMonsterFlags3(monster.mnum, state) & mask)) return null;
     const matches = (object: GameObject) => objectMatchesTarget(object, mask, state);
     if (!(monster.minvent ?? []).some(matches)) {
         if (heroHasTarget(mask, state))

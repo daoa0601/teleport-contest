@@ -26,8 +26,9 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
+import { questMonsterSound } from './role_monsters.js';
 import {
-    MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND,
+    MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME,
     MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterTypeName,
 } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
@@ -141,7 +142,7 @@ function thirdPersonSoundVerb(verb: string) {
 }
 
 export async function publishMonsterYelp(monster: Monster) {
-    const sound = MONSTER_SOUND[monster.mnum];
+    const sound = questMonsterSound(monster.mnum);
     if (monster.msleeping || !monster.mcanmove || !sound) return;
 
     const deaf = heroIsDeaf();
@@ -169,7 +170,7 @@ export async function publishMonsterYelp(monster: Monster) {
 }
 
 export async function publishMonsterWhimper(monster: Monster) {
-    const sound = MONSTER_SOUND[monster.mnum];
+    const sound = questMonsterSound(monster.mnum);
     if (monster.msleeping || !monster.mcanmove || !sound) return;
     const verb = heroIsHallucinating()
         ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
@@ -182,7 +183,7 @@ export async function publishMonsterWhimper(monster: Monster) {
 }
 
 export async function publishMonsterGrowl(monster: Monster) {
-    const sound = MONSTER_SOUND[monster.mnum];
+    const sound = questMonsterSound(monster.mnum);
     if (monster.msleeping || !monster.mcanmove || !sound)
         return game._lastPlineKind === PLNMSG_GROWL;
 
@@ -206,7 +207,7 @@ export async function publishMonsterGrowl(monster: Monster) {
 
 function maybeHumanoidGasp(observer: Monster) {
     requirePlayingGame(game);
-    let sound = MONSTER_SOUND[observer.mnum] ?? 0;
+    let sound = questMonsterSound(observer.mnum);
     if ((sound === MS_GUARDIAN && observer.mnum !== game.urole.guardnum)
         || (sound === MS_PRIEST && !priestIsCoaligned(observer))) return null;
     const minion = observer.emin || observer.mextra?.emin;

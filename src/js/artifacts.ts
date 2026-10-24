@@ -75,8 +75,8 @@ import {
     requireObjectData,
 } from './object_data.js';
 import { objectMaterial } from './object_material.js';
+import { questMonsterAlignment } from './role_monsters.js';
 import {
-    MONSTER_ALIGNMENT,
     MONSTER_FLAGS2,
     MONSTER_MAGIC_RESISTANCE,
     MONSTER_SYMBOL,
@@ -547,7 +547,7 @@ function artifactAttackApplies(
         case 'symbol':
             return MONSTER_SYMBOL[mnum] === SYMBOL_TARGETS[target.value];
         case 'alignment': {
-            const alignment = hero ? state.u?.ualign?.type : MONSTER_ALIGNMENT[mnum];
+            const alignment = hero ? state.u?.ualign?.type : questMonsterAlignment(mnum, state);
             if (hero) return alignment !== artifact.alignment;
             return (
                 alignment === -128 ||

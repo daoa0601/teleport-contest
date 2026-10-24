@@ -24,15 +24,13 @@ import type { MonsterLiquidDeathContext } from './mon.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
-import {
-    isQuestLeader,
-    questMonsterSound,
-} from './quest.js';
+import { isQuestLeader } from './quest.js';
+import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
 import { prepareMonsterPetrification } from './monster_stoning.js';
 import {
-    MONSTER_ALIGNMENT, MONSTER_FLAGS2,
+    MONSTER_FLAGS2,
     MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
     monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster,
     monsterIsQuestGuardian, monsterIsUnicorn,
@@ -163,7 +161,7 @@ function applyPriestKillConsequences(monster: Monster) {
     adjustHeroAlignment(coaligned ? -2 : 2);
     if (coaligned) game.u.ublessed = 0;
 
-    if (MONSTER_ALIGNMENT[monster.mnum] === A_NONE) {
+    if (questMonsterAlignment(monster.mnum) === A_NONE) {
         const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
         adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
     }
@@ -373,7 +371,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
         changeHeroLuck(-1);
     if (monsterIsUnicorn(monster.mnum)
         && Math.sign(game.u?.ualign?.type ?? 0)
-            === Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0)) {
+            === Math.sign(questMonsterAlignment(monster.mnum))) {
         changeHeroLuck(-5);
         await plineWithContinuation(formatFeltMessage('guilty...'));
     }

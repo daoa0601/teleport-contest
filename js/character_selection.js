@@ -24,10 +24,11 @@ class CharacterSelection {
     readName;
     choices;
     random = new Set();
-    filters = createCharacterFilters();
+    filters;
     name = game.plname;
     constructor(options, readName) {
         this.readName = readName;
+        this.filters = options.characterFilters ?? createCharacterFilters();
         this.choices = {
             role: findRole(options.role) ?? null,
             race: findRace(options.race) ?? null,
@@ -204,6 +205,16 @@ class CharacterSelection {
             // candidates. Keep ROLE_RANDOM until makepicks corrects it.
             if (facet !== 'role' && this.candidates(facet).length === 0)
                 continue;
+            if (facet === 'role' && this.candidates(facet).length === 0) {
+                // randrole_filtered() drops incompatible choices but keeps
+                // each exclusion when an explicitly random role cannot fit.
+                const permitted = this.roleCandidates(EMPTY_CHOICES);
+                const candidates = permitted.length ? permitted : this.fallbackCandidates('role');
+                const key = candidates[rn2(candidates.length)];
+                if (key)
+                    this.setFacet('role', key);
+                continue;
+            }
             this.pickRandom(facet);
         }
         if (!this.choices.role)
@@ -260,11 +271,7 @@ class CharacterSelection {
     candidates(facet, menu = false) {
         const c = this.choices;
         switch (facet) {
-            case 'role': return nativeRoleChoices().filter(role => {
-                const choice = { ...c, role };
-                return characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice)
-                    && characterGenderAllowed(this.filters, choice) && characterAlignmentAllowed(this.filters, choice);
-            }).map(role => role.key);
+            case 'role': return this.roleCandidates(c);
             case 'race': return races.filter(race => {
                 const choice = { ...c, race };
                 return characterRaceAllowed(this.filters, choice) && (!menu
@@ -281,6 +288,13 @@ class CharacterSelection {
                     || characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice));
             }).map(alignment => alignment.name);
         }
+    }
+    roleCandidates(choices) {
+        return nativeRoleChoices().filter(role => {
+            const choice = { ...choices, role };
+            return characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice)
+                && characterGenderAllowed(this.filters, choice) && characterAlignmentAllowed(this.filters, choice);
+        }).map(role => role.key);
     }
     roleName(role, gender, combined = false) {
         if (gender?.value === 1)
@@ -393,7 +407,7 @@ class CharacterSelection {
         return result === 'filtered';
     }
     selectionQuestion() {
-        return characterSelectionQuestion(this.choices, this.random);
+        return characterSelectionQuestion(this.choices, this.random, this.filters);
     }
 }
 async function readSetupAnswer(question) {

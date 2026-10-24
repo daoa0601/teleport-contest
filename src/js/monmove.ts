@@ -456,6 +456,7 @@ import { msummon } from './minion.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { MONSTER_SOUND } from './monster_data.js';
+import { questMonsterSound } from './role_monsters.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { artifactById } from './artifacts.js';
@@ -3225,7 +3226,7 @@ async function movePet(
             // manufacturing a zero-hit attack transaction between pets.
             if (target.mtame && monster.mtame && !heroHasConflict(state)) continue;
             if (maxPassiveMonsterDamage(target, monster) >= (monster.mhp ?? 1)) continue;
-            const targetSound = MONSTER_SOUND[target.mnum];
+            const targetSound = questMonsterSound(target.mnum, state);
             if ((monster.mhp * 4 < monster.mhpmax
                 || targetSound === MS_GUARDIAN || targetSound === MS_LEADER)
                 && target.mpeaceful && !heroHasConflict(state)) continue;

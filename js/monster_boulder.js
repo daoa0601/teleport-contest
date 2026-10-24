@@ -1,7 +1,8 @@
 // C monmove.c:m_can_break_boulder() and m_break_boulder().
 import { plineWithContinuation } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { MONSTER_SOUND, monsterIsRider } from './monster_data.js';
+import { monsterIsRider } from './monster_data.js';
+import { questMonsterSound } from './role_monsters.js';
 import { monsterName } from './monster_name.js';
 import { BOULDER } from './object_data.js';
 import { fractureRock } from './rock_breakage.js';
@@ -13,7 +14,7 @@ const MS_LEADER = 36;
 export function monsterCanBreakBoulder(monster) {
     return !!(monsterIsRider(monster)
         || !monster.mspec_used && (monster.isshk || monster.ispriest
-            || MONSTER_SOUND[monster.mnum] === MS_LEADER));
+            || questMonsterSound(monster.mnum) === MS_LEADER));
 }
 export async function breakMonsterBoulder(monster, x, y, state = game, { random = rn2, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);

@@ -4,8 +4,9 @@ import { game } from './gstate.js';
 import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
 import { canSeeMonster, flush_screen, pline, plineWithContinuation } from './display.js';
-import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE, STRAT_WAITMASK, MAGIC_PORTAL, } from './const.js';
-import { MONSTER_NAME, MONSTER_SOUND } from './monster_data.js';
+import { MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_WAITMASK, MAGIC_PORTAL, } from './const.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { questMonsterSound } from './role_monsters.js';
 import { displayQuestText, prepareQuestText, qtPager, comPager } from './quest_pager.js';
 import { artifactByName } from './artifacts.js';
 import { exerciseWisdom as exerciseQuestWisdom } from './attrib.js';
@@ -27,11 +28,6 @@ import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
 const MS_LEADER = 36;
-// role_init() changes the selected nemesis's sound. The Master of Thieves
-// is otherwise a quest leader, so the Tourist needs this per-game override.
-export function questMonsterSound(species, state = game) {
-    return species === state.urole?.neminum ? MS_NEMESIS : MONSTER_SOUND[species] ?? 0;
-}
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
 // survive level cache changes and ordinary game serialization as later quest
@@ -74,19 +70,14 @@ export function checkQuestMonsterStatus(monster, state = game) {
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1;
 }
-// role_init() marks the selected role's leader species peaceful and M3_CLOSE;
-// makemon() then records the particular live identity in q_score.  Register
-// after ordinary construction so the constructor's existing RNG remains in
-// source order even while role metadata overrides the final attitude.
+// C makemon() records the quest leader's identity. Birth flags still control
+// anger and waiting; recording the identity must not change either one.
 export function registerQuestLeader(monster, g = game) {
     if (!monster || monster.mnum !== g.urole?.ldrnum)
         return false;
     const status = ensureQuestStatus(g);
     status.leader_m_id = monster.m_id;
-    status.ldrgend = monster.female ? 1 : 0;
     monster.questLeader = true;
-    monster.mpeaceful = 1;
-    monster.mstrategy = (monster.mstrategy || 0) | STRAT_CLOSE;
     return true;
 }
 export function isQuestLeader(monster, g = game) {

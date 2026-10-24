@@ -3,9 +3,9 @@ import { MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY } from './const.js';
 import {
     nativeRoleChoices, validCharacterAlignment, validCharacterGender, validCharacterRace,
 } from './character_choices.js';
-import type { CharacterChoices } from './character_choices.js';
+import type { CharacterChoices, CharacterFacet } from './character_choices.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { aligns, genders, races } from './roles.js';
+import { aligns, findAlignment, findGender, findRace, findRole, genders, races } from './roles.js';
 import type { AlignmentName, GenderName, RaceName, RoleKey } from './roles.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
@@ -30,6 +30,28 @@ export function createCharacterFilters(): CharacterFilters {
 
 export function hasCharacterFilters(filters: CharacterFilters): boolean {
     return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
+}
+
+// C setrolefilter() accepts any character facet, trying roles first.
+export function setCharacterFilter(filters: CharacterFilters, value: string): boolean {
+    const role = findRole(value);
+    if (role) { filters.roles.add(role.key); return true; }
+    const race = findRace(value);
+    if (race) { filters.races.add(race.name); return true; }
+    const gender = findGender(value);
+    if (gender) { filters.genders.add(gender.name); return true; }
+    const alignment = findAlignment(value);
+    if (alignment) { filters.alignments.add(alignment.name); return true; }
+    return false;
+}
+
+export function clearCharacterFilter(filters: CharacterFilters, facet: CharacterFacet): void {
+    switch (facet) {
+    case 'role': filters.roles.clear(); break;
+    case 'race': filters.races.clear(); break;
+    case 'gender': filters.genders.clear(); break;
+    case 'alignment': filters.alignments.clear(); break;
+    }
 }
 
 // role.c:ok_role(), ok_race(), ok_gend(), and ok_align() consult their own

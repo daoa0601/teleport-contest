@@ -5,7 +5,8 @@ import { isok, RLOC_MSG, STRAT_APPEARMSG, STRAT_GROUND, STRAT_HEAL, STRAT_MONSTR
 import { plineWithContinuation } from './display.js';
 import { remove_object } from './floor_object.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { MONSTER_FLAGS3, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { questMonsterFlags3 } from './role_monsters.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { observeDistantObjectForNaming } from './objnam.js';
@@ -45,7 +46,7 @@ function decideCovetousStrategy(monster, state) {
         : [WANTS_BOOK, WANTS_BELL, WANTS_CANDELABRUM, WANTS_ARTIFACT]));
     let goal;
     for (const mask of masks) {
-        if (!((MONSTER_FLAGS3[monster.mnum] ?? 0) & mask))
+        if (!(questMonsterFlags3(monster.mnum, state) & mask))
             continue;
         const target = findCovetousTarget(monster, mask, state);
         if (target) {
@@ -56,7 +57,7 @@ function decideCovetousStrategy(monster, state) {
     return { strategy: { kind: health < 3 ? 'heal' : 'harass' }, goal };
 }
 function findCovetousTarget(monster, mask, state) {
-    if (!((MONSTER_FLAGS3[monster.mnum] ?? 0) & mask))
+    if (!(questMonsterFlags3(monster.mnum, state) & mask))
         return null;
     const matches = (object) => objectMatchesTarget(object, mask, state);
     if (!(monster.minvent ?? []).some(matches)) {
