@@ -105,11 +105,13 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const selection = self === undefined ? new SpecialSelection() : selectionValue(self);
         const coordinate = args.length === 0 ? null
             : { x: luaCoordinate(args[0]), y: luaCoordinate(args[1]) };
+        const value = luaInt(args[2] ?? 1);
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
-        selection_setpoint(point.x, point.y, selection.selection, luaInt(args[2] ?? 1));
+        selection_setpoint(point.x, point.y, selection.selection, value);
         return self ?? wrap(selection);
     };
     const get = async (self: LuaValue, ...args: LuaValue[]) => {
+        const selection = selectionValue(self);
         let coordinate: Coordinate;
         const table = args[0];
         if (args.length === 1 && table instanceof LuaTable) {
@@ -126,7 +128,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             throw new TypeError('l_selection_getpoint: Incorrect params');
         }
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
-        return selection_getpoint(point.x, point.y, selectionValue(self).selection);
+        return selection_getpoint(point.x, point.y, selection.selection);
     };
     const clone = (...args: LuaValue[]) => {
         const source = selectionValue(args[0]);

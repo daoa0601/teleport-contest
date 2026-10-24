@@ -424,3 +424,35 @@ void test('clone and negate retain native second-selection copy targets', async 
     assert.equal(state.getGlobal('inverted'), 1);
     assert.equal(state.getGlobal('original'), 1);
 });
+
+void test('invalid selection point arguments leave the next random location unchanged', async t => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 1, ystart: 0, width: 79, height: 21 }),
+    });
+    t.after(() => state.destroy());
+    const choosePoint = async () => {
+        await state.executeAsync(`
+            local point = selection.new()
+            point:set()
+            local box = point:bounds()
+            chosen_x, chosen_y = box.lx, box.ly
+        `);
+        return { x: state.getGlobal('chosen_x'), y: state.getGlobal('chosen_y') };
+    };
+    initRng(17);
+    const expected = await choosePoint();
+
+    for (const source of [
+        'selection.new():set(-1, -1, false)',
+        'selection.get(nil, -1, -1)',
+    ]) {
+        initRng(17);
+        await assert.rejects(state.executeAsync(source), { name: 'TypeError' });
+
+        const chosen = await choosePoint();
+
+        assert.equal(chosen.x, expected.x, `${source} must not change the next chosen column`);
+        assert.equal(chosen.y, expected.y, `${source} must not change the next chosen row`);
+    }
+});
