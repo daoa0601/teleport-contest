@@ -26,3 +26,27 @@ void test('a welded weapon refusal names the lamp the hero tried to rub', async 
     assert.equal(game.uwep, dagger);
     assert.equal(game.context.move, 0);
 });
+
+for (const [name, quantity, phrase] of [
+    ['Rays OF Dawn', 1, 'those oil lamp'],
+    ['PAIR OF LAMPS', 2, 'that oil lamps'],
+] as const) {
+    void test(`tool refusal treats plural wording in "${name}" without regard to case`, async () => {
+        freshObjectRoom({ flags: { verbose: true } });
+        const dagger = await addInventoryObject(DAGGER, { cursed: true });
+        await setPrimaryWeapon(dagger);
+        const lamp = await addInventoryObject(OIL_LAMP, { oname: name, quan: quantity });
+        const input = resetInputState();
+        await setTopline('');
+
+        await answerPrompts(runExtendedCommand('rub', lamp.invlet), input, [{
+            prompt: /you cannot rub /,
+            keys: ' ',
+        }]);
+
+        assert.equal(game._lastPlineMessage,
+            `Since your weapon is welded to your hand, you cannot rub ${phrase} named ${name}.`);
+        assert.equal(game.uwep, dagger);
+        assert.equal(game.context.move, 0);
+    });
+}
