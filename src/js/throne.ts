@@ -105,6 +105,7 @@ function removeThrone(x: number, y: number): void {
     if (!location) return;
     location.typ = ROOM;
     location.flags = 0;
+    location.looted = 0;
     map_background(x, y, false);
     newsym_force(x, y);
 }
