@@ -25,6 +25,14 @@ void test('alignment filters remove roles with no permitted alignment', async ()
     assert.equal(rows.some(row => row.includes('a Knight')), false);
     assert.equal(rows.some(row => row.includes('a Healer')), false);
 });
+void test('role choices check race and alignment filters independently', async () => {
+    await start('n~HEGO>L\n');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+    assert.ok(rows.some(row => row.includes('a - an Archeologist')), 'Archeologist permits dwarf and an unfiltered alignment independently');
+    assert.ok(rows.some(row => row.includes('c - a Caveman/Cavewoman')));
+    assert.ok(rows.some(row => row.includes('v - a Valkyrie')));
+    assert.equal(rows.some(row => row.includes('w - a Wizard')), false);
+});
 void test('cancelling filter edits keeps all races available', async () => {
     await start('n~H\x1bkmy');
     assert.equal(game.moves, 1);

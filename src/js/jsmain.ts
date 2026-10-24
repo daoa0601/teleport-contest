@@ -29,7 +29,7 @@ import {
 } from './character_choices.js';
 import type { ParsedCharacterName } from './character_name.js';
 import {
-    characterAlignmentAllowed, characterRaceAllowed, characterRoleAllowed,
+    characterAlignmentAllowed, characterGenderAllowed, characterRaceAllowed, characterRoleAllowed,
     createCharacterFilters, editCharacterFilters, hasCharacterFilters,
 } from './character_filters.js';
 import type {
@@ -628,26 +628,6 @@ export class Engine {
             const entry = CHARACTER_ROLE_MENU.find(candidate => candidate[0] === key);
             return entry && roles.find(candidate => candidate.key === entry[1]);
         };
-        const allSelectableRoles = (): Role[] => CHARACTER_ROLE_MENU
-            .map(([, key]) => roles.find(candidate => candidate.key === key))
-            .filter((candidate): candidate is Role => !!candidate && !filteredRoles.has(candidate.key));
-        const hasCompletion = (
-            role: RoleChoice, race: RaceChoice, gender: GenderChoice, alignment: AlignmentChoice,
-        ): boolean => {
-            const candidates = role ? [role] : allSelectableRoles();
-            const candidateRaces = race ? [race]
-                : races.filter(candidate => !filteredRaces.has(candidate.name));
-            return candidates.some(candidateRole => candidateRaces.some(candidateRace =>
-                genders.some(candidateGender => !filteredGenders.has(candidateGender.name)
-                    && (gender ? candidateGender === gender : true)
-                    && aligns.some(candidateAlignment =>
-                        !filteredAlignments.has(candidateAlignment.name)
-                        && (alignment ? candidateAlignment === alignment : true)
-                        && validCharacterChoice(
-                            candidateRole, candidateRace,
-                            candidateGender, candidateAlignment,
-                        )))));
-        };
         const availableRaces = (
             role: RoleChoice, gender: GenderChoice, alignment: AlignmentChoice,
         ): Race[] => races.filter(race =>
@@ -666,7 +646,13 @@ export class Engine {
         ): RoleCandidate[] => CHARACTER_ROLE_MENU.flatMap(entry => {
             if (filteredRoles.has(entry[1])) return [];
             const role = roleByKey(entry[0]);
-            return role && hasCompletion(role, race, gender, alignment)
+            const choices = { role, race, gender, alignment };
+            // pick_role() and setup_rolemenu() test each facet separately;
+            // their surviving race and alignment need not form one tuple.
+            return role && characterRoleAllowed(filters, choices)
+                && characterRaceAllowed(filters, choices)
+                && characterGenderAllowed(filters, choices)
+                && characterAlignmentAllowed(filters, choices)
                 ? [[entry, role] satisfies RoleCandidate] : [];
         });
 

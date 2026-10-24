@@ -13,7 +13,7 @@ import { plineWithContinuation } from './display.js';
 import { findRole, findRace, findAlignment, findGender, randomCharacterOption, roles, races, aligns, genders, } from './roles.js';
 import { parseCharacterName } from './character_name.js';
 import { characterSelectionQuestion, hasCharacterCompletion, nativeRoleChoices, pickCharacterChoice, rigidCharacterChecks, ROLE_SELECTION_RULES, RACE_SELECTION_RULES, validCharacterAlignment, validCharacterChoice, validCharacterGender, validCharacterRace, } from './character_choices.js';
-import { characterAlignmentAllowed, characterRaceAllowed, characterRoleAllowed, createCharacterFilters, editCharacterFilters, hasCharacterFilters, } from './character_filters.js';
+import { characterAlignmentAllowed, characterGenderAllowed, characterRaceAllowed, characterRoleAllowed, createCharacterFilters, editCharacterFilters, hasCharacterFilters, } from './character_filters.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
@@ -558,19 +558,6 @@ export class Engine {
             const entry = CHARACTER_ROLE_MENU.find(candidate => candidate[0] === key);
             return entry && roles.find(candidate => candidate.key === entry[1]);
         };
-        const allSelectableRoles = () => CHARACTER_ROLE_MENU
-            .map(([, key]) => roles.find(candidate => candidate.key === key))
-            .filter((candidate) => !!candidate && !filteredRoles.has(candidate.key));
-        const hasCompletion = (role, race, gender, alignment) => {
-            const candidates = role ? [role] : allSelectableRoles();
-            const candidateRaces = race ? [race]
-                : races.filter(candidate => !filteredRaces.has(candidate.name));
-            return candidates.some(candidateRole => candidateRaces.some(candidateRace => genders.some(candidateGender => !filteredGenders.has(candidateGender.name)
-                && (gender ? candidateGender === gender : true)
-                && aligns.some(candidateAlignment => !filteredAlignments.has(candidateAlignment.name)
-                    && (alignment ? candidateAlignment === alignment : true)
-                    && validCharacterChoice(candidateRole, candidateRace, candidateGender, candidateAlignment)))));
-        };
         const availableRaces = (role, gender, alignment) => races.filter(race => !filteredRaces.has(race.name)
             && validCharacterRace(role, race, alignment));
         const availableGenders = (role, race, alignment) => genders.filter(gender => !filteredGenders.has(gender.name)
@@ -581,7 +568,13 @@ export class Engine {
             if (filteredRoles.has(entry[1]))
                 return [];
             const role = roleByKey(entry[0]);
-            return role && hasCompletion(role, race, gender, alignment)
+            const choices = { role, race, gender, alignment };
+            // pick_role() and setup_rolemenu() test each facet separately;
+            // their surviving race and alignment need not form one tuple.
+            return role && characterRoleAllowed(filters, choices)
+                && characterRaceAllowed(filters, choices)
+                && characterGenderAllowed(filters, choices)
+                && characterAlignmentAllowed(filters, choices)
                 ? [[entry, role]] : [];
         });
         const facetSummary = (role, race, gender, alignment) => [
