@@ -209,6 +209,39 @@ void test('POSIX groups and bracketed group punctuation still filter messages', 
     assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
 });
 
+for (const pattern of ['bell|', '|bell', 'bell||gong', '(bell|)', '(|bell)', '((bell|))']) {
+    void test(`MSGTYPE rejects the empty alternative in ${pattern} and keeps messages visible`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "${pattern}"`);
+
+        await plineWithContinuation('A bell rings.');
+        await flush_screen(1);
+
+        const errors = config.configErrors.flatMap(report => report.errors);
+        assert.equal(errors.length, 1);
+        assert.equal(errors[0]?.message, 'MSGTYPE regex error: empty (sub)expression');
+        assert.equal(topline(), 'A bell rings.');
+    });
+}
+
+for (const [pattern, hidden] of [
+    ['A (bell|()) rings[.]', 'A  rings.'],
+    ['A ([|]|bell) rings[.]', 'A | rings.'],
+    ['A (\\||bell) rings[.]', 'A | rings.'],
+] as const) {
+    void test(`MSGTYPE accepts the nonempty alternatives in ${pattern}`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "^${pattern}$"`);
+
+        await plineWithContinuation(hidden);
+        await plineWithContinuation('The door opens.');
+        await flush_screen(1);
+
+        assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
+        assert.equal(topline(), 'The door opens.');
+    });
+}
+
 for (const [pattern, diagnostic] of [
     ['bell{2', 'braces not balanced'],
     ['bell{2,', 'braces not balanced'],

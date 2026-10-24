@@ -65,6 +65,8 @@ function posixPattern(pattern: string): string {
     let inSet = false;
     let setStart = -1;
     let repeatable = false;
+    let groupDepth = 0;
+    let branchStart = 0;
     for (let index = 0; index < pattern.length; index++) {
         const ch = pattern.charAt(index);
         if (inSet && pattern.startsWith('[:', index)) {
@@ -99,6 +101,20 @@ function posixPattern(pattern: string): string {
         } else if (!inSet && ch === '(' && pattern.charAt(index + 1) === '?') {
             // POSIX ERE has no group prefixes; '?' here has no operand.
             throw new SyntaxError('repetition-operator operand invalid');
+        } else if (!inSet && ch === '(') {
+            groupDepth++;
+            branchStart = index + 1;
+            result += ch;
+        } else if (!inSet && ch === '|') {
+            if (index === branchStart) throw new SyntaxError('empty (sub)expression');
+            branchStart = index + 1;
+            result += ch;
+        } else if (!inSet && ch === ')' && groupDepth > 0) {
+            // An empty group is valid, but either side of '|' needs an expression.
+            if (index === branchStart && pattern.charAt(index - 1) === '|')
+                throw new SyntaxError('empty (sub)expression');
+            groupDepth--;
+            result += ch;
         } else if (!inSet && ch === '{') {
             const repetition = posixRepetition(pattern.slice(index), repeatable);
             if (repetition === null) {
@@ -116,6 +132,8 @@ function posixPattern(pattern: string): string {
         if (!inSet && ch !== '{') repeatable = !'(^$|*+?'.includes(ch);
     }
     if (inSet) throw new SyntaxError('brackets ([ ]) not balanced');
+    if (groupDepth > 0) throw new SyntaxError('parentheses not balanced');
+    if (branchStart === pattern.length) throw new SyntaxError('empty (sub)expression');
     return result;
 }
 
