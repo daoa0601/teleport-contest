@@ -40,6 +40,10 @@ function luaCoordinate(value: LuaValue | undefined): number {
     return coordxy(luaInteger(value));
 }
 
+function luaInt(value: LuaValue | undefined): number {
+    return luaInteger(value) | 0;
+}
+
 // The two-axis get form uses lua_tointeger, which returns zero on failure.
 function getAxis(value: LuaValue | undefined): number {
     const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : 0;
@@ -92,7 +96,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const coordinate = args.length === 0 ? null
             : { x: luaCoordinate(args[0]), y: luaCoordinate(args[1]) };
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
-        selection_setpoint(point.x, point.y, selection.selection, luaInteger(args[2] ?? 1));
+        selection_setpoint(point.x, point.y, selection.selection, luaInt(args[2] ?? 1));
         return self ?? wrap(selection);
     };
     const get = async (self: LuaValue, ...args: LuaValue[]) => {
@@ -119,10 +123,10 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         ? new SpecialSelection().negate()
         : selectionValue(self).negate());
     const percentage = (self: LuaValue, percent: LuaValue) => wrap(
-        selectionValue(self).percentage(luaInteger(percent)),
+        selectionValue(self).percentage(luaInt(percent)),
     );
     const filterMapchar = (self: LuaValue, character: LuaValue, lit: LuaValue = -2) => wrap(
-        selectionValue(self).filterMapCharacter(luaString(character), luaInteger(lit ?? -2)),
+        selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)),
     );
     const grow = (self: LuaValue, direction: LuaValue = 'all') => {
         const name = luaString(direction ?? 'all');
@@ -131,7 +135,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         return wrap(selectionValue(self).grow(name));
     };
     const rndcoord = (self: LuaValue, remove: LuaValue = 0) => pointTable(
-        relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)))
+        relativePoint(selectionValue(self).randomCoordinate(!!luaInt(remove ?? 0)))
             ?? { x: -1, y: -1 },
     );
     const bounds = (self: LuaValue) => boundsTable(selectionValue(self).bounds());
@@ -163,9 +167,9 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         const result = self ? selectionValue(self) : new SpecialSelection();
         const x = luaInteger(args[0]), y = luaInteger(args[1]);
-        const radiusX = luaInteger(args[2]);
-        const radiusY = circular ? radiusX : luaInteger(args[3]);
-        const filled = luaInteger(args[circular ? 3 : 4] ?? 0);
+        const radiusX = luaInt(args[2]);
+        const radiusY = circular ? radiusX : luaInt(args[3]);
+        const filled = luaInt(args[circular ? 3 : 4] ?? 0);
         const point = explicitPoint(x, y);
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return self ?? wrap(result);
@@ -195,7 +199,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
         return wrap(specialSelectionRandLine(
             start.x, start.y, end.x, end.y,
-            luaInteger(args[4] ?? 7),
+            luaInt(args[4] ?? 7),
             12,
             result,
         ));
@@ -241,7 +245,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
         room: (...args) => {
             const candidate = args.length === 1
-                ? game.level?.rooms[luaInteger(args[0])] : undefined;
+                ? game.level?.rooms[luaInt(args[0])] : undefined;
             return wrap(new SpecialSelection(selection_from_mkroom(
                 isRoom(candidate) ? candidate : currentContext()._room,
             )));

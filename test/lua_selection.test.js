@@ -287,4 +287,26 @@ void test('selection point and gradient arguments use native coordinate conversi
     await assert.rejects(state.executeAsync('selection.set(1, 2, 3)'), /requires a selection/);
     await assert.rejects(state.executeAsync('selection.new():get({x = 0, [2] = 0})'), /integer/);
 });
+void test('selection integer options narrow before percentage, removal, lighting and fill decisions', async (t) => {
+    const game = freshGame();
+    game.level.requireAt(12, 6).typ = ROOM;
+    game.level.requireAt(12, 6).lit = true;
+    initRng(17);
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+    await state.executeAsync(`
+        local point = selection.set(12, 6)
+        percentage = point:percentage(4294967296):numpoints()
+        point:rndcoord(4294967296)
+        remaining = point:numpoints()
+        lighting = point:filter_mapchar(".", 4294967296):numpoints()
+        filled = selection.circle(12, 6, 1, 4294967296):get(12, 6)
+    `);
+    assert.equal(state.getGlobal('percentage'), 0);
+    assert.equal(state.getGlobal('remaining'), 1);
+    assert.equal(state.getGlobal('lighting'), 0);
+    assert.equal(state.getGlobal('filled'), 0);
+});
 //# sourceMappingURL=lua_selection.test.js.map

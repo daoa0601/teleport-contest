@@ -10,6 +10,9 @@ function coordxy(value) {
 function luaCoordinate(value) {
     return coordxy(luaInteger(value));
 }
+function luaInt(value) {
+    return luaInteger(value) | 0;
+}
 // The two-axis get form uses lua_tointeger, which returns zero on failure.
 function getAxis(value) {
     const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : 0;
@@ -61,7 +64,7 @@ export function createSelectionApi(context, invoke = null) {
         const coordinate = args.length === 0 ? null
             : { x: luaCoordinate(args[0]), y: luaCoordinate(args[1]) };
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
-        selection_setpoint(point.x, point.y, selection.selection, luaInteger(args[2] ?? 1));
+        selection_setpoint(point.x, point.y, selection.selection, luaInt(args[2] ?? 1));
         return self ?? wrap(selection);
     };
     const get = async (self, ...args) => {
@@ -91,15 +94,15 @@ export function createSelectionApi(context, invoke = null) {
     const negate = (self) => wrap(self == null
         ? new SpecialSelection().negate()
         : selectionValue(self).negate());
-    const percentage = (self, percent) => wrap(selectionValue(self).percentage(luaInteger(percent)));
-    const filterMapchar = (self, character, lit = -2) => wrap(selectionValue(self).filterMapCharacter(luaString(character), luaInteger(lit ?? -2)));
+    const percentage = (self, percent) => wrap(selectionValue(self).percentage(luaInt(percent)));
+    const filterMapchar = (self, character, lit = -2) => wrap(selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)));
     const grow = (self, direction = 'all') => {
         const name = luaString(direction ?? 'all');
         if (!['all', 'random', 'north', 'south', 'east', 'west'].includes(name))
             throw new TypeError(`Unknown selection growth direction: ${name}`);
         return wrap(selectionValue(self).grow(name));
     };
-    const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)))
+    const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInt(remove ?? 0)))
         ?? { x: -1, y: -1 });
     const bounds = (self) => boundsTable(selectionValue(self).bounds());
     const explicitPoint = (x, y) => {
@@ -131,9 +134,9 @@ export function createSelectionApi(context, invoke = null) {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         const result = self ? selectionValue(self) : new SpecialSelection();
         const x = luaInteger(args[0]), y = luaInteger(args[1]);
-        const radiusX = luaInteger(args[2]);
-        const radiusY = circular ? radiusX : luaInteger(args[3]);
-        const filled = luaInteger(args[circular ? 3 : 4] ?? 0);
+        const radiusX = luaInt(args[2]);
+        const radiusY = circular ? radiusX : luaInt(args[3]);
+        const filled = luaInt(args[circular ? 3 : 4] ?? 0);
         const point = explicitPoint(x, y);
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return self ?? wrap(result);
@@ -158,7 +161,7 @@ export function createSelectionApi(context, invoke = null) {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         const result = self ? selectionValue(self).clone() : new SpecialSelection();
         const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
-        return wrap(specialSelectionRandLine(start.x, start.y, end.x, end.y, luaInteger(args[4] ?? 7), 12, result));
+        return wrap(specialSelectionRandLine(start.x, start.y, end.x, end.y, luaInt(args[4] ?? 7), 12, result));
     };
     const iterate = async (self, callback) => {
         if (!invoke)
@@ -200,7 +203,7 @@ export function createSelectionApi(context, invoke = null) {
         match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
         room: (...args) => {
             const candidate = args.length === 1
-                ? game.level?.rooms[luaInteger(args[0])] : undefined;
+                ? game.level?.rooms[luaInt(args[0])] : undefined;
             return wrap(new SpecialSelection(selection_from_mkroom(isRoom(candidate) ? candidate : currentContext()._room)));
         },
     };
