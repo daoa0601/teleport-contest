@@ -5175,13 +5175,12 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
     }
     const weapon = game.uwep;
     const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
+    const discoveredWeld = !!weapon && !weapon.bknown;
     if (weapon && (ringSlot === primary || OBJECT_BIMANUAL[weapon.otyp])
         && isWeldedPrimary(weapon)) {
-        const discovered = !weapon.bknown;
-        weapon.bknown = true;
         const handName = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(heroHandName(game)) : heroHandName(game);
         await pline(`You cannot free your weapon ${handName} to put on the ring.`);
-        game.context.move = discovered ? 1 : 0;
+        game.context.move = discoveredWeld ? 1 : 0;
         return;
     }
     const touch = await retouchHeroObject(object);
@@ -6187,11 +6186,12 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
         return { item: null, spentTime: false, cancelled: true };
     }
 
+    const knewWeld = !!item.bknown;
     if (isWeldedPrimary(item)) {
         // getobj() tests splittable() first for a partial count. That test
         // reveals the weld before doquiver_core() checks whether it is new.
-        if (selection.count !== null && selection.count < item.quan) item.bknown = true;
-        const spentTime = !item.bknown;
+        const countedPart = selection.count !== null && selection.count < item.quan;
+        const spentTime = !knewWeld && !countedPart;
         await refuseWeldedPrimary();
         resetBulkTakeoff();
         game.context.move = spentTime ? 1 : 0;
