@@ -20,8 +20,8 @@ import {
     A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
     DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED,
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE,
-    MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD,
-    WEB, isok,
+    MAXULEV, P_BASIC, P_RIDING, PIT, SPIKED_PIT, SQKY_BOARD, WEB,
+    WT_TOOMUCH_DIAGONAL, isok,
 } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
@@ -37,12 +37,13 @@ import type { Trap, MapLocation, Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import type { DirectionSelection } from './tty_prompts.js';
 import { convertTrapToObject } from './trap_object.js';
-import { heroBadRock, heroTightDiagonalReason } from './hack.js';
+import { heroBadRock } from './hack.js';
+import { consumeObjectCharge } from './object_charge.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { maketrap } from './mklev.js';
-import { dismountHero } from './steed.js';
+import { dismountHero, riderCannotReachMessage } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectTypeKnown } from './shk.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
@@ -53,6 +54,9 @@ import {
     MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE,
     MONSTER_SYMBOL, monsterIsMindless, monsterTypeName,
 } from './monster_data.js';
+import { MONSTER_SIZE } from './monster_data.js';
+import { propertyIsActive } from './properties.js';
+
 import {
     ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
     LARGE_BOX, CHEST, OBJECT_BIMANUAL, POT_OIL,
@@ -62,7 +66,7 @@ import { recordObjectKnowledge } from './object_knowledge.js';
 import {
     heroHasNoHands,
 } from './polyself.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { promptYesNoQuit } from './query.js';
 import { d, rnd, rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -71,7 +75,7 @@ import {
 } from './stoning.js';
 import { promptDirection } from './tty_prompts.js';
 import {
-    EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, nearCapacity, objectWeight,
+    EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight,
 } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
@@ -87,7 +91,7 @@ const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
 const G_UNIQ = 0x1000;
 const S_HUMAN = 53;
-
+const MZ_LARGE = 3;
 interface TrapEntryResult {
     entered: boolean;
     died: boolean;
@@ -458,16 +462,25 @@ async function tryDisarm(trap: Trap, {
     }
     const dx = trap.tx - state.u.ux;
     const dy = trap.ty - state.u.uy;
-    const tightDiagonal = dx && dy
+    // C trap.c:5461-5469 duplicates only the tight-space core of
+    // test_move(): bad rock in both orthogonal squares plus overencumbrance
+    // or a big form.  cant_squeeze_thru()'s extra exemptions do not apply.
+    const tooTight = !!(dx && dy
         && heroBadRock(state, state.u.ux, trap.ty)
         && heroBadRock(state, trap.tx, state.u.uy)
-        && heroTightDiagonalReason(state);
-    if (tightDiagonal) {
+        && (((state.inventory || []).length > 0
+            && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
+            || (MONSTER_SIZE[heroSpecies(state)] ?? 2) >= MZ_LARGE));
+    if (tooTight) {
         await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
     if (!heroCanReachFloor(state, { checkPit: here })) {
-        await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
+        if (state.u.usteed
+            && (state.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC)
+            await publish(riderCannotReachMessage(state));
+        else
+            await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
 
@@ -505,8 +518,11 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
 }: RescueOptions): Promise<void> {
     if (trap.ttyp === BEAR_TRAP) {
         if (monster.mtame) {
+            // C trap.c:5485-5486 -> abuse_dog(): Aggravate_monster or
+            // Conflict halves tameness instead of the single-point hit.
             monster.mtame = heroHasConflict(state)
-                ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
+                || propertyIsActive('aggravateMonster', state)
+                    ? Math.trunc(monster.mtame / 2) : monster.mtame - 1;
             if (monster.mtame > 0 && monster.edog)
                 monster.edog.abuse = (monster.edog.abuse ?? 0) + 1;
         }
@@ -554,12 +570,20 @@ async function disarmHoldingTrap(trap: Trap, options: FloorTrapOptions): Promise
         await convertTrapToObject(trap, BEARTRAP, 1, state);
         return true;
     } else {
-        const blade = webCuttingWeapon(trap, state);
+        // C trap.c:5575-5586 picks the blade without regard to the monster
+        // that was just extracted, and names the primary weapon's artifact
+        // (bare_artifactname(uwep)) for the fiery-blade message.
+        const primary = state.uwep || state.u?.uwep;
+        const secondary = state.uswapwep || state.u?.uswapwep;
+        const blade = primary && isBlade(primary) ? primary
+            : state.u.twoweap && secondary && isBlade(secondary)
+                ? secondary : null;
         const artifact = artifactById(blade?.oartifact, state);
-        if (artifact?.name === 'Sting')
+        const primaryArtifact = artifactById(primary?.oartifact, state);
+        if (blade && artifact && blade === primary && artifact.name === 'Sting')
             await publish(`Sting cuts through ${possessiveTrap(trap)} web!`);
-        else if (artifact?.attack?.damageType === 'fire')
-            await publish(`${artifact.name} burns through ${possessiveTrap(trap)} web!`);
+        else if (blade && artifact && artifact.attack?.damageType === 'fire')
+            await publish(`${(primaryArtifact ?? artifact).name} burns through ${possessiveTrap(trap)} web!`);
         else if (blade)
             await publish(`You cut through ${possessiveTrap(trap)} web.`);
         else await publish(`You succeed in removing ${possessiveTrap(trap)} web.`);
@@ -598,7 +622,7 @@ async function disarmSqueakyBoard(trap: Trap, options: FloorTrapOptions): Promis
     if (result < 2) return result !== 0;
 
     if (tool.otyp === CAN_OF_GREASE) {
-        tool.spe = Math.max(0, (tool.spe ?? 0) - 1);
+        await consumeObjectCharge(tool, { state: options.state });
     } else {
         await consumeOne(tool, options.state);
         recordObjectKnowledge(POT_OIL, options.state);

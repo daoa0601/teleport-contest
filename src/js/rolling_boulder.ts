@@ -40,6 +40,7 @@ import { observeObject } from './object_knowledge.js';
 import { shipObject } from './object_migration.js';
 import { unlinkObject } from './object_location.js';
 import { splitObjectStack } from './object_stack.js';
+import { maybeUnhideAt } from './monster_hiding.js';
 import { relocateObjectRandomly } from './object_teleport.js';
 import type { GameObject } from './object_types.js';
 import { killerObjectName, objectCombatName } from './objnam.js';
@@ -98,12 +99,16 @@ export async function launchRollingBoulder(start: Position, endpoint: Position, 
         if (!boulder) return false;
         [source, destination] = [destination, source];
     }
+    // C trap.c:3293-3295: taking the last boulder off the launch square
+    // exposes anything that was hiding beneath it.
+    const tookWholePile = boulder.quan <= 1;
     if (boulder.quan > 1) {
         const single = splitObjectStack(boulder, 1, state);
         if (!single) throw new Error(`Cannot launch one boulder from stack ${boulder.o_id}`);
         boulder = single;
     }
     unlinkObject(boulder, state);
+    if (tookWholePile) maybeUnhideAt(source.x, source.y, state);
     newsym(source.x, source.y);
     vision_note_blocker_change(source.x, source.y);
     const digging = state.context.digging;
