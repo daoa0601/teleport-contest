@@ -4,8 +4,6 @@ import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IRONBARS, IS_OBSTRUCTED, Is_airlevel, Is_rogue_level, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, ROLLING_BOULDER_TRAP, SHOPBASE, STONE, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, W_NONDIGGABLE, is_pit, isok, } from './const.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
-import { isRider } from './corpse_species.js';
 import { canSpotMonster, feel_location, glyphAt, map_invisible, map_object, newsym, plineWithContinuation, unmap_invisible, } from './display.js';
 import { levelAtDepth } from './dungeon.js';
 import { useUpFloorObject } from './floor_consumption.js';
@@ -18,10 +16,10 @@ import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { randomTeleportDepth } from './level_teleport.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNoncorporeal } from './monster_data.js';
+import { MONSTER_FLAGS2, monsterIsNoncorporeal } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
-import { BOULDER, CORPSE } from './object_data.js';
+import { BOULDER } from './object_data.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { relocateObjectRandomly } from './object_teleport.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
@@ -35,8 +33,7 @@ import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { addShopObjectToBill, billForObject, costlySpot, removeObjectAndContentsFromBill, shopResident, } from './shk.js';
 import { findObjectOwner, stolenValue } from './shop_loss.js';
-import { relocateMonsterTo } from './teleport.js';
-import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
+import { reviveNastyAt } from './revive_nasty.js';
 import { surfaceName } from './terrain_name.js';
 import { feelTrap, seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -105,7 +102,7 @@ async function pushBoulders(sx, sy, dx, dy) {
             await plineWithContinuation(`The ${objectCombatName(boulder)} won't roll diagonally on this ${surfaceName(sx, sy)}.`);
             return cannotPush(boulder, sx, sy);
         }
-        if (await reviveNasty(rx, ry))
+        if (await reviveNastyAt(rx, ry, 'You sense movement on the other side.'))
             return false;
         if (monster && !monsterIsNoncorporeal(monster)
             && (!monster.mtrapped || !trap || !is_pit(trap.ttyp))) {
@@ -368,32 +365,5 @@ async function moveBoulder(boulder, sx, sy, rx, ry, costly) {
         if (owner && !roomsAt(game.level, rx, ry, SHOPBASE).includes(owner.eshk.shoproom))
             await stolenValue(boulder, sx, sy, true, { silent: false });
     }
-}
-async function reviveNasty(x, y) {
-    requirePlayingGame(game);
-    let revived = false;
-    for (const corpse of [...game.level.objects[x]?.[y] ?? []]) {
-        if (corpse.otyp !== CORPSE
-            || !(isRider(corpse.corpsenm) || MONSTER_NAME[corpse.corpsenm ?? -1] === 'Wizard of Yendor'))
-            continue;
-        const occupant = monsterAtPosition(game.level, x, y);
-        if (occupant)
-            await moveRevivalOccupant(occupant, x, y);
-        await plineWithContinuation('You sense movement on the other side.', { noRepeat: true });
-        const revival = await reviveCorpseImmediately(corpse);
-        if (revival)
-            for (const message of revival.messages)
-                await plineWithContinuation(message);
-        revived = revival?.kind === 'revived';
-    }
-    const monster = revived ? monsterAtPosition(game.level, x, y) : null;
-    if (monster && !goodPosition(x, y, { kind: 'monster', monster }))
-        await moveRevivalOccupant(monster, x, y);
-    return revived;
-}
-async function moveRevivalOccupant(monster, x, y) {
-    const position = findNearbyMonsterPosition(monster.mnum, x, y);
-    if (position)
-        await relocateMonsterTo(monster, position.x, position.y);
 }
 //# sourceMappingURL=boulder_push.js.map

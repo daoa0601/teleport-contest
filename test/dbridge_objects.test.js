@@ -8,7 +8,8 @@ import { moveObject, placeCreatedObject } from '../js/floor_object.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { BELL_OF_OPENING, ROCK, SACK } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
-import { knownObject } from './support/game-objects.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 function bridgeRoom(open = false) {
     const level = freshGameplayRoom();
@@ -45,5 +46,13 @@ void test('a rising drawbridge destroys a punishment ball and releases the hero'
     assert.equal(game.u.punished, false);
     assert.equal(game.uball, null);
     assert.equal(game.uchain, null);
+});
+void test('a lowering drawbridge revives a Rider before destroying the floor pile', async () => {
+    const level = bridgeRoom();
+    const death = MONSTER_NAME.indexOf('Death');
+    const corpse = placeCreatedObject(await untimedCorpse(death), 12, 10);
+    await openDrawbridge(12, 10);
+    assert.equal(corpse.where, 'gone');
+    assert.equal(level.monsters.some(monster => monster.mnum === death && monster.mhp > 0), true);
 });
 //# sourceMappingURL=dbridge_objects.test.js.map

@@ -14,6 +14,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { delobj } from './object_delete.js';
 import { unpunishHero } from './punishment.js';
 import { heroIsDeaf } from './senses.js';
+import { reviveNastyAt } from './revive_nasty.js';
 import { cansee, vision_note_blocker_change, vision_recalc, } from './vision.js';
 function directionFromBridgeToWall(bridge) {
     const direction = (bridge.drawbridgemask || 0) & DB_DIR;
@@ -97,6 +98,9 @@ function removeEngravingAt(x, y, state = game) {
     level.engravings = (level.engravings || []).filter(engraving => engraving.x !== x || engraving.y !== y);
 }
 async function clearDrawbridgeSquares(bridge, wall, includeWallObjects, state) {
+    await reviveNastyAt(bridge.x, bridge.y, null, state);
+    if (includeWallObjects)
+        await reviveNastyAt(wall.x, wall.y, null, state);
     await destroyObjectsAt(bridge.x, bridge.y, state);
     if (includeWallObjects)
         await destroyObjectsAt(wall.x, wall.y, state);

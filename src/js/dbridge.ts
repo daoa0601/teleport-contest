@@ -28,6 +28,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { delobj } from './object_delete.js';
 import { unpunishHero } from './punishment.js';
 import { heroIsDeaf } from './senses.js';
+import { reviveNastyAt } from './revive_nasty.js';
 import {
     cansee, vision_note_blocker_change, vision_recalc,
 } from './vision.js';
@@ -112,6 +113,8 @@ async function clearDrawbridgeSquares(
     includeWallObjects: boolean,
     state: GameState,
 ): Promise<void> {
+    await reviveNastyAt(bridge.x, bridge.y, null, state);
+    if (includeWallObjects) await reviveNastyAt(wall.x, wall.y, null, state);
     await destroyObjectsAt(bridge.x, bridge.y, state);
     if (includeWallObjects) await destroyObjectsAt(wall.x, wall.y, state);
     removeTrapAt(bridge.x, bridge.y, state);
