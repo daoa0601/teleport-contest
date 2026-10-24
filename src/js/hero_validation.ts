@@ -1,5 +1,5 @@
 import type {
-    Hero, HeroAlignment, HeroAttributes, HeroConduct, HeroEventFlag, HeroEvents,
+    Hero, HeroAttributes, HeroConduct, HeroEventFlag, HeroEvents,
     HeroPossessions, HeroRoleplay, HeroSkill,
 } from './hero_types.js';
 import type {
@@ -17,7 +17,7 @@ import { validSavedSpeciesOrNone } from './species_validation.js';
 import { validSavedGlyph } from './display_validation.js';
 import { validSavedDungeonLocation } from './map_validation.js';
 import {
-    validSavedAlignmentValue, validSavedAttributeValues,
+    validSavedAlignmentValue, validSavedAttributeValues, validSavedHeroAlignment,
 } from './character_validation.js';
 
 export function validSavedHero(
@@ -45,7 +45,7 @@ export function validSavedHero(
         urexp: optional(integer),
         ublesscnt: optional(integer),
         uac: optional(integer),
-        ualign: optional(validHeroAlignment),
+        ualign: optional(validSavedHeroAlignment),
         ualignbase: optional(validAlignmentBases),
         uroleplay: optional(validHeroRoleplay),
         rightHanded: optional(boolean),
@@ -213,12 +213,6 @@ const heroFlag = (value: unknown): value is HeroEventFlag =>
 
 function validHeroAttributes(value: unknown): value is HeroAttributes {
     return closedFieldsMatch<HeroAttributes>(value, { a: validSavedAttributeValues });
-}
-
-function validHeroAlignment(value: unknown): value is HeroAlignment {
-    return closedFieldsMatch<HeroAlignment>(value, {
-        type: validSavedAlignmentValue, record: integer, abuse: optional(integer),
-    });
 }
 
 function validAlignmentBases(value: unknown): value is [AlignmentValue, AlignmentValue] {

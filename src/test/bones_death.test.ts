@@ -101,7 +101,7 @@ void test('a mummy victim rises with their inventory and intrinsic resistances',
             ulevel: 8,
             uhpmax: 37,
             uluck: -2,
-            ualign: { type: 1, record: 10 },
+            ualign: { type: 1, record: 10, abuse: 3 },
             uevent: { udemigod: true, uhand_of_elbereth: 1 },
         },
     });
@@ -142,6 +142,7 @@ void test('a mummy victim rises with their inventory and intrinsic resistances',
     assert.equal(mummy.mhpmax, 37);
     assert.equal(mummy.female, true);
     assert.equal(mummy.msleeping, 1);
+    assert.deepEqual(mummy.mextra?.ebones?.oldalign, { type: 1, record: 10, abuse: 3 });
     assert.equal(mummy.minvent.includes(armor), true);
     assert.equal(mummy.minvent.includes(dagger), true);
     assert.equal(armor.owornmask, W_ARM);

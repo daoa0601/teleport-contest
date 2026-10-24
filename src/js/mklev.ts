@@ -3547,7 +3547,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 14;
+const BONES_VERSION = 15;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;

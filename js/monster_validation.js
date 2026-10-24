@@ -2,6 +2,7 @@ import { AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, M_AP_FURNITURE, M_AP_MONSTE
 import { SLIME_MOLD } from './object_data.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
+import { validSavedHeroAlignment } from './character_validation.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity, } from './saved_validation.js';
 const flag = (value) => typeof value === 'boolean' || value === 0 || value === 1;
 const position = (value) => closedFieldsMatch(value, { x: integer, y: integer });
@@ -89,7 +90,7 @@ const bones = (value) => closedFieldsMatch(value, {
     parentmid: integer,
     role: integer,
     race: integer,
-    oldalign: integer,
+    oldalign: validSavedHeroAlignment,
     deathlevel: integer,
     luck: integer,
     mnum: ismnum,

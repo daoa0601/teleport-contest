@@ -11,6 +11,7 @@ import {
 import { SLIME_MOLD } from './object_data.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
+import { validSavedHeroAlignment } from './character_validation.js';
 import {
     arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string,
     validateSavedEntity,
@@ -117,7 +118,7 @@ const bones: Check<BonesMonsterData> = (value): value is BonesMonsterData => clo
     parentmid: integer,
     role: integer,
     race: integer,
-    oldalign: integer,
+    oldalign: validSavedHeroAlignment,
     deathlevel: integer,
     luck: integer,
     mnum: ismnum,

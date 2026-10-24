@@ -3,7 +3,7 @@
 import { setMonsterGivenName } from './monster_given_name.js';
 import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, RLOC_NONE } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { removeMonsterFromGame } from './monster_departure.js';
@@ -90,6 +90,7 @@ export function giveHeroResistancesToMonster(monster, state = game) {
     return inherited;
 }
 export function completeBonesMonster(monster, state = game) {
+    requirePlayingGame(state);
     const name = state.plname || 'player';
     const finalRole = roleIndex(state);
     const finalRace = raceIndex(state);
@@ -97,7 +98,11 @@ export function completeBonesMonster(monster, state = game) {
         parentmid: monster.m_id,
         role: finalRole,
         race: finalRace,
-        oldalign: state.u?.ualign?.type ?? 0,
+        oldalign: {
+            type: state.u.ualign.type,
+            record: state.u.ualign.record,
+            abuse: state.u.ualign.abuse ?? 0,
+        },
         deathlevel: state.u?.ulevel ?? 0,
         luck: state.u?.uluck ?? 0,
         mnum: SPECIAL_PM + 1 + finalRole,
