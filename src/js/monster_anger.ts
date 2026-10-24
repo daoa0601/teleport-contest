@@ -388,7 +388,7 @@ async function angerQuestGuardiansAfterAttack(monster: Monster) {
     for (const guardian of guardians) guardian.mpeaceful = 0;
 
     const visibleCount = guardians.filter(guardian =>
-        canSpotMonster(guardian)).length;
+        canSeeMonster(guardian)).length;
     if (!visibleCount || heroIsHallucinating()) return;
     let name = monsterTypeName(game.urole.guardnum);
     if (visibleCount > 1) name = makePlural(name);

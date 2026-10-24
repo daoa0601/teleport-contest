@@ -9,6 +9,7 @@ import { angerMonster } from '../js/monster_anger.js';
 import { makeMonsterFlee } from '../js/monster_flee.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { initRng } from '../js/rng.js';
+import { makeBlinded } from '../js/sight_change.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function topline() {
@@ -16,6 +17,24 @@ async function topline() {
     const row = requireGameDisplay().grid[0];
     assert.ok(row, 'the display has a message row');
     return row.map(cell => cell.ch).join('').trimEnd();
+}
+for (const blind of [false, true]) {
+    void test(`quest guardians become angry ${blind ? 'silently when only sensed' : 'visibly when seen'}`, async () => {
+        freshObjectRoom({ role: 'archeologist', hero: { telepathy: true } });
+        requirePlayingGame(game);
+        const leader = await createMonsterAt('Lord Carnarvon', 11, 10, NO_MINVENT);
+        const guardian = await createMonsterAt('student', 12, 10, NO_MINVENT);
+        leader.mpeaceful = guardian.mpeaceful = 1;
+        if (blind)
+            await makeBlinded(10, { talk: false });
+        pushKeys(' '.repeat(20));
+        await angerMonster(leader, { attacked: true });
+        assert.equal(guardian.mpeaceful, 0);
+        if (blind)
+            assert.doesNotMatch(game._pending_message, /appears to be angry too/);
+        else
+            assert.match(game._pending_message, /The student appears to be angry too/);
+    });
 }
 void test('an immobile humanoid bystander flinches instead of announcing that it turns', async () => {
     freshObjectRoom();

@@ -1,17 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { PIT, POOL } from '../js/const.js';
+import { NO_MINVENT, PIT, POOL, W_AMUL } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { installSwallowedHero } from './support/hero-state.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { changeMonsterForm } from '../js/monster_polymorph.js';
 import {
     addInventoryObject, floorObject, knownObject,
 } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { dropObjectAtHero, hitFloorWithObject } from '../js/object_drop.js';
-import { OBJECT_NAMES, POT_OIL } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, CORPSE, OBJECT_NAMES, POT_OIL, STATUE } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { unlinkObject } from '../js/object_location.js';
 
@@ -66,6 +69,52 @@ void test('a digesting swallower instantly digests dropped meat', async () => {
 
     assert.equal(meat.where, 'gone');
     assert.equal(worm.minvent.includes(meat), false);
+});
+
+void test('a dropped cockatrice corpse petrifies its engulfer and gives the hero kill credit', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const worm = await createMonsterAt(PURPLE_WORM, 11, 10);
+    await installSwallowedHero(worm);
+    const x = worm.mx, y = worm.my;
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
+    pushKeys(' '.repeat(20));
+
+    await dropObjectAtHero(corpse);
+
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(worm.dead, true);
+    assert.equal(game.u.uconduct.killer, 1);
+    assert.equal(corpse.where, 'gone');
+    const statue = floorObjectsAt(level, x, y).find(object => object.otyp === STATUE);
+    assert.ok(statue, 'the engulfer leaves a statue at its original square');
+    assert.equal(statue.contents?.includes(corpse) ?? false, false);
+});
+
+void test('a dropped petrifying corpse gives unseen life-saving feedback without releasing the hero', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+    const amulet = await equipMonsterObject(worm, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+    await changeMonsterForm(worm, MONSTER_NAME.indexOf(PURPLE_WORM));
+    await installSwallowedHero(worm);
+    const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
+    const experience = game.u.uexp;
+    const messages: string[] = [];
+
+    await dropObjectAtHero(corpse, {
+        publish: async (message: string) => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes('Maybe not...'), `Expected life-saving feedback; got: ${messages.join(' | ')}`);
+    assert.equal(game.u.uswallow, 1);
+    assert.equal(game.u.ustuck, worm);
+    assert.equal(worm.mhp, worm.mhpmax);
+    assert.equal(amulet.where, 'gone');
+    assert.equal(corpse.where, 'gone');
+    assert.equal(game.u.uconduct.killer, 1);
+    assert.equal(game.u.uexp, experience);
+    assert.equal(floorObjectsAt(level, worm.mx, worm.my).some(object => object.otyp === STATUE), false);
 });
 
 // Non-food dropped while swallowed joins the swallower's pack.

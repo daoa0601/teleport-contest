@@ -169,7 +169,9 @@ export async function consumeMonsterObject(
             const stoning = await prepareMonsterPetrification(monster, { publish });
             if (stoning.heroDied) return;
             if (!stoning.survived)
-                await finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true, publish, random, rollDice });
+                await finishEnvironmentalMonsterDeath(monster, state, {
+                    noCorpse: true, stoneRemains: stoning.remains ?? null, publish, random, rollDice,
+                });
         }
     }
     if (state.program_state.gameover || monster.migrating || state.level !== level) return;

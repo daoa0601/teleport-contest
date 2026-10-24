@@ -100,7 +100,9 @@ async function eatMonsterBrain(
         const stone = await prepareMonsterPetrification(attacker, { publish });
         if (stone.heroDied) return { damage, hitFlags: M_ATTK_MISS, heroDied: true };
         if (stone.survived) return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
-        const death = await finishDeath(attacker, { noCorpse: true, random, publish });
+        const death = await finishDeath(attacker, {
+            noCorpse: true, stoneRemains: stone.remains ?? null, random, publish,
+        });
         if (death.heroDied) return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: true };
         if (attacker.mtame && !visible) {
             await publish('You have a sad thought for a moment, then it passes.');

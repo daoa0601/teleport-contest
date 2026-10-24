@@ -35,12 +35,12 @@ import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { publishMonsterGrowl, publishMonsterYelp } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, } from './monster_data.js';
 import { mksobj } from './mklev.js';
-import { migrateMonsterOffLevel, sendMonsterToLimbo } from './monster_migration.js';
+import { migrateMonsterOffLevel } from './monster_migration.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterAtPosition } from './monster_location.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
-import { moveMonsterNextToHero, relocateMonsterTo } from './teleport.js';
+import { dealWithMonsterOvercrowding, moveMonsterNextToHero, relocateMonsterTo } from './teleport.js';
 import { BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK, } from './object_data.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { placeObject, remove_object } from './floor_object.js';
@@ -138,9 +138,8 @@ function heroCarriesBillFor(keeper) {
 }
 // ---------------------------------------------------------------- relocation
 // C mon.c mnearto(): bring the monster to <x,y>; shove any resident of the
-// destination aside when moveOther is set.  A resident that cannot be
-// re-housed goes to limbo via the migration owner and re-arrives on this
-// level later (C deal_with_overcrowding() -> m_into_limbo()).
+// destination aside when moveOther is set. A resident without room uses
+// the endgame's overcrowding rules or waits in limbo elsewhere.
 export async function mnearto(monster, x, y, state, { moveOther = false, flags = RLOC_NOMSG } = {}) {
     if (monster.mx === x && monster.my === y
         && monsterAt(state, x, y) === monster)
@@ -162,7 +161,7 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
         const near = findNearbyMonsterPosition(monster.mnum, newx, newy, { state });
         if (!near) {
             if (othermon)
-                await sendMonsterToLimbo(othermon, state);
+                await dealWithMonsterOvercrowding(othermon, state);
             return 0;
         }
         newx = near.x;
@@ -172,7 +171,7 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
     if (moveOther && othermon) {
         const replaced = await mnearto(othermon, x, y, state, { moveOther: false, flags });
         if (!replaced)
-            await sendMonsterToLimbo(othermon, state);
+            await dealWithMonsterOvercrowding(othermon, state);
         return 2;
     }
     return 1;

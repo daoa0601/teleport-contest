@@ -26,6 +26,7 @@ import { setMonsterGivenName } from './monster_given_name.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
+import { describeStoneEngulferEscape } from './monster_stoning.js';
 import { resolveMonsterDeathExplosion, monsterHasDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion, } from './monster_explosion.js';
 import { corpseKeepsMonsterTraits } from './monster_traits.js';
 import { BOOMERANG, BULLWHIP, CLUB, CORPSE, ELVEN_SPEAR, GLOB_OF_GRAY_OOZE, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, QUARTERSTAFF, ROCK, SADDLE, SCR_BLANK_PAPER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
@@ -444,8 +445,9 @@ export async function finishMonsterKilled(monster, state, { damageType, cause = 
 export function finishEnvironmentalMonsterDeath(monster, state, options = {}) {
     return resolveMonsterDeath(monster, state, options);
 }
-async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFeeling = false, noCorpse = false, noRevive = false, zombifyCorpse = false, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false } = {}) {
+async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFeeling = false, noCorpse = false, noRevive = false, zombifyCorpse = false, stoneRemains = null, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false } = {}) {
     requireLiveGame(state);
+    const wasInside = !!state.u.uswallow && state.u.ustuck === monster;
     const recovery = await preventMonsterDeath(monster, {
         creditedKill: deathMessage,
         disintegrated,
@@ -462,6 +464,8 @@ async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFee
         if (await detachDeadMonster(monster, state, random, publish, rollOne))
             return { monster, survived: false, corpse: null, heroDied: true };
     }
+    if (wasInside)
+        await describeStoneEngulferEscape(monster, stoneRemains, state, publish);
     // C vamprises returns true even when its door already ran mondied.
     // An outer mondied still tries to leave remains; mondead does not.
     const death = noCorpse

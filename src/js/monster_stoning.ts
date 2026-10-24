@@ -9,6 +9,7 @@ import {
     canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
 import { expelHero } from './hero_expulsion.js';
+import { heroLocomotion } from './hero_locomotion.js';
 import { relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { surfaceName } from './terrain_name.js';
@@ -32,12 +33,12 @@ import {
 import { mkcorpstat, mksobj } from './mklev.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL,
-    monsterIsAmorphous, monsterTypeName,
+    monsterDigests, monsterIsAmorphous, monsterTypeName,
 } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
-import { corpseName } from './objnam.js';
+import { corpseName, objectName } from './objnam.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { useMonsterStoningCure } from './monster_stoning_cure.js';
@@ -439,7 +440,13 @@ export async function petrifyMonsterImmediately(monster: Monster, {
     }
     if (creditHero) recordHeroKillConduct();
 
-    return finishMonsterPetrification(monster, { finishDeath, publish });
+    const x = monster.mx, y = monster.my;
+    const result = await finishMonsterPetrification(monster, { finishDeath, publish });
+    // xkilled() reports unseen recovery even though monstone() has already
+    // returned without handing a surviving monster to the death handler.
+    if (creditHero && result.survived && !cansee(x, y))
+        await publish('Maybe not...');
+    return result;
 }
 
 // C mon.c:monstone(). Reversion and life saving precede statue creation.
@@ -476,7 +483,17 @@ async function finishMonsterPetrification(monster: Monster, {
     const result = await prepareMonsterPetrification(monster, { publish });
     if (result.heroDied || result.survived) return result;
     if (!finishDeath) throw new Error('Petrification requires a monster death handler');
-    await finishDeath(monster, { noCorpse: true });
+    await finishDeath(monster, { noCorpse: true, stoneRemains: result.remains ?? null, publish });
     if (game.program_state.gameover) return { heroDied: true };
     return result;
+}
+
+// monstone() describes escape after mondead() has released the hero, using
+// the monster's final species and the statue or rock it actually left.
+export async function describeStoneEngulferEscape(
+    monster: Monster, remains: GameObject | null, state: GameState,
+    publish: MessagePublisher,
+): Promise<void> {
+    if (!remains || !monsterDigests(monster)) return;
+    await publish(`You ${heroLocomotion('jump', state)} through an opening in the new ${objectName(remains, state)}.`);
 }
