@@ -79,7 +79,7 @@ import {
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
 import {
-    observeObjectForNaming, definiteName, objectCombatName, objectQuestion,
+    observeObjectForNaming, definiteName, objectCombatName, objectName, objectQuestion,
     simpleObjectName, simpleObjectNameWithArticle,
 } from './objnam.js';
 import { objectDescription } from './object_description.js';
@@ -416,7 +416,9 @@ function bareArtifactOrPlainName(weapon: GameObject | null | undefined,
     state: GameState): string {
     const artifact = artifactById(weapon?.oartifact, state);
     if (artifact) return artifact.name.replace(/^The /, 'the ');
-    return weapon ? simpleObjectName(weapon, state) : '';
+    if (!weapon) return '';
+    observeObjectForNaming(weapon, { state });
+    return objectName(weapon, state);
 }
 
 function untrapFailureRoll(trap: Trap, state: GameState, random: (limit: number) => number): number {

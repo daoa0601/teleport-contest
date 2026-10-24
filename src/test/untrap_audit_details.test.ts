@@ -150,31 +150,26 @@ void test('repairing a squeaky board with shop grease bills one charge', async (
 
 // C trap.c:5581 -> objnam.c bare_artifactname(uwep): the fiery-blade
 // message names the primary weapon even when the burning blade is the
-// secondary; a non-artifact primary is named by its plain xname().
-void test("a fiery secondary blade burns the web under the primary weapon's name", async () => {
-    let verified = false;
-    for (let seed = 1n; seed <= 60n && !verified; seed++) {
-        const level = freshPlayableRoom({});
-        addTrap(level, WEB, 11, 10, { tseen: true });
-        const mace = await addInventoryObject(MACE, { spe: 3 });
-        await setPrimaryWeapon(mace);
-        const fireBrand = await addInventoryItem(await artifactObject('Fire Brand'));
-        game.u.twoweap = true;
-        game.uswapwep = game.u.uswapwep = fireBrand;
-        const messages: string[] = [];
-        initRng(seed);
+// secondary. xname() observes a non-artifact primary and keeps its given name.
+void test("a fiery secondary blade names and observes the primary weapon while burning a web", async () => {
+    const level = freshPlayableRoom({});
+    const web = addTrap(level, WEB, 11, 10, { tseen: true });
+    const mace = await addInventoryObject(MACE,
+        { oname: 'Bob', dknown: false, observed: false });
+    await setPrimaryWeapon(mace);
+    const fireBrand = await addInventoryItem(await artifactObject('Fire Brand'));
+    game.u.twoweap = true;
+    game.uswapwep = game.u.uswapwep = fireBrand;
+    const messages: string[] = [];
+    initRng(1n);
 
-        await untrap({
-            chooseDirection: direction(1, 0),
-            publish: message => { messages.push(message); },
-            ask: async () => 'n',
-        });
+    await untrap({
+        chooseDirection: direction(1, 0),
+        publish: message => { messages.push(message); },
+        ask: async () => 'n',
+    });
 
-        if (!messages.some(message => message.includes('web'))) continue;
-        verified = true;
-        const text = messages.join(' | ');
-        assert.match(text, /mace burns through (?:your|the) web!/, text);
-        assert.doesNotMatch(text, /Fire Brand/);
-    }
-    assert.equal(verified, true, 'some seed must remove the web');
+    assert.equal(messages[0], 'mace named Bob burns through the web!');
+    assert.equal(mace.dknown, true, 'naming a visible weapon recognizes its appearance');
+    assert.equal(level.traps.includes(web), false);
 });
