@@ -2822,6 +2822,15 @@ export async function showMessageMenu(letter, pickMode, message) {
         await plineWithContinuation(message);
         return 0;
     }
+    // The choice's own formatting reported before tty drew it.
+    await publishDeferredImpossibles();
+    // tty_putstr() reaches update_topl(), which joins or pages older prose.
+    const pending = game._suppressMessagesUntilInput ? '' : game._pending_message || '';
+    const columns = game.nhDisplay?.cols ?? 80;
+    if (pending && message.length + pending.length + 3 < columns - 8)
+        message = `${pending}  ${message}`;
+    else if (pending)
+        await pageTopline(pending);
     game._pending_message = message;
     game._retained_message = '';
     const menuLetter = letter.charCodeAt(0);

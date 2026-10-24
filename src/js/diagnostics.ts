@@ -4,7 +4,7 @@ import { BUFSZ, PANICLOG, PATCHLEVEL, VERSION_MAJOR, VERSION_MINOR } from './con
 import { beginPanicOutput, plineWithContinuation, rawPrint } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { saveErrorGame } from './save.js';
-import { PanicTermination } from './panic_termination.js';
+import { FormatterPanic, PanicTermination } from './panic_termination.js';
 import type { GameState } from './game_state.js';
 
 export const FUZZER_OFF = 0;
@@ -66,6 +66,11 @@ export async function impossible(reason: string, { state = game }: { state?: Gam
 export function deferImpossible(reason: string, state: GameState = game): void {
     reason = diagnosticReason(reason);
     paniclog('impossible', reason, state);
+    // Native panics here, before the formatter's next statement.
+    if (fuzzerMode(state) === FUZZER_IMPOSSIBLE_PANIC) {
+        state.program_state.in_impossible = true;
+        throw new FormatterPanic(reason);
+    }
     (state.program_state.deferred_impossibles ??= []).push(reason);
 }
 

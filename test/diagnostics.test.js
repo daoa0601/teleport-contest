@@ -11,6 +11,8 @@ import { resetInputState } from '../js/input.js';
 import { Engine } from '../js/jsmain.js';
 import { hasErrorSave, restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { LEASH } from '../js/object_data.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function visibleText() {
     return requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
@@ -347,5 +349,37 @@ void test('declining a panic-save warning stops the outer Engine without making 
     assert.equal(game.moves, 0);
     assert.equal(game.level, null);
     assert.equal(hasErrorSave('Diagnostic', storage), true);
+});
+void test('a panic-mode report from an inventory name panics the Engine with that report', async () => {
+    const storage = memoryStorage();
+    const engine = new Engine({
+        seed: 1, storage, display: new GameDisplay(null),
+        nethackrc: 'OPTIONS=name:Diagnostic,role:valkyrie,race:human,gender:female,align:lawful,!legacy,!tutorial,!tips',
+    });
+    respondToInput(engine.inputGate, screen => {
+        if (/--More--|Hit space to continue/.test(screen))
+            return ' ';
+        return undefined;
+    }, 'formatter panic');
+    try {
+        await engine.runUntilInputNeeded();
+        const leash = await addInventoryObject(LEASH, { leashmon: 4242 });
+        game.flags.debug_fuzzer = 1;
+        engine.inputGate.feed('i');
+        await assert.rejects(engine.runUntilInputNeeded(), PanicTermination);
+        assert.equal(leash.leashmon, 4242, 'native panics before the formatter detaches the leash');
+        assert.ok(engine.lastRunResult !== null && engine.lastRunResult !== undefined);
+        assert.equal(engine.lastRunResult.kind, 'panicked');
+        assert.equal(engine.lastRunResult.reason, 'leashed monster #4242 not found');
+        assert.match(visibleText(), /Suddenly, the dungeon collapses\./);
+        assert.doesNotMatch(visibleText(), /an uncursed leash/);
+        assert.deepEqual(reports(storage), [
+            { type: 'impossible', reason: 'leashed monster #4242 not found' },
+            { type: 'panic', reason: 'leashed monster #4242 not found' },
+        ]);
+    }
+    finally {
+        await engine.lua.destroy();
+    }
 });
 //# sourceMappingURL=diagnostics.test.js.map

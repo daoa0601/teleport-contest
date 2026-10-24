@@ -4,8 +4,9 @@ import { rhack } from '../js/cmd.js';
 import { NO_MINVENT, PANICLOG } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { impossible } from '../js/diagnostics.js';
-import { inventoryItemDescription } from '../js/invent.js';
+import { FUZZER_IMPOSSIBLE_PANIC, impossible } from '../js/diagnostics.js';
+import { PanicTermination } from '../js/panic_termination.js';
+import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';
 import { LEASH, POT_HEALING, TIN, TIN_OPENER } from '../js/object_data.js';
 import { useTinOpener } from '../js/tin.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -116,5 +117,28 @@ void test('a stopped message window still shows a tin opener report before the w
     assert.ok(diagnostic < question, screens.join('\n----\n'));
     assert.doesNotMatch(screens[question] ?? '', /unpaid_cost/);
     assert.notEqual(game.uwep, opener, 'Escape answers the question, not the diagnostic');
+});
+void test('a singleton leash choice is read after its impossible() report, not over it', async () => {
+    freshPlayableRoom();
+    game.storage = memoryStorage();
+    const leash = await addInventoryObject(LEASH, { leashmon: 4242 });
+    const letter = leash.invlet ?? '';
+    const screens = recordScreens();
+    await selectInventoryObject({ letters: letter });
+    const diagnostic = firstScreenIndex(screens, /leashed monster #4242 not found/);
+    const choice = firstScreenIndex(screens, new RegExp(`${letter} - an uncursed leash\\.`));
+    const report = firstScreenIndex(screens, /Please report these messages/);
+    assert.ok(diagnostic < report && report < choice, screens.join('\n----\n'));
+    assert.match(screens.at(-1) ?? '', new RegExp(`${letter} - an uncursed leash\\.`), 'the selection key is read with the choice still shown');
+});
+void test('impossible() panic mode stops the leash formatter before it detaches the leash', async () => {
+    freshPlayableRoom();
+    game.storage = memoryStorage();
+    game.flags.debug_fuzzer = FUZZER_IMPOSSIBLE_PANIC;
+    const leash = await addInventoryObject(LEASH, { leashmon: 4242 });
+    recordScreens();
+    await assert.rejects(rhack('i'.charCodeAt(0)), PanicTermination);
+    assert.equal(leash.leashmon, 4242);
+    assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);
 });
 //# sourceMappingURL=naming_impossible.test.js.map
