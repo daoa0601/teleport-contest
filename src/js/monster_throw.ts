@@ -3,7 +3,7 @@
 // next projectile is detached from the attacker's inventory.
 import {
     A_DEX, A_STR, BOLT_LIM, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR,
-    IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, MGIVENNAME, NEED_RANGED_WEAPON, NEED_WEAPON,
+    IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, MGIVENNAME, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM,
     P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
@@ -12,6 +12,7 @@ import { applyMonsterBlindness, monsterCanBeBlindedByObject,
     prepareHeroThrownBlindness, finishHeroThrownBlindness } from './blinding_attack.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation } from './display.js';
+import { impossible } from './diagnostics.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -537,6 +538,7 @@ async function hitHeroWithProjectile(shot: MonsterProjectileShot, context: Fligh
     const hero = state.u;
     const zeroDamage = object.otyp === EGG || object.otyp === CREAM_PIE || object.otyp === BLINDING_VENOM;
     if (object.otyp === EGG && !touchPetrifies(object.corpsenm)) {
+        await impossible(`monster throwing egg type ${object.corpsenm ?? NON_PM}`, { state });
         await stopHeroOccupation(state, publish);
         return { blindness: null };
     }
@@ -557,7 +559,7 @@ async function hitHeroWithProjectile(shot: MonsterProjectileShot, context: Fligh
     const die = finishHeroDeathAfterMonsterMessage;
     const hit = await hitHeroWithObject(object, damage, accuracy, {
         state, publish, rollOne, die,
-        name: captureHeroProjectileName(object, state, volley), killer: killerObjectName(object, state),
+        ...(volley ? { volley } : {}),
     });
     shot.hit = hit.hit;
     shot.heroDied = hit.died;

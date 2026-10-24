@@ -53,5 +53,6 @@ export async function breatheFromMonster(
 
 export function breathWeaponName(damageType: number) {
     return ['', 'fragments', 'fire', 'frost', 'sleep gas',
-        'a disintegration blast', 'lightning', 'poison gas', 'acid'][damageType] || 'strange breath';
+        'a disintegration blast', 'lightning', 'poison gas', 'acid',
+        'strange breath #8', 'strange breath #9'][damageType] || 'strange breath';
 }

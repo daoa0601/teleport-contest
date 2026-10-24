@@ -6,6 +6,7 @@ import { W_WEP } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame } from './gstate.js';
+import { objectShedsLight } from './light.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
@@ -20,6 +21,7 @@ import { heroIsDeaf } from './senses.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
+import { snuffThrownCandle } from './thrown_object.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -82,7 +84,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
                 const feet = makePlural(monsterFootName(monster.mnum));
                 await publish(`${definiteObjectAction(weapon, 'return', state)} back to ${name()}, landing at ${monsterPossessive(monster, { state })} ${feet}.`);
             } else if (!heroIsDeaf(state)) {
-                await publishHeardMessage(`something land near ${name()}.`, publish, state);
+                await publishHeardMessage(`Something land near ${name()}.`, publish, state);
             }
         } else {
             damage += rollOne(3);
@@ -108,8 +110,9 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
     }
 
     const options = { state: requireInitializedGame(state), publish, random };
+    await snuffThrownCandle(weapon, state, publish);
     if (!await shipObject(weapon, x, y, options)) {
-        const landed = await landFloorObject(weapon, x, y, options);
+        const landed = await landFloorObject(weapon, x, y, { ...options, verb: 'drop' });
         if (!landed) {
             if (cansee(x, y)) newsym(x, y);
             return;
@@ -123,5 +126,6 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
         if (isPoolAt(x, y, state) || isLavaAt(x, y, state) && !flammable)
             await publish(objectWeight(weapon) > 9 ? 'Splash!' : 'Plop!');
     }
+    if (objectShedsLight(weapon)) state.vision_full_recalc = 1;
     if (cansee(x, y)) newsym(x, y);
 }

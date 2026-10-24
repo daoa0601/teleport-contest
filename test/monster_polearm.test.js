@@ -11,7 +11,7 @@ import { attackHeroWithPolearm } from '../js/monster_polearm.js';
 import { LANCE, OBJECT_NAMES } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
-import { knownObject } from './support/game-objects.js';
+import { artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjects } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -23,6 +23,22 @@ async function soldierWithLance(x, y) {
     findArmorClass();
     return soldier;
 }
+void test('a monster swinging an unidentified Snickersnee describes the named katana', async () => {
+    freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
+    requirePlayingGame(game);
+    const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
+    soldier.mux = game.u.ux;
+    soldier.muy = game.u.uy;
+    const weapon = await equipMonsterObject(soldier, await artifactObject('Snickersnee', { known: false }), W_WEP);
+    const messages = [];
+    await attackHeroWithPolearm(soldier, weapon, game, {
+        publish: async (message) => { messages.push(message); }, rollOne: () => 20,
+        random: () => 1,
+    });
+    assert.equal(messages[0], 'The soldier swings a katana named Snickersnee.');
+    assert.equal(weapon.known, false);
+    assert.equal(soldier.mw, weapon);
+});
 void test('an unfamiliar polearm keeps its visible appearance in the thrust and miss messages', async () => {
     freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
     requirePlayingGame(game);

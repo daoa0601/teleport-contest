@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { throwMonsterWeaponAtHero } from '../js/monster_throw.js';
-import { DAGGER, DART } from '../js/object_data.js';
+import { DAGGER, DART, ROCK } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -22,6 +22,19 @@ async function throwWeaponAtHero(type = DAGGER, properties = {}) {
     soldier.muy = game.u.uy;
     return { soldier, weapon };
 }
+void test('a horizontal rock throw tells a rock-passing hero it does no harm', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    installPolymorphedHero('xorn', { hitPoints: 40 });
+    const { soldier, weapon } = await throwWeaponAtHero(ROCK, { spe: 0 });
+    const messages = [];
+    await throwMonsterWeaponAtHero(soldier, game, weapon, {
+        random: () => 1, rollOne: () => 1,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(game.u.mh, 40);
+    assert.ok(messages.includes("It doesn't harm you."));
+});
 void test('projectile damage waits until the hit message can be shown', async () => {
     freshObjectRoom();
     requireFixtureGame(game);

@@ -7,7 +7,7 @@ import { M_ATTK_HIT, M_ATTK_MISS } from './const.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { rayDamageType } from './magic_types.js';
-import { AD_MAGM, AD_RBRE, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
+import { AD_MAGM, AD_RBRE, AD_SPC2 } from './monster_attack_types.js';
 import { monsterName } from './monster_name.js';
 import { monsterLinedUpWithMonster } from './monster_ranged_alignment.js';
 import { displayRayName } from './ray_name.js';
@@ -56,7 +56,7 @@ export async function resolveMonsterCombatBreath(
         const name = monsterName(source, { state, capitalized: true });
         const weapon = heroIsHallucinating(state)
             ? displayRayName(damageType, 'breath', { state, random }).replace(/^blast of /, '')
-            : damageType >= AD_SPC1 ? `strange breath #${damageType - 1}` : breathWeaponName(damageType);
+            : breathWeaponName(damageType);
         await publish(`${name} breathes ${weapon}!`);
     }
     const ray = await breatheFromMonster(source, target, {

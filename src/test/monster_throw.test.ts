@@ -52,6 +52,35 @@ function projectileRoom() {
 const ordinaryChoices = (bound: number) => Math.min(1, bound - 1);
 const minimumRoll = () => 1;
 
+void test('a monster throwing a nonpetrifying egg reports the invalid attack without hitting the hero', async () => {
+    projectileRoom();
+    requirePlayingGame(game);
+    const source = await combatant('orc', { x: 15, y: 12 });
+    const species = MONSTER_NAME.indexOf('red dragon');
+    const egg = await uninitializedObject(EGG, { corpsenm: species });
+    await addObjectToMonsterInventory(source, egg);
+    game.u.confused = true;
+    const health = game.u.uhp;
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        messages.push(game._pending_message);
+        input.feed(' ');
+    };
+
+    const shot = await throwMonsterProjectile(source, egg, {
+        state: game, dx: 1, dy: 0, range: 3,
+        random: ordinaryChoices, rollOne: minimumRoll,
+    });
+
+    messages.push(game._pending_message);
+    assert.ok(messages.some(message => message.includes(`monster throwing egg type ${species}`)),
+        `Expected the invalid egg diagnostic; received: ${messages.join(' | ')}`);
+    assert.equal(shot.hit, false);
+    assert.equal(game.u.uhp, health);
+    assert.equal(egg.where, 'floor');
+});
+
 void test('a monster-thrown acid potion wakes sleeping monsters near a shrieking victim', async () => {
     projectileRoom();
     requirePlayingGame(game);

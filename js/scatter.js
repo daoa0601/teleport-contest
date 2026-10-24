@@ -25,7 +25,6 @@ import { dist2 } from './hacklib.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import { hideHeroUnder, maybeUnhideAt } from './monster_hiding.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './punishment.js';
@@ -45,11 +44,9 @@ import { isPoisonableObject } from './object_properties.js';
 import { shouldMulchMissile } from './projectile.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
-import { heroIsBlind } from './senses.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
-import { objectDescription } from './object_description.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
@@ -284,44 +281,20 @@ async function hitHero(node, state, options) {
     });
     if (state.u.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
-    if (object.oclass !== POTION_CLASS) {
-        const result = await hitHeroWithObject(object, damage, attack, {
-            state, publish: options.publish, rollOne: options.rollOne,
-        });
-        if (result.hit) {
-            node.range -= 3;
-            await stopHeroOccupation(state, options.publish);
-        }
-        return result.hit;
-    }
-    const name = object.quan > 1 ? await objectDescription(object, { state })
-        : withIndefiniteArticle(objectCombatName(object, { state }));
-    const terse = heroIsBlind(state) || !state.flags.verbose;
-    const threshold = state.u.uac + attack;
-    const roll = options.rollOne(20);
-    if (threshold <= roll) {
-        if (terse)
-            await options.publish('It misses.');
-        else if (threshold <= roll - 2) {
-            const subject = name.charAt(0).toUpperCase() + name.slice(1);
-            await options.publish(`${subject} ${verbForSubject(name, 'miss')} you.`);
-        }
-        else
-            await options.publish(`You are almost hit by ${name}.`);
-        return false;
-    }
-    const punctuation = damage > 4 ? '!' : '.';
-    await options.publish(terse ? `You are hit${punctuation}` : `You are hit by ${name}${punctuation}`);
-    await hitHeroWithThrownPotion(object, {
-        state, publish: options.publish, random: options.random,
-        rollOne: options.rollOne, rollDice: options.rollDice, source: 'propelled',
+    const result = await hitHeroWithObject(object, damage, attack, {
+        state, publish: options.publish, rollOne: options.rollOne,
+        random: options.random, rollDice: options.rollDice,
     });
-    node.object = null;
-    node.stopped = true;
-    node.range -= 3;
-    if (!state.program_state.gameover)
-        await stopHeroOccupation(state, options.publish);
-    return true;
+    if (result.hit) {
+        node.range -= 3;
+        if (object.oclass === POTION_CLASS) {
+            node.object = null;
+            node.stopped = true;
+        }
+        if (!result.died)
+            await stopHeroOccupation(state, options.publish);
+    }
+    return result.hit;
 }
 async function fractureObject(object, x, y, state, options) {
     const boulder = object.otyp === BOULDER;
