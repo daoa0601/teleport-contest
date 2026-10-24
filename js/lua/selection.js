@@ -4,6 +4,17 @@ import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
 import { game } from '../gstate.js';
 import { isRoom } from '../map_types.js';
+function coordxy(value) {
+    return (value << 16) >> 16;
+}
+function luaCoordinate(value) {
+    return coordxy(luaInteger(value));
+}
+// The two-axis get form uses lua_tointeger, which returns zero on failure.
+function getAxis(value) {
+    const number = typeof value === 'number' || typeof value === 'string' ? Number(value) : 0;
+    return Number.isInteger(number) ? coordxy(number) : 0;
+}
 function selectionValue(value) {
     if (!(value instanceof LuaUserdata)
         || !(value.value instanceof SpecialSelection))
@@ -43,18 +54,35 @@ export function createSelectionApi(context, invoke = null) {
         };
     };
     const set = async (...args) => {
-        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
-        const selection = self ? selectionValue(self) : new SpecialSelection();
+        if (args.length === 0)
+            throw new TypeError('Selection setpoint error');
+        const self = args.length === 2 ? undefined : args.shift();
+        const selection = self === undefined ? new SpecialSelection() : selectionValue(self);
         const coordinate = args.length === 0 ? null
-            : { x: luaInteger(args[0]), y: luaInteger(args[1]) };
+            : { x: luaCoordinate(args[0]), y: luaCoordinate(args[1]) };
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         selection_setpoint(point.x, point.y, selection.selection, luaInteger(args[2] ?? 1));
         return self ?? wrap(selection);
     };
-    const get = async (self, x, y = null) => {
-        const coordinate = x instanceof LuaTable
-            ? { x: luaInteger(x.get('x') ?? x.get(1)), y: luaInteger(x.get('y') ?? x.get(2)) }
-            : { x: luaInteger(x), y: luaInteger(y) };
+    const get = async (self, ...args) => {
+        let coordinate;
+        const table = args[0];
+        if (args.length === 1 && table instanceof LuaTable) {
+            if (table.get('x') != null) {
+                coordinate = { x: luaCoordinate(table.get('x')), y: luaCoordinate(table.get('y')) };
+            }
+            else {
+                if (table.length() !== 2)
+                    throw new TypeError('Not a coordinate');
+                coordinate = { x: luaCoordinate(table.get(1)), y: luaCoordinate(table.get(2)) };
+            }
+        }
+        else if (args.length === 2) {
+            coordinate = { x: getAxis(args[0]), y: getAxis(args[1]) };
+        }
+        else {
+            throw new TypeError('l_selection_getpoint: Incorrect params');
+        }
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selectionValue(self).selection);
     };
@@ -117,13 +145,13 @@ export function createSelectionApi(context, invoke = null) {
         if (type !== 'radial' && type !== 'square')
             throw new TypeError(`Unknown gradient type: ${type}`);
         const start = origin();
-        const x = start.x + luaInteger(options.get('x'));
-        const y = start.y + luaInteger(options.get('y'));
-        const x2 = start.x + luaInteger(options.get('x2') ?? -1);
-        const y2 = start.y + luaInteger(options.get('y2') ?? -1);
+        const x = coordxy(start.x + luaCoordinate(options.get('x')));
+        const y = coordxy(start.y + luaCoordinate(options.get('y')));
+        const x2 = coordxy(start.x + luaCoordinate(options.get('x2') ?? -1));
+        const y2 = coordxy(start.y + luaCoordinate(options.get('y2') ?? -1));
         const pointCenter = x2 === -1 && y2 === -1;
         const result = new SpecialSelection();
-        selection_do_gradient(result.selection, x, y, pointCenter ? x : x2, pointCenter ? y : y2, type === 'radial' ? SEL_GRADIENT_RADIAL : SEL_GRADIENT_SQUARE, luaInteger(options.get('mindist') ?? 0), luaInteger(options.get('maxdist')));
+        selection_do_gradient(result.selection, x, y, pointCenter ? x : x2, pointCenter ? y : y2, type === 'radial' ? SEL_GRADIENT_RADIAL : SEL_GRADIENT_SQUARE, luaCoordinate(options.get('mindist') ?? 0), luaCoordinate(options.get('maxdist')));
         return wrap(result);
     };
     const randline = (...args) => {

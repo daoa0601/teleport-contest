@@ -264,4 +264,27 @@ void test('selection point values retain native signed character storage and bit
     assert.equal(state.getGlobal('difference'), 2);
     assert.equal(state.getGlobal('exclusive'), 6);
 });
+void test('selection point and gradient arguments use native coordinate conversion', async (t) => {
+    freshGame();
+    initRng(17);
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 10, ystart: 4, width: 1, height: 1 }),
+    });
+    t.after(() => state.destroy());
+    await state.executeAsync(`
+        local point = selection.set(65535, 65535)
+        random_count = point:numpoints()
+        random_value = point:get(65535, 65535)
+        converted_get = point:get("not a number", false)
+        gradient = selection.gradient({x = 65536, y = 65536, x2 = 65536, y2 = 65536,
+            maxdist = 65536}):get(0, 0)
+    `);
+    assert.equal(state.getGlobal('random_count'), 1);
+    assert.equal(state.getGlobal('random_value'), 1);
+    assert.equal(state.getGlobal('converted_get'), 1, 'two-axis get uses lua_tointeger conversion');
+    assert.equal(state.getGlobal('gradient'), 1);
+    await assert.rejects(state.executeAsync('selection.set()'), /Selection setpoint error/);
+    await assert.rejects(state.executeAsync('selection.set(1, 2, 3)'), /requires a selection/);
+    await assert.rejects(state.executeAsync('selection.new():get({x = 0, [2] = 0})'), /integer/);
+});
 //# sourceMappingURL=lua_selection.test.js.map
