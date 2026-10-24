@@ -2,9 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_EXTINCT, MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
+import { plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { InputGate, bindInputGate, resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterStatusLine } from '../js/monster_status.js';
 import { cutWorm, initializeMonsterWormBody } from '../js/monster_worm.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -196,5 +198,62 @@ void test('a paralyzed tame half does not retain the original pet record', async
     assert.equal(child.mextra?.edog, undefined);
     assert.equal(child.mfrozen, 4);
     assert.equal(worm.mfrozen, 8);
+});
+void test('a severed body remains on the map while its sleeping new head wakes', async () => {
+    const worm = await wormWithTail();
+    requirePlayingGame(game);
+    initializePet(worm);
+    worm.msleeping = 1;
+    const cut = worm.wormSegments[1];
+    const tip = worm.wormSegments.at(-1);
+    assert.ok(cut && tip);
+    await plineWithContinuation('You pause to look at the sleeping long worm and its many tail segments.');
+    const gate = new InputGate();
+    bindInputGate(gate);
+    const splitting = cutWorm(worm, cut.x, cut.y, true, {
+        rollOne: () => 20, random: limit => limit === 3 ? 0 : 1,
+    });
+    const boundary = await Promise.race([
+        gate.waitUntilBlocked().then(() => 'pager'),
+        splitting.then(() => 'finished'),
+    ]);
+    try {
+        assert.equal(boundary, 'pager', 'The wake-up message must wait for the previous long message.');
+        assert.equal(monsterAtPosition(game.level, tip.x, tip.y)?.m_id, worm.m_id, 'The detached tail still belongs to the original worm until the split completes.');
+    }
+    finally {
+        gate.feed(' '.repeat(8));
+        await splitting;
+    }
+    const child = monsterAtPosition(game.level, cut.x, cut.y);
+    assert.ok(child && child !== worm);
+    assert.equal(monsterAtPosition(game.level, tip.x, tip.y), child);
+});
+void test('a dying severed body remains mapped during its message without extending the retained worm', async () => {
+    const worm = await wormWithTail();
+    requirePlayingGame(game);
+    const cut = worm.wormSegments[1];
+    const tip = worm.wormSegments.at(-1);
+    assert.ok(cut && tip);
+    await plineWithContinuation('You pause to look at the long worm and its many winding tail segments.');
+    const gate = new InputGate();
+    bindInputGate(gate);
+    const splitting = cutWorm(worm, cut.x, cut.y, true, {
+        rollOne: () => 20, random: () => 1,
+    });
+    const boundary = await Promise.race([
+        gate.waitUntilBlocked().then(() => 'pager'),
+        splitting.then(() => 'finished'),
+    ]);
+    try {
+        assert.equal(boundary, 'pager', 'The cut-off message must wait for the previous long message.');
+        assert.equal(monsterAtPosition(game.level, tip.x, tip.y)?.m_id, worm.m_id);
+        assert.match(await monsterStatusLine(worm), /, 1st of 2 segments/, 'Probing counts only the retained body even before the detached half leaves the map.');
+    }
+    finally {
+        gate.feed(' '.repeat(8));
+        await splitting;
+    }
+    assert.equal(monsterAtPosition(game.level, tip.x, tip.y), null);
 });
 //# sourceMappingURL=monster_worm_cut.test.js.map

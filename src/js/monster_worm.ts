@@ -77,46 +77,53 @@ export async function cutWorm(monster: Monster, x: number, y: number, sliceOrCho
 
     const severed = monster.wormSegments.slice(cutIndex);
     monster.wormSegments = monster.wormSegments.slice(0, cutIndex);
-    const wormno = monster.m_lev >= 3 && random(3) === 0 ? nextWormNumber(state) : 0;
-    const clone = wormno ? await cloneMonster(monster, state, {
-        position: { x, y }, random,
-    }) : null;
-    if (!clone) {
-        let message: string | null = null;
-        if (!state.context.mon_moving) {
-            message = `You cut part of the tail off of ${monsterName(monster, { state })}.`;
-        } else if (canSpotMonster(monster)) {
-            const name = monsterName(monster, { state });
-            const possessive = name === 'it' ? 'its' : /s$/i.test(name) ? `${name}'` : `${name}'s`;
-            message = `Part of ${possessive} tail has been cut off.`;
+    monster.wormDetachedSegments = severed;
+    try {
+        const wormno = monster.m_lev >= 3 && random(3) === 0 ? nextWormNumber(state) : 0;
+        // clone_mon() needs an empty head square. The remaining detached
+        // cells stay owned by the original worm until place_wsegs().
+        if (wormno) monster.wormDetachedSegments = severed.slice(1);
+        const clone = wormno ? await cloneMonster(monster, state, {
+            position: { x, y }, random,
+        }) : null;
+        if (!clone) {
+            monster.wormDetachedSegments = severed;
+            let message: string | null = null;
+            if (!state.context.mon_moving) {
+                message = `You cut part of the tail off of ${monsterName(monster, { state })}.`;
+            } else if (canSpotMonster(monster)) {
+                const name = monsterName(monster, { state });
+                const possessive = name === 'it' ? 'its' : /s$/i.test(name) ? `${name}'` : `${name}'s`;
+                message = `Part of ${possessive} tail has been cut off.`;
+            }
+            if (message) await publish(message);
+            // toss_wsegs() clears and redraws each cell from tail to cut.
+            while (severed.length) {
+                const segment = severed.pop();
+                if (segment?.x) newsym(segment.x, segment.y);
+            }
+            if (monster.mhp > 1) monster.mhp = Math.trunc(monster.mhp / 2);
+            return;
         }
-        // C toss_wsegs removes map occupancy after the cut-off message.
-        // Keep the detached body's cells occupied while that pager is open.
-        monster.wormSegments.push(...severed);
-        if (message) await publish(message);
-        monster.wormSegments.length = cutIndex;
-        for (let index = severed.length - 1; index >= 0; index--) {
-            const segment = severed[index];
-            if (segment) newsym(segment.x, segment.y);
-        }
-        if (monster.mhp > 1) monster.mhp = Math.trunc(monster.mhp / 2);
-        return;
-    }
 
-    clone.wormno = wormno;
-    clone.mcloned = 0;
-    monster.m_lev = Math.max(monster.m_lev - 2, 3);
-    clone.m_lev = monster.m_lev;
-    clone.mhpmax = clone.mhp = rollDice(clone.m_lev, 8);
-    monster.mhpmax = rollDice(monster.m_lev, 8);
-    monster.mhp = Math.min(monster.mhp, monster.mhpmax);
-    clone.wormSegments = severed.slice(1);
-    clone.wormHead = { x, y };
-    clone.wormGrowTime = 0;
-    if (state.context.mon_moving)
-        await publish(`${monsterName(monster, { state, capitalized: true })} is cut in half.`);
-    else
-        await publish(`You cut ${monsterName(monster, { state })} in half.`);
+        clone.wormno = wormno;
+        clone.mcloned = 0;
+        monster.m_lev = Math.max(monster.m_lev - 2, 3);
+        clone.m_lev = monster.m_lev;
+        clone.mhpmax = clone.mhp = rollDice(clone.m_lev, 8);
+        monster.mhpmax = rollDice(monster.m_lev, 8);
+        monster.mhp = Math.min(monster.mhp, monster.mhpmax);
+        clone.wormSegments = severed.slice(1);
+        clone.wormHead = { x, y };
+        clone.wormGrowTime = 0;
+        delete monster.wormDetachedSegments;
+        if (state.context.mon_moving)
+            await publish(`${monsterName(monster, { state, capitalized: true })} is cut in half.`);
+        else
+            await publish(`You cut ${monsterName(monster, { state })} in half.`);
+    } finally {
+        delete monster.wormDetachedSegments;
+    }
 }
 
 function nextWormNumber(state: GameState) {
@@ -126,6 +133,21 @@ function nextWormNumber(state: GameState) {
     let wormno = 1;
     while (wormno < MAX_NUM_WORMS && used.has(wormno)) wormno++;
     return wormno < MAX_NUM_WORMS ? wormno : 0;
+}
+
+// C worm.c:wseg_at(). Segment numbers run from the hidden head toward the
+// tail. A displaced live head need not coincide with any stored segment.
+export function wormSegmentIndexAt(
+    monster: Monster | null, x: number, y: number, state: GameState = game,
+): number {
+    if (!monster?.wormno || monsterAtPosition(requireGameLevel(state), x, y) !== monster)
+        return 0;
+    requireWormBody(monster);
+    for (let index = monster.wormSegments.length - 1; index >= 0; index--) {
+        const segment = monster.wormSegments[index];
+        if (segment?.x === x && segment.y === y) return index + 2;
+    }
+    return monster.wormHead.x === x && monster.wormHead.y === y ? 1 : 0;
 }
 
 // C worm.c:worm_cross(). The head and each body segment are consecutive.

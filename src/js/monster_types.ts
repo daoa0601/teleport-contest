@@ -10,6 +10,9 @@ export interface MonsterPosition {
     my: number;
     mstate?: number;
     wormSegments?: Position[];
+    // A cut detaches the segment chain before cloning or discarding it.
+    // Its map cells still belong to this worm until that operation finishes.
+    wormDetachedSegments?: Position[];
 }
 
 export interface MonsterLevel {
@@ -244,7 +247,8 @@ export interface MonsterBirthState extends Monster {
 // A corpse keeps identity and role history, never ownership of the former
 // inventory or a live long-worm body. Revival supplies those from its birth.
 export type SavedMonsterTraits = Omit<Monster,
-    'minvent' | 'inventory' | 'mw' | 'wormSegments' | 'wormHead' | 'wormGrowTime' | 'lightRemoved'>;
+    'minvent' | 'inventory' | 'mw' | 'wormSegments' | 'wormDetachedSegments'
+    | 'wormHead' | 'wormGrowTime' | 'lightRemoved'>;
 
 export interface MonsterVital {
     mvflags: number;

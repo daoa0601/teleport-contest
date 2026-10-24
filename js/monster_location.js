@@ -31,6 +31,7 @@ export function exposeEngulfedDefenderForDeath(attacker, defender, state = game)
 }
 export function monsterOccupiesPosition(monster, x, y) {
     return !!monster && ((monster.mx === x && monster.my === y)
-        || !!monster.wormSegments?.some(segment => segment.x === x && segment.y === y));
+        || !!monster.wormSegments?.some(segment => segment.x === x && segment.y === y)
+        || !!monster.wormDetachedSegments?.some(segment => segment.x === x && segment.y === y));
 }
 //# sourceMappingURL=monster_location.js.map

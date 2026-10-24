@@ -110,9 +110,11 @@ export function seeMonsterWithInfrared(monster) {
 function canPhysicallyProjectMonster(monster, x, y) {
     return monsterVisible(monster) && (cansee(x, y) || seeMonsterWithInfrared(monster));
 }
-// C worm.c:worm_known(). The live head and occupied body share actor identity.
+// C worm.c:worm_known(). A head-only relocation leaves the hidden segment
+// behind until worm_move() or place_wsegs() updates it.
 export function wormKnown(monster) {
-    return cansee(monster.mx, monster.my)
+    const head = monster.wormHead;
+    return !!head && cansee(head.x, head.y)
         || (monster.wormSegments ?? []).some(segment => segment.x && cansee(segment.x, segment.y));
 }
 // C mon.c:monkilled(). Its death line is square-visible or worm-known,
@@ -1125,9 +1127,9 @@ function objectGlyphNumber(object, piletop) {
         + (objectUsesGenericGlyph(object) ? object.oclass : object.otyp);
 }
 // C display.h:mon_to_glyph(). Ignore disguises for a revelation flash.
-export function transientMonsterGlyph(monster) {
+export function transientMonsterGlyph(monster, monsterState = 'normal') {
     return displayMonsterGlyph(heroIsHallucinating()
-        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female);
+        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female, monsterState);
 }
 // Native zapdir_to_glyph() and reset_glyphmap(): direction selects one of
 // four symbols; the beam type retains a separate glyph even for equal colors.

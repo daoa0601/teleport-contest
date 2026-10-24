@@ -51,5 +51,6 @@ export function monsterOccupiesPosition(
     return !!monster && (
         (monster.mx === x && monster.my === y)
         || !!monster.wormSegments?.some(segment => segment.x === x && segment.y === y)
+        || !!monster.wormDetachedSegments?.some(segment => segment.x === x && segment.y === y)
     );
 }

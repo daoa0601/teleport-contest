@@ -164,6 +164,8 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         my: integer,
         mstate: optional(integer),
         wormSegments: optional(arrayOf(position)),
+        // Saving is unavailable while cutworm is awaiting a message pager.
+        wormDetachedSegments: (entry): entry is undefined => entry === undefined,
         m_id: integer,
         mnum: ismnum,
         m_lev: integer,
@@ -271,7 +273,7 @@ export function validSavedMonster(value: unknown, context: SavedEntityContext): 
 
 export function validSavedMonsterTraits(value: unknown, context: SavedEntityContext): value is SavedMonsterTraits {
     const {
-        minvent, inventory, mw, wormSegments, wormHead, wormGrowTime, lightRemoved,
+        minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved,
         ...fields
     } = monsterFields(value, context);
     return validateSavedEntity(value, 'savedMonster', context, fields);
