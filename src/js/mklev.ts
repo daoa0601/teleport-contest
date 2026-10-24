@@ -7072,7 +7072,11 @@ function createLuaLevelSession() {
     );
     const bindings: LuaBindings = {
         nh: {
-            debug_themerm: () => null,
+            debug_themerm: (...args: LuaValue[]) => {
+                if (args.length !== 1)
+                    throw new NethackLuaError('debug_themerm should have 1 boolean arg');
+                return null;
+            },
             is_genocided: (...args: LuaValue[]) => {
                 if (args.length !== 1) throw new NethackLuaError('Wrong args');
                 // C nhl_is_genocided() resolves names with name_to_mon(),
@@ -7081,7 +7085,11 @@ function createLuaLevelSession() {
                 return mndx >= 0
                     && !!((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD);
             },
-            level_difficulty: () => level_difficulty(),
+            level_difficulty: (...args: LuaValue[]) => {
+                if (args.length)
+                    throw new NethackLuaError('level_difficulty should not have any args');
+                return level_difficulty();
+            },
             start_timer_at: (x, y, kind, timeout) => {
                 const timerName = luaString(kind);
                 if (timerName !== 'melt-ice' && timerName !== LEVEL_TIMER_KIND.MELT_ICE_AWAY)

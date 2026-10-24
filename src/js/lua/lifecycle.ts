@@ -6,6 +6,7 @@ import { applyNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
 import { luaPline, luaText } from './messages.js';
+import { NethackLuaError } from './errors.js';
 import { luaInteger } from './arguments.js';
 import { LuaHeroTable } from './hero.js';
 import { createObjectApi } from './objects.js';
@@ -48,8 +49,9 @@ function bindingsFor(
 ): LuaBindings {
     const { nh: additionalNh = {}, ...remainingBindings }
         = additionalBindings;
-    const parseConfig = (line: LuaValue) => {
-        applyNethackrc(String(line), gameState);
+    const parseConfig = (...args: LuaValue[]) => {
+        if (args.length !== 1) throw new NethackLuaError('Wrong args');
+        applyNethackrc(String(args[0]), gameState);
     };
     return {
         nh: {
@@ -74,7 +76,10 @@ function bindingsFor(
             ),
             pline: luaPline,
             text: luaText,
-            impossible: async message => { await impossible(String(message), { state: gameState }); },
+            impossible: async (...args: LuaValue[]) => {
+                if (args.length !== 1) throw new NethackLuaError('Wrong args');
+                await impossible(String(args[0]), { state: gameState });
+            },
             eckey: command => commandKeyDescription(
                 String(command), gameState.commandBindings,
             ),
