@@ -4,7 +4,12 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, TT_PIT, W_AMUL } from '../js/const.js';
+import { COLNO, LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROWNO, ROOM, STONE, TT_PIT, W_AMUL } from '../js/const.js';
+import { expelHero } from '../js/hero_expulsion.js';
+import { setHeroGrip } from '../js/hero_grip.js';
+import { installPagerInput } from './support/pager-input.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { polymonHero } from '../js/polyself.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { damageHeroFromMonster, loseHeroHp } from '../js/hero_damage.js';
@@ -278,5 +283,24 @@ void test('a released swallower outside the landing blast keeps its own amulet',
     assert.ok(trapper.minvent?.includes(monsterAmulet));
     assert.match(text, /unfolds and you are released![\s\S]*Boom!/);
     assert.doesNotMatch(text, /trapper's medallion|indigestion|rips open/);
+});
+void test('an engulfer expelling a wall-bound hero with nowhere to stand leaves for limbo', async () => {
+    freshTurnRoom();
+    requirePlayingGame(game);
+    await polymonHero(MONSTER_NAME.indexOf('xorn'));
+    const vortex = await createMonsterAt('energy vortex', game.u.ux, game.u.uy, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    game.u.uswallow = 1;
+    setHeroGrip(vortex, game);
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
+            requireGameLevel(game).requireAt(x, y).typ = STONE;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /.*/, limit: 8 });
+    const messages = [];
+    const result = await expelHero(vortex, { publish: async (message) => { messages.push(message); } });
+    assert.equal(result.expelled, true);
+    assert.ok(messages.includes('Brrooaa...  You land hard at some distance.'), `unexpected prose: ${messages.join(' | ')}`);
+    assert.ok(!requireGameLevel(game).monsters.includes(vortex), 'the engulfer departs for limbo');
+    assert.equal(game.u.uswallow, 0);
 });
 //# sourceMappingURL=life_saving_release.test.js.map

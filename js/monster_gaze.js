@@ -64,6 +64,8 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
                 }
                 if (medusa && heroIsHallucinating(state) && random(3) === 0)
                     await publish('Someone seems overdue for a serpent cut.');
+                else if (medusa && monster.mcan && reaction < 0)
+                    await publish(`${name()} doesn't look all that ugly.`);
                 else
                     await publish(`${name()} gazes ineffectually.`);
                 break;
@@ -150,7 +152,7 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
                 await makeBlinded(duration, { state, talk: false, publish });
                 await stopHeroOccupation(state, publish);
                 if (!heroIsBlind(state))
-                    await publish('Your vision clears.');
+                    await publish('Your vision quickly clears.');
                 else
                     await makeStunned(Math.max(state.u.stunnedTurns || 0, rollOne(3)), { state, talk: true, publish });
             }

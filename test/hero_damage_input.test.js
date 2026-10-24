@@ -8,6 +8,7 @@ import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { runMonsterAction } from '../js/monmove.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { moveloop_core } from '../js/allmain.js';
@@ -209,4 +210,20 @@ for (const recovery of ['life saving', 'debug refusal']) {
         assert.match(visibleScreen(), /HP:12\(12\)/, 'the temporary fatal display must not survive recovery');
     });
 }
+void test('an ordinary monster hit annotates its damage while showdamage is on', async () => {
+    freshObjectRoom({ flags: { showdamage: true }, hero: { uhp: 40, uhpmax: 40 } });
+    requirePlayingGame(game);
+    const ogre = await createMonsterAt('ogre', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => {
+        if (game._pending_message)
+            messages.push(game._pending_message);
+    };
+    installPagerInput(input, { expected: /ogre|hit|\[HP/, limit: 8 });
+    await runMonsterAction(ogre, game, () => 0, () => 1, () => 1);
+    const prose = `${messages.join('\n')}\n${game._pending_message ?? ''}`;
+    assert.match(prose, /\[HP -1, 39 left\]/);
+    assert.equal(game.u.uhp, 39);
+});
 //# sourceMappingURL=hero_damage_input.test.js.map
