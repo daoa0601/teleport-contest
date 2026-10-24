@@ -14,7 +14,7 @@ import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects
 import { ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { definiteName, objectCombatName, objectLooksUnique, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
@@ -45,6 +45,7 @@ import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
+const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 // C check_invent_gold(): only malformed purses may be reorganized.
 export async function checkInventoryGold(why, state = game) {
     const gold = state.inventory.filter(object => object.oclass === COIN_CLASS);
@@ -455,25 +456,26 @@ function itemActionEntries(item, state, repairGold) {
     const entries = [];
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     const stack = item.quan > 1;
+    const plural = objectNameIsPlural(item, state);
     const shoot = ammunitionMatchesLauncher(item, state.uwep);
     if (item === state.uwep || item === state.uswapwep || item === state.uquiver) {
         const quivered = item === state.uquiver;
         const verb = quivered ? 'Quiver' : 'Wield';
         const action = quivered ? 'un-ready' : 'un-wield';
         const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
-        entries.push({ key: '-', text: `${verb} '-' to ${action} ${stack ? `these ${noun}s` : `this ${noun}`}` });
+        entries.push({ key: '-', text: `${verb} '-' to ${action} ${plural ? `these ${noun}s` : `this ${noun}`}` });
     }
     const apply = itemApplyText(item, state);
     if (apply)
         entries.push({ key: 'a', text: apply });
     if (item.oclass !== COIN_CLASS && item.dknown && !item.oartifact && item.otyp !== SPE_NOVEL) {
         const named = !!(item.oextra?.oname || item.oname);
-        entries.push({ key: 'c', text: `${named ? 'Rename or un-name' : 'Name'} ${objectLooksUnique(item, state) ? 'the' : stack ? 'this stack of' : 'this specific'} ${itemName}` });
+        entries.push({ key: 'c', text: `${named ? 'Rename or un-name' : 'Name'} ${objectLooksUnique(item, state) ? 'the' : plural ? 'this stack of' : 'this specific'} ${itemName}` });
     }
     const callName = state._objectCallNames?.[item.otyp];
     if (item.dknown && objectTypeCallable(item, state) && (!objectTypeKnown(item, state) || callName)) {
         const noun = objectLooksUnique(item, state) ? definiteName(itemName, state)
-            : stack ? itemName : makePlural(itemName);
+            : plural ? itemName : makePlural(itemName);
         entries.push({ key: 'C', text: `${callName ? 'Re-call or un-call' : 'Call'} the type for ${noun}` });
     }
     if (!alreadyWorn)
@@ -681,7 +683,8 @@ function itemReadingText(item, state) {
     if (item.otyp === HAWAIIAN_SHIRT)
         return 'Look at the pattern on the shirt';
     if (item.oclass === SCROLL_CLASS) {
-        const magic = item.dknown && (item.otyp !== SCR_BLANK_PAPER || !known)
+        const magic = item.dknown && item.otyp !== SCR_MAIL
+            && (item.otyp !== SCR_BLANK_PAPER || !known)
             ? ' to activate its magic' : '';
         return `Read this scroll${magic}`;
     }

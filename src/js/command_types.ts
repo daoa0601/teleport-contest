@@ -20,6 +20,7 @@ export type RepeatCommandEntry =
 export type CannedCommand =
     | { kind: 'rub' | 'apply' | 'wield'; invlet: string }
     | { kind: 'swap-weapon' }
+    | { kind: 'reqmenu' }
     | { kind: 'inventory-action'; action: InventoryAction }
     | { kind: 'fire'; shotLimit: number };
 

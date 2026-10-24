@@ -1572,10 +1572,15 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
     }
 }
 function enqueueInventoryAction(action) {
-    if (action && !['\x1b', ' ', '\n', '\r'].includes(action.key)) {
-        game._cannedCommands ??= [];
-        game._cannedCommands.push({ kind: 'inventory-action', action });
-    }
+    if (!action || ['\x1b', ' ', '\n', '\r'].includes(action.key))
+        return;
+    game._cannedCommands ??= [];
+    // itemactions_pushkeys() queues the normal prefix so command admission
+    // and repeat include it before the inventory command runs.
+    if (action.key === 'e' || action.key === 'q'
+        || action.key === 'T' && !((action.item.owornmask ?? 0) & W_ARMOR))
+        game._cannedCommands.push({ kind: 'reqmenu' });
+    game._cannedCommands.push({ kind: 'inventory-action', action });
 }
 async function doquaff() {
     const result = await quaff();
@@ -2655,7 +2660,6 @@ async function runInventoryAction({ key, item }) {
             return;
         case 'e':
             queueCommandKeys(letter);
-            game.iflags.menu_requested = true;
             await doeat();
             return;
         case 'E':
@@ -2688,7 +2692,6 @@ async function runInventoryAction({ key, item }) {
             return;
         case 'q':
             queueCommandKeys(letter);
-            game.iflags.menu_requested = true;
             await doquaff();
             return;
         case 'Q':
@@ -2710,10 +2713,8 @@ async function runInventoryAction({ key, item }) {
             queueCommandKeys(letter);
             if ((item.owornmask ?? 0) & W_ARMOR)
                 await removeWornItem('take off', true);
-            else {
-                game.iflags.menu_requested = true;
+            else
                 await tipCommand();
-            }
             return;
         case 't':
             await dothrow(item);

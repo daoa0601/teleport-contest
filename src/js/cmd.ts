@@ -1694,10 +1694,14 @@ async function runCommandHandler(binding: CommandBinding, {
 }
 
 function enqueueInventoryAction(action: InventoryAction | null): void {
-    if (action && !['\x1b', ' ', '\n', '\r'].includes(action.key)) {
-        game._cannedCommands ??= [];
-        game._cannedCommands.push({ kind: 'inventory-action', action });
-    }
+    if (!action || ['\x1b', ' ', '\n', '\r'].includes(action.key)) return;
+    game._cannedCommands ??= [];
+    // itemactions_pushkeys() queues the normal prefix so command admission
+    // and repeat include it before the inventory command runs.
+    if (action.key === 'e' || action.key === 'q'
+        || action.key === 'T' && !((action.item.owornmask ?? 0) & W_ARMOR))
+        game._cannedCommands.push({ kind: 'reqmenu' });
+    game._cannedCommands.push({ kind: 'inventory-action', action });
 }
 
 async function doquaff() {
@@ -2760,7 +2764,6 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
     case 'd': queueCommandKeys(letter); await dodrop(); return;
     case 'e':
         queueCommandKeys(letter);
-        game.iflags.menu_requested = true;
         await doeat();
         return;
     case 'E': queueCommandKeys(letter); await doengrave(); return;
@@ -2772,7 +2775,6 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
     case 'P': case 'W': queueCommandKeys(letter); await dowear(); return;
     case 'q':
         queueCommandKeys(letter);
-        game.iflags.menu_requested = true;
         await doquaff();
         return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
@@ -2785,10 +2787,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
     case 'T':
         queueCommandKeys(letter);
         if ((item.owornmask ?? 0) & W_ARMOR) await removeWornItem('take off', true);
-        else {
-            game.iflags.menu_requested = true;
-            await tipCommand();
-        }
+        else await tipCommand();
         return;
     case 't': await dothrow(item); return;
     case 'w': queueCommandKeys(letter); await dowield(); return;
