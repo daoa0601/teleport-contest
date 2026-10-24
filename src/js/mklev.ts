@@ -75,7 +75,7 @@ import {
 } from './buried_object.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage, fixShopDamage } from './shop_damage.js';
 import { GameMap } from './game.js';
 import { levelAllowsBones } from './bones_admission.js';
 import { restoreBonesMonsters } from './bones_monster.js';
@@ -3899,6 +3899,7 @@ async function getbones(): Promise<boolean> {
     restoreLevelRegions(game, 0);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
+    await fixShopDamage(game);
     sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = await unlinkBonesAfterRestore(sourceDisplayLevel);

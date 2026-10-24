@@ -1,14 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { game } from '../js/gstate.js';
+import { game, requireGameLevel } from '../js/gstate.js';
+import { DOOR, D_NODOOR, HWALL, SHOP_WALL_COST } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';
+import { addShopDamage } from '../js/shop_damage.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
+import { createStaffedShop } from './support/shop.js';
 function bonesRoom(storage, wizard = true) {
     freshPlayableRoom({ flags: { debug: wizard }, hero: { uz: { dnum: 0, dlevel: 7 } } });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
@@ -56,4 +59,24 @@ for (const wizard of [false, true]) {
         }
     });
 }
+void test('loading bones repairs an old shop wall breach before play resumes', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    const { roomno } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
+    const wall = requireGameLevel().requireAt(8, 10);
+    wall.typ = HWALL;
+    wall.roomno = roomno;
+    wall.edge = true;
+    addShopDamage(8, 10, SHOP_WALL_COST);
+    wall.typ = DOOR;
+    wall.doormask = D_NODOOR;
+    game.moves += 5;
+    assert.equal(saveBonesLevel(), true);
+    bonesRoom(storage);
+    game.moves = 20;
+    resetInputState().feed('yn');
+    await mklev();
+    assert.equal(requireGameLevel().requireAt(8, 10).typ, HWALL);
+    assert.equal(requireGameLevel().damagelist?.length, 0);
+});
 //# sourceMappingURL=bones_restore_lifecycle.test.js.map
