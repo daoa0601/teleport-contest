@@ -28,8 +28,8 @@ negative checks. The exit status is nonzero if any claim fails.
 | `cfront.py` | clang's typed JSON AST of the real C sources (macros, `#if`, conversions resolved by clang) |
 | `csym.py` | C symbolic executor: typed integers, UB obligations |
 | `jssym.py` | JavaScript symbolic executor (tree-sitter): exact-integer number model, BigInt |
-| `core.py` | paths, the abstract random streams, unrolling and invariant loop rules |
-| `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant |
+| `core.py` | paths, the abstract random streams, unrolling and invariant-plus-variant loop rules |
+| `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant and variant |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
 

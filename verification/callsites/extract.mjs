@@ -93,6 +93,27 @@ function resolve(id) {
 // declared type is readonly (lint rejects the casts that could bypass that),
 // or every reference only indexes it or reads its length.
 const tableCache = new Map();
+// Whether an expression is written: assigned (also inside a destructuring
+// pattern), incremented, decremented, or deleted.
+function isWritten(n) {
+    let child = n;
+    let p = n.parent;
+    while (ts.isParenthesizedExpression(p) || ts.isArrayLiteralExpression(p) || ts.isSpreadElement(p)
+        || ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p) || ts.isObjectLiteralExpression(p)) {
+        child = p;
+        p = p.parent;
+    }
+    if (ts.isBinaryExpression(p) && p.left === child
+        && p.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
+        && p.operatorToken.kind <= ts.SyntaxKind.LastAssignment) return true;
+    if ((ts.isForOfStatement(p) || ts.isForInStatement(p)) && p.initializer === child) return true;
+    if (ts.isPrefixUnaryExpression(n.parent) || ts.isPostfixUnaryExpression(n.parent)) {
+        const op = n.parent.operator;
+        return op === ts.SyntaxKind.PlusPlusToken || op === ts.SyntaxKind.MinusMinusToken;
+    }
+    return ts.isDeleteExpression(n.parent);
+}
+
 function tableOf(n) {
     n = strip(n);
     if (!ts.isIdentifier(n)) return null;
@@ -111,10 +132,7 @@ function tableOf(n) {
             if (!readOnly) return;
             if (ts.isIdentifier(m) && m !== decl.name && resolve(m) === symbol) {
                 const p = m.parent;
-                const indexed = ts.isElementAccessExpression(p) && p.expression === m
-                    && !(ts.isBinaryExpression(p.parent) && p.parent.left === p
-                        && p.parent.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
-                        && p.parent.operatorToken.kind <= ts.SyntaxKind.LastAssignment);
+                const indexed = ts.isElementAccessExpression(p) && p.expression === m && !isWritten(p);
                 const length = ts.isPropertyAccessExpression(p) && p.expression === m && p.name.text === 'length';
                 const importing = ts.isImportSpecifier(p) || ts.isExportSpecifier(p);
                 if (!indexed && !length && !importing) readOnly = false;

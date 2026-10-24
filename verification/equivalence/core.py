@@ -68,8 +68,12 @@ class LoopSpec:
     map variable names to integer terms at the loop head and at loop entry.
     facts(view, entry, pos, pos0) -> list of definitional instances (see
     specs.Recurrence) that are assumed wherever the invariant is assumed.
+    variant(view, entry) -> integer term that is non-negative whenever the
+    body runs and strictly smaller after it, so the loop terminates (the
+    invariant alone gives only partial correctness).
     """
     invariant: Callable
+    variant: Callable
     facts: Callable = lambda view, entry, pos, pos0: []
     streams: tuple = ('core',)
 
@@ -210,6 +214,8 @@ class Machine:
                 if not taken:
                     exits.append(p3)
                     continue
+                measure = spec.variant(view, entry)
+                self.oblige(p3, measure >= 0, 'loop variant is non-negative when the body runs', where)
                 for p4 in body_fn(p3):
                     if p4.returned or len(p4.events) != events_before:
                         raise Unsupported(f'{where}: annotated loop returns or logs inside its body')
@@ -220,6 +226,7 @@ class Machine:
                     p4.pc.extend(spec.facts(after, entry, p4.pos, pos0))
                     for c in spec.invariant(after, entry, p4.pos, pos0):
                         self.oblige(p4, c, 'loop invariant is preserved', where)
+                    self.oblige(p4, spec.variant(after, entry) < measure, 'loop variant decreases', where)
         return exits
 
 

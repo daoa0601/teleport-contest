@@ -26,6 +26,15 @@ SAFE = 2 ** 53
 _PARSER = Parser(Language(tsj.language()))
 
 
+def _close_scope(outer, paths):
+    """Drop the bindings a block or for statement introduced (let, const);
+    outer is the set of names bound before it ran."""
+    for p in paths:
+        for name in [k for k in p.env if k not in outer]:
+            del p.env[name]
+    return paths
+
+
 @dataclass(frozen=True)
 class V:
     """A JavaScript value: kind is num, big, bool, str, ctx, obj, fn, ext, undef."""
@@ -136,10 +145,10 @@ class JSExec:
         if t == 'comment':
             return [path]
         if t == 'statement_block':
-            paths = [path]
+            outer, paths = set(path.env), [path]
             for c in n.named_children:
                 paths = seq(paths, lambda p, c=c: self.exec(p, c))
-            return paths
+            return _close_scope(outer, paths)
         if t in ('lexical_declaration', 'variable_declaration'):
             paths = [path]
             for d in n.named_children:
@@ -181,6 +190,10 @@ class JSExec:
 
     def _declare(self, path, d):
         name = d.child_by_field_name('name').text.decode()
+        if name in path.env:
+            # one environment per frame: a shadowing declaration would
+            # overwrite the outer binding, so it is rejected rather than modeled
+            raise Unsupported(f'declaration of {name} shadows a binding at {self.where(d)}')
         value = d.child_by_field_name('value')
         if value is None:
             path.env[name] = UNDEF
@@ -195,8 +208,10 @@ class JSExec:
         cond = n.child_by_field_name('condition')
         if cond.type == 'expression_statement':
             cond = cond.named_children[0]
+        outer = set(path.env)
         paths = self.exec(path, n.child_by_field_name('initializer'))
-        return seq(paths, lambda p: self._loop(p, n, cond, n.child_by_field_name('increment')))
+        paths = seq(paths, lambda p: self._loop(p, n, cond, n.child_by_field_name('increment')))
+        return _close_scope(outer, paths)
 
     def _loop(self, path, n, cond, update):
         body = n.child_by_field_name('body')
@@ -400,7 +415,7 @@ class JSExec:
             if obj == 'Math':
                 return self._math(path, prop, arg_nodes, where)
             if obj == '_rngLog' and prop == 'push':
-                return [(path, self._log(path, arg_nodes[0]))]
+                return [(p, UNDEF) for p in self._log(path, arg_nodes[0])]
             raise Unsupported(f'call {obj}.{prop} at {where}')
         name = fn.text.decode()
         out = []
@@ -439,15 +454,17 @@ class JSExec:
             return self.eval(path, arg)
         out = []
         for p, args in self.eval_list(path, arg_nodes):
+            if any(a.kind != 'num' for a in args) or not args:
+                raise Unsupported(f'Math.{name} needs numeric arguments at {where}')
             vs = [a.v for a in args]
             if name == 'abs':
                 r = z3.If(vs[0] < 0, -vs[0], vs[0])
             elif name == 'sign':
                 r = z3.If(vs[0] < 0, -1, z3.If(vs[0] > 0, 1, 0))
-            elif name == 'max':
-                r = z3.If(vs[0] >= vs[1], vs[0], vs[1])
-            elif name == 'min':
-                r = z3.If(vs[0] <= vs[1], vs[0], vs[1])
+            elif name in ('max', 'min'):
+                r = vs[0]
+                for v in vs[1:]:
+                    r = z3.If(v > r, v, r) if name == 'max' else z3.If(v < r, v, r)
             else:
                 raise Unsupported(f'Math.{name} at {where}')
             out.append((p, V('num', r)))
@@ -456,15 +473,20 @@ class JSExec:
     def _log(self, path, template):
         if template.type != 'template_string':
             raise Unsupported('log entry is not a template literal')
-        shape, values = '', []
+        # each substitution may fork or draw, so every resulting path gets
+        # its own copy of the entry, appended after the substitutions' effects
+        states = [(path, '', ())]
         for c in template.named_children:
             if c.type == 'string_fragment':
-                shape += c.text.decode()
+                states = [(p, shape + c.text.decode(), values) for p, shape, values in states]
             elif c.type == 'template_substitution':
-                [(_, v)] = self.eval(path, c.named_children[0])
-                if v.kind != 'num':
-                    raise Unsupported('non-numeric log substitution')
-                shape += '{}'
-                values.append(v.v)
-        path.events.append(Event(shape, tuple(values)))
-        return UNDEF
+                following = []
+                for p, shape, values in states:
+                    for p2, v in self.eval(p, c.named_children[0]):
+                        if v.kind != 'num':
+                            raise Unsupported('non-numeric log substitution')
+                        following.append((p2, shape + '{}', values + (v.v,)))
+                states = following
+        for p, shape, values in states:
+            p.events.append(Event(shape, values))
+        return [p for p, _, _ in states]

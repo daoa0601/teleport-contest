@@ -83,7 +83,8 @@ def _d_loops():
     def js_facts(v, e, pos, pos0):
         return sums.instances(pos0['core'], e['x'], v['i']) + draws(pos0['core'], v['i'])
 
-    return {('c', 'd', 0): LoopSpec(c_inv, c_facts), ('js', 'd', 0): LoopSpec(js_inv, js_facts)}
+    return {('c', 'd', 0): LoopSpec(c_inv, lambda v, e: v['n'], c_facts),
+            ('js', 'd', 0): LoopSpec(js_inv, lambda v, e: e['n'] - v['i'], js_facts)}
 
 
 LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
@@ -97,7 +98,9 @@ SPECS = [
          probes=[('x == 0', lambda s: [s['x'] == 0]), ('x < 0', lambda s: [s['x'] < 0])]),
     Spec('rnd', 'rnd', 'rnd', [('x', INT)], pre=lambda s: [s['x'] >= 1],
          probes=[('x == 0', lambda s: [s['x'] == 0]), ('x < 0', lambda s: [s['x'] < 0])],
-         mutants=[(RNG, 'const val = RND(x) + 1;', 'const val = RND(x - 1) + 1;')]),
+         mutants=[(RNG, 'const val = RND(x) + 1;', 'const val = RND(x - 1) + 1;'),
+                  # a draw inside a log substitution must reach the path
+                  (RNG, '`rnd(${x})=${val}`', '`rnd(${x})=${val + rn2(1)}`')]),
     Spec('rn1', 'rn1_macro', 'rn1', [('x', INT), ('y', INT)],
          pre=lambda s: [s['x'] >= 1, s['y'] + s['x'] - 1 <= INT_MAX],
          probes=[('any y', lambda s: [s['x'] >= 1])]),
@@ -111,7 +114,9 @@ SPECS = [
          pre=lambda s: [s['n'] >= 0, s['x'] >= 0, z3.Or(s['x'] >= 1, s['n'] == 0),
                         s['n'] * s['x'] <= INT_MAX],
          loops=_d_loops(),
-         mutants=[(RNG, 'let sum = 0;', 'let sum = 1;')]),
+         mutants=[(RNG, 'let sum = 0;', 'let sum = 1;'),
+                  # keeps the invariant but never terminates: the variant catches it
+                  (RNG, 'i++)\n        sum += RND(x) + 1;', 'i += 0)\n        sum += 0;')]),
     Spec('rne', 'rne', 'rne', [('x', INT)], state=ULEVEL,
          pre=lambda s: [s['x'] >= 1, s['u.ulevel'] >= 0, s['u.ulevel'] <= 30],
          mutants=[(RNG, 'ulevel < 15 ? 5', 'ulevel < 16 ? 5', 'equivalent'),   # 15 / 3 == 5
@@ -128,9 +133,13 @@ SPECS = [
     Spec('distmin', 'distmin', 'distmin', [(v, COORDXY) for v in ('x0', 'y0', 'x1', 'y1')],
          pre=lambda s: [z3.And(s[v] >= -2 ** 14, s[v] < 2 ** 14) for v in ('x0', 'y0', 'x1', 'y1')],
          probes=[('any coordxy', lambda s: [])],
-         mutants=[(HACKLIB, 'return Math.max(Math.abs(x1 - x2)', 'return Math.min(Math.abs(x1 - x2)')]),
+         mutants=[(HACKLIB, 'return Math.max(Math.abs(x1 - x2)', 'return Math.min(Math.abs(x1 - x2)'),
+                  (HACKLIB, 'Math.abs(y1 - y2));', 'Math.abs(y1 - y2), 1);')]),
     Spec('dist2', 'dist2', 'dist2', [(v, COORDXY) for v in ('x0', 'y0', 'x1', 'y1')],
          pre=lambda s: [z3.And(s[v] >= -2 ** 14, s[v] < 2 ** 14) for v in ('x0', 'y0', 'x1', 'y1')],
          probes=[('any coordxy', lambda s: [])],
-         mutants=[(HACKLIB, '(y1 - y2) * (y1 - y2);', '(y1 - y2) * (y2 - y1);')]),
+         mutants=[(HACKLIB, '(y1 - y2) * (y1 - y2);', '(y1 - y2) * (y2 - y1);'),
+                  # a block-local binding must not escape or overwrite the outer one
+                  (HACKLIB, 'return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);',
+                   'let r = 0; { let r = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2); } return r;')]),
 ]

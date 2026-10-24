@@ -112,8 +112,11 @@ but none is checked yet:
 - Supported subset: integer C with locals, struct reads from globals, calls,
   and `while`; JS with numbers, BigInt, `Math`, calls, and `for`/`while`. Not
   yet: pointers and heap writes, arrays, `switch`, Lua, `async`/`await`,
-  exceptions as control flow, and loops that log inside their bodies under
-  induction.
+  exceptions as control flow, loops that log inside their bodies under
+  induction, and JS declarations that shadow an outer binding (rejected, not
+  modeled). An induction loop needs a variant as well as an invariant, so
+  equivalence includes termination. `sizeof` is evaluated for the LP64
+  target, and other type traits are rejected.
 - Log comparison uses structured entries. C's `@ caller` annotation and
   number prefix are ignored, as in scoring.
 

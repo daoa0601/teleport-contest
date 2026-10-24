@@ -8,6 +8,7 @@ which is clang's implementation-defined behavior on the recorder's LP64 target.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 
 import z3
@@ -52,6 +53,24 @@ def convert(v, src, dst):
         return v % (2 ** bits)
     wrapped = (v + 2 ** (bits - 1)) % (2 ** bits) - 2 ** (bits - 1)
     return z3.If(in_range(v, dst), v, wrapped)
+
+
+SCALAR_SIZES = {'char': 1, 'signed char': 1, 'unsigned char': 1, 'short': 2, 'unsigned short': 2,
+                'int': 4, 'unsigned int': 4, 'long': 8, 'unsigned long': 8,
+                'long long': 8, 'unsigned long long': 8}
+
+
+def c_sizeof(qual):
+    """sizeof for the LP64 targets the recorder is built for; other types are unsupported."""
+    qual = re.sub(r'\b(const|volatile)\b', '', qual).strip()
+    array = re.fullmatch(r'(.*\S)\s*\[(\d+)\]', qual)
+    if array:
+        return int(array.group(2)) * c_sizeof(array.group(1))
+    if qual.endswith('*'):
+        return 8
+    if qual in SCALAR_SIZES:
+        return SCALAR_SIZES[qual]
+    raise Unsupported(f'sizeof({qual})')
 
 
 @dataclass(frozen=True)
@@ -316,7 +335,10 @@ class CExec:
         if k == 'CallExpr':
             return self._call_expr(path, n)
         if k == 'UnaryExprOrTypeTraitExpr':
-            return [(path, CVal(z3.IntVal(0), (64, False)))]
+            if n.get('name') != 'sizeof':
+                raise Unsupported(f"C {n.get('name')} at {self.where(n)}")
+            t = n['argType'] if 'argType' in n else n['inner'][0]['type']
+            return [(path, CVal(z3.IntVal(c_sizeof(t.get('desugaredQualType', t['qualType']))), (64, False)))]
         raise Unsupported(f'C expression {k} at {self.where(n)}')
 
     def _ref(self, path, n):
@@ -356,6 +378,10 @@ class CExec:
         if op in ('/', '%'):
             self.m.oblige(path, b != 0, f'C division by zero ({op})', where)
             if signed:
+                # the quotient of the minimum by -1 is unrepresentable, which
+                # makes both / and % undefined even though the remainder is 0
+                self.m.oblige(path, z3.Not(z3.And(a == -2 ** (bits - 1), b == -1)),
+                              f'C signed overflow in {op} (minimum by -1)', where)
                 r = self.m.tdiv(path, a, b) if op == '/' else self.m.trem(path, a, b)
             else:
                 r = a / b if op == '/' else a % b
