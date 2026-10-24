@@ -3869,16 +3869,22 @@ async function getbones(): Promise<boolean> {
 
     const encoded = game.storage?.getItem(bonesStorageKey());
     if (!encoded) return false;
-    if (game.flags?.debug
-        && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
-    let payload: BonesPayload;
+    let payload: BonesPayload | null = null;
     try {
         payload = decodeBonesPayload(encoded, BONES_VERSION);
+        if (!validMonsterWormBodies(payload.level)) payload = null;
     } catch (_error) {
+        payload = null;
+    }
+    if (!payload) {
+        if (!game.flags.debug)
+            await pline('Discarding unusable bones; no need to panic...');
+        await unlinkBonesAfterRestore();
         return false;
     }
-    if (!validMonsterWormBodies(payload.level)) return false;
+    if (game.flags.debug
+        && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
     restoreMonsterWormHeads(payload.level);
     restoreEngravings(payload.level);
@@ -3895,17 +3901,26 @@ async function getbones(): Promise<boolean> {
     restoreBonesMonsterAttitudes(game.level);
     sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
-    game._restoredBones = true;
+    game._restoredBones = await unlinkBonesAfterRestore(sourceDisplayLevel);
+    return game._restoredBones;
+}
 
-    if (game.flags?.debug) {
+async function unlinkBonesAfterRestore(displayLevel: GameMap | null = null): Promise<boolean> {
+    if (game.flags.debug) {
         const unlink = await bonesPrompt(
-            'Unlink bones? [yn] (n) ', sourceDisplayLevel,
+            'Unlink bones? [yn] (n) ', displayLevel,
         );
-        if (unlink === 'y') game.storage?.removeItem?.(bonesStorageKey());
-    } else {
-        game.storage?.removeItem?.(bonesStorageKey());
+        if (unlink !== 'y') return true;
     }
-    return true;
+    const storage = game.storage;
+    if (!storage) return false;
+    try {
+        const key = bonesStorageKey();
+        storage.removeItem(key);
+        return storage.getItem(key) === null;
+    } catch (_error) {
+        return false;
+    }
 }
 
 // C ref: allmain.c l_nhcore_init()
