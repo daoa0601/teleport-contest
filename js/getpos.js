@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
-import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, showUnrememberedTopline, terrain_glyph, } from './display.js';
+import { COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
+import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, showUnrememberedTopline, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -10,7 +10,6 @@ import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
@@ -131,6 +130,10 @@ function matchingGetposSymbols(key, state) {
 function getposGlyphSymbol(glyph) {
     if (glyph === undefined)
         return null;
+    if (glyph === GlyphOffset.cmapStone)
+        return CmapSymbol.stone;
+    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
+        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
     if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
         return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
     if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB)
@@ -386,17 +389,15 @@ function getposArea(state) {
     }
     const classify = (tx, ty) => {
         const location = state.level?.at(tx, ty);
-        if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
+        if (!location || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
             return null;
-        if (location.typ === STONE || location.typ === SCORR || IS_WALL(location.typ) || location.typ === TREE)
-            return 2;
         const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null)
             return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
             || symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain)
             return 1;
-        if (symbol >= CmapSymbol.vwall && symbol <= CmapSymbol.trwall || symbol === CmapSymbol.tree)
+        if (symbol <= CmapSymbol.trwall || symbol === CmapSymbol.tree)
             return 2;
         if (symbol === CmapSymbol.corr || symbol === CmapSymbol.litcorr)
             return 3;
@@ -412,7 +413,8 @@ function getposArea(state) {
     const pending = [{ x, y }];
     for (let index = 0; index < pending.length; index++) {
         const spot = pending[index];
-        if (!spot || classify(spot.x, spot.y) !== category)
+        if (!spot || classify(spot.x, spot.y) !== category
+            || index > 0 && !state.level?.at(spot.x, spot.y)?.seenv)
             continue;
         const key = spot.y * COLNO + spot.x;
         if (area.has(key))
