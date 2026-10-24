@@ -3,8 +3,8 @@
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
-import { CRUSHING, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, KILLED_BY_AN, NO_KILLER_PREFIX, } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation, } from './display.js';
+import { CRUSHING, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, KILLED_BY_AN, MOAT, NO_KILLER_PREFIX, } from './const.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';
@@ -22,7 +22,7 @@ import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterSubjectPronoun } from './monster_name.js';
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_WALLWALK = 0x00000008;
@@ -222,7 +222,7 @@ async function crushEntity(entity, bridge, state, options, killer, death) {
     if (state.program_state.gameover)
         return;
     if (died && visible) {
-        await plineWithContinuation(`Unfortunately for ${entityName(entity, state)}, it is still crushed.`);
+        await plineWithContinuation(`Unfortunately for ${entityName(entity, state)}, ${monsterSubjectPronoun(monster, { state })} is still crushed.`);
     }
 }
 function occupantAt(occupants, x, y) {
@@ -348,10 +348,11 @@ async function handleEntity(entity, bridge, wall, state, options, occupants) {
         return;
     }
     if (isPoolOrLavaAt(entity.x, entity.y, state) && visibleAfterMove && !entity.hero) {
-        const liquid = isLavaAt(entity.x, entity.y, state) ? 'lava' : 'moat';
-        await plineWithContinuation(heroIsHallucinating(state)
-            ? `${entityPhrase(entity, 'drink', state)} the ${liquid} and disappears.`
-            : `${entityPhrase(entity, 'fall', state)} into the ${liquid}.`);
+        const lava = isLavaAt(entity.x, entity.y, state);
+        if (heroIsHallucinating(state))
+            await plineWithContinuation(`${entityPhrase(entity, 'drink', state)} the ${lava ? 'lava' : 'moat'} and disappears.`);
+        else
+            await plineWithContinuation(`${entityPhrase(entity, 'fall', state)} into the ${lava ? displayLiquidName('lava', state) : 'moat'}.`);
     }
     await dieMovingEntity(entity, bridge, state, options, occupants, 'fell from a drawbridge', { showKillMessage: visibleAfterMove, noCorpse: true });
 }
@@ -364,12 +365,8 @@ export async function moveDrawbridgeOccupants(bridge, wall, state, options = {})
     await handleEntity(occupants[1], bridge, wall, state, options, occupants);
 }
 async function settleEntityAfterCollapse(entity, state) {
-    if (!isPoolOrLavaAt(entity.x, entity.y, state))
-        return;
     if (entity.hero) {
-        await heroLiquidEffects({
-            state,
-        });
+        await heroSpotEffects(state);
         return;
     }
     await resolveMonsterLiquid(entity.actor, state, {
@@ -378,34 +375,43 @@ async function settleEntityAfterCollapse(entity, state) {
         monsterMoving: !!state.context.mon_moving,
     });
 }
-async function killCollapseVictim(entity, bridge, state, options, killer) {
-    if (entityIsVisible(entity)) {
-        await plineWithContinuation(entity.hero
-            ? `You are ${killer === 'exploding drawbridge'
-                ? 'blown apart by flying debris'
-                : 'hit by a huge chunk of metal'}!`
-            : `${entityName(entity, state, true)} is ${killer === 'exploding drawbridge'
-                ? 'blown apart by flying debris'
-                : 'hit by a huge chunk of metal'}!`);
+async function killCollapseVictim(entity, bridge, state, options, occupants, killer) {
+    const inView = entityIsVisible(entity);
+    if (inView) {
+        if (killer === 'exploding drawbridge')
+            await plineWithContinuation(`${entityPhrase(entity, 'are', state)} blown apart by flying debris.`);
+        else if (!entity.hero && heroIsHallucinating(state))
+            await plineWithContinuation(`${entityPhrase(entity, 'get', state)} into some heavy metal!`);
+        else
+            await plineWithContinuation(`${entityPhrase(entity, 'are', state)} hit by a huge chunk of metal!`);
     }
-    await crushEntity(entity, bridge, state, options, killer, {
-        showKillMessage: entityIsVisible(entity), noCorpse: true,
+    else if (killer === 'collapsing drawbridge'
+        && !heroIsDeaf(state) && !entity.hero && !isPoolAt(bridge.x, bridge.y, state)) {
+        await publishHeardMessage('a crushing sound.', plineWithContinuation, state);
+    }
+    await dieMovingEntity(entity, bridge, state, options, occupants, killer, {
+        showKillMessage: inView, noCorpse: true,
     });
 }
 export async function destroyDrawbridgeOccupants(bridge, wall, state, options = {}) {
-    const atWall = entityAt(wall.x, wall.y, state);
+    const occupants = [null, entityAt(wall.x, wall.y, state)];
+    const atWall = occupants[1];
     if (atWall && !entityAutomaticallyMissed(atWall, state)) {
-        await killCollapseVictim(atWall, bridge, state, options, 'exploding drawbridge');
+        await killCollapseVictim(atWall, bridge, state, options, occupants, 'exploding drawbridge');
         if (state.program_state?.gameover)
             return;
     }
-    const onSpan = entityAt(bridge.x, bridge.y, state);
+    const onSpan = occupants[0] = entityAt(bridge.x, bridge.y, state);
     if (!onSpan)
         return;
     if (entityMissed(onSpan, state, true)) {
         await settleEntityAfterCollapse(onSpan, state);
         return;
     }
-    await killCollapseVictim(onSpan, bridge, state, options, 'collapsing drawbridge');
+    await killCollapseVictim(onSpan, bridge, state, options, occupants, 'collapsing drawbridge');
+    if (state.program_state.gameover)
+        return;
+    if (state.level?.at(onSpan.x, onSpan.y)?.typ === MOAT)
+        await handleEntity(onSpan, bridge, wall, state, options, occupants);
 }
 //# sourceMappingURL=drawbridge_occupants.js.map

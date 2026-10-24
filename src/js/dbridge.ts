@@ -11,7 +11,7 @@ import {
     ROOM, W_NONDIGGABLE, isok,
 } from './const.js';
 import {
-    newsym, plineWithContinuation,
+    displayLiquidName, newsym, plineWithContinuation,
 } from './display.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import {
@@ -156,11 +156,11 @@ function heroAt(point: Position, state: GameState): boolean {
 async function announceBridgeDestruction(bridge: DrawbridgeSquare, wall: DrawbridgeSquare, under: number, state: GameState): Promise<void> {
     const overLava = under === DB_LAVA;
     if (under === DB_MOAT || overLava) {
-        const liquid = overLava ? 'lava' : 'moat';
         const raised = bridge.location.typ === DRAWBRIDGE_UP;
         const visiblePoint = raised ? wall : bridge;
         if (cansee(visiblePoint.x, visiblePoint.y)
             || heroAt(visiblePoint, state)) {
+            const liquid = overLava ? displayLiquidName('lava', state) : 'moat';
             await plineWithContinuation(raised
                 ? `The portcullis of the drawbridge falls into the ${liquid}!`
                 : `The drawbridge collapses into the ${liquid}!`);
