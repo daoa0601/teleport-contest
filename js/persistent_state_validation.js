@@ -45,7 +45,6 @@ function validPersistentState(value, entities) {
         _artifactFound: optional(setOf(integer)),
         _artifactOrigins: optional(mapOf(validArtifactId, oneOf('gift', 'wish', 'named', 'viadip', 'lvldef', 'bones', 'random'))),
         _artifactRuntime: optional(mapOf(integer, validArtifact)),
-        _bonesEncountered: optional(boolean),
         _deathKiller: optional(string),
         _polymorphGenocideCause: optional(oneOf('scroll', 'confusion', 'throne')),
         _encounteredObjectTypes: optional(setOf(integer)),

@@ -420,11 +420,11 @@ import {
 } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
+    doborn,
     doquit,
     finishHeroDeath,
-    vanquishedLines, listGenocided,
+    listGenocided, listVanquished,
 } from './end.js';
-import { hasRecordedMonsterDeaths } from './monster_vitals.js';
 import {
     applyHeroContactPassive,
 } from './monster_passive.js';
@@ -3456,6 +3456,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
     ['wizmakemap', wizMakeMap],
+    ['wizborn', doborn],
 ]);
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
@@ -4352,13 +4353,7 @@ async function doChronicle() {
 }
 
 async function doVanquished() {
-    if (!hasRecordedMonsterDeaths()) {
-        await pline('No creatures have been vanquished.');
-    } else {
-        await showDisclosureOverlay(vanquishedLines(), {
-            restoreUnderlay: true,
-        });
-    }
+    await listVanquished(game.iflags.menu_requested ? 'A' : 'y');
     game._pending_message = '';
     game.context.move = 0;
 }

@@ -293,7 +293,6 @@ export interface GameState {
     _artifactOrigins?: Map<number, ArtifactOrigin>;
     _artifactDiscoveries?: number[];
     gamelog?: Array<{ turn: number; text: string }>;
-    _bonesEncountered?: boolean;
     _bonesSaved?: boolean;
     _canMakeBones?: boolean;
     _deathKiller?: string;

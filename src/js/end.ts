@@ -50,7 +50,7 @@ import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD,
-    ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
+    ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED,
     PANICKED, QUIT, STARVING, STONING, TRICKED,
     In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
@@ -505,6 +505,44 @@ export function vanquishedLines(ask = false): TextMenuEntry[] {
     if (entries.length > 1)
         lines.push(`${total} creatures vanquished.`);
     return lines;
+}
+
+// C insight.c:dovanquished() -> list_vanquished().  The 'm' command prefix
+// (iflags.menu_requested) passes 'A' and forces the sort-order choice even
+// when nothing has been vanquished yet; Escape there keeps the old order
+// and the (possibly empty) list still follows.
+export async function listVanquished(defquery: 'y' | 'A' = 'y'): Promise<void> {
+    if (defquery === 'A') await setVanqOrder(true);
+    if (!vanquishedTypeCount()) {
+        if (!game.program_state.gameover)
+            await pline('No creatures have been vanquished.');
+        return;
+    }
+    await showDisclosureOverlay(vanquishedLines(), {
+        restoreUnderlay: true,
+    });
+}
+
+// C insight.c:doborn() (#wizborn): per-species born/died counters plus the
+// genocided (G), extinct (E), or otherwise-gone (X) flag, ending on a blank
+// line; native formats running totals into a buffer but never displays them.
+export async function doborn(): Promise<void> {
+    const lines: string[] = ['died born'];
+    for (const [mnum, vital] of (game.mvitals || []).entries()) {
+        const born = vital?.born ?? 0;
+        const died = vital?.died ?? 0;
+        const gone = vital?.mvflags ?? 0;
+        if (!born && !died && (gone & G_GONE) === 0) continue;
+        const flag = (gone & G_GONE) === G_EXTINCT ? 'E'
+            : (gone & G_GONE) === G_GENOD ? 'G'
+                : (gone & G_GONE) !== 0 ? 'X' : ' ';
+        lines.push(`${String(died).padStart(4)} ${String(born).padStart(4)} ${flag} ${
+            (MONSTER_NAME[mnum] ?? '').padEnd(30)}`);
+    }
+    lines.push('');
+    await showTextWindow(lines);
+    game._pending_message = '';
+    game.context.move = 0;
 }
 
 interface GoneSpecies {

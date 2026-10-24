@@ -268,8 +268,7 @@ import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } fro
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
-import { doquit, finishHeroDeath, vanquishedLines, listGenocided, } from './end.js';
-import { hasRecordedMonsterDeaths } from './monster_vitals.js';
+import { doborn, doquit, finishHeroDeath, listGenocided, listVanquished, } from './end.js';
 import { applyHeroContactPassive, } from './monster_passive.js';
 import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
 import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
@@ -3422,6 +3421,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
     ['wizmakemap', wizMakeMap],
+    ['wizborn', doborn],
 ]);
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0
@@ -4335,14 +4335,7 @@ async function doChronicle() {
     game.context.move = 0;
 }
 async function doVanquished() {
-    if (!hasRecordedMonsterDeaths()) {
-        await pline('No creatures have been vanquished.');
-    }
-    else {
-        await showDisclosureOverlay(vanquishedLines(), {
-            restoreUnderlay: true,
-        });
-    }
+    await listVanquished(game.iflags.menu_requested ? 'A' : 'y');
     game._pending_message = '';
     game.context.move = 0;
 }

@@ -78,7 +78,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _artifactOrigins: optional(mapOf(validArtifactId,
             oneOf('gift', 'wish', 'named', 'viadip', 'lvldef', 'bones', 'random'))),
         _artifactRuntime: optional(mapOf(integer, validArtifact)),
-        _bonesEncountered: optional(boolean),
         _deathKiller: optional(string),
         _polymorphGenocideCause: optional(oneOf('scroll', 'confusion', 'throne')),
         _encounteredObjectTypes: optional(setOf(integer)),
