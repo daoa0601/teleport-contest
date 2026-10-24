@@ -57,6 +57,35 @@ const POSIX_CLASSES = new Map([
     ['space', ' \t\r\n\v\f'], ['upper', 'A-Z'], ['xdigit', 'A-Fa-f0-9'],
 ]);
 
+// macOS libc's regex/FreeBSD/cname.h supplies these names for collating
+// symbols and equivalence classes, including their historical aliases.
+const POSIX_CHARACTER_NAMES = new Map([
+    ['ACK', '\x06'], ['BEL', '\x07'], ['BS', '\x08'], ['CAN', '\x18'],
+    ['CR', '\r'], ['DC1', '\x11'], ['DC2', '\x12'], ['DC3', '\x13'], ['DC4', '\x14'],
+    ['DEL', '\x7f'], ['DLE', '\x10'], ['EM', '\x19'], ['ENQ', '\x05'],
+    ['EOT', '\x04'], ['ESC', '\x1b'], ['ETB', '\x17'], ['ETX', '\x03'],
+    ['FF', '\f'], ['FS', '\x1c'], ['GS', '\x1d'], ['HT', '\t'],
+    ['IS1', '\x1f'], ['IS2', '\x1e'], ['IS3', '\x1d'], ['IS4', '\x1c'],
+    ['LF', '\n'], ['NAK', '\x15'], ['NUL', '\0'], ['RS', '\x1e'],
+    ['SI', '\x0f'], ['SO', '\x0e'], ['SOH', '\x01'], ['STX', '\x02'],
+    ['SUB', '\x1a'], ['SYN', '\x16'], ['US', '\x1f'], ['VT', '\v'],
+    ['alert', '\x07'], ['ampersand', '&'], ['apostrophe', "'"], ['asterisk', '*'],
+    ['backslash', '\\'], ['backspace', '\b'], ['carriage-return', '\r'],
+    ['circumflex', '^'], ['circumflex-accent', '^'], ['colon', ':'], ['comma', ','],
+    ['commercial-at', '@'], ['dollar-sign', '$'], ['eight', '8'], ['equals-sign', '='],
+    ['exclamation-mark', '!'], ['five', '5'], ['form-feed', '\f'], ['four', '4'],
+    ['full-stop', '.'], ['grave-accent', '`'], ['greater-than-sign', '>'],
+    ['hyphen', '-'], ['hyphen-minus', '-'], ['left-brace', '{'], ['left-curly-bracket', '{'],
+    ['left-parenthesis', '('], ['left-square-bracket', '['], ['less-than-sign', '<'],
+    ['low-line', '_'], ['newline', '\n'], ['nine', '9'], ['number-sign', '#'], ['one', '1'],
+    ['percent-sign', '%'], ['period', '.'], ['plus-sign', '+'], ['question-mark', '?'],
+    ['quotation-mark', '"'], ['reverse-solidus', '\\'], ['right-brace', '}'],
+    ['right-curly-bracket', '}'], ['right-parenthesis', ')'], ['right-square-bracket', ']'],
+    ['semicolon', ';'], ['seven', '7'], ['six', '6'], ['slash', '/'], ['solidus', '/'],
+    ['space', ' '], ['tab', '\t'], ['three', '3'], ['tilde', '~'], ['two', '2'],
+    ['underscore', '_'], ['vertical-line', '|'], ['vertical-tab', '\v'], ['zero', '0'],
+]);
+
 // The pinned build uses POSIX extended expressions. JavaScript shares its
 // operators, but needs explicit POSIX classes, literal leading ']' in sets,
 // and an absolute end anchor (its '$' also matches before a final newline).
@@ -77,11 +106,12 @@ function posixPattern(pattern: string): string {
             index = end + 1;
         } else if (inSet && (pattern.startsWith('[.', index) || pattern.startsWith('[=', index))) {
             const end = pattern.indexOf(`${pattern.charAt(index + 1)}]`, index + 2);
-            const character = pattern.slice(index + 2, end);
+            if (end < 0) throw new SyntaxError('invalid collating element');
+            const name = pattern.slice(index + 2, end);
+            const character = name.length === 1 ? name : POSIX_CHARACTER_NAMES.get(name);
             // The native process retains the C locale: collating symbols and
-            // equivalence classes each contain one character.
-            if (end < 0 || character.length !== 1)
-                throw new SyntaxError('invalid collating element');
+            // equivalence classes each resolve to one character.
+            if (character === undefined) throw new SyntaxError('invalid collating element');
             result += '[]\\^-'.includes(character) ? `\\${character}` : character;
             index = end + 1;
         } else if (ch === '\\') {

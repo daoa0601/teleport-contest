@@ -177,6 +177,32 @@ for (const pattern of ['[[.a.]]', '[[=a=]]']) {
     });
 }
 
+for (const [pattern, hidden, visible] of [
+    ['[[.hyphen-minus.]]', '-', 'x'],
+    ['[[.hyphen.]]', '-', 'x'],
+    ['[[.right-square-bracket.]]', ']', '['],
+    ['[[.left-square-bracket.]]', '[', ']'],
+    ['[[.circumflex-accent.]]', '^', 'x'],
+    ['[[.reverse-solidus.]]', '\\', '/'],
+    ['[[.vertical-line.]]', '|', 'x'],
+    ['[[.quotation-mark.]]', '"', "'"],
+    ['[[.zero.]-[.nine.]]+', '502', 'bells'],
+    ['A[[.HT.]]bell', 'A\tbell', 'A bell'],
+    ['[[=hyphen-minus=]]', '-', 'x'],
+] as const) {
+    void test(`MSGTYPE resolves the named bracket elements in ${pattern}`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "^${pattern}$"`);
+
+        await plineWithContinuation(hidden);
+        await plineWithContinuation(visible);
+        await flush_screen(1);
+
+        assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
+        assert.equal(topline(), visible);
+    });
+}
+
 for (const pattern of [
     'A bell(?= rings)', 'A bell(?! stops)', '(?<=A )bell',
     '(?<!No )bell', '(?:A bell)', '(?<sound>A bell)',
