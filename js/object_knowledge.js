@@ -46,7 +46,7 @@ export const OBJECT_CLASS_LABELS = {
     11: 'Wands',
     12: 'Coins',
     13: 'Gems/Stones',
-    14: 'Large rocks',
+    14: 'Boulders/Statues',
     15: 'Iron balls',
     16: 'Chains',
     17: 'Venoms',

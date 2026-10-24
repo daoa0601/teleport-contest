@@ -38,6 +38,18 @@ void test('traditional class discovery accepts an undiscovered class without adv
     assert.equal(game.context.move, 0);
 });
 
+void test('the undiscovered rock class uses the native boulders and statues name', async t => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=menustyle:traditional');
+    recordObjectKnowledge(POT_HEALING);
+    const input = resetInputState();
+    planInput(input, t, [{ prompt: /View discoveries for which sort of objects\?/, keys: '`' }]);
+
+    await rhack('`'.charCodeAt(0));
+
+    assert.equal(game._pending_message, "You haven't discovered any boulders/statues yet.");
+});
+
 void test('partial class discovery skips the class menu when only one class is available', async t => {
     freshObjectRoom();
     applyNethackrc('OPTIONS=menustyle:partial,sortdiscoveries:c');
