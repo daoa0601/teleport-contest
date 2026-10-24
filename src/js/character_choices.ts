@@ -1,6 +1,7 @@
 // C role.c: character admission and prompt text, without terminal I/O.
 import type { Role, Race, Gender, Alignment, RoleKey, RaceName, GenderName, AlignmentName } from './roles.js';
 import { genders, roles } from './roles.js';
+import type { CharacterFilters } from './character_filters.js';
 
 export type RoleChoice = Role | null | undefined;
 export type RaceChoice = Race | null | undefined;
@@ -56,13 +57,15 @@ export const RACE_SELECTION_RULES: Record<RaceName, { aligns: readonly Alignment
 };
 
 // role.c:root_plselection_prompt() and build_plselection_prompt().
-export function characterSelectionQuestion(choices: CharacterChoices, random: ReadonlySet<CharacterFacet>): string {
+export function characterSelectionQuestion(choices: CharacterChoices, random: ReadonlySet<CharacterFacet>,
+    filters?: CharacterFilters): string {
     const { role, race, gender, alignment } = choices;
     const description: string[] = [];
     const missing = new Set<CharacterFacet>();
-    const usableAlignment = alignment && validCharacterAlignment(role, race, alignment) ? alignment : null;
+    const usableAlignment = alignment && !filters?.alignments.has(alignment.name)
+        && validCharacterAlignment(role, race, alignment) ? alignment : null;
     if (usableAlignment) description.push(usableAlignment.name);
-    else if (!race || validCharacterRace(role, race, null)
+    else if (!race || !filters?.races.has(race.name) && validCharacterRace(role, race, null)
         && RACE_SELECTION_RULES[race.name].aligns.length > 1) missing.add('alignment');
 
     const genderCount = role ? ROLE_SELECTION_RULES[role.key].genders?.length ?? genders.length : 0;
@@ -71,7 +74,7 @@ export function characterSelectionQuestion(choices: CharacterChoices, random: Re
             description.push(gender.name);
     } else if (!role || genderCount > 1) missing.add('gender');
 
-    if (race && (!role || validCharacterRace(role, race, usableAlignment)))
+    if (race && (!role || !filters?.races.has(race.name) && validCharacterRace(role, race, usableAlignment)))
         description.push(role ? race.adj : race.name);
     else missing.add('race');
 

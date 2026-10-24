@@ -14,6 +14,7 @@ import { characterSelectionQuestion, nativeRoleChoices, ROLE_SELECTION_RULES as 
 import type { CharacterChoices as Choices, CharacterFacet as Facet, GenderChoice } from './character_choices.js';
 import { characterRoleAllowed, characterRaceAllowed, characterGenderAllowed, characterAlignmentAllowed,
     createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';
+import type { CharacterFilters } from './character_filters.js';
 import { tty_create_nhwindow, tty_add_menu, tty_end_menu, tty_select_menu,
     tty_destroy_nhwindow } from './tty_menu.js';
 import type { TtyMenuWindow } from './tty_menu.js';
@@ -23,6 +24,7 @@ export interface CharacterOptions {
     race: string | null;
     gender: string | null;
     align: string | null;
+    characterFilters?: CharacterFilters;
 }
 export interface SelectedCharacter {
     role: Role;
@@ -47,10 +49,11 @@ export async function selectCharacter(options: CharacterOptions,
 class CharacterSelection {
     private choices: Choices;
     private readonly random = new Set<Facet>();
-    private readonly filters = createCharacterFilters();
+    private readonly filters: CharacterFilters;
     private name = game.plname;
 
     constructor(options: CharacterOptions, private readonly readName: () => Promise<ParsedCharacterName>) {
+        this.filters = options.characterFilters ?? createCharacterFilters();
         this.choices = {
             role: findRole(options.role) ?? null,
             race: findRace(options.race) ?? null,
@@ -204,6 +207,15 @@ class CharacterSelection {
             // A conflicting configured facet can leave pick_*() with no
             // candidates. Keep ROLE_RANDOM until makepicks corrects it.
             if (facet !== 'role' && this.candidates(facet).length === 0) continue;
+            if (facet === 'role' && this.candidates(facet).length === 0) {
+                // randrole_filtered() drops incompatible choices but keeps
+                // each exclusion when an explicitly random role cannot fit.
+                const permitted = this.roleCandidates(EMPTY_CHOICES);
+                const candidates = permitted.length ? permitted : this.fallbackCandidates('role');
+                const key = candidates[rn2(candidates.length)];
+                if (key) this.setFacet('role', key);
+                continue;
+            }
             this.pickRandom(facet);
         }
         if (!this.choices.role) return;
@@ -257,11 +269,7 @@ class CharacterSelection {
     private candidates(facet: Facet, menu = false): string[] {
         const c = this.choices;
         switch (facet) {
-        case 'role': return nativeRoleChoices().filter(role => {
-            const choice = { ...c, role };
-            return characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice)
-                && characterGenderAllowed(this.filters, choice) && characterAlignmentAllowed(this.filters, choice);
-        }).map(role => role.key);
+        case 'role': return this.roleCandidates(c);
         case 'race': return races.filter(race => {
             const choice = { ...c, race };
             return characterRaceAllowed(this.filters, choice) && (!menu
@@ -278,6 +286,14 @@ class CharacterSelection {
                 || characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice));
         }).map(alignment => alignment.name);
         }
+    }
+
+    private roleCandidates(choices: Choices): string[] {
+        return nativeRoleChoices().filter(role => {
+            const choice = { ...choices, role };
+            return characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice)
+                && characterGenderAllowed(this.filters, choice) && characterAlignmentAllowed(this.filters, choice);
+        }).map(role => role.key);
     }
 
     private roleName(role: Role, gender: GenderChoice, combined = false): string {
@@ -389,7 +405,7 @@ class CharacterSelection {
     }
 
     private selectionQuestion(): string {
-        return characterSelectionQuestion(this.choices, this.random);
+        return characterSelectionQuestion(this.choices, this.random, this.filters);
     }
 
 }

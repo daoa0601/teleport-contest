@@ -1,6 +1,8 @@
 // options.js — Parse .nethackrc options.
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 import { game } from './gstate.js';
+import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
+import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
 import { addMessageTypeRule } from './message_types.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
@@ -265,6 +267,7 @@ function parseConfiguration(rc, result, report, fromFile) {
     if (!rc && fromFile)
         return result;
     const petOptionsSeen = new Set();
+    const characterOptionsSeen = new Map();
     const lines = fromFile ? configurationLines(rc, report)
         : [{ bytes: new TextEncoder().encode(rc.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
     for (const { bytes, sourceLine, lineNumber } of lines) {
@@ -341,6 +344,15 @@ function parseConfiguration(rc, result, report, fromFile) {
             // C retains using_alias while unwinding the right-to-left
             // recursion, including aliases belonging to other options.
             usingAlias ||= CONFIGURATION_ALIASES.has(optionName);
+            const characterFacet = configuredCharacterFacet(bindingOption);
+            if (characterFacet) {
+                configureCharacterOption(result, {
+                    facet: characterFacet, value: colonIdx < 0 ? null : stripped.slice(colonIdx + 1),
+                    spelling: stripped, negated,
+                    previous: characterOptionsSeen, fromFile, usingAlias,
+                }, addError);
+                continue;
+            }
             if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
                 && bindingOption !== 'menu_objsyms' && bindingOption !== 'menu_overlay' && bindingOption !== 'menu_tab_sep') {
                 if (!negated && optionValue)
@@ -511,14 +523,6 @@ function parseConfiguration(rc, result, report, fromFile) {
                 const val = stripped.slice(colonIdx + 1).trim();
                 if (key === 'name')
                     result.name = val;
-                else if (key === 'role')
-                    result.role = val;
-                else if (key === 'race')
-                    result.race = val;
-                else if (key === 'gender')
-                    result.gender = val;
-                else if (key === 'align')
-                    result.align = val;
                 else if (key === 'playmode' && val === 'debug')
                     result.flags.debug = true;
                 else if (key === 'playmode' && val === 'explore')
@@ -632,6 +636,99 @@ function parseConfiguration(rc, result, report, fromFile) {
     if (paranoiaSeen)
         result.flags.paranoia_bits = paranoiaBits;
     return result;
+}
+function configuredCharacterFacet(option) {
+    if (option === 'character' || option.length >= 3 && 'role'.startsWith(option))
+        return 'role';
+    if (option.length >= 3 && 'race'.startsWith(option))
+        return 'race';
+    if (option.length >= 3 && 'gender'.startsWith(option))
+        return 'gender';
+    if (option === 'align' || option.length >= 6 && 'alignment'.startsWith(option))
+        return 'alignment';
+    return null;
+}
+// C options.c:parse_role_opt(). Negative lists change filters without
+// replacing an already specified choice; each option source has its own list.
+function configureCharacterOption(result, { facet, value, spelling, negated, previous, fromFile, usingAlias, }, addError) {
+    if (!value) {
+        addError(`Missing parameter for '${spelling}'`);
+        return;
+    }
+    const filters = result.characterFilters ??= createCharacterFilters();
+    let priorNegation = null;
+    let positiveValue = null;
+    let filterOnly = false;
+    const duplicate = fromFile && previous.has(facet);
+    const words = value.trim();
+    for (let token of words ? words.split(/\s+/) : []) {
+        let tokenNegated = false;
+        while (token.startsWith('!') || /^no/i.test(token)) {
+            tokenNegated = !tokenNegated;
+            token = token.slice(token.startsWith('!') ? 1 : token[2] === '-' ? 3 : 2);
+        }
+        if (!token) {
+            addError(`Negated nothing for '${facet}'`);
+            return;
+        }
+        if (priorNegation !== null) {
+            if (tokenNegated !== priorNegation || negated && tokenNegated) {
+                addError(`Invalid mixed negation for '${negated ? '!' : ''}${facet}'`);
+                return;
+            }
+            if (!negated && !tokenNegated) {
+                addError('Multiple role values only allowed when list is negated');
+                return;
+            }
+        }
+        priorNegation = tokenNegated;
+        if (negated || tokenNegated) {
+            if (previous.get(facet) !== 'negative')
+                clearCharacterFilter(filters, facet);
+            if (!setCharacterFilter(filters, token)) {
+                addError(`Invalid ${facet} '${token}'`);
+                return;
+            }
+            previous.set(facet, 'negative');
+            filterOnly = true;
+        }
+        else {
+            if (duplicate && previous.get(facet) === 'negative') {
+                const alias = facet === 'role' ? 'character' : facet === 'alignment' ? 'align' : '(null)';
+                addError(`compound option specified multiple times: ${facet}${usingAlias ? ` (via alias: ${alias})` : ''}`);
+                return;
+            }
+            previous.set(facet, 'positive');
+            positiveValue = token;
+        }
+    }
+    if (filterOnly)
+        return;
+    positiveValue ??= '';
+    const selected = facet === 'role' ? findRole(positiveValue)
+        : facet === 'race' ? findRace(positiveValue)
+            : facet === 'gender' ? findGender(positiveValue) : findAlignment(positiveValue);
+    const random = randomCharacterOption(positiveValue);
+    if (!selected && !random)
+        addError(`Unknown ${facet} '${positiveValue}'`);
+    const choice = selected || random ? positiveValue : null;
+    switch (facet) {
+        case 'role':
+            result.role = choice;
+            break;
+        case 'race':
+            result.race = choice;
+            break;
+        case 'gender':
+            result.gender = choice;
+            result.flags.initgend = findGender(choice)?.value ?? (random ? -2 : -1);
+            if (choice)
+                result.flags.female = random || findGender(choice)?.value === 1;
+            break;
+        case 'alignment':
+            result.align = choice;
+            break;
+    }
 }
 // C cfgfiles.c:parse_conf_buf() counts physical lines, including comments,
 // and attributes a continued statement to its final physical line. The

@@ -30,14 +30,15 @@ export const RACE_SELECTION_RULES = {
     orc: { aligns: ['chaotic'] },
 };
 // role.c:root_plselection_prompt() and build_plselection_prompt().
-export function characterSelectionQuestion(choices, random) {
+export function characterSelectionQuestion(choices, random, filters) {
     const { role, race, gender, alignment } = choices;
     const description = [];
     const missing = new Set();
-    const usableAlignment = alignment && validCharacterAlignment(role, race, alignment) ? alignment : null;
+    const usableAlignment = alignment && !filters?.alignments.has(alignment.name)
+        && validCharacterAlignment(role, race, alignment) ? alignment : null;
     if (usableAlignment)
         description.push(usableAlignment.name);
-    else if (!race || validCharacterRace(role, race, null)
+    else if (!race || !filters?.races.has(race.name) && validCharacterRace(role, race, null)
         && RACE_SELECTION_RULES[race.name].aligns.length > 1)
         missing.add('alignment');
     const genderCount = role ? ROLE_SELECTION_RULES[role.key].genders?.length ?? genders.length : 0;
@@ -47,7 +48,7 @@ export function characterSelectionQuestion(choices, random) {
     }
     else if (!role || genderCount > 1)
         missing.add('gender');
-    if (race && (!role || validCharacterRace(role, race, usableAlignment)))
+    if (race && (!role || !filters?.races.has(race.name) && validCharacterRace(role, race, usableAlignment)))
         description.push(role ? race.adj : race.name);
     else
         missing.add('race');
