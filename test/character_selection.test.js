@@ -273,6 +273,21 @@ void test('the opening question preserves the name-entry base window', async () 
     assert.match(menu, /Shall I pick character's race, role, gender and alignment/);
     assert.match(menu, /NetHack, Copyright/);
 });
+void test('dismissing corner character menus clears the covered name-entry text', async () => {
+    const engine = await runSegment({
+        seed: 19, datetime: '20260801120000',
+        nethackrc: 'OPTIONS=!legacy,!tutorial,!tips,role:priest',
+        moves: 'AbcdefghijklmnopqrstuvwxyzABCDE\nnhfl', storage: memoryStorage(),
+    });
+    await engine.lua.destroy();
+    const display = requireGameDisplay();
+    const rows = display.grid.map(row => row.map(cell => cell.ch).join(''));
+    assert.match(rows.join('\n'), /Is this ok\? \[ynaq\]/);
+    const nameRow = rows[12];
+    assert.ok(nameRow, 'the name-entry row must be present');
+    assert.ok(nameRow.startsWith('Who are you? '), 'the uncovered name prompt remains visible');
+    assert.equal(nameRow.slice(display.cols / 2).trim(), '', 'dismissed character menus must clear the name tail below confirmation');
+});
 void test('the question drops an incompatible alignment before describing an elven Priest', async () => {
     const menu = await selection('', 'role:priest,race:elf,align:lawful');
     assert.match(menu, /Shall I pick your elven Priest\/Priestess's gender for you\? \[ynaq\]/);

@@ -173,7 +173,7 @@ export async function tty_clear_nhwindow<T>(window: TtyMenuWindow<T>): Promise<v
     // screen redraw belongs to dismissal, where hallucinations may change.
     if (window.active) {
         if (window.offx === 0) display()?.clearScreen();
-        else await restoreMenuCorner(window);
+        else await eraseMenuCorner(window);
     }
     window.entries = [];
     window.layout = null;
@@ -263,37 +263,41 @@ export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPick
             // C select_menu() restores bot_disabled before the window is
             // destroyed, so a corner menu's docorner() can run bot().
             if (window.offx !== 0) restoreStatusUpdates();
-            // Character selection covers the base window before a map exists.
-            // Native erase_menu_or_text() clears a full-screen menu here.
-            if (roleSelection && window.offx === 0) {
-                display()?.clearScreen();
-                window.active = false;
-                window.underlay = null;
-            } else await tty_dismiss_nhwindow(window);
+            await tty_dismiss_nhwindow(window, roleSelection);
         } finally {
             restoreStatusUpdates();
         }
     }
 }
 
-export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
+export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
     window.cancelled = false;
     if (!window.active) return;
     window.active = false;
     if (window.offx === 0) {
-        await docrt();
-        await flush_screen(1);
-    } else await restoreMenuCorner(window);
+        if (roleSelection) display()?.clearScreen();
+        else {
+            await docrt();
+            await flush_screen(1);
+        }
+    } else await eraseMenuCorner(window, roleSelection);
     window.underlay = null;
 }
 
-async function restoreMenuCorner<T>(window: TtyMenuWindow<T>): Promise<void> {
+async function eraseMenuCorner<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
     const d = display();
-    if (!d || !window.underlay) return;
+    if (!d) return;
     // erase_menu_or_text() calls docorner(offx, maxrow + 1, 0).
     // A prior full-screen clear must stay blank outside that rectangle.
     const left = Math.max(0, window.offx - 1);
     const bottom = Math.min(d.rows, (window.layout?.maxRows ?? 0) + 1);
+    // During character selection, docorner() clears the base window;
+    // there are no map cells to redraw over the erased name-entry text.
+    if (roleSelection) {
+        clearRect(left, 0, d.cols, bottom);
+        return;
+    }
+    if (!window.underlay) return;
     for (let row = 0; row < bottom; row++) {
         for (let col = left; col < d.cols; col++) {
             const cell = window.underlay[row]?.[col];
