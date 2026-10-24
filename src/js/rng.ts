@@ -118,5 +118,3 @@ export function rnz(i: number): number {
     return x;
 }
 
-export const c_d = d;
-export const lua_d = d;

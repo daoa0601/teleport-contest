@@ -1,6 +1,7 @@
 // Egg hatch timers.
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
+import { ingSuffix } from './hacklib.js';
 import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './terrain_properties.js';
@@ -137,11 +138,6 @@ function hatchlingCry(mnum) {
         return 'mumble';
     return MONSTER_SYMBOL[mnum] === S_EEL ? 'gurgle' : 'chitter';
 }
-function ingForm(verb) {
-    return verb.endsWith('e')
-        ? `${verb.slice(0, -1)}ing`
-        : `${verb}ing`;
-}
 function heroIsDeaf(state) {
     return !!(state.deaf || state.u?.deaf
         || (state.u?.deafTurns ?? 0) > 0);
@@ -153,7 +149,7 @@ function parentHatchMessage(mnum, count, egg, state) {
         ? 'seems' : 'sounds';
     const parent = state.flags?.female ? 'mommy' : 'daddy';
     const punctuation = egg.spe ? '.' : '?';
-    return `${subject} ${ingForm(hatchlingCry(mnum))} ${description} like "${parent}${punctuation}"`;
+    return `${subject} ${ingSuffix(hatchlingCry(mnum))} ${description} like "${parent}${punctuation}"`;
 }
 // C creates the monsters and reduces the egg stack before it prints the hatch
 // message. The caller prints that message before finishEggHatchTimer() updates

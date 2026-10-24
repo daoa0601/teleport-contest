@@ -257,6 +257,37 @@ void test('a hero-laid floor egg hatches a tame monster', async () => {
     await finishEggHatchTimer(event, game, game.moves);
 });
 
+void test('a hero-laid pack egg cries for its mommy with the C gerund', async () => {
+    // C timeout.c:1121: the hatch timer routes cry_sound(mon) through
+    // ing_suffix(). No cry word reaches the doubling or "ie" branches, so
+    // those rules are pinned separately in ing_suffix.test.ts; this locks
+    // the assembled message through the public hatch-timer path.
+    const cry = async (species: string) => {
+        freshEggState(2);
+        requireFixtureGame(game);
+        const egg = await mksobj(EGG, true, false);
+        egg.corpsenm = MONSTER_NAME.indexOf(species);
+        egg.quan = egg.quantity = 1;
+        egg.spe = 1;
+        egg.where = 'inventory';
+        game.inventory = [egg];
+        game.moves = hatchTimer(egg).deadline;
+
+        const event = await runClaimedEggHatchTimer(
+            claimNextDueObjectTimer(game, game.moves), game, game.moves,
+        );
+        assert.ok(event, 'The due object timer must produce its effect.');
+        assert.ok('mnum' in event);
+        return event;
+    };
+
+    const hiss = await cry('cockatrice');
+    assert.equal(hiss.followupMessage, 'Its hissing sounds like "mommy."');
+
+    const mumble = await cry('red naga');
+    assert.equal(mumble.followupMessage, 'Its mumbling sounds like "mommy."');
+});
+
 void test('a dragon egg in the pack hatches a tame dragon', async () => {
     freshEggState(2);
     requireFixtureGame(game);

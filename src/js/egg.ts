@@ -2,6 +2,7 @@
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
 
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
+import { ingSuffix } from './hacklib.js';
 import {
     G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT,
 } from './const.js';
@@ -185,12 +186,6 @@ function hatchlingCry(mnum: number): string {
     return MONSTER_SYMBOL[mnum] === S_EEL ? 'gurgle' : 'chitter';
 }
 
-function ingForm(verb: string): string {
-    return verb.endsWith('e')
-        ? `${verb.slice(0, -1)}ing`
-        : `${verb}ing`;
-}
-
 function heroIsDeaf(state: GameState): boolean {
     return !!(state.deaf || state.u?.deaf
         || (state.u?.deafTurns ?? 0) > 0);
@@ -203,7 +198,7 @@ function parentHatchMessage(mnum: number, count: number, egg: GameObject, state:
         ? 'seems' : 'sounds';
     const parent = state.flags?.female ? 'mommy' : 'daddy';
     const punctuation = egg.spe ? '.' : '?';
-    return `${subject} ${ingForm(hatchlingCry(mnum))} ${
+    return `${subject} ${ingSuffix(hatchlingCry(mnum))} ${
         description} like "${parent}${punctuation}"`;
 }
 
