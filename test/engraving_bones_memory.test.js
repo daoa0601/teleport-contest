@@ -7,6 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon } from './support/topology.js';
 void test('bones engravings lose the ancestor reading flags and restore worn text pointers', async () => {
     freshObjectRoom();
     const storage = memoryStorage();
@@ -20,6 +21,7 @@ void test('bones engravings lose the ancestor reading flags and restore worn tex
     freshObjectRoom();
     game.storage = storage;
     game.flags.debug = true;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     resetInputState().feed('yn');
     await mklev();
     const restored = engravingAt(12, 10);

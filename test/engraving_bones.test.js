@@ -16,6 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { createDungeon } from './support/topology.js';
 void test('an ancestor Elbereth is already complete when the next hero attacks from it', async () => {
     const input = freshTurnRoom({ moves: 1000, hero: { uz: { dnum: 0, dlevel: 8 } } });
     requireFixtureGame(game);
@@ -35,6 +36,7 @@ void test('an ancestor Elbereth is already complete when the next hero attacks f
     requireFixtureGame(game);
     game.storage = storage;
     game.flags.debug = true;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     const nextInput = resetInputState();
     nextInput.feed('yn');
     await mklev();

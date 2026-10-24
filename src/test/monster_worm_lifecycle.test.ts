@@ -36,6 +36,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon } from './support/topology.js';
 
 function occupiedSquares(worm: Monster, level = requireGameLevel()) {
     const squares = [];
@@ -135,6 +136,7 @@ for (const newMoves of [1, 1000]) {
         game.storage = storage;
         game.flags.debug = true;
         const input = resetInputState();
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         await answerPrompts(mklev(), input, [
             { prompt: /Get bones\?/, keys: 'y' },
             { prompt: /Unlink bones\?/, keys: 'n' },

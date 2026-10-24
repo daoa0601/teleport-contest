@@ -52,6 +52,7 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { addShopDamage } from './shop_damage.js';
 import { GameMap } from './game.js';
+import { levelAllowsBones } from './bones_admission.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave, } from './bones_object.js';
@@ -3816,11 +3817,14 @@ function restoreBonesMonsterAttitudes(level) {
 // C refs: bones.c:getbones() and restore.c:getlev(ghostly).
 async function getbones() {
     const flags = game.flags || {};
-    if (flags.explore)
+    if (game.discover || flags.explore)
         return false;
     if (flags.bones === false)
         return false;
     if (rn2(3) && !game.flags?.debug)
+        return false;
+    const location = game.u.uz;
+    if (!location || !levelAllowsBones(location))
         return false;
     const encoded = game.storage?.getItem(bonesStorageKey());
     if (!encoded)

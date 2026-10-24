@@ -27,8 +27,13 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { createDungeon } from './support/topology.js';
 const PM_GHOST = 287;
 const LEVEL = { dnum: 0, dlevel: 7 };
+function connectBonesLevel() {
+    freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
+}
 for (const hero of ['Ada-Cav', 'Ada-Cav-Hum', 'Ada-Cav-Hum-Fem', 'Ada-Cav-Hum-Fem-Cha']) {
     void test(`bones familiarity includes cemetery suffixes for ${hero}`, async () => {
         const storage = memoryStorage();
@@ -39,7 +44,7 @@ for (const hero of ['Ada-Cav', 'Ada-Cav-Hum', 'Ada-Cav-Hum-Fem', 'Ada-Cav-Hum-Fe
         game.u.ualign.type = -1;
         requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
         assert.ok(saveBonesLevel());
-        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        connectBonesLevel();
         game.plname = hero;
         game.storage = storage;
         game.flags.debug = true;
@@ -62,7 +67,7 @@ for (const hero of ['Ada', 'Ad']) {
         game.plname = 'Ada-Lovelace';
         requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
         assert.ok(saveBonesLevel());
-        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        connectBonesLevel();
         game.plname = hero;
         game.storage = storage;
         game.flags.debug = true;
@@ -84,7 +89,7 @@ void test('bones from another hero do not make a newly entered level familiar', 
     requireGameLevel().requireAt(15, 10).typ = FOUNTAIN;
     assert.ok(saveBonesLevel());
     for (let seed = 1; seed <= 4; seed++) {
-        freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+        connectBonesLevel();
         game.plname = 'Newcomer';
         game.storage = storage;
         game.flags.debug = true;
@@ -105,7 +110,7 @@ void test('a hero recognizes their bones after a later ancestor has died on the 
     pushKeys('yn');
     await mklev();
     assert.ok(saveBonesLevel());
-    freshConnectedLevels({ destinationDepth: 7, generateDestination: true });
+    connectBonesLevel();
     game.plname = 'First';
     game.storage = storage;
     game.flags.debug = true;
@@ -124,6 +129,7 @@ function freshBonesRoom(storage) {
     });
     requirePlayingGame(game);
     game.storage = storage;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     game.flags.debug = true;
     init_objects();
     initializeArtifacts(game);

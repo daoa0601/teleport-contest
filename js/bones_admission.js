@@ -14,7 +14,7 @@ export function canMakeBones(state = game, random = rn2) {
     if (ledger <= 0 || ledger > maxLedgerNo(state))
         return false;
     const branchLevel = isBranchLevel(location, state);
-    if (!levelAllowsBones(location, branchLevel, state))
+    if (!levelAllowsBones(location, state))
         return false;
     if (state.u.uswallow)
         return false;
@@ -27,7 +27,7 @@ export function canMakeBones(state = game, random = rn2) {
         return false;
     return !state.discover && !state.flags.explore;
 }
-function levelAllowsBones(location, branchLevel, state) {
+export function levelAllowsBones(location, state = game) {
     const dungeon = state.dungeons[location.dnum];
     if (!dungeon?.bonetag)
         return false;
@@ -36,7 +36,7 @@ function levelAllowsBones(location, branchLevel, state) {
         return false;
     if (location.dlevel === dungeon.num_dunlevs)
         return false;
-    if (branchLevel && location.dlevel > 1)
+    if (isBranchLevel(location, state) && location.dlevel > 1)
         return false;
     return !Invocation_lev(location, state);
 }

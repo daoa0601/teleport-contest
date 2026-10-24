@@ -7,6 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon } from './support/topology.js';
 for (const eightBit of [false, true]) {
     void test(`bones clean control characters from engraving text with eight-bit input ${eightBit ? 'enabled' : 'disabled'}`, async () => {
         freshObjectRoom();
@@ -17,6 +18,7 @@ for (const eightBit of [false, true]) {
         freshObjectRoom();
         game.storage = storage;
         game.flags.debug = true;
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         game.iflags.wc_eight_bit_input = eightBit;
         resetInputState().feed('yn');
         await mklev();

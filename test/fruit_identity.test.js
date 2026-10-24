@@ -21,6 +21,7 @@ import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon } from './support/topology.js';
 async function changeFruitThroughOptions(name) {
     resetInputState().feed(`a${name}\n\x1b`);
     await rhack('O'.charCodeAt(0));
@@ -160,6 +161,7 @@ void test('bones carry only existing fruit identities and remap floor, contained
     freshObjectRoom();
     game.storage = storage;
     game.flags.debug = true;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     game.u.uz = { dnum: 0, dlevel: 8 };
     changePreferredFruit('Pear');
     const preferred = game.context.current_fruit;

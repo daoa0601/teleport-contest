@@ -218,6 +218,7 @@ function freshBonesRoom(storage: ReturnType<typeof memoryStorage>) {
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     game.storage = storage;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     game.flags.debug = true;
     init_objects();
     initializeArtifacts(game);

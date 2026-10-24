@@ -15,7 +15,7 @@ export function canMakeBones(state: GameState = game, random: typeof rn2 = rn2):
     const ledger = ledgerNo(location, state);
     if (ledger <= 0 || ledger > maxLedgerNo(state)) return false;
     const branchLevel = isBranchLevel(location, state);
-    if (!levelAllowsBones(location, branchLevel, state)) return false;
+    if (!levelAllowsBones(location, state)) return false;
     if (state.u.uswallow) return false;
     if (!branchLevel && state.level.traps.some(trap => trap.ttyp === MAGIC_PORTAL))
         return false;
@@ -26,13 +26,13 @@ export function canMakeBones(state: GameState = game, random: typeof rn2 = rn2):
     return !state.discover && !state.flags.explore;
 }
 
-function levelAllowsBones(location: DungeonLocation, branchLevel: boolean, state: GameState): boolean {
+export function levelAllowsBones(location: DungeonLocation, state: GameState = game): boolean {
     const dungeon = state.dungeons[location.dnum];
     if (!dungeon?.bonetag) return false;
     const special = specialLevelAt(location, state);
     if (special && !special.bonetag) return false;
     if (location.dlevel === dungeon.num_dunlevs) return false;
-    if (branchLevel && location.dlevel > 1) return false;
+    if (isBranchLevel(location, state) && location.dlevel > 1) return false;
     return !Invocation_lev(location, state);
 }
 
