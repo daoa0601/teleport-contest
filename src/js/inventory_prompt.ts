@@ -4,8 +4,9 @@ import { ingSuffix } from './hacklib.js';
 
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
+import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
-import { clearCommandKeys, nhgetch, takeCommandKey } from './input.js';
+import { clearCommandKeys, readchar, takeCommandKey } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { rn2 } from './rng.js';
 import {
@@ -52,7 +53,8 @@ const CANCELLED: InventoryObjectSelection = { cancelled: true, object: null, non
 const HANDS: InventoryObjectSelection = { cancelled: false, object: null, none: true, count: null };
 const COIN_CLASS = 12;
 const HANDS_SYM = 45, QUESTION = 63, ASTERISK = 42, ESCAPE = 27;
-const QUITCHARS = [32, 13, 10, ESCAPE];
+// strchr(quitchars, '\0') also succeeds, for a literal NUL from the fuzzer.
+const QUITCHARS = [0, 32, 13, 10, ESCAPE];
 
 function admitsChoice(classification: InventoryClassification): boolean {
     return classification === GETOBJ_SUGGEST || classification === GETOBJ_DOWNPLAY;
@@ -393,13 +395,13 @@ export function compactInventoryLetters(letters: string): string {
 }
 
 // C cmd.c:get_count(): only a positive typed count is passed on by getobj.
-// Backspace edits the count; a second digit makes the count visible.
+// Backspace edits the count; counts above nine are echoed.
 async function readInventoryCount(firstKey: number): Promise<{ key: number; count: number }> {
     let count = 0, key = firstKey, backspaced = false;
     for (;;) {
         let showZero = false;
         if (key >= 48 && key <= 57) {
-            count = Math.min(0x7fffffff, count * 10 + key - 48);
+            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT, count * 10 + key - 48);
             showZero = key === 48;
         } else if (key === 8 || key === 127) {
             if (!count) return { key, count: 0 };
@@ -414,7 +416,7 @@ async function readInventoryCount(firstKey: number): Promise<{ key: number; coun
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }
-        key = await nhgetch();
+        key = await readchar();
     }
 }
 
