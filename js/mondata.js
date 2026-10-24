@@ -145,7 +145,8 @@ export function resolveMonsterNamePrefix(value) {
     const source = value.trim().replace(/\s+/g, ' ').replace(/^(?:a|an|the) /i, '');
     for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
-            && acceptedNameRemainder(requested.slice(alias.length))) {
+            && (!requested[alias.length] || requested[alias.length] === ' '
+                || requested[alias.length] === "'")) {
             return { ...match, remainder: source.slice(alias.length), overridesGender: true };
         }
     }
