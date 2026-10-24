@@ -25,7 +25,7 @@ import { BOULDER, CORPSE, OBJECT_BIMANUAL, } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
-import { touchPetrifyingCorpse } from './stoning.js';
+import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { moveHeroByTeleport } from './teleport.js';
@@ -143,8 +143,7 @@ async function damageHeroWithWhip(whip, state) {
     return loseHeroHp(damage, `killed ${reflexive} with ${possessivePronoun} bullwhip`, { state, publish: pline });
 }
 async function snatchPetrifyingCorpse(weapon, state) {
-    const petrification = await touchPetrifyingCorpse(weapon, {
-        action: 'Snatching',
+    const petrification = await snatchCorpseBareHanded(weapon, {
         beforeDeath: async () => {
             await placeObject(weapon, state.u.ux, state.u.uy);
         },

@@ -22,6 +22,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYM
 import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
+import { corpseName } from './objnam.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { useMonsterStoningCure } from './monster_stoning_cure.js';
@@ -64,7 +65,7 @@ export async function monsterSelfTouch(monster, { prefix = '', creditHero = fals
         return { touched: false, survived: true };
     }
     if (cansee(monster.mx, monster.my)) {
-        await publish(`${prefix}${selfTouchSubject(monster, prefix)} touches the ${monsterTypeName(corpse.corpsenm)} corpse.`);
+        await publish(`${prefix}${selfTouchSubject(monster, prefix)} touches ${corpseName(corpse, { definite: true })}.`);
     }
     const petrification = await petrifyMonsterImmediately(monster, {
         creditHero, finishDeath, publish,

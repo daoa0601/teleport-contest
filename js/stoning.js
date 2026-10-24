@@ -18,6 +18,7 @@ import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterType
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS, } from './monster_attack_types.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { CORPSE, EGG } from './object_data.js';
+import { corpseName, killerObjectName, objectMonsterName } from './objnam.js';
 import { heroHasNoLimbs, heroIsPolymorphed, polymonHero, } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { clearHeroSliming } from './slime.js';
@@ -286,12 +287,6 @@ export function heroWouldPetrifyFromFlesh(mnum, state = game) {
         && !heroResistsStoning(state)
         && !heroPolymorphsWhenStoned(state);
 }
-function corpseWithArticle(object) {
-    const species = corpseSpeciesName(object);
-    const name = object.oextra?.oname || object.oname;
-    const noun = `${species} corpse${name ? ` named ${name}` : ''}`;
-    return withIndefiniteArticle(noun);
-}
 export async function selfTouchPetrifyingWeapons({ messageStart = 'No longer petrify-resistant, you', state = game, publish = pline, die = finishHeroDeath, } = {}) {
     if (heroResistsStoning(state))
         return { touched: false, died: false };
@@ -304,10 +299,12 @@ export async function selfTouchPetrifyingWeapons({ messageStart = 'No longer pet
         if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm))
             continue;
         touched = true;
-        const species = corpseSpeciesName(weapon);
+        // C trap.c:selftouch() names the species with obj_pmname(), not
+        // corpse_xname(), so unique and personal species stay unadorned.
+        const species = objectMonsterName(weapon);
         await publish(`${messageStart} touch the ${species} corpse.`);
         const result = await resolveImmediatePetrification({
-            killer: corpseWithArticle(weapon),
+            killer: `${withIndefiniteArticle(species)} corpse`,
             state, publish, die,
         });
         if (result.died)
@@ -327,28 +324,42 @@ export function willFeelPetrifyingCorpse(object, { forceTouch = false, state = g
 export async function feelPetrifyingCorpse(object, { forceTouch = false, state = game, publish = plineWithContinuation, } = {}) {
     if (!willFeelPetrifyingCorpse(object, { forceTouch, state }))
         return { touched: false, died: false };
-    const quantity = objectQuantity(object);
-    const noun = `${corpseSpeciesName(object)} corpse${quantity > 1 ? 's' : ''}`;
+    const corpse = corpseName(object, { definite: true });
     if (formCanBecomeStoneGolem(state.u.umonnum, state))
-        await publish(`You touched the ${noun} with your bare ${makePlural(heroHandName(state))}.`);
+        await publish(`You touched ${corpse} with your bare ${makePlural(heroHandName(state))}.`);
     else
-        await publish(`Touching the ${noun} is a fatal mistake...`);
+        await publish(`Touching ${corpse} is a fatal mistake...`);
     const result = await resolveImmediatePetrification({
         state, publish,
-        killer: `touching ${quantity === 1 ? 'a ' : ''}${noun} bare-handed`,
+        killer: `touching ${killerObjectName(object, state)} bare-handed`,
     });
     return { touched: true, died: result.died };
 }
-export async function touchPetrifyingCorpse(object, { action = 'Touching', beforeDeath = null, } = {}) {
-    const gloves = game.uarmg || game.u?.uarmg;
-    if (object?.otyp !== CORPSE || !touchPetrifies(object.corpsenm)
-        || gloves || heroResistsStoning())
+// C pickup.c:fatal_corpse_mistake(): handling one corpse from the stack, with
+// the death reason from killer_xname() describing the whole stack.
+export async function touchPetrifyingCorpse(object) {
+    if (!handlesPetrifyingCorpseBareHanded(object))
         return null;
-    const corpse = corpseWithArticle(object);
-    await plineWithContinuation(`${action} ${corpse} is a fatal mistake.`);
+    return await petrifyFromCorpseContact(`Touching ${corpseName(object, { singular: true, includeArticle: true })} is a fatal mistake.`, killerObjectName(object));
+}
+// C apply.c:use_whip(): a snatched corpse is named by cxname() before it
+// moves, and that name is also the death reason.
+export async function snatchPetrifyingCorpse(object, { beforeDeath = null, } = {}) {
+    if (!handlesPetrifyingCorpseBareHanded(object))
+        return null;
+    const name = corpseName(object);
+    const corpse = objectQuantity(object) === 1 ? withIndefiniteArticle(name) : name;
+    return await petrifyFromCorpseContact(`Snatching ${corpse} is a fatal mistake.`, corpse, beforeDeath);
+}
+function handlesPetrifyingCorpseBareHanded(object) {
+    return object?.otyp === CORPSE && touchPetrifies(object.corpsenm)
+        && !(game.uarmg || game.u?.uarmg) && !heroResistsStoning();
+}
+async function petrifyFromCorpseContact(message, killer, beforeDeath = null) {
+    await plineWithContinuation(message);
     await beforeDeath?.();
     const result = await resolveImmediatePetrification({
-        killer: corpse,
+        killer,
         publish: plineWithContinuation,
     });
     return result.transformed && !result.died ? null : { died: result.died };

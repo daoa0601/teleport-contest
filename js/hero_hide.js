@@ -6,8 +6,8 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, } from './monster_data.js';
 import { CORPSE } from './object_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { simpleObjectNameWithArticle } from './objnam.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+import { corpseName, simpleObjectNameWithArticle } from './objnam.js';
 import { heroFormClings, heroFormHidesUnderObjects, heroFormHidesWithoutCover, heroIsFlying, heroMonsterForm, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
 import { touchPetrifies } from './stoning.js';
@@ -62,11 +62,10 @@ function petrifyingCorpseCover(objects) {
         return null;
     }
     const count = objects.reduce((total, object) => total + (object.quan ?? object.quantity ?? 1), 0);
-    const species = MONSTER_NAME[first.corpsenm] || 'monster';
-    const corpse = `${species} corpse`;
-    if (count === 1)
-        return withIndefiniteArticle(corpse);
-    return `${species} ${makePlural('corpse')}`;
+    // C polyself.c:dohide() appends plur(count) to cxname(top), even when
+    // the top object's own quantity already pluralized the corpse name.
+    const corpse = corpseName(first);
+    return count === 1 ? withIndefiniteArticle(corpse) : `${corpse}s`;
 }
 function sameLevel(left, right) {
     return !!left && !!right

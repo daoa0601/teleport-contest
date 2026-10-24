@@ -30,6 +30,7 @@ import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
@@ -122,6 +123,28 @@ void test('#offer makes a Rider in a wielded corpse stack writhe out of the hero
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('Death')));
 });
 
+void test('#offer handles a carried cockatrice corpse by feeling it bare-handed', async () => {
+    freshAltar({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+    requirePlayingGame(game);
+    const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('cockatrice')));
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        if (game._pending_message) messages.push(game._pending_message);
+    };
+    installPagerInput(input, { expected: /stone|fatal mistake|Goodbye|points|You were/i, limit: 10 });
+
+    assert.ok(corpse.invlet, 'the carried corpse needs an inventory letter');
+    await runExtendedCommand('offer', corpse.invlet);
+
+    assert.ok(game.program_state.gameover);
+    assert.ok(messages.join(' ').includes('Touching the cockatrice corpse is a fatal mistake...'), messages.join(' | '));
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by touching a cockatrice corpse bare-handed');
+});
+
 void test('a blind hero offering their own race senses something dreadful being summoned', async () => {
     freshAltar({ alignment: -1, hero: { permaBlind: true, ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
@@ -174,6 +197,7 @@ void test('an old ordinary corpse is retained without earning favor', async () =
 
     assert.ok(corpse.invlet);
 
+    assert.ok(corpse.invlet, 'the carried corpse needs an inventory letter');
     await runExtendedCommand('offer', corpse.invlet);
 
     assert.ok(game.inventory.includes(corpse));
