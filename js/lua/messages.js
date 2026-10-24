@@ -2,6 +2,7 @@
 import { flushPendingTopline, plineWithContinuation } from '../display.js';
 import { NethackLuaError } from './errors.js';
 import { showTextMenuOverlay } from '../windows.js';
+import { luaCheckString } from './runtime.js';
 export async function luaPline(...args) {
     if (args.length !== 1 && args.length !== 2)
         throw new NethackLuaError('Wrong args');
@@ -22,9 +23,8 @@ export async function luaText(...args) {
     await showTextMenuOverlay(lines);
 }
 function messageString(value) {
-    if (typeof value === 'string' || typeof value === 'number')
-        return String(value);
-    throw new TypeError('Lua message text must be a string or number');
+    // nhl_pline() and nhl_text() read their text with luaL_checkstring.
+    return luaCheckString(1, value);
 }
 function textMenuLines(text) {
     const lines = [];

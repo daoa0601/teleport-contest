@@ -72,3 +72,27 @@ void test('nh.eckey returns nothing for any other argument count', async t => {
     assert.equal(core.getGlobal('extra'), null);
     assert.equal(typeof core.getGlobal('bound'), 'string');
 });
+
+void test('nh bindings read their string arguments with luaL_checkstring', async t => {
+    freshGame({ flags: { bones: false } });
+    requirePlayingGame(game);
+    initRng(738n);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    const core = currentLuaLifecycle().core;
+    assert.ok(core, 'the core Lua state is running');
+
+    await assert.rejects(core.executeAsync('nh.impossible(nil)'),
+        /bad argument #1 to 'impossible' \(string expected, got nil\)/);
+    await assert.rejects(core.executeAsync('nh.parse_config({})'),
+        /bad argument #1 to 'parse_config' \(string expected, got table\)/);
+    await assert.rejects(core.executeAsync('nh.eckey(nil)'),
+        /bad argument #1 to 'eckey' \(string expected, got nil\)/);
+    await assert.rejects(core.executeAsync('nh.pline(true)'),
+        /bad argument #1 to 'pline' \(string expected, got boolean\)/);
+    // luaL_checkstring converts numbers, so an unbound numeric name is an
+    // empty key description rather than an error or nil.
+    core.execute('numeric = nh.eckey(123)');
+    assert.equal(core.getGlobal('numeric'), '');
+});

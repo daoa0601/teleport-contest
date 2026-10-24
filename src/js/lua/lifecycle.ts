@@ -14,7 +14,7 @@ import type { ObjectApi } from './objects.js';
 import type { GameState } from '../game_state.js';
 import type { LuaHostObject, LuaValue } from './runtime.js';
 import {
-    LuaState, LuaTable, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs,
+    LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs,
     objectToLuaTable,
 } from './runtime.js';
 
@@ -51,7 +51,7 @@ function bindingsFor(
         = additionalBindings;
     const parseConfig = (...args: LuaValue[]) => {
         if (args.length !== 1) throw new NethackLuaError('Wrong args');
-        applyNethackrc(String(args[0]), gameState);
+        applyNethackrc(luaCheckString(1, args[0]), gameState);
     };
     return {
         nh: {
@@ -78,10 +78,11 @@ function bindingsFor(
             text: luaText,
             impossible: async (...args: LuaValue[]) => {
                 if (args.length !== 1) throw new NethackLuaError('Wrong args');
-                await impossible(String(args[0]), { state: gameState });
+                await impossible(luaCheckString(1, args[0]), { state: gameState });
             },
             eckey: (...args: LuaValue[]) => args.length === 1
-                ? commandKeyDescription(String(args[0]), gameState.commandBindings)
+                ? commandKeyDescription(
+                    luaCheckString(1, args[0]), gameState.commandBindings)
                 : undefined,
             parse_config: parseConfig,
             ...additionalNh,
