@@ -3826,6 +3826,33 @@ function restoreBonesClock(level, savedAt) {
     if (level.flags.stasis_until !== undefined)
         level.flags.stasis_until += adjustment;
 }
+// C restore.c:getlev(): branch entrances can move between games.
+function repairBonesConnections(level, location) {
+    const here = (end) => end.dnum === location.dnum && end.dlevel === location.dlevel;
+    const branch = game.branches.find(candidate => here(candidate.end1) || here(candidate.end2));
+    if (!branch) {
+        for (const trap of [...level.traps])
+            if (trap.ttyp === MAGIC_PORTAL)
+                deleteTrap(trap);
+        return;
+    }
+    if (location.dlevel !== 1)
+        return;
+    const destination = here(branch.end1) ? branch.end2 : branch.end1;
+    if (branch.type === 'portal') {
+        const portal = level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (!portal)
+            throw new PanicTermination('getlev: need portal but none found');
+        portal.dst = { ...destination };
+        return;
+    }
+    for (let stair = game.stairs; stair; stair = stair.next) {
+        if (stair.tolev.dnum === location.dnum)
+            continue;
+        stair.tolev = { ...destination };
+        break;
+    }
+}
 // C refs: bones.c:getbones() and restore.c:getlev(ghostly).
 async function getbones() {
     const flags = game.flags || {};
@@ -3871,6 +3898,7 @@ async function getbones() {
     await renewBonesIdentities(game.level, payload.fruits);
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
+    repairBonesConnections(game.level, location);
     restoreBonesObjects(game.level);
     await fixShopDamage(game);
     sanitizeEngravings(game.level);
