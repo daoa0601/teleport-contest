@@ -120,7 +120,7 @@ function heroIronShoes() {
 function heroWearsIronShoes() {
     return !!heroIronShoes();
 }
-async function triggerPit(trap, { viaSitting = false, failedUntrap = false, tookPlunge = false, recursiveTrap = false } = {}) {
+async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recursiveTrap = false } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
     const formFlags = heroFormFlags();
@@ -132,7 +132,9 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
     const adjacent = fromPit && (hero.dx || hero.dy);
     const alreadyKnown = !!trap.tseen;
     const flying = hero.flying || game.flying;
-    const plunged = tookPlunge || failedUntrap;
+    // C trap.c:1836: plunged is TOOKPLUNGE only.  FAILEDUNTRAP never
+    // reaches a pit: untrap() refuses pit targets before try_disarm().
+    const plunged = tookPlunge;
     if (!sokoban && (hero.levitating || game.levitating
         || (flying && !plunged && !viaSitting)))
         return;
@@ -1275,7 +1277,7 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             break;
         case PIT:
         case SPIKED_PIT:
-            await triggerPit(trap, { viaSitting, failedUntrap, tookPlunge, recursiveTrap });
+            await triggerPit(trap, { viaSitting, tookPlunge, recursiveTrap });
             break;
         case WEB:
             await triggerWeb(trap, { viaSitting, failedUntrap, forceTrap, noWebMessage });
