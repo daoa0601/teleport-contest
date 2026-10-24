@@ -595,6 +595,9 @@ export async function selectMapPosition({
             clearMarking();
             setHilite(defaultHilite);
         }
+        // docrt_flags(docrtRefresh) resends the current glyphs and requests
+        // a status redraw; it does not recalculate sight or hallucinations.
+        game.context.botl = true;
     };
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
     const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
