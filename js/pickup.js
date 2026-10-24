@@ -447,10 +447,11 @@ export async function autopickupAllows(object) {
     const configured = game.flags?.pickup_types || '';
     const symbol = OBJECT_CLASS_SYMBOLS[object.oclass];
     let pickit = !configured || !!symbol && configured.includes(symbol);
-    // check_autopickup_exceptions() matches makesingular(doname(obj)); a
-    // matching rule overrides the pickup_types verdict with its own.
+    // check_autopickup_exceptions() matches makesingular(doname(obj)), and
+    // xname() observes the object for a sighted hero while naming it.
     const exceptions = game.iflags.autopickupExceptions;
     if (exceptions?.length) {
+        observeObjectForNaming(object);
         const description = makeSingular(await objectDescription(object));
         const match = exceptions.find(rule => rule.regex.test(description));
         if (match)

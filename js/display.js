@@ -1115,7 +1115,7 @@ function objectGlyph(object) {
                 ? game.boulderSym
                 : activeObjectSymbols()[objectClassForType(displayedType)] || '?',
             color: objectColor(object), decgfx: false,
-            kind: 'object', otyp: displayedType, ...species,
+            kind: 'object', otyp: displayedType, ...species, glyph,
             statueGlyph: object.otyp === STATUE, piletop,
         };
 }

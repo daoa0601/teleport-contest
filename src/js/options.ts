@@ -645,10 +645,13 @@ function handleConfigStatement(
     case 'BOULDER': {
         // cnf_line_BOULDER() stores the override in the primary symbol set;
         // initoptions_finish() publishes it as the boulder's map glyph.
-        // get_uchars() leaves the slot alone for an explicit zero.
+        // get_uchars() leaves the slot alone for an explicit zero, but a
+        // nonzero value truncated to a zero uchar (e.g. 256) clears the
+        // override: get_othersym() reads zero as "no override".
         const { values, syntaxError } = parseUcharList(parsed.valueBytes, 1, true);
         if (syntaxError) addRawError('Syntax error in BOULDER');
-        else if (values[0] !== undefined) result.boulderSym = String.fromCharCode(values[0]);
+        else if (values[0] !== undefined)
+            result.boulderSym = values[0] ? String.fromCharCode(values[0]) : '';
         break;
     }
     case 'OPTIONS':

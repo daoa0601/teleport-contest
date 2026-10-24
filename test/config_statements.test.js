@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { def_warnsyms } from '../js/const.js';
-import { flush_screen, newsym } from '../js/display.js';
+import { flush_screen, glyphAt, newsym } from '../js/display.js';
 import { completeExtendedCommand } from '../js/extended_commands.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { Engine, runSegment } from '../js/jsmain.js';
-import { ARROW, BOULDER } from '../js/object_data.js';
+import { ARROW, BOULDER, SCR_MAGIC_MAPPING } from '../js/object_data.js';
+import { GlyphOffset } from '../js/glyph_numbers.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
@@ -289,13 +290,57 @@ void test('without an exception the pickup classes decide', async () => {
 void test('BOULDER= replaces the boulder map glyph', async () => {
     assert.equal(parseNethackrc('BOULDER=48').boulderSym, '0');
     assert.equal(parseNethackrc('BOULDER=0').boulderSym, undefined);
+    // A nonzero value that truncates to a zero uchar clears the override:
+    // get_othersym() reads zero as "no override", never as a NUL glyph.
+    assert.equal(parseNethackrc('BOULDER=256').boulderSym, '');
+    assert.equal(parseNethackrc('BOULDER=125\nBOULDER=256').boulderSym, '');
     freshObjectRoom();
     requirePlayingGame(game);
-    applyNethackrc('BOULDER=48');
+    applyNethackrc('BOULDER=256');
     await floorObject(BOULDER, 11, 10, { dknown: true });
     newsym(11, 10);
     await flush_screen(1);
-    assert.equal(requireScreenCell(10, 11).ch, '0');
+    assert.equal(requireScreenCell(10, 11).ch, '`');
+});
+void test('an ordinary object keeps its native glyph number', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    await floorObject(BOULDER, 11, 10, { dknown: true });
+    newsym(11, 10);
+    await flush_screen(1);
+    // display.c always records the object's glyph; getpos's m/o cycling and
+    // same-glyph gathering compare these numbers.
+    assert.equal(glyphAt(11, 10)?.glyph, GlyphOffset.object + BOULDER);
+    assert.equal(glyphAt(11, 10)?.kind, 'object');
+});
+void test('an exception rule observes an unseen object while naming it', async () => {
+    freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.display = { async readKey() { return ' '.charCodeAt(0); } };
+    applyNethackrc('AUTOPICKUP_EXCEPTION="<scroll labeled"');
+    // dknown starts false: only doname()'s observation reveals the label
+    // while building the name the rule matches against. The scroll's class
+    // is outside pickup_types, so the rule alone decides.
+    const scroll = await floorObject(SCR_MAGIC_MAPPING, game.u.ux, game.u.uy, { dknown: false, typeKnown: false });
+    await autopickupAtHero();
+    assert.equal(scroll.dknown, true);
+    assert.ok(game.inventory.some(object => object.otyp === SCR_MAGIC_MAPPING));
+});
+void test('a drop rule needs the observed name to spare an unseen scroll', async () => {
+    freshObjectRoom({ flags: { pickup: true } });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.display = { async readKey() { return ' '.charCodeAt(0); } };
+    applyNethackrc('AUTOPICKUP_EXCEPTION=">scroll labeled"');
+    const scroll = await floorObject(SCR_MAGIC_MAPPING, game.u.ux, game.u.uy, { dknown: false, typeKnown: false });
+    await autopickupAtHero();
+    // Unobserved, the name is just "a scroll": the rule would not match and
+    // the scroll would leave with everything else on the floor.
+    assert.equal(scroll.dknown, true);
+    assert.ok(!game.inventory.some(object => object.otyp === SCR_MAGIC_MAPPING));
+    assert.ok(game.level?.objects?.[game.u.ux]?.[game.u.uy]
+        ?.some(object => object.otyp === SCR_MAGIC_MAPPING));
 });
 void test('MENUCOLOR sees no equals past byte 255 of the statement', () => {
     assert.deepEqual(fileErrors(`MENUCOLOR=${'x'.repeat(255)}=green`).map(error => error.message), ['Malformed MENUCOLOR']);
