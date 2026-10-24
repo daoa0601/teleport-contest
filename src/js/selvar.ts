@@ -29,6 +29,7 @@ export interface SelectionArea {
     ystart: number;
     width: number;
     height: number;
+    _room?: Room | null | undefined;
 }
 export type SelectionFloodMatch = (x: number, y: number) => boolean;
 type SelectionVisitor = (x: number, y: number) => void;
@@ -694,7 +695,10 @@ export class SpecialSelection {
 }
 
 function absolute(context: SelectionArea, x: number, y: number): Coordinate {
-    return { x: context.xstart + x, y: context.ystart + y };
+    return {
+        x: (context._room?.lx ?? context.xstart) + (x & 0xff),
+        y: (context._room?.ly ?? context.ystart) + (y & 0xff),
+    };
 }
 
 export function specialSelectionFillRect(context: SelectionArea, x1: number, y1: number, x2: number, y2: number) {
@@ -745,6 +749,7 @@ export function specialSelectionOfTerrain(context: SelectionArea, typ: number) {
 
 export function specialSelectionFloodFill(context: SelectionArea, x: number, y: number, diagonals = false) {
     const start = absolute(context, x, y);
+    if (!isok(start.x, start.y)) return new SpecialSelection();
     const terrain = game.level?.at?.(start.x, start.y)?.typ;
     return new SpecialSelection().floodFill(
         start.x, start.y, diagonals,

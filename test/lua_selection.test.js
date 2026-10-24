@@ -181,4 +181,27 @@ void test('selection methods describe rectangular and irregular bounds', t => {
     assert.equal(state.getGlobal('irregular'), 'irregularly shaped 3 by 2');
     assert.equal(state.getGlobal('empty'), 0);
 });
+void test('flood fills wrap explicit coordinates and reject off-map starting squares', async (t) => {
+    const game = freshGame();
+    game.level.requireAt(1, 2).typ = ROOM;
+    game.level.requireAt(2, 3).typ = ROOM;
+    const context = { xstart: 0, ystart: 0, width: 80, height: 21 };
+    const state = new LuaState({ selection: createSelectionBindings(context) });
+    t.after(() => state.destroy());
+    await state.executeAsync(`
+        off_map = selection.floodfill(0, 0):numpoints()
+        wrapped = selection.floodfill(257, 258):numpoints()
+        diagonal = selection.floodfill(257, 258, true):numpoints()
+    `);
+    assert.equal(state.getGlobal('off_map'), 0, 'column zero cannot start a flood into the level');
+    assert.equal(state.getGlobal('wrapped'), 1);
+    assert.equal(state.getGlobal('diagonal'), 2);
+    game.level.requireAt(21, 9).typ = ROOM;
+    const roomState = new LuaState({
+        selection: createSelectionBindings({ ...context, _room: selectionRoom(20, 8, 30, 18) }),
+    });
+    t.after(() => roomState.destroy());
+    await roomState.executeAsync('inside_room = selection.floodfill(1, 1):get(1, 1)');
+    assert.equal(roomState.getGlobal('inside_room'), 1);
+});
 //# sourceMappingURL=lua_selection.test.js.map

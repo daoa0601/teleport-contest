@@ -593,7 +593,10 @@ export class SpecialSelection {
     }
 }
 function absolute(context, x, y) {
-    return { x: context.xstart + x, y: context.ystart + y };
+    return {
+        x: (context._room?.lx ?? context.xstart) + (x & 0xff),
+        y: (context._room?.ly ?? context.ystart) + (y & 0xff),
+    };
 }
 export function specialSelectionFillRect(context, x1, y1, x2, y2) {
     const selection = selection_new();
@@ -636,6 +639,8 @@ export function specialSelectionOfTerrain(context, typ) {
 }
 export function specialSelectionFloodFill(context, x, y, diagonals = false) {
     const start = absolute(context, x, y);
+    if (!isok(start.x, start.y))
+        return new SpecialSelection();
     const terrain = game.level?.at?.(start.x, start.y)?.typ;
     return new SpecialSelection().floodFill(start.x, start.y, diagonals, (nextX, nextY) => game.level?.at?.(nextX, nextY)?.typ === terrain);
 }
