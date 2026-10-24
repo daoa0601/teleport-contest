@@ -78,6 +78,10 @@ async function editLine(prompt, accepts, { suppressStatus = false, inMenu = fals
     renderEditor();
     for (;;) {
         const key = await nhgetch();
+        // pgetchar() returns signed char in the pinned build: 0xff becomes
+        // EOF, which hooked_tty_getlin() cancels even after typed text.
+        if (key === -1 || key === 0xff)
+            return finish(null);
         // C hooked_tty_getlin(): Escape first clears non-empty input; only
         // Escape at an already empty prompt cancels with "\033" (Null here).
         if (key === 27) {

@@ -181,6 +181,23 @@ void test('empty naming input preserves a name and spaces remove it', async () =
     assert.equal(dagger.oextra?.oname ?? dagger.oname, undefined);
 });
 
+for (const typedName of ['', 'Replacement']) {
+    void test(`EOF ${typedName ? 'after typed text' : 'at an empty prompt'} cancels individual naming`, async () => {
+        freshObjectRoom();
+        const dagger = await addInventoryObject(ELVEN_DAGGER, {
+            invlet: 'a', oextra: { oname: 'Keepsake' },
+        });
+        const input = resetInputState();
+        input.feed(`name\r${typedName}\xff\r`);
+        queueCommandKeys('ia');
+
+        await rhack('#'.charCodeAt(0));
+
+        assert.equal(dagger.oextra?.oname, 'Keepsake');
+        assert.equal(game.context.move, 0);
+    });
+}
+
 void test('individual naming keeps printable high bytes and limits the normalized name', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
