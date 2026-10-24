@@ -40,7 +40,7 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
         nh: {
             rn2: (...args) => {
                 if (args.length !== 1)
-                    throw new TypeError('nh.rn2 expects one integer');
+                    throw new NethackLuaError('Wrong args');
                 return rn2(luaInteger(args[0]));
             },
             random: (...args) => {
@@ -48,7 +48,7 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
                     return rn2(luaInteger(args[0]));
                 if (args.length === 2)
                     return luaInteger(args[0]) + rn2(luaInteger(args[1]));
-                throw new TypeError('nh.random expects one or two integers');
+                throw new NethackLuaError('Wrong args');
             },
             callback: (...args) => {
                 const result = lifecycle.registerCallback(args);
@@ -64,7 +64,9 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
                     throw new NethackLuaError('Wrong args');
                 await impossible(String(args[0]), { state: gameState });
             },
-            eckey: command => commandKeyDescription(String(command), gameState.commandBindings),
+            eckey: (...args) => args.length === 1
+                ? commandKeyDescription(String(args[0]), gameState.commandBindings)
+                : undefined,
             parse_config: parseConfig,
             ...additionalNh,
         },

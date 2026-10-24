@@ -1,12 +1,13 @@
 // C nhlua.c:nhl_pline() and nhl_text().
 
 import { flushPendingTopline, plineWithContinuation } from '../display.js';
+import { NethackLuaError } from './errors.js';
 import { showTextMenuOverlay } from '../windows.js';
 import type { LuaValue } from './runtime.js';
 
 export async function luaPline(...args: LuaValue[]) {
     if (args.length !== 1 && args.length !== 2)
-        throw new TypeError('nh.pline expects a message and an optional wait flag');
+        throw new NethackLuaError('Wrong args');
     await plineWithContinuation(messageString(args[0]));
     if (args[1] != null && args[1] !== false) await flushPendingTopline();
 }
