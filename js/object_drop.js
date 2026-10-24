@@ -3,6 +3,7 @@
 // dothrow.c:hitfloor().
 import { ALTAR, HOLE, IS_SOFT, IS_ALTAR, LEFT_SIDE, PIT, RIGHT_SIDE, SPIKED_PIT, TRAPDOOR, } from './const.js';
 import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { newsym, plineWithContinuation, map_object } from './display.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
@@ -82,6 +83,9 @@ async function engulferDigestsFood(object, { state, publish }) {
     else if (couldPetrify) {
         const stone = await petrifyMonsterImmediately(swallower, {
             creditHero: true, publish,
+            finishDeath: (monster, options) => finishHeroMonsterKill(monster, monster.mx, monster.my, {
+                ...options, showKillMessage: false, recordConduct: false,
+            }),
         });
         if (stone.heroDied)
             return { digested: true, heroDied: true };

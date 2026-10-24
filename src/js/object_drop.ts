@@ -7,6 +7,7 @@ import {
     TRAPDOOR,
 } from './const.js';
 import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
@@ -116,6 +117,9 @@ async function engulferDigestsFood(object: GameObject, { state, publish }: { sta
     } else if (couldPetrify) {
         const stone = await petrifyMonsterImmediately(swallower, {
             creditHero: true, publish,
+            finishDeath: (monster, options) => finishHeroMonsterKill(monster, monster.mx, monster.my, {
+                ...options, showKillMessage: false, recordConduct: false,
+            }),
         });
         if (stone.heroDied) return { digested: true, heroDied: true };
     } else if (couldGrow) {
