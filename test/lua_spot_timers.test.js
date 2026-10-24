@@ -84,6 +84,34 @@ void test('nh.start_timer_at accepts coordinate tables and lua_tointeger delays'
     assert.equal(game.level.requireAt(10, 5).typ, MOAT, 'a zeroed delay melts the ice without waiting');
     assert.equal(game.level.requireAt(11, 5).typ, ICE);
 });
+void test('nh.start_timer_at wraps coordinates as signed 16-bit values before map bounds checks', async (t) => {
+    freshGame({ flags: { bones: false } });
+    requirePlayingGame(game);
+    initRng(740n);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    await mklev();
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua, 'ordinary level generation loads the Lua level API');
+    const start = game.moves;
+    await lua.executeAsync('des.map({ map = "II\\nII", x = 10, y = 5 })');
+    game.level.requireAt(9, 4).typ = ICE;
+    await lua.executeAsync(`
+        nh.start_timer_at(65536, 0, "melt-ice", 10)
+        nh.start_timer_at({ x = 1, y = 65536 }, "melt-ice", 10)
+        nh.start_timer_at({ -65536, -65535 }, "melt-ice", 10)
+        nh.start_timer_at(32769, 1, "melt-ice", 10)
+        nh.start_timer_at(9007199254740991, 9007199254740991, "melt-ice", 10)
+    `);
+    game.moves = start + 10;
+    await runDueTimers();
+    assert.equal(game.level.requireAt(10, 5).typ, MOAT, 'the positional x wraps to zero');
+    assert.equal(game.level.requireAt(11, 5).typ, MOAT, 'the named y wraps to zero');
+    assert.equal(game.level.requireAt(10, 6).typ, MOAT, 'negative array entries wrap before adding the map origin');
+    assert.equal(game.level.requireAt(11, 6).typ, ICE, 'a signed coordinate outside the map schedules nothing');
+    assert.equal(game.level.requireAt(9, 4).typ, MOAT, 'large integer coordinates narrow before adding the map origin');
+});
 void test('nh.start_timer_at coordinate tables validate like get_coord', async (t) => {
     freshGame({ flags: { bones: false } });
     requirePlayingGame(game);

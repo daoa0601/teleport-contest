@@ -7154,8 +7154,13 @@ function createLuaLevelSession() {
                 const when = luaToInteger(args[args.length - 1]);
                 const point = luaTimerCoordinates(args);
                 if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice')) return;
-                const timerX = context.xstart + point.x;
-                const timerY = context.ystart + point.y;
+                // nhl_timer_start_at() and cvt_to_abscoord() store signed
+                // 16-bit coordxy values. Narrow before addition so large
+                // Lua integers retain their low bits, then narrow the sum.
+                const relativeX = (point.x << 16) >> 16;
+                const relativeY = (point.y << 16) >> 16;
+                const timerX = ((context.xstart + relativeX) << 16) >> 16;
+                const timerY = ((context.ystart + relativeY) << 16) >> 16;
                 if (!isok(timerX, timerY)) return;
                 const deadline = (game.moves ?? 0) + when;
                 stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
