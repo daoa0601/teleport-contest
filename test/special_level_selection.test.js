@@ -79,7 +79,7 @@ void test('selection callback diagnostics include the Lua source and calling fun
     assert.match(record.reason, /\[C\]: in function 'error'/);
     assert.match(record.reason, /s\.lua:2: in upvalue 'fail'/);
     assert.match(record.reason, /s\.lua:4: in function <s\.lua:4>/);
-    assert.match(record.reason, /\[C\]: in function 'selection\.iterate'/);
+    assert.match(record.reason, /\[C\]: in method 'iterate'/);
     assert.match(record.reason, /s\.lua:4: in main chunk/);
     assert.equal(lua.getGlobal('continued'), true);
 });

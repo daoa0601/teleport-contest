@@ -1,10 +1,56 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { LuaState } from '../js/lua/runtime.js';
+import { LuaState, LuaTable } from '../js/lua/runtime.js';
 
 for (const asynchronous of [false, true]) {
     const mode = asynchronous ? 'asynchronous' : 'synchronous';
+
+    void test(`${mode} Lua tracebacks use call-site names for functions in global tables`, async t => {
+        const state = new LuaState();
+        t.after(() => state.destroy());
+        const source = [
+            'helpers = {}',
+            'function helpers.fail() error("broken") end',
+            'helpers.fail()',
+        ].join('\n');
+
+        await assert.rejects(async () => {
+            if (asynchronous) await state.executeAsync(source, '=helpers.lua');
+            else state.execute(source, '=helpers.lua');
+        }, error => {
+            assert.match(state.traceback.format(error), /helpers\.lua:2: in field 'fail'/);
+            return true;
+        });
+
+        const helpers = state.getGlobal('helpers');
+        assert.ok(helpers instanceof LuaTable);
+        await assert.rejects(async () => {
+            if (asynchronous) await state.callValueAsync(helpers.get('fail'), []);
+            else state.callValue(helpers.get('fail'), []);
+        }, error => {
+            assert.match(state.traceback.format(error), /helpers\.lua:2: in function <helpers\.lua:2>/);
+            return true;
+        });
+    });
+
+    void test(`${mode} Lua tracebacks retain loaded library names after a global is replaced`, async t => {
+        const state = new LuaState();
+        t.after(() => state.destroy());
+        const source = [
+            'local insert = table.insert',
+            'table = {}',
+            'insert(3, 1)',
+        ].join('\n');
+
+        await assert.rejects(async () => {
+            if (asynchronous) await state.executeAsync(source, '=library.lua');
+            else state.execute(source, '=library.lua');
+        }, error => {
+            assert.match(state.traceback.format(error), /\[C\]: in function 'table\.insert'/);
+            return true;
+        });
+    });
 
     void test(`${mode} Lua diagnostics retain definition locations and discard unwound calls`, async t => {
         const state = new LuaState();

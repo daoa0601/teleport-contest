@@ -396,6 +396,7 @@ export class LuaState {
     _destroyPromise;
     cleanup;
     environmentRoot = null;
+    loadedModules = new Map();
     traceback = new LuaTraceback();
     get globals() {
         if (!this.environmentRoot)
@@ -407,10 +408,12 @@ export class LuaState {
         this._destroyPromise = null;
         this.cleanup = cleanup;
         this.environmentRoot = new Environment();
+        const globals = new LuaGlobals(this.globals);
+        this.loadedModules.set('_G', globals);
         this.installStandardLibrary();
         for (const [name, value] of Object.entries(bindings))
             this.globals.define(name, value);
-        this.globals.define('_G', new LuaGlobals(this.globals));
+        this.globals.define('_G', globals);
     }
     installStandardLibrary() {
         this.globals.define('type', value => luaType(value));
@@ -469,6 +472,8 @@ export class LuaState {
                 return new LuaValues(values);
             },
         });
+        for (const name of ['math', 'string', 'table'])
+            this.loadedModules.set(name, first(this.globals.get(name)));
     }
     execute(source, filename = '<lua>') {
         if (this.destroyed)
@@ -502,6 +507,7 @@ export class LuaState {
                     await this.cleanup?.();
                 }
                 finally {
+                    this.loadedModules.clear();
                     this.environmentRoot = null;
                 }
             });
@@ -528,15 +534,15 @@ export class LuaState {
         }
     }
     globalFunctionName(callable) {
-        for (const [name, value] of this.globals.values) {
-            if (value === callable)
-                return `function '${name}'`;
-            const target = first(value);
-            const fields = target instanceof LuaTable ? target.entries()
-                : isHostObject(target) ? Object.entries(target) : [];
+        // lauxlib.c searches two table levels from the loaded-module registry.
+        // _G is a loaded module; tables stored inside it are one level too deep.
+        for (const [name, module] of this.loadedModules) {
+            const fields = module instanceof LuaGlobals ? module.environment.values
+                : module instanceof LuaTable ? module.entries()
+                    : isHostObject(module) ? Object.entries(module) : [];
             for (const [field, entry] of fields) {
                 if (typeof field === 'string' && entry === callable)
-                    return `function '${name}.${field}'`;
+                    return `function '${name === '_G' ? field : `${name}.${field}`}'`;
             }
         }
         return null;
