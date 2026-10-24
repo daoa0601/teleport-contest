@@ -1,8 +1,9 @@
 // mkmap.js - cave-style map generation.
 // C ref: mkmap.c.
-import { COLNO, ICE, ICED_MOAT, ICED_POOL, IS_OBSTRUCTED, IS_WALL, LAVAPOOL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, STONE, TREE, } from './const.js';
+import { COLNO, ICE, ICED_MOAT, ICED_POOL, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LAVAPOOL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, ROWNO, SDOOR, SHARED, STONE, TREE, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { requireGameLevel } from './gstate.js';
+import { isok } from './hacklib.js';
 import { dig_corridor, wallifyMap } from './mklev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
@@ -74,7 +75,6 @@ export async function mkmap({ lit, foreground = ROOM, background = STONE, smooth
         // join_map() discovers eight-connected foreground components in
         // x-major order. Temporary room numbers let somexy() choose a point
         // from an irregular component using the same bounds as C.
-        const seen = new Set();
         const temporaryRooms = level.rooms.slice(0, level.nroom).map(entry => {
             if (!isRoom(entry))
                 throw new Error('Cave joining requires a complete room.');
@@ -82,45 +82,26 @@ export async function mkmap({ lit, foreground = ROOM, background = STONE, smooth
         });
         discoverRegions: for (let x = 2; x <= width; x++) {
             for (let y = 1; y < height; y++) {
-                const key = `${x},${y}`;
-                if (seen.has(key)
-                    || level.requireAt(x, y).typ !== foreground)
+                const loc = level.requireAt(x, y);
+                if (loc.typ !== foreground || loc.roomno !== 0)
                     continue;
-                const pending = [[x, y]];
-                const cells = [];
-                let lx = x, hx = x, ly = y, hy = y;
-                while (pending.length) {
-                    const point = pending.pop();
-                    if (!point)
-                        break;
-                    const [cx, cy] = point;
-                    const cellKey = `${cx},${cy}`;
-                    if (cx < 1 || cx > width || cy < 0 || cy >= ROWNO
-                        || seen.has(cellKey)
-                        || level.requireAt(cx, cy).typ !== foreground)
-                        continue;
-                    seen.add(cellKey);
-                    cells.push([cx, cy]);
-                    lx = Math.min(lx, cx);
-                    hx = Math.max(hx, cx);
-                    ly = Math.min(ly, cy);
-                    hy = Math.max(hy, cy);
-                    for (const [dx, dy] of dirs)
-                        pending.push([cx + dx, cy + dy]);
-                }
-                if (cells.length <= 3) {
-                    for (const [cx, cy] of cells) {
-                        level.requireAt(cx, cy).typ = background;
-                        level.requireAt(cx, cy).roomno = 0;
+                const roomNumber = temporaryRooms.length + ROOMOFFSET;
+                const region = flood_fill_rm(x, y, roomNumber, false, false);
+                if (region.filled <= 3) {
+                    for (let cx = region.lx; cx <= region.hx; cx++) {
+                        for (let cy = region.ly; cy <= region.hy; cy++) {
+                            const cell = level.requireAt(cx, cy);
+                            if (cell.roomno !== roomNumber)
+                                continue;
+                            cell.typ = background;
+                            cell.roomno = 0;
+                        }
                     }
                     continue;
                 }
-                const roomNumber = temporaryRooms.length + ROOMOFFSET;
-                for (const [cx, cy] of cells)
-                    level.requireAt(cx, cy).roomno = roomNumber;
                 temporaryRooms.push({
-                    lx: Math.max(1, lx), ly: Math.max(1, ly),
-                    hx: Math.min(COLNO - 2, hx), hy: Math.min(ROWNO - 2, hy),
+                    lx: Math.max(1, region.lx), ly: Math.max(1, region.ly),
+                    hx: Math.min(COLNO - 2, region.hx), hy: Math.min(ROWNO - 2, region.hy),
                     rtype: OROOM, rlit: 0,
                     doorct: 0, fdoor: level.doorindex,
                     irregular: true, needjoining: false,
@@ -195,5 +176,75 @@ export async function mkmap({ lit, foreground = ROOM, background = STONE, smooth
         level.flags.is_maze_lev = false;
         level.flags.is_cavernous_lev = true;
     }
+}
+// C ref: mkmap.c flood_fill_rm(). Bounds and the fill count are local to one
+// flood instead of shared generation globals.
+export function flood_fill_rm(sx, sy, roomNumber, lit, anyroom) {
+    const level = requireGameLevel();
+    const result = { lx: sx, ly: sy, hx: sx, hy: sy, filled: 0 };
+    function fillRun(x, y) {
+        const foreground = level.requireAt(x, y).typ;
+        while (x > 0) {
+            const loc = level.requireAt(x, y);
+            if (!(anyroom ? IS_ROOM(loc.typ) : loc.typ === foreground)
+                || loc.roomno === roomNumber)
+                break;
+            x--;
+        }
+        x++;
+        result.lx = Math.min(result.lx, x);
+        result.ly = Math.min(result.ly, y);
+        let end = x;
+        for (; end <= COLNO - 2 && level.requireAt(end, y).typ === foreground; end++) {
+            const loc = level.requireAt(end, y);
+            loc.roomno = roomNumber;
+            loc.lit = lit;
+            if (anyroom)
+                markBoundary(end, y, end === x);
+            result.filled++;
+        }
+        for (const adjacentY of [y - 1, y + 1]) {
+            if (!isok(x, adjacentY))
+                continue;
+            for (let column = x; column < end; column++) {
+                if (level.requireAt(column, adjacentY).typ === foreground) {
+                    fillIfUnassigned(column, adjacentY, foreground);
+                }
+                else {
+                    fillIfUnassigned(column - 1, adjacentY, foreground);
+                    fillIfUnassigned(column + 1, adjacentY, foreground);
+                }
+            }
+        }
+        result.hx = Math.max(result.hx, end - 1);
+        result.hy = Math.max(result.hy, y);
+    }
+    function fillIfUnassigned(x, y, foreground) {
+        if (!isok(x, y))
+            return;
+        const loc = level.requireAt(x, y);
+        if (loc.typ === foreground && loc.roomno !== roomNumber)
+            fillRun(x, y);
+    }
+    function markBoundary(x, y, firstInRun) {
+        for (let wallX = firstInRun ? x - 1 : x; wallX <= x + 1; wallX++) {
+            for (let wallY = y - 1; wallY <= y + 1; wallY++) {
+                if (!isok(wallX, wallY))
+                    continue;
+                const wall = level.requireAt(wallX, wallY);
+                if (!(IS_WALL(wall.typ) || IS_DOOR(wall.typ) || wall.typ === SDOOR))
+                    continue;
+                wall.edge = true;
+                if (lit)
+                    wall.lit = true;
+                if (wall.roomno === 0)
+                    wall.roomno = roomNumber;
+                else if (wall.roomno !== roomNumber)
+                    wall.roomno = SHARED;
+            }
+        }
+    }
+    fillRun(sx, sy);
+    return result;
 }
 //# sourceMappingURL=mkmap.js.map

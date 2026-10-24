@@ -63,7 +63,7 @@ import { GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_m
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
-import { mkmap } from './mkmap.js';
+import { flood_fill_rm, mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -4370,62 +4370,16 @@ function specialRandomDoorAt(context, x, y) {
 }
 function specialIrregularRoom(context, x, y, rtype, lit, needfill) {
     const level = requireGameLevel();
-    // sp_lev.c lspo_region() delegates irregular rooms to flood_fill_rm().
-    // That scanline flood includes diagonally touching runs of the same
-    // terrain, then marks neighboring walls and doors as the room's edge.
     const seedX = context.xstart + x, seedY = context.ystart + y;
-    const seedType = level.at(seedX, seedY)?.typ;
     const roomNumber = level.nroom + ROOMOFFSET;
     const equivalence = game.smeq;
     if (!equivalence)
         throw new Error('Irregular room creation requires room equivalence.');
     equivalence[level.nroom] = level.nroom;
-    const pending = [{ x: seedX, y: seedY }];
-    const visited = new Map();
-    let lx = seedX, hx = seedX, ly = seedY, hy = seedY;
-    while (pending.length) {
-        const point = pending.pop();
-        if (!point)
-            break;
-        const { x: roomX, y: roomY } = point;
-        const key = `${roomX},${roomY}`;
-        if (visited.has(key))
-            continue;
-        const loc = level.at(roomX, roomY);
-        if (!loc || loc.typ !== seedType)
-            continue;
-        visited.set(key, point);
-        loc.roomno = roomNumber;
-        loc.lit = !!lit;
-        lx = Math.min(lx, roomX);
-        hx = Math.max(hx, roomX);
-        ly = Math.min(ly, roomY);
-        hy = Math.max(hy, roomY);
-        for (let dx = -1; dx <= 1; dx++) {
-            for (let dy = -1; dy <= 1; dy++) {
-                if (dx || dy)
-                    pending.push({ x: roomX + dx, y: roomY + dy });
-            }
-        }
-    }
-    for (const { x: roomX, y: roomY } of visited.values()) {
-        for (let dx = -1; dx <= 1; dx++) {
-            for (let dy = -1; dy <= 1; dy++) {
-                const loc = level.at(roomX + dx, roomY + dy);
-                if (!loc || !(IS_WALL(loc.typ) || IS_DOOR(loc.typ)
-                    || loc.typ === SDOOR))
-                    continue;
-                loc.edge = true;
-                if (lit)
-                    loc.lit = true;
-                loc.roomno = loc.roomno && loc.roomno !== roomNumber
-                    ? SHARED : roomNumber;
-            }
-        }
-    }
+    const bounds = flood_fill_rm(seedX, seedY, roomNumber, lit, true);
     // lspo_region() registers the bounds with lighting off: flood_fill_rm()
     // already lit the room's floor and boundary, not the whole rectangle.
-    add_room(lx, ly, hx, hy, false, rtype, true);
+    add_room(bounds.lx, bounds.ly, bounds.hx, bounds.hy, false, rtype, true);
     const room = level.rooms[level.nroom - 1];
     if (!isRoom(room))
         throw new Error('Irregular room creation did not install a room.');
