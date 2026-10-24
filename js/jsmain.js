@@ -1094,8 +1094,14 @@ export class Engine {
                 }
             }
             else if (key >= 32 && key <= 126 && name.length < 31) {
-                name += String.fromCharCode(key);
-                display.putstr(prompt.length + name.length - 1, row, String.fromCharCode(key), NO_COLOR);
+                const typed = String.fromCharCode(key);
+                // Unix tty_askname() normalizes before echoing or parsing
+                // suffixes; a leading digit would make save names ambiguous.
+                const allowed = /^[A-Za-z@-]$/.test(typed)
+                    || name.length > 0 && /^[0-9]$/.test(typed);
+                const character = allowed ? typed : '_';
+                name += character;
+                display.putstr(prompt.length + name.length - 1, row, character, NO_COLOR);
             }
         }
         return parseCharacterName(name || 'player');
