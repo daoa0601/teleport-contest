@@ -17,7 +17,11 @@ const WEAPON_SLOTS = [
     ['uquiver', W_QUIVER, 'ready'],
 ];
 export function isWeldedPrimary(object, state = game) {
-    return !!object && object === (state.uwep || state.u?.uwep) && willWeld(object);
+    if (!object || object !== (state.uwep || state.u?.uwep) || !willWeld(object))
+        return false;
+    // C welded() discovers the curse even when the caller can still act.
+    object.bknown = true;
+    return true;
 }
 export function setTwoWeaponCombat(enabled, state = game) {
     if (state.u.twoweap === enabled)

@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { LAVAPOOL } from '../js/const.js';
-import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, HORN_OF_PLENTY, ROCK, SACK, WAN_CANCELLATION } from '../js/object_data.js';
+import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, DAGGER, HORN_OF_PLENTY, ROCK, SACK, WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { nearCapacity, objectWeight, SLT_ENCUMBER, UNENCUMBERED } from '../js/weight.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -63,6 +64,23 @@ void test('cancelling the tipping destination leaves contents alone but spends t
     assert.equal(club.where, 'contained');
     assert.equal(game.context.move, 1);
 });
+for (const hasTarget of [false, true]) {
+    void test(`cancelling a tip ${hasTarget ? 'with another container discovers' : 'with only the source preserves'} a weapon's unknown curse`, async () => {
+        freshPlayableRoom();
+        const sack = await addInventoryObject(SACK, { initialize: false });
+        const club = await knownObject(CLUB, { where: 'contained', container: sack });
+        sack.contents = [club];
+        const weapon = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+        await setPrimaryWeapon(weapon);
+        if (hasTarget)
+            await addInventoryObject(SACK, { initialize: false });
+        await runExtendedCommand('tip', `${sack.invlet}\x1b`);
+        assert.equal(weapon.bknown, hasTarget);
+        assert.equal(sack.contents.includes(club), true);
+        assert.equal(club.where, 'contained');
+        assert.equal(game.context.move, 1);
+    });
+}
 void test('declining the floor chest offers the carried sack instead', async () => {
     const level = freshPlayableRoom();
     const chest = await floorObject(CHEST, 10, 10, { initialize: false, olocked: false });

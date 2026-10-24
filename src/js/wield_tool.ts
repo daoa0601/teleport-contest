@@ -56,7 +56,7 @@ async function explainWeldedPrimary(
     }
     const noun = heroHandName(state);
     const hand = isTwoHanded(primary) ? makePlural(noun) : noun;
-    const demonstrative = plural && !name.includes('pair of ') ? 'those' : 'that';
+    const demonstrative = plural && !/pair of /i.test(name) ? 'those' : 'that';
     await pline(
         `Since your weapon is welded to your ${hand}, `
         + `you cannot ${verb} ${demonstrative} ${name}.`,
@@ -74,7 +74,7 @@ export async function wieldTool(
         return { ready: true, newlyWielded: false };
 
     const name = objectCombatName(object, { state, includeCorpseSpecies: false });
-    const plural = quantityOf(object) > 1 || name.includes('pair of ') || name.includes('s of ');
+    const plural = quantityOf(object) > 1 || /pair of |s of /i.test(name);
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
         await pline(
             `You can't ${verb} ${ownedObjectName(object, state, { capitalized: false })} while wearing ${

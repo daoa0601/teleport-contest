@@ -127,8 +127,8 @@ async function tipDestination(source: GameObject): Promise<{ cancelled: boolean;
     }, { selectable: false, text: '' }];
     const targets = game.inventory.filter(object => object !== source && isContainer(object)
         && !(object.otyp === BAG_OF_TRICKS && object.dknown && objectTypeKnown(object)));
-    const hands = !heroHasNoHands(game) && heroHasFreeHand(game);
-    if (targets.length && !hands) await pline(heroHasNoHands(game) ? 'You have no hands!'
+    const hands = targets.length === 0 || (!heroHasNoHands(game) && heroHasFreeHand(game));
+    if (!hands) await pline(heroHasNoHands(game) ? 'You have no hands!'
         : `You have no free ${heroHandName()}.`);
     for (const object of targets) {
         if (!hands || object.olocked && object.lknown || !object.invlet)

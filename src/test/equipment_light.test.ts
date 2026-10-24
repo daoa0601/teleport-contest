@@ -7,6 +7,7 @@ import { dropHeroInventoryForBones } from '../js/bones_death.js';
 import { rhack } from '../js/cmd.js';
 import { NEED_HTH_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';
 import { pline } from '../js/display.js';
+import { wearEyewear } from '../js/eyewear.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
@@ -18,6 +19,7 @@ import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/light.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { addInventoryItem } from '../js/u_init.js';
+import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
@@ -124,6 +126,24 @@ void test('swapping Sunsword from the alternate slot starts its light', async ()
 
     assert.equal(game.uwep, sword);
     assert.equal(cansee(12, 10), true);
+});
+
+void test('the Eyes reveal Sunsword shining despite an underlying blindness timeout', async () => {
+    darkRoom();
+    requireFixtureGame(game);
+    game.u.ualign.type = 1;
+    const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
+    await wearEyewear(eyes);
+    setHeroBlindnessTurns(10);
+    assert.equal(heroIsBlind(), false);
+    const sword = await addInventoryItem(await artifactObject('Sunsword'));
+    resetInputState().feed(`${sword.invlet}  `);
+
+    await rhack('w'.charCodeAt(0));
+
+    assert.equal(sword.lamplit, true);
+    assert.equal(game.u.blindTurns, 10);
+    assert.match(game._lastPlineMessage ?? '', /begins to shine brightly!/);
 });
 
 void test('a stack of burning candles lights a wider area until extinguished', async () => {

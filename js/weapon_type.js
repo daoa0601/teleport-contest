@@ -71,6 +71,8 @@ export function heroHasFreeHand(state) {
     const weapon = state.uwep || state.u.uwep;
     if (!weapon || !willWeld(weapon))
         return true;
+    // freehand() calls welded() before checking the other hand or shield.
+    weapon.bknown = true;
     const shield = state.uarms || state.u.uarms;
     return !OBJECT_BIMANUAL[weapon.otyp] && !shield?.cursed;
 }

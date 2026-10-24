@@ -29,11 +29,12 @@ export async function slipFromSlipperyHands(
     const hero = state.u;
     const weapon = state.uwep ?? null;
     const rightHanded = hero.rightHanded !== false;
-    const weldedTwoHander = !!weapon && isWeldedPrimary(weapon, state)
-        && !!OBJECT_BIMANUAL[weapon.otyp];
     // A welded two-handed weapon pins only the ring on the weapon hand.
-    const ringFalls = (ring: GameObject | null | undefined, weaponHand: boolean) =>
-        !!ring && !ring.cursed && !(weldedTwoHander && weaponHand);
+    const ringFalls = (ring: GameObject | null | undefined, weaponHand: boolean) => {
+        if (!ring || ring.cursed) return false;
+        return !weapon || !(isWeldedPrimary(weapon, state) && weaponHand)
+            || !OBJECT_BIMANUAL[weapon.otyp];
+    };
     const left = state.uleft ?? null;
     const right = state.uright ?? null;
     const leftFalls = ringFalls(left, !rightHanded);

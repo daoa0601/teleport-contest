@@ -30,7 +30,10 @@ const WEAPON_SLOTS: readonly WeaponSlotAssignment[] = [
 export function isWeldedPrimary(
     object: GameObject | null | undefined, state: GameState = game,
 ): boolean {
-    return !!object && object === (state.uwep || state.u?.uwep) && willWeld(object);
+    if (!object || object !== (state.uwep || state.u?.uwep) || !willWeld(object)) return false;
+    // C welded() discovers the curse even when the caller can still act.
+    object.bknown = true;
+    return true;
 }
 
 export function setTwoWeaponCombat(enabled: boolean, state: GameState = game): void {

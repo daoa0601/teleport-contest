@@ -513,8 +513,9 @@ async function catchUnicornGift(object, { state, source, publish }) {
 }
 async function catchThrownObject(object, { state, random, publish }) {
     const hero = state.u;
-    if (heroIsBlind(state) || heroHasNoHands(state) || !heroHasFreeHand(state)
-        || hero.confused || hero.stunned || hero.fumbling || object.oclass === VENOM_CLASS
+    // freehand() can reveal a welded curse, so keep the native eligibility order.
+    if (heroIsBlind(state) || hero.confused || hero.stunned || hero.fumbling
+        || object.oclass === VENOM_CLASS || heroHasNoHands(state) || !heroHasFreeHand(state)
         || calcCapacity(state, object.owt) > SLT_ENCUMBER)
         return false;
     const chance = 100 - currentAttribute(A_DEX, state)
