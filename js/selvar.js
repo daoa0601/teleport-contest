@@ -191,9 +191,10 @@ export function selection_filter_mapchar(selection, typ, lit = -2) {
             if (!selection_getpoint(x, y, selection)
                 || !location || !match_maptyps(typ, location.typ))
                 continue;
-            if (lit === -2
-                || (lit === -1 && rn2(2))
-                || (lit !== -1 && Number(location.lit) === lit))
+            const keep = lit === -1 ? rn2(2)
+                : lit === 0 || lit === 1 ? Number(location.lit) === lit
+                    : true;
+            if (keep)
                 selection_setpoint(x, y, result, 1);
         }
     }

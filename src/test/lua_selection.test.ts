@@ -5,6 +5,7 @@ import { LuaState } from '../js/lua/runtime.js';
 import { createSelectionBindings } from '../js/lua/selection.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
+import { ROOM } from '../js/const.js';
 
 void test('Lua selection methods and operators use the selvar backend', () => {
     const context = { xstart: 2, ystart: 3, width: 20, height: 12 };
@@ -47,4 +48,27 @@ void test('explicit selection coordinates wrap each axis to eight bits before th
     assert.equal(state.getGlobal('wrapped_count'), 1);
     assert.equal(state.getGlobal('wrapped_x'), 3);
     assert.equal(state.getGlobal('wrapped_y'), 5);
+});
+
+void test('map-character filters ignore lighting for values other than random, dark or lit', t => {
+    const game = freshGame();
+    game.level.requireAt(12, 6).typ = ROOM;
+    game.level.requireAt(12, 6).lit = true;
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+
+    state.execute(`
+        local floor = selection.area(12, 6, 12, 6)
+        negative = floor:filter_mapchar(".", -3):numpoints()
+        positive = floor:filter_mapchar(".", 2):numpoints()
+        dark = floor:filter_mapchar(".", 0):numpoints()
+        lit = floor:filter_mapchar(".", 1):numpoints()
+    `);
+
+    assert.equal(state.getGlobal('negative'), 1);
+    assert.equal(state.getGlobal('positive'), 1);
+    assert.equal(state.getGlobal('dark'), 0);
+    assert.equal(state.getGlobal('lit'), 1);
 });

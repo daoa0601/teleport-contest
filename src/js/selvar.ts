@@ -235,9 +235,10 @@ export function selection_filter_mapchar(selection: Selection | null, typ: numbe
             const location = game.level?.at?.(x, y);
             if (!selection_getpoint(x, y, selection)
                 || !location || !match_maptyps(typ, location.typ)) continue;
-            if (lit === -2
-                || (lit === -1 && rn2(2))
-                || (lit !== -1 && Number(location.lit) === lit))
+            const keep = lit === -1 ? rn2(2)
+                : lit === 0 || lit === 1 ? Number(location.lit) === lit
+                    : true;
+            if (keep)
                 selection_setpoint(x, y, result, 1);
         }
     }
