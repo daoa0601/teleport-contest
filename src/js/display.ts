@@ -843,16 +843,17 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
     // C selects wall glyphs by branch, independently of puzzle completion.
-    // dat/symbols overrides gray with blue for DEC Sokoban walls and yellow
-    // for DEC Fort Ludios walls.
+    // Branch wall colors come from dat/symbols G_ glyph customizations, which
+    // only a symset such as DECgraphics loads; wallcolors[] stays gray under
+    // the default set.
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
     const wallColor = rogue ? NO_COLOR
         : In_sokoban(game.u?.uz)
         ? (dec ? CLR_BLUE : NO_COLOR)
-        : inMines ? CLR_BROWN
-            : inHell ? CLR_RED
+        : dec && inMines ? CLR_BROWN
+            : dec && inHell ? CLR_RED
                 : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
