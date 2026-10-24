@@ -267,7 +267,7 @@ import {
 } from './stoning.js';
 import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
-import { autopickupAtHero } from './pickup.js';
+import { autopickupAtHero, describeDecor } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
 import {
     applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass,
@@ -935,12 +935,17 @@ async function finishFumblingExpiryAfterMessage(fumbled: boolean, publish: Messa
         }
     }
     game.u.fumblingFromIce = false;
-    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic || propertyIsActive('fumbling', game))
+    if (game.u?.fumblingFromArmor || game.u.fumblingIntrinsic || propertyIsActive('fumbling', game))
         game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
     game.u.fumbling = !!(game.u?.fumblingFromArmor
-        || game.u?.fumblingIntrinsic
+        || game.u.fumblingIntrinsic
         || propertyIsActive('fumbling', game)
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
+    // C timeout.c: a decor message deferred past the trip catches up here.
+    if (game.iflags.deferDecor) {
+        await describeDecor();
+        game.iflags.deferDecor = false;
+    }
 }
 
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({

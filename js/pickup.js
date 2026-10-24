@@ -1,16 +1,19 @@
 // C pickup.c: command pickup, automatic pickup, and floor inspection.
 import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
-import { makeSingular } from './object_grammar.js';
+import { makeSingular, withIndefiniteArticle } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
-import { newsym, newsym_force, flush_screen, pline, plineWithContinuation, map_object, consumeHallucinatedMenuObjectGlyph, } from './display.js';
-import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
-import { surfaceName } from './terrain_name.js';
+import { newsym, newsym_force, flush_screen, pline, plineWithContinuation, consumeHallucinatedMenuObjectGlyph, } from './display.js';
+import { dungeonFeatureAt } from './dungeon_feature.js';
+import { waterbodyName } from './terrain_name.js';
+import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { propertyTimeout } from './properties.js';
+import { backOnGroundMessage } from './hack.js';
 import { showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
@@ -43,7 +46,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
-import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit, LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
+import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit, ICE, DRAWBRIDGE_UP, IS_FURNITURE, IS_POOL, IS_LAVA, PLNMSG_BACK_ON_GROUND, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
@@ -104,13 +107,14 @@ export async function autopickupAtHero() {
         const deepLiquid = (isPoolAt(x, y) && !(game.u.uinwater || game.underwater))
             || isLavaAt(x, y);
         if (game.context.nopick || !source.objects.length || deepLiquid) {
-            await describePickupDecor(loc);
+            if (game.flags.mention_decor)
+                await describeDecor();
             await readFloorEngraving(x, y);
             return;
         }
         const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
         if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
-            await describePickupDecor(loc);
+            await describeDecor();
             return;
         }
         const busy = !game._runState && (game.multi
@@ -500,7 +504,7 @@ function splitPickupStack(object, count) {
 // C pickup.c:check_here().
 async function checkHere(source, pickedSome) {
     const { x, y } = source;
-    const skipFeature = await describePickupDecor(requireGameLevel().at(x, y));
+    const skipFeature = game.flags.mention_decor ? await describeDecor() : false;
     const chain = game.uchain || game.u?.uchain;
     const count = pickupObjects(source).filter(object => object !== chain).length;
     if (!count) {
@@ -514,13 +518,54 @@ async function checkHere(source, pickedSome) {
     const { died } = await lookHere(count, { pickedSome, skipFeature });
     return { died };
 }
-async function describePickupDecor(loc) {
-    const brokenDoor = !!game.flags.mention_decor && loc?.typ === DOOR
-        && loc.doormask === D_BROKEN && game._prevDecorType !== DOOR;
-    game._prevDecorType = loc?.typ ?? STONE;
-    if (brokenDoor)
-        await pline('There is a broken door here.');
-    return brokenDoor;
+// C pickup.c:describe_decor(). Feature feedback on arrival; FALSE means the
+// surface was the same non-furniture type, so look_here() shows its own
+// feature line instead of skipping it.
+export async function describeDecor() {
+    // One turn of fumbling left: slip_or_trip() interrupts the hero at the
+    // end of this turn, so hold the decor message back until after it.
+    // C deferred_decor(TRUE) only defers while mention_decor is set.
+    if (propertyTimeout('fumbling') === 1 && !game.iflags.deferDecor) {
+        game.iflags.deferDecor = !!game.flags.mention_decor;
+        return false;
+    }
+    const { ux: x, uy: y } = game.u;
+    const location = requireGameLevel().requireAt(x, y);
+    const surface = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const previous = game._prevDecorType ?? STONE;
+    const underwater = !!(game.underwater || game.u?.uinwater);
+    let feature = dungeonFeatureAt(x, y);
+    const doorHere = feature === 'open door' || feature === 'doorway';
+    const waterHere = feature === 'pool of water';
+    if (doorHere || underwater || (surface === ICE && IS_POOL(previous)))
+        feature = null;
+    let described = true;
+    if (surface === previous && !IS_FURNITURE(surface)) {
+        described = false;
+    }
+    else if (feature) {
+        if (waterHere)
+            feature = waterbodyName(x, y, game);
+        if (feature !== 'swamp' && surface !== ICE)
+            feature = withIndefiniteArticle(feature);
+        const message = game.flags.verbose
+            ? `There is ${feature} here.`
+            : `${feature.charAt(0).toUpperCase()}${feature.slice(1)}.`;
+        await plineWithContinuation(message, {
+            noRepeat: surface === ICE && !!game.flags.mention_decor,
+        });
+    }
+    else if (!underwater) {
+        if (IS_POOL(previous) || IS_LAVA(previous) || previous === ICE) {
+            if (game._lastPlineKind !== PLNMSG_BACK_ON_GROUND) {
+                await plineWithContinuation(backOnGroundMessage(false, game));
+                game._lastPlineKind = PLNMSG_BACK_ON_GROUND;
+            }
+        }
+    }
+    game._prevDecorType = game.flags.mention_decor ? surface : STONE;
+    return described;
 }
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });

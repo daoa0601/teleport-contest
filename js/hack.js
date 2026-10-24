@@ -663,7 +663,7 @@ async function finishLiquidTeleport(movement, { state, repaint, resetVision, rec
 }
 // C trap.c:back_on_ground(). Both ordinary pool exit and rescue name
 // the current surface, including ice beneath a raised drawbridge.
-function backOnGroundMessage(rescued, state) {
+export function backOnGroundMessage(rescued, state) {
     const { ux, uy } = state.u;
     let surface = surfaceName(ux, uy, state);
     let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
