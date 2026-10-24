@@ -1,7 +1,7 @@
 // Monster state saved in bones levels.
 // C refs: bones.c:savebones()/getbones().
 import { setMonsterGivenName } from './monster_given_name.js';
-import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, RLOC_NONE } from './const.js';
+import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, PL_NSIZ, RLOC_NONE } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -10,12 +10,15 @@ import { setMonsterMalign } from './monster_alignment.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { hideMonsterOnRestore, hideMonsterUnder } from './monster_hiding.js';
+import { setShopResidency } from './monster_migration.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
 import { roomForRoomno } from './room.js';
+import { pacifyShopkeeper } from './shop_damage.js';
+import { hasShopkeeperData } from './shop_types.js';
 import { relocateMonsterTo } from './teleport.js';
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
@@ -130,6 +133,14 @@ export async function restoreBonesMonsters(level, state) {
     // Births append here; native fmon starts with the newest monster.
     const monsters = [...level.monsters].reverse();
     for (const monster of monsters) {
+        if (monster.isshk && state.u.uz?.dlevel) {
+            if (!hasShopkeeperData(monster))
+                throw new Error(`Bones shopkeeper ${monster.m_id} has no shop record.`);
+            monster.eshk.shoplevel = { ...state.u.uz };
+            const customer = (monster.eshk.customer ?? '').slice(0, PL_NSIZ).toLowerCase();
+            if (!monster.mpeaceful && customer !== state.plname.slice(0, PL_NSIZ).toLowerCase())
+                pacifyShopkeeper(monster, true);
+        }
         // C priest.c:restpriest(): bones belong to the receiving level.
         if (monster.ispriest && state.u.uz?.dlevel) {
             const shrine = monster.epri ?? monster.mextra?.epri;
@@ -143,6 +154,7 @@ export async function restoreBonesMonsters(level, state) {
             monster.mhpmax = DEFUNCT_MONSTER;
     }
     for (const monster of monsters) {
+        setShopResidency(monster, false, state);
         if (monster.mundetected && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
             await hideMonsterUnder(monster, state);
         if (!monster.isshk) {
