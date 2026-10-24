@@ -390,13 +390,13 @@ export async function throneSitEffect({
         if (game.flags?.debug && !game.flags?.debug_fuzzer) {
             const answer = await getLine(
                 'Throne sit effect (1..13) [0=random]',
-                ch => /[0-9]/.test(ch),
+                () => true,
             );
             if (answer === null) {
                 await plineWithContinuation('Never mind.');
                 return;
             }
-            const requested = Number(answer);
+            const requested = Number.parseInt(answer, 10);
             if (requested >= 1 && requested <= 13) effect = requested;
         }
         if (special) {
