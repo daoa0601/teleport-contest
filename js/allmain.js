@@ -43,6 +43,7 @@ import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, telepo
 import { monsterAtPosition } from './monster_location.js';
 import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
+import { restoreMonsterShape } from './monster_polymorph.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -105,7 +106,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -126,7 +127,7 @@ import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
 import { aligns, nativeRoleAt } from './roles.js';
-import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
+import { initializeSourceStartup } from './startup.js';
 import { ensureQuestStatus } from './quest.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
@@ -342,24 +343,50 @@ async function applyCalendarMessages() {
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
     delete game._pendingHeroShapeChange;
-    const quest = game.quest_status;
-    const savedGenders = quest && { leader: quest.ldrgend, nemesis: quest.nemgend };
-    initializeRoleQuestGenders();
-    // C restgamestate() reloads q_score after role_init() rolls its genders.
-    if (quest && savedGenders) {
-        quest.ldrgend = savedGenders.leader;
-        quest.nemgend = savedGenders.nemesis;
-    }
+    // C restgamestate() runs role_init() before anything else the preamble
+    // does; restoreGame() has already spent its quest gender rolls and then
+    // installed the saved quest_status over the rolled values.
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
     game._encumbranceLevel = 0;
-    // C dorecover() rebuilds the unsaved vision state before docrt() and
-    // welcome(). Search and monster feedback use that same live sight.
-    vision_reset_new_level();
+    // C getlev() closes dorecover() with a fixup pass over every monster on
+    // the restored current level. Its other steps — steed and engulfer
+    // relinking, placement, hidden cover, and shopkeeper residency — are
+    // restored directly from the saved graph, and elapsed time is zero at a
+    // plain restore, so restore_cham() is the piece this pass still owes.
+    // Births append in the port, whereas C's fmon chain keeps the newest
+    // monster first. The pass runs where C runs it, before vision_reset()
+    // (restore.c:926) and with program_state.restoring still set, so plain
+    // sight sees nothing yet and the map stays unpainted behind any
+    // sensed-change message; only sensing can spot a revert here. getlev()
+    // holds in_getlev across the pass (restore.c:1064-1305), so a revert that
+    // asks for a vision recalculation cannot rebuild sight mid-pass.
+    game.program_state.restoring = true;
+    game.program_state.in_getlev = true;
+    game.vision_full_recalc = 0;
+    try {
+        for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+            await restoreMonsterShape(monster, game);
+            if (game.program_state.gameover)
+                return;
+        }
+    }
+    finally {
+        game.program_state.in_getlev = false;
+        game.program_state.restoring = false;
+        // C dorecover() rebuilds the unsaved vision state (restore.c:926-928)
+        // and clears program_state.restoring before docrt(); docrt() pages
+        // any pending line at cls()'s message flush, as tty does.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
+    }
     await docrt();
     // The first flush paints the display state restored with the level.
     await bot();
+    // C dorecover() runs clear_nhwindow(WIN_MESSAGE) between docrt() and
+    // welcome(), erasing any shape-fixup line above without spending a key.
+    clearMessageWindow();
     await welcome(false);
     await checkSpecialRoom();
     if (game.flags?.explore)

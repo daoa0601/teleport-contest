@@ -10,6 +10,8 @@ import { initializeMonsterVitals } from './monster_population.js';
 import { rn2, rnd } from './rng.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { ensureQuestStatus } from './quest.js';
+import type { QuestStatus } from './game_state.js';
+import type { Role } from './roles.js';
 
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
@@ -19,7 +21,15 @@ const M2_NEUTER = 0x00040000;
 export function initializeRoleQuestGenders(): void {
     const role = game.urole;
     if (!role) throw new Error('Quest gender initialization requires a selected role');
-    const quest = ensureQuestStatus();
+    rollQuestFigureGenders(role, ensureQuestStatus());
+}
+
+// The rolls role_init() makes whenever the quest figure's own species has
+// no fixed gender. On restore they run inside restgamestate() before the
+// hero is even read, and the saved quest_status then overwrites the values.
+export function rollQuestFigureGenders(
+    role: Pick<Role, 'ldrnum' | 'neminum'>, quest: Pick<QuestStatus, 'ldrgend' | 'nemgend'>,
+): void {
     quest.ldrgend = questMonsterGender(role.ldrnum);
     if (role.neminum !== undefined)
         quest.nemgend = questMonsterGender(role.neminum);

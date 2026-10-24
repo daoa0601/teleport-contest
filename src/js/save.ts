@@ -4,7 +4,7 @@
 import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
+import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -15,13 +15,14 @@ import { decodeSavedGame } from './persistent_state_validation.js';
 import type { SavedGame } from './persistent_state_validation.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
+import { rollQuestFigureGenders } from './startup.js';
 import type { PersistentState } from './state_schema.js';
 import type { StorageBackend } from './storage.js';
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
-import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING } from './const.js';
+import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './weapon_type.js';
@@ -192,10 +193,32 @@ async function writeSave(
     return saved;
 }
 
+// C restore.c:restgamestate() reports its refusal through You() and returns
+// FALSE; dorecover() then waits for the message to be dismissed and discards
+// the save file. The synchronous restoreGame() can only report the refusal,
+// so the caller completes that dialogue through dismissUnhealthyRestore().
+let restoreRefusal: 'unhealthy' | null = null;
+
+export function restoreRefusedAsUnhealthy(): boolean {
+    return restoreRefusal === 'unhealthy';
+}
+
+export async function dismissUnhealthyRestore(
+    name: string | null | undefined,
+    storage: RestoreStorage | null | undefined = game.storage,
+): Promise<void> {
+    if (restoreRefusal !== 'unhealthy') return;
+    restoreRefusal = null;
+    await pline('You were not healthy enough to survive restoration.');
+    await displayMessageWindow();
+    storage?.removeItem?.(saveKey(name));
+}
+
 export function restoreGame(
     name: string | null | undefined,
     storage: RestoreStorage | null | undefined = game.storage,
 ): boolean {
+    restoreRefusal = null;
     if (!storage?.getItem) return false;
     const key = saveKey(name);
     try {
@@ -205,6 +228,21 @@ export function restoreGame(
         if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
             return false;
         requireInitializedHero(snapshot.state.u);
+        // C restgamestate() reads the saved flags and runs role_init()
+        // before it reads the hero, so the quest gender rolls are spent
+        // even when the save is then refused; installing the snapshot
+        // afterwards overwrites the rolled values, as Sfi_q_score() does.
+        rollQuestFigureGenders(snapshot.state.urole, { ldrgend: 0, nemgend: 0 });
+        // C restgamestate() refuses a save whose hero was not healthy enough
+        // to survive restoration, and dorecover() then waits for the message
+        // to be dismissed before discarding the save file and starting over.
+        // restoreGame() is synchronous, so the caller owns that dialogue.
+        const savedHero = snapshot.state.u;
+        if ((savedHero.uhp ?? 0) <= 0
+            && (!Upolyd(savedHero) || (savedHero.mh ?? 0) <= 0)) {
+            restoreRefusal = 'unhealthy';
+            return false;
+        }
         restoreSavedMonsters(snapshot.state);
         // C restgamestate() reads ubirthday back from its local-time text.
         const birthday = snapshot.state.ubirthday === undefined

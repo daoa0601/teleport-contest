@@ -19,7 +19,7 @@ import { parseCharacterName } from './character_name.js';
 import type { ParsedCharacterName } from './character_name.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
-import { askAboutPanicSave, hasErrorSave, restoreGame } from './save.js';
+import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
@@ -334,7 +334,12 @@ export class Engine {
         g.moves = 0;
         initializeFruitRegistry(opts.fruit, g);
 
-        if (restoreGame(playerName, this.storage)) {
+        const restored = restoreGame(playerName, this.storage);
+        // C dorecover() shows the refusal message and waits for its
+        // dismissal key before the game falls through to a new character.
+        if (restoreRefusedAsUnhealthy())
+            await dismissUnhealthyRestore(playerName, this.storage);
+        if (restored) {
             await restoregamePreamble();
             return true;
         }
