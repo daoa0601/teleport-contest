@@ -32,7 +32,7 @@ export function hasCharacterFilters(filters: CharacterFilters): boolean {
     return !!(filters.roles.size || filters.races.size || filters.genders.size || filters.alignments.size);
 }
 
-// role.c:ok_role(), ok_race(), and ok_align() each consult only their own
+// role.c:ok_role(), ok_race(), ok_gend(), and ok_align() consult their own
 // filters and constraints. Menu builders combine the predicates they need.
 export function characterRoleAllowed(filters: CharacterFilters, choices: CharacterChoices): boolean {
     const { role, race, gender, alignment } = choices;
@@ -47,6 +47,12 @@ export function characterRaceAllowed(filters: CharacterFilters, choices: Charact
     const { role, race, alignment } = choices;
     return (race ? [race] : races).some(candidate =>
         !filters.races.has(candidate.name) && validCharacterRace(role, candidate, alignment));
+}
+
+export function characterGenderAllowed(filters: CharacterFilters, choices: CharacterChoices): boolean {
+    const { role, gender } = choices;
+    return (gender ? [gender] : genders).some(candidate =>
+        !filters.genders.has(candidate.name) && validCharacterGender(role, candidate));
 }
 
 export function characterAlignmentAllowed(filters: CharacterFilters, choices: CharacterChoices): boolean {
@@ -66,34 +72,51 @@ export async function editCharacterFilters(filters: CharacterFilters): Promise<'
             const key = first === previousKey ? first.toUpperCase() : first;
             previousKey = key;
             const name = role.name.m === role.name.f ? role.name.m : `${role.name.m}/${role.name.f}`;
+            const choices = { role, race: null, gender: null, alignment: null };
+            const allowed = characterRoleAllowed(filters, choices)
+                && characterRaceAllowed(filters, choices)
+                && characterGenderAllowed(filters, choices)
+                && characterAlignmentAllowed(filters, choices);
             tty_add_menu(window, {
                 identifier: { facet: 'role', value: role.key }, selector: key,
                 text: withIndefiniteArticle(name),
-                itemflags: filters.roles.has(role.key) ? MENU_ITEMFLAGS_SELECTED : 0,
+                itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
             });
         }
         tty_add_menu(window, { identifier: null, text: '' });
         tty_add_menu(window, { identifier: null, text: 'Unacceptable races' });
         for (const race of races) {
+            const choices = { role: null, race, gender: null, alignment: null };
+            const allowed = characterRaceAllowed(filters, choices)
+                && characterRoleAllowed(filters, choices)
+                && characterAlignmentAllowed(filters, choices);
             tty_add_menu(window, {
                 identifier: { facet: 'race', value: race.name }, selector: race.name.charAt(0).toUpperCase(),
-                text: race.name, itemflags: filters.races.has(race.name) ? MENU_ITEMFLAGS_SELECTED : 0,
+                text: race.name, itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
             });
         }
         tty_add_menu(window, { identifier: null, text: '' });
         tty_add_menu(window, { identifier: null, text: 'Unacceptable genders' });
         for (const gender of genders) {
+            const choices = { role: null, race: null, gender, alignment: null };
+            const allowed = characterGenderAllowed(filters, choices)
+                && characterRoleAllowed(filters, choices)
+                && characterRaceAllowed(filters, choices);
             tty_add_menu(window, {
                 identifier: { facet: 'gender', value: gender.name }, selector: gender.name.charAt(0).toUpperCase(),
-                text: gender.name, itemflags: filters.genders.has(gender.name) ? MENU_ITEMFLAGS_SELECTED : 0,
+                text: gender.name, itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
             });
         }
         tty_add_menu(window, { identifier: null, text: '' });
         tty_add_menu(window, { identifier: null, text: 'Unacceptable alignments' });
         for (const alignment of aligns) {
+            const choices = { role: null, race: null, gender: null, alignment };
+            const allowed = characterAlignmentAllowed(filters, choices)
+                && characterRoleAllowed(filters, choices)
+                && characterRaceAllowed(filters, choices);
             tty_add_menu(window, {
                 identifier: { facet: 'alignment', value: alignment.name }, selector: alignment.name.charAt(0).toUpperCase(),
-                text: alignment.name, itemflags: filters.alignments.has(alignment.name) ? MENU_ITEMFLAGS_SELECTED : 0,
+                text: alignment.name, itemflags: allowed ? 0 : MENU_ITEMFLAGS_SELECTED,
             });
         }
         tty_end_menu(window, `Pick all that apply${hasCharacterFilters(filters) ? ' and/or unpick any that no longer apply' : ''}`);

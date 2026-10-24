@@ -55,6 +55,16 @@ void test('choosing race first offers only races compatible with an unfiltered r
     assert.equal(game.urole?.key, 'wizard');
     assert.equal(game.urace?.name, 'elf');
 });
+void test('clearing the female filter retains the implied Valkyrie exclusion on reopening', async () => {
+    const engine = await start('n~>F\n~>F\n');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+    assert.equal(rows.some(row => row.includes('a Valkyrie')), false, 'the reopened filter editor preselects the role excluded by the female filter');
+    engine.inputGate.feed('kfy');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1);
+    assert.equal(game.urole?.key, 'knight');
+    assert.equal(game.flags.female, true, 'clearing female permits other female roles');
+});
 for (const { facet, exclusions } of [
     { facet: 'role', exclusions: 'abchkmprRstvw' },
     { facet: 'race', exclusions: 'HEDGO' },
