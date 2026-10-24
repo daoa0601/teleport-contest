@@ -3540,23 +3540,24 @@ function eachObjectInBonesGraph(level, visit) {
     };
     eachTopLevelBonesObject(level, walk);
 }
-function resetBonesObjectList(objects, ghostly) {
+function resetBonesObjectList(objects, mode, ghostly = mode === 'save') {
     const kept = [];
     for (const object of objects || []) {
-        object.contents = resetBonesObjectList(object.contents, false);
+        object.contents = resetBonesObjectList(object.contents, mode, false);
         for (const content of object.contents)
             content.container = object;
         if (object.in_use)
             continue;
         if (ghostly)
             object.ghostly = true;
-        kept.push(prepareBonesObjectForSave(object));
+        kept.push(mode === 'save'
+            ? prepareBonesObjectForSave(object) : prepareBonesObjectForRestore(object));
     }
     return kept;
 }
-function resetBonesObjectsForSave(level) {
+function resetBonesObjects(level, mode) {
     for (const monster of level?.monsters || []) {
-        const inventory = resetBonesObjectList(monster.minvent || monster.inventory, true);
+        const inventory = resetBonesObjectList(monster.minvent || monster.inventory, mode);
         monster.minvent = monster.inventory = inventory;
         monster.hasInventory = inventory.length > 0;
     }
@@ -3565,9 +3566,9 @@ function resetBonesObjectsForSave(level) {
         if (!column)
             continue;
         for (let y = 0; y < column.length; y++)
-            column[y] = resetBonesObjectList(column[y], true);
+            column[y] = resetBonesObjectList(column[y], mode);
     }
-    level.buriedObjects = resetBonesObjectList(level?.buriedObjects, true);
+    level.buriedObjects = resetBonesObjectList(level?.buriedObjects, mode);
 }
 // C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
 // the level graph only. The saved-graph codec retains entity aliases and
@@ -3624,7 +3625,7 @@ export function saveBonesLevel() {
         trap.madeby_u = 0;
         trap.tseen = trap.ttyp === HOLE;
     }
-    resetBonesObjectsForSave(payload.level);
+    resetBonesObjects(payload.level, 'save');
     const fruitIds = new Set();
     eachObjectInBonesGraph(payload.level, object => {
         if (object.otyp === SLIME_MOLD)
@@ -3793,9 +3794,9 @@ async function renewBonesIdentities(level, fruits) {
     }
 }
 function restoreBonesObjects(level) {
+    resetBonesObjects(level, 'restore');
     let newestOrder = game._fobjSerial ?? 0;
     eachObjectInBonesGraph(level, object => {
-        prepareBonesObjectForRestore(object, game);
         newestOrder = Math.max(newestOrder, object._fobjOrder ?? 0);
     });
     // C restore.c:getlev() keeps the bones fobj chain; objects placed
