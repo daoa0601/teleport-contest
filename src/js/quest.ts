@@ -31,7 +31,7 @@ import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './regions.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { impossible } from './diagnostics.js';
-import { markOverviewUnreachable } from './dungeon.js';
+import { markOverviewUnreachable, sameDungeonLevel } from './dungeon.js';
 
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
@@ -205,9 +205,12 @@ export async function prepareQuestArrival({ fromDepth }: {
     if (g.u?.uevent?.qcompleted) return null;
     if (g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname !== 'The Quest') return null;
 
-    const prototype = g._activeSpecialLevel?.prototype || '';
+    // quest.c:onquest() classifies the destination by dungeon position
+    // (Is_qstart/Is_qlocate/Is_nemesis), not by the last generation script:
+    // a bones filler level keeps the departure level's prototype.
+    const at = (name: string) => sameDungeonLevel(currentDepth, g.specialLevels?.get(name));
     const status = ensureQuestStatus(g);
-    if (prototype.endsWith('-strt')) {
+    if (at('x-strt')) {
         if (!status.first_start) {
             return {
                 ...await prepareQtDelivery('firsttime', g),
@@ -229,7 +232,7 @@ export async function prepareQuestArrival({ fromDepth }: {
         }
         return null;
     }
-    if (prototype.endsWith('-loca')) {
+    if (at('x-loca')) {
         if (status.killed_nemesis) return null;
         const fromAbove = (fromDepth?.dlevel ?? currentDepth.dlevel)
             < (g.u?.uz?.dlevel ?? 0);
@@ -245,7 +248,7 @@ export async function prepareQuestArrival({ fromDepth }: {
         if (fromAbove)
             return prepareQtDelivery('locate_next', g);
     }
-    if (prototype.endsWith('-goal')) {
+    if (at('x-goal')) {
         if (status.killed_nemesis) return null;
         if (!status.made_goal) {
             return {
@@ -368,9 +371,9 @@ async function questPurity(talk: boolean, g: GameState = game): Promise<-1 | 0 |
     return currentBaseAlignment(g) !== original ? -1 : 0;
 }
 
+// C Is_qstart(&u.uz): the quest home is identified by dungeon position.
 export function onQuestStart(g: GameState = game) {
-    return g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname === 'The Quest'
-        && g._activeSpecialLevel?.prototype?.endsWith('-strt');
+    return sameDungeonLevel(g.u?.uz, g.specialLevels?.get('x-strt'));
 }
 
 // C quest.c:ok_to_quest() asks the non-interactive purity predicate.  Keep

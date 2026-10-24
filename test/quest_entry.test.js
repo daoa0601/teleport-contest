@@ -3,9 +3,9 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { gotoLevel } from '../js/level_change.js';
 import { resetInputState } from '../js/input.js';
-import { ensureQuestStatus } from '../js/quest.js';
+import { displayPreparedQuestArrival, ensureQuestStatus, prepareQuestArrival } from '../js/quest.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
-import { createDungeon } from './support/topology.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { addTrap } from './support/level-state.js';
 import { MAGIC_PORTAL } from '../js/const.js';
 void test('entering the Healer quest delivers its homecoming text before marking the visit', async () => {
@@ -20,6 +20,7 @@ void test('entering the Healer quest delivers its homecoming text before marking
     cache.set('1:1', destination);
     cache.delete('0:2');
     destination.activeSpecialLevel = { prototype: 'Hea-strt', file: 'Hea-strt.lua' };
+    game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: 1, dlevel: 1 })]]);
     addTrap(destination.level, MAGIC_PORTAL, 12, 10);
     const pages = [];
     const input = resetInputState();
@@ -31,5 +32,19 @@ void test('entering the Healer quest delivers its homecoming text before marking
     await gotoLevel({ dnum: 1, dlevel: 1 }, { arrival: 'portal' });
     assert.match(pages.join('\n'), /What sorcery/);
     assert.equal(ensureQuestStatus().first_start, true);
+});
+void test('a quest filler level keeping the goal prototype is not the nemesis level', async () => {
+    freshConnectedLevels({ role: 'healer', dungeonName: 'The Quest' });
+    game.u.uz = { dnum: 0, dlevel: 4 };
+    // A bones filler arrival skips makelevel(), so the departure level's
+    // generation script is still the active one.
+    game._activeSpecialLevel = { prototype: 'Hea-goal', file: 'Hea-goal.lua' };
+    game.specialLevels = new Map([
+        ['x-strt', createSpecialLevel({ dnum: 0, dlevel: 1 })],
+        ['x-goal', createSpecialLevel({ dnum: 0, dlevel: 5 })],
+    ]);
+    const arrival = await prepareQuestArrival({ fromDepth: { dnum: 0, dlevel: 5 } });
+    assert.equal(await displayPreparedQuestArrival(arrival), false);
+    assert.ok(!ensureQuestStatus().made_goal);
 });
 //# sourceMappingURL=quest_entry.test.js.map
