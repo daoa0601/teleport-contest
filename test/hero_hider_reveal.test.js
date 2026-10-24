@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
-import { COLNO, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROOM, ROWNO, STONE } from '../js/const.js';
+import { COLNO, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROOM, ROWNO, SQKY_BOARD, STONE } from '../js/const.js';
+import { maketrap } from '../js/mklev.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -14,7 +15,7 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-const REVEAL_PROSE = /fall|piercer|ogre|snake|hiding|Wait|mimic|hit|miss|It |turn into/i;
+const REVEAL_PROSE = /fall|board|piercer|ogre|snake|hiding|Wait|mimic|hit|miss|It |turn into/i;
 function finalProse(messages) {
     return `${messages.join('\n')}\n${game._pending_message ?? ''}`;
 }
@@ -87,6 +88,26 @@ void test('a falling piercer lands on the attacker\'s vacated square', async () 
     assert.equal(ogre.my, heroY, 'the attacker takes the hero\'s old square');
     assert.equal(game.u.ux, 11, 'the hero lands on the attacker\'s old square');
     assert.equal(game.u.uy, 10, 'the hero lands on the attacker\'s old square');
+});
+void test('a falling piercer springs a trap on its landing square', async () => {
+    const { messages } = revealRoom();
+    assert.equal((await polymonHero(MONSTER_NAME.indexOf('rock piercer'))).transformed, true);
+    assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
+    const level = requireGameLevel(game);
+    const heroX = game.u.ux;
+    const heroY = game.u.uy;
+    const ogre = await attackingOgre();
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
+            level.requireAt(x, y).typ = STONE;
+    level.requireAt(heroX, heroY).typ = ROOM;
+    level.requireAt(ogre.mx, ogre.my).typ = ROOM;
+    await maketrap(ogre.mx, ogre.my, SQKY_BOARD);
+    await runAttack(ogre);
+    const prose = finalProse(messages);
+    assert.equal(game.u.ux, 11, 'the hero lands on the attacker\'s old square');
+    assert.match(prose, /A board beneath you squeaks/);
+    assert.match(prose, /falling piercer \(you\)!/, 'the piercer still strikes after landing');
 });
 void test('a hiding snake hero is pointed out to its attacker', async () => {
     const { messages } = revealRoom();
