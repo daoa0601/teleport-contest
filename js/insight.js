@@ -475,38 +475,6 @@ export async function showFinalAttributes(options) {
         validKeys: [27, 32, 10, 13],
     });
 }
-function currentAchievementLines() {
-    if (!game.flags?.debug)
-        return [];
-    const achievements = achievementEntries(game);
-    if (!achievements.length)
-        return [];
-    const lines = [
-        '',
-        `Achievement${achievements.length === 1 ? '' : 's'}:`,
-    ];
-    for (const achievement of achievements) {
-        const identity = Math.abs(achievement);
-        if (identity === ACH_HELL) {
-            lines.push(' You have entered Gehennom.');
-        }
-        else if (identity === ACH_MINE) {
-            lines.push(' You have entered the Gnomish Mines.');
-        }
-        else if (identity === ACH_TOWN) {
-            lines.push(' You have entered Minetown.');
-        }
-        else if (identity >= ACH_RNK1 && identity <= ACH_RNK8) {
-            const rank = identity - ACH_RNK1 + 1;
-            const title = game.urole?.title?.[rank];
-            const gender = achievement < 0 ? 'f' : 'm';
-            const name = title?.[gender] || title?.m || title?.f
-                || `rank ${rank}`;
-            lines.push(` You have attained the rank of ${name}.`);
-        }
-    }
-    return lines;
-}
 export function currentConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
@@ -548,8 +516,11 @@ export function currentConductLines() {
     }
     if (!(conduct.pets || 0))
         lines.push(' You have never had a pet.');
-    if (!(conduct.genocides || 0))
+    const genocides = (game.mvitals ?? []).filter(vital => (vital?.mvflags & G_GENOD) !== 0).length;
+    if (!genocides)
         lines.push(' You have never genocided any monsters.');
+    else
+        lines.push(` You have genocided ${genocides} ${plural(genocides, 'type')} of ${plural(genocides, 'monster')}.`);
     if (!(conduct.polypiles || 0)) {
         lines.push(' You have never polymorphed an object.');
     }
@@ -564,16 +535,16 @@ export function currentConductLines() {
         const count = conduct.polyselfs;
         lines.push(` You have changed form ${count} time${count === 1 ? '' : 's'}.`);
     }
-    if (!(conduct.wishes || 0)) {
-        lines.push(' You have used no wishes.');
+    lines.push(...wishConductLines(false));
+    if (achievementEntries(game).includes(ACH_SOKO)) {
+        const cheated = conduct.sokocheat ?? 0;
+        lines.push(cheated
+            ? ` You have violated the special Sokoban rules ${killedCountPhrase(cheated)}.`
+            : " You haven't violated any of the special Sokoban rules.");
     }
-    else {
-        const count = conduct.wishes;
-        lines.push(` You have used ${count} wish${count === 1 ? '' : 'es'}.`);
-        if (!(conduct.wisharti || 0))
-            lines.push(" You haven't wished for any artifacts.");
-    }
-    lines.push(...currentAchievementLines());
+    // Native only shows achievements mid-game in wizard mode.
+    if (game.flags?.debug)
+        lines.push(...achievementLines(false));
     return lines;
 }
 export async function doconduct() {
@@ -629,31 +600,39 @@ export function finalConductLines() {
         lines.push(' You never changed form.');
     else if (game.flags.debug)
         lines.push(` You changed form ${conduct.polyselfs} ${plural(conduct.polyselfs, 'time')}.`);
-    if (!conduct.wishes)
-        lines.push(' You used no wishes.');
-    else {
-        const wishes = conduct.wishes;
-        const artifacts = conduct.wisharti ?? 0;
-        let text = ` You used ${wishes} wish${wishes === 1 ? '' : 'es'}`;
-        if (artifacts) {
-            const count = artifacts !== wishes ? `${artifacts} `
-                : artifacts > 2 ? 'all ' : artifacts === 2 ? 'both ' : '';
-            text += ` (${count}for ${artifacts === 1 ? 'an artifact' : 'artifacts'})`;
-        }
-        lines.push(`${text}.`);
-        if (!artifacts)
-            lines.push(' You did not wish for any artifacts.');
-    }
+    lines.push(...wishConductLines(true));
     if (achievementEntries(game).includes(ACH_SOKO)) {
         const cheated = conduct.sokocheat ?? 0;
         lines.push(cheated
             ? ` You violated the special Sokoban rules ${killedCountPhrase(cheated)}.`
             : ' You did not violate any of the special Sokoban rules.');
     }
-    lines.push(...finalAchievementLines());
+    lines.push(...achievementLines(true));
     return lines;
 }
-function finalAchievementLines() {
+// C insight.c:show_conduct(): the wish count and its artifact suffix; the
+// two tenses share the suffix, differing only in the leading "have".
+function wishConductLines(final) {
+    const conduct = game.u?.uconduct || {};
+    const wishes = conduct.wishes || 0;
+    if (!wishes)
+        return [final ? ' You used no wishes.' : ' You have used no wishes.'];
+    const artifacts = conduct.wisharti ?? 0;
+    let text = ` You ${final ? '' : 'have '}used ${wishes} wish${wishes === 1 ? '' : 'es'}`;
+    if (artifacts) {
+        const count = artifacts !== wishes ? `${artifacts} `
+            : artifacts > 2 ? 'all ' : artifacts === 2 ? 'both ' : '';
+        text += ` (${count}for ${artifacts === 1 ? 'an artifact' : 'artifacts'})`;
+    }
+    const lines = [`${text}.`];
+    if (!artifacts)
+        lines.push(final ? ' You did not wish for any artifacts.' : " You haven't wished for any artifacts.");
+    return lines;
+}
+// C insight.c:show_achievements().  Achievements are displayed in the order
+// they were recorded, except that an ascension defers the Amulet and the
+// win itself to the end of the list; 'final' selects past-tense wording.
+function achievementLines(final) {
     let entries = achievementEntries(game);
     if (!entries.length)
         return [];
@@ -664,21 +643,36 @@ function finalAchievementLines() {
         entries.push(ACH_UWIN);
         game.u.uachieved = entries;
     }
+    const bellHeld = !!game.u.uhave?.bell, candleHeld = !!game.u.uhave?.menorah, bookHeld = !!game.u.uhave?.book, amuletHeld = !!game.u.uhave?.amulet, ascended = !!game.u.uevent?.ascended;
+    // [present, past] phrases; enl_msg() picks the tense from 'final'.
     const actions = new Map([
-        [ACH_BLND, 'explored without being able to see'], [ACH_NUDE, 'went without any armor'],
-        [ACH_MINE, 'entered the Gnomish Mines'], [ACH_TOWN, 'entered Minetown'],
-        [ACH_SHOP, 'entered a shop'], [ACH_TMPL, 'entered a temple'],
-        [ACH_ORCL, 'consulted the Oracle of Delphi'], [ACH_NOVL, 'read from a Discworld novel'],
-        [ACH_SOKO, 'entered Sokoban'], [ACH_SOKO_PRIZE, 'completed Sokoban'],
-        [ACH_MINE_PRIZE, 'completed the Gnomish Mines'], [ACH_BGRM, 'entered the Big Room'],
-        [ACH_MEDU, 'defeated Medusa'], [ACH_TUNE, "learned the tune to open and close the Castle's drawbridge"],
-        [ACH_BELL, `${game.u.uhave?.bell ? 'had' : 'handled'} the Bell of Opening`],
-        [ACH_HELL, 'entered Gehennom'],
-        [ACH_CNDL, `${game.u.uhave?.menorah ? 'had' : 'handled'} the Candelabrum of Invocation`],
-        [ACH_BOOK, `${game.u.uhave?.book ? 'had' : 'handled'} the Book of the Dead`],
-        [ACH_INVK, "gained access to Moloch's Sanctum"],
-        [ACH_AMUL, `${game.u.uevent?.ascended ? 'delivered' : game.u.uhave?.amulet ? 'had' : 'had obtained'} the Amulet of Yendor`],
-        [ACH_ENDG, 'reached the Elemental Planes'], [ACH_ASTR, 'reached the Astral Plane'],
+        [ACH_BLND, ['are exploring without being able to see', 'explored without being able to see']],
+        [ACH_NUDE, ['have gone without any armor', 'went without any armor']],
+        [ACH_MINE, ['have entered the Gnomish Mines', 'entered the Gnomish Mines']],
+        [ACH_TOWN, ['have entered Minetown', 'entered Minetown']],
+        [ACH_SHOP, ['have entered a shop', 'entered a shop']],
+        [ACH_TMPL, ['have entered a temple', 'entered a temple']],
+        [ACH_ORCL, ['have consulted the Oracle of Delphi', 'consulted the Oracle of Delphi']],
+        [ACH_NOVL, ['have read from a Discworld novel', 'read from a Discworld novel']],
+        [ACH_SOKO, ['have entered Sokoban', 'entered Sokoban']],
+        [ACH_SOKO_PRIZE, ['have completed Sokoban', 'completed Sokoban']],
+        [ACH_MINE_PRIZE, ['have completed the Gnomish Mines', 'completed the Gnomish Mines']],
+        [ACH_BGRM, ['have entered the Big Room', 'entered the Big Room']],
+        [ACH_MEDU, ['have defeated Medusa', 'defeated Medusa']],
+        [ACH_TUNE, ["have learned the tune to open and close the Castle's drawbridge",
+                "learned the tune to open and close the Castle's drawbridge"]],
+        [ACH_BELL, [`${bellHeld ? 'have' : 'have handled'} the Bell of Opening`,
+                `${bellHeld ? 'had' : 'handled'} the Bell of Opening`]],
+        [ACH_HELL, ['have entered Gehennom', 'entered Gehennom']],
+        [ACH_CNDL, [`${candleHeld ? 'have' : 'have handled'} the Candelabrum of Invocation`,
+                `${candleHeld ? 'had' : 'handled'} the Candelabrum of Invocation`]],
+        [ACH_BOOK, [`${bookHeld ? 'have' : 'have handled'} the Book of the Dead`,
+                `${bookHeld ? 'had' : 'handled'} the Book of the Dead`]],
+        [ACH_INVK, ["have gained access to Moloch's Sanctum", "gained access to Moloch's Sanctum"]],
+        [ACH_AMUL, [`${ascended ? 'delivered' : amuletHeld ? 'have' : 'have obtained'} the Amulet of Yendor`,
+                `${ascended ? 'delivered' : amuletHeld ? 'had' : 'had obtained'} the Amulet of Yendor`]],
+        [ACH_ENDG, ['have reached the Elemental Planes', 'reached the Elemental Planes']],
+        [ACH_ASTR, ['have reached the Astral Plane', 'reached the Astral Plane']],
     ]);
     const lines = ['', `Achievement${entries.length === 1 ? '' : 's'}:`];
     for (const entry of entries) {
@@ -689,11 +683,11 @@ function finalAchievementLines() {
         else if (identity >= ACH_RNK1 && identity <= ACH_RNK8) {
             const rank = game.urole?.title?.[identity - ACH_RNK1 + 1];
             const title = (entry < 0 ? rank?.f : rank?.m) || rank?.m || 'Adventurer';
-            lines.push(` You attained the rank of ${title}.`);
+            lines.push(` You ${final ? '' : 'have '}attained the rank of ${title}.`);
         }
         else {
             const action = actions.get(identity);
-            lines.push(action ? ` You ${action}.` : ` [Unexpected achievement #${entry}.]`);
+            lines.push(action ? ` You ${action[final ? 1 : 0]}.` : ` [Unexpected achievement #${entry}.]`);
         }
     }
     return lines;
