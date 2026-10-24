@@ -1168,9 +1168,14 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
             statueGlyph: true, piletop,
         }
         : {
-            ch: activeObjectSymbols()[objectClassForType(displayedType)] || '?',
+            // display.c sends the boulder object to showsyms[SYM_BOULDER],
+            // which BOULDER= overrides outside the rogue symbol set.
+            ch: object.otyp === BOULDER && !Is_rogue_level(game.u?.uz)
+                && game.boulderSym
+                ? game.boulderSym
+                : activeObjectSymbols()[objectClassForType(displayedType)] || '?',
             color: objectColor(object), decgfx: false,
-            kind: 'object', otyp: displayedType, ...species, glyph,
+            kind: 'object', otyp: displayedType, ...species,
             statueGlyph: object.otyp === STATUE, piletop,
         };
 }

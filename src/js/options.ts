@@ -9,7 +9,7 @@ import { findAlignment, findGender, findRace, findRole, randomCharacterOption } 
 import { NATIVE_COMMANDS } from './command_data.js';
 import { resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
-import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import type { ConfigurationErrorReport } from './config_errors.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
@@ -61,6 +61,8 @@ interface ConfigurationSettings {
     characterFilters?: CharacterFilters;
     fruit?: string;
     symset?: string;
+    // gs.showsyms[SYM_BOULDER + SYM_OFF_X] override from BOULDER=.
+    boulderSym?: string;
     preferred_pet?: PetPreference;
     monTelecontrol?: boolean;
     tutorial_set?: boolean;
@@ -279,6 +281,7 @@ type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'comm
     _monTelecontrol?: boolean;
     fruitName?: string;
     preferred_pet?: string;
+    boulderSym?: string;
 };
 
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
@@ -293,6 +296,8 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     if (result.monTelecontrol !== undefined) state._monTelecontrol = result.monTelecontrol;
     if (result.fruit !== undefined) state.fruitName = result.fruit;
     if (result.preferred_pet !== undefined) state.preferred_pet = result.preferred_pet;
+    // cnf_line_BOULDER() writes straight into the live symbol override.
+    if (result.boulderSym !== undefined) state.boulderSym = result.boulderSym;
     return result;
 }
 
@@ -370,6 +375,12 @@ function matchConfigStatement(name: string): ConfigStatementName | null {
         if (name.length >= minimum && statement.toLowerCase().startsWith(name)) return statement;
     }
     return null;
+}
+
+// vconfig_error_add()'s BUFSZ-1 cut and printf's %.Ns precision count
+// bytes; a UTF-8 sequence split by the cut survives as one character.
+function cutConfigBytes(text: string, limit: number): string {
+    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
 }
 
 // C's uchar list parser (cfgfiles.c:get_uchars()). Zeros are stored unless
@@ -463,7 +474,10 @@ const MENUCOLOR_ATTR_NAMES = [
 
 // C coloratt.c:add_menu_coloring(). The coloring list itself is not kept
 // (menus are not colored in this port), but every diagnostic is emitted.
-function parseMenuColoring(value: string, addError: (message: string) => void): boolean {
+function parseMenuColoring(valueText: string, addError: (message: string) => void): boolean {
+    // coloratt.c copies the statement into str[BUFSZ] before parsing, so a
+    // '=' past byte 255 is invisible and the line looks malformed.
+    const value = cutConfigBytes(valueText, BUFSZ - 1);
     const equals = value.indexOf('=');
     if (equals < 0) {
         addError('Malformed MENUCOLOR');
@@ -477,7 +491,7 @@ function parseMenuColoring(value: string, addError: (message: string) => void): 
         // text starts with a digit; anything outside 0..CLR_MAX-1 fails.
         const digits = tail.match(/^\d+/)?.[0];
         if (digits === undefined || Number(digits) >= CLR_MAX) {
-            addError(`Unknown color '${tail.slice(0, 60)}'`);
+            addError(`Unknown color '${cutConfigBytes(tail, 60)}'`);
             return false;
         }
     }
@@ -485,7 +499,7 @@ function parseMenuColoring(value: string, addError: (message: string) => void): 
         const attribute = value.slice(equals + 1)
             .replace(/[ \t]+/g, ' ').trim().slice(ampersand + 1);
         if (!MENUCOLOR_ATTR_NAMES.some(name => fuzzyMatch(attribute, name))) {
-            addError(`Unknown text attribute '${attribute.slice(0, 50)}'`);
+            addError(`Unknown text attribute '${cutConfigBytes(attribute, 50)}'`);
             return false;
         }
     }
@@ -510,8 +524,11 @@ function parseMenuColoring(value: string, addError: (message: string) => void): 
 
 // C options.c:add_autopickup_exception(): sscanf() forms `"<%s`, `">%s`, or
 // `"%s`, each with an optional whitespace + '#' comment after the closing
-// quote. The exception list itself is not kept; the diagnostics are.
-function parseAutopickupException(value: string, addError: (message: string) => void): boolean {
+// quote. Valid patterns join the exception list (newest first, like
+// ga.apelist); pickup.c:autopick_testobj() consults it during autopickup.
+function parseAutopickupException(
+    value: string, addError: (message: string) => void,
+): AutopickupExceptionRule | null {
     const bytes = new TextEncoder().encode(value);
     const scan = (prefix: string): { text: string; trailing: string | null } | null => {
         const start = 1 + prefix.length;
@@ -526,28 +543,27 @@ function parseAutopickupException(value: string, addError: (message: string) => 
         const rest = new TextDecoder().decode(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
         return { text, trailing: rest.charAt(0) || null };
     };
-    const compile = (text: string): boolean => {
+    const compile = (text: string, grab: boolean): AutopickupExceptionRule | null => {
         try {
-            new PosixRegex(text);
+            return { pattern: text, grab, regex: new PosixRegex(text) };
         } catch (error) {
             if (!(error instanceof SyntaxError)) throw error;
             addError(`regex error in AUTOPICKUP_EXCEPTION: ${error.message}`);
-            return false;
+            return null;
         }
-        return true;
     };
     const grab = scan('<');
     if (grab && (grab.trailing === null || grab.trailing === '#'))
-        return compile(grab.text);
+        return compile(grab.text, true);
     const noGrab = scan('>');
-    if (noGrab?.trailing === null) return compile(noGrab.text);
+    if (noGrab?.trailing === null) return compile(noGrab.text, false);
     // The final check reuses the plain-quoted scan's captures, exactly as C
     // reuses the last sscanf()'s results ('">x" #c' keeps the '>x' text).
     const plain = scan('');
     if (plain && (plain.trailing === null || plain.trailing === '#'))
-        return compile(plain.text);
+        return compile(plain.text, false);
     addError('syntax error in AUTOPICKUP_EXCEPTION');
-    return false;
+    return null;
 }
 
 function handleConfigStatement(
@@ -569,9 +585,6 @@ function handleConfigStatement(
     case 'ROGUESYMBOLS': case 'SYMBOLS': case 'WIZKIT':
     case 'QT_TILEWIDTH': case 'QT_TILEHEIGHT': case 'QT_FONTSIZE': case 'QT_COMPACT':
         break;
-    case 'AUTOPICKUP_EXCEPTION':
-        parseAutopickupException(parsed.valueText, addError);
-        break;
     case 'MENUCOLOR':
         if (parseMenuColoring(parsed.valueText, addError)) result.flags.menucolors = true;
         break;
@@ -589,6 +602,12 @@ function handleConfigStatement(
     case 'AUTOCOMPLETE':
         parseAutocompleteStatement(parsed.valueText, addRawError);
         break;
+    case 'AUTOPICKUP_EXCEPTION': {
+        // ga.apelist is prepended, so the newest rule matches first.
+        const rule = parseAutopickupException(parsed.valueText, addError);
+        if (rule) (result.iflags.autopickupExceptions ??= []).unshift(rule);
+        break;
+    }
     case 'MSGTYPE': {
         const error = addMessageTypeRule(parsed.valueText, result.iflags.messageTypes ??= []);
         if (error) addError(error);
@@ -624,11 +643,12 @@ function handleConfigStatement(
         break;
     }
     case 'BOULDER': {
-        // The parsed override would replace the boulder symbol; no symbol
-        // override table exists in this port, so only the diagnostic is
-        // observable.
-        const { syntaxError } = parseUcharList(parsed.valueBytes, 1, true);
+        // cnf_line_BOULDER() stores the override in the primary symbol set;
+        // initoptions_finish() publishes it as the boulder's map glyph.
+        // get_uchars() leaves the slot alone for an explicit zero.
+        const { values, syntaxError } = parseUcharList(parsed.valueBytes, 1, true);
         if (syntaxError) addRawError('Syntax error in BOULDER');
+        else if (values[0] !== undefined) result.boulderSym = String.fromCharCode(values[0]);
         break;
     }
     case 'OPTIONS':
@@ -1142,7 +1162,7 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
             sectionCurrent = null;
             if (sectionChosen === null) {
                 report.errors.push({ sourceLine, lineNumber,
-                    message: `Section "[${section}]" without CHOOSE` });
+                    message: cutConfigBytes(`Section "[${section}]" without CHOOSE`, BUFSZ - 1) });
             } else if (section) {
                 sectionCurrent = section;
             } else {
@@ -1167,14 +1187,14 @@ function* configurationLines(rc: string, report: ConfigurationErrorReport) {
         if (name.length >= 6 && 'choose'.startsWith(name)) {
             if (delimiter < 0) {
                 report.errors.push({ sourceLine, lineNumber,
-                    message: 'Format is CHOOSE=section1,section2,...' });
+                    message: cutConfigBytes('Format is CHOOSE=section1,section2,...', BUFSZ - 1) });
             } else {
                 // C frees the previous choice before drawing, so a failed
                 // CHOOSE leaves no section chosen.
                 sectionChosen = chooseRandomPart(statement.slice(delimiter + 1));
                 if (sectionChosen === null)
                     report.errors.push({ sourceLine, lineNumber,
-                        message: 'No config section to choose' });
+                        message: cutConfigBytes('No config section to choose', BUFSZ - 1) });
             }
             pending = new Uint8Array(0);
             continue;

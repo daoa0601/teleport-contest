@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { def_warnsyms } from '../js/const.js';
+import { flush_screen, newsym } from '../js/display.js';
 import { completeExtendedCommand } from '../js/extended_commands.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { Engine, runSegment } from '../js/jsmain.js';
-import { parseNethackrc } from '../js/options.js';
+import { ARROW, BOULDER } from '../js/object_data.js';
+import { applyNethackrc, parseNethackrc } from '../js/options.js';
+import { autopickupAtHero } from '../js/pickup.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { floorObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
 const PLAY = 'OPTIONS=!legacy,!tutorial,!autopickup,name:Traveler';
 async function start(nethackrc) {
     return runSegment({
@@ -246,5 +254,57 @@ void test('a long AUTOCOMPLETE diagnostic keeps its prefix and counts as early r
     assert.match(text, /Hit return to continue:/);
     assert.equal(engine.state.earlyRawMessages, 2);
     assert.equal(engine.state.moves, 0);
+});
+void test('a grab exception picks up an item outside the pickup classes', async () => {
+    freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.display = { async readKey() { return ' '.charCodeAt(0); } };
+    applyNethackrc('AUTOPICKUP_EXCEPTION="<arrow"');
+    await floorObject(ARROW, game.u.ux, game.u.uy, { dknown: true });
+    await autopickupAtHero();
+    assert.ok(game.inventory.some(object => object.otyp === ARROW));
+});
+void test('a drop exception leaves a matching item on the floor', async () => {
+    freshObjectRoom({ flags: { pickup: true } });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.display = { async readKey() { return ' '.charCodeAt(0); } };
+    applyNethackrc('AUTOPICKUP_EXCEPTION=">arrow"');
+    await floorObject(ARROW, game.u.ux, game.u.uy, { dknown: true });
+    await autopickupAtHero();
+    assert.ok(!game.inventory.some(object => object.otyp === ARROW));
+    assert.ok(game.level?.objects?.[game.u.ux]?.[game.u.uy]
+        ?.some(object => object.otyp === ARROW));
+});
+void test('without an exception the pickup classes decide', async () => {
+    freshObjectRoom({ flags: { pickup: true, pickup_types: '$' } });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.display = { async readKey() { return ' '.charCodeAt(0); } };
+    await floorObject(ARROW, game.u.ux, game.u.uy, { dknown: true });
+    await autopickupAtHero();
+    assert.ok(!game.inventory.some(object => object.otyp === ARROW));
+});
+void test('BOULDER= replaces the boulder map glyph', async () => {
+    assert.equal(parseNethackrc('BOULDER=48').boulderSym, '0');
+    assert.equal(parseNethackrc('BOULDER=0').boulderSym, undefined);
+    freshObjectRoom();
+    requirePlayingGame(game);
+    applyNethackrc('BOULDER=48');
+    await floorObject(BOULDER, 11, 10, { dknown: true });
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, '0');
+});
+void test('MENUCOLOR sees no equals past byte 255 of the statement', () => {
+    assert.deepEqual(fileErrors(`MENUCOLOR=${'x'.repeat(255)}=green`).map(error => error.message), ['Malformed MENUCOLOR']);
+});
+void test('section diagnostics are cut at the config error length', () => {
+    const [error] = fileErrors(`[${'é'.repeat(300)}]`);
+    assert.ok(error);
+    // 'Section "[' is ten bytes; 245 more bytes hold 122 two-byte
+    // characters and the first byte of the next one.
+    assert.equal(error.message, `Section "[${'é'.repeat(122)}\uFFFD`);
 });
 //# sourceMappingURL=config_statements.test.js.map

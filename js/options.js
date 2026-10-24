@@ -263,6 +263,9 @@ export function applyNethackrc(rc, state = game) {
         state.fruitName = result.fruit;
     if (result.preferred_pet !== undefined)
         state.preferred_pet = result.preferred_pet;
+    // cnf_line_BOULDER() writes straight into the live symbol override.
+    if (result.boulderSym !== undefined)
+        state.boulderSym = result.boulderSym;
     return result;
 }
 // C cfgfiles.c:parse_config_line()'s config_line_stmt[] table. SYSCF-only
@@ -329,6 +332,11 @@ function matchConfigStatement(name) {
             return statement;
     }
     return null;
+}
+// vconfig_error_add()'s BUFSZ-1 cut and printf's %.Ns precision count
+// bytes; a UTF-8 sequence split by the cut survives as one character.
+function cutConfigBytes(text, limit) {
+    return new TextDecoder().decode(new TextEncoder().encode(text).subarray(0, limit));
 }
 // C's uchar list parser (cfgfiles.c:get_uchars()). Zeros are stored unless
 // the list is being modified in place, but every parsed number still counts
@@ -423,7 +431,10 @@ const MENUCOLOR_ATTR_NAMES = [
 ];
 // C coloratt.c:add_menu_coloring(). The coloring list itself is not kept
 // (menus are not colored in this port), but every diagnostic is emitted.
-function parseMenuColoring(value, addError) {
+function parseMenuColoring(valueText, addError) {
+    // coloratt.c copies the statement into str[BUFSZ] before parsing, so a
+    // '=' past byte 255 is invisible and the line looks malformed.
+    const value = cutConfigBytes(valueText, BUFSZ - 1);
     const equals = value.indexOf('=');
     if (equals < 0) {
         addError('Malformed MENUCOLOR');
@@ -438,7 +449,7 @@ function parseMenuColoring(value, addError) {
         // text starts with a digit; anything outside 0..CLR_MAX-1 fails.
         const digits = tail.match(/^\d+/)?.[0];
         if (digits === undefined || Number(digits) >= CLR_MAX) {
-            addError(`Unknown color '${tail.slice(0, 60)}'`);
+            addError(`Unknown color '${cutConfigBytes(tail, 60)}'`);
             return false;
         }
     }
@@ -446,7 +457,7 @@ function parseMenuColoring(value, addError) {
         const attribute = value.slice(equals + 1)
             .replace(/[ \t]+/g, ' ').trim().slice(ampersand + 1);
         if (!MENUCOLOR_ATTR_NAMES.some(name => fuzzyMatch(attribute, name))) {
-            addError(`Unknown text attribute '${attribute.slice(0, 50)}'`);
+            addError(`Unknown text attribute '${cutConfigBytes(attribute, 50)}'`);
             return false;
         }
     }
@@ -474,7 +485,8 @@ function parseMenuColoring(value, addError) {
 }
 // C options.c:add_autopickup_exception(): sscanf() forms `"<%s`, `">%s`, or
 // `"%s`, each with an optional whitespace + '#' comment after the closing
-// quote. The exception list itself is not kept; the diagnostics are.
+// quote. Valid patterns join the exception list (newest first, like
+// ga.apelist); pickup.c:autopick_testobj() consults it during autopickup.
 function parseAutopickupException(value, addError) {
     const bytes = new TextEncoder().encode(value);
     const scan = (prefix) => {
@@ -493,31 +505,30 @@ function parseAutopickupException(value, addError) {
         const rest = new TextDecoder().decode(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
         return { text, trailing: rest.charAt(0) || null };
     };
-    const compile = (text) => {
+    const compile = (text, grab) => {
         try {
-            new PosixRegex(text);
+            return { pattern: text, grab, regex: new PosixRegex(text) };
         }
         catch (error) {
             if (!(error instanceof SyntaxError))
                 throw error;
             addError(`regex error in AUTOPICKUP_EXCEPTION: ${error.message}`);
-            return false;
+            return null;
         }
-        return true;
     };
     const grab = scan('<');
     if (grab && (grab.trailing === null || grab.trailing === '#'))
-        return compile(grab.text);
+        return compile(grab.text, true);
     const noGrab = scan('>');
     if (noGrab?.trailing === null)
-        return compile(noGrab.text);
+        return compile(noGrab.text, false);
     // The final check reuses the plain-quoted scan's captures, exactly as C
     // reuses the last sscanf()'s results ('">x" #c' keeps the '>x' text).
     const plain = scan('');
     if (plain && (plain.trailing === null || plain.trailing === '#'))
-        return compile(plain.text);
+        return compile(plain.text, false);
     addError('syntax error in AUTOPICKUP_EXCEPTION');
-    return false;
+    return null;
 }
 function handleConfigStatement(statement, parsed, result, addError, addRawError) {
     switch (statement) {
@@ -545,9 +556,6 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
         case 'QT_FONTSIZE':
         case 'QT_COMPACT':
             break;
-        case 'AUTOPICKUP_EXCEPTION':
-            parseAutopickupException(parsed.valueText, addError);
-            break;
         case 'MENUCOLOR':
             if (parseMenuColoring(parsed.valueText, addError))
                 result.flags.menucolors = true;
@@ -567,6 +575,13 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
         case 'AUTOCOMPLETE':
             parseAutocompleteStatement(parsed.valueText, addRawError);
             break;
+        case 'AUTOPICKUP_EXCEPTION': {
+            // ga.apelist is prepended, so the newest rule matches first.
+            const rule = parseAutopickupException(parsed.valueText, addError);
+            if (rule)
+                (result.iflags.autopickupExceptions ??= []).unshift(rule);
+            break;
+        }
         case 'MSGTYPE': {
             const error = addMessageTypeRule(parsed.valueText, result.iflags.messageTypes ??= []);
             if (error)
@@ -604,12 +619,14 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
             break;
         }
         case 'BOULDER': {
-            // The parsed override would replace the boulder symbol; no symbol
-            // override table exists in this port, so only the diagnostic is
-            // observable.
-            const { syntaxError } = parseUcharList(parsed.valueBytes, 1, true);
+            // cnf_line_BOULDER() stores the override in the primary symbol set;
+            // initoptions_finish() publishes it as the boulder's map glyph.
+            // get_uchars() leaves the slot alone for an explicit zero.
+            const { values, syntaxError } = parseUcharList(parsed.valueBytes, 1, true);
             if (syntaxError)
                 addRawError('Syntax error in BOULDER');
+            else if (values[0] !== undefined)
+                result.boulderSym = String.fromCharCode(values[0]);
             break;
         }
         case 'OPTIONS':
@@ -1088,7 +1105,7 @@ function* configurationLines(rc, report) {
             sectionCurrent = null;
             if (sectionChosen === null) {
                 report.errors.push({ sourceLine, lineNumber,
-                    message: `Section "[${section}]" without CHOOSE` });
+                    message: cutConfigBytes(`Section "[${section}]" without CHOOSE`, BUFSZ - 1) });
             }
             else if (section) {
                 sectionCurrent = section;
@@ -1115,7 +1132,7 @@ function* configurationLines(rc, report) {
         if (name.length >= 6 && 'choose'.startsWith(name)) {
             if (delimiter < 0) {
                 report.errors.push({ sourceLine, lineNumber,
-                    message: 'Format is CHOOSE=section1,section2,...' });
+                    message: cutConfigBytes('Format is CHOOSE=section1,section2,...', BUFSZ - 1) });
             }
             else {
                 // C frees the previous choice before drawing, so a failed
@@ -1123,7 +1140,7 @@ function* configurationLines(rc, report) {
                 sectionChosen = chooseRandomPart(statement.slice(delimiter + 1));
                 if (sectionChosen === null)
                     report.errors.push({ sourceLine, lineNumber,
-                        message: 'No config section to choose' });
+                        message: cutConfigBytes('No config section to choose', BUFSZ - 1) });
             }
             pending = new Uint8Array(0);
             continue;

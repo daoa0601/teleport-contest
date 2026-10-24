@@ -232,6 +232,9 @@ export interface GameState {
     preferred_pet?: string;
     petname_used?: number;
     symset?: string | null;
+    // showsyms[SYM_BOULDER + SYM_OFF_X] override set by BOULDER=; the
+    // primary set only, so rogue levels keep their own boulder symbol.
+    boulderSym?: string;
     fruitName?: string;
     fruits?: Fruit[];
     castleTune?: string;

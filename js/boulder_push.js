@@ -188,7 +188,7 @@ async function cannotPush(boulder, x, y) {
         const canPickup = !game.level?.flags.sokoban_rules
             && (game.inventory.filter(object => object.oclass !== 12).length < 52
                 || !game.inventory.some(object => object.otyp === BOULDER));
-        const willPickup = canPickup && game.flags.pickup && !game.context.nopick && autopickupAllows(boulder);
+        const willPickup = canPickup && game.flags.pickup && !game.context.nopick && await autopickupAllows(boulder);
         const steed = game.u.usteed;
         if (steed && (game.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC) {
             await plineWithContinuation(`You aren't skilled enough to ${willPickup ? 'pick up' : 'push aside'} the ${objectCombatName(boulder)} from ${monsterName(steed, { article: 'your' })}.`);
