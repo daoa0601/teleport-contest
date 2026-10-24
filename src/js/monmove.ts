@@ -107,6 +107,7 @@ import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { disturbMealMimicry } from './meal_mimic.js';
+import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { isAccessibleAt } from './terrain_properties.js';
@@ -1852,10 +1853,22 @@ function reduceHeroContactDamage(
 // mhitu.c mdamageu(): subtract from the active body and clamp only down to
 // its maximum. Lethal HP stays negative until done() commits zero, after
 // done_in_by() has announced the death.
-function applyHeroContactDamage(state: PlayingGameState, damage: number) {
+async function applyHeroContactDamage(
+    state: PlayingGameState, damage: number, publish: MessagePublisher = plineWithContinuation,
+) {
     state.context.botl = true;
-    if (Upolyd(state.u)) state.u.mh = Math.min((state.u.mh ?? 1) - damage, state.u.mhmax ?? 1);
-    else state.u.uhp = Math.min(state.u.uhp - damage, state.u.uhpmax);
+    // C mdamageu(): showdamage() prints the post-subtraction, pre-clamp HP.
+    if (Upolyd(state.u)) {
+        state.u.mh = (state.u.mh ?? 1) - damage;
+        if (state.flags.showdamage && damage)
+            await publish(`[HP ${-damage}, ${state.u.mh} left]`);
+        state.u.mh = Math.min(state.u.mh, state.u.mhmax ?? 1);
+    } else {
+        state.u.uhp -= damage;
+        if (state.flags.showdamage && damage)
+            await publish(`[HP ${-damage}, ${state.u.uhp} left]`);
+        state.u.uhp = Math.min(state.u.uhp, state.u.uhpmax);
+    }
 }
 
 // Complete body loss before applying the old form's passive response.
@@ -1867,7 +1880,7 @@ async function finishHeroContactDamage(
     state: PlayingGameState,
     { random = rn2, rollDice = d, publish = plineWithContinuation, die }: MonsterDamageOptions = {},
 ) {
-    applyHeroContactDamage(state, damage);
+    await applyHeroContactDamage(state, damage, publish);
     if (Upolyd(state.u) && state.u.mh < 1) {
         const restored = await returnHeroToHumanForm(state, { publish, ...(die ? { die } : {}) });
         if (restored.died) return { heroDied: true, attackerStopped: true };
@@ -3957,8 +3970,19 @@ export async function beginMonsterHeroAttack(
             return { heroAttackResult: attackerDied ? 1 : 0 };
         }
     }
+    // C mattacku(): a concealed hero (hiding or mimicking) is revealed
+    // instead of attacked, before the armor-class differential.
+    if (await revealConcealedHeroToAttacker(monster, {
+        state, random, rollOne, rollDice, calls,
+    })) return {};
     if (await disturbMealMimicry(monster, { state })) return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
+    // C mhitu.c:721-724 — make eels visible the moment they hit or miss us.
+    if (MONSTER_SYMBOL[monster.mnum] === S_EEL && monster.minvis
+        && cansee(monster.mx, monster.my)) {
+        monster.minvis = 0;
+        newsym(monster.mx, monster.my);
+    }
     const alreadyFleeing = !!monster.mflee;
     await summonMonsterAttackHelp(monster, state, random);
     if (monster.mflee && !alreadyFleeing) return {};
@@ -5261,7 +5285,10 @@ async function beginHeroAttackSlot(
             nativeResult: M_ATTK_MISS,
         };
     }
-    if (attackType !== AT_MAGC && distant) return null;
+    // C mattacku() lets a monster that is holding the hero (u.ustuck) use
+    // its hug attack even when it is not beside the hero's apparent spot.
+    if (attackType !== AT_MAGC && distant
+        && !(attackType === AT_HUGS && state.u.ustuck === monster)) return null;
     if (naturalContact) {
         if (attackType === AT_KICK && monster.mtrapped) {
             const trap = trapAt(state, monster.mx, monster.my);

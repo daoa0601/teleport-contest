@@ -6,7 +6,8 @@ import { moveloop_core } from '../js/allmain.js';
 import { resolveMonsterSelfExplosion } from '../js/monster_self_explosion.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
 import { AT_EXPL } from '../js/monster_attack_types.js';
-import { D_CLOSED, D_NODOOR, DOOR, MM_ANGRY, MM_NOGRP, NO_MINVENT, NON_PM, PIT, POOL, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
+import { D_CLOSED, D_NODOOR, DOOR, MM_ANGRY, MM_NOGRP, NO_MINVENT, NON_PM, PIT, POOL, TT_PIT, W_AMUL, W_ARM, W_WEP } from '../js/const.js';
+import { RED_DRAGON_SCALES } from '../js/object_data.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -392,4 +393,22 @@ void test('fire-resistant monster inventory can burn without damaging its carrie
 
     assert.ok(scrolls.quan < 64);
     assert.equal(monster.mhp, 500);
+});
+
+void test('worn defending dragon scales mark the hero unaffected by a sphere', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const sphere = await createMonsterAt('flaming sphere', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    await equipMonsterObject(sphere, await knownObject(RED_DRAGON_SCALES), W_ARM);
+    const attack = MONSTER_ATTACKS[sphere.mnum]?.find(([type]) => type === AT_EXPL);
+    assert.ok(attack);
+    const messages: string[] = [];
+
+    await resolveMonsterSelfExplosion(sphere, attack, {
+        foundHero: true, publish: async message => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes('You seem unaffected by it.'),
+        `expected the defended line, got: ${messages.join(' | ')}`);
+    assert.ok(sphere.mhp <= 0 || sphere.dead, 'the sphere still dies in its own blast');
 });

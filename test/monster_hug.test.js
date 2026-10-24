@@ -6,6 +6,7 @@ import { MM_ANGRY, NO_MINVENT, W_ARM, W_ARMC } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { releaseHold } from '../js/hero_expulsion.js';
+import { setHeroGrip } from '../js/hero_grip.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';
@@ -191,6 +192,18 @@ void test('an undiscovered oilskin cloak prevents a hug without revealing its ty
     assert.match(messages.join('\n'), /cannot hold onto your slippery cloak!/);
     assert.doesNotMatch(messages.join('\n'), /oilskin|slippery slippery|Escape coat/);
     assert.equal(cloak.dknown, false);
+});
+void test('a monster already holding the hero hugs from beyond adjacency', async () => {
+    const ape = await attacker();
+    requirePlayingGame(game);
+    ape.mx = 12;
+    ape.my = 11;
+    setHeroGrip(ape, game);
+    const { messages } = attackMessages();
+    await performMonsterHeroAttack(ape, game, hits);
+    messages.push(game._pending_message ?? '');
+    assert.ok(game.u.uhp < 100, 'the holder squeezes without being adjacent');
+    assert.equal(game.u.ustuck, ape);
 });
 void test('cursed slippery armor can fail to protect against a hug', async () => {
     const ape = await attacker();

@@ -150,7 +150,7 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
                 await makeBlinded(duration, { state, talk: false, publish });
                 await stopHeroOccupation(state, publish);
                 if (!heroIsBlind(state))
-                    await publish('Your vision clears.');
+                    await publish('Your vision quickly clears.');
                 else
                     await makeStunned(Math.max(state.u.stunnedTurns || 0, rollOne(3)), { state, talk: true, publish });
             }

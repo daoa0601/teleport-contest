@@ -33,8 +33,18 @@ import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
-export async function resolveHeroSeduction(monster, attack, state, publish, random, rollOne) {
-    if (monster.mcan || seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) !== 1)
+export async function resolveHeroSeduction(monster, attack, state, publish, random, rollOne, { allowCancelledSeducer = false } = {}) {
+    if (monster.mcan) {
+        // C sounds.c:MS_SEDUCE calls doseduce() without a cancellation gate,
+        // so a cancelled seducer still complains about a severe headache when
+        // chatting.  The attack path (uhitm.c:mhitm_ad_ssex) gates on !mcan
+        // and stays silent.
+        if (allowCancelledSeducer) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} acts as though ${monsterSubjectPronoun(monster, { state })} has got a severe headache.`);
+        }
+        return;
+    }
+    if (seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) !== 1)
         return;
     const female = !!monster.female;
     if (monster.mspec_used) {

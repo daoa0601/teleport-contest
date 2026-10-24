@@ -5,7 +5,7 @@
 // that ordinary object, and oname() then commits the named artifact.
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { P_BASIC, P_SKILLED, Upolyd, W_ARM } from './const.js';
-import { heroHasDrainResistance } from './armor.js';
+import { dragonFormForArmor, heroHasDrainResistance } from './armor.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt } from './shk.js';
@@ -17,7 +17,7 @@ import { d, rnd, rn2 } from './rng.js';
 import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { questMonsterAlignment } from './role_monsters.js';
-import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, } from './monster_resistance.js';
@@ -319,6 +319,35 @@ function artifactDefenseApplies(defender, damageType, hero, state) {
     }
     const inventory = hero ? state.inventory : defender?.minvent || defender?.inventory;
     return carriedArtifactDefends(inventory, damageType, state);
+}
+// C mondata.c:defended() — explmu()'s base immunity test for the exploding
+// monster itself: a wielded artifact that defends against the damage type,
+// or dragon scales — worn as body armor, or implicit in an adult dragon's
+// own body. Unlike the carries-defense helpers above, items that merely
+// defend while carried do not count.
+const SCALE_DEFENDING_DRAGON = {
+    fire: 'red dragon',
+    cold: 'white dragon',
+    shock: 'blue dragon',
+    hallucination: 'gold dragon',
+};
+export function monsterWieldsOrWearsDefense(monster, damageType, state) {
+    if (!monster || damageType == null)
+        return false;
+    const weapon = monsterWieldedWeapon(monster);
+    if (artifactById(weapon?.oartifact, state)?.defense === damageType)
+        return true;
+    const dragonName = SCALE_DEFENDING_DRAGON[damageType];
+    if (!dragonName)
+        return false;
+    const defender = MONSTER_NAME.indexOf(dragonName);
+    if (defender < 0)
+        return false;
+    if (monster.mnum === defender)
+        return true; /* an adult dragon is its own suit */
+    const worn = (monster.minvent || monster.inventory || [])
+        .find(object => ((object.owornmask ?? 0) & W_ARM) !== 0);
+    return dragonFormForArmor(worn) === defender;
 }
 export function heroHasArtifactDefense(damageType, state = game) {
     return artifactDefenseApplies(null, damageType, true, state);

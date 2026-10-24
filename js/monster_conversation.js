@@ -157,7 +157,7 @@ export async function publishMonsterConversation(monster, sound, state) {
                 && seductionCompatibility(monster, 'hero', null, state) === 1) {
                 await resolveHeroSeduction(monster, {
                     kind: 'hero-attack', attackType: AT_TUCH, damageType: AD_SSEX, hit: true,
-                }, state, pline, rn2, rnd);
+                }, state, pline, rn2, rnd, { allowCancelledSeducer: true });
             }
             else {
                 const selection = heroPolyGender(state) !== Number(monster.female) ? rn2(3) : 0;

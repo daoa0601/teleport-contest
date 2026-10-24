@@ -55,8 +55,19 @@ interface SeductionContext {
 export async function resolveHeroSeduction(
     monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
     publish: MessagePublisher, random: typeof rn2, rollOne: typeof rnd,
+    { allowCancelledSeducer = false }: { allowCancelledSeducer?: boolean } = {},
 ): Promise<void> {
-    if (monster.mcan || seductionCompatibility(monster, 'hero',
+    if (monster.mcan) {
+        // C sounds.c:MS_SEDUCE calls doseduce() without a cancellation gate,
+        // so a cancelled seducer still complains about a severe headache when
+        // chatting.  The attack path (uhitm.c:mhitm_ad_ssex) gates on !mcan
+        // and stays silent.
+        if (allowCancelledSeducer) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} acts as though ${monsterSubjectPronoun(monster, { state })} has got a severe headache.`);
+        }
+        return;
+    }
+    if (seductionCompatibility(monster, 'hero',
         [attack.attackType, attack.damageType, 0, 0], state) !== 1) return;
     const female = !!monster.female;
     if (monster.mspec_used) {

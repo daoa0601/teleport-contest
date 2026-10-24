@@ -5,7 +5,7 @@ import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
 import type { DamageType } from './monster_attack_types.js';
 // Active monster self-explosions. Native mhitu.c:explmu(), explode.c:mon_explodes().
-import { monsterHasArtifactDefense } from './artifacts.js';
+import { monsterWieldsOrWearsDefense } from './artifacts.js';
 import type { ArtifactDefenseQuery } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { M_ATTK_AGR_DIED, M_ATTK_MISS, WATER } from './const.js';
@@ -50,7 +50,7 @@ export async function resolveMonsterSelfExplosion(monster: Monster, attack: Mons
     if (monster.mcan) return { mask: M_ATTK_MISS, heroDied: false };
     const [, damageType, dice, sides] = attack;
     let damage = d(dice, sides);
-    let unaffected = monsterHasArtifactDefense(monster, defense.get(damageType), state);
+    let unaffected = monsterWieldsOrWearsDefense(monster, defense.get(damageType), state);
     let killSource = true;
     if (foundHero) {
         await publish(`${monsterName(monster, { state, capitalized: true })} explodes!`);

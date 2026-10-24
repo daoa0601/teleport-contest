@@ -162,7 +162,7 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
             await publish(`You are blinded by ${possessiveName(name(false))} radiance!`);
             await makeBlinded(duration, { state, talk: false, publish });
             await stopHeroOccupation(state, publish);
-            if (!heroIsBlind(state)) await publish('Your vision clears.');
+            if (!heroIsBlind(state)) await publish('Your vision quickly clears.');
             else await makeStunned(Math.max(state.u.stunnedTurns || 0, rollOne(3)), { state, talk: true, publish });
         }
         break;
