@@ -515,12 +515,15 @@ export class Engine {
             || (!configured.gender && !random.has('gender'))
             || (!configured.alignment && !random.has('alignment'));
         const initial = rigidCharacterChecks(configured, random);
+        // A random choice which rigid checks could not resolve stays random
+        // until its own facet is visited; it does not enable pick-for-you.
+        const pendingRandom = new Set([...random].filter(facet => !initial[facet]));
         let manualInitial = initial;
         const hasUnspecifiedChoice = (!initial.role && !random.has('role'))
             || (!initial.race && !random.has('race'))
             || (!initial.gender && !random.has('gender'))
             || (!initial.alignment && !random.has('alignment'));
-        let auto = needsConfirmation ? 'y' : random.size ? 'a' : 'n';
+        let auto = 'n';
         if (hasUnspecifiedChoice) {
             const question = characterSelectionQuestion(initial, random);
             do {
@@ -599,6 +602,7 @@ export class Engine {
                         continue;
                     }
                     if (key === 'n') {
+                        pendingRandom.clear();
                         manualInitial = {
                             role: null,
                             race: null,
@@ -822,7 +826,9 @@ export class Engine {
 
             const resetFiltering = async (facet: CharacterFacet): Promise<void> => {
                 const result = await editCharacterFilters(filters);
+                pendingRandom.delete(facet);
                 if (result !== 'cancelled') {
+                    pendingRandom.clear();
                     role = null;
                     race = null;
                     gender = null;
@@ -877,18 +883,21 @@ export class Engine {
                         continue;
                     }
                     if (key === '/') {
+                        pendingRandom.delete('race');
                         role = null;
                         race = null;
                         nextFacet = 'race';
                         continue;
                     }
                     if (key === '"') {
+                        pendingRandom.delete('gender');
                         role = null;
                         gender = null;
                         nextFacet = 'gender';
                         continue;
                     }
                     if (key === '[') {
+                        pendingRandom.delete('alignment');
                         role = null;
                         alignment = null;
                         nextFacet = 'alignment';
@@ -907,6 +916,7 @@ export class Engine {
                 }
 
                 if (nextFacet === 'race') {
+                    const randomRace = pendingRandom.delete('race');
                     if (race && validCharacterRace(role, race, null)) {
                         nextFacet = role ? 'gender' : 'role';
                         continue;
@@ -914,6 +924,13 @@ export class Engine {
                     race = null;
                     const candidates = availableRaces(role, gender, alignment);
                     const permitted = races.filter(candidate => validCharacterRace(role, candidate, null));
+                    if (randomRace) {
+                        if (!candidates.length) await plineWithContinuation('Incompatible race!');
+                        race = pickCharacterChoice(candidates)
+                            ?? permitted[Math.trunc(rn2(permitted.length * 100) / 100)];
+                        nextFacet = role ? 'gender' : 'role';
+                        continue;
+                    }
                     const counted = candidates.length ? candidates : permitted;
                     if (counted.length === 1) {
                         race = counted[0];
@@ -931,12 +948,14 @@ export class Engine {
                         continue;
                     }
                     if (key === '"') {
+                        pendingRandom.delete('gender');
                         gender = null;
                         race = null;
                         nextFacet = 'gender';
                         continue;
                     }
                     if (key === '[') {
+                        pendingRandom.delete('alignment');
                         alignment = null;
                         race = null;
                         nextFacet = 'alignment';
@@ -961,6 +980,7 @@ export class Engine {
                 }
 
                 if (nextFacet === 'gender') {
+                    const randomGender = pendingRandom.delete('gender');
                     if (gender && validCharacterGender(role, gender)) {
                         nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
                         continue;
@@ -968,6 +988,12 @@ export class Engine {
                     gender = null;
                     const candidates = availableGenders(role, race, alignment);
                     const permitted = genders.filter(candidate => validCharacterGender(role, candidate));
+                    if (randomGender) {
+                        if (!candidates.length) await plineWithContinuation('Incompatible gender!');
+                        gender = pickCharacterChoice(candidates) ?? pickCharacterChoice(permitted);
+                        nextFacet = role ? (race ? 'alignment' : 'race') : 'role';
+                        continue;
+                    }
                     const counted = candidates.length ? candidates : permitted;
                     if (counted.length === 1) {
                         gender = counted[0];
@@ -989,12 +1015,14 @@ export class Engine {
                         continue;
                     }
                     if (key === '/') {
+                        pendingRandom.delete('race');
                         race = null;
                         gender = null;
                         nextFacet = 'race';
                         continue;
                     }
                     if (key === '[') {
+                        pendingRandom.delete('alignment');
                         alignment = null;
                         gender = null;
                         nextFacet = 'alignment';
@@ -1008,6 +1036,7 @@ export class Engine {
                     continue;
                 }
 
+                const randomAlignment = pendingRandom.delete('alignment');
                 if (alignment && validCharacterAlignment(role, race, alignment)) {
                     nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
                     if (!nextFacet) break facetSelection;
@@ -1016,6 +1045,13 @@ export class Engine {
                 alignment = null;
                 const candidates = availableAlignments(role, race, gender);
                 const permitted = aligns.filter(candidate => validCharacterAlignment(role, race, candidate));
+                if (randomAlignment) {
+                    if (!candidates.length) await plineWithContinuation('Incompatible alignment!');
+                    alignment = pickCharacterChoice(candidates) ?? pickCharacterChoice(permitted);
+                    nextFacet = role ? (race ? (gender ? null : 'gender') : 'race') : 'role';
+                    if (!nextFacet) break facetSelection;
+                    continue;
+                }
                 const counted = candidates.length ? candidates : permitted;
                 if (counted.length === 1) {
                     alignment = counted[0];
@@ -1038,12 +1074,14 @@ export class Engine {
                     continue;
                 }
                 if (key === '/') {
+                    pendingRandom.delete('race');
                     race = null;
                     alignment = null;
                     nextFacet = 'race';
                     continue;
                 }
                 if (key === '"') {
+                    pendingRandom.delete('gender');
                     gender = null;
                     alignment = null;
                     nextFacet = 'gender';
@@ -1090,6 +1128,7 @@ export class Engine {
                     continue;
                 }
                 if (key === 'n') {
+                    pendingRandom.clear();
                     manualInitial = { role: null, race: null, gender: null, alignment: null };
                     continue selection;
                 }

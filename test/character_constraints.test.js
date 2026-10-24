@@ -43,4 +43,25 @@ void test('a Valkyrie with a configured male gender starts female', async () => 
     assert.equal(game.flags.female, true);
     assert.equal(game.moves, 1);
 });
+void test('a random gender leaves an incompatible explicit alignment for manual selection', async () => {
+    const engine = await start('role:Wizard,race:human,gender:random,align:lawful');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+    assert.ok(rows.some(row => row.includes('Pick an alignment or creed')));
+    assert.equal(game.moves, 0, 'an incompatible explicit alignment still needs a choice');
+    engine.inputGate.feed('n');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1);
+    assert.equal(game.initAlignment?.name, 'neutral');
+});
+void test('a random alignment stays automatic after manually replacing an incompatible race', async () => {
+    const engine = await start('role:Wizard,race:dwarf,gender:male,align:random');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+    assert.ok(rows.some(row => row.includes('Pick a race or species')));
+    assert.equal(game.moves, 0, 'an incompatible explicit race still needs a choice');
+    engine.inputGate.feed('h');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1, 'the requested random alignment needs no menu input');
+    assert.equal(game.urace?.name, 'human');
+    assert.ok(game.initAlignment?.name === 'neutral' || game.initAlignment?.name === 'chaotic');
+});
 //# sourceMappingURL=character_constraints.test.js.map
