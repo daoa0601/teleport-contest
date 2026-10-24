@@ -73,6 +73,39 @@ void test('randline clones selections without adding points when coordinate pars
     assert.equal(state.getGlobal('returned_count'), 0);
     assert.equal(state.getGlobal('target_count'), 1);
 });
+void test('selection growth and geometry report the first invalid Lua argument', async (t) => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+    const cases = [
+        { source: 'selection.grow(selection.new(), "north", 1)', message: "bad argument #2 to 'grow' (userdata expected, got string)" },
+        { source: 'selection.new():grow("north", 1)', message: "bad argument #1 to 'grow' (userdata expected, got string)" },
+        { source: 'selection.grow(selection.new(), nil, 1)', message: "bad argument #2 to 'grow' (userdata expected, got nil)" },
+        { source: 'selection.grow(1, "north", 1)', message: "bad argument #1 to 'grow' (userdata expected, got number)" },
+        { source: 'selection.line(1, 2, 3, 4, 5)', message: "bad argument #1 to 'line' (userdata expected, got number)" },
+        { source: 'selection.rect(1, 2, 3, 4, 5)', message: "bad argument #1 to 'rect' (userdata expected, got number)" },
+        { source: 'selection.fillrect(1, 2, 3, 4, 5)', message: "bad argument #1 to 'fillrect' (userdata expected, got number)" },
+        { source: 'selection.area(1, 2, 3, 4, 5)', message: "bad argument #1 to 'area' (userdata expected, got number)" },
+        { source: 'selection.line(selection.new(), 1, 2, 3)', message: "bad argument #1 to 'line' (number expected, got selection)" },
+        { source: 'selection.circle(selection.new(), 1, 2)', message: "bad argument #1 to 'circle' (number expected, got selection)" },
+        { source: 'selection.ellipse(selection.new(), 1, 2, 3)', message: "bad argument #1 to 'ellipse' (number expected, got selection)" },
+        { source: 'selection.circle(1, 2, 3, 0, 5)', message: "bad argument #1 to 'circle' (userdata expected, got number)" },
+        { source: 'selection.ellipse(1, 2, 3, 4, 0, 5)', message: "bad argument #1 to 'ellipse' (userdata expected, got number)" },
+        { source: 'selection.line(selection.new(), "x", 2, 3, 4)', message: "bad argument #2 to 'line' (number expected, got string)" },
+        { source: 'selection.new():randline(1, 2, 3, 4, 0.5)', message: "bad argument #5 to 'randline' (number has no integer representation)" },
+    ];
+    for (const { source, message } of cases) {
+        await t.test(source, async () => {
+            await assert.rejects(state.executeAsync(source, '=selection-arguments.lua'), error => {
+                assert.ok(error instanceof Error);
+                assert.ok(error.message.includes(`selection-arguments.lua:1: ${message}`), error.message);
+                return true;
+            });
+        });
+    }
+});
 void test('explicit selection coordinates wrap each axis to eight bits before the map origin', async (t) => {
     freshGame();
     initRng(17);

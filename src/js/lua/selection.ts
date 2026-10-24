@@ -58,6 +58,18 @@ function argumentType(value: LuaValue | undefined): string {
     return luaType(value);
 }
 
+function integerArgument(value: LuaValue | undefined, argument: number): number {
+    try {
+        return luaInteger(value);
+    } catch (cause) {
+        const numeric = typeof value === 'number'
+            || (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)));
+        const message = numeric ? 'number has no integer representation'
+            : `number expected, got ${argumentType(value)}`;
+        throw new LuaArgumentError(argument, message, { cause });
+    }
+}
+
 function selectionValue(value: LuaValue | undefined, argument = 1): SpecialSelection {
     if (!(value instanceof LuaUserdata))
         throw new LuaArgumentError(argument, `userdata expected, got ${argumentType(value)}`);
@@ -160,11 +172,13 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)),
     );
     const grow = (self: LuaValue, direction: LuaValue = 'all', ...extra: LuaValue[]) => {
-        if (extra.length) throw new NethackLuaError('wrong parameters');
+        const selection = selectionValue(self);
         const name = luaString(direction ?? 'all');
         if (!['all', 'random', 'north', 'south', 'east', 'west'].includes(name))
             throw new TypeError(`Unknown selection growth direction: ${name}`);
-        return wrap(selectionValue(self).grow(name));
+        // With extra arguments native leaves the direction in clone's second slot.
+        if (extra.length) selectionValue(direction, 2);
+        return wrap(selection.grow(name));
     };
     const rndcoord = (self: LuaValue, remove: LuaValue = 0) => pointTable(
         relativePoint(selectionValue(self).randomCoordinate(!!luaInt(remove ?? 0)))
@@ -178,12 +192,16 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             y: start.y + (luaInteger(y) & 0xff),
         };
     };
+    const pointArguments = (args: LuaValue[], first: number) => explicitPoint(
+        integerArgument(args[first - 1], first), integerArgument(args[first], first + 1),
+    );
     const geometry = (shape: 'line' | 'rect' | 'area', args: LuaValue[]) => {
-        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
-        if (args.length !== 4)
+        if (args.length !== 4 && args.length !== 5)
             throw new NethackLuaError(`selection.${shape === 'area' ? 'fillrect' : shape}: illegal arguments`);
-        const result = self ? selectionValue(self).clone() : new SpecialSelection();
-        const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
+        const source = args.length === 5 ? selectionValue(args[0]) : null;
+        const first = source ? 2 : 1;
+        const start = pointArguments(args, first), end = pointArguments(args, first + 2);
+        const result = source ? source.clone() : new SpecialSelection();
         if (shape === 'area') {
             for (let y = start.y; y <= end.y; y++)
                 selection_do_line(start.x, y, end.x, y, result.selection);
@@ -198,18 +216,23 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         return wrap(result);
     };
     const ellipse = (circular: boolean, args: LuaValue[]) => {
-        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         const required = circular ? 3 : 4;
-        if (args.length !== required && args.length !== required + 1)
+        const coordinatesOnly = args.length === required
+            || (args.length === required + 1 && typeof args[0] === 'number');
+        if (!coordinatesOnly && args.length !== required + 1 && args.length !== required + 2)
             throw new NethackLuaError('wrong parameters');
-        const result = self ? selectionValue(self) : new SpecialSelection();
-        const x = luaInteger(args[0]), y = luaInteger(args[1]);
-        const radiusX = luaInt(args[2]);
-        const radiusY = circular ? radiusX : luaInt(args[3]);
-        const filled = luaInt(args[circular ? 3 : 4] ?? 0);
-        const point = explicitPoint(x, y);
+        const result = coordinatesOnly ? new SpecialSelection() : selectionValue(args[0]);
+        const first = coordinatesOnly ? 1 : 2;
+        const point = pointArguments(args, first);
+        const radiusX = integerArgument(args[first + 1], first + 2) | 0;
+        const radiusY = circular ? radiusX : integerArgument(args[first + 2], first + 3) | 0;
+        const filledIndex = first + required;
+        const filledValue = args[filledIndex - 1];
+        const filled = circular && coordinatesOnly && args.length === 4
+            ? integerArgument(filledValue, filledIndex) | 0
+            : integerArgument(filledValue ?? 0, filledIndex) | 0;
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
-        return self ?? wrap(result);
+        return coordinatesOnly ? wrap(result) : args[0];
     };
     const gradient = async (options: LuaValue, ...extra: LuaValue[]) => {
         if (!(options instanceof LuaTable) || extra.length)
@@ -235,14 +258,14 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         let roughness = 7;
         if (args.length === 6) {
             selectionValue(args[0]);
-            start = explicitPoint(args[1], args[2]);
-            end = explicitPoint(args[3], args[4]);
-            roughness = luaInt(args[5]);
+            start = pointArguments(args, 2);
+            end = pointArguments(args, 4);
+            roughness = integerArgument(args[5], 6) | 0;
             args.splice(1);
         } else if (args.length === 5 && typeof args[0] === 'number') {
-            start = explicitPoint(args[0], args[1]);
-            end = explicitPoint(args[2], args[3]);
-            roughness = luaInt(args[4]);
+            start = pointArguments(args, 1);
+            end = pointArguments(args, 3);
+            roughness = integerArgument(args[4], 5) | 0;
             args = [wrap(new SpecialSelection())];
         }
         const result = clone(...args);
