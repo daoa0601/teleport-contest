@@ -237,7 +237,10 @@ const TRAP_TYPES = new Map([
     ['vibrating square', VIBRATING_SQUARE],
 ]);
 
-function tableOptions(value: LuaValue | undefined): DesOptions {
+function tableOptions(
+    value: LuaValue | undefined,
+    lighting: 'terrain' | 'integer' | 'boolean' = 'terrain',
+): DesOptions {
     if (!(value instanceof LuaTable))
         throw new TypeError('des operation expects a table');
     const options: DesOptions = {};
@@ -278,9 +281,14 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
     ] as const) {
         const entry = value.get(key);
         if (entry == null) continue;
+        if (key === 'lit' && lighting === 'integer') {
+            options.lit = luaInteger(entry);
+            continue;
+        }
         if (typeof entry !== 'boolean' && typeof entry !== 'number')
             throw new TypeError(`des.${key} must be a flag`);
-        if (key !== 'lit' && typeof entry === 'number' && entry !== 0 && entry !== 1)
+        if ((key !== 'lit' || lighting === 'boolean')
+            && typeof entry === 'number' && entry !== 0 && entry !== 1)
             throw new TypeError(`des.${key} must be zero or one`);
         options[key] = key === 'lit' ? entry : !!entry;
     }
@@ -665,7 +673,7 @@ export function createDesBindings(
     wrapSelection: (value: SpecialSelection) => LuaValue,
 ): LuaHostObject {
     const commands: Record<string, (...args: LuaValue[]) => unknown> = {
-        level_init: (options: LuaValue) => operations.levelInit(tableOptions(options)),
+        level_init: (options: LuaValue) => operations.levelInit(tableOptions(options, 'boolean')),
         level_flags: (...flags: LuaValue[]) => operations.levelFlags(flags),
         mineralize: (value: LuaValue) => operations.mineralize(
             value === undefined ? {} : tableOptions(value),
@@ -681,11 +689,11 @@ export function createDesBindings(
             });
         },
         region: (selection: LuaValue, lighting: LuaValue) => selection instanceof LuaTable
-            ? operations.roomRegion(tableOptions(selection))
+            ? operations.roomRegion(tableOptions(selection, 'integer'))
             : operations.region(
                 unwrapSelection(selection), String(lighting),
             ),
-        room: (value: LuaValue) => operations.room(tableOptions(value)),
+        room: (value: LuaValue) => operations.room(tableOptions(value, 'integer')),
         stair: (direction: LuaValue, x: LuaValue, y: LuaValue) => operations.stair(
             stairOptions(direction, x, y),
         ),
@@ -748,7 +756,7 @@ export function createDesBindings(
     };
     const bindings: LuaHostObject = {
         map: async value => wrapSelection(await operations.map(
-            value instanceof LuaTable ? tableOptions(value) : String(value),
+            value instanceof LuaTable ? tableOptions(value, 'boolean') : String(value),
         )),
         object: (id, x, y) => operations.object(objectOptions(id, x, y)),
     };

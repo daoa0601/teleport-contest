@@ -5883,12 +5883,6 @@ async function createLuaAltar(context, options) {
         altar.flags |= AM_SANCTUM;
     level.flags.has_temple = true;
 }
-function luaRoomLighting(value) {
-    if (value !== -1)
-        return !!value;
-    return rnd(1 + Math.abs(depth_of_level(game.u?.uz))) < 11
-        && rn2(77) !== 0;
-}
 function luaRoomType(name = 'ordinary') {
     const roomTypes = {
         ordinary: OROOM,
@@ -5957,7 +5951,7 @@ async function createLuaRoomRegion(context, options) {
         || ![x1, y1, x2, y2].every(Number.isInteger))
         throw new TypeError('des.region requires four coordinates');
     const roomType = luaRoomType(options.type);
-    const lit = luaRoomLighting(options.lit ?? -1);
+    const lit = litstate_rnd(options.lit ?? -1);
     const roomNotNeeded = roomType === OROOM && !options.irregular
         && !options.arrival_room && !game.in_mk_themerooms;
     if (roomNotNeeded || requireGameLevel().nroom >= MAXNROFROOMS) {
