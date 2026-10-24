@@ -25,7 +25,9 @@ import type { DrawbridgeOptions, DrawbridgeSquare } from './drawbridge_terrain.j
 import { remove_object } from './floor_object.js';
 import { BOULDER } from './object_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { stopAllObjectTimers } from './object_timers.js';
+import { delobj } from './object_delete.js';
+import { unpunishHero } from './punishment.js';
+import { heroIsDeaf } from './senses.js';
 import {
     cansee, vision_note_blocker_change, vision_recalc,
 } from './vision.js';
@@ -83,16 +85,12 @@ export function findDrawbridgeAt(x: number, y: number, state = game): Drawbridge
     return bridgeLocation ? { x: bridge.x, y: bridge.y, location: bridgeLocation } : null;
 }
 
-function destroyObjectsAt(x: number, y: number, state = game): void {
-    const pile = state.level?.objects?.[x]?.[y] || [];
-    for (const object of pile) {
-        stopAllObjectTimers(object);
-        object.where = 'gone';
-        object.ox = 0;
-        object.oy = 0;
+async function destroyObjectsAt(x: number, y: number, state: GameState): Promise<void> {
+    for (const object of [...state.level?.objects[x]?.[y] ?? []]) {
+        if (object.where === 'gone') continue;
+        if (object === (state.uball || state.u.uball)) await unpunishHero(state);
+        if (object !== (state.uchain || state.u.uchain)) await delobj(object, state);
     }
-    const column = state.level?.objects[x];
-    if (column) column[y] = [];
 }
 
 function removeTrapAt(x: number, y: number, state = game): void {
@@ -108,14 +106,14 @@ function removeEngravingAt(x: number, y: number, state = game): void {
     );
 }
 
-function clearDrawbridgeSquares(
+async function clearDrawbridgeSquares(
     bridge: DrawbridgeSquare,
     wall: DrawbridgeSquare,
     includeWallObjects: boolean,
     state: GameState,
-): void {
-    destroyObjectsAt(bridge.x, bridge.y, state);
-    if (includeWallObjects) destroyObjectsAt(wall.x, wall.y, state);
+): Promise<void> {
+    await destroyObjectsAt(bridge.x, bridge.y, state);
+    if (includeWallObjects) await destroyObjectsAt(wall.x, wall.y, state);
     removeTrapAt(bridge.x, bridge.y, state);
     removeTrapAt(wall.x, wall.y, state);
     removeEngravingAt(bridge.x, bridge.y, state);
@@ -188,7 +186,7 @@ export async function openDrawbridge(x: number, y: number, state = game, options
     wall.location.doormask = D_NODOOR;
     await moveDrawbridgeOccupants(bridge, wall, state, options);
     if (state.program_state?.gameover) return true;
-    clearDrawbridgeSquares(bridge, wall, false, state);
+    await clearDrawbridgeSquares(bridge, wall, false, state);
     newsym(x, y);
     newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
@@ -215,7 +213,9 @@ export async function closeDrawbridge(x: number, y: number, state = game, option
     wall.location.wall_info = W_NONDIGGABLE;
     await moveDrawbridgeOccupants(bridge, wall, state, options);
     if (state.program_state?.gameover) return true;
-    clearDrawbridgeSquares(bridge, wall, true, state);
+    if (state.level?.objects[x]?.[y]?.length && !heroIsDeaf(state))
+        await publishHeardMessage('smashing and crushing.', plineWithContinuation, state);
+    await clearDrawbridgeSquares(bridge, wall, true, state);
     newsym(x, y);
     newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
