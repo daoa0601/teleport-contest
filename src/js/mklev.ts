@@ -10361,7 +10361,6 @@ export function wallifyMap(x1: number, y1: number, x2: number, y2: number): void
             }
             if (wallType != null) {
                 loc.typ = wallType;
-                loc.horizontal = wallType === HWALL;
             }
         }
     }
