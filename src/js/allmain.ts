@@ -767,19 +767,18 @@ async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void
     if (game.u.uhave.amulet) await amuletTurn(game);
     if (!rn2(40 + currentAttribute(A_DEX) * 3)) wipeHeroEngraving(rnd(3));
     // allmain.c's demigod intervention clock advances after engraving wear
-    // and before environmental level motion.  Nervous outcomes 0/1 are
-    // synchronous; outcome2's black-glow pline can suspend before rndcurse,
-    // reset, environment, and once-per-action scheduling.
+    // and before environmental level motion. Each announcement waits only
+    // when pline() needs input, before curses or the next intervention roll.
     if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
         if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0) game.u.udg_cnt--;
         if ((game.u.udg_cnt ?? 0) === 0) {
             const intervention = Is_astralevel(game.u.uz) ? rnd(4) : rn2(6);
             if (intervention <= 1) {
-                appendTurnMessage(formatFeltMessage('vaguely nervous.'));
+                await plineWithContinuation(formatFeltMessage('vaguely nervous.'));
                 delete game._unresolvedDemigodIntervention;
             } else if (intervention === 2) {
                 if (!heroIsBlind(game))
-                    appendTurnMessage(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
+                    await plineWithContinuation(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
                 game._pendingDemigodIntervention = {
                     kind: intervention, sourceTurn,
                 };
@@ -1606,7 +1605,6 @@ async function advanceWorldTurn(): Promise<void> {
         const intervention = game._pendingDemigodIntervention;
         game._pendingDemigodIntervention = null;
         if (intervention.kind === 2) {
-            await waitForCurrentMonsterMore();
             const heroAttack = { deferredCurseItems: true };
             await resolveDeferredHeroCurseItems(heroAttack);
             delete game._unresolvedDemigodIntervention;
