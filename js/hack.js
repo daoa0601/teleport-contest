@@ -27,7 +27,7 @@ import { igniteItems } from './light.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { splitHeroMonsterForm } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, } from './object_data.js';
 import { ownedObjectAction } from './objnam.js';
 import { heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying, } from './polyself.js';
@@ -95,7 +95,7 @@ const S_EYE = 5;
 const S_VORTEX = 22;
 const S_LIGHT = 25;
 const PM_GREMLIN = 40;
-const PM_GRID_BUG = 112;
+const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_AIR_ELEMENTAL = 154;
 const PM_IRON_GOLEM = 259;
 function heroIsInAir(state) {
@@ -214,7 +214,7 @@ export async function crawlDestinationAllowed(state, x, y, random, publish) {
         return false;
     if (x === u.ux || y === u.uy)
         return true;
-    if ((u.mtimedone ?? 0) > 0 && u.umonnum === PM_GRID_BUG)
+    if (u.umonnum === PM_GRID_BUG)
         return false;
     if (heroPassesWalls(state))
         return true;

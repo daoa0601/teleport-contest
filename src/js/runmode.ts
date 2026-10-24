@@ -28,6 +28,7 @@ export function stopRun(g: GameState = game, andTravel = true): void {
     const running = !!g.context.run;
     if (g.context.run && g.flags.time) g.context.time_botl = true;
     g.context.run = 0;
+    if (g._runState?.mode === 8) delete g._runState.visited;
     if (running && g.flags.terrainstatus) {
         g.iflags.terrain_typ = MAX_TYPE;
         classifyStatusTerrain(g);

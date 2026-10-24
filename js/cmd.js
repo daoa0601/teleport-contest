@@ -211,7 +211,7 @@ import { captureThrownObjectFlight, } from './thrown_object.js';
 import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, CORPSE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, CORPSE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests, monsterSpeciesHidesOnCeiling, } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
@@ -409,61 +409,115 @@ async function rejectHeroDiagonalDoorExit(dx, dy) {
 // C test_move(TEST_MOVE): tests obstacles without performing auto-open,
 // boulder pushing, or the hero's eventual movement.
 export function heroTestMove(x, y, g = game) {
+    return testHeroMove(g.u.ux, g.u.uy, x, y, 'move', g).passes;
+}
+// Shop doorway checks print even during a path search, so publish them at
+// the awaited boundary while the shared movement decision remains pure.
+async function testTravelMove(fromX, fromY, x, y, mode, g) {
+    const result = testHeroMove(fromX, fromY, x, y, mode, g);
+    if (result.blockedBy) {
+        const name = shopkeeperName(result.blockedBy, { state: g, capitalized: true });
+        const senses = propertyIsActive('invisible', g) ? ' senses your motion and' : '';
+        await plineWithContinuation(`${name}${senses} blocks your way!`);
+    }
+    return result.passes;
+}
+// C test_move() shares physical checks across TEST_MOVE, TEST_TRAV and
+// TEST_TRAP. Travel admits closed doors and checks consecutive boulders;
+// the trap mode reports hazards after checking entry, before checking exit.
+function testHeroMove(fromX, fromY, x, y, mode, g) {
     if (!isok(x, y))
-        return false;
+        return { passes: false };
     const hero = g.u;
     const location = g.level?.at(x, y);
     if (!location)
-        return false;
-    const oozing = heroOozesUnderDoor(location, g);
-    let eatsDoor = false;
-    if ((IS_OBSTRUCTED(location.typ)
-        || location.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED)))
-        && !heroCanPassWallAt(g, x, y) && !oozing) {
-        // C test_move(TEST_MOVE): a tunneler that needs no pick may eat
-        // the rock or closed door, unless it is underwater.
-        const formFlags = MONSTER_FLAGS1[heroSpecies(g)] ?? 0;
-        const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
-        if (!tunnels || hero.uinwater || g.underwater)
-            return false;
-        eatsDoor = location.typ === DOOR;
-    }
+        return { passes: false };
     const passesWalls = heroPassesWalls(g);
-    if (location.typ === IRONBARS && !passesWalls
-        && (hero.uinwater || g.underwater
-            || !monsterPassesBars({ mnum: heroSpecies(g) })))
-        return false;
-    const dx = x - hero.ux, dy = y - hero.uy;
-    if (dx && dy) {
-        // Oozing under or eating a closed door skips the doorway entry test.
-        const entryDoor = oozing || eatsDoor ? null : location;
-        if (!passesWalls && blocksDiagonalDoor(g.level?.at(hero.ux, hero.uy), entryDoor))
-            return false;
-        if (heroBadRock(g, hero.ux, y) && heroBadRock(g, x, hero.uy)) {
-            if (heroTightDiagonalReason(g))
-                return false;
+    const formFlags = MONSTER_FLAGS1[heroSpecies(g)] ?? 0;
+    const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
+    const underwater = !!(hero.uinwater || g.underwater);
+    let checkDoorEntry = location.typ === DOOR;
+    if (IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS) {
+        if (!heroCanPassWallAt(g, x, y)) {
+            if (underwater)
+                return { passes: false };
+            if (location.typ === IRONBARS) {
+                if (!passesWalls && !monsterPassesBars({ mnum: heroSpecies(g) }))
+                    return { passes: false };
+            }
+            else if (!tunnels)
+                return { passes: false };
         }
-        else if (wormCrossesBetween(hero.ux, hero.uy, x, y, g))
-            return false;
     }
-    // C test_move(): TEST_MOVE still avoids known hazards while travelling.
-    // Exempt the hero's square because the path search works backwards.
-    if (g.context.run === 8 && (dx || dy)) {
+    else if (closedTravelDoor(x, y, g)) {
+        if (passesWalls || heroCanOoze(g))
+            checkDoorEntry = false;
+        else {
+            if (underwater)
+                return { passes: false };
+            if (tunnels)
+                checkDoorEntry = false;
+            else if (mode === 'move')
+                return { passes: false };
+        }
+    }
+    const dx = x - fromX, dy = y - fromY;
+    if (dx && dy) {
+        if (!passesWalls && checkDoorEntry) {
+            if (blocksDiagonalDoor(null, location))
+                return { passes: false };
+            const blockedBy = shopkeeperBlockingDoor(x, y, g);
+            if (blockedBy)
+                return { passes: false, blockedBy };
+        }
+        if (heroBadRock(g, fromX, y) && heroBadRock(g, x, fromY)) {
+            if (heroTightDiagonalReason(g))
+                return { passes: false };
+        }
+        else if (wormCrossesBetween(fromX, fromY, x, y, g))
+            return { passes: false };
+    }
+    // Reverse searches must be able to return to the hero's square.
+    if (g.context.run === 8 && (x !== hero.ux || y !== hero.uy)) {
         if (knownRunTrap(x, y, g))
-            return false;
+            return { passes: mode === 'trap' };
         if (location.seenv && isPoolOrLavaAt(x, y, g)) {
             const liquidWall = IS_WATERWALL(location.typ) || location.typ === LAVAWALL;
             const inAir = propertyIsActive('levitation', g) || propertyIsActive('flying', g);
             const canWalk = isPoolAt(x, y, g) ? heroKnowsWaterWalking(g)
                 : heroKnowsLavaWalking(g) && isLavaAt(hero.ux, hero.uy, g);
             if (liquidWall || !(inAir || canWalk))
-                return false;
+                return { passes: mode === 'trap' };
         }
     }
-    const boulder = g.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
-    return !(boulder && (!passesWalls || g.level?.flags.sokoban_rules)
-        && (g.context.run ?? 0) >= 2 && !heroIsBlind(g)
-        && !heroIsHallucinating(g) && !heroCouldMoveOntoBoulder(x, y, g));
+    if (mode === 'trap')
+        return { passes: false };
+    const origin = g.level?.at(fromX, fromY);
+    if (dx && dy && !passesWalls && origin?.typ === DOOR) {
+        if (blocksDiagonalDoor(origin, null))
+            return { passes: false };
+        const blockedBy = shopkeeperBlockingEntry(x, y, g);
+        if (blockedBy)
+            return { passes: false, blockedBy };
+    }
+    if (travelBoulderAt(x, y, g) && (!passesWalls || g.level?.flags.sokoban_rules)) {
+        if (mode === 'move') {
+            if ((g.context.run ?? 0) >= 2 && !heroIsBlind(g)
+                && !heroIsHallucinating(g) && !heroCouldMoveOntoBoulder(x, y, g))
+                return { passes: false };
+        }
+        else {
+            if (g.level?.flags.sokoban_rules)
+                return { passes: false };
+            if (travelBoulderAt(fromX, fromY, g) && !passesWalls
+                && !heroCouldMoveOntoBoulder(fromX, fromY, g) && !tunnels
+                && !g.inventory.some(object => object.otyp === PICK_AXE
+                    || object.otyp === DWARVISH_MATTOCK
+                    || object.otyp === WAN_DIGGING && !objectTypeKnown(object, g)))
+                return { passes: false };
+        }
+    }
+    return { passes: true };
 }
 function runDist2(x1, y1, x2, y2) {
     const dx = x1 - x2;
@@ -479,111 +533,85 @@ const TRAVEL_DIRECTIONS = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ];
-function travelCellKnown(x, y, g = game) {
-    const loc = g.level?.at(x, y);
-    return !!loc && (!!loc.seenv || !!loc.remembered_glyph || couldsee(x, y));
+function closedTravelDoor(x, y, g) {
+    const location = g.level?.at(x, y);
+    return location?.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED));
 }
-function travelStepAllowed(fromX, fromY, toX, toY, g = game) {
-    if (toX < 1 || toX >= COLNO || toY < 0 || toY >= ROWNO)
-        return false;
-    if (!travelCellKnown(toX, toY, g)
-        || blocksMove(toX, toY) && !heroCanPassWallAt(g, toX, toY))
-        return false;
-    const dx = toX - fromX;
-    const dy = toY - fromY;
-    if (dx && dy && blocksDiagonalDoor(g.level?.at(fromX, fromY), g.level?.at(toX, toY)))
-        return false;
-    if (g.level?.flags?.sokoban_rules
-        && (g.level?.objects?.[toX]?.[toY] || [])
-            .some(object => object.otyp === BOULDER))
-        return false;
-    const trap = g.level?.traps?.find(candidate => candidate.tx === toX && candidate.ty === toY && candidate.tseen);
-    if (trap)
-        return false;
-    const typ = g.level?.at(toX, toY)?.typ;
-    if (typ === undefined)
-        return false;
-    if (isPoolOrLavaAt(toX, toY, g))
-        return false;
-    return true;
+function travelBoulderAt(x, y, g) {
+    return !!g.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
 }
-function findDirectTravelDirection(targetX, targetY, g = game) {
-    let frontier = [[targetX, targetY]];
-    const discoveredRadius = new Map([[`${targetX},${targetY}`, 0]]);
-    let radius = 1;
-    while (frontier.length) {
+function travelCellKnown(x, y, g) {
+    const location = g.level?.at(x, y);
+    return !!location && (!!location.seenv || !heroIsBlind(g) && couldsee(x, y));
+}
+// C findtravelpath(): each radius preserves cardinal-first frontier order.
+// Door, boulder and trap delays apply to each edge before TEST_TRAV, in all
+// three search modes. The origin starts unmarked, as in C's zeroed matrix.
+async function searchTravelPath(startX, startY, goalX, goalY, mode, g) {
+    let frontier = [[startX, startY]];
+    const distance = new Map();
+    const directions = MONSTER_NAME[heroSpecies(g)] === 'grid bug'
+        ? TRAVEL_DIRECTIONS.slice(0, 4) : TRAVEL_DIRECTIONS;
+    for (let radius = 1; frontier.length; radius++) {
         const next = [];
         for (const [x, y] of frontier) {
-            const key = `${x},${y}`;
-            const hasBoulder = (g.level?.objects?.[x]?.[y] || [])
-                .some(object => object.otyp === BOULDER);
-            // findtravelpath() leaves an ordinary boulder node on the
-            // frontier for two extra radii.  The graph still contains it,
-            // but an equally short clean route wins.
-            const discoveredAt = discoveredRadius.get(key);
-            if (discoveredAt === undefined)
-                throw new Error(`Travel frontier has no radius for ${x},${y}`);
-            if (hasBoulder && !heroCouldMoveOntoBoulder(x, y, g)
-                && discoveredAt > radius - 3) {
-                next.push([x, y]);
-                continue;
-            }
-            for (const [dx, dy] of TRAVEL_DIRECTIONS) {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (nx === g.u.ux && ny === g.u.uy) {
-                    // hack.c:findtravelpath(TRAVP_TRAVEL) expands backward
-                    // from the destination and tests this edge in that same
-                    // direction.  If an unreachable stone target becomes
-                    // adjacent, C returns the blocked final direction and
-                    // lets domove() stop travel; reversing this check enters
-                    // TRAVP_GUESS and can oscillate beside the target.
-                    if (travelStepAllowed(x, y, nx, ny, g))
-                        return { dx: x - nx, dy: y - ny };
+            let repeated = false;
+            for (const [dx, dy] of directions) {
+                const nx = x + dx, ny = y + dy;
+                if (!isok(nx, ny) || mode === 'guess' && !couldsee(nx, ny))
+                    continue;
+                const delayed = !heroPassesWalls(g) && !heroCanOoze(g) && closedTravelDoor(x, y, g)
+                    || travelBoulderAt(x, y, g) && !heroCouldMoveOntoBoulder(x, y, g)
+                    || await testTravelMove(x, y, nx, ny, 'trap', g);
+                if (delayed && (distance.get(y * COLNO + x) ?? 0) > radius - 3) {
+                    if (!repeated)
+                        next.push([x, y]);
+                    repeated = true;
                     continue;
                 }
-                const nextKey = `${nx},${ny}`;
-                if (discoveredRadius.has(nextKey)
-                    || !travelStepAllowed(x, y, nx, ny, g))
+                if (!await testTravelMove(x, y, nx, ny, 'travel', g)
+                    || !travelCellKnown(nx, ny, g))
                     continue;
-                discoveredRadius.set(nextKey, radius);
-                next.push([nx, ny]);
+                if (nx === goalX && ny === goalY) {
+                    if (mode !== 'guess')
+                        return { distance, direction: { dx: x - goalX, dy: y - goalY } };
+                }
+                else if (!distance.has(ny * COLNO + nx)) {
+                    distance.set(ny * COLNO + nx, radius);
+                    next.push([nx, ny]);
+                }
             }
         }
         frontier = next;
-        radius++;
     }
-    return null;
+    return { distance, direction: null };
 }
-// C hack.c:is_valid_travelpt() calls findtravelpath(TRAVP_VALID), which
-// accepts only a complete known path to the selected square.  The separate
-// TRAVP_GUESS fallback belongs to live travel after a valid destination has
-// been chosen; using it for getpos descriptions falsely labels solid or
-// unreachable targets as travelable.
-function isValidTravelTarget(targetX, targetY, g = game) {
-    if (g.u?.ux === targetX && g.u?.uy === targetY)
+// C is_valid_travelpt() searches forward; live travel searches backward so
+// its predecessor gives the next step. Guessing is only for live movement.
+async function isValidTravelTarget(targetX, targetY, g = game) {
+    if (g.u.ux === targetX && g.u.uy === targetY)
         return true;
-    // TRAVP_VALID expands from the hero toward the requested destination.
-    // The ordinary travel search expands backwards so it can recover the
-    // hero's next step; reusing that orientation here would let the search
-    // escape *from* a solid target without ever validating entry into it.
-    const queue = [[g.u.ux, g.u.uy]];
-    const visited = new Set([`${g.u.ux},${g.u.uy}`]);
-    for (const [x, y] of queue) {
-        for (const [dx, dy] of TRAVEL_DIRECTIONS) {
-            const nx = x + dx;
-            const ny = y + dy;
-            const key = `${nx},${ny}`;
-            if (visited.has(key)
-                || !travelStepAllowed(x, y, nx, ny, g))
-                continue;
-            if (nx === targetX && ny === targetY)
+    if (glyphAt(targetX, targetY, g)?.glyph === cmapToGlyph(CmapSymbol.stone)
+        && !g.level?.at(targetX, targetY)?.seenv)
+        return false;
+    if (g.context.travel1 && travelDistance(g.u.ux, g.u.uy, targetX, targetY) === 1) {
+        requirePlayingGame(g);
+        if (await crawlDestinationAllowed(g, targetX, targetY, rn2, plineWithContinuation)) {
+            stopRun(g, false);
+            if (await testTravelMove(g.u.ux, g.u.uy, targetX, targetY, 'move', g))
                 return true;
-            visited.add(key);
-            queue.push([nx, ny]);
         }
     }
-    return false;
+    const { direction } = await searchTravelPath(g.u.ux, g.u.uy, targetX, targetY, 'valid', g);
+    if (direction) {
+        g.u.dx = direction.dx;
+        g.u.dy = direction.dy;
+        if (g._runState?.mode === 8) {
+            g._runState.visited ??= new Set();
+            g._runState.visited.add(g.u.uy * COLNO + g.u.ux);
+        }
+    }
+    return direction !== null;
 }
 function travelDistance(x1, y1, x2, y2) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
@@ -593,47 +621,24 @@ function travelDistanceSquared(x1, y1, x2, y2) {
     const dy = y1 - y2;
     return dx * dx + dy * dy;
 }
-// C hack.c:findtravelpath(TRAVP_GUESS).  When the selected destination is
-// not connected through remembered terrain, search the hero-visible region,
-// choose its point closest to the real target using C's scan/tie order, and
-// take one ordinary travel step toward that temporary target.  Repeating the
-// calculation after each move lets newly revealed terrain extend the route.
-function findGuessedTravelDirection(targetX, targetY, g = game) {
-    const originX = g.u.ux;
-    const originY = g.u.uy;
-    const queue = [[originX, originY]];
-    const distance = new Map([[`${originX},${originY}`, 0]]);
-    for (const [x, y] of queue) {
-        for (const [dx, dy] of TRAVEL_DIRECTIONS) {
-            const nx = x + dx;
-            const ny = y + dy;
-            const key = `${nx},${ny}`;
-            if (distance.has(key) || !couldsee(nx, ny)
-                || !travelStepAllowed(x, y, nx, ny, g))
-                continue;
-            const previousDistance = distance.get(`${x},${y}`);
-            if (previousDistance === undefined)
-                throw new Error(`Missing travel distance for ${x},${y}`);
-            distance.set(key, previousDistance + 1);
-            queue.push([nx, ny]);
-        }
-    }
-    let pickX = originX;
-    let pickY = originY;
+// C TRAVP_GUESS limits the forward search to couldsee() squares, then scans
+// x-major. Ties require both a shorter search radius and smaller dist2().
+async function findGuessedTravelDirection(targetX, targetY, g) {
+    const originX = g.u.ux, originY = g.u.uy;
+    const { distance } = await searchTravelPath(originX, originY, targetX, targetY, 'guess', g);
+    let pickX = originX, pickY = originY;
     let bestDistance = travelDistance(targetX, targetY, originX, originY);
     let bestSquared = travelDistanceSquared(targetX, targetY, originX, originY);
     let bestPath = COLNO * ROWNO;
-    // The C implementation scans the travel matrix x-major, then y-major.
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
-            const path = distance.get(`${x},${y}`);
+            const path = distance.get(y * COLNO + x);
             if (!path || !couldsee(x, y))
                 continue;
             const candidateDistance = travelDistance(targetX, targetY, x, y);
             const candidateSquared = travelDistanceSquared(targetX, targetY, x, y);
             if (candidateDistance < bestDistance
-                || (candidateDistance === bestDistance
-                    && path < bestPath && candidateSquared < bestSquared)) {
+                || candidateDistance === bestDistance && path < bestPath && candidateSquared < bestSquared) {
                 pickX = x;
                 pickY = y;
                 bestDistance = candidateDistance;
@@ -642,30 +647,28 @@ function findGuessedTravelDirection(targetX, targetY, g = game) {
             }
         }
     }
-    if (pickX !== originX || pickY !== originY)
-        return findDirectTravelDirection(pickX, pickY, g);
-    const dx = Math.sign(targetX - originX);
-    const dy = Math.sign(targetY - originY);
-    // C's last guess uses TEST_MOVE: unknown squares are allowed, but known
-    // traps and unsafe liquids still cancel the direction while travelling,
-    // leaving the zero direction that findtravelpath() stores at "found".
-    return heroTestMove(originX + dx, originY + dy, g)
-        ? { dx, dy } : { dx: 0, dy: 0 };
+    if (pickX !== originX || pickY !== originY) {
+        const { direction } = await searchTravelPath(pickX, pickY, originX, originY, 'travel', g);
+        return direction ? { ...direction, checkVisited: true } : null;
+    }
+    // With no better visible goal, C tests the general direction using
+    // TEST_MOVE: an unseen square may be discovered by ordinary movement.
+    const dx = Math.sign(targetX - originX), dy = Math.sign(targetY - originY);
+    return await testTravelMove(originX, originY, originX + dx, originY + dy, 'move', g)
+        ? { dx, dy, checkVisited: false } : null;
 }
-export function findTravelDirection(state = game._runState, g = game) {
-    if (!state || state.mode !== 8 || !g.u || !g.level)
+export async function findTravelDirection(state = game._runState, g = game) {
+    if (!state || state.mode !== 8 || !g.level)
         return null;
     const { targetX, targetY } = state;
-    const direction = g.u.ux === targetX && g.u.uy === targetY
-        ? { dx: 0, dy: 0 }
-        : findDirectTravelDirection(targetX, targetY, g)
-            || findGuessedTravelDirection(targetX, targetY, g);
-    if (!direction)
-        return null;
-    // findtravelpath() stores even a blocked guess's zero direction.
-    g.u.dx = direction.dx;
-    g.u.dy = direction.dy;
-    return direction.dx || direction.dy ? direction : null;
+    const atTarget = g.u.ux === targetX && g.u.uy === targetY;
+    const direct = atTarget ? null
+        : (await searchTravelPath(targetX, targetY, g.u.ux, g.u.uy, 'travel', g)).direction;
+    const direction = atTarget ? null : direct ? { ...direct, checkVisited: true }
+        : await findGuessedTravelDirection(targetX, targetY, g);
+    g.u.dx = direction?.dx ?? 0;
+    g.u.dy = direction?.dy ?? 0;
+    return direction;
 }
 // C hack.c:findtravelpath() updates repetition before the rest of
 // domove_core(), even when it leaves a zero direction after a failed guess.
@@ -677,24 +680,36 @@ async function selectTravelStep(state) {
         && travelDistance(hero.ux, hero.uy, targetX, targetY) === 1
         && await crawlDestinationAllowed(game, targetX, targetY, rn2, plineWithContinuation)) {
         stopRun(game, false);
-        if (heroTestMove(targetX, targetY)) {
+        if (await testTravelMove(hero.ux, hero.uy, targetX, targetY, 'move', game)) {
             nomul(0);
             game._travelTarget = null;
             return { dx: targetX - hero.ux, dy: targetY - hero.uy };
         }
         game.context.run = 8;
     }
-    const direction = findTravelDirection(state);
+    const direction = await findTravelDirection(state);
     if (!direction) {
         nomul(0);
         return { dx: 0, dy: 0 };
     }
-    if (hero.ux + direction.dx === targetX && hero.uy + direction.dy === targetY) {
+    const visited = state.visited ?? new Set();
+    const nextX = hero.ux + direction.dx, nextY = hero.uy + direction.dy;
+    // C's general-direction fallback records the origin without testing
+    // history. Only a completed backward search checks the chosen next step.
+    const returning = direction.checkVisited && visited.has(nextY * COLNO + nextX);
+    if (returning || direction.checkVisited && nextX === targetX && nextY === targetY) {
         nomul(0);
         // Keep the running checks for a final path step, unlike the
         // adjacent first-step shortcut above.
         game.context.run = 8;
-        game._travelTarget = null;
+        if (returning)
+            await plineWithContinuation('You stop, unsure which way to go.');
+        else
+            game._travelTarget = null;
+    }
+    else {
+        visited.add(hero.uy * COLNO + hero.ux);
+        state.visited = visited;
     }
     return direction;
 }
@@ -4684,11 +4699,7 @@ async function travelPositionDescription(x, y) {
     const description = await wizardPositionDescription(x, y);
     if (x === game.u?.ux && y === game.u?.uy)
         return description;
-    const loc = game.level?.at?.(x, y);
-    // hack.c:is_valid_travelpt() rejects unexplored stone before searching.
-    const unexploredProjection = description === 'unexplored area'
-        && !loc?.seenv;
-    const valid = !unexploredProjection && isValidTravelTarget(x, y);
+    const valid = await isValidTravelTarget(x, y);
     return valid ? description : `${description} (no travel path)`;
 }
 // C pager.c:lookat() gives the sensed hero priority over the map glyph.
