@@ -1,4 +1,5 @@
 import { heroLocomotion } from './hero_locomotion.js';
+import { recorderLocalHour } from './calendar.js';
 import { impossible } from './diagnostics.js';
 // shk.js — Runtime shop ownership and entry policy.
 // C refs: hack.c move_update()/check_special_room(), shk.c inhishop(),
@@ -1361,10 +1362,11 @@ function specialRoomEntryMessage(room, roomno) {
         }
         case LEPREHALL: return 'You enter a leprechaun hall!';
         case MORGUE: {
-            if (Number(String(game.datetime || '').slice(8, 10)) !== 0)
-                return 'You have an uncanny feeling...';
-            const verb = heroLocomotion('Run');
-            return `${verb} away!  ${verb} away!`;
+            if (recorderLocalHour(game.datetime) === 0) {
+                const verb = heroLocomotion('Run');
+                return `${verb} away!  ${verb} away!`;
+            }
+            return 'You have an uncanny feeling...';
         }
         case BEEHIVE: return 'You enter a giant beehive!';
         case COCKNEST: return 'You enter a disgusting nest!';
