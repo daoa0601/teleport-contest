@@ -32,10 +32,14 @@ export async function seeNearbyMonsters(state: GameState = game): Promise<void> 
                 ? monster.mappearance : monster.mnum;
             if (species === undefined) throw new Error(`Monster ${monster.m_id} has no disguise species`);
             if (state.mvitals?.[species]?.seen_close) continue;
-            if (canSeeMonster(monster) || monster.mundetected && canSenseMonster(monster))
+            if (canSeeMonster(monster) || monster.mundetected && canSenseMonster(monster)) {
+                state.bhitpos.x = x;
+                state.bhitpos.y = y;
+                state.notonhead = x !== monster.mx || y !== monster.my;
                 await seeMonsterCloseup(monster, {
-                    onHead: x === monster.mx && y === monster.my, state,
+                    onHead: !state.notonhead, state,
                 });
+            }
         }
     }
 }
