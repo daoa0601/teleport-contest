@@ -36,6 +36,7 @@ export async function takeHeroGold(state: GameState = game): Promise<void> {
     await plineWithContinuation(lostMoney
         ? 'You notice you have no gold!'
         : formatFeltMessage('a strange sensation.', state));
+    if (lostMoney) state.context.botl = true;
 }
 
 function quantity(object: GameObject | null | undefined): number {

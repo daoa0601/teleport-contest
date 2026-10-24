@@ -60,6 +60,7 @@ import { applyRemoveCurseSpell } from './scroll_effects.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
+import { setSlipperyHands } from './towel.js';
 import { cansee } from './vision.js';
 import { makeWish } from './wish.js';
 import { aggravateMonsters } from './monster_anger.js';
@@ -104,6 +105,7 @@ function removeThrone(x: number, y: number): void {
     if (!location) return;
     location.typ = ROOM;
     location.flags = 0;
+    location.looted = 0;
     map_background(x, y, false);
     newsym_force(x, y);
 }
@@ -293,7 +295,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
         for (const object of game.inventory || []) {
             if (object.oclass !== COIN_CLASS) object.greased = true;
         }
-        game.u.glibTurns = rn1(101, 100);
+        setSlipperyHands(rn1(101, 100));
         break;
     case 7:
         await attrcurse();
@@ -389,13 +391,13 @@ export async function throneSitEffect({
         if (game.flags?.debug && !game.flags?.debug_fuzzer) {
             const answer = await getLine(
                 'Throne sit effect (1..13) [0=random]',
-                ch => /[0-9]/.test(ch),
+                () => true,
             );
             if (answer === null) {
                 await plineWithContinuation('Never mind.');
                 return;
             }
-            const requested = Number(answer);
+            const requested = Number.parseInt(answer, 10);
             if (requested >= 1 && requested <= 13) effect = requested;
         }
         if (special) {
@@ -433,8 +435,8 @@ export async function attrcurse({ publish = plineWithContinuation }: {
         if (!hasPermanentIntrinsicProperty(property, game)) continue;
         removePermanentIntrinsicProperty(property, game);
 
-        if (property === 'telepathy' && game.blind
-            && !hero.blindTelepathy) await see_monsters();
+        if (property === 'telepathy' && heroIsBlind(game)
+            && !hero.telepathy) await see_monsters();
         if (property === 'invisible') syncHeroInvisibility(game);
         if (property === 'seeInvisible') {
             if (!hero.seeInvisible) {
