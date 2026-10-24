@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { DOOR, SDOOR, W_ARM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLUB, OBJECT_NAMES, POT_HEALING, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, } from '../js/object_data.js';
+import { CLUB, OBJECT_NAMES, POT_HEALING, SACK, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { applyScrollEffects } from '../js/scroll_effects.js';
 import { learnScroll, learnScrollType } from '../js/scroll_discovery.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -126,4 +127,26 @@ for (const postage of [false, true]) {
         assert.equal(result.consumed, false);
     });
 }
+void test('a lucky blessed identify scroll identifies a second possession', async () => {
+    freshGameplayRoom();
+    requirePlayingGame(game);
+    // A carried luckstone keeps C's Luck (uluck + moreluck) positive even
+    // though the base luck record is neutral.
+    game.u.uluck = 0;
+    game.u.moreluck = 3;
+    const first = await addInventoryObject(CLUB, { known: false, bknown: false });
+    const second = await addInventoryObject(POT_HEALING, { known: false, bknown: false });
+    const third = await addInventoryObject(SACK, { known: false, bknown: false });
+    const source = await scroll(SCR_IDENTIFY, { blessed: true });
+    const input = resetInputState();
+    // The blessed identification count is the effect's first random roll;
+    // land it on one so only Luck can raise the count to two.
+    initRng(3n);
+    input.feed(` ${first.invlet}\n ${second.invlet}\n`);
+    const result = await applyScrollEffects(source);
+    assert.equal(result.consumed, true);
+    assert.equal(first.known, true, 'the first menu choice must be identified');
+    assert.equal(second.known, true, 'Luck must raise the blessed count from one to two');
+    assert.equal(third.known, false);
+});
 //# sourceMappingURL=scroll_effects.test.js.map
