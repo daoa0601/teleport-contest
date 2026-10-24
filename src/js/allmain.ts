@@ -697,12 +697,12 @@ function appendTurnMessage(message: string): void {
 // but must not stop independent occupations such as eating, lock-picking, or
 // spellbook study.  This port represents both kinds in `_occupation`, so keep
 // the distinction at the interruption boundary.
-function interruptCountedActivity(message: string): void {
+async function interruptCountedActivity(message: string): Promise<void> {
     const game = requireInitializedGame();
     if (!(game.multi > 0) || game.context.travel || game.context.run) return;
     endVoluntaryMultiTurn(game);
     if (game.flags?.verbose !== false && game._lastPlineMessage !== message) {
-        appendTurnMessage(message);
+        await plineWithContinuation(message);
     }
 }
 
@@ -940,7 +940,7 @@ async function finishInitialTurnMaintenanceAfterRegions({
     // that exact source stack resumes.
     const recoveryCapacity = game.u.invulnerable ? UNENCUMBERED : capacity;
     if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
-        interruptCountedActivity('You are in full health.');
+        await interruptCountedActivity('You are in full health.');
     if (game.program_state.gameover) return { kind: 'complete', moveAmount };
 
     // C moveloop_core(): moving around while Strained or worse is hard work.
@@ -970,7 +970,7 @@ async function finishInitialTurnMaintenanceAfterRegions({
             );
             game.context.botl = true;
             if (game.u.uen === game.u.uenmax)
-                interruptCountedActivity('You feel full of energy.');
+                await interruptCountedActivity('You feel full of energy.');
         }
     }
 
