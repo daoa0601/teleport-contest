@@ -27,6 +27,52 @@ void test('Lua selection methods and operators use the selvar backend', () => {
     assert.equal(state.getGlobal('count'), 5);
     assert.equal(state.getGlobal('box'), 4);
 });
+void test('randline validates the native selection stack when its argument count skips coordinate parsing', async (t) => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+    const cases = [
+        { source: 'selection.randline()', message: "bad argument #1 to 'randline' (userdata expected, got no value)" },
+        { source: 'selection.randline(1)', message: "bad argument #1 to 'randline' (userdata expected, got number)" },
+        { source: 'selection.randline(selection.new(), 1, 2, 3, 4)', message: "bad argument #2 to 'randline' (userdata expected, got number)" },
+        { source: 'selection.new():randline(1, 2, 3, 4)', message: "bad argument #1 to 'randline' (userdata expected, got number)" },
+        { source: 'selection.randline("1", 2, 3, 4, 0)', message: "bad argument #1 to 'randline' (userdata expected, got string)" },
+        { source: 'selection.randline(1, 2, 3, 4, 0, 0)', message: "bad argument #1 to 'randline' (userdata expected, got number)" },
+    ];
+    for (const { source, message } of cases) {
+        await t.test(source, async () => {
+            await assert.rejects(state.executeAsync(source, '=randline.lua'), error => {
+                assert.ok(error instanceof Error);
+                assert.ok(error.message.includes(`randline.lua:1: ${message}`), error.message);
+                return true;
+            });
+        });
+    }
+});
+void test('randline clones selections without adding points when coordinate parsing is skipped', async (t) => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 2, ystart: 3, width: 20, height: 12 }),
+    });
+    t.after(() => state.destroy());
+    await state.executeAsync(`
+        local source = selection.set(1, 1)
+        local line = selection.randline(source)
+        copied = line:get(1, 1)
+        degenerate_point = line:get(0, 0)
+        source_unchanged = source:get(0, 0)
+        local target = selection.new()
+        returned_count = selection.randline(source, target):numpoints()
+        target_count = target:numpoints()
+    `);
+    assert.equal(state.getGlobal('copied'), 1);
+    assert.equal(state.getGlobal('degenerate_point'), 0);
+    assert.equal(state.getGlobal('source_unchanged'), 0);
+    assert.equal(state.getGlobal('returned_count'), 0);
+    assert.equal(state.getGlobal('target_count'), 1);
+});
 void test('explicit selection coordinates wrap each axis to eight bits before the map origin', async (t) => {
     freshGame();
     initRng(17);
@@ -290,7 +336,7 @@ void test('selection point and gradient arguments use native coordinate conversi
     assert.equal(state.getGlobal('converted_get'), 1, 'two-axis get uses lua_tointeger conversion');
     assert.equal(state.getGlobal('gradient'), 1);
     await assert.rejects(state.executeAsync('selection.set()'), /Selection setpoint error/);
-    await assert.rejects(state.executeAsync('selection.set(1, 2, 3)'), /requires a selection/);
+    await assert.rejects(state.executeAsync('selection.set(1, 2, 3)'), /userdata expected, got number/);
     await assert.rejects(state.executeAsync('selection.new():get({x = 0, [2] = 0})'), /Not a coordinate/);
 });
 void test('selection integer options narrow before percentage, removal, lighting and fill decisions', async (t) => {
@@ -388,7 +434,7 @@ void test('invalid selection point arguments leave the next random location unch
         'selection.get(nil, -1, -1)',
     ]) {
         initRng(17);
-        await assert.rejects(state.executeAsync(source), { name: 'TypeError' });
+        await assert.rejects(state.executeAsync(source), source);
         const chosen = await choosePoint();
         assert.equal(chosen.x, expected.x, `${source} must not change the next chosen column`);
         assert.equal(chosen.y, expected.y, `${source} must not change the next chosen row`);

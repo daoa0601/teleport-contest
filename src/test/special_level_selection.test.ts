@@ -112,7 +112,6 @@ void test('selection callback argument errors identify the line and source that 
         { source: 'selection.circle(1)', message: 'wrong parameters' },
         { source: 'selection.ellipse(1)', message: 'wrong parameters' },
         { source: 'selection.gradient()', message: 'selection.gradient requires table argument' },
-        { source: 'selection.randline(1)', message: 'wrong parameters' },
         { source: 'selection.new():iterate(3)', message: 'wrong parameters' },
         { source: 'selection.describe_size()', message: 'wrong parameters' },
         { source: 'selection.floodfill()', message: 'wrong parameters' },
@@ -141,6 +140,28 @@ void test('selection callback argument errors identify the line and source that 
                 record.reason);
         });
     }
+});
+
+void test('randline argument errors use Lua caller locations instead of nhl_error suffixes', async t => {
+    const lua = await levelLua(t);
+    const storage = memoryStorage();
+    game.storage = storage;
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    await lua.executeAsync([
+        'local function fail()',
+        '  selection.randline(1)',
+        'end',
+        'selection.set(1, 0):iterate(fail)',
+    ].join('\n'), '@selection-error.lua');
+
+    const record: unknown = JSON.parse((storage.getItem(PANICLOG) ?? '').trim());
+    assert.ok(record && typeof record === 'object'
+        && 'reason' in record && typeof record.reason === 'string',
+        'the nonfatal callback failure should be logged');
+    assert.ok(record.reason.includes("selection-error.lua:2: bad argument #1 to 'randline' (userdata expected, got number)\nstack traceback:"),
+        record.reason);
 });
 
 void test('Lua circles and ellipses carve outlines or filled areas relative to their map', async t => {

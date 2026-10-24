@@ -1,5 +1,5 @@
 import { luaChunkId } from './syntax_error.js';
-import { NethackLuaError } from './errors.js';
+import { LuaArgumentError, NethackLuaError } from './errors.js';
 // nhlua.c:traceback_handler() uses luaL_traceback() before Lua unwinds.
 // Retain Lua frames on the original exception; JavaScript frames are unrelated.
 export class LuaTraceback {
@@ -34,6 +34,15 @@ export class LuaTraceback {
             return;
         const frames = this.frames.filter(frame => !frame.hidden);
         const caller = frames.at(-2);
+        if (error instanceof LuaArgumentError) {
+            const call = frames.at(-1)?.description.match(/^(\w+) '(.*)'$/u);
+            const name = call?.[2] ?? '?';
+            const argument = error.argument - (call?.[1] === 'method' ? 1 : 0);
+            const message = argument === 0
+                ? `calling '${name}' on bad self (${error.message})`
+                : `bad argument #${argument} to '${name}' (${error.message})`;
+            error.message = this.where(1) + message;
+        }
         if (error instanceof NethackLuaError && caller)
             error.message += ` (line ${caller.line} ${caller.source})`;
         this.failures.set(error, frames.map(frame => ({ ...frame })).reverse());

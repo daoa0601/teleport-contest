@@ -16,7 +16,7 @@ import {
 } from '../selvar.js';
 import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
-import { NethackLuaError } from './errors.js';
+import { LuaArgumentError, NethackLuaError } from './errors.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
 import { game } from '../gstate.js';
 import { isRoom } from '../map_types.js';
@@ -52,10 +52,17 @@ function getAxis(value: LuaValue | undefined): number {
     return Number.isInteger(number) ? coordxy(number) : 0;
 }
 
-function selectionValue(value: LuaValue | undefined): SpecialSelection {
-    if (!(value instanceof LuaUserdata)
-        || !(value.value instanceof SpecialSelection))
-        throw new TypeError('selection operation requires a selection');
+function argumentType(value: LuaValue | undefined): string {
+    if (value === undefined) return 'no value';
+    if (value instanceof LuaUserdata) return value.metatable.__name ?? 'userdata';
+    return luaType(value);
+}
+
+function selectionValue(value: LuaValue | undefined, argument = 1): SpecialSelection {
+    if (!(value instanceof LuaUserdata))
+        throw new LuaArgumentError(argument, `userdata expected, got ${argumentType(value)}`);
+    if (!(value.value instanceof SpecialSelection))
+        throw new LuaArgumentError(argument, `selection expected, got ${argumentType(value)}`);
     return value.value;
 }
 
@@ -135,7 +142,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const source = selectionValue(args[0]);
         if (args.length === 1) return wrap(source.clone());
         // Native copies into stack slot two and returns the new empty selection on top.
-        copySelectionInto(selectionValue(args[1]), source);
+        copySelectionInto(selectionValue(args[1], 2), source);
         return wrap(new SpecialSelection());
     };
     const numpoints = (self: LuaValue) => selectionValue(self).numPoints();
@@ -224,16 +231,24 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         return wrap(result);
     };
     const randline = (...args: LuaValue[]) => {
-        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
-        if (args.length !== 5) throw new NethackLuaError('wrong parameters');
-        const result = self ? selectionValue(self).clone() : new SpecialSelection();
-        const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
-        return wrap(specialSelectionRandLine(
-            start.x, start.y, end.x, end.y,
-            luaInt(args[4]),
-            12,
-            result,
-        ));
+        let start = explicitPoint(0, 0), end = explicitPoint(0, 0);
+        let roughness = 7;
+        if (args.length === 6) {
+            selectionValue(args[0]);
+            start = explicitPoint(args[1], args[2]);
+            end = explicitPoint(args[3], args[4]);
+            roughness = luaInt(args[5]);
+            args.splice(1);
+        } else if (args.length === 5 && typeof args[0] === 'number') {
+            start = explicitPoint(args[0], args[1]);
+            end = explicitPoint(args[2], args[3]);
+            roughness = luaInt(args[4]);
+            args = [wrap(new SpecialSelection())];
+        }
+        const result = clone(...args);
+        const target = args.length === 1 ? result.value : selectionValue(args[1], 2);
+        specialSelectionRandLine(start.x, start.y, end.x, end.y, roughness, 12, target);
+        return result;
     };
     const iterate = async (self: LuaValue, ...args: LuaValue[]) => {
         const callback = args[0];
@@ -294,23 +309,24 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         },
     };
     const metatable: LuaMetatable = {
+        __name: 'selection',
         __index: methods,
         __bor: (left, right) => wrap(
-            selectionValue(left).union(selectionValue(right)),
+            selectionValue(left).union(selectionValue(right, 2)),
         ),
         __band: (left, right) => wrap(
-            selectionValue(left).intersect(selectionValue(right)),
+            selectionValue(left).intersect(selectionValue(right, 2)),
         ),
         __bxor: (left, right) => wrap(
-            selectionValue(left).xor(selectionValue(right)),
+            selectionValue(left).xor(selectionValue(right, 2)),
         ),
         __bnot: value => wrap(selectionValue(value).negate()),
         __unm: value => wrap(selectionValue(value).negate()),
         __add: (left, right) => wrap(
-            selectionValue(left).union(selectionValue(right)),
+            selectionValue(left).union(selectionValue(right, 2)),
         ),
         __sub: (left, right) => wrap(
-            selectionValue(left).subtract(selectionValue(right)),
+            selectionValue(left).subtract(selectionValue(right, 2)),
         ),
     };
     const currentContext = () => {
