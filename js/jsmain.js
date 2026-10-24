@@ -910,7 +910,15 @@ export class Engine {
                         continue;
                     }
                     applyPreMenuRigidChecks();
-                    drawGenderMenu(role, race, alignment, candidates);
+                    // setup_gendmenu() adds role and race compatibility;
+                    // counting and Random still use ok_gend() alone.
+                    const menuCandidates = candidates.filter(candidate => {
+                        const choices = { role, race, gender: candidate, alignment };
+                        return characterGenderAllowed(filters, choices)
+                            && characterRoleAllowed(filters, choices)
+                            && characterRaceAllowed(filters, choices);
+                    });
+                    drawGenderMenu(role, race, alignment, menuCandidates);
                     const key = String.fromCharCode(await nhgetch()).toLowerCase();
                     if (key === 'q' || key === '\x1b')
                         return null;
@@ -941,7 +949,7 @@ export class Engine {
                     if (key === '*' || key === ' ' || key === '\n')
                         gender = pickCharacterChoice(candidates) ?? pickCharacterChoice(permitted);
                     else
-                        gender = candidates.find(candidate => candidate.name[0] === key);
+                        gender = menuCandidates.find(candidate => candidate.name[0] === key);
                     if (!gender)
                         continue;
                     nextFacet = role ? (race ? 'alignment' : 'race') : 'role';

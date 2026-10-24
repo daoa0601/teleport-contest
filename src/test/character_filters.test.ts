@@ -81,6 +81,21 @@ void test('choosing race first offers only races compatible with an unfiltered r
     assert.equal(game.urace?.name, 'elf');
 });
 
+void test('choosing gender first excludes male when only Valkyrie remains', async () => {
+    const engine = await start('n~abchkmprRstw\n"');
+    const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
+
+    assert.ok(rows.some(row => row.includes('Pick a gender or sex')));
+    assert.equal(rows.some(row => row.includes('m - male')), false,
+        'male cannot lead to the only unfiltered role, Valkyrie');
+    assert.ok(rows.some(row => row.includes('f - female')));
+    engine.inputGate.feed('fvhny');
+    await engine.runUntilInputNeeded();
+    assert.equal(game.moves, 1);
+    assert.equal(game.urole?.key, 'valkyrie');
+    assert.equal(game.flags.female, true);
+});
+
 void test('clearing the female filter retains the implied Valkyrie exclusion on reopening', async () => {
     const engine = await start('n~>F\n~>F\n');
     const rows = requireGameDisplay().grid.map(cells => cells.map(cell => cell.ch).join(''));
