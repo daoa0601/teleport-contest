@@ -42,6 +42,17 @@ void test('climbing from a pit leaves the hero on the pit square', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.equal(game.u.utrap, 0);
 });
+void test('a hero escaping a pit does not move into an adjacent seen pit', async () => {
+    const level = freshGameplayRoom();
+    requireFixtureGame(game);
+    addTrap(level, PIT, 11, 10, { tseen: true });
+    game.u.utrap = 1;
+    game.u.utraptype = TT_PIT;
+    await rhack('l'.charCodeAt(0));
+    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+    assert.equal(game.u.utrap, 0);
+    assert.equal(game._pending_message, 'You crawl to the edge of the pit.');
+});
 void test('falling into a pit can destroy a monster body without hurting saved human health', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);

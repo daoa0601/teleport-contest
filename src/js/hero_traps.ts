@@ -630,14 +630,12 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
         }
         return false;
     }
-    case TT_PIT: {
-        const target = game.level.traps.find(trap =>
-            trap.tx === targetX && trap.ty === targetY);
-        if (target?.tseen && (target.ttyp === PIT || target.ttyp === SPIKED_PIT))
-            return true;
+    case TT_PIT:
+        // C domove_core() calls trapmove(x, y, NULL), so the destination
+        // pit lookup in trap.c is dead here: every attempted step from a
+        // pit goes through climb_pit() and then aborts the move.
         await climbOutOfPit();
         return false;
-    }
     case TT_WEB:
         await struggleInWeb();
         return false;
