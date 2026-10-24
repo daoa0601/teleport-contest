@@ -8046,27 +8046,16 @@ async function makelevel() {
         const branchp = is_branchlev();
         if (branchp)
             await place_branch(branchp);
-        // C ref: mklev.c makelevel() skip0 tail (lines 1389-1412).  The
-        // bonus-room selection runs on the Rogue level as well: a room is
-        // fillable only when its rooms[] slot carried FILL_NORMAL into this
-        // level (the slot array is game-global in C), and the randomly
-        // chosen room receives the level's bonus-item draw before filling.
-        const fillableRogueRooms = level.rooms
-            .slice(0, level.nroom)
-            .filter((room) => isRoom(room)
-            && (room.rtype === OROOM || room.rtype === THEMEROOM)
-            && room.needfill === FILL_NORMAL);
-        let rogueBonusRoomCountdown = fillableRogueRooms.length
-            ? rn2(fillableRogueRooms.length) : -1;
-        for (const croom of level.rooms.slice(0, level.nroom)) {
-            if (!isRoom(croom))
-                continue;
-            const fillable = (croom.rtype === OROOM || croom.rtype === THEMEROOM)
-                && croom.needfill === FILL_NORMAL;
-            await fill_ordinary_room(croom, fillable && rogueBonusRoomCountdown === 0);
-            if (fillable)
-                rogueBonusRoomCountdown--;
-        }
+        // C ref: mklev.c makelevel() skip0 tail.  C still counts
+        // ROOM_IS_FILLABLE rooms and draws the bonus-room selection here,
+        // but savelev() memsets svr.rooms when the previous level is
+        // released (save.c:564, reached from goto_level and #wizmakemap),
+        // so Rogue rooms always start with needfill FILL_NONE and the
+        // count is zero: every room is offered to fill_ordinary_room with
+        // no bonus flag and returns at its needfill gate.
+        for (const croom of level.rooms.slice(0, level.nroom))
+            if (isRoom(croom))
+                await fill_ordinary_room(croom, false);
         for (const croom of level.rooms.slice(0, level.nroom))
             if (isRoom(croom))
                 await fillSpecialRoom(croom);

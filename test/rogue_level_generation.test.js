@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALTAR, CORR, DOOR, FOUNTAIN, GRAVE, Is_rogue_level, OROOM, ROOM, SCORR, SDOOR, SINK, } from '../js/const.js';
+import { ALTAR, CORR, DOOR, FOUNTAIN, GRAVE, Is_rogue_level, OROOM, ROOM, SCORR, SDOOR, SINK, FILL_NONE, FILL_NORMAL, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
+import { init_dungeons } from '../js/dungeon.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
@@ -156,6 +157,43 @@ void test('the Rogue level carries both stairways and no ordinary furniture', as
         const stairs = levelStairs(game);
         assert.equal(stairs.length, 2, 'a mid-dungeon Rogue level has up and down stairs');
         assert.equal(stairs.filter(stair => stair.up).length, 1);
+    }
+});
+void test('Rogue rooms stay unfilled even after a level that filled its rooms', async () => {
+    // Ordinary levels mark their themed rooms FILL_NORMAL during generation
+    // (C sp_lev des.room "filled"). When the hero leaves, savelev() releases
+    // the level and memsets the shared rooms[] array (save.c:564; reached
+    // from goto_level's WRITING|FREEING save and from #wizmakemap), so every
+    // level generation starts with FILL_NONE slots. The Rogue level drawn
+    // right after a filled level therefore never counts a fillable room,
+    // never draws the bonus-room selection, and no Rogue room is stocked.
+    freshPlayableRoom({ seed: 5n, hero: { uz: { dnum: 0, dlevel: 1 } } });
+    requirePlayingGame(game);
+    await init_dungeons();
+    game.u.uz = { dnum: 0, dlevel: 3 };
+    initRng(5n);
+    await mklev();
+    const ordinary = requireGameLevel();
+    assert.ok(roomsOfLevel().some(room => room.needfill === FILL_NORMAL), 'the ordinary level left fillable rooms behind');
+    assert.ok(ordinary.monsters.length > 0, 'ordinary room filling ran');
+    const rogueLocation = game.specialLevels?.get('rogue');
+    assert.ok(rogueLocation, 'the dungeon descriptor places the rogue level');
+    game._specialLevelPrototype = 'rogue';
+    game.u.uz = { dnum: rogueLocation.dnum, dlevel: rogueLocation.dlevel };
+    initRng(9n);
+    await mklev();
+    const rogue = requireGameLevel();
+    assert.ok(Is_rogue_level(game.u.uz));
+    for (const room of roomsOfLevel())
+        assert.equal(room.needfill, FILL_NONE, 'the released level left no fillable room slots');
+    // No fill_ordinary_room products anywhere: the only monster is the
+    // tribute ghost and the only floor objects are its pile; no traps.
+    const ghost = rogue.monsters.find(monster => monster.mnum === PM_GHOST);
+    assert.ok(ghost);
+    assert.equal(rogue.monsters.length, 1, 'room filling added no monsters');
+    assert.equal(rogue.traps.length, 0, 'room filling added no traps');
+    for (const object of floorObjects(rogue)) {
+        assert.ok(object.ox === ghost.mx && object.oy === ghost.my, 'the only floor objects are the ghost tribute items');
     }
 });
 //# sourceMappingURL=rogue_level_generation.test.js.map
