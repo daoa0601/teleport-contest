@@ -71,6 +71,7 @@ void test('rnl keeps full Luck once the range exceeds fifteen', () => {
         ['rn2(50)', 'rnl(20)'],
         'the nested roll covers all thirteen points of Luck');
 });
+
 void test('rnl clamps adjusted draws into the requested range', () => {
     let highClampSeen = false, lowClampSeen = false, skippedSeen = false;
     for (let seed = 1n; seed < 200n && !(highClampSeen && lowClampSeen && skippedSeen); seed++) {
