@@ -28,6 +28,7 @@ import {
     validCharacterChoice, validCharacterGender, validCharacterRace,
 } from './character_choices.js';
 import type { ParsedCharacterName } from './character_name.js';
+import { createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';
 import type {
     Role, Race, Gender, Alignment, RoleKey, RaceName,
     GenderName, AlignmentName,
@@ -614,8 +615,8 @@ export class Engine {
             }
         }
 
-        const filteredRoles = new Set<RoleKey>();
-        const filteredRaces = new Set<RaceName>();
+        const filters = createCharacterFilters();
+        const { roles: filteredRoles, races: filteredRaces, genders: filteredGenders, alignments: filteredAlignments } = filters;
         const roleByKey = (key: string): Role | undefined => {
             const entry = CHARACTER_ROLE_MENU.find(candidate => candidate[0] === key);
             return entry && roles.find(candidate => candidate.key === entry[1]);
@@ -630,9 +631,11 @@ export class Engine {
             const candidateRaces = race ? [race]
                 : races.filter(candidate => !filteredRaces.has(candidate.name));
             return candidates.some(candidateRole => candidateRaces.some(candidateRace =>
-                genders.some(candidateGender => (gender ? candidateGender === gender : true)
+                genders.some(candidateGender => !filteredGenders.has(candidateGender.name)
+                    && (gender ? candidateGender === gender : true)
                     && aligns.some(candidateAlignment =>
-                        (alignment ? candidateAlignment === alignment : true)
+                        !filteredAlignments.has(candidateAlignment.name)
+                        && (alignment ? candidateAlignment === alignment : true)
                         && validCharacterChoice(
                             candidateRole, candidateRace,
                             candidateGender, candidateAlignment,
@@ -645,10 +648,12 @@ export class Engine {
             && validCharacterRace(role, race, alignment));
         const availableGenders = (
             role: RoleChoice, race: RaceChoice, alignment: AlignmentChoice,
-        ): Gender[] => genders.filter(gender => validCharacterGender(role, gender));
+        ): Gender[] => genders.filter(gender => !filteredGenders.has(gender.name)
+            && validCharacterGender(role, gender));
         const availableAlignments = (
             role: RoleChoice, race: RaceChoice, gender: GenderChoice,
-        ): Alignment[] => aligns.filter(alignment => validCharacterAlignment(role, race, alignment));
+        ): Alignment[] => aligns.filter(alignment => !filteredAlignments.has(alignment.name)
+            && validCharacterAlignment(role, race, alignment));
         const availableRoles = (
             race: RaceChoice, gender: GenderChoice, alignment: AlignmentChoice,
         ): RoleCandidate[] => CHARACTER_ROLE_MENU.flatMap(entry => {
@@ -718,7 +723,7 @@ export class Engine {
             candidates: readonly RoleCandidate[], race: RaceChoice,
             gender: GenderChoice, alignment: AlignmentChoice,
         ): void => {
-            const compact = filteredRoles.size > 0 || filteredRaces.size > 0
+            const compact = hasCharacterFilters(filters)
                 || !!race || !!gender || !!alignment;
             const left = compact ? 41 : 0;
             const lines = Array<CharacterMenuLine>(candidates.length + 11 + Number(compact)).fill('');
@@ -736,43 +741,11 @@ export class Engine {
             lines[row++] = forced && alignment?.name === forced.name
                 ? `${prefix}    ${forced.owner} forces ${forced.name}`
                 : `${prefix}[ - ${routeLabel(alignment, 'alignment')}`;
-            lines[row++] = `${prefix}~ - ${filteredRoles.size || filteredRaces.size
+            lines[row++] = `${prefix}~ - ${hasCharacterFilters(filters)
                 ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[row++] = `${prefix}q - Quit`;
             lines[row] = `${prefix}(end)`;
             this._drawCharacterMenu(lines, left, row, 6 + Number(!compact));
-        };
-
-        const editFilters = async (): Promise<void> => {
-            for (;;) {
-                const lines = Array<CharacterMenuLine>(24).fill('');
-                lines[0] = { text: ' Pick all that apply', attr: 1 };
-                lines[2] = ' Unacceptable roles';
-                CHARACTER_ROLE_MENU.forEach(([key, roleKey, description], index) => {
-                    const mark = filteredRoles.has(roleKey) ? '+' : '-';
-                    lines[index + 3] = ` ${key} ${mark} ${description}`;
-                });
-                lines[17] = ' Unacceptable races';
-                CHARACTER_RACE_MENU.forEach(([, key, name], index) => {
-                    const mark = filteredRaces.has(name) ? '+' : '-';
-                    lines[index + 18] = ` ${key} ${mark} ${name}`;
-                });
-                lines[23] = ' (1 of 2)';
-                this._drawCharacterMenu(lines, 0, 23, 9);
-                const key = String.fromCharCode(await nhgetch());
-                if (key === '\r' || key === '\n' || key === ' ') return;
-                const roleEntry = CHARACTER_ROLE_MENU.find(entry => entry[0] === key);
-                if (roleEntry) {
-                    if (filteredRoles.has(roleEntry[1])) filteredRoles.delete(roleEntry[1]);
-                    else filteredRoles.add(roleEntry[1]);
-                    continue;
-                }
-                const raceEntry = CHARACTER_RACE_MENU.find(entry => entry[1] === key);
-                if (raceEntry) {
-                    if (filteredRaces.has(raceEntry[2])) filteredRaces.delete(raceEntry[2]);
-                    else filteredRaces.add(raceEntry[2]);
-                }
-            }
         };
 
         const drawRaceMenu = (
@@ -792,7 +765,7 @@ export class Engine {
             lines[row++] = `? - ${routeLabel(role, 'role')}`;
             lines[row++] = forcedGenderRow(role, gender);
             lines[row++] = forcedAlignmentRow(role, null, alignment);
-            lines[row++] = `~ - ${filteredRoles.size || filteredRaces.size ? 'Reset' : 'Set'} role/race/&c filtering`;
+            lines[row++] = `~ - ${hasCharacterFilters(filters) ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[row++] = 'q - Quit';
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
@@ -812,7 +785,7 @@ export class Engine {
             lines[8] = `? - ${routeLabel(role, 'role')}`;
             lines[9] = `/ - ${routeLabel(race, 'race')}`;
             lines[10] = forcedAlignmentRow(role, race, alignment);
-            lines[11] = `~ - ${filteredRoles.size || filteredRaces.size ? 'Reset' : 'Set'} role/race/&c filtering`;
+            lines[11] = `~ - ${hasCharacterFilters(filters) ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[12] = 'q - Quit';
             lines[13] = '(end)';
             this._drawCharacterMenu(lines, 41, 13);
@@ -834,7 +807,7 @@ export class Engine {
             lines[row++] = `? - ${routeLabel(role, 'role')}`;
             lines[row++] = `/ - ${routeLabel(race, 'race')}`;
             lines[row++] = forcedGenderRow(role, gender);
-            lines[row++] = `~ - ${filteredRoles.size || filteredRaces.size ? 'Reset' : 'Set'} role/race/&c filtering`;
+            lines[row++] = `~ - ${hasCharacterFilters(filters) ? 'Reset' : 'Set'} role/race/&c filtering`;
             lines[row++] = 'q - Quit';
             lines[row] = '(end)';
             this._drawCharacterMenu(lines, 41, row);
@@ -846,6 +819,24 @@ export class Engine {
             let gender = manualInitial.gender;
             let alignment = manualInitial.alignment;
             let nextFacet: CharacterFacet | null = 'role';
+
+            const resetFiltering = async (facet: CharacterFacet): Promise<void> => {
+                const result = await editCharacterFilters(filters);
+                if (result !== 'cancelled') {
+                    role = null;
+                    race = null;
+                    gender = null;
+                    alignment = null;
+                } else {
+                    switch (facet) {
+                    case 'role': role = null; break;
+                    case 'race': race = null; break;
+                    case 'gender': gender = null; break;
+                    case 'alignment': alignment = null; break;
+                    }
+                }
+                nextFacet = result === 'filtered' ? 'role' : facet;
+            };
 
             // role.c:plsel_startmenu() calls rigid_role_checks() immediately
             // before constructing every facet menu.  A rigid picker still
@@ -882,10 +873,7 @@ export class Engine {
                     const key = String.fromCharCode(await nhgetch());
                     if (key === 'q' || key === '\x1b') return null;
                     if (key === '~') {
-                        if (filteredRoles.size || filteredRaces.size) {
-                            filteredRoles.clear();
-                            filteredRaces.clear();
-                        } else await editFilters();
+                        await resetFiltering('role');
                         continue;
                     }
                     if (key === '/') {
@@ -952,10 +940,7 @@ export class Engine {
                         continue;
                     }
                     if (key === '~') {
-                        if (filteredRoles.size || filteredRaces.size) {
-                            filteredRoles.clear();
-                            filteredRaces.clear();
-                        } else await editFilters();
+                        await resetFiltering('race');
                         continue;
                     }
                     if (key === '*' || key === ' ' || key === '\n') race = pickCharacterChoice(candidates);
@@ -986,6 +971,10 @@ export class Engine {
                     drawGenderMenu(role, race, alignment);
                     const key = String.fromCharCode(await nhgetch()).toLowerCase();
                     if (key === 'q' || key === '\x1b') return null;
+                    if (key === '~') {
+                        await resetFiltering('gender');
+                        continue;
+                    }
                     if (key === '?') {
                         role = null;
                         gender = null;
@@ -1029,6 +1018,10 @@ export class Engine {
                 drawAlignmentMenu(role, race, gender, candidates);
                 const key = String.fromCharCode(await nhgetch()).toLowerCase();
                 if (key === 'q' || key === '\x1b') return null;
+                if (key === '~') {
+                    await resetFiltering('alignment');
+                    continue;
+                }
                 if (key === '?') {
                     role = null;
                     alignment = null;
