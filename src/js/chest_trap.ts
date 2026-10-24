@@ -3,14 +3,15 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { makeHallucinated, makeStunned } from './hero_mental_status.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroHandName } from './body_parts.js';
+import { heroSpecies } from './hero_species.js';
 import { nomul } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import { A_CON, A_DEX, A_STR, W_BALL } from './const.js';
+import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';
 import { currency } from './currency.js';
 import {
-    bot, plineWithContinuation, randomColorName, shieldeff,
+    bot, displayMessageWindow, plineWithContinuation, randomColorName, shieldeff,
 } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
@@ -20,18 +21,21 @@ import type { Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { staggerVerb } from './monster_hurtle.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import {
-    deleteObject, deleteObjectContents,
+    delobj, deleteObjectContents,
 } from './object_delete.js';
+import { getObjectLocation } from './object_location.js';
 import { definiteName, definiteObjectAction, objectCombatName } from './objnam.js';
-import { objectResistsDestruction } from './object_state.js';
 import { poisonHero } from './poison.js';
+import { unpunishHero } from './punishment.js';
 import { createPoisonGasCloud } from './regions.js';
 import { d, rn2 } from './rng.js';
 import { costlySpot, insideShopRoomAt } from './shk.js';
 import { makeAngryShopkeeper } from './shop_damage.js';
 import { stolenValue } from './shop_loss.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { destroyElectricInventory } from './zap.js';
 
 type RandomBelow = (limit: number) => number;
@@ -63,34 +67,17 @@ const BLIND_GAS = [
 ];
 
 function containerLocation(container: GameObject, state: GameState): Position {
-    if (container.where === 'floor')
-        return { x: container.ox, y: container.oy };
-    const location = { x: state.u.ux, y: state.u.uy };
-    container.ox = location.x;
-    container.oy = location.y;
-    return location;
+    const location = getObjectLocation(container, state);
+    if (location) {
+        container.ox = location.x;
+        container.oy = location.y;
+    }
+    return { x: container.ox, y: container.oy };
 }
 
 function halfPhysicalDamage(amount: number, state: GameState): number {
     return state.u?.halfPhysicalDamage
         ? Math.trunc((amount + 1) / 2) : amount;
-}
-
-async function clearPunishment(state: GameState): Promise<void> {
-    const ball = state.uball || state.u?.uball;
-    const chain = state.uchain || state.u?.uchain;
-    if (chain) await deleteObject(chain, state);
-    if (ball) {
-        ball.owornmask = (ball.owornmask ?? 0) & ~W_BALL;
-        ball.worn = false;
-    }
-    state.uball = null;
-    state.uchain = null;
-    if (state.u) {
-        state.u.uball = null;
-        state.u.uchain = null;
-        state.u.punished = false;
-    }
 }
 
 async function explodeContainer(
@@ -106,18 +93,19 @@ async function explodeContainer(
     let loss = spot ? await stolenValue(container, location.x, location.y,
         spot.resident.mpeaceful, { state, publish, silent: true }) : 0;
     await deleteObjectContents(container, state);
-    const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
     const ball = state.uball || state.u?.uball;
     const chain = state.uchain || state.u?.uchain;
-    if ((ball && pile.includes(ball)) || (chain && pile.includes(chain))) await clearPunishment(state);
+    if ((chain && chain.ox === location.x && chain.oy === location.y)
+        || (ball?.where === 'floor' && ball.ox === location.x && ball.oy === location.y))
+        await unpunishHero(state);
 
     let containerDestroyed = false;
+    const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
     for (const object of pile) {
         if (spot) loss += await stolenValue(object, object.ox, object.oy,
             spot.resident.mpeaceful, { state, publish, silent: true });
-        if (objectResistsDestruction(object, 0, 0)) continue;
         if (object === container) containerDestroyed = true;
-        await deleteObject(object, state);
+        await delobj(object, state);
     }
 
     await wakeMonstersNearWithMessages(
@@ -193,7 +181,10 @@ async function shockHero(state: GameState, publish: MessagePublisher, random: Ra
     if (state.u?.shockResistance) {
         if (state === game) await shieldeff(state.u.ux, state.u.uy);
         await publish("You don't seem to be affected.");
+        monstersObserveHeroResistance(M_SEEN_ELEC, state);
         damage = 0;
+    } else {
+        monstersForgetHeroResistance(M_SEEN_ELEC, state);
     }
     const items = await destroyElectricInventory(originalDamage, {
         state, publish, random,
@@ -230,7 +221,12 @@ async function confuseHero(container: GameObject, state: GameState, publish: Mes
     const hallucinating = heroIsHallucinating(state);
     if (!alreadyStunned) {
         if (hallucinating) await publish('What a groovy feeling!');
-        else await publish('You stagger...');
+        else {
+            const movement = staggerVerb(heroSpecies(state)).replace(/s$/, '');
+            const feeling = state.u.hallucinationResistance ? ''
+                : blind ? ' and get dizzy' : ' and your vision blurs';
+            await publish(`You ${movement}${feeling}...`);
+        }
     }
     await makeStunned((state.u.stunnedTurns ?? 0) + 16 + random(7), { state, talk: false });
     await makeHallucinated((state.u.hallucinationTurns ?? 0) + 16 + random(5), {
@@ -256,7 +252,7 @@ function trapOutcome(luck: number, random: RandomBelow): number {
 export async function triggerChestTrap(container: GameObject | null | undefined, {
     state = game,
     disarm = false,
-    bodyPart = 'hand',
+    bodyPart = heroHandName(state),
     random = rn2,
     rollDice = d,
     publish = plineWithContinuation,
@@ -266,6 +262,7 @@ export async function triggerChestTrap(container: GameObject | null | undefined,
     container.tknown = false;
     container.otrapped = false;
     await publish(`You ${disarm ? 'set it off' : 'trigger a trap'}!`);
+    await displayMessageWindow();
 
     const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
     if (luck > -13 && random(13 + luck) > 7) {
