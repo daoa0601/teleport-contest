@@ -58,7 +58,7 @@ import type {
 } from './lua/des.js';
 import type { LuaBindings, LuaGameState } from './lua/lifecycle.js';
 import type { LuaValue } from './lua/runtime.js';
-import { luaInteger, luaString, luaToInteger } from './lua/arguments.js';
+import { luaInteger, luaString, luaToInteger, luaNumberValue } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
@@ -6807,12 +6807,11 @@ function luaTimerCoordinates(args: readonly LuaValue[]): { x: number; y: number 
 // The C message hardcodes entry number 1 for both positions.
 function luaTimerArrayEntry(table: LuaTable, entry: number): number {
     const value = table.get(entry);
-    if (typeof value === 'number'
-        || (typeof value === 'string' && value.trim() !== ''
-            && !Number.isNaN(Number(value))))
-        return luaToInteger(value);
-    throw new NethackLuaError(
-        `Array entry #1 is ${luaType(value)}, expected number`);
+    const converted = luaNumberValue(value);
+    if (converted === null)
+        throw new NethackLuaError(
+            `Array entry #1 is ${luaType(value)}, expected number`);
+    return luaToInteger(converted);
 }
 
 function createLuaLevelSession() {

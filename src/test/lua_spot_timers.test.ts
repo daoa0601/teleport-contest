@@ -171,3 +171,49 @@ void test('nh.start_timer_at coordinate tables validate like get_coord', async t
         'the non-integral entry reads as coordinate zero');
     assert.equal(game.level.requireAt(11, 5).typ, ICE);
 });
+
+void test('timer arguments convert Lua numeral strings by luaO_str2num rules', async t => {
+    freshGame({ flags: { bones: false } });
+    requirePlayingGame(game);
+    initRng(741n);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    await mklev();
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua, 'ordinary level generation loads the Lua level API');
+    await lua.executeAsync('des.map({ map = "II", x = 10, y = 5 })');
+
+    // "0b1" and "Infinity" are JavaScript numbers, not Lua numbers, so
+    // lua_isnumber rejects them and luaL_checkinteger blames the type.
+    await assert.rejects(lua.executeAsync(
+        'nh.start_timer_at({ x = "0b1", y = 0 }, "melt-ice", 10)'),
+        /bad argument #-1 to 'start_timer_at' \(number expected, got string\)/);
+    await assert.rejects(lua.executeAsync(
+        'nh.start_timer_at({ x = "Infinity", y = 0 }, "melt-ice", 10)'),
+        /bad argument #-1 to 'start_timer_at' \(number expected, got string\)/);
+    await assert.rejects(lua.executeAsync(
+        'nh.start_timer_at({ "0b1", 0 }, "melt-ice", 10)'),
+        /Array entry #1 is string, expected number \(line 1/);
+    // A string that converts but has no integer representation keeps
+    // intererror()'s other message.
+    await assert.rejects(lua.executeAsync(
+        'nh.start_timer_at({ x = "1.5", y = 0 }, "melt-ice", 10)'),
+        /bad argument #-1 to 'start_timer_at' \(number has no integer representation\)/);
+
+    // Hex floats convert: both coordinates and the delay read 0x0p0 as 0,
+    // so the ice melts on the current move.
+    await lua.executeAsync(
+        'nh.start_timer_at({ "0x0p0", 0 }, "melt-ice", "0x0p0")');
+    await runDueTimers();
+    assert.equal(game.level.requireAt(10, 5).typ, MOAT,
+        'hex float numerals name coordinate zero');
+    assert.equal(game.level.requireAt(11, 5).typ, ICE);
+
+    // A delay string outside Lua's grammar converts as zero, not three:
+    // the second sheet melts without waiting for move three.
+    await lua.executeAsync('nh.start_timer_at(1, 0, "melt-ice", "0b11")');
+    await runDueTimers();
+    assert.equal(game.level.requireAt(11, 5).typ, MOAT,
+        'a non-numeral delay reads as zero, not JavaScript 0b11');
+});

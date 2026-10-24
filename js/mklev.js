@@ -39,7 +39,7 @@ import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { createDesBindings, mapOrigin, objectTypeForName, tablePoint, } from './lua/des.js';
-import { luaInteger, luaString, luaToInteger } from './lua/arguments.js';
+import { luaInteger, luaString, luaToInteger, luaNumberValue } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
@@ -6729,11 +6729,10 @@ function luaTimerCoordinates(args) {
 // The C message hardcodes entry number 1 for both positions.
 function luaTimerArrayEntry(table, entry) {
     const value = table.get(entry);
-    if (typeof value === 'number'
-        || (typeof value === 'string' && value.trim() !== ''
-            && !Number.isNaN(Number(value))))
-        return luaToInteger(value);
-    throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
+    const converted = luaNumberValue(value);
+    if (converted === null)
+        throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
+    return luaToInteger(converted);
 }
 function createLuaLevelSession() {
     const wholeLevel = {

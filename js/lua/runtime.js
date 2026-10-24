@@ -2,7 +2,7 @@ import { parseLua } from './parser.js';
 import { LuaTraceback } from './traceback.js';
 import { luaChunkId } from './syntax_error.js';
 import { LuaArgumentError } from './errors.js';
-import { luaInteger } from './arguments.js';
+import { luaInteger, luaNumberValue } from './arguments.js';
 export class LuaValues {
     values;
     constructor(values = []) {
@@ -202,18 +202,16 @@ export function luaCheckString(argument, value) {
     throw new LuaArgumentError(argument, `string expected, got ${value === undefined ? 'no value' : luaType(value)}`);
 }
 // luaL_checkinteger() converts integral numbers and numeric strings and
-// raises lauxlib's bad-argument error for anything else.
+// raises lauxlib's bad-argument error for anything else. intererror()
+// distinguishes values that are numbers but lack an integer
+// representation from values that are not numbers at all.
 export function luaCheckInteger(argument, value) {
-    const integral = (number) => {
-        if (Number.isInteger(number))
-            return number;
+    const converted = luaNumberValue(value);
+    if (converted === null)
+        throw new LuaArgumentError(argument, `number expected, got ${value === undefined ? 'no value' : luaType(value)}`);
+    if (!Number.isInteger(converted) || converted < -(2 ** 63) || converted >= 2 ** 63)
         throw new LuaArgumentError(argument, 'number has no integer representation');
-    };
-    if (typeof value === 'number')
-        return integral(value);
-    if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)))
-        return integral(Number(value));
-    throw new LuaArgumentError(argument, `number expected, got ${value === undefined ? 'no value' : luaType(value)}`);
+    return converted;
 }
 function luaString(value) {
     value = first(value);
