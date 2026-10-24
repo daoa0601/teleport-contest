@@ -3,11 +3,11 @@
 
 import type { GameContext, GameState } from './game_state.js';
 
-export const SAVE_VERSION = 40;
+export const SAVE_VERSION = 41;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
-    '_artifactExists', '_artifactFound', '_artifactRuntime', '_bonesEncountered',
+    '_artifactExists', '_artifactFound', '_artifactOrigins', '_artifactRuntime', '_bonesEncountered',
     '_deathKiller', '_encounteredObjectTypes', '_fobjSerial', '_heroTrack',
     '_initialGoldCount', '_knownObjectTypes', '_last_message', '_levelAnnotations',
     '_levelCache', '_lifeSavedCount', '_migratingMonsters', '_nextAttribCheck', '_nextIdent',

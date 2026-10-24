@@ -7,7 +7,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import {
     artifactById, artifactExistCount, createArtifactGift, discoverArtifact,
-    markArtifactFound,
+    setArtifactOrigin,
 } from './artifacts.js';
 import { adjustAttribute, exerciseAttribute } from './attrib.js';
 import { heroFootName } from './body_parts.js';
@@ -444,7 +444,7 @@ async function bestowArtifact(value: number): Promise<boolean> {
     const object = await createArtifactGift(hero.ualign.type, value);
     if (!object) return false;
     if (object.oartifact === undefined) throw new Error('An artifact gift requires an artifact id.');
-    markArtifactFound(object.oartifact);
+    setArtifactOrigin(object, 'gift', { knownOrigin: true });
     const artifact = artifactById(object.oartifact);
     if (!artifact) throw new Error('An artifact gift must have a registered artifact identity.');
     if (object.spe === undefined) throw new Error('An artifact gift must have an enchantment value.');

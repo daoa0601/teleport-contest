@@ -5,7 +5,7 @@
 // Fisher-Yates description/color shuffles.  Other startup owners remain
 // partial; the implementation below is the source of truth.
 import { game } from './gstate.js';
-import { artifactById } from './artifacts.js';
+import { artifactById, artifactInfoLines } from './artifacts.js';
 import { initializeObjectProbabilities } from './mklev.js';
 import type { TextMenuEntry } from './windows.js';
 import { rn2 } from './rng.js';
@@ -373,7 +373,10 @@ export async function doclassdisco(): Promise<void> {
         return;
     }
     if (symbol === 'a') {
-        if (artifacts.length) await showDiscoveries([discoveryHeading('Artifacts'), ...artifacts]);
+        if (game.flags.debug
+            && (await yn_function('Dump information about all artifacts?', 'yn', 'n')).answer === 'y')
+            await showDiscoveries([discoveryHeading('Artifacts'), ...artifactInfoLines()]);
+        else if (artifacts.length) await showDiscoveries([discoveryHeading('Artifacts'), ...artifacts]);
         else await plineWithContinuation("You haven't discovered any artifacts yet.");
         return;
     }

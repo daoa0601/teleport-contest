@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { LONG_SWORD } from '../js/object_data.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName, artifactInfoLines } from '../js/artifacts.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -63,6 +63,8 @@ for (const alignment of alignments) {
         assert.equal(game.level.flags.nfountains, 0);
         if (alignment === 1) {
             assert.equal(sword.oartifact, artifactByName('Excalibur')?.id);
+            assert.match(artifactInfoLines().find(line => line.startsWith('  Excalibur ')) ?? '',
+                /\[exists; hero knows; viadip\]$/);
             assert.equal(sword.blessed, true);
             assert.equal(sword.oerodeproof, true);
             assert.equal(sword.oeroded, 0);

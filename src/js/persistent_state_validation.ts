@@ -20,6 +20,7 @@ import {
     numericRecordOf, oneOf, optional, setOf, string,
 } from './saved_validation.js';
 import { createSavedEntityChecks } from './entity_validation.js';
+import { ARTIFACT_DATA } from './artifact_data.js';
 import { OBJECT_SPELL_CATEGORY } from './object_data.js';
 import { ORACLE_TEXT } from './oracle_data.js';
 import { validSavedHero, validSavedPropertyName } from './hero_validation.js';
@@ -74,6 +75,8 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _artifactDiscoveries: optional(arrayOf(integer)),
         _artifactExists: optional(setOf(integer)),
         _artifactFound: optional(setOf(integer)),
+        _artifactOrigins: optional(mapOf(validArtifactId,
+            oneOf('gift', 'wish', 'named', 'viadip', 'lvldef', 'bones', 'random'))),
         _artifactRuntime: optional(mapOf(integer, validArtifact)),
         _bonesEncountered: optional(boolean),
         _deathKiller: optional(string),
@@ -246,6 +249,10 @@ function validQuestStatus(value: unknown): value is QuestStatus {
         offered_artifact: boolean, got_thanks: boolean, ldrgend: integer,
         nemgend: integer, godgend: integer, leader_is_dead: boolean, leader_m_id: integer,
     });
+}
+
+function validArtifactId(value: unknown): value is number {
+    return integer(value) && ARTIFACT_DATA.some(artifact => artifact.id === value);
 }
 
 function validArtifactTarget(value: unknown): value is ArtifactTarget {

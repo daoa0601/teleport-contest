@@ -6309,7 +6309,7 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
     if (options.name) {
         const artifact = artifactByName(options.name);
         if (artifact?.baseType === object.otyp) {
-            if (nameArtifact(object, artifact) && artifact.questArtifact)
+            if (nameArtifact(object, artifact, { origin: 'lvldef' }) && artifact.questArtifact)
                 object.questArtifact = true;
         }
         else {

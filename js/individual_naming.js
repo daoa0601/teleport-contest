@@ -56,7 +56,7 @@ export async function nameIndividualObject(object) {
     }
     if (!artifact || artifact.baseType !== object.otyp || inscription !== artifact.name)
         return;
-    if (!nameArtifact(object, artifact, { knownOrigin: true }))
+    if (!nameArtifact(object, artifact, { origin: 'named', knownOrigin: true }))
         return;
     if (object === (game.uswapwep || game.u.uswapwep)) {
         if (game.u.twoweap)
