@@ -33,7 +33,7 @@ const TRAP_TYPES = new Map([
     ['polymorph', POLY_TRAP],
     ['vibrating square', VIBRATING_SQUARE],
 ]);
-function tableOptions(value) {
+function tableOptions(value, lighting = 'terrain') {
     if (!(value instanceof LuaTable))
         throw new TypeError('des operation expects a table');
     const options = {};
@@ -78,9 +78,14 @@ function tableOptions(value) {
         const entry = value.get(key);
         if (entry == null)
             continue;
+        if (key === 'lit' && lighting === 'integer') {
+            options.lit = luaInteger(entry);
+            continue;
+        }
         if (typeof entry !== 'boolean' && typeof entry !== 'number')
             throw new TypeError(`des.${key} must be a flag`);
-        if (key !== 'lit' && typeof entry === 'number' && entry !== 0 && entry !== 1)
+        if ((key !== 'lit' || lighting === 'boolean')
+            && typeof entry === 'number' && entry !== 0 && entry !== 1)
             throw new TypeError(`des.${key} must be zero or one`);
         options[key] = key === 'lit' ? entry : !!entry;
     }
@@ -458,7 +463,7 @@ export function regionCoordinates(context, coordinates, levelCoordinates) {
 }
 export function createDesBindings(operations, wrapSelection) {
     const commands = {
-        level_init: (options) => operations.levelInit(tableOptions(options)),
+        level_init: (options) => operations.levelInit(tableOptions(options, 'boolean')),
         level_flags: (...flags) => operations.levelFlags(flags),
         mineralize: (value) => operations.mineralize(value === undefined ? {} : tableOptions(value)),
         message: (value) => operations.message(String(value)),
@@ -472,9 +477,9 @@ export function createDesBindings(operations, wrapSelection) {
             });
         },
         region: (selection, lighting) => selection instanceof LuaTable
-            ? operations.roomRegion(tableOptions(selection))
+            ? operations.roomRegion(tableOptions(selection, 'integer'))
             : operations.region(unwrapSelection(selection), String(lighting)),
-        room: (value) => operations.room(tableOptions(value)),
+        room: (value) => operations.room(tableOptions(value, 'integer')),
         stair: (direction, x, y) => operations.stair(stairOptions(direction, x, y)),
         ladder: (direction, x, y) => operations.ladder(stairOptions(direction, x, y)),
         door: (state, x, y) => operations.door(doorOptions(state, x, y)),
@@ -522,7 +527,7 @@ export function createDesBindings(operations, wrapSelection) {
         monster: (id, x, y) => operations.monster(monsterOptions(id, x, y)),
     };
     const bindings = {
-        map: async (value) => wrapSelection(await operations.map(value instanceof LuaTable ? tableOptions(value) : String(value))),
+        map: async (value) => wrapSelection(await operations.map(value instanceof LuaTable ? tableOptions(value, 'boolean') : String(value))),
         object: (id, x, y) => operations.object(objectOptions(id, x, y)),
     };
     // C's des callbacks return no Lua values except map and object. Internal
