@@ -1,5 +1,4 @@
-import { aligns, genders, races, roles } from './roles.js';
-import { rn2 } from './rng.js';
+import { genders, roles } from './roles.js';
 // C ref: role.c roles[].allow and races[].allow.  The JS role table keeps
 // Ranger before Rogue for historical callers, while the C selection table
 // deliberately keeps Rogue before Ranger; random character selection must
@@ -87,11 +86,6 @@ export function characterSelectionQuestion(choices, random) {
         prompt += ` ${last}`;
     return `${prompt} for you? [ynaq]`;
 }
-export function validCharacterChoice(role, race, gender, alignment) {
-    return !!role && (!race || validCharacterRace(role, race, alignment))
-        && (!gender || validCharacterGender(role, gender))
-        && (!alignment || validCharacterAlignment(role, race, alignment));
-}
 // Native ok_race(), ok_gend(), and ok_align() check only the constraints
 // belonging to that facet. An incompatible alignment must not erase a
 // valid gender or prevent the user from choosing a race first.
@@ -107,52 +101,10 @@ export function validCharacterAlignment(role, race, alignment) {
     return (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
         && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
 }
-export function hasCharacterCompletion(role, race, gender, alignment) {
-    return races.some(candidateRace => (race ? candidateRace === race : true)
-        && genders.some(candidateGender => (gender ? candidateGender === gender : true)
-            && aligns.some(candidateAlignment => (alignment ? candidateAlignment === alignment : true)
-                && validCharacterChoice(role, candidateRace, candidateGender, candidateAlignment))));
-}
-export function pickCharacterChoice(choices) {
-    return choices.length ? choices[rn2(choices.length)] ?? null : null;
-}
 export function nativeRoleChoices() {
     return CHARACTER_ROLE_ORDER.flatMap(key => {
         const role = roles.find(candidate => candidate.key === key);
         return role ? [role] : [];
     });
-}
-// role.c:rigid_role_checks(). Explicit random choices run in role, race,
-// alignment, gender order. Unspecified facets roll only when forced.
-export function rigidCharacterChecks(initial, random) {
-    let { role, race, gender, alignment } = initial;
-    if (random.has('role')) {
-        const candidates = nativeRoleChoices().filter(candidate => hasCharacterCompletion(candidate, race, gender, alignment));
-        role = pickCharacterChoice(candidates) ?? pickCharacterChoice(nativeRoleChoices());
-    }
-    if (random.has('race'))
-        race = pickCharacterChoice(races.filter(candidate => validCharacterRace(role, candidate, alignment)));
-    if (random.has('alignment'))
-        alignment = pickCharacterChoice(aligns.filter(candidate => validCharacterAlignment(role, race, candidate)));
-    if (random.has('gender'))
-        gender = pickCharacterChoice(genders.filter(candidate => validCharacterGender(role, candidate)));
-    if (role) {
-        if (!race && !random.has('race')) {
-            const candidates = races.filter(candidate => validCharacterRace(role, candidate, alignment));
-            if (candidates.length === 1)
-                race = pickCharacterChoice(candidates);
-        }
-        if (!alignment && !random.has('alignment')) {
-            const candidates = aligns.filter(candidate => validCharacterAlignment(role, race, candidate));
-            if (candidates.length === 1)
-                alignment = pickCharacterChoice(candidates);
-        }
-        if (!gender && !random.has('gender')) {
-            const candidates = genders.filter(candidate => validCharacterGender(role, candidate));
-            if (candidates.length === 1)
-                gender = pickCharacterChoice(candidates);
-        }
-    }
-    return { role, race, gender, alignment };
 }
 //# sourceMappingURL=character_choices.js.map

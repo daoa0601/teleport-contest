@@ -282,7 +282,7 @@ class CharacterSelection {
 
     private roleName(role: Role, gender: GenderChoice, combined = false): string {
         if (gender?.value === 1) return role.name.f;
-        if (!gender && !this.random.has('gender') && combined && role.name.f !== role.name.m)
+        if (!gender && combined && role.name.f !== role.name.m)
             return `${role.name.m}/${role.name.f}`;
         return role.name.m;
     }

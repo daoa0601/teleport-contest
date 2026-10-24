@@ -118,6 +118,12 @@ void test('confirmation rename retains every selected facet', async () => {
     assert.match(menu, /Is this ok\? \[ynaq\]/);
     assert.match(menu, /Changed the lawful female human Priestess/);
 });
+void test('confirmation rename normalizes the name and ignores character suffixes', async () => {
+    const menu = await selection('nphflaA.da-wiz-elf-m-cha\n');
+    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.match(menu, /A_da the lawful female human Priestess/);
+    assert.equal(game.plname, 'A_da');
+});
 void test('automatic picking produces a complete confirmation identity', async () => {
     const menu = await selection('y', 'role:priest,gender:female');
     assert.match(menu, /Is this ok\? \[ynaq\]/);
