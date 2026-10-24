@@ -14,8 +14,8 @@ function containerStack(container, object, state) {
 function linkContainerObject(container, object) {
     object.where = 'contained';
     object.container = container;
-    object.ox = 0;
-    object.oy = 0;
+    // C add_to_container() leaves ox/oy untouched, so an object taken from
+    // the floor keeps its last square while inside the container.
     (container.contents ||= []).unshift(object);
     return object;
 }

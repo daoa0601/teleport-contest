@@ -43,10 +43,18 @@ const TIMER_KINDS = new Map([
     ['fig-transform', OBJECT_TIMER_KIND.FIG_TRANSFORM], ['shrink-glob', OBJECT_TIMER_KIND.SHRINK_GLOB],
     ['melt-ice', null],
 ]);
+// C nhlobj.c checks lua_gettop() only for new, at, class, placeobj, the
+// timer methods, and bury.  The other methods never look at argc, so extra
+// arguments are ignored, and next() consults its flag only at exactly two
+// arguments.
 const ARGUMENT_COUNTS = {
-    new: [1], isnull: [1], at: [2], next: [0, 1, 2], totable: [1], class: [1],
-    contents: [1], container: [1], addcontent: [2], placeobj: [3],
-    has_timer: [2], peek_timer: [2], stop_timer: [1, 2], start_timer: [3], bury: [1, 3],
+    new: { min: 1, max: 1 }, isnull: { min: 1 }, at: { min: 2, max: 2 },
+    next: { min: 0 }, totable: { min: 1 }, class: { min: 1, max: 1 },
+    contents: { min: 1 }, container: { min: 1 }, addcontent: { min: 2 },
+    placeobj: { min: 3, max: 3 },
+    has_timer: { min: 2, max: 2 }, peek_timer: { min: 2, max: 2 },
+    stop_timer: { min: 1, max: 2 }, start_timer: { min: 3, max: 3 },
+    bury: { min: 1, max: 3 },
 };
 function handle(value) {
     if (!(value instanceof ObjectHandle))
@@ -149,13 +157,17 @@ export function createObjectApi(state = game) {
             const point = api.toAbsolute(luaInteger(x), luaInteger(y));
             return api.wrap(state.level?.objects?.[point.x]?.[point.y]?.[0] || null);
         },
-        next: (value, onSquare = false) => {
+        next: (...args) => {
+            const [value, flag] = args;
             if (value === undefined)
                 return api.wrap(floorChain(state)[0] || null);
             const item = object(value);
             if (!item)
                 return api.wrap(null);
-            const chain = objectChain(item, onSquare != null && onSquare !== false, state);
+            // l_obj_nextobj() reads its flag argument only at exactly two
+            // arguments; with three or more it falls back to the nobj chain.
+            const onSquare = args.length === 2 && flag != null && flag !== false;
+            const chain = objectChain(item, onSquare, state);
             return api.wrap(chain[chain.indexOf(item) + 1] || null);
         },
         totable: value => objectTable(object(value), state),
@@ -226,13 +238,15 @@ export function createObjectApi(state = game) {
             return result.outcome === 'absorbed';
         },
     };
-    for (const [name, counts] of Object.entries(ARGUMENT_COUNTS)) {
+    for (const [name, { min, max }] of Object.entries(ARGUMENT_COUNTS)) {
         const operation = methods[name];
         if (!operation)
             throw new Error(`Missing Lua object operation: ${name}`);
         methods[name] = (...args) => {
-            if (!counts.includes(args.length))
-                throw new TypeError(`obj.${name} expects ${counts.join(' or ')} arguments, got ${args.length}`);
+            if (args.length < min || (max !== undefined && args.length > max)) {
+                throw new TypeError(`obj.${name} expects ${max === undefined
+                    ? `at least ${min}` : min === max ? `${min}` : `${min} to ${max}`} arguments, got ${args.length}`);
+            }
             return operation(...args);
         };
     }
@@ -275,7 +289,10 @@ function objectTable(item, state) {
     if (!item)
         return objectToLuaTable({ NO_OBJ: 1 });
     const values = Object.fromEntries(OBJECT_FIELDS.map(field => [field, Number(item[field] || 0)]));
-    values.usecount = 0;
+    // C obj.h overloads usecount as spestudied (spellbook study tally) and
+    // wishedfor (1 while a wished object is held); JS keeps both as their own
+    // fields, so report their sum like the shared field would hold.
+    values.usecount = (item.spestudied ?? 0) + (item.wishedfor ? 1 : 0);
     values.has_contents = Number(!!item.contents?.length);
     values.is_container = Number(isContainer(item));
     values.otyp_name = OBJECT_NAMES[item.otyp];
