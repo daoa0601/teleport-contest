@@ -356,7 +356,7 @@ import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
     armorSlotFor,
     armorSimpleName, armorOffMessage,
-    findArmorClass, heroIsDisplaced,
+    findArmorClass, heroIsDisplaced, heroKnowsLavaWalking, heroKnowsWaterWalking,
     removeHeroArmor, wearHeroArmor,
 } from './armor.js';
 import {
@@ -498,7 +498,7 @@ import {
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import {
     RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM,
-    ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR,
+    ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, IS_WATERWALL, TREE, D_NODOOR,
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
     IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
@@ -634,6 +634,18 @@ export function heroTestMove(x: number, y: number, g: GameState = game): boolean
         if (heroBadRock(g, hero.ux, y) && heroBadRock(g, x, hero.uy)) {
             if (heroTightDiagonalReason(g)) return false;
         } else if (wormCrossesBetween(hero.ux, hero.uy, x, y, g)) return false;
+    }
+    // C test_move(): TEST_MOVE still avoids known hazards while travelling.
+    // Exempt the hero's square because the path search works backwards.
+    if (g.context.run === 8 && (dx || dy)) {
+        if (knownRunTrap(x, y, g)) return false;
+        if (location.seenv && isPoolOrLavaAt(x, y, g)) {
+            const liquidWall = IS_WATERWALL(location.typ) || location.typ === LAVAWALL;
+            const inAir = propertyIsActive('levitation', g) || propertyIsActive('flying', g);
+            const canWalk = isPoolAt(x, y, g) ? heroKnowsWaterWalking(g)
+                : heroKnowsLavaWalking(g) && isLavaAt(hero.ux, hero.uy, g);
+            if (liquidWall || !(inAir || canWalk)) return false;
+        }
     }
     const boulder = g.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
     return !(boulder && (!passesWalls || g.level?.flags.sokoban_rules)
@@ -828,9 +840,9 @@ function findGuessedTravelDirection(targetX: number, targetY: number, g: GameSta
 
     const dx = Math.sign(targetX - originX);
     const dy = Math.sign(targetY - originY);
-    // C's last guess uses TEST_MOVE, allowing an unknown square or liquid
-    // which the travel search itself avoids; a refused guess leaves the
-    // zero direction that findtravelpath() stores at "found".
+    // C's last guess uses TEST_MOVE: unknown squares are allowed, but known
+    // traps and unsafe liquids still cancel the direction while travelling,
+    // leaving the zero direction that findtravelpath() stores at "found".
     return heroTestMove(originX + dx, originY + dy, g)
         ? { dx, dy } : { dx: 0, dy: 0 };
 }

@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { continueRun, rhack } from '../js/cmd.js';
-import { D_CLOSED, DOOR, ICE, POOL, ROOM, STONE } from '../js/const.js';
+import { continueRun, heroTestMove, rhack } from '../js/cmd.js';
+import { wearHeroArmor } from '../js/armor.js';
+import { D_CLOSED, DOOR, ICE, LAVAPOOL, LAVAWALL, PIT, POOL, ROOM, STONE, VIBRATING_SQUARE, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng, rnd } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 function surroundHeroWithStone(level) {
     for (let x = game.u.ux - 2; x <= game.u.ux + 2; x++) {
@@ -87,7 +91,7 @@ void test('a failed travel search can still send a stunned hero into a reachable
     assertTravelStopped();
     assert.equal(rnd(1000), 658, 'the following roll includes retries past the surrounding rock');
 });
-void test('the general-direction travel guess permits water before turbulence cancels the step', async () => {
+void test('a travel guess rejects known water before friction can divert the step', async () => {
     const level = freshObjectRoom({ hero: { uinwater: 1 } });
     for (let x = 9; x <= 11; x++)
         for (let y = 9; y <= 11; y++)
@@ -98,10 +102,85 @@ void test('the general-direction travel guess permits water before turbulence ca
     await rhack(31);
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.deepEqual([game.u.dx, game.u.dy], [0, 0]);
-    assert.equal(game._pending_message, 'Water turbulence affects your movements.');
+    assert.equal(game._pending_message, '');
     assert.equal(game.context.move, 1);
     assertTravelStopped();
-    assert.equal(rnd(1000), 347, 'the following roll includes the turbulence that cancelled movement');
+    assert.equal(rnd(1000), 794, 'a cancelled direction needs no water-friction roll');
+});
+void test('a travel guess rejects a known trap and still checks slippery ice', async () => {
+    const level = freshObjectRoom({ hero: { utrap: 0 }, flags: { mention_walls: true } });
+    surroundHeroWithStone(level);
+    level.requireAt(10, 10).typ = ICE;
+    level.requireAt(11, 10).typ = ROOM;
+    addTrap(level, PIT, 11, 10, { tseen: true });
+    vision_recalc(0);
+    game._travelTarget = { x: 30, y: 10 };
+    initRng(4n);
+    await rhack(31);
+    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+    assert.deepEqual([game.u.dx, game.u.dy], [0, 0]);
+    assert.equal(game.u.utrap, 0);
+    assert.equal(game.u.fumblingTurns, 1);
+    assert.equal(game._pending_message, '');
+    assert.equal(game.context.move, 1);
+    assertTravelStopped();
+    assert.equal(rnd(1000), 778, 'rejecting the trap still leaves the ice check before the next roll');
+});
+for (const typeKnown of [false, true]) {
+    void test(`travel previews ${typeKnown ? 'accept identified' : 'reject unidentified'} water-walking boots`, async () => {
+        const level = freshObjectRoom({ context: { run: 8 } });
+        level.requireAt(11, 10).typ = POOL;
+        wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown }));
+        assert.equal(heroTestMove(11, 10), typeKnown);
+    });
+}
+void test('a travel movement preview permits known lava walking only from lava', async () => {
+    const level = freshObjectRoom({ context: { run: 8 } });
+    level.requireAt(11, 10).typ = LAVAPOOL;
+    grantIntrinsicProperty('fireResistance', 'outside');
+    wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { oerodeproof: true, rknown: true }));
+    assert.equal(heroTestMove(11, 10), false, 'travel cannot start walking onto lava from dry ground');
+    level.requireAt(10, 10).typ = LAVAPOOL;
+    assert.equal(heroTestMove(11, 10), true, 'a protected hero already on lava can continue across it');
+});
+for (const property of ['levitation', 'flying']) {
+    void test(`a travel movement preview with ${property} permits liquid surfaces and rejects liquid walls`, () => {
+        const level = freshObjectRoom({ context: { run: 8 } });
+        if (property === 'levitation')
+            grantIntrinsicProperty('levitation', 'outside');
+        else
+            grantIntrinsicProperty('flying', 'outside');
+        level.requireAt(11, 10).typ = POOL;
+        level.requireAt(10, 11).typ = LAVAPOOL;
+        level.requireAt(9, 10).typ = WATER;
+        level.requireAt(10, 9).typ = LAVAWALL;
+        assert.equal(heroTestMove(11, 10), true, 'the hero can pass above a pool');
+        assert.equal(heroTestMove(10, 11), true, 'the hero can pass above lava');
+        assert.equal(heroTestMove(9, 10), false, 'a water wall cannot be flown over');
+        assert.equal(heroTestMove(10, 9), false, 'a lava wall cannot be flown over');
+    });
+}
+void test('a travel movement preview leaves unknown liquid for ordinary movement to discover', () => {
+    const level = freshObjectRoom({ context: { run: 8 } });
+    const pool = level.requireAt(11, 10);
+    pool.typ = POOL;
+    pool.seenv = 0;
+    assert.equal(heroTestMove(11, 10), true);
+});
+void test('travel previews allow the current square and vibrating squares', () => {
+    const level = freshObjectRoom({ context: { run: 8 } });
+    level.requireAt(10, 10).typ = POOL;
+    addTrap(level, PIT, 10, 10, { tseen: true });
+    addTrap(level, VIBRATING_SQUARE, 11, 10, { tseen: true });
+    assert.equal(heroTestMove(10, 10), true, 'travel can search backwards to the hero');
+    assert.equal(heroTestMove(11, 10), true, 'a vibrating square is no obstacle');
+});
+void test('ordinary movement previews leave known hazards to the movement checks', () => {
+    const level = freshObjectRoom();
+    level.requireAt(11, 10).typ = POOL;
+    addTrap(level, PIT, 10, 11, { tseen: true });
+    assert.equal(heroTestMove(11, 10), true);
+    assert.equal(heroTestMove(10, 11), true);
 });
 void test('a guessed route toward an unreachable target still checks ice before moving', async () => {
     const level = freshObjectRoom({ top: 10, bottom: 10 });
