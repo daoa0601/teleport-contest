@@ -236,11 +236,7 @@ void test('MENUCOLOR statements report malformed patterns, colors, and attribute
 });
 
 void test('AUTOPICKUP_EXCEPTION statements report syntax and regex errors', () => {
-    // An unclosed quote fails the sscanf() scan and is a syntax error.
     assert.equal(fileErrors('AUTOPICKUP_EXCEPTION="<arrow"').length, 0);
-    assert.deepEqual(
-        fileErrors('AUTOPICKUP_EXCEPTION="<*arrow').map(error => error.message),
-        ['syntax error in AUTOPICKUP_EXCEPTION']);
     assert.equal(fileErrors('AUTOPICKUP_EXCEPTION=">food" # avoid food').length, 0);
     assert.equal(fileErrors('AUTOPICKUP_EXCEPTION=unquoted').length, 1);
     assert.deepEqual(
@@ -250,6 +246,18 @@ void test('AUTOPICKUP_EXCEPTION statements report syntax and regex errors', () =
     const regexError = fileErrors('AUTOPICKUP_EXCEPTION="<*arr(ow"');
     assert.equal(regexError.length, 1);
     assert.match(regexError[0]?.message ?? '', /^regex error in AUTOPICKUP_EXCEPTION: /);
+});
+
+void test('AUTOPICKUP_EXCEPTION compiles a captured pattern without requiring a closing quote', () => {
+    for (const prefix of ['<', '>', '']) {
+        for (const pattern of ['arrow', 'a'.repeat(253) + '(" junk', 'é'.repeat(127) + '(']) {
+            const statement = `AUTOPICKUP_EXCEPTION="${prefix}${pattern}`;
+            assert.equal(fileErrors(statement).length, 0, statement);
+        }
+        const errors = fileErrors(`AUTOPICKUP_EXCEPTION="${prefix}*arrow`);
+        assert.equal(errors.length, 1);
+        assert.match(errors[0]?.message ?? '', /^regex error in AUTOPICKUP_EXCEPTION: /);
+    }
 });
 
 void test('AUTOCOMPLETE statements flip extended-command autocompletion', () => {

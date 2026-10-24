@@ -512,16 +512,19 @@ function parseMenuColoring(value: string, addError: (message: string) => void): 
 // `"%s`, each with an optional whitespace + '#' comment after the closing
 // quote. The exception list itself is not kept; the diagnostics are.
 function parseAutopickupException(value: string, addError: (message: string) => void): boolean {
-    // %253[^\"] stops after 253 characters or at the closing quote; a run of
-    // scanf whitespace then precedes the single %c character, if any.
+    const bytes = new TextEncoder().encode(value);
     const scan = (prefix: string): { text: string; trailing: string | null } | null => {
         const start = 1 + prefix.length;
         if (!value.startsWith('"' + prefix)) return null;
-        const close = value.indexOf('"', start);
-        // The scanset must match at least one character and at most 253.
-        if (close <= start || close - start > 253) return null;
-        const rest = value.slice(close + 1).replace(/^[ \t\n\r\f\v]+/, '');
-        return { text: value.slice(start, close), trailing: rest.charAt(0) || null };
+        const close = bytes.indexOf(34, start);
+        const end = Math.min(close < 0 ? bytes.length : close, start + 253);
+        if (end === start) return null;
+        const text = new TextDecoder().decode(bytes.subarray(start, end));
+        // Once the scanset captures text, sscanf() returns one conversion
+        // even if the closing quote is missing or beyond the 253-byte limit.
+        if (bytes[end] !== 34) return { text, trailing: null };
+        const rest = new TextDecoder().decode(bytes.subarray(end + 1)).replace(/^[ \t\n\r\f\v]+/, '');
+        return { text, trailing: rest.charAt(0) || null };
     };
     const compile = (text: string): boolean => {
         try {
