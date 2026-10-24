@@ -359,8 +359,11 @@ export async function restoregamePreamble() {
     // monster first. The pass runs where C runs it, before vision_reset()
     // (restore.c:926) and with program_state.restoring still set, so plain
     // sight sees nothing yet and the map stays unpainted behind any
-    // sensed-change message; only sensing can spot a revert here.
+    // sensed-change message; only sensing can spot a revert here. getlev()
+    // holds in_getlev across the pass (restore.c:1064-1305), so a revert that
+    // asks for a vision recalculation cannot rebuild sight mid-pass.
     game.program_state.restoring = true;
+    game.program_state.in_getlev = true;
     game.vision_full_recalc = 0;
     try {
         for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
@@ -370,6 +373,7 @@ export async function restoregamePreamble() {
         }
     }
     finally {
+        game.program_state.in_getlev = false;
         game.program_state.restoring = false;
         // C dorecover() rebuilds the unsaved vision state (restore.c:926-928)
         // and clears program_state.restoring before docrt(); docrt() pages

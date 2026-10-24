@@ -11,6 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { cansee } from '../js/vision.js';
 import { requireScreenRow } from './support/screen.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -112,4 +113,47 @@ void test('the restore shape pass senses only and paints nothing behind its mess
         'No map or status output is painted behind the restore message.');
     const topline = requireScreenRow(0).map(cell => cell.ch).join('');
     assert.match(topline, /welcome back to NetHack!/);
+});
+
+// getlev() holds program_state.in_getlev across restore_cham() (restore.c:
+// 1064-1305), and vision_recalc() returns early while it is set (vision.c:
+// 533). A revert out of a light-emitting form asks for a full recalculation,
+// yet the messages after it still find the hero seeing nothing.
+void test('a light-emitting revert during the restore shape pass does not restore sight', async () => {
+    initRng(6113);
+    freshObjectRoom({
+        role: 'wizard',
+        hero: { ualignbase: [0, 0] },
+        flags: { female: false, initgend: 0 },
+    });
+    game.plname = game.displayName = 'Glow';
+    game.detectMonsters = true;
+    // C's fmon keeps the newest monster first, so the light reverts first and
+    // the dog's revert is the message that follows it.
+    const dog = await createMonsterAt('chameleon', 12, 10);
+    await changeMonsterForm(dog, MONSTER_NAME.indexOf('little dog'));
+    dog.mcan = 1;
+    const light = await createMonsterAt('chameleon', 11, 10);
+    await changeMonsterForm(light, MONSTER_NAME.indexOf('yellow light'));
+    light.mcan = 1;
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+
+    resetGame();
+    initRng(6113);
+    game.nhDisplay = new GameDisplay(null);
+    assert.equal(restoreGame('Glow', storage), true);
+
+    const input = resetInputState();
+    installPagerInput(input, { expected: /turns into|welcome back/, limit: 4 });
+    const sightAtRevert: boolean[] = [];
+    input.beforeRead = () => {
+        if ((game._pending_message || '').includes('turns into')) sightAtRevert.push(cansee(11, 10));
+    };
+    await restoregamePreamble();
+    await flushPendingTopline();
+
+    assert.deepEqual(sightAtRevert, [false, false],
+        'Both reverts are announced with sight still unbuilt.');
+    assert.equal(cansee(11, 10), true, 'Sight is rebuilt after the pass.');
 });
