@@ -58,12 +58,12 @@ import type {
 } from './lua/des.js';
 import type { LuaBindings, LuaGameState } from './lua/lifecycle.js';
 import type { LuaValue } from './lua/runtime.js';
-import { luaInteger, luaString } from './lua/arguments.js';
+import { luaInteger, luaString, luaToInteger } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
 import { NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
 import {
-    luaTableToArray, objectToLuaTable,
+    luaTableToArray, objectToLuaTable, LuaTable,
 } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
@@ -6772,6 +6772,33 @@ async function ensureWaysOut() {
     }
 }
 
+// nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'
+// timer names, in timeout.h order; timer_is_pos() admits only melt-ice.
+const LEVEL_TIMER_TYPE_NAMES = [
+    'rot-organic', 'rot-corpse', 'revive-mon', 'zombify-mon',
+    'burn-obj', 'hatch-egg', 'fig-transform', 'shrink-glob', 'melt-ice',
+];
+
+// nhlua.c:nhl_get_xy_params() over sp_lev.c:get_coord(), as reached by
+// nhl_timer_start_at() after the timer type and delay were popped: two
+// integers, or one table with x/y fields or a two-entry array.
+function luaTimerCoordinates(args: readonly LuaValue[]): { x: number; y: number } {
+    if (args.length === 4)
+        return { x: luaToInteger(args[0]), y: luaToInteger(args[1]) };
+    if (args.length === 3 && args[0] instanceof LuaTable) {
+        const table = args[0];
+        const x = table.get('x');
+        if (x != null) {
+            const y = table.get('y');
+            if (y == null) throw new NethackLuaError('Not a coordinate');
+            return { x: luaInteger(x), y: luaInteger(y) };
+        }
+        if (table.length() !== 2) throw new NethackLuaError('Not a coordinate');
+        return { x: luaInteger(table.get(1)), y: luaInteger(table.get(2)) };
+    }
+    throw new NethackLuaError('nhl_timer_start_at: Wrong args');
+}
+
 function createLuaLevelSession() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
@@ -7090,13 +7117,19 @@ function createLuaLevelSession() {
                     throw new NethackLuaError('level_difficulty should not have any args');
                 return level_difficulty();
             },
-            start_timer_at: (x, y, kind, timeout) => {
-                const timerName = luaString(kind);
-                if (timerName !== 'melt-ice' && timerName !== LEVEL_TIMER_KIND.MELT_ICE_AWAY)
-                    throw new TypeError(`Unknown level timer: ${timerName}`);
-                const timerX = context.xstart + luaInteger(x);
-                const timerY = context.ystart + luaInteger(y);
-                const deadline = (game.moves ?? 0) + luaInteger(timeout);
+            start_timer_at: (...args: LuaValue[]) => {
+                // nhl_get_timertype() accepts every timeout_funcs entry;
+                // only melt-ice is a position timer (timer_is_pos()).
+                const timerName = luaString(args[args.length - 2]);
+                const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
+                if (timerType < 0) throw new NethackLuaError('Unknown timer type');
+                const when = luaToInteger(args[args.length - 1]);
+                const point = luaTimerCoordinates(args);
+                if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice')) return;
+                const timerX = context.xstart + point.x;
+                const timerY = context.ystart + point.y;
+                if (!isok(timerX, timerY)) return;
+                const deadline = (game.moves ?? 0) + when;
                 stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
                 scheduleLevelTimer(
                     timerX, timerY,
