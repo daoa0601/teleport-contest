@@ -3,8 +3,20 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { takeMonsterTurn } from '../js/monmove.js';
+import { aggravateMonsters } from '../js/monster_anger.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const cannotMove of [0, false]) {
+    void test(`aggravation can release paralysis stored as a ${typeof cannotMove} flag`, async () => {
+        freshObjectRoom();
+        const goblin = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
+        goblin.mcanmove = cannotMove;
+        goblin.mfrozen = 20;
+        aggravateMonsters(game, () => 0);
+        assert.ok(goblin.mcanmove, 'aggravation should restore the ability to move');
+        assert.equal(goblin.mfrozen, 0);
+    });
+}
 for (const sleeperInside of [false, true]) {
     void test(`aggravation spell selection ${sleeperInside ? 'recognizes' : 'ignores'} a sleeper ${sleeperInside ? 'inside' : 'outside'} the caster's tower area`, async () => {
         freshObjectRoom({ right: 25 });
