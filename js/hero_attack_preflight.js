@@ -7,7 +7,8 @@ import { observeObjectForNaming } from './objnam.js';
 import { artifactById } from './artifacts.js';
 import { AD_STCK } from './monster_attack_types.js';
 import { M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, PARANOID_HIT, STRAT_WAITMASK, } from './const.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible, newsym, plineWithContinuation, senseWithTelepathy, } from './display.js';
+import { heroDetectsMonsters } from './senses.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
 import { stumbleOntoMimic } from './mimic.js';
@@ -145,7 +146,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
                 newsym(monster.mx, monster.my);
             return { proceed: true, spentTime: false };
         }
-        if (!canSenseMonster(monster)) {
+        if (!senseWithTelepathy(monster) && !heroDetectsMonsters()) {
             await publishHiddenMonster(monster, state);
             return { proceed: false, spentTime: true };
         }
