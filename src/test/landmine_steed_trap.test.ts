@@ -2,15 +2,17 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { CORPSE, SADDLE } from '../js/object_data.js';
+import { CHEST, CORPSE, SADDLE } from '../js/object_data.js';
+import { keepSaddleWithSteedcorpse, triggerHeroTrap } from '../js/hero_traps.js';
+import { saveMonsterTraits } from '../js/monster_traits.js';
 import type { GameObject } from '../js/object_types.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { floorObject, knownObject } from './support/game-objects.js';
 
 function collectMessages(): string[] {
     const messages: string[] = [];
@@ -126,4 +128,43 @@ void test('a flying hero discovering their own unseen mine gets the discovery va
         assert.match(text, /KAABLAMM!!!  The air currents set it off!/);
     }
     assert.equal(seen, true, 'some seed must discover the unseen own mine');
+});
+
+// C trap.c:953-958 keep_saddle_with_steedcorpse(): a corpse inside a
+// container has no map location (get_obj_location() without CONTAINED_TOO
+// fails), so the saddle stays where it is while the search still stops.
+void test('a saddle stays put when the steed corpse lies inside a container', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const steed = await createSaddledSteed();
+    const saddle = await floorObject(SADDLE, 11, 10);
+    const chest = await floorObject(CHEST, 12, 10);
+    const corpse = await knownObject(CORPSE, {
+        oextra: { omonst: saveMonsterTraits(steed) },
+    });
+    chest.contents = [...(chest.contents || []), corpse];
+    corpse.container = chest;
+    corpse.where = 'contained';
+    corpse.ox = 3; // a stale square from before the corpse was containerized
+    corpse.oy = 3;
+
+    await keepSaddleWithSteedcorpse(steed.m_id, saddle);
+
+    assert.deepEqual([saddle.ox, saddle.oy], [11, 10],
+        'the saddle must not follow a corpse with no map location');
+
+    // A floor corpse elsewhere still receives the saddle.
+    chest.contents = [];
+    corpse.container = null;
+    corpse.where = 'floor';
+    corpse.ox = 12;
+    corpse.oy = 11;
+    const objects = game.level?.objects;
+    if (!objects) throw new Error('the object room level has no objects');
+    const column = objects[12] ||= [];
+    column[11] = [...(column[11] || []), corpse];
+
+    await keepSaddleWithSteedcorpse(steed.m_id, saddle);
+
+    assert.deepEqual([saddle.ox, saddle.oy], [12, 11]);
 });

@@ -1108,8 +1108,15 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
             const movement = await moveHeroByTeleport(
                 destination.x, destination.y, state,
             );
-            // C trap.c:5189: the life-saving rescue teleport is a silent
-            // safe_teleds(); dotele()'s "materialize" line does not apply.
+            // C trap.c:5189 -> safe_teleds(TELEDS_TELEPORT) -> teleds():
+            // the rescue relocation still prints the verbose materialize
+            // line (teleport.c:545-547).
+            if (state.flags?.verbose !== false) {
+                await publish(`You materialize in ${
+                    movement.oldx === movement.x && movement.oldy === movement.y
+                        ? 'the same' : 'a different'
+                } location!`);
+            }
             const escape = await finishLiquidTeleport(movement, {
                 state,
                 repaint,

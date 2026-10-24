@@ -81,7 +81,7 @@ import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
 import {
     observeObjectForNaming, definiteName, objectCombatName, objectQuestion,
-    simpleObjectNameWithArticle,
+    simpleObjectName, simpleObjectNameWithArticle,
 } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
@@ -410,6 +410,16 @@ function webCuttingWeapon(trap: Trap, state: GameState): GameObject | null {
     return state.u.twoweap && secondary && isBlade(secondary) ? secondary : null;
 }
 
+// C objnam.c:bare_artifactname(uwep): the primary weapon's artifact name
+// with a lowercased leading "The ", or its plain xname() when it is no
+// artifact (trap.c:5581 names the primary even for a fiery secondary).
+function bareArtifactOrPlainName(weapon: GameObject | null | undefined,
+    state: GameState): string {
+    const artifact = artifactById(weapon?.oartifact, state);
+    if (artifact) return artifact.name.replace(/^The /, 'the ');
+    return weapon ? simpleObjectName(weapon, state) : '';
+}
+
 function untrapFailureRoll(trap: Trap, state: GameState, random: (limit: number) => number): number {
     let chance = 3;
     if (trap.ttyp === WEB) {
@@ -583,7 +593,7 @@ async function disarmHoldingTrap(trap: Trap, options: FloorTrapOptions): Promise
         if (blade && artifact && blade === primary && artifact.name === 'Sting')
             await publish(`Sting cuts through ${possessiveTrap(trap)} web!`);
         else if (blade && artifact && artifact.attack?.damageType === 'fire')
-            await publish(`${(primaryArtifact ?? artifact).name} burns through ${possessiveTrap(trap)} web!`);
+            await publish(`${bareArtifactOrPlainName(primary, state)} burns through ${possessiveTrap(trap)} web!`);
         else if (blade)
             await publish(`You cut through ${possessiveTrap(trap)} web.`);
         else await publish(`You succeed in removing ${possessiveTrap(trap)} web.`);

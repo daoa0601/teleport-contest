@@ -316,17 +316,21 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
 let landmineSteedHitInProgress = false;
 // C trap.c:keep_saddle_with_steedcorpse(): the blast can scatter the dead
 // steed's corpse away from the saddle; the captured saddle follows the
-// corpse.  C walks fobj and each container's contents; the corpse keeps its
-// omonst traits because a steed is tame.
-async function keepSaddleWithSteedcorpse(steedMid, saddle) {
+// corpse.  C walks fobj and each container's contents, but only moves the
+// saddle when get_obj_location() resolves the corpse to a map square; a
+// contained corpse has no location, so C leaves the saddle in place yet
+// still stops searching.
+export async function keepSaddleWithSteedcorpse(steedMid, saddle) {
     if (saddle.where !== 'floor')
         return; // the blast may destroy the saddle
     const visit = async (objects) => {
         for (const object of [...(objects || [])]) {
             if (object.otyp === CORPSE && object.oextra?.omonst?.m_id === steedMid) {
-                remove_object(saddle, game);
-                await placeObject(saddle, object.ox, object.oy, game);
-                await stack_object(saddle, game);
+                if (object.where === 'floor') {
+                    remove_object(saddle, game);
+                    await placeObject(saddle, object.ox, object.oy, game);
+                    await stack_object(saddle, game);
+                }
                 return true;
             }
             if (await visit(object.contents))

@@ -147,3 +147,34 @@ void test('repairing a squeaky board with shop grease bills one charge', async (
     assert.ok((shopkeeper.eshk.debit ?? 0) > 0,
         `the shopkeeper must bill the charge: ${messages.join(' | ')}`);
 });
+
+// C trap.c:5581 -> objnam.c bare_artifactname(uwep): the fiery-blade
+// message names the primary weapon even when the burning blade is the
+// secondary; a non-artifact primary is named by its plain xname().
+void test("a fiery secondary blade burns the web under the primary weapon's name", async () => {
+    let verified = false;
+    for (let seed = 1n; seed <= 60n && !verified; seed++) {
+        const level = freshPlayableRoom({});
+        addTrap(level, WEB, 11, 10, { tseen: true });
+        const mace = await addInventoryObject(MACE, { spe: 3 });
+        await setPrimaryWeapon(mace);
+        const fireBrand = await addInventoryItem(await artifactObject('Fire Brand'));
+        game.u.twoweap = true;
+        game.uswapwep = game.u.uswapwep = fireBrand;
+        const messages: string[] = [];
+        initRng(seed);
+
+        await untrap({
+            chooseDirection: direction(1, 0),
+            publish: message => { messages.push(message); },
+            ask: async () => 'n',
+        });
+
+        if (!messages.some(message => message.includes('web'))) continue;
+        verified = true;
+        const text = messages.join(' | ');
+        assert.match(text, /mace burns through (?:your|the) web!/, text);
+        assert.doesNotMatch(text, /Fire Brand/);
+    }
+    assert.equal(verified, true, 'some seed must remove the web');
+});

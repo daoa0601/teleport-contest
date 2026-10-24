@@ -51,7 +51,7 @@ import { promptDirection } from './tty_prompts.js';
 import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight, } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
-import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
+import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -293,6 +293,15 @@ function webCuttingWeapon(trap, state) {
     const secondary = state.uswapwep || state.u?.uswapwep;
     return state.u.twoweap && secondary && isBlade(secondary) ? secondary : null;
 }
+// C objnam.c:bare_artifactname(uwep): the primary weapon's artifact name
+// with a lowercased leading "The ", or its plain xname() when it is no
+// artifact (trap.c:5581 names the primary even for a fiery secondary).
+function bareArtifactOrPlainName(weapon, state) {
+    const artifact = artifactById(weapon?.oartifact, state);
+    if (artifact)
+        return artifact.name.replace(/^The /, 'the ');
+    return weapon ? simpleObjectName(weapon, state) : '';
+}
 function untrapFailureRoll(trap, state, random) {
     let chance = 3;
     if (trap.ttyp === WEB) {
@@ -466,7 +475,7 @@ async function disarmHoldingTrap(trap, options) {
         if (blade && artifact && blade === primary && artifact.name === 'Sting')
             await publish(`Sting cuts through ${possessiveTrap(trap)} web!`);
         else if (blade && artifact && artifact.attack?.damageType === 'fire')
-            await publish(`${(primaryArtifact ?? artifact).name} burns through ${possessiveTrap(trap)} web!`);
+            await publish(`${bareArtifactOrPlainName(primary, state)} burns through ${possessiveTrap(trap)} web!`);
         else if (blade)
             await publish(`You cut through ${possessiveTrap(trap)} web.`);
         else

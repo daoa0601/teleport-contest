@@ -7,9 +7,10 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-// C trap.c:6497: chest_trap() marks the chest known-trap-free even when the
-// trap killed the hero (only an exploding-away chest keeps tknown clear).
-void test('a fatal poisoned needle still marks the chest no longer trapped', async () => {
+// C trap.c:6494-6497: bot() and tknown=1 sit after the outcome switch, but a
+// real death inside the switch goes through done(), which never returns, so
+// a fatal poisoned needle leaves the chest's tknown clear for the bones file.
+void test('a fatal poisoned needle leaves the chest trap knowledge unwritten', async () => {
     freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 } });
     requirePlayingGame(game);
     const chest = await floorObject(CHEST, 10, 10);
@@ -28,7 +29,7 @@ void test('a fatal poisoned needle still marks the chest no longer trapped', asy
     assert.equal(result?.outcome, 'poisoned-needle');
     assert.equal(result.died, true, `the needle must kill: ${messages.join(' | ')}`);
     assert.equal(game.program_state.gameover, true);
-    assert.equal(chest.otrapped, false, 'the one-shot trap flag is cleared');
-    assert.equal(chest.tknown, true, 'C sets tknown after every non-exploding outcome, even a fatal one');
+    assert.equal(chest.otrapped, false, 'the one-shot trap flag is cleared up front');
+    assert.equal(chest.tknown, false, 'done() never returns, so C never records the discovery');
 });
 //# sourceMappingURL=chest_trap_death_knowledge.test.js.map
