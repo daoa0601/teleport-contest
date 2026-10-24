@@ -6,6 +6,7 @@ export function placeMonsterAt(monster, x, y) {
     monster.mx = x;
     monster.my = y;
     monster.mstate = MON_FLOOR;
+    monster.headOnMap = true;
 }
 // Occupancy ends at unlink/off-map placement, not at zero hit points.
 export function monsterAtPosition(level, x, y) {
@@ -30,8 +31,8 @@ export function exposeEngulfedDefenderForDeath(attacker, defender, state = game)
         engulf.defenderExposed = true;
 }
 export function monsterOccupiesPosition(monster, x, y) {
-    return !!monster && ((monster.mx === x && monster.my === y)
-        || !!monster.wormSegments?.some(segment => segment.x === x && segment.y === y)
-        || !!monster.wormDetachedSegments?.some(segment => segment.x === x && segment.y === y));
+    return !!monster && ((monster.headOnMap !== false && monster.mx === x && monster.my === y)
+        || !!monster.wormSegments?.some(segment => segment.x !== 0 && segment.x === x && segment.y === y)
+        || !!monster.wormDetachedSegments?.some(segment => segment.x !== 0 && segment.x === x && segment.y === y));
 }
 //# sourceMappingURL=monster_location.js.map

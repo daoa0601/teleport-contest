@@ -9,6 +9,8 @@ export interface MonsterPosition {
     mx: number;
     my: number;
     mstate?: number;
+    // remove_monster() leaves mx/my intact; place_monster() maps the head again.
+    headOnMap?: boolean;
     wormSegments?: Position[];
     // A cut detaches the segment chain before cloning or discarding it.
     // Its map cells still belong to this worm until that operation finishes.
@@ -248,7 +250,7 @@ export interface MonsterBirthState extends Monster {
 // inventory or a live long-worm body. Revival supplies those from its birth.
 export type SavedMonsterTraits = Omit<Monster,
     'minvent' | 'inventory' | 'mw' | 'wormSegments' | 'wormDetachedSegments'
-    | 'wormHead' | 'wormGrowTime' | 'lightRemoved'>;
+    | 'wormHead' | 'wormGrowTime' | 'lightRemoved' | 'headOnMap'>;
 
 export interface MonsterVital {
     mvflags: number;

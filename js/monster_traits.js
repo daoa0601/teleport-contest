@@ -26,7 +26,7 @@ export function saveMonsterTraits(monster) {
         return null;
     if (monster.ispriest)
         forgetTempleEntry(monster);
-    const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormGrowTime, wormHead, lightRemoved, ...saved } = monster;
+    const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormGrowTime, wormHead, lightRemoved, headOnMap, ...saved } = monster;
     saved.wormno = 0;
     saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
     saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));

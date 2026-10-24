@@ -132,6 +132,7 @@ function monsterFields(value, context) {
         mx: integer,
         my: integer,
         mstate: optional(integer),
+        headOnMap: optional(boolean),
         wormSegments: optional(arrayOf(position)),
         // Saving is unavailable while cutworm is awaiting a message pager.
         wormDetachedSegments: (entry) => entry === undefined,
@@ -239,7 +240,7 @@ export function validSavedMonster(value, context) {
     return validateSavedEntity(value, 'monster', context, monsterFields(value, context));
 }
 export function validSavedMonsterTraits(value, context) {
-    const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved, ...fields } = monsterFields(value, context);
+    const { minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved, headOnMap, ...fields } = monsterFields(value, context);
     return validateSavedEntity(value, 'savedMonster', context, fields);
 }
 //# sourceMappingURL=monster_validation.js.map
