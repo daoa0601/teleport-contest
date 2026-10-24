@@ -1,7 +1,7 @@
 // Monster state saved in bones levels.
 // C refs: bones.c:savebones()/getbones().
 import { setMonsterGivenName } from './monster_given_name.js';
-import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, MON_FLOOR, PL_NSIZ, RLOC_NONE } from './const.js';
+import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, MON_FLOOR, PL_NSIZ, RLOC_NOMSG } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -56,7 +56,7 @@ async function fixupOracle(oracle) {
         const y = Math.trunc((chamber.ly + chamber.hy) / 2);
         const destination = findMonsterNearPosition(oracle.mnum, x, y);
         if (destination)
-            await relocateMonsterTo(oracle, destination.x, destination.y, { flags: RLOC_NONE });
+            await relocateMonsterTo(oracle, destination.x, destination.y, { flags: RLOC_NOMSG });
     }
     if (currentRoom() === chamber)
         chamber.rtype = DELPHI;
