@@ -1,15 +1,13 @@
 // object_call.js — Shared docall()/trycall() type-naming ownership.
 // C refs: do.c trycall(); do_name.c docall(), docall_xname().
 import { withIndefiniteArticle } from './object_grammar.js';
-import { PL_PSIZ } from './const.js';
 import { game } from './gstate.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL, } from './object_data.js';
 import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
-import { getLine } from './query.js';
+import { playerName } from './player_name.js';
 import { flush_screen } from './display.js';
 import { objectTypeKnown } from './shk.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
-const MAX_PLAYER_NAME_LENGTH = PL_PSIZ - 1;
 export function objectTypeIsCallable(object, state = game) {
     if (state._objectCallNames?.[object.otyp])
         return true;
@@ -60,10 +58,9 @@ export async function callObjectType(object, state = game) {
         observeObjectForNaming(sample, { state });
         prompt = `Call ${withIndefiniteArticle(objectName(sample, state))}:`;
     }
-    const input = await getLine(prompt, (_ch, key) => key >= 32 && key < 127);
-    if (input === null || input === '')
+    const callName = await playerName(prompt);
+    if (callName === null)
         return { prompted: true, named: false, callName: null };
-    const callName = input?.trim().replace(/\s+/g, ' ').slice(0, MAX_PLAYER_NAME_LENGTH) || '';
     if (!callName) {
         if (state._objectCallNames?.[object.otyp]) {
             delete state._objectCallNames[object.otyp];

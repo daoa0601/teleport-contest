@@ -180,3 +180,16 @@ void test('empty naming input preserves a name and spaces remove it', async () =
     await rhack('#'.charCodeAt(0));
     assert.equal(dagger.oextra?.oname ?? dagger.oname, undefined);
 });
+
+void test('individual naming keeps printable high bytes and limits the normalized name', async () => {
+    freshObjectRoom();
+    const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
+    const input = resetInputState();
+    input.feed(`name\r  \u00a0Café   ${'r'.repeat(68)}\r`);
+    queueCommandKeys('ia');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(dagger.oextra?.oname, `\u00a0Café ${'r'.repeat(56)}`);
+    assert.equal(game.context.move, 0);
+});
