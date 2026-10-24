@@ -9,6 +9,7 @@ import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createSpecialLevel } from './support/topology.js';
 
 for (const [terrain, name] of [[HWALL, 'wall'], [ROOM, 'room']] as const) {
     void test(`farlook describes an unseen ${name} as unexplored`, async () => {
@@ -108,6 +109,7 @@ for (const remembered of [false, true]) {
             prototype: 'Val-strt', file: 'Val-strt.lua', defaultLit: true,
             align: ['law', 'neutral', 'chaos'],
         };
+        game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: game.u.uz?.dnum ?? 0, dlevel: game.u.uz?.dlevel ?? 1 })]]);
         const location = level.requireAt(11, 10);
         location.typ = STAIRS;
         location.ladder = LA_DOWN;
