@@ -367,7 +367,7 @@ async function loseCursedBagContents(container, state) {
     }
     return loss;
 }
-function ageStoresFuel(object) {
+export function ageStoresFuel(object) {
     return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
         TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
 }

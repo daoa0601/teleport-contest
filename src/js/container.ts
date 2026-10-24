@@ -432,7 +432,7 @@ async function loseCursedBagContents(container: GameObject, state: GameState): P
     return loss;
 }
 
-function ageStoresFuel(object: GameObject): boolean {
+export function ageStoresFuel(object: GameObject): boolean {
     return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
         TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
 }

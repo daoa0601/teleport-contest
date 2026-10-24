@@ -53,6 +53,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { addShopDamage, fixShopDamage } from './shop_damage.js';
 import { GameMap } from './game.js';
 import { levelAllowsBones } from './bones_admission.js';
+import { ageStoresFuel } from './container.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave, } from './bones_object.js';
@@ -3498,7 +3499,7 @@ export function randomEngraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-const BONES_VERSION = 15;
+const BONES_VERSION = 16;
 function bonesStorageKey(level = game.u.uz) {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
 }
@@ -3586,6 +3587,7 @@ export function saveBonesLevel() {
     try {
         payload = decodeBonesPayload(encodeSavedGraph({
             version: BONES_VERSION,
+            savedAt: game.moves,
             level: game.level,
             stairs: game.stairs || null,
             heroTrack: (game._heroTrack || []).map(point => ({
@@ -3804,6 +3806,26 @@ function restoreBonesObjects(level) {
     // afterwards are pushed in front of it.
     game._fobjSerial = newestOrder;
 }
+// C restore.c:restobjchn()/getlev() and timeout.c:restore_timers(). Bones
+// arrive immediately after the old hero's death, on the new hero's clock.
+function restoreBonesClock(level, savedAt) {
+    const adjustment = game.moves - savedAt;
+    const restoreObjectClock = (object, frozen = false) => {
+        if (!frozen && !object.ageRelative && !ageStoresFuel(object))
+            object.age += adjustment;
+        for (const timer of object.objectTimers ?? [])
+            timer.deadline += adjustment;
+        for (const content of object.contents ?? [])
+            restoreObjectClock(content, object.otyp === ICE_BOX);
+    };
+    eachTopLevelBonesObject(level, restoreObjectClock);
+    for (const timer of level.levelTimers)
+        timer.deadline += adjustment;
+    for (const damage of level.damagelist ?? [])
+        damage.when += adjustment;
+    if (level.flags.stasis_until !== undefined)
+        level.flags.stasis_until += adjustment;
+}
 // C refs: bones.c:getbones() and restore.c:getlev(ghostly).
 async function getbones() {
     const flags = game.flags || {};
@@ -3845,6 +3867,7 @@ async function getbones() {
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
     }));
+    restoreBonesClock(game.level, payload.savedAt);
     await renewBonesIdentities(game.level, payload.fruits);
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
