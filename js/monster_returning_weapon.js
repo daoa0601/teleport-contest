@@ -5,6 +5,7 @@ import { W_WEP } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame } from './gstate.js';
+import { objectShedsLight } from './light.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
@@ -19,6 +20,7 @@ import { heroIsDeaf } from './senses.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
+import { snuffThrownCandle } from './thrown_object.js';
 const LIQUID = 1;
 const WOOD = 8;
 const PLASTIC = 18;
@@ -84,8 +86,9 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         await publishHeardMessage('a loud snap!', publish, state);
     }
     const options = { state: requireInitializedGame(state), publish, random };
+    await snuffThrownCandle(weapon, state, publish);
     if (!await shipObject(weapon, x, y, options)) {
-        const landed = await landFloorObject(weapon, x, y, options);
+        const landed = await landFloorObject(weapon, x, y, { ...options, verb: 'drop' });
         if (!landed) {
             if (cansee(x, y))
                 newsym(x, y);
@@ -100,6 +103,8 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         if (isPoolAt(x, y, state) || isLavaAt(x, y, state) && !flammable)
             await publish(objectWeight(weapon) > 9 ? 'Splash!' : 'Plop!');
     }
+    if (objectShedsLight(weapon))
+        state.vision_full_recalc = 1;
     if (cansee(x, y))
         newsym(x, y);
 }

@@ -6,16 +6,44 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { monsterWieldedWeapon } from '../js/monster_weapon.js';
 import { returnMonsterWeapon } from '../js/monster_returning_weapon.js';
 import { resetInputState } from '../js/input.js';
+import { beginObjectBurn } from '../js/light.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from '../js/monster_throw.js';
-import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, WAR_HAMMER } from '../js/object_data.js';
+import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('an uncaught returning candle is extinguished before landing', async () => {
+    const level = freshObjectRoom();
+    const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
+    const candle = await knownObject(TALLOW_CANDLE, { age: 100 });
+    beginObjectBurn(candle, game);
+    const messages = [];
+    await returnMonsterWeapon(soldier, candle, 12, 10, {
+        random: () => 0, publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(candle.lamplit, false);
+    assert.equal(candle.timed, 0);
+    assert.ok(floorObjectsAt(level, 12, 10).includes(candle));
+    assert.ok(messages.includes("The candle's flame is extinguished."));
+});
+void test('an uncaught returning lamp requests new lighting at its landing position', async () => {
+    const level = freshObjectRoom();
+    const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
+    const lamp = await knownObject(OIL_LAMP, { age: 100 });
+    beginObjectBurn(lamp, game);
+    game.vision_full_recalc = 0;
+    await returnMonsterWeapon(soldier, lamp, 12, 10, {
+        random: () => 0, publish: async () => { },
+    });
+    assert.equal(lamp.lamplit, true);
+    assert.ok(floorObjectsAt(level, 12, 10).includes(lamp));
+    assert.equal(game.vision_full_recalc, 1);
+});
 for (const { underlay, surface, splash } of [
     { underlay: DB_FLOOR, surface: 'floor', splash: false },
     { underlay: DB_ICE, surface: 'ice', splash: false },
