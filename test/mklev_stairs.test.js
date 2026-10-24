@@ -22,18 +22,20 @@ void test('generated downstairs avoid rooms with upstairs on their perimeter whe
         themerooms = {{ frequency = 1, contents = function()
             generated_rooms = generated_rooms + 1
             des.room({ w = 6, h = 4, lit = 1, filled = 0, contents = function()
-                if generated_rooms % 2 == 1 then des.stair("up", 0, -1) end
+                if generated_rooms % 2 == 1 then des.stair("up", 6, 0) end
             end })
         end }}
         function post_level_generate() end
     `);
+    // Room-relative stair coordinates are packed as unsigned bytes in
+    // sp_lev.c, so x = width (not y = -1) is how a room reaches its wall.
     for (let seed = 1; seed <= 16; seed++) {
         initRng(seed);
         await mklev();
         const level = requireGameLevel();
         const stairs = levelStairs(game);
         const rooms = level.rooms.filter(isRoom).filter(room => room.rtype !== VAULT);
-        const withPerimeterStairs = rooms.filter(room => stairs.some(stair => stair.up && stair.sx === room.lx && stair.sy === room.ly - 1));
+        const withPerimeterStairs = rooms.filter(room => stairs.some(stair => stair.up && stair.sx === room.hx + 1 && stair.sy === room.ly));
         assert.ok(withPerimeterStairs.length > 0, 'the level must have perimeter stairs');
         assert.ok(rooms.some(room => room.rtype === OROOM && !withPerimeterStairs.includes(room)), 'the level must offer an ordinary room without perimeter stairs');
         const down = stairs.find(stair => !stair.up);
