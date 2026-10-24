@@ -227,8 +227,9 @@ async function faintFromHunger(duration, state) {
     state._helplessReason = 'fainted from lack of food';
     state._helplessDoneMessage = 'You regain consciousness.';
     state._afterMove = { kind: 'unfaint' };
-    if (!propertyIsActive('levitation', state)
-        && !(state.uarmg || state.u?.uarmg)) {
+    // C eat.c:newuhs(): "if (!Levitation) selftouch("Falling, you");" —
+    // gloves do not shield the hero from the wielded corpse.
+    if (!propertyIsActive('levitation', state)) {
         await selfTouchPetrifyingWeapons({
             messageStart: 'Falling, you', state, publish: plineWithContinuation,
         });
