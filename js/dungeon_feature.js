@@ -17,8 +17,10 @@ import { waterbodyName } from './terrain_name.js';
 function sameLevel(left, right) {
     return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
-function stairwayDescription(stairway, state) {
-    const noun = stairway.isladder ? 'ladder' : 'staircase';
+// C stairs.c:stairs_description(): stcase requests "staircase"; otherwise
+// use "stairs". Ladders always keep their singular noun.
+export function stairwayDescription(stairway, state, stcase) {
+    const noun = stairway.isladder ? 'ladder' : stcase ? 'staircase' : 'stairs';
     const direction = stairway.up ? 'up' : 'down';
     const here = state.u.uz;
     if (!here)
@@ -103,7 +105,7 @@ export function dungeonFeatureAt(x, y, { state = game, probing = false } = {}) {
     }
     for (let stairway = state.stairs; stairway; stairway = stairway.next)
         if (stairway.sx === x && stairway.sy === y)
-            return stairwayDescription(stairway, state);
+            return stairwayDescription(stairway, state, true);
     if (type === DRAWBRIDGE_DOWN)
         return 'lowered drawbridge';
     if (type === DBWALL)

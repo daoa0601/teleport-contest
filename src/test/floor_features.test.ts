@@ -11,7 +11,8 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { dungeonFeatureSentenceAt } from '../js/dungeon_feature.js';
+import { dungeonFeatureSentenceAt, stairwayDescription } from '../js/dungeon_feature.js';
+import type { Stairway } from '../js/map_types.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_recalc } from '../js/vision.js';
@@ -119,6 +120,28 @@ void test('traversed ordinary stairs show absolute depth while unknown branch st
     assert.equal(await look(), 'There is a staircase down here.');
     game.stairs.u_traversed = true;
     assert.equal(await look(), 'There is a branch staircase down to the Dungeons of Doom here.');
+});
+
+void test('stair descriptions support plural stairs while ladders stay singular', () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    game.dungeons = [
+        createDungeon({ dname: 'The Dungeons of Doom', depth_start: 1 }),
+        createDungeon({ dname: 'The Gnomish Mines', depth_start: 5 }),
+    ];
+    game.u.uz = { dnum: 1, dlevel: 2 };
+    const stairs: Stairway = {
+        sx: 10, sy: 10, up: false, isladder: false,
+        tolev: { dnum: 1, dlevel: 3 }, u_traversed: false, next: null,
+    };
+
+    assert.equal(stairwayDescription(stairs, game, false), 'stairs down');
+    stairs.u_traversed = true;
+    assert.equal(stairwayDescription(stairs, game, false), 'stairs down to level 7');
+    stairs.tolev = { dnum: 0, dlevel: 4 };
+    assert.equal(stairwayDescription(stairs, game, false), 'branch stairs down to the Dungeons of Doom');
+    stairs.isladder = true;
+    assert.equal(stairwayDescription(stairs, game, false), 'branch ladder down to the Dungeons of Doom');
 });
 
 void test('the traversed dungeon entrance describes departure or the Amulet destination', async () => {
