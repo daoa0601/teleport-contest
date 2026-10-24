@@ -435,6 +435,8 @@ export class Engine {
                 gender: selectedGender,
                 alignment: selectedAlignment,
             }, random);
+            if (!selected)
+                return false;
             selectedRole = selected.role;
             selectedRace = selected.race;
             selectedGender = selected.gender;
@@ -552,10 +554,18 @@ export class Engine {
         let auto = needsConfirmation ? 'y' : random.size ? 'a' : 'n';
         if (hasUnspecifiedChoice) {
             const question = "Shall I pick character's race, role, gender and alignment for you? [ynaq]";
-            display.clearRow(0);
-            display.putstr(0, 0, question, NO_COLOR);
-            display.setCursor(question.length + 1, 0);
-            auto = String.fromCharCode(await nhgetch()).toLowerCase();
+            do {
+                display.clearRow(0);
+                display.putstr(0, 0, question, NO_COLOR);
+                display.setCursor(question.length + 1, 0);
+                auto = String.fromCharCode(await nhgetch()).toLowerCase();
+                if (auto === 'q' || auto === '\x1b')
+                    return null;
+                if (auto === ' ' || auto === '\n')
+                    auto = 'y';
+                else if (auto === '*' || auto === '@')
+                    auto = 'a';
+            } while (auto !== 'y' && auto !== 'n' && auto !== 'a');
         }
         if (auto !== 'n') {
             let role = initial.role;
@@ -608,6 +618,8 @@ export class Engine {
                     this._drawCharacterMenu(confirmLines, left, 8, 6, true);
                     const code = await nhgetch();
                     const key = String.fromCharCode(code).toLowerCase();
+                    if (key === 'q' || code === 27)
+                        return null;
                     if (key === 'a') {
                         do {
                             selectedName = (await this._readPlayerName(10, false)).name;
@@ -858,6 +870,8 @@ export class Engine {
                     applyPreMenuRigidChecks();
                     drawRoleMenu(candidates, race, gender, alignment);
                     const key = String.fromCharCode(await nhgetch());
+                    if (key === 'q' || key === '\x1b')
+                        return null;
                     if (key === '~') {
                         if (filteredRoles.size || filteredRaces.size) {
                             filteredRoles.clear();
@@ -885,7 +899,7 @@ export class Engine {
                         nextFacet = 'alignment';
                         continue;
                     }
-                    const chosen = key === '*'
+                    const chosen = key === '*' || key === ' ' || key === '\n'
                         ? candidates[rn2(candidates.length)]?.[1]
                         : roleByKey(key);
                     if (!chosen || !candidates.some(([, candidate]) => candidate === chosen))
@@ -911,6 +925,8 @@ export class Engine {
                     applyPreMenuRigidChecks();
                     drawRaceMenu(role, candidates, gender, alignment);
                     const key = String.fromCharCode(await nhgetch());
+                    if (key === 'q' || key === '\x1b')
+                        return null;
                     if (key === '?') {
                         role = null;
                         race = null;
@@ -938,8 +954,8 @@ export class Engine {
                             await editFilters();
                         continue;
                     }
-                    if (key === '*')
-                        race = candidates[rn2(candidates.length)];
+                    if (key === '*' || key === ' ' || key === '\n')
+                        race = pickCharacterChoice(candidates);
                     else {
                         const entry = CHARACTER_RACE_MENU.find(candidate => candidate[0] === key.toLowerCase());
                         race = candidates.find(candidate => candidate.name === entry?.[2]);
@@ -966,6 +982,8 @@ export class Engine {
                     applyPreMenuRigidChecks();
                     drawGenderMenu(role, race, alignment);
                     const key = String.fromCharCode(await nhgetch()).toLowerCase();
+                    if (key === 'q' || key === '\x1b')
+                        return null;
                     if (key === '?') {
                         role = null;
                         gender = null;
@@ -984,8 +1002,8 @@ export class Engine {
                         nextFacet = 'alignment';
                         continue;
                     }
-                    if (key === '*')
-                        gender = candidates[rn2(candidates.length)];
+                    if (key === '*' || key === ' ' || key === '\n')
+                        gender = pickCharacterChoice(candidates);
                     else
                         gender = candidates.find(candidate => candidate.name[0] === key);
                     if (!gender)
@@ -1013,6 +1031,8 @@ export class Engine {
                 applyPreMenuRigidChecks();
                 drawAlignmentMenu(role, race, gender, candidates);
                 const key = String.fromCharCode(await nhgetch()).toLowerCase();
+                if (key === 'q' || key === '\x1b')
+                    return null;
                 if (key === '?') {
                     role = null;
                     alignment = null;
@@ -1031,8 +1051,8 @@ export class Engine {
                     nextFacet = 'gender';
                     continue;
                 }
-                if (key === '*')
-                    alignment = candidates[rn2(candidates.length)];
+                if (key === '*' || key === ' ' || key === '\n')
+                    alignment = pickCharacterChoice(candidates);
                 else
                     alignment = candidates.find(candidate => candidate.name[0] === key);
                 if (!alignment)
@@ -1062,6 +1082,8 @@ export class Engine {
                 this._drawCharacterMenu(lines, left, 8, 6, preserveConfirmationBackground);
                 const code = await nhgetch();
                 const key = String.fromCharCode(code).toLowerCase();
+                if (key === 'q' || code === 27)
+                    return null;
                 if (key === 'a') {
                     do {
                         selectedName = (await this._readPlayerName(10, false)).name;
@@ -1070,8 +1092,10 @@ export class Engine {
                     preserveConfirmationBackground = true;
                     continue;
                 }
-                if (key === 'n')
+                if (key === 'n') {
+                    manualInitial = { role: null, race: null, gender: null, alignment: null };
                     continue selection;
+                }
                 if (key === 'y' || code === 10 || code === 13 || code === 32)
                     return { role, race, gender, alignment, name: selectedName };
             }
