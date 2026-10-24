@@ -12,4 +12,3 @@ for (const { damageType, name } of [
         assert.equal(breathWeaponName(damageType), name);
     });
 }
-

@@ -3391,6 +3391,12 @@ export async function fumaroles(state = requireInitializedGame()) {
 export async function resolveDeferredMonsterBreath(action, breath, state, emitMessage, random = rn2, rollDice = d, rollOne = rnd) {
     if (!breath?.launched || !breath.deferredRay)
         return breath || null;
+    if (breath.damageType < AD_MAGM || breath.damageType > AD_SPC2) {
+        await impossible(`Breath weapon ${breath.damageType - 1} used`, { state });
+        breath.deferredRay = false;
+        breath.finished = true;
+        return breath;
+    }
     const monster = action.monster;
     const publish = emitMessage || plineWithContinuation;
     if (canSeeMonster(monster)) {
