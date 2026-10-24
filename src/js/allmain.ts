@@ -138,7 +138,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
-    canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap,
+    canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap,
     bot,
     flush_screen, flushPendingTopline, updateStatusLines,
     pline,
@@ -202,7 +202,7 @@ import {
     peekNextDueObjectTimer,
 } from './object_timers.js';
 import { aligns, nativeRoleAt } from './roles.js';
-import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
+import { initializeSourceStartup } from './startup.js';
 import { ensureQuestStatus } from './quest.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
@@ -517,14 +517,9 @@ async function applyCalendarMessages() {
 export async function restoregamePreamble() {
     const game = requireInitializedGame();
     delete game._pendingHeroShapeChange;
-    const quest = game.quest_status;
-    const savedGenders = quest && { leader: quest.ldrgend, nemesis: quest.nemgend };
-    initializeRoleQuestGenders();
-    // C restgamestate() reloads q_score after role_init() rolls its genders.
-    if (quest && savedGenders) {
-        quest.ldrgend = savedGenders.leader;
-        quest.nemgend = savedGenders.nemesis;
-    }
+    // C restgamestate() runs role_init() before anything else the preamble
+    // does; restoreGame() has already spent its quest gender rolls and then
+    // installed the saved quest_status over the rolled values.
     await l_nhcore_init();
     game._moveloopStarted = false;
     // pickup.c's oldcap is process-local (decl.c), not restored save state.
@@ -549,6 +544,9 @@ export async function restoregamePreamble() {
 
     // The first flush paints the display state restored with the level.
     await bot();
+    // C dorecover() runs clear_nhwindow(WIN_MESSAGE) between docrt() and
+    // welcome(), erasing any shape-fixup line above without spending a key.
+    clearMessageWindow();
     await welcome(false);
     await checkSpecialRoom();
     if (game.flags?.explore)

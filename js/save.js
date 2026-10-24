@@ -12,6 +12,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
+import { rollQuestFigureGenders } from './startup.js';
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
@@ -204,6 +205,11 @@ export function restoreGame(name, storage = game.storage) {
         if (!snapshot.state.level || !snapshot.state.urole || !snapshot.state.urace)
             return false;
         requireInitializedHero(snapshot.state.u);
+        // C restgamestate() reads the saved flags and runs role_init()
+        // before it reads the hero, so the quest gender rolls are spent
+        // even when the save is then refused; installing the snapshot
+        // afterwards overwrites the rolled values, as Sfi_q_score() does.
+        rollQuestFigureGenders(snapshot.state.urole, snapshot.state.quest_status ?? { ldrgend: 0, nemgend: 0 });
         // C restgamestate() refuses a save whose hero was not healthy enough
         // to survive restoration, and dorecover() then waits for the message
         // to be dismissed before discarding the save file and starting over.

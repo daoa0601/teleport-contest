@@ -17,7 +17,12 @@ export function initializeRoleQuestGenders() {
     const role = game.urole;
     if (!role)
         throw new Error('Quest gender initialization requires a selected role');
-    const quest = ensureQuestStatus();
+    rollQuestFigureGenders(role, ensureQuestStatus());
+}
+// The rolls role_init() makes whenever the quest figure's own species has
+// no fixed gender. On restore they run inside restgamestate() before the
+// hero is even read, and the saved quest_status then overwrites the values.
+export function rollQuestFigureGenders(role, quest) {
     quest.ldrgend = questMonsterGender(role.ldrnum);
     if (role.neminum !== undefined)
         quest.nemgend = questMonsterGender(role.neminum);

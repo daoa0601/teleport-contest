@@ -5,7 +5,8 @@ import { game, resetGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { decodeSavedGame } from '../js/persistent_state_validation.js';
-import { initRng } from '../js/rng.js';
+import { initRng, rn2 } from '../js/rng.js';
+import { initializeRoleQuestGenders } from '../js/startup.js';
 import { dismissUnhealthyRestore, restoreGame, restoreRefusedAsUnhealthy, saveGame, } from '../js/save.js';
 import { encodeSavedGraph } from '../js/saved_graph.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -26,6 +27,7 @@ void test('a dead hero is refused at restore, one key dismisses the message, and
     snapshot.state.u.uhp = 0;
     storage.setItem(key, encodeSavedGraph(snapshot));
     resetGame();
+    initRng(6103);
     game.nhDisplay = new GameDisplay(null);
     const input = resetInputState();
     installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
@@ -54,6 +56,7 @@ void test('a polymorphed hero restores only while its current body lives', async
     livingBody.state.u.mh = 5;
     storage.setItem(key, encodeSavedGraph(livingBody));
     resetGame();
+    initRng(6104);
     game.nhDisplay = new GameDisplay(null);
     assert.equal(restoreGame('Poly', storage), true);
     assert.equal(restoreRefusedAsUnhealthy(), false);
@@ -65,6 +68,7 @@ void test('a polymorphed hero restores only while its current body lives', async
     deadBody.state.u.mh = 0;
     storage.setItem(key, encodeSavedGraph(deadBody));
     resetGame();
+    initRng(6104);
     game.nhDisplay = new GameDisplay(null);
     const input = resetInputState();
     installPagerInput(input, { expected: /not healthy enough/, limit: 2 });
@@ -72,5 +76,33 @@ void test('a polymorphed hero restores only while its current body lives', async
     assert.equal(restoreRefusedAsUnhealthy(), true);
     await dismissUnhealthyRestore('Poly', storage);
     assert.equal(storage.getItem(key), null);
+});
+// C restgamestate() reads the saved flags and runs role_init() before the
+// health check, so the quest-figure gender rolls are spent even when the
+// save is refused; every later random call in the new game follows them.
+void test("a refused restore spends role_init's quest gender rolls first", async () => {
+    initRng(6105);
+    freshObjectRoom({
+        role: 'wizard',
+        hero: { ualignbase: [0, 0] },
+        flags: { female: false, initgend: 0 },
+    });
+    game.plname = game.displayName = 'Refused';
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    const key = 'teleport-save:refused';
+    const snapshot = decodeSavedGame(storage.getItem(key) ?? '');
+    snapshot.state.u.uhp = 0;
+    storage.setItem(key, encodeSavedGraph(snapshot));
+    resetGame();
+    game.nhDisplay = new GameDisplay(null);
+    initRng(6105);
+    assert.equal(restoreGame('Refused', storage), false);
+    const afterRefusal = rn2(1000);
+    initRng(6105);
+    // A Wizard's nemesis has no fixed gender, so role_init() rolls it.
+    game.urole = snapshot.state.urole;
+    initializeRoleQuestGenders();
+    assert.equal(afterRefusal, rn2(1000), "The refusal must leave the stream exactly past role_init()'s rolls.");
 });
 //# sourceMappingURL=restore_health.test.js.map

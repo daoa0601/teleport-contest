@@ -10,6 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { requireScreenRow } from './support/screen.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -26,6 +27,11 @@ void test('a cancelled shapechanger returns to its natural form across a save an
         flags: { female: false, initgend: 0 },
     });
     game.plname = game.displayName = 'Cham';
+    // Detection senses the revert without restored sight, as a blind
+    // telepathic hero would; C's docrt() then flushes the pending line at
+    // cls()'s display_nhwindow(WIN_MESSAGE, FALSE) — one key — and the
+    // greeting overwrites the top line.
+    game.detectMonsters = true;
     const monster = await createMonsterAt('chameleon', 11, 10);
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('little dog'));
     monster.mcan = 1;
@@ -41,11 +47,14 @@ void test('a cancelled shapechanger returns to its natural form across a save an
     assert.ok(restored, 'Expected the saved monster to be restored');
     assert.equal(restored.mnum, MONSTER_NAME.indexOf('little dog'));
     const input = resetInputState();
-    installPagerInput(input, { expected: /welcome back|turns into/, limit: 8 });
+    installPagerInput(input, { expected: /turns into|welcome back/, limit: 4 });
     await restoregamePreamble();
     await flushPendingTopline();
     assert.equal(restored.mnum, MONSTER_NAME.indexOf('chameleon'));
     assert.equal(restored.cham, -1, 'Cancellation keeps the reverted body from shapechanging again.');
     assert.equal(!!restored.mcan, true, 'Restoration keeps the monster cancelled.');
+    const topline = requireScreenRow(0).map(cell => cell.ch).join('');
+    assert.match(topline, /welcome back to NetHack!/);
+    assert.doesNotMatch(topline, /turns into/, 'The shape-change line is erased, not paged, before the greeting.');
 });
 //# sourceMappingURL=save_restore_shape.test.js.map
