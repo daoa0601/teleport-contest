@@ -258,8 +258,8 @@ export function isGetposPickCharacter(ch: string): boolean {
 
 // getpos() flushes the existing glyph buffer. Recalculating sight here would
 // discover warnings or erase unseen-monster memory in the middle of a turn.
-export async function paintGetposCursor(cursor: Position, message: string, markedSpots: readonly Position[] | null = null): Promise<TemporaryMapEffect | null> {
-    game._pending_message = message;
+export async function paintGetposCursor(cursor: Position, message: string | null, markedSpots: readonly Position[] | null = null): Promise<TemporaryMapEffect | null> {
+    if (message !== null) game._pending_message = message;
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the
     // hero can see, so a validity rule that admits unseen squares (polearm
     // couldsee+glyph policy) still cannot reveal them.
@@ -570,7 +570,6 @@ export async function selectMapPosition({
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
-    let message = prompt;
     let firstPaint = true;
     let showGoal = false;
     // Native msg_given clears prompts at exit, but leaves automatic
@@ -622,12 +621,14 @@ export async function selectMapPosition({
         const initialMapCursor = isValidLocation && !game.flags.verbose
             ? lastDirtyMapCursor() : null;
         for (;;) {
+            // pline() owns notices and goals, including their pager cleanup.
+            // Cursor redraws only supply new text for the initial prompt or autodescribe.
+            let message: string | null = firstPaint ? prompt : null;
             if (showGoal) {
                 await pline(movePrompt);
-                message = movePrompt;
                 showGoal = false;
             } else if (!firstPaint && autoDescription() && !clearMessageOnExit) {
-                message = await describeSelectedPosition(describe, cursor, isValidLocation) ?? message;
+                message = await describeSelectedPosition(describe, cursor, isValidLocation);
             }
             // The symbol callback runs only when entering that state. Cursor
             // movement keeps its temporary glyphs until a toggle or refresh.
@@ -733,7 +734,6 @@ export async function selectMapPosition({
                     // show_goal_msg: the next loop pass pline()s the goal,
                     // which tty pages when it cannot share the notice's line.
                     await pline(movePrompt);
-                    message = movePrompt;
                 }
                 continue;
             }
@@ -812,7 +812,6 @@ export async function selectMapPosition({
                 cursor.y = feature.y;
                 if (clearMessageOnExit) {
                     clearMessageWindow();
-                    message = '';
                 }
                 clearMessageOnExit = false;
                 continue;
