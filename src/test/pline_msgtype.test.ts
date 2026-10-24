@@ -298,8 +298,8 @@ for (const [pattern, diagnostic] of [
     ['bell{2,x}', 'invalid repetition count(s)'],
     ['bell{256}', 'maximum repetition exceeds 255'],
     ['bell{1,256}', 'maximum repetition exceeds 255'],
-    ['{2', 'repetition-operator operand invalid'],
-    ['{256}', 'repetition-operator operand invalid'],
+    ['{2', 'braces not balanced'],
+    ['{256}', 'maximum repetition exceeds 255'],
     ['(bell|{2})', 'repetition-operator operand invalid'],
     ['bell{2}{3}', 'repetition-operator operand invalid'],
 ] as const) {
