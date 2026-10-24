@@ -4,7 +4,7 @@ import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY,
-    EXPL_MAGICAL, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd,
+    EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd,
     PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME,
 } from './const.js';
 import {
@@ -24,8 +24,9 @@ import { applyMonsterGolemEffects } from './mon.js';
 import { angerAttackedMonster, wakeMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import {
-    AD_ACID, AD_COLD, AD_DGST, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM,
-    AD_PHYS, AD_RBRE, AT_ENGL,
+    AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX,
+    AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE,
+    AD_SPEL, AT_ENGL,
 } from './monster_attack_types.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving,
@@ -144,6 +145,15 @@ const damageKinds = new Map<DamageType, ExplosionKind>([
         resists: monsterHasAcidResistance,
     }],
     [AD_PHYS, { name: 'explosion', floor: null, resists: () => false }],
+]);
+
+const explosionStyles = new Map<DamageType, number>([
+    [AD_ELEC, EXPL_MAGICAL], [AD_SPEL, EXPL_MAGICAL],
+    [AD_DREN, EXPL_MAGICAL], [AD_ENCH, EXPL_MAGICAL],
+    [AD_FIRE, EXPL_FIERY], [AD_COLD, EXPL_FROSTY],
+    [AD_DRST, EXPL_NOXIOUS], [AD_DRDX, EXPL_NOXIOUS],
+    [AD_DRCO, EXPL_NOXIOUS], [AD_DISE, EXPL_NOXIOUS],
+    [AD_PEST, EXPL_NOXIOUS], [AD_PHYS, EXPL_NOXIOUS],
 ]);
 
 // A negative type is a monster zap, except that WAND_CLASS uses -otyp.
@@ -487,9 +497,17 @@ function explosionDeathCause(type: number, objectClass: number, description: str
         ? `killed by a ${description}` : `killed by ${description}` };
 }
 
-export function createElementalMonsterExplosion(x: number, y: number, damageType: DamageType, damage: number, killer: string, options: ExplosionOptions = {}) {
-    const style = damageType === AD_COLD ? EXPL_FROSTY : damageType === AD_ELEC ? EXPL_MAGICAL : EXPL_FIERY;
+export async function createElementalMonsterExplosion(x: number, y: number, damageType: DamageType, damage: number, killer: string, options: ExplosionOptions = {}) {
+    const style = await explosionStyleForDamage(damageType, options.state ?? game);
     return explode(x, y, -(damageType - 1 + 20), damage, MON_EXPLODE, style, {
         ...options, killer,
     });
+}
+
+// C explode.c:adtyp_to_expltype().
+async function explosionStyleForDamage(damageType: DamageType, state: GameState): Promise<number> {
+    const style = explosionStyles.get(damageType);
+    if (style !== undefined) return style;
+    await impossible(`adtyp_to_expltype: bad explosion type ${damageType}`, { state });
+    return EXPL_FIERY;
 }
