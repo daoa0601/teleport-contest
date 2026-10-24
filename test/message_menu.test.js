@@ -117,4 +117,26 @@ void test('a nonselectable singleton is ordinary prose without a forced More pro
     await flush_screen(1);
     assert.equal(rowText(0), 'b - an uncursed dagger.');
 });
+// C tty_message_menu() sets dismiss_more before tty_putstr(), so the More
+// prompt for an older message that cannot share the line accepts the letter.
+const olderMessage = 'You see here a long row of carefully stacked dusty spellbooks.';
+void test('the item letter dismisses an older message before the singleton is shown', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    await plineWithContinuation(olderMessage);
+    const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [
+        { prompt: /spellbooks\.--More--/, keys: 'b' },
+        { prompt: /^b - an uncursed dagger\.--More--/, keys: 'b' },
+    ]);
+    assert.equal(selected, 'b'.charCodeAt(0));
+    assert.equal(rowText(0), '');
+});
+void test('Escape at an older message cancels the singleton without showing it', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    await plineWithContinuation(olderMessage);
+    const selected = await answerPrompts(showMessageMenu('b', PICK_ONE, 'b - an uncursed dagger.'), input, [{ prompt: /spellbooks\.--More--/, keys: '\x1b' }]);
+    assert.equal(selected, 27);
+    assert.doesNotMatch(rowText(0), /dagger/);
+});
 //# sourceMappingURL=message_menu.test.js.map

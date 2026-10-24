@@ -2827,19 +2827,24 @@ export async function showMessageMenu(letter, pickMode, message) {
     // tty_putstr() reaches update_topl(), which joins or pages older prose.
     const pending = game._suppressMessagesUntilInput ? '' : game._pending_message || '';
     const columns = game.nhDisplay?.cols ?? 80;
+    // dismiss_more is set first, so the letter also acknowledges older prose.
+    const menuLetter = letter.charCodeAt(0);
     if (pending && message.length + pending.length + 3 < columns - 8)
         message = `${pending}  ${message}`;
-    else if (pending)
-        await pageTopline(pending);
+    else if (pending && await pageTopline(pending, { dismissKey: menuLetter }) === 27) {
+        // WIN_STOP skips the choice's own display; morc cancels the prompt.
+        if (game.nhDisplay)
+            game.nhDisplay.stoppedTopline = message;
+        return 27;
+    }
     game._pending_message = message;
     game._retained_message = '';
-    const menuLetter = letter.charCodeAt(0);
     const key = await pageTopline(message, { menuLetter });
     return key === menuLetter || key === 27 ? key : 0;
 }
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
-async function pageTopline(message, { urgent = false, menuLetter } = {}) {
+async function pageTopline(message, { urgent = false, menuLetter, dismissKey = menuLetter } = {}) {
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
     const lines = toplineRows(message, columns);
@@ -2865,7 +2870,7 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
     let key;
     do
         key = await nhgetch();
-    while (key !== menuLetter && ![27, 32, 10, 13].includes(key));
+    while (key !== dismissKey && ![27, 32, 10, 13].includes(key));
     game._pending_message = '';
     if (menuLetter !== undefined) {
         // Escape cancels this selection only. Both wrapped text and a More
