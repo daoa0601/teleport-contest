@@ -218,6 +218,8 @@ void test('a raised drawbridge permits writing on the ice beneath it', async () 
     assert.equal(engravingAt(game.u.ux, game.u.uy, game.level)?.engr_type, DUST);
     assert.equal(engravingAt(game.u.ux, game.u.uy, game.level)?.text, 'X');
 });
+// 0xff is excluded: the pinned pgetchar() returns a signed char, so that byte
+// reads as EOF and cancels getlin().
 void test('writing preserves high-bit tty characters and non-space whitespace', async () => {
     const input = freshTurnRoom();
     requireFixtureGame(game);
@@ -226,13 +228,13 @@ void test('writing preserves high-bit tty characters and non-space whitespace', 
     await answerPrompts(moveloop_core(), input, [
         { prompt: /What do you want to write with\?/, keys: marker.invlet },
         { prompt: /You scribble on the floor with/, keys: ' ' },
-        { prompt: /What do you want to scribble on the floor here\?/, keys: '\u00a0\u00e9\u0080\u00ff\u00a0\r' },
+        { prompt: /What do you want to scribble on the floor here\?/, keys: '\u00a0\u00e9\u0080\u00fe\u00a0\r' },
     ]);
     assert.ok(game._occupation, 'accepted writing must start an engraving');
     await moveloop_core();
     const engraving = engravingAt(game.u.ux, game.u.uy, game.level);
     assert.equal(engraving?.engr_type, MARK);
-    assert.equal(engraving?.text, '\u00a0\u00e9\u0080\u00ff\u00a0');
+    assert.equal(engraving?.text, '\u00a0\u00e9\u0080\u00fe\u00a0');
 });
 void test('an owlbear writes with a fingertip', async () => {
     const input = freshTurnRoom();
