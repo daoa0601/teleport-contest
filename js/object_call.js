@@ -6,7 +6,7 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJ
 import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { playerName } from './player_name.js';
 import { flush_screen } from './display.js';
-import { objectTypeKnown } from './shk.js';
+import { objectTypeKnown, repriceDiscoveredGems } from './shk.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
 export function objectTypeIsCallable(object, state = game) {
     if (state._objectCallNames?.[object.otyp])
@@ -67,6 +67,8 @@ export async function callObjectType(object, state = game) {
             if (!objectTypeKnown(object, state) && !state._encounteredObjectTypes?.has(object.otyp)) {
                 if (state._objectDiscoveryOrder)
                     state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
+                if (object.oclass === 13)
+                    repriceDiscoveredGems(object.otyp, state);
             }
         }
         return { prompted: true, named: false, callName: null };

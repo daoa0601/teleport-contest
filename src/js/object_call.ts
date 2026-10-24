@@ -10,7 +10,7 @@ import {
 import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { playerName } from './player_name.js';
 import { flush_screen } from './display.js';
-import { objectTypeKnown } from './shk.js';
+import { objectTypeKnown, repriceDiscoveredGems } from './shk.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -80,6 +80,7 @@ export async function callObjectType(object: GameObject, state: GameState = game
             if (!objectTypeKnown(object, state) && !state._encounteredObjectTypes?.has(object.otyp)) {
                 if (state._objectDiscoveryOrder)
                     state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
+                if (object.oclass === 13) repriceDiscoveredGems(object.otyp, state);
             }
         }
         return { prompted: true, named: false, callName: null };
