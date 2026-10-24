@@ -9,8 +9,9 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { throwMonsterWeaponAtHero } from '../js/monster_throw.js';
-import { DAGGER, DART, ROCK } from '../js/object_data.js';
-import { knownObject } from './support/game-objects.js';
+import { ACID_VENOM, BLINDING_VENOM, DAGGER, DART, ROCK } from '../js/object_data.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -149,4 +150,47 @@ void test('a caught poisoned dart is announced by its simple name', async () => 
     });
 
     assert.ok(messages.some(message => message.startsWith('You catch the dart!')), messages.join(' | '));
+});
+
+for (const [condition, type, impairment] of [
+    ['confusion', DART, 'confused'],
+    ['stun', DART, 'stunned'],
+    ['fumbling', DART, 'fumbling'],
+    ['blinding venom', BLINDING_VENOM, null],
+    ['acid venom', ACID_VENOM, null],
+] as const) {
+    void test(`${condition} prevents a catch without revealing a welded weapon's curse`, async () => {
+        freshObjectRoom();
+        requireFixtureGame(game);
+        const wielded = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+        await setPrimaryWeapon(wielded);
+        if (impairment) game.u[impairment] = true;
+        const { soldier, weapon } = await throwWeaponAtHero(type);
+
+        const result = await throwMonsterWeaponAtHero(soldier, game, weapon, {
+            random: () => 0,
+            rollOne: () => 1,
+            publish: async () => {},
+        });
+
+        assert.equal(result.shots[0]?.caught, false);
+        assert.equal(wielded.bknown, false);
+    });
+}
+
+void test('an eligible catch reveals a welded weapon\'s curse while using the other hand', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const wielded = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+    await setPrimaryWeapon(wielded);
+    const { soldier, weapon } = await throwWeaponAtHero(DART);
+
+    const result = await throwMonsterWeaponAtHero(soldier, game, weapon, {
+        random: () => 0,
+        rollOne: () => 1,
+        publish: async () => {},
+    });
+
+    assert.equal(result.shots[0]?.caught, true);
+    assert.equal(wielded.bknown, true);
 });
