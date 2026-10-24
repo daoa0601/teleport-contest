@@ -39,7 +39,7 @@ export function saveMonsterTraits(monster: Monster | null | undefined): SavedMon
     if (!monster) return null;
     if (monster.ispriest) forgetTempleEntry(monster);
     const {
-        minvent, inventory, mw, wormSegments, wormDetachedSegments, wormGrowTime, wormHead, lightRemoved,
+        minvent, inventory, mw, wormSegments, wormDetachedSegments, wormGrowTime, wormHead, lightRemoved, headOnMap,
         ...saved
     } = monster;
     saved.wormno = 0;

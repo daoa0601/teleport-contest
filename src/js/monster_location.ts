@@ -10,6 +10,7 @@ export function placeMonsterAt(monster: MonsterPosition, x: number, y: number): 
     monster.mx = x;
     monster.my = y;
     monster.mstate = MON_FLOOR;
+    monster.headOnMap = true;
 }
 
 // Occupancy ends at unlink/off-map placement, not at zero hit points.
@@ -49,8 +50,8 @@ export function monsterOccupiesPosition(
     monster: MonsterPosition | null | undefined, x: number, y: number,
 ): boolean {
     return !!monster && (
-        (monster.mx === x && monster.my === y)
-        || !!monster.wormSegments?.some(segment => segment.x === x && segment.y === y)
-        || !!monster.wormDetachedSegments?.some(segment => segment.x === x && segment.y === y)
+        (monster.headOnMap !== false && monster.mx === x && monster.my === y)
+        || !!monster.wormSegments?.some(segment => segment.x !== 0 && segment.x === x && segment.y === y)
+        || !!monster.wormDetachedSegments?.some(segment => segment.x !== 0 && segment.x === x && segment.y === y)
     );
 }

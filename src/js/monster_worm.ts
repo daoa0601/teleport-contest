@@ -1,7 +1,7 @@
 // Long-worm body ownership.
 // C refs: makemon.c:initworm(), worm.c:place_worm_tail_randomly(), wormgone().
 
-import { MAX_NUM_WORMS, MHPMAX, MON_FLOOR, MON_OFFMAP, NORMAL_SPEED, isok, xdir, ydir } from './const.js';
+import { MAX_NUM_WORMS, MHPMAX, MON_FLOOR, NORMAL_SPEED, isok, xdir, ydir } from './const.js';
 import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -180,18 +180,20 @@ export function clearMonsterWormFromMap(monster: Monster) {
         const point = monster.wormSegments[i];
         if (point?.x) {
             monster.wormSegments[i] = { x: 0, y: point.y };
-            newsym(point.x, point.y);
+            clearWormSquare(monster, point);
         }
     }
-    // C removes the head's grid entry without changing its coordinates or
-    // lifecycle state. Hide it only for this synchronous repaint.
-    const previousState = monster.mstate;
-    monster.mstate = (monster.mstate ?? MON_FLOOR) | MON_OFFMAP;
-    if (monster.wormHead.x) newsym(monster.wormHead.x, monster.wormHead.y);
-    if (previousState === undefined) delete monster.mstate;
-    else monster.mstate = previousState;
+    if (monster.wormHead.x) clearWormSquare(monster, monster.wormHead);
     monster.wormHead = { x: 0, y: monster.wormHead.y };
     return count;
+}
+
+function clearWormSquare(monster: Monster, point: Position): void {
+    // The hidden segment normally shares the live head's square. A literal
+    // head-only move can leave it behind; remove_worm follows the segments.
+    if (monster.mx === point.x && monster.my === point.y)
+        monster.headOnMap = false;
+    newsym(point.x, point.y);
 }
 
 export function removeMonsterWormBody(monster: Monster) {
@@ -347,7 +349,7 @@ function removeWormTailTip(monster: WormMonster) {
 }
 
 type WormRestoreMonster = Pick<Monster,
-    'mx' | 'my' | 'mstate' | 'wormno' | 'wormHead' | 'wormSegments' | 'wormGrowTime'>;
+    'mx' | 'my' | 'mstate' | 'headOnMap' | 'wormno' | 'wormHead' | 'wormSegments' | 'wormGrowTime'>;
 
 export interface WormRestoreLevel {
     monsters: WormRestoreMonster[];
@@ -364,6 +366,7 @@ export function validMonsterWormBodies(level: unknown): level is WormRestoreLeve
             || typeof monster.mx !== 'number' || !Number.isInteger(monster.mx)
             || typeof monster.my !== 'number' || !Number.isInteger(monster.my)
             || monster.mstate !== undefined && typeof monster.mstate !== 'number'
+            || monster.headOnMap !== undefined && typeof monster.headOnMap !== 'boolean'
             || monster.wormno !== undefined && typeof monster.wormno !== 'number'
             || monster.wormGrowTime !== undefined
                 && typeof monster.wormGrowTime !== 'number') return false;
@@ -402,6 +405,8 @@ function savedWormPoint(value: unknown): value is Position {
 // C restore.c calls place_wsegs(), which normalizes only the hidden head.
 export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
     for (const monster of level.monsters) {
+        // The native monster grid is rebuilt from fmon when loading a level.
+        delete monster.headOnMap;
         if (monster.wormno) monster.wormHead = { x: monster.mx, y: monster.my };
     }
 }
