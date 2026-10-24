@@ -153,7 +153,9 @@ export async function consumeMonsterObject(monster, object, state = game, { publ
             if (stoning.heroDied)
                 return;
             if (!stoning.survived)
-                await finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true, publish, random, rollDice });
+                await finishEnvironmentalMonsterDeath(monster, state, {
+                    noCorpse: true, stoneRemains: stoning.remains ?? null, publish, random, rollDice,
+                });
         }
     }
     if (state.program_state.gameover || monster.migrating || state.level !== level)

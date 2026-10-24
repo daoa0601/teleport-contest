@@ -28,7 +28,7 @@ import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
-import { prepareMonsterPetrification } from './monster_stoning.js';
+import { describeStoneEngulferEscape, prepareMonsterPetrification } from './monster_stoning.js';
 import {
     MONSTER_FLAGS2,
     MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
@@ -71,6 +71,7 @@ export interface HeroMonsterKillOptions {
     zombifyCorpse?: boolean;
     noRevive?: boolean;
     petrified?: boolean;
+    stoneRemains?: GameObject | null;
     sadFeeling?: boolean;
     publish?: MessagePublisher;
 }
@@ -205,6 +206,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     zombifyCorpse = false,
     noRevive = false,
     petrified = false,
+    stoneRemains = null,
     sadFeeling = false,
     publish = plineWithContinuation,
 }: HeroMonsterKillOptions = {}): Promise<HeroMonsterKillOutcome> {
@@ -264,6 +266,8 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
     if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
         return { killed: true, heroDied: true };
+    if (wasInside)
+        await describeStoneEngulferEscape(monster, stone?.remains ?? stoneRemains, game, publish);
 
     // xkilled() owns this message after mondead() has released the inventory.
     if (sadFeeling)

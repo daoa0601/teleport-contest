@@ -93,7 +93,9 @@ async function eatHeroBrain(
             await publish(`${monsterName(monster, { state, capitalized: true })} turns to stone!`);
         const stone = await prepareMonsterPetrification(monster, { publish });
         if (stone.survived) return false;
-        await finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true, publish });
+        await finishEnvironmentalMonsterDeath(monster, state, {
+            noCorpse: true, stoneRemains: stone.remains ?? null, publish,
+        });
         return true;
     }
     const attributes = state.u.acurr?.a;

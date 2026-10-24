@@ -38,6 +38,7 @@ import { setMonsterGivenName } from './monster_given_name.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
+import { describeStoneEngulferEscape } from './monster_stoning.js';
 import {
     resolveMonsterDeathExplosion, monsterHasDeathExplosion,
     monsterDeathSwallower, rollMonsterDeathExplosion,
@@ -68,6 +69,8 @@ export interface MonsterDeathOptions {
     noCorpse?: boolean;
     noRevive?: boolean;
     zombifyCorpse?: boolean;
+    // monstone creates remains before ordinary death releases its engulfer.
+    stoneRemains?: GameObject | null;
     random?: (limit: number) => number;
     // C rnd()-style rolls, kept apart from rn2() so the native call is used.
     rollOne?: (sides: number) => number;
@@ -589,6 +592,7 @@ async function resolveMonsterDeath(
         noCorpse = false,
         noRevive = false,
         zombifyCorpse = false,
+        stoneRemains = null,
         random = rn2,
         rollOne = rnd,
         rollDice = d,
@@ -599,6 +603,7 @@ async function resolveMonsterDeath(
     } = {},
 ): Promise<MonsterDeathResult> {
     requireLiveGame(state);
+    const wasInside = !!state.u.uswallow && state.u.ustuck === monster;
     const recovery = await preventMonsterDeath(monster, {
         creditedKill: deathMessage,
         disintegrated,
@@ -616,6 +621,7 @@ async function resolveMonsterDeath(
         if (await detachDeadMonster(monster, state, random, publish, rollOne))
             return { monster, survived: false, corpse: null, heroDied: true };
     }
+    if (wasInside) await describeStoneEngulferEscape(monster, stoneRemains, state, publish);
     // C vamprises returns true even when its door already ran mondied.
     // An outer mondied still tries to leave remains; mondead does not.
     const death = noCorpse

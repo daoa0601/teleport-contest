@@ -84,7 +84,7 @@ export async function resolveMonsterCombatGaze(
         if (stone.heroDied) return gazeResult(M_ATTK_MISS, true);
         if (stone.survived) return gazeResult(M_ATTK_MISS);
         const death = await finishEnvironmentalMonsterDeath(attacker, state, {
-            noCorpse: true, publish, random, rollDice,
+            noCorpse: true, stoneRemains: stone.remains ?? null, publish, random, rollDice,
         });
         return gazeResult(attacker.mhp <= 0 ? M_ATTK_AGR_DIED : M_ATTK_MISS, !!death.heroDied);
     }

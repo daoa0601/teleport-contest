@@ -59,7 +59,9 @@ async function eatMonsterBrain(attacker, defender, damage, { state, visible, ran
             return { damage, hitFlags: M_ATTK_MISS, heroDied: true };
         if (stone.survived)
             return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
-        const death = await finishDeath(attacker, { noCorpse: true, random, publish });
+        const death = await finishDeath(attacker, {
+            noCorpse: true, stoneRemains: stone.remains ?? null, random, publish,
+        });
         if (death.heroDied)
             return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: true };
         if (attacker.mtame && !visible) {
