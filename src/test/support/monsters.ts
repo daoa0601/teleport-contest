@@ -51,7 +51,8 @@ export async function equipMonsterObject(monster: Monster, object: GameObject, w
     if (!carried) throw new Error('Monster equipment was not retained in inventory');
     carried.owornmask = wornMask;
     carried.worn = wornMask !== 0;
-    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | wornMask;
+    // C mon_wield_item() keeps W_WEP out of find_mac()'s armor mask.
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | (wornMask & ~W_WEP);
     if (wornMask & W_WEP) {
         carried.wielded = true;
         monster.mw = carried;
