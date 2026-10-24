@@ -33,6 +33,20 @@ void test('hallucination prevents monster naming before cursor selection', async
     await rhack('#'.charCodeAt(0));
     assert.equal(game._pending_message, 'You would never recognize it anyway.');
 });
+void test('monster naming keeps printable high bytes and limits the normalized name', async (t) => {
+    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+    const input = resetInputState();
+    input.feed('name\r');
+    queueCommandKeys('m');
+    planInput(input, t, [
+        { prompt: /instructions/, keys: 'l.' },
+        { prompt: /What do you want to call the soldier\?/, keys: `  \u00a0Café   ${'r'.repeat(68)}\r` },
+    ]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(soldier.mgivenname, `\u00a0Café ${'r'.repeat(56)}`);
+    assert.equal(game.context.move, 0);
+});
 void test('unique monsters reject a different name', async (t) => {
     freshObjectRoom({ flags: { tips: false, verbose: true } });
     const medusa = await createMonsterAt('Medusa', 11, 10, NO_MINVENT);

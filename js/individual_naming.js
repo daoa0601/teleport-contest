@@ -1,7 +1,7 @@
 // Player inscriptions and artifact naming. C do_name.c:do_oname()/oname().
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
-import { PL_PSIZ, QBUFSZ } from './const.js';
+import { QBUFSZ } from './const.js';
 import { displayMessageWindow, plineWithContinuation as pline } from './display.js';
 import { wipeoutText } from './engrave.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import { CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS, SPE_NOVEL, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
-import { getLine } from './query.js';
+import { playerName } from './player_name.js';
 import { rn2Display } from './rng.js';
 import { objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
 import { setTwoWeaponCombat, setWieldedArtifactProperties } from './weapon_slots.js';
@@ -120,12 +120,6 @@ function individualNamingDescription(object, limit) {
     if (name.length > limit)
         name = simpleObjectName(plainObject, state);
     return name.length <= limit ? name : 'item';
-}
-// Empty input cancels; spaces erase a name after normalization.
-export async function playerName(prompt) {
-    const input = await getLine(prompt, (_ch, key) => key >= 32 && key < 127);
-    return input === null || input === '' ? null
-        : input.trim().replace(/\s+/g, ' ').slice(0, PL_PSIZ - 1);
 }
 function restrictedArtifactName(object, artifact) {
     if (!(artifact.restricted || artifact.noGeneration || object.quan > 1))

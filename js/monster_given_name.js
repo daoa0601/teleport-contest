@@ -5,8 +5,8 @@ import { PL_PSIZ } from './const.js';
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
 export function setMonsterGivenName(monster, value) {
-    // Interactive names and the pinned Lua names are ASCII. Do not apply
-    // interactive whitespace normalization to names supplied by level files.
+    // Names supplied by level files retain their whitespace. Only player
+    // input goes through name_from_player()'s normalization.
     const name = String(value ?? '').split('\0', 1)[0]?.slice(0, PL_PSIZ - 1) || '';
     if (!name) {
         delete monster.name;

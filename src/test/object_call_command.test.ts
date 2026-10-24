@@ -36,6 +36,19 @@ void test('an empty type-name answer keeps the existing call name', async () => 
     assert.equal(game._objectCallNames?.[RIN_PROTECTION], 'Defense');
 });
 
+void test('type calling keeps printable high bytes and limits the normalized name', async () => {
+    freshObjectRoom();
+    await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });
+    const input = resetInputState();
+    input.feed(`name\r  \u00a0Café   ${'r'.repeat(68)}\r`);
+    queueCommandKeys('oa');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game._objectCallNames?.[RIN_PROTECTION], `\u00a0Café ${'r'.repeat(56)}`);
+    assert.equal(game.context.move, 0);
+});
+
 void test('erasing a call name keeps the unidentified ring in encountered discoveries', async t => {
     freshObjectRoom();
     await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });

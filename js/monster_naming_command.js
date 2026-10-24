@@ -5,7 +5,7 @@ import { canSenseMonster, canSpotMonster, glyphAt, monsterVisible, plineWithCont
 import { game, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { describeGetposLocation, selectMapPosition, showGetposTip } from './getpos.js';
-import { playerName } from './individual_naming.js';
+import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './mirror.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsRider } from './monster_data.js';
 import { setMonsterGivenName } from './monster_given_name.js';

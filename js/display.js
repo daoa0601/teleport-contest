@@ -28,7 +28,7 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
-import { rn2Display } from './rng.js';
+import { rn2, rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE, } from './random_text_data.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
@@ -2025,6 +2025,19 @@ export function displayColorName(preferred, state = game) {
     if (color === undefined)
         throw new Error('Display RNG returned an invalid color index');
     return color;
+}
+const OBJECT_COLOR_NAMES = [
+    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
+    'colorless', 'orange', 'bright green', 'yellow', 'bright blue',
+    'bright magenta', 'bright cyan', 'white',
+];
+// C do_name.c:rndcolor() draws an ordinary color even when hcolor() will
+// replace it with a hallucinated color from the display stream.
+export function randomColorName(state = game, random = rn2) {
+    const color = OBJECT_COLOR_NAMES[random(OBJECT_COLOR_NAMES.length)];
+    if (color === undefined)
+        throw new RangeError('Random color selection is outside the color table');
+    return displayColorName(color, state);
 }
 // C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
 // names suppress the article before the result is sentence-capitalized.

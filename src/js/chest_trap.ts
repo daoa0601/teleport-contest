@@ -10,7 +10,7 @@ import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, W_BALL } from './const.js';
 import { currency } from './currency.js';
 import {
-    bot, plineWithContinuation, shieldeff,
+    bot, plineWithContinuation, randomColorName, shieldeff,
 } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
@@ -60,12 +60,6 @@ export type ChestTrapResult = {
 
 const BLIND_GAS = [
     'humid', 'odorless', 'pungent', 'chilling', 'acrid', 'biting',
-];
-
-const GAS_COLORS = [
-    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
-    'colorless', 'orange', 'bright green', 'yellow', 'bright blue',
-    'bright magenta', 'bright cyan', 'white',
 ];
 
 function containerLocation(container: GameObject, state: GameState): Position {
@@ -227,7 +221,7 @@ async function confuseHero(container: GameObject, state: GameState, publish: Mes
     const blind = heroIsBlind(state);
     const description = blind
         ? BLIND_GAS[random(BLIND_GAS.length)]
-        : GAS_COLORS[random(GAS_COLORS.length)];
+        : randomColorName(state, random);
     await publish(
         `A cloud of ${description} gas billows from ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}.`,
     );

@@ -267,3 +267,22 @@ void test('colored gas stuns the hero while hallucination resistance stays activ
     assert.equal(game.u.hallucinationTurns, 19);
     assert.equal(heroIsHallucinating(), false);
 });
+
+void test('hallucination changes the color seen when a chest releases stunning gas', async () => {
+    const gasMessages: string[] = [];
+    for (const hallucinationTurns of [0, 30]) {
+        freshTrapRoom({ hero: { uluck: 13, hallucinationTurns } });
+        const chest = await addInventoryObject(CHEST, { otrapped: true });
+        const output = messageCollector();
+        initRng(2n);
+
+        const result = await triggerChestTrap(chest, { publish: output.publish });
+
+        assert.equal(result?.outcome, 'stunning-gas');
+        const message = output.messages.find(text => text.startsWith('A cloud of '));
+        assert.ok(message, 'Stunning gas must describe the cloud the hero sees');
+        gasMessages.push(message);
+    }
+    assert.notEqual(gasMessages[1], gasMessages[0],
+        'A hallucinating hero sees a fanciful color instead of the ordinary gas color');
+});

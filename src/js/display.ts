@@ -62,7 +62,7 @@ import {
     MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
     monsterTypeName,
 } from './monster_data.js';
-import { rn2Display } from './rng.js';
+import { rn2, rn2Display } from './rng.js';
 import {
     BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE,
 } from './random_text_data.js';
@@ -2071,6 +2071,20 @@ export function displayColorName(preferred: string | null | undefined, state: Ga
     const color = HALLUCINATED_COLORS[rn2Display(HALLUCINATED_COLORS.length)];
     if (color === undefined) throw new Error('Display RNG returned an invalid color index');
     return color;
+}
+
+const OBJECT_COLOR_NAMES = [
+    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
+    'colorless', 'orange', 'bright green', 'yellow', 'bright blue',
+    'bright magenta', 'bright cyan', 'white',
+];
+
+// C do_name.c:rndcolor() draws an ordinary color even when hcolor() will
+// replace it with a hallucinated color from the display stream.
+export function randomColorName(state: GameState = game, random = rn2): string {
+    const color = OBJECT_COLOR_NAMES[random(OBJECT_COLOR_NAMES.length)];
+    if (color === undefined) throw new RangeError('Random color selection is outside the color table');
+    return displayColorName(color, state);
 }
 
 // C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
