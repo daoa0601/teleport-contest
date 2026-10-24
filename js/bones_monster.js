@@ -7,7 +7,7 @@ import { game } from './gstate.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import { SPECIAL_PM } from './monster_data.js';
-import { hasIntrinsicProperty } from './properties.js';
+import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
 function sanitizeMonsterName(monster) {
     const name = monster?.mextra?.mgivenname
@@ -39,7 +39,7 @@ function raceIndex(state) {
 export function giveHeroResistancesToMonster(monster, state = game) {
     let inherited = 0;
     for (const [property, bit] of HERO_RESISTANCES) {
-        if (hasIntrinsicProperty(property, null, state))
+        if (hasPermanentIntrinsicProperty(property, state))
             inherited |= bit;
     }
     monster.mintrinsics = (monster.mintrinsics ?? 0) | inherited;
