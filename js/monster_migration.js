@@ -233,7 +233,7 @@ function arrivalStairway(state, origin, ladder) {
     // connects back to the origin level.
     for (let stair = state.stairs; stair; stair = stair.next) {
         if (sameLevel(stair.tolev, origin)
-            && !!stair.isladder === ladder)
+            && (ladder === undefined || stair.isladder === ladder))
             return stair;
     }
     return null;
@@ -344,8 +344,7 @@ export async function monsterArrive(monster, when, state) {
             break;
         }
         case MIGR_SSTAIRS: {
-            const stair = arrivalStairway(state, origin, false)
-                || arrivalStairway(state, origin, true);
+            const stair = arrivalStairway(state, origin);
             if (stair)
                 xlocale = stair.sx, ylocale = stair.sy;
             break;

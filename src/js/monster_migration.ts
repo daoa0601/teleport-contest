@@ -299,12 +299,12 @@ export function catchUpMonster(monster: Monster, moves: number, state: GameState
     monster.mlstmv = state.moves ?? 0;
 }
 
-function arrivalStairway(state: GameState, origin: DungeonLocation | undefined, ladder: boolean) {
+function arrivalStairway(state: GameState, origin: DungeonLocation | undefined, ladder?: boolean) {
     // C stairway_find_from()/stairway_find(): the stair on this level that
     // connects back to the origin level.
     for (let stair = state.stairs; stair; stair = stair.next) {
         if (sameLevel(stair.tolev, origin)
-            && !!stair.isladder === ladder) return stair;
+            && (ladder === undefined || stair.isladder === ladder)) return stair;
     }
     return null;
 }
@@ -419,8 +419,7 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
         break;
     }
     case MIGR_SSTAIRS: {
-        const stair = arrivalStairway(state, origin, false)
-            || arrivalStairway(state, origin, true);
+        const stair = arrivalStairway(state, origin);
         if (stair) xlocale = stair.sx, ylocale = stair.sy;
         break;
     }
