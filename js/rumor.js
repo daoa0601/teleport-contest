@@ -1,6 +1,6 @@
-// C rumors.c:outrumor(BY_COOKIE). Callers own literacy and the cookie itself.
+// C rumors.c: rumor delivery and Oracle consultations.
 import { setMulti } from './command_state.js';
-import { ACH_ORCL, FAINTED } from './const.js';
+import { ACH_ORCL, BY_COOKIE, BY_ORACLE, BY_OTHER, BY_PAPER, FAINTED } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { getRumor } from './mklev.js';
@@ -63,11 +63,7 @@ export async function consultOracle(oracle, state = game) {
         recordAchievement(state, ACH_ORCL);
     let experience = 0;
     if (payment === minorCost) {
-        const rumor = getRumor(true, 1) || 'NetHack rumors file closed for renovation.';
-        const manner = !rn2(4) ? 'offhandedly ' : !rn2(3) ? 'casually '
-            : rn2(2) ? 'nonchalantly ' : '';
-        await pline(`True to her word, the Oracle ${manner}says: `);
-        await pline(`"${rumor}"`);
+        await outRumor(1, BY_ORACLE, state);
         if (!events.minor_oracle)
             experience = Math.trunc(payment / (events.major_oracle ? 25 : 10));
         events.minor_oracle = true;
@@ -115,19 +111,35 @@ export async function outOracle(special, delphi, state = game) {
     state._retained_message = '';
 }
 export async function readCookieFortune(cookie, { state = game } = {}) {
+    await outRumor(cookie.blessed ? 1 : cookie.cursed ? -1 : 0, BY_COOKIE, state);
+}
+// C rumors.c:outrumor(). Reading permits cookie-specific fortunes; spoken
+// and other rumors exclude them. Callers own literacy and consumed objects.
+export async function outRumor(truth, mechanism, state = game) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (state.u.uhs === FAINTED)
+    const reading = mechanism === BY_COOKIE || mechanism === BY_PAPER;
+    if (mechanism === BY_COOKIE && state.u.uhs === FAINTED)
         return;
-    if (heroIsBlind(state)) {
-        await pline('This cookie has a scrap of paper inside.');
+    if (reading && heroIsBlind(state)) {
+        if (mechanism === BY_COOKIE)
+            await pline('This cookie has a scrap of paper inside.');
         await pline('What a pity that you cannot read it!');
         return;
     }
-    const rumor = getRumor(false, cookie.blessed ? 1 : cookie.cursed ? -1 : 0)
+    const rumor = getRumor(!reading, truth)
         || 'NetHack rumors file closed for renovation.';
-    await pline('This cookie has a scrap of paper inside.');
-    await pline('It reads:');
+    if (mechanism === BY_ORACLE) {
+        const manner = !rn2(4) ? 'offhandedly ' : !rn2(3) ? 'casually '
+            : rn2(2) ? 'nonchalantly ' : '';
+        await pline(`True to her word, the Oracle ${manner}says: `);
+        await pline(`"${rumor}"`);
+        return;
+    }
+    if (mechanism === BY_COOKIE)
+        await pline('This cookie has a scrap of paper inside.');
+    if (reading)
+        await pline('It reads:');
     await pline(rumor);
 }
 //# sourceMappingURL=rumor.js.map
