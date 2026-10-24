@@ -209,7 +209,7 @@ export function restoreGame(name, storage = game.storage) {
         // before it reads the hero, so the quest gender rolls are spent
         // even when the save is then refused; installing the snapshot
         // afterwards overwrites the rolled values, as Sfi_q_score() does.
-        rollQuestFigureGenders(snapshot.state.urole, snapshot.state.quest_status ?? { ldrgend: 0, nemgend: 0 });
+        rollQuestFigureGenders(snapshot.state.urole, { ldrgend: 0, nemgend: 0 });
         // C restgamestate() refuses a save whose hero was not healthy enough
         // to survive restoration, and dorecover() then waits for the message
         // to be dismissed before discarding the save file and starting over.
