@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { useBullwhip } from '../js/bullwhip.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
-import { TT_PIT, W_WEP } from '../js/const.js';
+import { M_AP_OBJECT, TT_PIT, W_WEP } from '../js/const.js';
+import { initializePet } from '../js/dog.js';
+import { ARROW } from '../js/object_data.js';
+import { installPagerInput } from './support/pager-input.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE, DAGGER, ROCK } from '../js/object_data.js';
@@ -268,5 +271,80 @@ void test('a flesh golem snatching a cockatrice corpse turns to stone golem and 
     assert.doesNotMatch(result.text, /fatal mistake/u);
     assert.ok(game.inventory.includes(result.club));
     assert.equal(floorObjectsAt(result.level, game.u.ux, game.u.uy).includes(result.club), false);
+});
+void test('flicking a whip at an unsensed object mimic stumbles onto it and strikes', async () => {
+    freshPlayableRoom({
+        role: 'archeologist',
+        hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } },
+    });
+    requirePlayingGame(game);
+    const whip = await addInventoryObject(BULLWHIP, {
+        invlet: 'a',
+        spe: 2,
+        wielded: true,
+        owornmask: W_WEP,
+    });
+    game.uwep = game.u.uwep = whip;
+    game.u.uhitinc = 100;
+    const mimic = await createMonsterAt('giant mimic', 11, 10);
+    mimic.m_ap_type = M_AP_OBJECT;
+    mimic.mappearance = ARROW;
+    mimic.mhp = mimic.mhpmax = 40;
+    initRng(7123n);
+    const messages = [];
+    const input = resetInputState();
+    installPagerInput(input, { expected: /mimic|You hit|You miss/, limit: 8 });
+    const pager = input.display;
+    if (pager) {
+        input.display = {
+            async readKey() {
+                messages.push(game._pending_message);
+                return pager.readKey();
+            },
+        };
+    }
+    await applyInventoryObject(whip, 'l ');
+    const prose = [...messages, game._pending_message].join('\n');
+    // C apply.c:use_whip() stumbles onto the mimic like any melee probe.
+    assert.match(prose, /is a giant mimic/);
+    assert.doesNotMatch(prose, /Snap/);
+    assert.equal(mimic.m_ap_type, 0);
+    // The stumble flows into force_attack(), which really strikes the mimic.
+    assert.ok(mimic.mhp < 40, 'the revealed mimic must take the forced hit');
+});
+void test('flicking a whip at a yielding pet stops without snapping or striking it', async () => {
+    freshPlayableRoom({
+        role: 'archeologist',
+        hero: { acurr: { a: [10, 10, 10, 18, 10, 10] } },
+    });
+    requirePlayingGame(game);
+    const whip = await addInventoryObject(BULLWHIP, {
+        invlet: 'a',
+        spe: 2,
+        wielded: true,
+        owornmask: W_WEP,
+    });
+    game.uwep = game.u.uwep = whip;
+    const worm = await createMonsterAt('long worm', 11, 10);
+    initializePet(worm, { state: game });
+    initRng(7124n);
+    const messages = [];
+    const input = resetInputState();
+    installPagerInput(input, { expected: /whip|in the way|flee/, limit: 8 });
+    const pager = input.display;
+    if (pager) {
+        input.display = {
+            async readKey() {
+                messages.push(game._pending_message);
+                return pager.readKey();
+            },
+        };
+    }
+    await applyInventoryObject(whip, 'l ');
+    const prose = [...messages, game._pending_message].join('\n');
+    assert.match(game._pending_message ?? '', /You stop\..*is in the way/);
+    assert.doesNotMatch(game._pending_message ?? '', /Snap/);
+    // force_attack() keeps its safepet displacement: the pet is unharmed.
+    assert.equal(worm.mhp, worm.mhpmax);
 });
 //# sourceMappingURL=bullwhip_apply.test.js.map
