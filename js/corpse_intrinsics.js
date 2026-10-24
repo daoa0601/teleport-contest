@@ -11,7 +11,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData, } from './monster_data.js';
 import { CORPSE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { killerObjectName } from './objnam.js';
+import { corpseName, killerObjectName } from './objnam.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, refreshProperty, } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -190,10 +190,9 @@ async function touchWieldedCorpseAfterResistanceExpires(state) {
         if (object?.otyp !== CORPSE || object.corpsenm === undefined || !touchPetrifies(object.corpsenm)
             || state.u.stoneResistance)
             continue;
-        const corpse = killerObjectName(object, state);
-        await plineWithContinuation(`You are wielding ${corpse} in your bare ${makePlural(heroHandName(state))}.`);
+        await plineWithContinuation(`You are wielding ${corpseName(object, { includeArticle: true })} in your bare ${makePlural(heroHandName(state))}.`);
         const result = await resolveImmediatePetrification({
-            state, killer: `resistance timing out while wielding ${corpse}`,
+            state, killer: `resistance timing out while wielding ${killerObjectName(object, state)}`,
         });
         if (result.died)
             return;

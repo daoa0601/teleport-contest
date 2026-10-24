@@ -13,7 +13,7 @@ import { stopRun } from './runmode.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
 import { windowOrigin } from './tty_menu.js';
 import { objectDescription } from './object_description.js';
-import { observeObjectForNaming } from './objnam.js';
+import { corpseName, observeObjectForNaming } from './objnam.js';
 import { NO_COLOR } from './terminal.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { objectQuantity } from './object_stack.js';
@@ -117,12 +117,8 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
         if (corpse) {
             const plural = objectQuantity(corpse) > 1;
             const prefix = objectCount > 1 ? 'Including' : plural ? "They're" : "It's";
-            const species = corpse.corpsenm;
-            if (species === undefined)
-                throw new Error('A petrifying corpse needs its monster species');
-            const noun = `${MONSTER_NAME[species]} corpse${plural ? 's' : ''}`;
             const warning = formCanBecomeStoneGolem(game.u.umonnum) ? '' : ', unfortunately';
-            await plineWithContinuation(`${prefix} ${plural ? '' : 'a '}${noun}${warning}.`);
+            await plineWithContinuation(`${prefix} ${corpseName(corpse, { includeArticle: true })}${warning}.`);
             return await feelPetrifyingCorpse(corpse);
         }
         return { died: false };

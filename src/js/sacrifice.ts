@@ -55,7 +55,7 @@ import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnl, rnd, rnz } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { unrestrictHeroSkill } from './skills.js';
-import { heroResistsStoning, touchPetrifies, touchPetrifyingCorpse } from './stoning.js';
+import { feelPetrifyingCorpse, heroResistsStoning, touchPetrifies } from './stoning.js';
 
 const AMULET_CLASS = 5;
 const FOOD_CLASS = 7;
@@ -115,7 +115,7 @@ async function chooseOffering(): Promise<GameObject | null> {
         for (const corpse of corpses) {
             if (heroIsBlind(game) && !(game.uarmg || hero.uarmg)
                 && !heroResistsStoning() && touchPetrifies(corpse.corpsenm)) {
-                await touchPetrifyingCorpse(corpse);
+                await feelPetrifyingCorpse(corpse);
                 return null;
             }
             const single = objectQuantity(corpse) === 1;
@@ -151,7 +151,7 @@ async function offerCorpse(corpse: GameObject, highAltar: boolean, alignment: nu
     if (!conduct.gnostic)
         recordGameLogEvent(`rejected atheism by offering ${inventoryItemDescription(corpse)} on an altar of ${deityName(alignment)}`);
     conduct.gnostic = (conduct.gnostic || 0) + 1;
-    await touchPetrifyingCorpse(corpse);
+    await feelPetrifyingCorpse(corpse, { forceTouch: true });
     if (game.program_state.gameover) return;
     if (isRider(corpse.corpsenm)) {
         await pline('At your touch, the corpse suddenly moves...');

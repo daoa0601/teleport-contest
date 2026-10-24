@@ -14,7 +14,7 @@ import {
 } from './monster_data.js';
 import { CORPSE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { killerObjectName } from './objnam.js';
+import { corpseName, killerObjectName } from './objnam.js';
 import {
     grantIntrinsicProperty, hasIntrinsicProperty, refreshProperty,
 } from './properties.js';
@@ -191,10 +191,9 @@ async function touchWieldedCorpseAfterResistanceExpires(state: GameState) {
     for (const object of weapons) {
         if (object?.otyp !== CORPSE || object.corpsenm === undefined || !touchPetrifies(object.corpsenm)
             || state.u.stoneResistance) continue;
-        const corpse = killerObjectName(object, state);
-        await plineWithContinuation(`You are wielding ${corpse} in your bare ${makePlural(heroHandName(state))}.`);
+        await plineWithContinuation(`You are wielding ${corpseName(object, { includeArticle: true })} in your bare ${makePlural(heroHandName(state))}.`);
         const result = await resolveImmediatePetrification({
-            state, killer: `resistance timing out while wielding ${corpse}`,
+            state, killer: `resistance timing out while wielding ${killerObjectName(object, state)}`,
         });
         if (result.died) return;
         if (!state.u.stoneResistance) await releaseWeaponSlots(object, state);
