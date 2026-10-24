@@ -132,3 +132,16 @@ void test('skeleton chat holds input while two world turns pass, then restores m
     assert.equal(game._helplessTurns, 0);
     assert.equal(game.multi, 0);
 });
+
+void test('chat with a cancelled incubus complains about a severe headache', async () => {
+    freshObjectRoom({ flags: { female: true } });
+    const incubus = await createMonsterAt('amorous demon', 11, 10);
+    incubus.female = false;
+    incubus.mcan = 1;
+    incubus.msleeping = 0;
+
+    await runExtendedCommand('chat', 'l');
+
+    assert.equal(game._pending_message, 'The incubus acts as though he has got a severe headache.');
+    assert.equal(game.context.move, 1);
+});
