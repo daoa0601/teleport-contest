@@ -62,6 +62,11 @@ export function levelIsWizardTower(state = game) {
     const prototype = state._activeSpecialLevel?.prototype;
     return prototype !== undefined && WIZARD_TOWER_LEVELS.has(prototype);
 }
+// C dungeon.c:On_W_tower_level(): the destination form of the tower test.
+export function wizardTowerLevelAt(dnum, dlevel) {
+    const prototype = specialPrototypeAt(dnum, dlevel);
+    return prototype !== null && WIZARD_TOWER_LEVELS.has(prototype);
+}
 // The teleport exclusions in the three Wizard levels mark the tower walls.
 // C dungeon.c exposes the same area as In_W_tower().
 export function insideWizardTower(x, y, state = game) {

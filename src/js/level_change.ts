@@ -36,9 +36,9 @@ import { restoreLevelRegions, updateHeroRegions } from './regions.js';
 import { mklev, oinit, place_lregion, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js';
 import { dungeonBuildsUp, level_difficulty, specialPrototypeAt,
     recordMappedOverviewState, recordOverviewBranch, markOverviewUnreachable,
-    insideWizardTower, levelIsWizardTower } from './dungeon.js';
+    insideWizardTower, levelIsWizardTower, wizardTowerLevelAt } from './dungeon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely, bringLeashedFollowers } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
@@ -158,6 +158,10 @@ interface LevelArrivalOptions {
     followers: Monster[];
     beforeGlow: () => Promise<void>;
     wasInsideWizardTower: boolean;
+    // C goto_level() computes 'up' from the requested destination before the
+    // Amulet's mysterious force can redirect the hero deeper; u_on_rndspot()
+    // still sees the stale upward flag.
+    rndspotUp: boolean;
 }
 
 export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
@@ -169,6 +173,10 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     const oldDepth = { ...game.u.uz };
     const wasInsideWizardTower = insideWizardTower(game.u.ux, game.u.uy);
     const destinationDepth = { ...oldDepth, ...targetDepth };
+    // C do.c:1489: 'up' compares the requested destination before the
+    // Amulet's mysterious force can redirect it deeper.
+    const climbingUp = dungeonDepth(destinationDepth.dnum, destinationDepth.dlevel)
+        < dungeonDepth(oldDepth.dnum, oldDepth.dlevel);
     const tutorialDnum = game.specialLevels?.get('tut-1')?.dnum;
     const leavingTutorial = tutorialDnum !== undefined && Number.isInteger(tutorialDnum)
         && oldDepth.dnum === tutorialDnum && destinationDepth.dnum !== tutorialDnum;
@@ -194,6 +202,42 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         await docrt();
         await bot();
         return false;
+    }
+    // C do.c:1541-1573: with the Amulet, a Gehennom ascent can be pushed
+    // back down by a mysterious force.  The chance drops as it kicks in
+    // (context.mysteryforce), and the bias runs from chaotic (mildest) to
+    // lawful (harshest).  A hero inside the Wizard's tower stays inside it.
+    // The redirected arrival is a random spot, not stairs, and keeps the
+    // original up-arrival flag for u_on_rndspot().
+    const departingDungeon = game.dungeons[oldDepth.dnum];
+    if (departingDungeon?.flags?.hellish
+        && climbingUp && game.u.uhave?.amulet
+        && destinationDepth.dnum === oldDepth.dnum
+        && arrival !== 'portal'
+        && oldDepth.dlevel < departingDungeon.num_dunlevs - 3
+        && rn2(4 + (game.context.mysteryforce ?? 0)) === 0) {
+        const odds = 3 + game.u.ualign.type; /* 2..4 */
+        let diff = odds <= 1 ? 0 : rn2(odds);
+        if (diff !== 0) {
+            // C assign_rnd_level(): one level below plus rnd(diff), clamped
+            // to the dungeon's bounds.
+            destinationDepth.dlevel = Math.max(1,
+                Math.min(departingDungeon.num_dunlevs, oldDepth.dlevel + rnd(diff)));
+            diff = destinationDepth.dlevel - oldDepth.dlevel;
+            if (wasInsideWizardTower
+                && !wizardTowerLevelAt(destinationDepth.dnum, destinationDepth.dlevel))
+                diff = 0;
+        }
+        if (diff === 0) destinationDepth.dlevel = oldDepth.dlevel;
+        await pline('A mysterious force momentarily surrounds you...');
+        game.context.mysteryforce = (game.context.mysteryforce ?? 0) + rn2(diff + 2);
+        if (destinationDepth.dlevel === oldDepth.dlevel) {
+            await teleportHeroSafely();
+            await bringLeashedFollowers(game);
+            return true;
+        }
+        arrival = 'random';
+        ladder = false;
     }
     // C do.c:goto_level() applies the quest-start admission gate after the
     // destination has been resolved but before savelev()/mklev().  Wizard
@@ -305,7 +349,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         postMessage = '';
         await plineWithContinuation(message);
     };
-    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower });
+    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower, rndspotUp: climbingUp });
     if (died) return true;
     const newDepth = { ...game.u.uz };
 
@@ -518,7 +562,7 @@ async function finishAstralArrival(): Promise<void> {
     await gainGuardianAngel(game);
 }
 
-async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower }: LevelArrivalOptions): Promise<boolean> {
+async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower, rndspotUp }: LevelArrivalOptions): Promise<boolean> {
     requirePlayingGame(game);
     const atStairs = arrival === 'stairs' || arrival === 'downstairs';
     const up = dungeonDepth(game.u.uz.dnum, game.u.uz.dlevel)
@@ -558,8 +602,8 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         } else {
             if (wasInsideWizardTower && levelIsWizardTower())
                 await placeHeroAtRandomArrival(game._activeSpecialLevel?.downTeleportExclude);
-            else await placeHeroAtRandomArrival(up
-                ? game.level.upTeleportRegion : game.level.downTeleportRegion, up);
+            else await placeHeroAtRandomArrival(rndspotUp
+                ? game.level.upTeleportRegion : game.level.downTeleportRegion, rndspotUp);
             if (arrival === 'falling') {
                 if (heroIsPunished() && await fallWithIronBall()) return true;
                 const contact = await selfTouchPetrifyingWeapons({

@@ -13,6 +13,7 @@ export function validSavedGameContext(value, entities) {
         jingle: optional(string),
         lifelist: optional(validLifeList),
         made_amulet: optional(boolean),
+        mysteryforce: optional(integer),
         mon_moving: optional(boolean),
         mv: optional(boolean),
         no_of_wizards: optional(integer),
