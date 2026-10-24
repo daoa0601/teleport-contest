@@ -3558,6 +3558,18 @@ export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz)
     return game.storage?.getItem(bonesStorageKey(level)) != null;
 }
 
+export function deleteBonesLevel(): boolean {
+    const storage = game.storage;
+    if (!storage) return false;
+    try {
+        const key = bonesStorageKey();
+        storage.removeItem(key);
+        return storage.getItem(key) === null;
+    } catch (_error) {
+        return false;
+    }
+}
+
 async function bonesPrompt(message: string, displayLevel: GameMap | null = null): Promise<string> {
     await pline(message);
     const restoredLevel = game.level;
@@ -3948,15 +3960,7 @@ async function finishBonesRestore(displayLevel: GameMap | null = null): Promise<
         );
         if (unlink !== 'y') return true;
     }
-    const storage = game.storage;
-    if (!storage) return false;
-    try {
-        const key = bonesStorageKey();
-        storage.removeItem(key);
-        return storage.getItem(key) === null;
-    } catch (_error) {
-        return false;
-    }
+    return deleteBonesLevel();
 }
 
 // C ref: allmain.c l_nhcore_init()

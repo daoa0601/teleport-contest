@@ -12,6 +12,7 @@ import {
     completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave,
 } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
+import { plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -20,7 +21,7 @@ import { makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
 import {
-    bonesLevelExists, createCorpstatAt, makemonAt, mkcorpstat, mksobj,
+    bonesLevelExists, createCorpstatAt, deleteBonesLevel, makemonAt, mkcorpstat, mksobj,
     saveBonesLevel,
 } from './mklev.js';
 import {
@@ -174,6 +175,10 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
             'Bones file already exists.  Replace it?',
         );
         if (replace !== 'y') return false;
+        if (!deleteBonesLevel()) {
+            await plineWithContinuation('Cannot unlink old bones.');
+            return false;
+        }
     }
 
     releaseAllMonsterLeashes();

@@ -5,9 +5,11 @@ import { G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { saveBonesLevel } from '../js/mklev.js';
 import { LEASH } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { init_objects } from '../js/o_init.js';
+import { InMemoryStorage } from '../js/storage.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -71,5 +73,17 @@ void test('bones are not saved when the dead hero ghost cannot be created', asyn
     game.mvitals[MONSTER_NAME.indexOf('ghost')] = { born: 0, died: 0, mvflags: G_GENOD };
     assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), false);
     assert.equal(storage.length, 0);
+});
+void test('wizard replacement keeps old bones when the storage backend cannot unlink them', async () => {
+    dyingHero();
+    game.flags.debug = true;
+    game.storage = new class extends InMemoryStorage {
+        removeItem() { }
+    }();
+    assert.equal(saveBonesLevel(), true);
+    const leash = await addInventoryObject(LEASH);
+    assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), false);
+    assert.equal(leash.where, 'inventory');
+    assert.match(game._pending_message, /Cannot unlink old bones/);
 });
 //# sourceMappingURL=bones_preparation.test.js.map

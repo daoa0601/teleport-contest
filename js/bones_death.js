@@ -6,12 +6,13 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd, } from './const.js';
 import { completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave, } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
+import { plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { setTwoWeaponCombat } from './weapon_slots.js';
 import { makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
-import { bonesLevelExists, createCorpstatAt, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
+import { bonesLevelExists, createCorpstatAt, deleteBonesLevel, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
 import { monsterCanCarryObject, monsterLikesObjects, } from './monster_carry.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -153,6 +154,10 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
         const replace = await promptDeathQuestion('Bones file already exists.  Replace it?');
         if (replace !== 'y')
             return false;
+        if (!deleteBonesLevel()) {
+            await plineWithContinuation('Cannot unlink old bones.');
+            return false;
+        }
     }
     releaseAllMonsterLeashes();
     if (game.u.punished)
