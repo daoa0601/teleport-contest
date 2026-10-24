@@ -1,13 +1,14 @@
 // How many objects the hero throws or shoots with one command.
 // C refs: dothrow.c multishot_class_bonus() and throw_obj().
-import { artifactById } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
+import { plineWithContinuation } from './display.js';
 import { A_DEX, A_STR, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { rnd } from './rng.js';
+import { isQuestArtifact } from './quest.js';
 import { ensureHeroSkills } from './skills.js';
 const WEAPON_CLASS = 2;
 function weakMultishot(role, skill, state) {
@@ -41,10 +42,6 @@ function raceBonus(race, item, launcher, skill) {
     }
     return race === 'gnome' && skill === -P_CROSSBOW ? 1 : 0;
 }
-function questArtifactLauncher(launcher, state) {
-    return !!(launcher?.questArtifact
-        || artifactById(launcher?.oartifact, state)?.questArtifact);
-}
 export function chooseHeroVolleyCount(item, { state = game, shotLimit = 0, random = rnd, } = {}) {
     requirePlayingGame(state);
     const quantity = Math.max(1, item?.quan ?? item?.quantity ?? 1);
@@ -71,7 +68,7 @@ export function chooseHeroVolleyCount(item, { state = game, shotLimit = 0, rando
     maximum += roleBonus(role, item, launcher, skill);
     if (!weak) {
         maximum += raceBonus(race, item, launcher, skill);
-        if (questArtifactLauncher(launcher, state))
+        if (launcher && isQuestArtifact(launcher, state))
             maximum++;
     }
     if (maximum > 1 && skill === -P_CROSSBOW
@@ -82,5 +79,19 @@ export function chooseHeroVolleyCount(item, { state = game, shotLimit = 0, rando
     if (shotLimit > 0)
         count = Math.min(count, shotLimit);
     return count;
+}
+// C endmultishot(TRUE): the current projectile finishes, then the command
+// stops. Keep the count live so its remaining contact messages see the limit.
+export async function endHeroVolley(volley, state = game) {
+    if (volley.index >= volley.count)
+        return;
+    if (!state.context.mon_moving) {
+        const index = volley.index;
+        const suffix = index % 100 >= 11 && index % 100 <= 13 ? 'th'
+            : index % 10 === 1 ? 'st' : index % 10 === 2 ? 'nd'
+                : index % 10 === 3 ? 'rd' : 'th';
+        await plineWithContinuation(`You stop ${volley.shooting ? 'firing' : 'throwing'} after the ${index}${suffix} ${volley.shooting ? 'shot' : 'toss'}.`);
+    }
+    volley.count = volley.index;
 }
 //# sourceMappingURL=hero_multishot.js.map

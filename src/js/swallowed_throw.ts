@@ -12,6 +12,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
+import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import type { FinishKillWithObject } from './hero_ranged_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -56,6 +57,7 @@ interface SwallowedThrowOptions {
 export interface SwallowedWeaponThrowOptions extends SwallowedThrowOptions {
     objectClass: number;
     finishKill: FinishKillWithObject;
+    volley?: HeroProjectileVolley;
 }
 
 export interface SwallowedEggPieOrVenomThrowOptions extends SwallowedThrowOptions {
@@ -163,6 +165,7 @@ export async function resolveSwallowedWeaponThrow({
     selectedQuantity,
     splitObjectId = null,
     finishKill,
+    volley,
 }: SwallowedWeaponThrowOptions): Promise<boolean> {
     const engulfer = swallowedWeaponTarget(state, item, objectClass);
     if (!engulfer) return false;
@@ -197,6 +200,7 @@ export async function resolveSwallowedWeaponThrow({
         const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
             state,
             guaranteedHit: true,
+            ...(volley ? { volley } : {}),
             // xkilled() leaves a returning missile free during expulsion;
             // other projectiles join the engulfer's inventory before death.
             ...(returns ? {} : { finishKillWithObject: finishKill }),

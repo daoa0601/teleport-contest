@@ -102,7 +102,7 @@ function swallowedPotionEligibility(state, item, objectClass, selectedQuantity) 
     }
     return engulfer;
 }
-export async function resolveSwallowedWeaponThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, finishKill, }) {
+export async function resolveSwallowedWeaponThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, finishKill, volley, }) {
     const engulfer = swallowedWeaponTarget(state, item, objectClass);
     if (!engulfer)
         return false;
@@ -133,6 +133,7 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
         const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
             state,
             guaranteedHit: true,
+            ...(volley ? { volley } : {}),
             // xkilled() leaves a returning missile free during expulsion;
             // other projectiles join the engulfer's inventory before death.
             ...(returns ? {} : { finishKillWithObject: finishKill }),

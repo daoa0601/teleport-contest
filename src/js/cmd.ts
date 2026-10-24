@@ -297,6 +297,7 @@ import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { chooseHeroVolleyCount } from './hero_multishot.js';
+import type { HeroProjectileVolley } from './hero_physical_types.js';
 import {
     captureThrownObjectFlight,
 } from './thrown_object.js';
@@ -2747,17 +2748,17 @@ async function doswapweapon() {
     setMulti(0);
     if (heroHasNoHands(game) || heroIsVerySmall(game)) {
         await pline("Don't be ridiculous!");
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     if (await refuseWeldedPrimary()) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
     await setSecondaryWeapon(null, game);
-    const spentTime = await readyHeroWeapon(oldSecondary);
+    const result = await readyHeroWeapon(oldSecondary);
     if (game.uwep === oldPrimary) {
         await setSecondaryWeapon(oldSecondary, game);
     } else if (oldPrimary) {
@@ -2770,7 +2771,8 @@ async function doswapweapon() {
     } else {
         await plineWithContinuation('You have no secondary weapon readied.');
     }
-    game.context.move = spentTime ? 1 : 0;
+    if (result === 'failed') resetCommandVariables(true);
+    else game.context.move = result === 'time' ? 1 : 0;
 }
 
 async function dochat() {
@@ -5346,7 +5348,7 @@ async function dowield(): Promise<void> {
     setMulti(0);
     if (heroHasNoHands(game) || heroIsVerySmall(game)) {
         await pline("Don't be ridiculous!");
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     clearSplitObjects();
@@ -5358,13 +5360,13 @@ async function dowield(): Promise<void> {
             makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
     });
     if (selection.cancelled) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
 
     let object = selection.object;
     if (!selection.none && !object) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     let splitParent: GameObject | null = null;
@@ -5383,7 +5385,7 @@ async function dowield(): Promise<void> {
     if (await refuseWeldedPrimary()) {
         resetBulkTakeoff();
         if (splitParent && object) await rejoinObjectStack(splitParent, object);
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     if (splitParent && object) {
@@ -5440,7 +5442,7 @@ async function dowield(): Promise<void> {
         await setQuiverObject(null);
     } else if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE)) {
         await pline('You cannot wield that!');
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     await wieldSelectedWeapon(object);
@@ -5449,12 +5451,12 @@ async function dowield(): Promise<void> {
 async function reportAlreadyWielded(object: GameObject): Promise<void> {
     await pline('You are already wielding that!');
     if (isWeaponTool(object) || isWetTowel(object)) game._unweapon = false;
-    game.context.move = 0;
+    resetCommandVariables(true);
 }
 
 async function wieldSelectedWeapon(object: GameObject | null): Promise<void> {
     const oldPrimary = game.uwep || game.u.uwep || null;
-    const spentTime = await readyHeroWeapon(object);
+    const result = await readyHeroWeapon(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
     // secondary object; preserving that identity is what makes a later
@@ -5463,7 +5465,8 @@ async function wieldSelectedWeapon(object: GameObject | null): Promise<void> {
         await setSecondaryWeapon(oldPrimary, game);
     }
     await stopTwoWeaponCombat();
-    game.context.move = spentTime ? 1 : 0;
+    if (result === 'failed') resetCommandVariables(true);
+    else game.context.move = result === 'time' ? 1 : 0;
 }
 
 // C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
@@ -6080,7 +6083,8 @@ async function applyTool(
 // one live inventory transaction; neither role nor recorded input selects a
 // different readiness implementation.
 async function doready(): Promise<void> {
-    await doquiverCore('ready');
+    const result = await doquiverCore('ready');
+    if (result.cancelled) resetCommandVariables(true);
 }
 
 function splitCarriedStack(item: GameObject, count: number): GameObject {
@@ -6347,11 +6351,20 @@ async function dofire(cannedShotLimit: number | null = null): Promise<void> {
             await pline('You have no ammunition readied.');
         }
         if (!fireObject) {
+            // A repeated direction cannot answer the empty-quiver picker.
+            game._inDoAgain = false;
             const selection = await doquiverCore('fire');
-            fireObject = selection?.item || null;
-            quiverSelectionSpentTime = !!selection?.spentTime;
+            if (selection.cancelled) {
+                resetCommandVariables(true);
+                return;
+            }
+            fireObject = selection.item;
+            quiverSelectionSpentTime = selection.spentTime;
         }
-        if (!fireObject) return;
+        if (!fireObject) {
+            if (!quiverSelectionSpentTime) resetCommandVariables(true);
+            return;
+        }
     }
 
     // dothrow.c:dofire() routes launcher assistance through CQ_CANNED: a
@@ -6560,33 +6573,7 @@ async function throwCommand(
 
     if (isWetTowel(item)) await dryTowel(item, -1);
 
-    if (selectedIsGold && item === game.uquiver) {
-        await resolveQuiveredGoldThrow({
-            state: game,
-            gold: item,
-            dx, dy, dz,
-            captureFlight: captureThrownObjectFlight,
-            wakeMonster: wakeAttackedMonster,
-        });
-        if (game.program_state.gameover) return;
-        await reportHeroEncumbrance(game);
-        game.context.move = 1;
-        return;
-    }
-
-    const selectedQuantity = item.quantity ?? item.quan ?? 1;
-    const thrownObjectClass = selectedObjectClass;
-    // obj.h:is_ammo()+matching_launcher(): the arrow flight owner is selected
-    // by the signed P_BOW subtype, not the ordinary ARROW/BOW identities.
-    // This includes elven, orcish, silver and ya ammunition with any matching
-    // bow while leaving crossbow and sling ammunition to the shared flight.
-    const bowAmmo = OBJECT_SUBTYPE[item.otyp] === -P_BOW;
-    const handThrownArrow = bowAmmo
-        && (!game.uwep || OBJECT_SUBTYPE[game.uwep.otyp] !== P_BOW);
-    const volleyCount = game.u?.uswallow ? 1 : chooseHeroVolleyCount(item, {
-        state: game,
-        shotLimit,
-    });
+    const volleyCount = chooseHeroVolleyCount(item, { state: game, shotLimit });
     if (volleyCount > 1 || shotLimit > 0) {
         if (volleyCount === 1) observeObjectForNaming(item);
         const noun = volleyCount === 1
@@ -6596,6 +6583,38 @@ async function throwCommand(
                 volleyCount} ${noun}.`,
         );
     }
+
+    const volley: HeroProjectileVolley = {
+        count: volleyCount, index: 1, objectType: item.otyp,
+        shooting: launcherMatchesAmmo(item, game.uwep),
+    };
+    for (; volley.index <= volley.count; volley.index++) {
+        const stopVolley = await throwSelectedUnit(item, dx, dy, volley);
+        if (game.program_state.gameover) return;
+        await reportHeroEncumbrance(game);
+        if (game.program_state.gameover || stopVolley) break;
+    }
+    game.context.move = 1;
+}
+
+// throw_obj() hands off one missile at a time. An engulfer can die during a
+// volley, so every remaining missile must choose its current destination.
+async function throwSelectedUnit(
+    item: GameObject, dx: number, dy: number, volley: HeroProjectileVolley,
+): Promise<boolean> {
+    if (item.oclass === 12 && item === game.uquiver) {
+        await resolveQuiveredGoldThrow({
+            state: game,
+            gold: item,
+            dx, dy, dz: game.u.dz ?? 0,
+            captureFlight: captureThrownObjectFlight,
+            wakeMonster: wakeAttackedMonster,
+        });
+        return false;
+    }
+
+    const selectedQuantity = item.quantity ?? item.quan ?? 1;
+    const thrownObjectClass = item.oclass || objectClassForType(item.otyp);
     if (await resolveSwallowedEggPieOrVenomThrow({
         state: game,
         item,
@@ -6603,14 +6622,15 @@ async function throwCommand(
         finishKill: (monster: Monster) => finishOrdinarySwallowedConsumedKill(
             monster, item.otyp === EGG ? 'swallowed-egg' : 'swallowed-venom',
         ),
-    })) return;
+    })) return false;
     if (await resolveSwallowedWeaponThrow({
         state: game,
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
+        volley,
         finishKill: finishOrdinarySwallowedThrowKill,
-    })) return;
+    })) return false;
     if (game.u?.uswallow
         && (thrownObjectClass === 2
             || (thrownObjectClass === 6
@@ -6630,7 +6650,7 @@ async function throwCommand(
         finishKill: (monster: Monster, death?: HeroMonsterKillOptions) => finishOrdinarySwallowedConsumedKill(
             monster, 'swallowed-potion', death,
         ),
-    })) return;
+    })) return false;
     if (game.u?.uswallow && thrownObjectClass === 8)
         throw new Error('swallowed potion throwing is not implemented');
 
@@ -6640,7 +6660,7 @@ async function throwCommand(
         objectClass: thrownObjectClass,
         selectedQuantity,
         wakeMonster: wakeAttackedMonster,
-    })) return;
+    })) return false;
 
     if (await resolveGenericSwallowedThrow({
         state: game,
@@ -6648,7 +6668,7 @@ async function throwCommand(
         objectClass: thrownObjectClass,
         selectedQuantity,
         wakeMonster: wakeAttackedMonster,
-    })) return;
+    })) return false;
     if (game.u?.uswallow && thrownObjectClass !== 8) {
         // An unresolved swallowed object cannot use the ordinary floor path;
         // that path targets map coordinates rather than the engulfing monster.
@@ -6666,36 +6686,19 @@ async function throwCommand(
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNearWithMessages,
         finishKill: finishOrdinaryMapPotionKill,
-    })) return;
+    })) return false;
     if (!game.u?.uswallow && thrownObjectClass === 8)
         throw new Error('map potion impact is not implemented');
 
-    // is_ammo() halves hand-thrown arrow range and announces the missing
-    // launcher before bhit() resolves the landing.  Keep the line alive
-    // across contact and the terminal projectile transaction below.
-    if (handThrownArrow) {
-        await pline(
-            `You aren't wielding a bow, so you throw your ${
-                OBJECT_NAMES[item.otyp] || 'arrow'
-            } by hand.`,
-        );
-    }
-
-    for (let shot = 0; shot < volleyCount; shot++) {
-        const shotResult = await throwOrdinaryObject({
-            state: game,
-            item,
-            quantity: item.quantity ?? item.quan ?? 1,
-            dx,
-            dy,
-            volley: { count: volleyCount, index: shot + 1, objectType: item.otyp },
-        });
-        if ('heroDied' in shotResult && shotResult.heroDied) return;
-        await reportHeroEncumbrance(game);
-        if (game.program_state?.gameover) break;
-        if ('stopVolley' in shotResult && shotResult.stopVolley) break;
-    }
-    game.context.move = 1;
+    const shotResult = await throwOrdinaryObject({
+        state: game,
+        item,
+        quantity: selectedQuantity,
+        dx,
+        dy,
+        volley,
+    });
+    return 'stopVolley' in shotResult && !!shotResult.stopVolley;
 }
 
 async function openLockedDoor(x: number, y: number): Promise<boolean> {
