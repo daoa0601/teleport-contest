@@ -89,14 +89,17 @@ const MONSTER_NAME_ALIASES = new Map(MONSTER_NAME_ALIAS_ENTRIES.map(([alias, tar
     alias,
     { mnum: typeof target === 'number' ? target : canonicalMonsterNumber(target), gender },
 ]));
+function withoutMonsterArticle(value) {
+    return value.replace(/^(?:a|an|the) /, '');
+}
 function normalizeMonsterName(value) {
-    let name = String(value || '').trim().toLowerCase()
-        .replace(/\s+/g, ' ')
-        .replace(/^(?:a|an|the) /, '');
-    name = name.replace(/vortices/g, 'vortex');
-    if (name.endsWith('ies') && !name.endsWith('zombies'))
+    let name = withoutMonsterArticle(value).toLowerCase();
+    const vortices = name.indexOf('vortices');
+    if (vortices >= 0)
+        return `${name.slice(0, vortices + 4)}ex`;
+    if (name.length > 3 && name.endsWith('ies') && !name.endsWith('zombies'))
         name = `${name.slice(0, -3)}y`;
-    else if (name.endsWith('ves'))
+    else if (name.length > 3 && name.endsWith('ves'))
         name = `${name.slice(0, -3)}f`;
     return name;
 }
@@ -143,7 +146,7 @@ export function resolveMonsterNamePrefix(value) {
     const requested = normalizeMonsterName(value);
     if (!requested)
         return null;
-    const source = value.trim().replace(/\s+/g, ' ').replace(/^(?:a|an|the) /i, '');
+    const source = withoutMonsterArticle(value);
     for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && (!requested[alias.length] || requested[alias.length] === ' '

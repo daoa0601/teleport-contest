@@ -25,3 +25,10 @@ void test('alternate spellings require a word boundary before canonical plural m
     assert.equal(nameToMonster('djinnis'), MONSTER_NAME.indexOf('djinni'));
 });
 
+void test('a monster prefix preserves the original trailing wish text', () => {
+    const match = resolveMonsterNamePrefix('a red dragon corpse  ');
+
+    assert.ok(match);
+    assert.equal(match.remainder, ' corpse  ');
+});
+
