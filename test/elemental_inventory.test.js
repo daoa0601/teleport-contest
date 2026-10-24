@@ -11,7 +11,7 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addTrap } from './support/level-state.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { flushPendingTopline } from '../js/display.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { dodiscovered } from '../js/o_init.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
@@ -285,11 +285,15 @@ for (const sight of ['sighted', 'blind', 'hallucinating']) {
         initRng(1n);
         await destroyColdInventory(5, { publish: async () => { } });
         assert.ok(!game.inventory.includes(potion));
-        const showing = dodiscovered();
-        const text = requireGameDisplay(game).grid
-            .map(row => row.map(cell => cell.ch).join('')).join('\n');
-        pushKeys('\x1b');
-        await showing;
+        // Capture the discoveries window when it waits for its dismissal key.
+        const input = resetInputState();
+        let text = '';
+        input.beforeRead = () => {
+            text ||= requireGameDisplay(game).grid
+                .map(row => row.map(cell => cell.ch).join('')).join('\n');
+        };
+        input.feed('\x1b');
+        await dodiscovered();
         assert.ok(game.objectDescriptions !== null && game.objectDescriptions !== undefined);
         const appearance = game.objectDescriptions[POT_HEALING];
         assert.equal(text.includes(`potion (${appearance})`), sight === 'sighted');
