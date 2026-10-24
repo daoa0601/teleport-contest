@@ -75,7 +75,8 @@ export function parseLua(source, filename = '<lua>') {
                 take(';');
                 continue;
             }
-            body.push(parseStatement());
+            const line = current().line;
+            body.push({ ...parseStatement(), line });
             if (is(';'))
                 take(';');
         }
@@ -103,7 +104,7 @@ export function parseLua(source, filename = '<lua>') {
         take(')');
         const body = parseBlock(new Set(['end']));
         takeClosing('end', opening);
-        return { type: 'Function', parameters, vararg, body };
+        return { type: 'Function', filename, line: opening.line, parameters, vararg, body };
     }
     function parseFunctionStatement() {
         const opening = take('function');
@@ -345,6 +346,7 @@ export function parseLua(source, filename = '<lua>') {
         fail('unexpected symbol');
     }
     function parseSuffixedExpression() {
+        const line = current().line;
         let expression = parsePrimary();
         for (;;) {
             if (is('[')) {
@@ -364,13 +366,13 @@ export function parseLua(source, filename = '<lua>') {
                 take(':');
                 const method = takeName();
                 expression = {
-                    type: 'MethodCall', target: expression, method,
+                    type: 'MethodCall', line, target: expression, method,
                     args: parseArguments(),
                 };
             }
             else if (is('(') || is('{') || current().type === 'string') {
                 expression = {
-                    type: 'Call', callee: expression,
+                    type: 'Call', line, callee: expression,
                     args: parseArguments(),
                 };
             }

@@ -7048,7 +7048,7 @@ function createLuaLevelSession() {
                 return true;
             } catch (error) {
                 if (error instanceof PanicTermination) throw error;
-                const detail = error instanceof Error ? error.message : String(error);
+                const detail = state.traceback.format(error);
                 await impossible(`Lua error: ${state.sid}:l_selection_iterate ${detail}`);
                 return false;
             }

@@ -1,8 +1,8 @@
 // Lua llex.c:lexerror() and lobject.c:luaO_chunkid().
 export function luaSyntaxError(chunkName, line, message, near) {
-    return new SyntaxError(`${chunkId(chunkName)}:${line}: ${message} near ${near}`);
+    return new SyntaxError(`${luaChunkId(chunkName)}:${line}: ${message} near ${near}`);
 }
-function chunkId(source) {
+export function luaChunkId(source) {
     // LUA_IDSIZE includes the terminating null byte.
     if (source.startsWith('='))
         return source.slice(1, 60);

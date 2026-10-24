@@ -3,7 +3,7 @@ import type { LuaToken } from './lexer.js';
 import { luaSyntaxError } from './syntax_error.js';
 import type {
     AssignmentTarget, BinaryOperator, Expression, FunctionExpression,
-    IfClause, LiteralExpression, Program, Statement, TableExpression,
+    IfClause, LiteralExpression, Program, Statement, StatementBody, TableExpression,
     TableField, UnaryOperator,
 } from './ast.js';
 
@@ -95,7 +95,8 @@ export function parseLua(source: string, filename = '<lua>'): Program {
                 take(';');
                 continue;
             }
-            body.push(parseStatement());
+            const line = current().line;
+            body.push({ ...parseStatement(), line });
             if (is(';')) take(';');
         }
         return body;
@@ -121,10 +122,10 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         take(')');
         const body = parseBlock(new Set(['end']));
         takeClosing('end', opening);
-        return { type: 'Function', parameters, vararg, body };
+        return { type: 'Function', filename, line: opening.line, parameters, vararg, body };
     }
 
-    function parseFunctionStatement(): Extract<Statement, { type: 'Assign' }> {
+    function parseFunctionStatement(): Extract<StatementBody, { type: 'Assign' }> {
         const opening = take('function');
         let target: AssignmentTarget = { type: 'Name', name: takeName() };
         while (is('.')) {
@@ -148,7 +149,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return { type: 'Assign', targets: [target], expressions: [expression] };
     }
 
-    function parseLocalStatement(): Statement {
+    function parseLocalStatement(): StatementBody {
         take('local');
         if (is('function')) {
             const opening = take('function');
@@ -169,7 +170,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return { type: 'Local', names, expressions };
     }
 
-    function parseIfStatement(): Extract<Statement, { type: 'If' }> {
+    function parseIfStatement(): Extract<StatementBody, { type: 'If' }> {
         const opening = take('if');
         const clauses: IfClause[] = [];
         let condition = parseExpression();
@@ -190,7 +191,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return { type: 'If', clauses, otherwise };
     }
 
-    function parseForStatement(): Statement {
+    function parseForStatement(): StatementBody {
         const opening = take('for');
         const first = takeName();
         if (is('=')) {
@@ -220,7 +221,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return { type: 'ForGeneric', names, expressions, body };
     }
 
-    function parseWhileStatement(): Extract<Statement, { type: 'While' }> {
+    function parseWhileStatement(): Extract<StatementBody, { type: 'While' }> {
         const opening = take('while');
         const condition = parseExpression();
         take('do');
@@ -229,14 +230,14 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return { type: 'While', condition, body };
     }
 
-    function parseRepeatStatement(): Extract<Statement, { type: 'Repeat' }> {
+    function parseRepeatStatement(): Extract<StatementBody, { type: 'Repeat' }> {
         const opening = take('repeat');
         const body = parseBlock(new Set(['until']));
         takeClosing('until', opening);
         return { type: 'Repeat', body, condition: parseExpression() };
     }
 
-    function parseReturnStatement(): Extract<Statement, { type: 'Return' }> {
+    function parseReturnStatement(): Extract<StatementBody, { type: 'Return' }> {
         take('return');
         if (current().type === 'eof' || atBlockEnd(blockEnds)
             || is(';')) return { type: 'Return', expressions: [] };
@@ -247,7 +248,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return expression.type === 'Name' || expression.type === 'Index';
     }
 
-    function parseAssignmentOrCall(): Statement {
+    function parseAssignmentOrCall(): StatementBody {
         const first = parseSuffixedExpression();
         if (first.type === 'Call' || first.type === 'MethodCall') {
             if (!is(',') && !is('=')) return { type: 'CallStatement', call: first };
@@ -264,7 +265,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
         return { type: 'Assign', targets, expressions: parseExpressionList() };
     }
 
-    function parseStatement(): Statement {
+    function parseStatement(): StatementBody {
         if (is('local')) return parseLocalStatement();
         if (is('function')) return parseFunctionStatement();
         if (is('if')) return parseIfStatement();
@@ -360,6 +361,7 @@ export function parseLua(source: string, filename = '<lua>'): Program {
     }
 
     function parseSuffixedExpression(): Expression {
+        const line = current().line;
         let expression = parsePrimary();
         for (;;) {
             if (is('[')) {
@@ -377,12 +379,12 @@ export function parseLua(source: string, filename = '<lua>'): Program {
                 take(':');
                 const method = takeName();
                 expression = {
-                    type: 'MethodCall', target: expression, method,
+                    type: 'MethodCall', line, target: expression, method,
                     args: parseArguments(),
                 };
             } else if (is('(') || is('{') || current().type === 'string') {
                 expression = {
-                    type: 'Call', callee: expression,
+                    type: 'Call', line, callee: expression,
                     args: parseArguments(),
                 };
             } else {
