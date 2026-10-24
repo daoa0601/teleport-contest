@@ -14,7 +14,7 @@ import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
-import { COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { BUFSZ, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 const DEFAULT_PARANOIA_BITS = PARANOID_PRAY | PARANOID_SWIM | PARANOID_TRAP;
 const MENU_STYLES = [
     ['traditional', '[prompt for object class(es), then', ' ask y/n for each item in those classes]'],
@@ -210,21 +210,32 @@ function parseScoreOption(value, negated) {
     }
     return choices;
 }
-export function parseNethackrc(rc) {
+export function parseNethackrc(rc, sources = {}) {
     const result = {
         name: '', role: null, race: null, gender: null, align: null,
+        configErrors: [],
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
-    parseConfiguration(rc, result);
+    const fileReport = { source: sources.fileName || '.nethackrc', errors: [] };
+    parseConfiguration(rc, result, fileReport, true);
+    result.configErrors.push(fileReport);
+    if (sources.nethackOptions != null) {
+        const environmentReport = { source: 'NETHACKOPTIONS', errors: [] };
+        parseConfiguration(sources.nethackOptions, result, environmentReport, false);
+        result.configErrors.push(environmentReport);
+    }
     result.commandBindings.finishConfiguration();
     return result;
 }
 export function applyNethackrc(rc, state = game) {
     const result = {
+        configErrors: [],
         flags: state.flags, iflags: state.iflags,
         commandBindings: state.commandBindings,
     };
-    parseConfiguration(rc, result);
+    const report = { source: 'parse_conf_str', errors: [] };
+    parseConfiguration(rc, result, report, true);
+    result.configErrors.push(report);
     if (result.monTelecontrol !== undefined)
         state._monTelecontrol = result.monTelecontrol;
     if (result.fruit !== undefined)
@@ -235,16 +246,26 @@ export function applyNethackrc(rc, state = game) {
 }
 // parse_config_line() always parses OPTIONS in initial/config-file mode,
 // including Lua fragments. Only full startup performs final reconciliation.
-function parseConfiguration(rc, result) {
+function parseConfiguration(rc, result, report, fromFile) {
     let paranoiaBits = result.flags.paranoia_bits ?? DEFAULT_PARANOIA_BITS;
     let paranoiaSeen = false;
-    if (!rc)
+    if (!rc && fromFile)
         return result;
-    for (const rawLine of rc.split('\n')) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith('#'))
-            continue;
-        const bindMatch = line.match(/^(?:BIND|BINDINGS)=(.+)$/i);
+    const petOptionsSeen = new Set();
+    const lines = fromFile ? configurationLines(rc, report)
+        : [{ text: rc.split('\0')[0] ?? '', sourceLine: '', lineNumber: 0 }];
+    for (const { text: line, sourceLine, lineNumber } of lines) {
+        const addError = (message) => {
+            report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
+        };
+        const checkDuplicatePetOption = (name, alias = false) => {
+            if (!fromFile)
+                return;
+            if (petOptionsSeen.has(name))
+                addError(`compound option specified multiple times: ${name}${alias ? ' (via alias: pet)' : ''}`);
+            petOptionsSeen.add(name);
+        };
+        const bindMatch = fromFile ? line.match(/^(?:BIND|BINDINGS)=(.+)$/i) : null;
         if (bindMatch?.[1]) {
             for (const field of bindingFields(bindMatch[1])) {
                 const separator = field.indexOf(':');
@@ -258,13 +279,19 @@ function parseConfiguration(rc, result) {
             }
             continue;
         }
-        const optMatch = line.match(/^OPTIONS=(.+)/i);
-        if (!optMatch?.[1])
+        const optionList = fromFile ? line.match(/^OPTIONS\s*[:=] ?(.*)$/i)?.[1] : line;
+        if (optionList === undefined)
             continue;
-        for (const opt of optMatch[1].split(',').reverse()) {
-            const trimmed = opt.trim();
-            if (!trimmed)
+        for (const opt of optionList.split(',').reverse()) {
+            if (new TextEncoder().encode(opt).length > BUFSZ / 2) {
+                addError(`Option too long, max length is ${BUFSZ / 2} characters`);
                 continue;
+            }
+            const trimmed = opt.trim();
+            if (!trimmed) {
+                addError('Empty statement');
+                continue;
+            }
             let negated = false;
             let stripped = trimmed;
             while (stripped.startsWith('!') || /^no/i.test(stripped)) {
@@ -339,24 +366,34 @@ function parseConfiguration(rc, result) {
             // determine_ambiguities() permits three-letter name-option
             // abbreviations. Pettype needs four letters, or the alias "pet".
             if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
-                const preference = configuredPetType(optionValue, negated);
+                checkDuplicatePetOption('pettype', bindingOption === 'pet');
+                const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
+                const preference = configuredPetType(value, negated);
                 if (preference !== null) {
                     result.preferred_pet = preference;
-                    if (optionValue)
-                        result.flags.pettype = optionValue;
+                    if (value)
+                        result.flags.pettype = value;
                 }
+                else if (value)
+                    addError(`Unrecognized pet type '${value}'.`);
+                else if (!negated)
+                    addError(`Missing parameter for '${stripped}'`);
                 continue;
             }
             const petNameOption = bindingOption.length >= 3
                 ? ['dogname', 'catname', 'horsename'].find(name => name.startsWith(bindingOption))
                 : undefined;
             if (petNameOption) {
-                if (negated)
+                checkDuplicatePetOption(petNameOption);
+                if (negated) {
+                    addError(`The ${petNameOption} option may not both have a value and be negated.`);
                     continue;
-                if (optionValue === 'none' || optionValue === '(none)')
+                }
+                const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
+                if (value === 'none' || value === '(none)')
                     result.flags[petNameOption] = '';
-                else if (optionValue)
-                    result.flags[petNameOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
+                else if (value)
+                    result.flags[petNameOption] = configuredPetName(value, !!result.iflags.wc_eight_bit_input);
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -540,6 +577,36 @@ function parseConfiguration(rc, result) {
     if (paranoiaSeen)
         result.flags.paranoia_bits = paranoiaBits;
     return result;
+}
+// C cfgfiles.c:parse_conf_buf() counts physical lines, including comments,
+// and attributes a continued statement to its final physical line. The
+// diagnostic echoes that line before parse_config_line() condenses spaces.
+function* configurationLines(rc, report) {
+    let pending = '';
+    let lineNumber = 0;
+    let sourceLine = '';
+    const physicalLines = rc.split('\n');
+    for (const [index, raw] of physicalLines.entries()) {
+        const length = new TextEncoder().encode(raw).length;
+        const hasNewline = index < physicalLines.length - 1;
+        if (length > 4 * BUFSZ - 2 || (!hasNewline && length === 4 * BUFSZ - 2)) {
+            // parse_conf_buf() rejects a full fgets buffer before advancing
+            // the error frame, so this diagnostic still names the prior line.
+            report.errors.push({ sourceLine, lineNumber, message: 'Line too long, skipping' });
+            continue;
+        }
+        lineNumber++;
+        const original = raw.split('\0')[0] ?? '';
+        const continued = original.endsWith('\\');
+        sourceLine = (continued ? original.slice(0, -1) : original).replace(/[ \t\r]+$/, '');
+        const content = sourceLine.trimStart();
+        if (content && !content.startsWith('#'))
+            pending += `${pending ? ' ' : ''}${content}`;
+        if (continued || !pending)
+            continue;
+        yield { text: pending.replace(/[ \t]+/g, ' ').trim(), sourceLine, lineNumber };
+        pending = '';
+    }
 }
 // C options.c:optfn_pettype() ignores negation when a value is supplied.
 // Horse is accepted, but dog.c:pet_type() still chooses a dog or cat unless

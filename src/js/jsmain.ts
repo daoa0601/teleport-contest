@@ -13,6 +13,7 @@ import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackrc } from './options.js';
+import { displayConfigurationErrors } from './config_errors.js';
 import {
     findRole, findRace, findAlignment, findGender,
     roles, races, aligns, genders,
@@ -32,6 +33,8 @@ export interface EngineOptions {
     seed?: number;
     datetime?: string | null;
     nethackrc?: string;
+    nethackrcFileName?: string;
+    nethackOptions?: string;
     storage?: StorageBackend | null;
     display?: GameDisplay | null;
     interactive?: boolean;
@@ -343,6 +346,8 @@ export class Engine {
     readonly _seed: number;
     readonly _datetime: string | null;
     readonly _nethackrc: string;
+    readonly _nethackrcFileName: string;
+    readonly _nethackOptions: string | null;
     readonly storage: StorageBackend | null;
     readonly display: GameDisplay | null;
     readonly state: GameState;
@@ -360,6 +365,8 @@ export class Engine {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
         this._nethackrc = opts.nethackrc || '';
+        this._nethackrcFileName = opts.nethackrcFileName || '.nethackrc';
+        this._nethackOptions = opts.nethackOptions ?? null;
         // Save files, bones, and records share this Web Storage interface in
         // both the browser and headless engine.
         this.storage = opts.storage || null;
@@ -398,7 +405,9 @@ export class Engine {
         g.animationFrame = () => this.animationFrame();
 
         // Parse nethackrc
-        const opts = parseNethackrc(this._nethackrc);
+        const opts = parseNethackrc(this._nethackrc, {
+            fileName: this._nethackrcFileName, nethackOptions: this._nethackOptions,
+        });
 
         // Install the terminal before character creation because an unset
         // OPTIONS=name opens the editable "Who are you?" prompt.
@@ -408,6 +417,7 @@ export class Engine {
         this.displayRng = g.displayCtx;
         enableRngLog();
 
+        await displayConfigurationErrors(opts.configErrors);
         const configuredName = opts.name || await this._readPlayerName();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.

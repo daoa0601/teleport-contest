@@ -8,6 +8,7 @@ import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
 import { parseNethackrc } from './options.js';
+import { displayConfigurationErrors } from './config_errors.js';
 import { findRole, findRace, findAlignment, findGender, roles, races, aligns, genders, } from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
@@ -258,6 +259,8 @@ export class Engine {
     _seed;
     _datetime;
     _nethackrc;
+    _nethackrcFileName;
+    _nethackOptions;
     storage;
     display;
     state;
@@ -274,6 +277,8 @@ export class Engine {
         this._seed = opts.seed || 0;
         this._datetime = opts.datetime || null;
         this._nethackrc = opts.nethackrc || '';
+        this._nethackrcFileName = opts.nethackrcFileName || '.nethackrc';
+        this._nethackOptions = opts.nethackOptions ?? null;
         // Save files, bones, and records share this Web Storage interface in
         // both the browser and headless engine.
         this.storage = opts.storage || null;
@@ -310,7 +315,9 @@ export class Engine {
         // Gameplay code paints a transient frame, then yields here.
         g.animationFrame = () => this.animationFrame();
         // Parse nethackrc
-        const opts = parseNethackrc(this._nethackrc);
+        const opts = parseNethackrc(this._nethackrc, {
+            fileName: this._nethackrcFileName, nethackOptions: this._nethackOptions,
+        });
         // Install the terminal before character creation because an unset
         // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
@@ -318,6 +325,7 @@ export class Engine {
         this.coreRng = g.coreCtx;
         this.displayRng = g.displayCtx;
         enableRngLog();
+        await displayConfigurationErrors(opts.configErrors);
         const configuredName = opts.name || await this._readPlayerName();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.

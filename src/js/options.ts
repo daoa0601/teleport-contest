@@ -2,6 +2,7 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
+import type { ConfigurationErrorReport } from './config_errors.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
@@ -18,7 +19,7 @@ import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
+    BUFSZ, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -26,8 +27,10 @@ import {
 } from './const.js';
 
 type PetPreference = '' | 'c' | 'd' | 'h' | 'n';
+type PetOption = 'pettype' | 'dogname' | 'catname' | 'horsename';
 
 interface ConfigurationSettings {
+    configErrors: ConfigurationErrorReport[];
     flags: GameFlags;
     iflags: InterfaceFlags;
     commandBindings: CommandBindings;
@@ -222,12 +225,25 @@ function parseScoreOption(value: string | null, negated: boolean): ScoreChoices 
     return choices;
 }
 
-export function parseNethackrc(rc: string): NethackConfiguration {
+export interface ConfigurationSources {
+    fileName?: string;
+    nethackOptions?: string | null;
+}
+
+export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): NethackConfiguration {
     const result: NethackConfiguration = {
         name: '', role: null, race: null, gender: null, align: null,
+        configErrors: [],
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
-    parseConfiguration(rc, result);
+    const fileReport: ConfigurationErrorReport = { source: sources.fileName || '.nethackrc', errors: [] };
+    parseConfiguration(rc, result, fileReport, true);
+    result.configErrors.push(fileReport);
+    if (sources.nethackOptions != null) {
+        const environmentReport: ConfigurationErrorReport = { source: 'NETHACKOPTIONS', errors: [] };
+        parseConfiguration(sources.nethackOptions, result, environmentReport, false);
+        result.configErrors.push(environmentReport);
+    }
     result.commandBindings.finishConfiguration();
     return result;
 }
@@ -240,10 +256,13 @@ type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'comm
 
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
     const result: ConfigurationSettings = {
+        configErrors: [],
         flags: state.flags, iflags: state.iflags,
         commandBindings: state.commandBindings,
     };
-    parseConfiguration(rc, result);
+    const report: ConfigurationErrorReport = { source: 'parse_conf_str', errors: [] };
+    parseConfiguration(rc, result, report, true);
+    result.configErrors.push(report);
     if (result.monTelecontrol !== undefined) state._monTelecontrol = result.monTelecontrol;
     if (result.fruit !== undefined) state.fruitName = result.fruit;
     if (result.preferred_pet !== undefined) state.preferred_pet = result.preferred_pet;
@@ -252,16 +271,28 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
 
 // parse_config_line() always parses OPTIONS in initial/config-file mode,
 // including Lua fragments. Only full startup performs final reconciliation.
-function parseConfiguration(rc: string, result: ConfigurationSettings): ConfigurationSettings {
+function parseConfiguration(
+    rc: string, result: ConfigurationSettings, report: ConfigurationErrorReport, fromFile: boolean,
+): ConfigurationSettings {
     let paranoiaBits = result.flags.paranoia_bits ?? DEFAULT_PARANOIA_BITS;
     let paranoiaSeen = false;
-    if (!rc) return result;
+    if (!rc && fromFile) return result;
 
-    for (const rawLine of rc.split('\n')) {
-        const line = rawLine.trim();
-        if (!line || line.startsWith('#')) continue;
+    const petOptionsSeen = new Set<PetOption>();
+    const lines = fromFile ? configurationLines(rc, report)
+        : [{ text: rc.split('\0')[0] ?? '', sourceLine: '', lineNumber: 0 }];
+    for (const { text: line, sourceLine, lineNumber } of lines) {
+        const addError = (message: string) => {
+            report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
+        };
+        const checkDuplicatePetOption = (name: PetOption, alias = false) => {
+            if (!fromFile) return;
+            if (petOptionsSeen.has(name))
+                addError(`compound option specified multiple times: ${name}${alias ? ' (via alias: pet)' : ''}`);
+            petOptionsSeen.add(name);
+        };
 
-        const bindMatch = line.match(/^(?:BIND|BINDINGS)=(.+)$/i);
+        const bindMatch = fromFile ? line.match(/^(?:BIND|BINDINGS)=(.+)$/i) : null;
         if (bindMatch?.[1]) {
             for (const field of bindingFields(bindMatch[1])) {
                 const separator = field.indexOf(':');
@@ -275,12 +306,19 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             continue;
         }
 
-        const optMatch = line.match(/^OPTIONS=(.+)/i);
-        if (!optMatch?.[1]) continue;
+        const optionList = fromFile ? line.match(/^OPTIONS\s*[:=] ?(.*)$/i)?.[1] : line;
+        if (optionList === undefined) continue;
 
-        for (const opt of optMatch[1].split(',').reverse()) {
+        for (const opt of optionList.split(',').reverse()) {
+            if (new TextEncoder().encode(opt).length > BUFSZ / 2) {
+                addError(`Option too long, max length is ${BUFSZ / 2} characters`);
+                continue;
+            }
             const trimmed = opt.trim();
-            if (!trimmed) continue;
+            if (!trimmed) {
+                addError('Empty statement');
+                continue;
+            }
 
             let negated = false;
             let stripped = trimmed;
@@ -351,22 +389,30 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             // determine_ambiguities() permits three-letter name-option
             // abbreviations. Pettype needs four letters, or the alias "pet".
             if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
-                const preference = configuredPetType(optionValue, negated);
+                checkDuplicatePetOption('pettype', bindingOption === 'pet');
+                const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
+                const preference = configuredPetType(value, negated);
                 if (preference !== null) {
                     result.preferred_pet = preference;
-                    if (optionValue) result.flags.pettype = optionValue;
-                }
+                    if (value) result.flags.pettype = value;
+                } else if (value) addError(`Unrecognized pet type '${value}'.`);
+                else if (!negated) addError(`Missing parameter for '${stripped}'`);
                 continue;
             }
             const petNameOption = bindingOption.length >= 3
                 ? (['dogname', 'catname', 'horsename'] as const).find(name => name.startsWith(bindingOption))
                 : undefined;
             if (petNameOption) {
-                if (negated) continue;
-                if (optionValue === 'none' || optionValue === '(none)')
+                checkDuplicatePetOption(petNameOption);
+                if (negated) {
+                    addError(`The ${petNameOption} option may not both have a value and be negated.`);
+                    continue;
+                }
+                const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
+                if (value === 'none' || value === '(none)')
                     result.flags[petNameOption] = '';
-                else if (optionValue)
-                    result.flags[petNameOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
+                else if (value)
+                    result.flags[petNameOption] = configuredPetName(value, !!result.iflags.wc_eight_bit_input);
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -510,6 +556,35 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
     }
     if (paranoiaSeen) result.flags.paranoia_bits = paranoiaBits;
     return result;
+}
+
+// C cfgfiles.c:parse_conf_buf() counts physical lines, including comments,
+// and attributes a continued statement to its final physical line. The
+// diagnostic echoes that line before parse_config_line() condenses spaces.
+function* configurationLines(rc: string, report: ConfigurationErrorReport) {
+    let pending = '';
+    let lineNumber = 0;
+    let sourceLine = '';
+    const physicalLines = rc.split('\n');
+    for (const [index, raw] of physicalLines.entries()) {
+        const length = new TextEncoder().encode(raw).length;
+        const hasNewline = index < physicalLines.length - 1;
+        if (length > 4 * BUFSZ - 2 || (!hasNewline && length === 4 * BUFSZ - 2)) {
+            // parse_conf_buf() rejects a full fgets buffer before advancing
+            // the error frame, so this diagnostic still names the prior line.
+            report.errors.push({ sourceLine, lineNumber, message: 'Line too long, skipping' });
+            continue;
+        }
+        lineNumber++;
+        const original = raw.split('\0')[0] ?? '';
+        const continued = original.endsWith('\\');
+        sourceLine = (continued ? original.slice(0, -1) : original).replace(/[ \t\r]+$/, '');
+        const content = sourceLine.trimStart();
+        if (content && !content.startsWith('#')) pending += `${pending ? ' ' : ''}${content}`;
+        if (continued || !pending) continue;
+        yield { text: pending.replace(/[ \t]+/g, ' ').trim(), sourceLine, lineNumber };
+        pending = '';
+    }
 }
 
 // C options.c:optfn_pettype() ignores negation when a value is supplied.
