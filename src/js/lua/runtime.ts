@@ -1,4 +1,7 @@
 import { parseLua } from './parser.js';
+import { LuaTraceback } from './traceback.js';
+import { luaChunkId } from './syntax_error.js';
+import { luaInteger } from './arguments.js';
 import type {
     AssignmentTarget, BinaryExpression, BinaryOperator, Expression,
     FunctionExpression, Statement, UnaryExpression, UnaryOperator,
@@ -42,7 +45,20 @@ class BreakSignal {}
 class Environment {
     readonly values = new Map<string, LuaResult>();
 
-    constructor(readonly parent: Environment | null = null) {}
+    constructor(
+        readonly parent: Environment | null = null,
+        readonly functionScope = false,
+    ) {}
+
+    referenceName(name: string): string {
+        let kind = 'local';
+        for (let scope: Environment | null = this; scope; scope = scope.parent) {
+            if (scope.values.has(name))
+                return `${scope.parent ? kind : 'global'} '${name}'`;
+            if (scope.functionScope) kind = 'upvalue';
+        }
+        return `global '${name}'`;
+    }
 
     define(name: string, value: LuaResult): void {
         this.values.set(name, value);
@@ -159,7 +175,7 @@ class LuaFunction {
     }
 
     environment(args: LuaValue[]): Environment {
-        const environment = new Environment(this.closure);
+        const environment = new Environment(this.closure, true);
         const parameters = this.expression.parameters;
         for (const [index, parameter] of parameters.entries())
             environment.define(parameter, args[index] ?? null);
@@ -378,6 +394,8 @@ export class LuaState {
     private _destroyPromise: Promise<void> | null;
     readonly cleanup: (() => void | Promise<void>) | null;
     private environmentRoot: Environment | null = null;
+    private readonly loadedModules = new Map<string, LuaValue>();
+    readonly traceback = new LuaTraceback();
 
     get globals(): Environment {
         if (!this.environmentRoot) throw new Error('Lua state has been destroyed');
@@ -389,17 +407,22 @@ export class LuaState {
         this._destroyPromise = null;
         this.cleanup = cleanup;
         this.environmentRoot = new Environment();
+        const globals = new LuaGlobals(this.globals);
+        this.loadedModules.set('_G', globals);
         this.installStandardLibrary();
         for (const [name, value] of Object.entries(bindings))
             this.globals.define(name, value);
-        this.globals.define('_G', new LuaGlobals(this.globals));
+        this.globals.define('_G', globals);
     }
 
     installStandardLibrary(): void {
         this.globals.define('type', value => luaType(value));
         this.globals.define('tostring', value => luaString(value));
-        this.globals.define('error', message => {
-            throw new Error(luaString(message));
+        this.globals.define('error', (message, level = 1) => {
+            const errorLevel = luaInteger(level ?? 1);
+            const location = typeof message === 'string' && errorLevel > 0
+                ? this.traceback.where(errorLevel) : '';
+            throw new Error(location + luaString(message));
         });
         this.globals.define('pairs', table => {
             if (!(table instanceof LuaTable))
@@ -449,18 +472,30 @@ export class LuaState {
                 return new LuaValues(values);
             },
         });
+        for (const name of ['math', 'string', 'table'])
+            this.loadedModules.set(name, first(this.globals.get(name)));
     }
 
     execute(source: string, filename = '<lua>') {
         if (this.destroyed) throw new Error('Lua state has been destroyed');
         const chunk = parseLua(source, filename);
-        this.executeBlock(chunk.body, this.globals);
+        this.traceback.enter(filename, 1, 'main chunk');
+        try {
+            this.executeBlock(chunk.body, new Environment(this.globals, true));
+        } finally {
+            this.traceback.leave();
+        }
     }
 
     async executeAsync(source: string, filename = '<lua>') {
         if (this.destroyed) throw new Error('Lua state has been destroyed');
         const chunk = parseLua(source, filename);
-        await this.executeBlockAsync(chunk.body, this.globals);
+        this.traceback.enter(filename, 1, 'main chunk');
+        try {
+            await this.executeBlockAsync(chunk.body, new Environment(this.globals, true));
+        } finally {
+            this.traceback.leave();
+        }
     }
 
     destroy(): Promise<void> {
@@ -470,6 +505,7 @@ export class LuaState {
                 try {
                     await this.cleanup?.();
                 } finally {
+                    this.loadedModules.clear();
                     this.environmentRoot = null;
                 }
             });
@@ -489,31 +525,80 @@ export class LuaState {
         return first(this.callValue(this.getGlobal(name), args));
     }
 
-    callValue(callable: LuaResult, args: LuaValue[]): LuaValues {
-        callable = first(callable);
-        let result;
-        if (callable instanceof LuaFunction) result = callable.invoke(args);
-        else if (typeof callable === 'function') result = syncResult(callable(...args));
-        else throw new TypeError(`attempt to call a ${luaType(callable)} value`);
-        if (result instanceof LuaValues) return result;
-        return new LuaValues(result === undefined ? [] : [result]);
+    private enterCall(callable: LuaFunction | LuaNativeFunction, reference: string | null, tailCall: boolean): void {
+        if (callable instanceof LuaFunction) {
+            const { filename, line } = callable.expression;
+            const description = this.globalFunctionName(callable) ?? (tailCall ? null : reference);
+            this.traceback.enter(filename, line,
+                description ?? `function <${luaChunkId(filename)}:${line}>`, tailCall);
+        } else {
+            this.traceback.enter(null, -1, this.globalFunctionName(callable) ?? reference ?? '?');
+        }
     }
 
-    async callValueAsync(callable: LuaResult, args: LuaValue[]): Promise<LuaValues> {
-        callable = first(callable);
-        let result;
-        if (callable instanceof LuaFunction)
-            result = await callable.invokeAsync(args);
-        else if (typeof callable === 'function') result = await callable(...args);
-        else throw new TypeError(`attempt to call a ${luaType(callable)} value`);
-        if (result instanceof LuaValues) return result;
-        return new LuaValues(result === undefined ? [] : [result]);
+    private globalFunctionName(callable: LuaFunction | LuaNativeFunction): string | null {
+        // lauxlib.c searches two table levels from the loaded-module registry.
+        // _G is a loaded module; tables stored inside it are one level too deep.
+        for (const [name, module] of this.loadedModules) {
+            const fields = module instanceof LuaGlobals ? module.environment.values
+                : module instanceof LuaTable ? module.entries()
+                    : isHostObject(module) ? Object.entries(module) : [];
+            for (const [field, entry] of fields) {
+                if (typeof field === 'string' && entry === callable)
+                    return `function '${name === '_G' ? field : `${name}.${field}`}'`;
+            }
+        }
+        return null;
     }
 
-    evaluateList(expressions: Expression[], environment: Environment): LuaValue[] {
+    private callReference(expression: Expression, environment: Environment): string | null {
+        if (expression.type === 'Name') return environment.referenceName(expression.name);
+        if (expression.type === 'Index' && expression.key.type === 'Literal'
+            && typeof expression.key.value === 'string')
+            return `field '${expression.key.value}'`;
+        return null;
+    }
+
+    callValue(callable: LuaResult, args: LuaValue[], reference: string | null = null, tailCall = false): LuaValues {
+        callable = first(callable);
+        if (!(callable instanceof LuaFunction) && typeof callable !== 'function')
+            throw new TypeError(`attempt to call a ${luaType(callable)} value`);
+        this.enterCall(callable, reference, tailCall);
+        try {
+            const result = callable instanceof LuaFunction
+                ? callable.invoke(args) : syncResult(callable(...args));
+            if (result instanceof LuaValues) return result;
+            return new LuaValues(result === undefined ? [] : [result]);
+        } catch (error) {
+            this.traceback.remember(error);
+            throw error;
+        } finally {
+            this.traceback.leave();
+        }
+    }
+
+    async callValueAsync(callable: LuaResult, args: LuaValue[], reference: string | null = null, tailCall = false): Promise<LuaValues> {
+        callable = first(callable);
+        if (!(callable instanceof LuaFunction) && typeof callable !== 'function')
+            throw new TypeError(`attempt to call a ${luaType(callable)} value`);
+        this.enterCall(callable, reference, tailCall);
+        try {
+            const result = callable instanceof LuaFunction
+                ? await callable.invokeAsync(args) : await callable(...args);
+            if (result instanceof LuaValues) return result;
+            return new LuaValues(result === undefined ? [] : [result]);
+        } catch (error) {
+            this.traceback.remember(error);
+            throw error;
+        } finally {
+            this.traceback.leave();
+        }
+    }
+
+    evaluateList(expressions: Expression[], environment: Environment, tailCall = false): LuaValue[] {
         const values = [];
         for (const [index, expression] of expressions.entries()) {
-            const value = this.evaluate(expression, environment);
+            const value = this.evaluate(expression, environment, tailCall && expressions.length === 1);
             if (index === expressions.length - 1 && value instanceof LuaValues)
                 values.push(...value.values);
             else
@@ -522,11 +607,11 @@ export class LuaState {
         return values;
     }
 
-    async evaluateListAsync(expressions: Expression[], environment: Environment): Promise<LuaValue[]> {
+    async evaluateListAsync(expressions: Expression[], environment: Environment, tailCall = false): Promise<LuaValue[]> {
         const values = [];
         for (const [index, expression] of expressions.entries()) {
             const value = await this.evaluateAsync(
-                expression, environment,
+                expression, environment, tailCall && expressions.length === 1,
             );
             if (index === expressions.length - 1 && value instanceof LuaValues)
                 values.push(...value.values);
@@ -561,16 +646,27 @@ export class LuaState {
     }
 
     executeBlock(statements: Statement[], environment: Environment): void {
-        for (const statement of statements)
-            this.executeStatement(statement, environment);
+        try {
+            for (const statement of statements)
+                this.executeStatement(statement, environment);
+        } catch (error) {
+            this.traceback.remember(error);
+            throw error;
+        }
     }
 
     async executeBlockAsync(statements: Statement[], environment: Environment): Promise<void> {
-        for (const statement of statements)
-            await this.executeStatementAsync(statement, environment);
+        try {
+            for (const statement of statements)
+                await this.executeStatementAsync(statement, environment);
+        } catch (error) {
+            this.traceback.remember(error);
+            throw error;
+        }
     }
 
     async executeStatementAsync(statement: Statement, environment: Environment): Promise<void> {
+        this.traceback.setLine(statement.line);
         switch (statement.type) {
         case 'Local': {
             const values = await this.evaluateListAsync(
@@ -695,7 +791,7 @@ export class LuaState {
             return;
         case 'Return':
             throw new ReturnSignal(await this.evaluateListAsync(
-                statement.expressions, environment,
+                statement.expressions, environment, true,
             ));
         case 'Break':
             throw new BreakSignal();
@@ -705,6 +801,7 @@ export class LuaState {
     }
 
     executeStatement(statement: Statement, environment: Environment): void {
+        this.traceback.setLine(statement.line);
         switch (statement.type) {
         case 'Local': {
             const values = this.evaluateList(statement.expressions, environment);
@@ -800,7 +897,7 @@ export class LuaState {
             return;
         case 'Return':
             throw new ReturnSignal(this.evaluateList(
-                statement.expressions, environment,
+                statement.expressions, environment, true,
             ));
         case 'Break':
             throw new BreakSignal();
@@ -809,7 +906,7 @@ export class LuaState {
         }
     }
 
-    evaluate(expression: Expression, environment: Environment): LuaResult {
+    evaluate(expression: Expression, environment: Environment, tailCall = false): LuaResult {
         switch (expression.type) {
         case 'Literal':
             return expression.value;
@@ -850,13 +947,16 @@ export class LuaState {
         case 'Call': {
             const callable = this.evaluate(expression.callee, environment);
             const args = this.evaluateList(expression.args, environment);
-            return this.callValue(callable, args);
+            this.traceback.setLine(expression.line);
+            return this.callValue(callable, args,
+                this.callReference(expression.callee, environment), tailCall);
         }
         case 'MethodCall': {
             const target = first(this.evaluate(expression.target, environment));
             const callable = getIndex(target, expression.method);
             const args = [target, ...this.evaluateList(expression.args, environment)];
-            return this.callValue(callable, args);
+            this.traceback.setLine(expression.line);
+            return this.callValue(callable, args, `method '${expression.method}'`, tailCall);
         }
         case 'Unary':
             return this.evaluateUnary(expression, environment);
@@ -867,7 +967,7 @@ export class LuaState {
         }
     }
 
-    async evaluateAsync(expression: Expression, environment: Environment): Promise<LuaResult> {
+    async evaluateAsync(expression: Expression, environment: Environment, tailCall = false): Promise<LuaResult> {
         switch (expression.type) {
         case 'Literal':
             return expression.value;
@@ -914,7 +1014,9 @@ export class LuaState {
             const args = await this.evaluateListAsync(
                 expression.args, environment,
             );
-            return this.callValueAsync(callable, args);
+            this.traceback.setLine(expression.line);
+            return this.callValueAsync(callable, args,
+                this.callReference(expression.callee, environment), tailCall);
         }
         case 'MethodCall': {
             const target = first(await this.evaluateAsync(
@@ -924,7 +1026,8 @@ export class LuaState {
             const args = [target, ...await this.evaluateListAsync(
                 expression.args, environment,
             )];
-            return this.callValueAsync(callable, args);
+            this.traceback.setLine(expression.line);
+            return this.callValueAsync(callable, args, `method '${expression.method}'`, tailCall);
         }
         case 'Unary':
             return unaryValue(

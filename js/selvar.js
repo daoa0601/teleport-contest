@@ -2,8 +2,10 @@
 // C refs: src/selvar.c and src/nhlsel.c.
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
-import { newsym } from './display.js';
-import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
+import { newsym_force } from './display.js';
+import { impossible } from './diagnostics.js';
+import { NethackLuaError } from './lua/errors.js';
+import { COLNO, ROWNO, ROOMOFFSET, STONE, CORR, ROOM, HWALL, VWALL, DOOR, AIR, CLOUD, SDOOR, SCORR, FOUNTAIN, THRONE, SINK, MOAT, POOL, LAVAPOOL, LAVAWALL, ICE, WATER, TREE, IRONBARS, CROSSWALL, MAX_TYPE, MATCH_WALL, INVALID_TYPE, MAP_Y_LIM, W_RANDOM, W_NORTH, W_SOUTH, W_EAST, W_WEST, W_ANY, IS_STWALL, isok, } from './const.js';
 export const SEL_GRADIENT_RADIAL = 0;
 export const SEL_GRADIENT_SQUARE = 1;
 export function selection_new() {
@@ -12,7 +14,7 @@ export function selection_new() {
         hei: ROWNO,
         bounds_dirty: false,
         bounds: { lx: COLNO, ly: ROWNO, hx: 0, hy: 0 },
-        map: new Uint8Array(COLNO * ROWNO).fill(1),
+        map: new Int8Array(COLNO * ROWNO).fill(1),
     };
 }
 export function selection_clear(selection, value) {
@@ -191,10 +193,18 @@ export function selection_filter_mapchar(selection, typ, lit = -2) {
             if (!selection_getpoint(x, y, selection)
                 || !location || !match_maptyps(typ, location.typ))
                 continue;
-            if (lit === -2
-                || (lit === -1 && rn2(2))
-                || (lit !== -1 && Number(location.lit) === lit))
-                selection_setpoint(x, y, result, 1);
+            switch (lit) {
+                case -1:
+                    selection_setpoint(x, y, result, rn2(2));
+                    break;
+                case 0:
+                case 1:
+                    if (Number(location.lit) === lit)
+                        selection_setpoint(x, y, result, 1);
+                    break;
+                default:
+                    selection_setpoint(x, y, result, 1);
+            }
         }
     }
     return result;
@@ -366,17 +376,22 @@ function line_dist_coord(x1, y1, x2, y2, x3, y3) {
     const squared = px * px + py * py;
     if (!squared)
         return (x1 - x3) ** 2 + (y1 - y3) ** 2;
-    const proportion = Math.max(0, Math.min(1, ((x3 - x1) * px + (y3 - y1) * py) / squared));
-    const x = Math.trunc(x1 + proportion * px);
-    const y = Math.trunc(y1 + proportion * py);
+    // Native float rounding happens before conversion back to integer coordinates.
+    const numerator = Math.fround((x3 - x1) * px + (y3 - y1) * py);
+    const projection = Math.fround(numerator / Math.fround(squared));
+    const proportion = Math.max(0, Math.min(1, projection));
+    const x = Math.trunc(Math.fround(x1 + Math.fround(proportion * px)));
+    const y = Math.trunc(Math.fround(y1 + Math.fround(proportion * py)));
     return (x - x3) ** 2 + (y - y3) ** 2;
 }
-export function selection_do_gradient(selection, x1, y1, x2, y2, type, minDistance, maxDistance) {
+export async function selection_do_gradient(selection, x1, y1, x2, y2, type, minDistance, maxDistance) {
     if (minDistance > maxDistance)
         [minDistance, maxDistance] = [maxDistance, minDistance];
     const minSquared = minDistance * minDistance;
     const maxSquared = maxDistance * maxDistance;
     const spread = Math.max(1, maxSquared - minSquared);
+    if (type !== SEL_GRADIENT_RADIAL && type !== SEL_GRADIENT_SQUARE)
+        await impossible('Unrecognized gradient type! Defaulting to radial...');
     for (let x = 0; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             let distance;
@@ -437,6 +452,8 @@ export function selection_do_line(x1, y1, x2, y2, selection) {
     }
 }
 export function selection_do_randline(x1, y1, x2, y2, roughness, recursion, selection) {
+    roughness = (roughness << 24) >> 24;
+    recursion = (recursion << 24) >> 24;
     if (recursion < 1 || (x1 === x2 && y1 === y2))
         return;
     roughness = Math.min(roughness, Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)));
@@ -506,7 +523,7 @@ export function selection_force_newsyms(selection) {
     for (let x = 1; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
             if (selection_getpoint(x, y, selection))
-                newsym(x, y);
+                newsym_force(x, y);
 }
 const GROW_DIRECTIONS = {
     all: W_ANY,
@@ -564,7 +581,7 @@ export class SpecialSelection {
     filterMapCharacter(character, lit = -2) {
         const terrain = mapCharacterType(character);
         if (terrain == null)
-            throw new Error(`unknown map character ${character}`);
+            throw new NethackLuaError('Erroneous map char');
         return new SpecialSelection(selection_filter_mapchar(this.selection, terrain, lit));
     }
     randomCoordinate(remove = false) {
@@ -591,7 +608,10 @@ export class SpecialSelection {
     }
 }
 function absolute(context, x, y) {
-    return { x: context.xstart + x, y: context.ystart + y };
+    return {
+        x: (context._room?.lx ?? context.xstart) + (x & 0xff),
+        y: (context._room?.ly ?? context.ystart) + (y & 0xff),
+    };
 }
 export function specialSelectionFillRect(context, x1, y1, x2, y2) {
     const selection = selection_new();
@@ -634,6 +654,8 @@ export function specialSelectionOfTerrain(context, typ) {
 }
 export function specialSelectionFloodFill(context, x, y, diagonals = false) {
     const start = absolute(context, x, y);
+    if (!isok(start.x, start.y))
+        return new SpecialSelection();
     const terrain = game.level?.at?.(start.x, start.y)?.typ;
     return new SpecialSelection().floodFill(start.x, start.y, diagonals, (nextX, nextY) => game.level?.at?.(nextX, nextY)?.typ === terrain);
 }
@@ -660,8 +682,6 @@ const MAP_CHAR_TYPES = {
     T: TREE,
     F: IRONBARS,
     x: MAX_TYPE,
-    '[': MAX_TYPE,
-    ']': MAX_TYPE,
     B: CROSSWALL,
     w: MATCH_WALL,
 };
@@ -669,27 +689,33 @@ export function mapCharacterType(character) {
     return character === undefined ? undefined : MAP_CHAR_TYPES[character];
 }
 export function specialSelectionMatch(fragment) {
-    const rows = fragment.split('\n');
-    const width = Math.max(...rows.map(row => row.length));
+    const data = (fragment.split('\0', 1)[0] ?? '').replace(/[0-9]/g, '');
+    const rows = data.split('\n');
+    if (rows.at(-1) === '')
+        rows.pop();
+    if (rows.length > MAP_Y_LIM + 1)
+        throw new NethackLuaError('mapfragment error');
+    const width = Math.max(0, ...rows.map(row => row.length));
     if (!(width % 2) || !(rows.length % 2))
-        throw new Error('mapfragment needs to have odd height and width');
+        throw new NethackLuaError('mapfragment needs to have odd height and width');
     const xRadius = Math.trunc(width / 2);
     const yRadius = Math.trunc(rows.length / 2);
-    const center = mapCharacterType(rows[yRadius]?.[xRadius]);
-    if (center === undefined || center === MAX_TYPE)
-        throw new Error('mapfragment center must be valid terrain');
+    // mapfrag_get() indexes the original buffer with a fixed row stride.
+    const terrainAt = (x, y) => mapCharacterType(data[y * (width + 1) + x]) ?? INVALID_TYPE;
+    const center = terrainAt(xRadius, yRadius);
+    if (center === INVALID_TYPE || center === MAX_TYPE)
+        throw new NethackLuaError('mapfragment center must be valid terrain');
     const selection = selection_new();
     for (let y = 0; y <= ROWNO; y++) {
         for (let x = 1; x < COLNO; x++) {
             let matched = true;
             for (let offsetX = -xRadius; offsetX <= xRadius && matched; offsetX++) {
                 for (let offsetY = -yRadius; offsetY <= yRadius; offsetY++) {
-                    const expected = MAP_CHAR_TYPES[rows[offsetY + yRadius]?.[offsetX + xRadius] ?? ' '];
+                    const expected = terrainAt(offsetX + xRadius, offsetY + yRadius);
                     const actual = isok(x + offsetX, y + offsetY)
                         ? game.level?.at?.(x + offsetX, y + offsetY)?.typ
                         : STONE;
-                    if (expected === undefined
-                        || !match_maptyps(expected, actual ?? STONE)) {
+                    if (!match_maptyps(expected, actual ?? STONE)) {
                         matched = false;
                         break;
                     }

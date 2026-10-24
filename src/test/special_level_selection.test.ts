@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
 
 import { CLOUD, CORR, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED,
-    FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
+    FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, PANICLOG,
     ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
     TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
@@ -23,6 +23,8 @@ import { novelTitle } from '../js/novel_titles.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { GameDisplay } from '../js/game_display.js';
+import { memoryStorage } from './support/memory-storage.js';
 
 async function levelLua(t: TestContext) {
     freshGame({ flags: { bones: false } });
@@ -37,6 +39,130 @@ async function levelLua(t: TestContext) {
     game.in_mklev = true;
     return lua;
 }
+
+void test('selection callback errors stop iteration and let the level script continue', async t => {
+    const lua = await levelLua(t);
+    const display = new GameDisplay(null);
+    game.nhDisplay = display;
+    let reportedError = false;
+    const input = resetInputState();
+    input.beforeRead = () => {
+        const visible = display.grid.map(row => row.map(cell => cell.ch).join(''))
+            .join(' ').replace(/\s+/gu, ' ');
+        if (visible.includes('l_selection_iterate') && visible.includes('selection callback failed'))
+            reportedError = true;
+        input.feed(' ');
+    };
+
+    await lua.executeAsync(`
+        visited = 0
+        selection.area(1, 0, 3, 0):iterate(function(x, y)
+            visited = visited + 1
+            error("selection callback failed")
+        end)
+        continued = true
+    `);
+
+    assert.equal(lua.getGlobal('visited'), 1);
+    assert.equal(lua.getGlobal('continued'), true);
+    assert.equal(reportedError, true, 'report the failed callback before continuing');
+    await assert.rejects(lua.executeAsync('selection.new():iterate(3)'), /wrong parameters/);
+});
+
+void test('selection callback diagnostics include the Lua source and calling functions', async t => {
+    const lua = await levelLua(t);
+    const storage = memoryStorage();
+    game.storage = storage;
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    await lua.executeAsync([
+        'local function fail()',
+        '  error("broken")',
+        'end',
+        'selection.set(1, 0):iterate(function() fail() end)',
+        'continued = true',
+    ].join('\n'), '=s.lua');
+
+    const record: unknown = JSON.parse((storage.getItem(PANICLOG) ?? '').trim());
+    assert.ok(record && typeof record === 'object'
+        && 'reason' in record && typeof record.reason === 'string',
+        'the nonfatal callback failure should be logged');
+    assert.match(record.reason, /s\.lua:2: broken\nstack traceback:/);
+    assert.match(record.reason, /\[C\]: in function 'error'/);
+    assert.match(record.reason, /s\.lua:2: in upvalue 'fail'/);
+    assert.match(record.reason, /s\.lua:4: in function <s\.lua:4>/);
+    assert.match(record.reason, /\[C\]: in method 'iterate'/);
+    assert.match(record.reason, /s\.lua:4: in main chunk/);
+    assert.equal(lua.getGlobal('continued'), true);
+});
+
+void test('selection callback argument errors identify the line and source that raised them', async t => {
+    const lua = await levelLua(t);
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    const cases = [
+        { source: 'selection.set()', message: 'Selection setpoint error' },
+        { source: 'selection.new():get({x = 1})', message: 'Not a coordinate' },
+        { source: 'selection.new():get({1})', message: 'Not a coordinate' },
+        { source: 'selection.new():get()', message: 'l_selection_getpoint: Incorrect params' },
+        { source: 'selection.line(1)', message: 'selection.line: illegal arguments' },
+        { source: 'selection.rect(1)', message: 'selection.rect: illegal arguments' },
+        { source: 'selection.fillrect(1)', message: 'selection.fillrect: illegal arguments' },
+        { source: 'selection.circle(1)', message: 'wrong parameters' },
+        { source: 'selection.ellipse(1)', message: 'wrong parameters' },
+        { source: 'selection.gradient()', message: 'selection.gradient requires table argument' },
+        { source: 'selection.new():iterate(3)', message: 'wrong parameters' },
+        { source: 'selection.describe_size()', message: 'wrong parameters' },
+        { source: 'selection.floodfill()', message: 'wrong parameters' },
+        { source: 'selection.match()', message: 'wrong parameters' },
+        { source: 'selection.new():filter_mapchar("[")', message: 'Erroneous map char' },
+        { source: 'selection.match("..")', message: 'mapfragment needs to have odd height and width' },
+        { source: 'selection.match(".?.")', message: 'mapfragment center must be valid terrain' },
+    ];
+
+    for (const { source, message } of cases) {
+        await t.test(source, async () => {
+            const storage = memoryStorage();
+            game.storage = storage;
+            await lua.executeAsync([
+                'local function fail()',
+                `  ${source}`,
+                'end',
+                'selection.set(1, 0):iterate(fail)',
+            ].join('\n'), '@selection-error.lua');
+
+            const record: unknown = JSON.parse((storage.getItem(PANICLOG) ?? '').trim());
+            assert.ok(record && typeof record === 'object'
+                && 'reason' in record && typeof record.reason === 'string',
+                'the nonfatal callback failure should be logged');
+            assert.ok(record.reason.includes(`${message} (line 2 selection-error.lua)\nstack traceback:`),
+                record.reason);
+        });
+    }
+});
+
+void test('randline argument errors use Lua caller locations instead of nhl_error suffixes', async t => {
+    const lua = await levelLua(t);
+    const storage = memoryStorage();
+    game.storage = storage;
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    await lua.executeAsync([
+        'local function fail()',
+        '  selection.randline(1)',
+        'end',
+        'selection.set(1, 0):iterate(fail)',
+    ].join('\n'), '@selection-error.lua');
+
+    const record: unknown = JSON.parse((storage.getItem(PANICLOG) ?? '').trim());
+    assert.ok(record && typeof record === 'object'
+        && 'reason' in record && typeof record.reason === 'string',
+        'the nonfatal callback failure should be logged');
+    assert.ok(record.reason.includes("selection-error.lua:2: bad argument #1 to 'randline' (userdata expected, got number)\nstack traceback:"),
+        record.reason);
+});
 
 void test('Lua circles and ellipses carve outlines or filled areas relative to their map', async t => {
     const lua = await levelLua(t);

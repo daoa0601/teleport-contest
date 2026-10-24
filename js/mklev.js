@@ -6983,7 +6983,20 @@ function createLuaLevelSession() {
             return monster;
         },
     };
-    const selectionApi = createSelectionApi(() => context, (callable, args) => currentState().callValueAsync(callable, args));
+    const selectionApi = createSelectionApi(() => context, async (callable, args) => {
+        const state = currentState();
+        try {
+            await state.callValueAsync(callable, args);
+            return true;
+        }
+        catch (error) {
+            if (error instanceof PanicTermination)
+                throw error;
+            const detail = state.traceback.format(error);
+            await impossible(`Lua error: ${state.sid}:l_selection_iterate ${detail}`);
+            return false;
+        }
+    });
     const bindings = {
         nh: {
             debug_themerm: () => null,

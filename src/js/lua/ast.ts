@@ -23,6 +23,8 @@ export interface LiteralExpression {
 
 export interface FunctionExpression {
     type: 'Function';
+    filename: string;
+    line: number;
     parameters: string[];
     vararg: boolean;
     body: Statement[];
@@ -46,12 +48,14 @@ export interface IndexExpression {
 
 export interface CallExpression {
     type: 'Call';
+    line: number;
     callee: Expression;
     args: Expression[];
 }
 
 export interface MethodCallExpression {
     type: 'MethodCall';
+    line: number;
     target: Expression;
     method: string;
     args: Expression[];
@@ -90,7 +94,9 @@ export interface IfClause {
     body: Statement[];
 }
 
-export type Statement =
+export type Statement = StatementBody & { line: number };
+
+export type StatementBody =
     | { type: 'Local'; names: string[]; expressions: Expression[] }
     | { type: 'LocalFunction'; name: string; expression: FunctionExpression }
     | { type: 'Assign'; targets: AssignmentTarget[]; expressions: Expression[] }

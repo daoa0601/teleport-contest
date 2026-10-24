@@ -2,10 +2,10 @@
 export function luaSyntaxError(
     chunkName: string, line: number, message: string, near: string,
 ): SyntaxError {
-    return new SyntaxError(`${chunkId(chunkName)}:${line}: ${message} near ${near}`);
+    return new SyntaxError(`${luaChunkId(chunkName)}:${line}: ${message} near ${near}`);
 }
 
-function chunkId(source: string): string {
+export function luaChunkId(source: string): string {
     // LUA_IDSIZE includes the terminating null byte.
     if (source.startsWith('=')) return source.slice(1, 60);
     if (source.startsWith('@')) {
