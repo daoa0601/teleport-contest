@@ -885,7 +885,7 @@ async function useContainerActions(container: GameObject, {
         return { spentTime: false, container };
     }
     if (!heroHasFreeHand(game)) {
-        await pline('You have no free hand.');
+        await pline(`You have no free ${heroHandName()}.`);
         return { spentTime: false, container };
     }
 

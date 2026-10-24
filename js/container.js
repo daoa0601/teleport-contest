@@ -820,7 +820,7 @@ async function useContainerActions(container, { held = false, moreContainers = f
         return { spentTime: false, container };
     }
     if (!heroHasFreeHand(game)) {
-        await pline('You have no free hand.');
+        await pline(`You have no free ${heroHandName()}.`);
         return { spentTime: false, container };
     }
     container.contents ||= [];
