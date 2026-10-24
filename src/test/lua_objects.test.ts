@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
+import { rhack } from '../js/cmd.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { beginObjectBurn } from '../js/light.js';
-import { BELL_OF_OPENING, CHEST, FOOD_RATION, GOLD_PIECE, LOADSTONE, OIL_LAMP, ROCK } from '../js/object_data.js';
+import { BELL_OF_OPENING, CHEST, FOOD_RATION, GOLD_PIECE, LOADSTONE, OIL_LAMP, ROCK, SPE_LIGHT } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -213,4 +214,72 @@ void test('Lua burial applies carried effects only to items which leave inventor
     assert.ok(game.inventory.some(object => object.otyp === BELL_OF_OPENING));
     requirePlayingGame(game);
     assert.equal(game.u.uhave.bell, true);
+});
+
+void test('a studied spellbook reports its study tally through obj:totable() usecount', async t => {
+    freshObjectRoom({ role: 'wizard' });
+    const core = await startLuaCore(t);
+    await core.executeAsync('spellbook = obj.new("blessed spellbook of light"); u.giveobj(spellbook)');
+    const source = game.inventory.find(object => object.otyp === SPE_LIGHT);
+    assert.ok(source?.invlet, 'The studied book needs an inventory letter');
+
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    pushKeys(`${source.invlet}    `);
+    await rhack('r'.charCodeAt(0));
+    for (let turn = 0; turn < 30 && game._occupation; turn++) await moveloop_core();
+    assert.equal(source.spestudied, 1);
+
+    await core.executeAsync('studies = spellbook:totable().usecount');
+    assert.equal(core.getGlobal('studies'), 1);
+});
+
+void test('boxing an object off the floor keeps its last square in its Lua report', async t => {
+    freshObjectRoom();
+    const core = await startLuaCore(t);
+    await core.executeAsync(`
+        rock = obj.new("rock")
+        rock:placeobj(u.ux, u.uy)
+        box = obj.new("chest")
+        box:addcontent(rock)
+        rock_x = rock:totable().ox
+        hero_x = u.ux
+        rock_where = rock:totable().where
+    `);
+    assert.equal(core.getGlobal('rock_x'), core.getGlobal('hero_x'));
+    assert.equal(core.getGlobal('rock_where'), 2); // OBJ_CONTAINED
+});
+
+void test('Lua object methods ignore extra arguments except where native code checks the count', async t => {
+    freshObjectRoom();
+    const core = await startLuaCore(t);
+    await core.executeAsync(`
+        first = obj.new("rock")
+        first:placeobj(u.ux, u.uy)
+        second = obj.new("rock")
+        second:placeobj(u.ux + 1, u.uy)
+        square_chain_ends = second:next(true):isnull()
+        wide_call = second:next(true, 0)
+        wide_call_left_square = (wide_call:totable().ox ~= second:totable().ox)
+        wide_call_real = not wide_call:isnull()
+        kept_quan = second:totable(1, 2, 3).quan
+        still_real = not second:isnull("junk")
+    `);
+    assert.equal(core.getGlobal('square_chain_ends'), true);
+    assert.equal(core.getGlobal('wide_call_left_square'), true);
+    assert.equal(core.getGlobal('wide_call_real'), true);
+    assert.equal(core.getGlobal('kept_quan'), 1);
+    assert.equal(core.getGlobal('still_real'), true);
+
+    await assert.rejects(core.executeAsync('obj.new("rock", 1)'));
+    await assert.rejects(core.executeAsync('obj.at(1)'));
+});
+
+void test('bury raises an error for two arguments before it inspects the object', async t => {
+    freshObjectRoom();
+    const core = await startLuaCore(t);
+    // l_obj_bury accepts only one or three arguments and rejects anything
+    // else before checking whether the handle refers to a real object.
+    await assert.rejects(core.executeAsync('obj.at(1, 1):bury(5)'));
+    await assert.rejects(core.executeAsync('obj.new("rock"):bury(5)'));
 });
