@@ -4,7 +4,7 @@ import { ismnum } from './const.js';
 import { validSavedSpeciesOrNone } from './species_validation.js';
 import { validSavedGlyph } from './display_validation.js';
 import { validSavedDungeonLocation } from './map_validation.js';
-import { validSavedAlignmentValue, validSavedAttributeValues, } from './character_validation.js';
+import { validSavedAlignmentValue, validSavedAttributeValues, validSavedHeroAlignment, } from './character_validation.js';
 export function validSavedHero(value, entities) {
     const fields = {
         ...heroPropertyFields,
@@ -28,7 +28,7 @@ export function validSavedHero(value, entities) {
         urexp: optional(integer),
         ublesscnt: optional(integer),
         uac: optional(integer),
-        ualign: optional(validHeroAlignment),
+        ualign: optional(validSavedHeroAlignment),
         ualignbase: optional(validAlignmentBases),
         uroleplay: optional(validHeroRoleplay),
         rightHanded: optional(boolean),
@@ -194,18 +194,13 @@ const heroFlag = (value) => boolean(value) || value === 0 || value === 1;
 function validHeroAttributes(value) {
     return closedFieldsMatch(value, { a: validSavedAttributeValues });
 }
-function validHeroAlignment(value) {
-    return closedFieldsMatch(value, {
-        type: validSavedAlignmentValue, record: integer, abuse: optional(integer),
-    });
-}
 function validAlignmentBases(value) {
     return arrayOf(validSavedAlignmentValue)(value) && value.length === 2;
 }
 function validHeroRoleplay(value) {
     return closedFieldsMatch(value, {
         pauper: boolean, nudist: boolean, reroll: boolean,
-        numrerolls: integer, blind: boolean, deaf: boolean,
+        numrerolls: integer, numbones: integer, blind: boolean, deaf: boolean,
     });
 }
 function validHeroSkill(value) {

@@ -1,26 +1,30 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 import { clearBypasses } from './object_bypass.js';
-import { PARANOID_BONES } from './const.js';
+import { DISMOUNT_BONES, PARANOID_BONES } from './const.js';
 import { paranoidQuery } from './query.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd, } from './const.js';
-import { completeBonesMonster, giveHeroResistancesToMonster, } from './bones_monster.js';
+import { completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave, } from './bones_monster.js';
 import { artifactEmitsLight } from './artifacts.js';
+import { plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { setTwoWeaponCombat } from './weapon_slots.js';
 import { makeEngravingAt } from './engrave.js';
 import { endObjectBurn } from './light.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
-import { bonesLevelExists, createCorpstatAt, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
+import { bonesLevelExists, createCorpstatAt, deleteBonesLevel, makemonAt, mkcorpstat, mksobj, saveBonesLevel, } from './mklev.js';
 import { monsterCanCarryObject, monsterLikesObjects, } from './monster_carry.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
 import { initializeMonsterArmor } from './monworn.js';
+import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { addObjectToContainer } from './object_container.js';
 import { CORPSE, MUMMY_WRAPPING, STATUE } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './object_release.js';
 import { rn2 } from './rng.js';
+import { dismountHero } from './steed.js';
+import { unpunishHero } from './punishment.js';
 import { objectWeight } from './weight.js';
 const PM_HUMAN = 260;
 const PM_GHOST = 287;
@@ -150,7 +154,19 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
         const replace = await promptDeathQuestion('Bones file already exists.  Replace it?');
         if (replace !== 'y')
             return false;
+        if (!deleteBonesLevel()) {
+            await plineWithContinuation('Cannot unlink old bones.');
+            return false;
+        }
     }
+    releaseAllMonsterLeashes();
+    if (game.u.punished)
+        await unpunishHero();
+    if (game.u.usteed)
+        await dismountHero(DISMOUNT_BONES);
+    await prepareBonesMonstersForSave();
+    for (const object of game.inventory)
+        object.ghostly = true;
     if (arise === LEAVESTATUE) {
         const form = game.u?.umonnum ?? game.urace?.mnum ?? PM_HUMAN;
         const statue = await mkcorpstat(STATUE, null, form, x, y, 0);
@@ -177,11 +193,13 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
     }
     await dropHeroInventoryForBones(x, y);
     const ghost = await makeBonesMonster(PM_GHOST, x, y, MM_NONAME);
-    if (ghost) {
-        completeBonesMonster(ghost, game);
-        if (corpse) {
-            corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
-        }
+    if (!ghost) {
+        game._bonesSaved = false;
+        return false;
+    }
+    completeBonesMonster(ghost, game);
+    if (corpse) {
+        corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
     game._bonesSaved = saveBonesLevel();
     return game._bonesSaved;

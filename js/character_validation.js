@@ -176,6 +176,11 @@ export function validSavedAttributeValues(value) {
 export function validSavedAlignmentValue(value) {
     return value === -1 || value === 0 || value === 1;
 }
+export function validSavedHeroAlignment(value) {
+    return closedFieldsMatch(value, {
+        type: validSavedAlignmentValue, record: integer, abuse: optional(integer),
+    });
+}
 function validGenderedName(value) {
     return closedFieldsMatch(value, { m: string, f: string });
 }

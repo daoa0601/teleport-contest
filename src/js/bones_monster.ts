@@ -2,18 +2,68 @@
 // C refs: bones.c:savebones()/getbones().
 
 import { setMonsterGivenName } from './monster_given_name.js';
-import { DEFUNCT_MONSTER } from './const.js';
+import { DEFUNCT_MONSTER, DELPHI, Is_oracle_level, MON_FLOOR, PL_NSIZ, RLOC_NOMSG } from './const.js';
 import { sanitizeBonesName } from './bones_name.js';
-import { game } from './gstate.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { isRoom } from './map_types.js';
+import { findMonsterNearPosition, peaceMinded } from './mklev.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { removeMonsterFromGame } from './monster_departure.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
+import { hideMonsterOnRestore, hideMonsterUnder } from './monster_hiding.js';
+import { setShopResidency } from './monster_migration.js';
 import { propagateMonsterSpecies } from './monster_population.js';
-import { SPECIAL_PM } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
+import { restoreMonsterShape } from './monster_polymorph.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
+import { roomForRoomno } from './room.js';
+import { pacifyShopkeeper } from './shop_damage.js';
+import { hasShopkeeperData } from './shop_types.js';
+import { relocateMonsterTo } from './teleport.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { GameMap } from './game.js';
 import type { PropertyName } from './property_types.js';
+
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
+const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
+const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
+const MS_LEADER = 36;
+const MS_NEMESIS = 37;
+const M1_CONCEAL = 0x80;
+
+export async function prepareBonesMonstersForSave(): Promise<void> {
+    const level = requireGameLevel();
+    for (const monster of [...level.monsters].reverse()) {
+        if (monster.mhp < 1 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) continue;
+        const sound = MONSTER_SOUND[monster.mnum];
+        if (monster.iswiz || monster.mnum === PM_MEDUSA
+            || sound === MS_LEADER || sound === MS_NEMESIS
+            || monster.mnum === PM_VLAD || monster.cham === PM_VLAD
+            || monster.mnum === PM_ORACLE && !await fixupOracle(monster))
+            await removeMonsterFromGame(monster);
+    }
+    purgeDeadMonsters(level);
+}
+
+async function fixupOracle(oracle: Monster): Promise<boolean> {
+    if (!Is_oracle_level(game.u.uz)) return false;
+    const level = requireGameLevel();
+    oracle.mpeaceful = 1;
+    const currentRoom = () => roomForRoomno(level, level.at(oracle.mx, oracle.my)?.roomno ?? 0);
+    if (currentRoom()?.rtype === DELPHI) return true;
+    const chamber = level.rooms.find(room => isRoom(room) && room.orig_rtype === DELPHI);
+    if (!isRoom(chamber)) return true;
+    if (currentRoom() !== chamber) {
+        const x = Math.trunc((chamber.lx + chamber.hx) / 2);
+        const y = Math.trunc((chamber.ly + chamber.hy) / 2);
+        const destination = findMonsterNearPosition(oracle.mnum, x, y);
+        if (destination) await relocateMonsterTo(oracle, destination.x, destination.y, { flags: RLOC_NOMSG });
+    }
+    if (currentRoom() === chamber) chamber.rtype = DELPHI;
+    return true;
+}
 
 function sanitizeMonsterName(monster: Monster): void {
     const name = monster?.mextra?.mgivenname
@@ -56,6 +106,7 @@ export function giveHeroResistancesToMonster(monster: Monster, state: GameState 
 }
 
 export function completeBonesMonster<T extends Monster>(monster: T, state: GameState = game): T {
+    requirePlayingGame(state);
     const name = state.plname || 'player';
     const finalRole = roleIndex(state);
     const finalRace = raceIndex(state);
@@ -63,7 +114,11 @@ export function completeBonesMonster<T extends Monster>(monster: T, state: GameS
         parentmid: monster.m_id,
         role: finalRole,
         race: finalRace,
-        oldalign: state.u?.ualign?.type ?? 0,
+        oldalign: {
+            type: state.u.ualign.type,
+            record: state.u.ualign.record,
+            abuse: state.u.ualign.abuse ?? 0,
+        },
         deathlevel: state.u?.ulevel ?? 0,
         luck: state.u?.uluck ?? 0,
         mnum: SPECIAL_PM + 1 + finalRole,
@@ -86,7 +141,17 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
     // C restmonchn() admits the complete chain before getbones() starts
     // purging it. Inventory drops during purge must not affect admission
     // of an actor later in that chain.
-    for (const monster of level?.monsters || []) {
+    // Births append here; native fmon starts with the newest monster.
+    const monsters = [...level.monsters].reverse();
+    for (const monster of monsters) {
+        if (monster.isshk && state.u.uz?.dlevel) {
+            if (!hasShopkeeperData(monster))
+                throw new Error(`Bones shopkeeper ${monster.m_id} has no shop record.`);
+            monster.eshk.shoplevel = { ...state.u.uz };
+            const customer = (monster.eshk.customer ?? '').slice(0, PL_NSIZ).toLowerCase();
+            if (!monster.mpeaceful && customer !== state.plname.slice(0, PL_NSIZ).toLowerCase())
+                pacifyShopkeeper(monster, true);
+        }
         // C priest.c:restpriest(): bones belong to the receiving level.
         if (monster.ispriest && state.u.uz?.dlevel) {
             const shrine = monster.epri ?? monster.mextra?.epri;
@@ -98,7 +163,22 @@ export async function restoreBonesMonsters(level: Pick<GameMap, 'monsters'>, sta
         if (!propagateMonsterSpecies(species, true, true, state))
             monster.mhpmax = DEFUNCT_MONSTER;
     }
-    for (const monster of [...(level?.monsters || [])]) {
+    for (const monster of monsters) {
+        setShopResidency(monster, false, state);
+        if (monster.mundetected && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
+            await hideMonsterUnder(monster, state);
+        if (!monster.isshk) {
+            const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
+            const isUnicorn = monster.mnum >= 101 && monster.mnum <= 103;
+            const coalignedUnicorn = isUnicorn
+                && Math.sign(state.u.ualign?.type ?? 0) === Math.sign(alignment);
+            monster.mpeaceful = coalignedUnicorn || peaceMinded(monster.mnum) ? 1 : 0;
+        }
+        setMonsterMalign(monster, state);
+        await restoreMonsterShape(monster, state);
+        await hideMonsterOnRestore(monster, state);
+    }
+    for (const monster of monsters) {
         sanitizeMonsterName(monster);
         if (monster.mhpmax !== DEFUNCT_MONSTER) continue;
         await removeMonsterFromGame(monster);

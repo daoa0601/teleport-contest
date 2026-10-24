@@ -3,6 +3,7 @@ import type {
     GenderedName, Race, Role, Spellcasting,
 } from './roles.js';
 import type { GameFlags } from './flags.js';
+import type { HeroAlignment } from './hero_types.js';
 import { ismnum } from './const.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import {
@@ -195,6 +196,12 @@ export function validSavedAttributeValues(value: unknown): value is AttributeVal
 
 export function validSavedAlignmentValue(value: unknown): value is AlignmentValue {
     return value === -1 || value === 0 || value === 1;
+}
+
+export function validSavedHeroAlignment(value: unknown): value is HeroAlignment {
+    return closedFieldsMatch<HeroAlignment>(value, {
+        type: validSavedAlignmentValue, record: integer, abuse: optional(integer),
+    });
 }
 
 function validGenderedName(value: unknown): value is GenderedName {

@@ -1,5 +1,6 @@
 import type { GameObject } from './object_types.js';
 import type { Position, Room } from './map_types.js';
+import type { HeroAlignment } from './hero_types.js';
 
 // The port currently stores C bit fields as either booleans or integer bits.
 // Multi-bit fields such as mstate, mstrategy and mtrapseen remain numbers.
@@ -106,7 +107,7 @@ export interface BonesMonsterData {
     parentmid: number;
     role: number;
     race: number;
-    oldalign: number;
+    oldalign: HeroAlignment;
     deathlevel: number;
     luck: number;
     mnum: number;

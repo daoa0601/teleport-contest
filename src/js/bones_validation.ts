@@ -8,6 +8,7 @@ import { restoreSavedMap, validSavedPosition, validSavedStairways } from './map_
 
 export interface BonesPayload {
     version: number;
+    savedAt: number;
     level: GameMap;
     stairs: Stairway | null;
     heroTrack: Position[];
@@ -24,9 +25,11 @@ export function decodeBonesPayload(encoded: string, expectedVersion: number): Bo
         throw new TypeError('Bones use an unsupported save version');
     for (const key of Object.keys(value)) {
         if (key !== 'version' && key !== 'level' && key !== 'stairs'
-            && key !== 'heroTrack' && key !== 'fruits')
+            && key !== 'heroTrack' && key !== 'fruits' && key !== 'savedAt')
             throw new TypeError(`Bones contain unsupported field ${key.slice(0, 80)}`);
     }
+    if (!integer(value.savedAt))
+        throw new TypeError('Bones contain an invalid save time');
     if (!validSavedStairways(value.stairs))
         throw new TypeError('Bones contain invalid stairways');
     if (!arrayOf(validSavedPosition)(value.heroTrack))
@@ -35,6 +38,7 @@ export function decodeBonesPayload(encoded: string, expectedVersion: number): Bo
         throw new TypeError('Bones contain invalid fruit definitions');
     return {
         version: expectedVersion,
+        savedAt: value.savedAt,
         level: restoreSavedMap(value.level, createSavedEntityChecks()),
         stairs: value.stairs,
         heroTrack: value.heroTrack,

@@ -24,6 +24,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
+import { createDungeon } from './support/topology.js';
 void test('#wizmakemap clears old sight before acknowledging the replacement level', async (t) => {
     const oldLevel = freshObjectRoom({
         hero: { uz: { dnum: 0, dlevel: 1 } },
@@ -54,6 +55,7 @@ void test('#wizmakemap loading bones does not make a cached bones level familiar
         assert.ok(saveBonesLevel(), `Could not save bones on level ${dlevel}`);
     }
     freshConnectedLevels({ generateDestination: true });
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     init_objects();
     game.storage = storage;
     game.plname = 'Ada';

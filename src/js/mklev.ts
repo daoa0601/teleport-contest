@@ -75,8 +75,10 @@ import {
 } from './buried_object.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { addShopDamage } from './shop_damage.js';
+import { addShopDamage, fixShopDamage } from './shop_damage.js';
 import { GameMap } from './game.js';
+import { levelAllowsBones } from './bones_admission.js';
+import { ageStoresFuel } from './container.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { propagateMonsterSpecies } from './monster_population.js';
 import {
@@ -3546,7 +3548,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 14;
+const BONES_VERSION = 16;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -3554,6 +3556,20 @@ function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string
 
 export function bonesLevelExists(level: DungeonLocation | undefined = game.u.uz): boolean {
     return game.storage?.getItem(bonesStorageKey(level)) != null;
+}
+
+export function deleteBonesLevel(): boolean {
+    const storage = game.storage;
+    if (!storage) return false;
+    try {
+        const key = bonesStorageKey();
+        // Native unlink fails if another game has already consumed these bones.
+        if (storage.getItem(key) === null) return false;
+        storage.removeItem(key);
+        return storage.getItem(key) === null;
+    } catch (_error) {
+        return false;
+    }
 }
 
 async function bonesPrompt(message: string, displayLevel: GameMap | null = null): Promise<string> {
@@ -3567,16 +3583,19 @@ async function bonesPrompt(message: string, displayLevel: GameMap | null = null)
 }
 
 function eachTopLevelBonesObject(level: GameMap, visit: (object: GameObject) => void): void {
-    for (const monster of level?.monsters || []) {
+    for (const monster of [...level.monsters].reverse()) {
         for (const object of monster.minvent || monster.inventory || [])
             visit(object);
     }
-    for (const column of level?.objects || []) {
-        for (const pile of column || []) {
-            for (const object of pile || []) visit(object);
-        }
-    }
+    for (const object of bonesFloorObjects(level)) visit(object);
     for (const object of level?.buriedObjects || []) visit(object);
+}
+
+function bonesFloorObjects(level: GameMap): GameObject[] {
+    const objects: GameObject[] = [];
+    for (const column of level.objects)
+        for (const pile of column ?? []) objects.push(...(pile ?? []));
+    return objects.sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
 }
 
 function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => void): void {
@@ -3588,34 +3607,37 @@ function eachObjectInBonesGraph(level: GameMap, visit: (object: GameObject) => v
     eachTopLevelBonesObject(level, walk);
 }
 
-function resetBonesObjectList(objects: GameObject[] | null | undefined, ghostly: boolean): GameObject[] {
+function resetBonesObjectList(
+    objects: GameObject[] | null | undefined, mode: 'save' | 'restore', ghostly = mode === 'save',
+): GameObject[] {
     const kept: GameObject[] = [];
     for (const object of objects || []) {
-        object.contents = resetBonesObjectList(object.contents, false);
+        object.contents = resetBonesObjectList(object.contents, mode, false);
         for (const content of object.contents)
             content.container = object;
         if (object.in_use) continue;
         if (ghostly) object.ghostly = true;
-        kept.push(prepareBonesObjectForSave(object));
+        kept.push(mode === 'save'
+            ? prepareBonesObjectForSave(object) : prepareBonesObjectForRestore(object));
     }
     return kept;
 }
 
-function resetBonesObjectsForSave(level: GameMap): void {
-    for (const monster of level?.monsters || []) {
+function resetBonesObjects(level: GameMap, mode: 'save' | 'restore'): void {
+    for (const monster of [...level.monsters].reverse()) {
         const inventory = resetBonesObjectList(
-            monster.minvent || monster.inventory, true,
+            monster.minvent || monster.inventory, mode,
         );
         monster.minvent = monster.inventory = inventory;
         monster.hasInventory = inventory.length > 0;
     }
-    for (let x = 0; x < (level?.objects?.length || 0); x++) {
-        const column = level.objects[x];
+    const retained = new Set(resetBonesObjectList(bonesFloorObjects(level), mode));
+    for (const column of level.objects) {
         if (!column) continue;
         for (let y = 0; y < column.length; y++)
-            column[y] = resetBonesObjectList(column[y], true);
+            column[y] = (column[y] ?? []).filter(object => retained.has(object));
     }
-    level.buriedObjects = resetBonesObjectList(level?.buriedObjects, true);
+    level.buriedObjects = resetBonesObjectList(level?.buriedObjects, mode);
 }
 
 // C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
@@ -3631,6 +3653,7 @@ export function saveBonesLevel(): boolean {
     try {
         payload = decodeBonesPayload(encodeSavedGraph({
             version: BONES_VERSION,
+            savedAt: game.moves,
             level: game.level,
             stairs: game.stairs || null,
             heroTrack: (game._heroTrack || []).map(point => ({
@@ -3654,6 +3677,7 @@ export function saveBonesLevel(): boolean {
     payload.level.bonesNames = [
         who, ...(payload.level.bonesNames ?? []),
     ];
+    if (game.flags.debug) payload.level.flags.wizard_bones = true;
 
     for (const monster of payload.level.monsters || []) {
         monster.mlstmv = 0;
@@ -3670,7 +3694,7 @@ export function saveBonesLevel(): boolean {
         trap.madeby_u = 0;
         trap.tseen = trap.ttyp === HOLE;
     }
-    resetBonesObjectsForSave(payload.level);
+    resetBonesObjects(payload.level, 'save');
     const fruitIds = new Set();
     eachObjectInBonesGraph(payload.level, object => {
         if (object.otyp === SLIME_MOLD) fruitIds.add(object.spe);
@@ -3784,7 +3808,7 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
         }
         for (const content of object.contents || []) await renewObject(content);
     };
-    for (const monster of level?.monsters || []) {
+    for (const monster of [...level.monsters].reverse()) {
         const oldId = monster.m_id;
         monster.m_id = nextIdent();
         if (Number.isInteger(oldId) && oldId > 0)
@@ -3792,9 +3816,7 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
         for (const object of monster.minvent || monster.inventory || [])
             await renewObject(object);
     }
-    for (const column of level?.objects || [])
-        for (const pile of column || [])
-            for (const object of pile || []) await renewObject(object);
+    for (const object of bonesFloorObjects(level)) await renewObject(object);
     for (const object of level?.buriedObjects || []) await renewObject(object);
 
     for (const monster of level?.monsters || []) {
@@ -3830,51 +3852,83 @@ async function renewBonesIdentities(level: GameMap, fruits: readonly Fruit[]): P
     }
 }
 
-function restoreBonesObjects(level: GameMap): void {
+function restoreBonesFloorOrder(level: GameMap): void {
     let newestOrder = game._fobjSerial ?? 0;
     eachObjectInBonesGraph(level, object => {
-        prepareBonesObjectForRestore(object, game);
         newestOrder = Math.max(newestOrder, object._fobjOrder ?? 0);
     });
-    // C restore.c:getlev() keeps the bones fobj chain; objects placed
-    // afterwards are pushed in front of it.
+    // C getlev() restores fobj before restore_cham() can drop equipment.
+    // Those drops must precede every object already in the bones chain.
     game._fobjSerial = newestOrder;
 }
 
-function restoreBonesMonsterAttitudes(level: GameMap): void {
-    for (const monster of level?.monsters || []) {
-        if (!monster.isshk) {
-            const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
-            const isUnicorn = monster.mnum >= 101 && monster.mnum <= 103;
-            const coalignedUnicorn = isUnicorn
-                && Math.sign(game.u?.ualign?.type ?? 0)
-                    === Math.sign(alignment);
-            monster.mpeaceful = coalignedUnicorn || peaceMinded(monster.mnum)
-                ? 1 : 0;
-        }
-        setMonsterMalign(monster);
+// C restore.c:restobjchn()/getlev() and timeout.c:restore_timers(). Bones
+// arrive immediately after the old hero's death, on the new hero's clock.
+function restoreBonesClock(level: GameMap, savedAt: number): void {
+    const adjustment = game.moves - savedAt;
+    const restoreObjectClock = (object: GameObject, frozen = false): void => {
+        if (!frozen && !object.ageRelative && !ageStoresFuel(object))
+            object.age += adjustment;
+        for (const timer of object.objectTimers ?? []) timer.deadline += adjustment;
+        for (const content of object.contents ?? []) restoreObjectClock(content, object.otyp === ICE_BOX);
+    };
+    eachTopLevelBonesObject(level, restoreObjectClock);
+    for (const timer of level.levelTimers) timer.deadline += adjustment;
+    for (const damage of level.damagelist ?? []) damage.when += adjustment;
+    if (level.flags.stasis_until !== undefined) level.flags.stasis_until += adjustment;
+}
+
+// C restore.c:getlev(): branch entrances can move between games.
+function repairBonesConnections(level: GameMap, location: DungeonLocation): void {
+    const here = (end: DungeonLocation) => end.dnum === location.dnum && end.dlevel === location.dlevel;
+    const branch = game.branches.find(candidate => here(candidate.end1) || here(candidate.end2));
+    if (!branch) {
+        for (const trap of [...level.traps])
+            if (trap.ttyp === MAGIC_PORTAL) deleteTrap(trap);
+        return;
+    }
+    if (location.dlevel !== 1) return;
+    const destination = here(branch.end1) ? branch.end2 : branch.end1;
+    if (branch.type === 'portal') {
+        const portal = level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (!portal) throw new PanicTermination('getlev: need portal but none found');
+        portal.dst = { ...destination };
+        return;
+    }
+    for (let stair = game.stairs; stair; stair = stair.next) {
+        if (stair.tolev.dnum === location.dnum) continue;
+        stair.tolev = { ...destination };
+        break;
     }
 }
 
 // C refs: bones.c:getbones() and restore.c:getlev(ghostly).
 async function getbones(): Promise<boolean> {
     const flags = game.flags || {};
-    if (flags.explore) return false;
+    if (game.discover || flags.explore) return false;
     if (flags.bones === false) return false;
     if (rn2(3) && !game.flags?.debug) return false;
+    const location = game.u.uz;
+    if (!location || !levelAllowsBones(location)) return false;
 
     const encoded = game.storage?.getItem(bonesStorageKey());
     if (!encoded) return false;
-    if (game.flags?.debug
-        && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
-    let payload: BonesPayload;
+    let payload: BonesPayload | null = null;
     try {
         payload = decodeBonesPayload(encoded, BONES_VERSION);
+        if (!validMonsterWormBodies(payload.level)) payload = null;
     } catch (_error) {
+        payload = null;
+    }
+    if (!payload) {
+        if (!game.flags.debug)
+            await pline('Discarding unusable bones; no need to panic...');
+        await finishBonesRestore();
         return false;
     }
-    if (!validMonsterWormBodies(payload.level)) return false;
+    if (game.flags.debug
+        && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
     restoreMonsterWormHeads(payload.level);
     restoreEngravings(payload.level);
@@ -3884,24 +3938,31 @@ async function getbones(): Promise<boolean> {
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
     }));
+    restoreBonesClock(game.level, payload.savedAt);
     await renewBonesIdentities(game.level, payload.fruits);
+    restoreBonesFloorOrder(game.level);
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
-    restoreBonesObjects(game.level);
-    restoreBonesMonsterAttitudes(game.level);
+    repairBonesConnections(game.level, location);
+    resetBonesObjects(game.level, 'restore');
+    await fixShopDamage(game);
     sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
-    game._restoredBones = true;
+    game._restoredBones = await finishBonesRestore(sourceDisplayLevel);
+    return game._restoredBones;
+}
 
-    if (game.flags?.debug) {
+async function finishBonesRestore(displayLevel: GameMap | null = null): Promise<boolean> {
+    const roleplay = game.u.uroleplay;
+    if (!roleplay) throw new Error('Bones restoration requires initialized roleplay counters');
+    roleplay.numbones++;
+    if (game.flags.debug) {
         const unlink = await bonesPrompt(
-            'Unlink bones? [yn] (n) ', sourceDisplayLevel,
+            'Unlink bones? [yn] (n) ', displayLevel,
         );
-        if (unlink === 'y') game.storage?.removeItem?.(bonesStorageKey());
-    } else {
-        game.storage?.removeItem?.(bonesStorageKey());
+        if (unlink !== 'y') return true;
     }
-    return true;
+    return deleteBonesLevel();
 }
 
 // C ref: allmain.c l_nhcore_init()

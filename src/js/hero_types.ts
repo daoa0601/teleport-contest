@@ -27,6 +27,7 @@ export interface HeroRoleplay {
     nudist: boolean;
     reroll: boolean;
     numrerolls: number;
+    numbones: number;
     blind: boolean;
     deaf: boolean;
 }

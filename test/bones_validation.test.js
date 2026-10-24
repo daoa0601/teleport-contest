@@ -17,7 +17,7 @@ void test('bones restore a usable map and preserve a contained object back-refer
     level.objects[10] = [];
     level.objects[10][10] = [chest];
     const encoded = encodeSavedGraph({
-        version: 10, level, stairs: null, heroTrack: [], fruits: [],
+        version: 10, savedAt: 1, level, stairs: null, heroTrack: [], fruits: [],
     });
     const restored = decodeBonesPayload(encoded, 10);
     const restoredChest = restored.level.objects[10]?.[10]?.[0];
@@ -29,6 +29,7 @@ void test('bones restore a usable map and preserve a contained object back-refer
 void test('bones reject an invalid terrain field before exposing a map', () => {
     const encoded = encodeSavedGraph({
         version: 10,
+        savedAt: 1,
         level: { ...new GameMap(), locations: [[{ ...makeLocation(), typ: 'lava' }]] },
         stairs: null, heroTrack: [], fruits: [],
     });
@@ -39,6 +40,7 @@ void test('a cyclic object reference cannot masquerade as its monster carrier', 
     malformed.ocarry = malformed;
     const encoded = encodeSavedGraph({
         version: 10,
+        savedAt: 1,
         level: { ...new GameMap(), objects: [[[malformed]]] },
         stairs: null, heroTrack: [], fruits: [],
     });
