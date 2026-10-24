@@ -149,6 +149,7 @@ import {
     see_traps,
     show_glyph_cell,
     swallowed,
+    under_ground, under_water,
     canSeeMonster, monsterVisible,
     shieldeff,
 } from './display.js';
@@ -3842,6 +3843,8 @@ export async function moveloop_core() {
     if (movementRationActionPending && !g.program_state?.gameover) {
         await settleHeroLiquidAfterAction();
         if (g.program_state?.gameover) return;
+        if (g.u.uinwater || g.underwater) await under_water(0);
+        else if (g.u.uburied) await under_ground(0);
         await seeNearbyMonsters(g);
     }
 
