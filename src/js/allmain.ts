@@ -3869,15 +3869,6 @@ export async function moveloop_core() {
         g._armorClassDirty = false;
     }
 
-    if (currentMulti(g) < 0 && pendingArmorAction(g)) {
-        // A delayed action spends movement without reading another command.
-        g.u.umoved = false;
-        g.context.move = 1;
-        g.u.umovement = (g.u.umovement ?? 12) - 12;
-        g._heroTimePending = true;
-        return;
-    }
-
     if (g._vaultGuardArrivalPending) {
         await continueVaultGuardArrival(g);
         const continuation = g._vaultMaintenanceContinuation;
