@@ -2829,15 +2829,20 @@ export async function showMessageMenu(letter, pickMode, message) {
     const columns = game.nhDisplay?.cols ?? 80;
     // dismiss_more is set first, so the letter also acknowledges older prose.
     const menuLetter = letter.charCodeAt(0);
+    let dismissKey = menuLetter;
     if (pending && message.length + pending.length + 3 < columns - 8)
         message = `${pending}  ${message}`;
     else if (pending) {
         // update_topl() still draws the incoming choice after Escape at older prose.
-        await pageTopline(pending, { dismissKey: menuLetter });
+        const key = await pageTopline(pending, { dismissKey });
+        // xwaitforspace() replaces dismiss_more with 1 on Escape. The
+        // choice still appears, but its letter no longer dismisses More.
+        if (key === 27)
+            dismissKey = 1;
     }
     game._pending_message = message;
     game._retained_message = '';
-    const key = await pageTopline(message, { menuLetter });
+    const key = await pageTopline(message, { menuLetter, dismissKey });
     return key === menuLetter || key === 27 ? key : 0;
 }
 // tty more() acknowledges existing output. A window-only display does not

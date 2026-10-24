@@ -185,7 +185,7 @@ void test('the item letter dismisses an older message before the singleton is sh
 });
 
 for (const { name, key, selected } of [
-    { name: 'the item letter', key: 'b', selected: 'b'.charCodeAt(0) },
+    { name: 'the item letter followed by Space', key: 'b ', selected: 0 },
     { name: 'Escape', key: '\x1b', selected: 27 },
     { name: 'Space', key: ' ', selected: 0 },
 ]) {
