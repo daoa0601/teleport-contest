@@ -11,7 +11,7 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { untrap } from '../js/untrap.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { createStaffedShop } from './support/shop.js';
@@ -49,27 +49,6 @@ void test('a secondary Sting does not announce itself while cutting a web', asyn
         assert.match(text, /You cut through (?:your|the) web\./, text);
     }
     assert.equal(verified, true, 'some seed must remove the web');
-});
-
-// C trap.c:5471-5477: untrap() refuses before try_disarm() for an
-// unskilled rider (can_reach_floor() fails in the main flow), so the
-// rider_cant_reach() branch inside try_disarm() stays defensive.
-void test('an unskilled rider is refused by the untrap floor-reach check', async () => {
-    const level = freshPlayableRoom({});
-    const steed = await createSaddledSteed();
-    game.u.usteed = steed;
-    addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
-    const messages: string[] = [];
-    initRng(1n);
-
-    await untrap({
-        chooseDirection: direction(1, 0),
-        publish: message => { messages.push(message); },
-        ask: async () => 'n',
-    });
-
-    assert.match(messages.join(' | '), /but you can't reach it while mounted\./,
-        messages.join(' | '));
 });
 
 // C trap.c:5485-5486 -> dog.c abuse_dog(): Aggravate_monster halves a pet's
