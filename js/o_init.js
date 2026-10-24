@@ -7,14 +7,15 @@
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { rn2 } from './rng.js';
-import { bot, docrt, flush_screen, plineWithContinuation } from './display.js';
-import { NHW_MENU, PICK_ONE } from './const.js';
+import { bot, clearMessageWindow, docrt, flush_screen, plineWithContinuation } from './display.js';
+import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE } from './const.js';
+import { yn_function } from './query.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { heroIsBlind } from './senses.js';
 import { ATR_INVERSE, addMenuHeading, showTextPages } from './windows.js';
 import { FLINT, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
-import { OBJECT_CLASS_LABELS, objectClassForType, observeObject, priceQuoteSuffix, } from './object_knowledge.js';
+import { OBJECT_CLASS_LABELS, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, priceQuoteSuffix, } from './object_knowledge.js';
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
 import { armorPresentationName } from './object_grammar.js';
 import { classifyLoot, inventoryClassOrder } from './object_sort.js';
@@ -302,14 +303,102 @@ export async function dodiscovered() {
         await plineWithContinuation("You haven't discovered anything yet...");
         return;
     }
-    // The tty text-window backend paginates the continuous putstr() stream
-    // into 23 content rows, reserving the last terminal row for --More--.
-    // Only the first page carries the title and its following blank line.
-    const rows = [
+    await showDiscoveries([
         `Discoveries, ${DISCOVERY_ORDERS[order]}`,
         '',
         ...body,
-    ];
+    ]);
+}
+// o_init.c:doclassdisco(). Even traditional prompts accept empty classes;
+// those choices stay hidden so the prompt advertises only useful answers.
+export async function doclassdisco() {
+    game.flags.discosort ??= 'o';
+    if (game.iflags.menu_requested && !await chooseDiscoverySort(2))
+        return;
+    const relics = discoveredRelics();
+    const artifacts = discoveredArtifacts();
+    const choices = [];
+    if (relics.length)
+        choices.push({ symbol: 'u', name: 'unique items or relics' });
+    if (artifacts.length)
+        choices.push({ symbol: 'a', name: 'artifacts' });
+    for (const oclass of discoveryClassOrder()) {
+        if (!(game._objectDiscoveryOrder ?? []).some(type => objectClassForType(type) === oclass && formattedDiscovery(type)))
+            continue;
+        choices.push({ symbol: requireObjectData(OBJECT_CLASS_SYMBOLS, oclass),
+            name: discoveryClassName(oclass).toLowerCase() });
+    }
+    if (!choices.length) {
+        await plineWithContinuation("You haven't discovered any items yet.");
+        return;
+    }
+    const symbol = await chooseDiscoveryClass(choices);
+    if (!symbol)
+        return;
+    if (symbol === 'u' || symbol === 'r') {
+        if (relics.length)
+            await showDiscoveries([discoveryHeading('Unique items or relics'), ...relics]);
+        else
+            await plineWithContinuation("You haven't discovered any unique items or relics yet.");
+        return;
+    }
+    if (symbol === 'a') {
+        if (artifacts.length)
+            await showDiscoveries([discoveryHeading('Artifacts'), ...artifacts]);
+        else
+            await plineWithContinuation("You haven't discovered any artifacts yet.");
+        return;
+    }
+    const oclass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
+    const name = discoveryClassName(oclass);
+    const order = game.flags.discosort;
+    const entries = classDiscoveries(oclass, order);
+    if (!entries.length) {
+        await plineWithContinuation(`You haven't discovered any ${name.toLowerCase()} yet.`);
+        return;
+    }
+    const description = order === 'o' ? 'order of discovery'
+        : order === 's' ? "'sortloot' order" : 'alphabetical order';
+    await showDiscoveries([`Discovered ${name} in ${description}`, ...entries]);
+}
+async function chooseDiscoveryClass(choices) {
+    const prompt = 'View discoveries for which sort of objects?';
+    const style = game.flags.menu_style ?? MENU_FULL;
+    if (style === MENU_TRADITIONAL || style === MENU_COMBINATION) {
+        const symbols = choices.map(choice => choice.symbol).join('');
+        const hidden = [...discoveryClassOrder().map(oclass => requireObjectData(OBJECT_CLASS_SYMBOLS, oclass)), 'a', 'u', 'r']
+            .filter(symbol => !symbols.includes(symbol)).join('');
+        const response = await yn_function(prompt, symbols + (hidden ? `\x1b${hidden}` : ''));
+        if (!response.answer)
+            clearMessageWindow();
+        return response.answer;
+    }
+    if (style === MENU_PARTIAL && choices.length === 1)
+        return choices[0]?.symbol ?? '';
+    const window = tty_create_nhwindow(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (const choice of choices)
+            tty_add_menu(window, { identifier: choice.symbol, text: choice.name,
+                group: choice.symbol === 'u' ? 'r' : choice.symbol === 'a' ? '' : choice.symbol });
+        tty_end_menu(window, prompt);
+        const result = await tty_select_menu(window, PICK_ONE);
+        return result.selections[0]?.identifier ?? '';
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
+}
+function discoveryClassName(oclass) {
+    const name = OBJECT_CLASS_LABELS[oclass];
+    if (!name)
+        throw new Error(`Missing discovery heading for object class ${oclass}`);
+    return name;
+}
+async function showDiscoveries(rows) {
+    // The tty text-window backend paginates the continuous putstr() stream
+    // into 23 content rows, reserving the last terminal row for --More--.
+    // Only the first page carries the title and its following blank line.
     const pages = [];
     for (let offset = 0; offset < rows.length; offset += 23) {
         const lines = Array(24).fill('');

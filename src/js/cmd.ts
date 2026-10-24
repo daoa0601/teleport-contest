@@ -247,7 +247,7 @@ import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
 import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { dodiscovered, renameDiscoveredType } from './o_init.js';
+import { doclassdisco, dodiscovered, renameDiscoveredType } from './o_init.js';
 import { doattributes, doconduct, showEnlightenment } from './insight.js';
 import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
@@ -1588,6 +1588,8 @@ async function runCommandHandler(binding: CommandBinding, {
         await dovspell();
     } else if (ch === '\\') {
         await dodiscovered();
+    } else if (ch === '`') {
+        await doclassdisco();
     } else if (key === 24) { // Ctrl-X
         await doattributes();
     } else if (ch === 's') {
