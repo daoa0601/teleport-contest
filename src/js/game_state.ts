@@ -80,6 +80,7 @@ export interface GameContext extends FoodContext {
     jingle?: string;
     lifelist?: { total_seen_upclose?: number; total_photographed?: number };
     made_amulet?: boolean;
+    mysteryforce?: number;
     mon_moving?: boolean | undefined;
     mv?: boolean;
     no_of_wizards?: number;
