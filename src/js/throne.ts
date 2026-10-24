@@ -60,6 +60,7 @@ import { applyRemoveCurseSpell } from './scroll_effects.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
+import { setSlipperyHands } from './towel.js';
 import { cansee } from './vision.js';
 import { makeWish } from './wish.js';
 import { aggravateMonsters } from './monster_anger.js';
@@ -293,7 +294,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
         for (const object of game.inventory || []) {
             if (object.oclass !== COIN_CLASS) object.greased = true;
         }
-        game.u.glibTurns = rn1(101, 100);
+        setSlipperyHands(rn1(101, 100));
         break;
     case 7:
         await attrcurse();
