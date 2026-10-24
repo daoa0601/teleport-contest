@@ -3973,6 +3973,12 @@ export async function beginMonsterHeroAttack(
     }
     if (await disturbMealMimicry(monster, { state })) return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
+    // C mhitu.c:721-724 — make eels visible the moment they hit or miss us.
+    if (MONSTER_SYMBOL[monster.mnum] === S_EEL && monster.minvis
+        && cansee(monster.mx, monster.my)) {
+        monster.minvis = 0;
+        newsym(monster.mx, monster.my);
+    }
     const alreadyFleeing = !!monster.mflee;
     await summonMonsterAttackHelp(monster, state, random);
     if (monster.mflee && !alreadyFleeing) return {};

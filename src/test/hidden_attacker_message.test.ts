@@ -92,3 +92,25 @@ void test('a blind warned hero sees the warning, not a remembered unseen marker,
     assert.equal(eel.mundetected, 0);
     assert.match(requireScreenCell(10, 11).ch, /^[1-5]$/);
 });
+
+void test('an invisible attacking eel is revealed where the hero sees its pool', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    level.requireAt(11, 10).typ = POOL;
+    const eel = await createMonsterAt('giant eel', 11, 10, NO_MINVENT);
+    eel.minvis = true;
+    eel.mundetected = 0;
+    eel.mpeaceful = 0;
+    eel.mux = game.u.ux;
+    eel.muy = game.u.uy;
+
+    const input = resetInputState();
+    installPagerInput(input, { expected: /giant eel|Something|It |hit|wrap|swing/i, limit: 5 });
+    await performMonsterHeroAttack(eel, game, {
+        random: () => 0, rollOne: () => 1, rollDice: () => 0,
+    });
+    await flush_screen(1);
+
+    assert.equal(eel.minvis, 0, 'mattacku reveals an attacking invisible eel');
+    assert.equal(requireScreenCell(10, 11).ch, ';');
+});
