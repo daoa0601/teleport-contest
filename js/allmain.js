@@ -25,7 +25,7 @@ import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearBypasses } from './object_bypass.js';
-import { ESCAPED, In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
@@ -124,9 +124,10 @@ import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, 
 import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
-import { nativeRoleAt } from './roles.js';
+import { aligns, nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
-import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
+import { recordGameLogEvent } from './gamelog.js';
+import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
 import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, selectHeroItemForTheft, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, beginMonsterDochug, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
@@ -138,7 +139,7 @@ import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
+import { heroHasOlfaction, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
 import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, sicknessDialogue, vomitingDialogue, } from './hero_illness.js';
 import { advanceHeroSliming, clearHeroSliming, finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime, slimeDialogue, } from './slime.js';
@@ -252,16 +253,50 @@ async function showLegacy() {
     d.setCursor(left + 8, 17);
     await nhgetch();
 }
-function welcomeText() {
+// C allmain.c:welcome(). Greeting, chronicle entry, and restore reminders
+// share the hero's innate identity even while another body is active.
+export async function welcome(newGame) {
     const g = requireInitializedGame();
-    const align = g.initAlignment?.name || 'neutral';
-    const gender = g.flags?.female ? 'female' : 'male';
-    const race = g.urace?.adj || 'human';
-    const role = g.flags?.female && g.urole?.name?.f
-        ? g.urole.name.f : g.urole?.name?.m || 'Adventurer';
-    const identity = ['caveman', 'priest', 'valkyrie'].includes(g.urole?.key)
-        ? `${align} ${race} ${role}` : `${align} ${gender} ${race} ${role}`;
-    return `${g.urole?.greeting || 'Hello'} ${g.plname}, welcome to NetHack!  You are a ${identity}.`;
+    await currentLuaLifecycle().callCore(g, newGame ? 'start_new_game' : 'restore_old_game');
+    if (!newGame && Upolyd(g.u) && heroHasBeenGenocided(g)) {
+        await plineWithContinuation(`You're back, but you still feel ${feelingAfterSelfGenocide(g)} inside.`);
+        return;
+    }
+    if (heroIsHallucinating(g))
+        await plineWithContinuation('NetHack is filmed in front of an undead studio audience.');
+    const female = !!(Upolyd(g.u) ? g.u.mfemale : g.flags.female);
+    const currentAlignment = g.u.ualignbase[A_CURRENT];
+    const adrift = g.u.ualign.type !== currentAlignment;
+    const identity = [];
+    if (newGame || currentAlignment !== g.u.ualignbase[A_ORIGINAL] || adrift) {
+        const alignment = adrift ? g.u.ualign.type : currentAlignment;
+        if (adrift)
+            identity.push('adrift');
+        identity.push(aligns.find(entry => entry.value === alignment)?.name ?? 'unaligned');
+    }
+    const genderedRole = g.urole.name.f !== g.urole.name.m;
+    const describeGender = newGame ? g.urole.key !== 'valkyrie'
+        : Number(female) !== (g.flags.initgend ?? 0);
+    if (!genderedRole && describeGender)
+        identity.push(female ? 'female' : 'male');
+    identity.push(g.urace.adj, female ? g.urole.name.f : g.urole.name.m);
+    const description = identity.join(' ');
+    const name = g.plname;
+    await plineWithContinuation(newGame
+        ? `${g.urole.greeting} ${name}, welcome to NetHack!  You are a ${description}.`
+        : `${g.urole.greeting} ${name}, the ${description}, welcome back to NetHack!`);
+    if (newGame) {
+        recordGameLogEvent(`${name} the ${description} entered the dungeon`, { state: g });
+        return;
+    }
+    const temperature = g.level.flags.temperature ?? 0;
+    if (temperature)
+        await plineWithContinuation(`It is ${temperature > 0 ? 'hot' : 'cold'} here.`);
+    if (In_hell(g.u.uz) && temperature > 0)
+        await plineWithContinuation(`You ${heroHasOlfaction(g) ? 'smell' : 'sense'} smoke...`);
+    const annotation = g._levelAnnotations?.get(`${g.u.uz.dnum}:${g.u.uz.dlevel}`);
+    if (annotation)
+        await plineWithContinuation(`You remember this level as ${annotation}.`);
 }
 async function showInlineMore(message) {
     await plineWithContinuation(message);
@@ -321,13 +356,9 @@ export async function restoregamePreamble() {
     // welcome(). Search and monster feedback use that same live sight.
     vision_reset_new_level();
     await docrt();
-    const race = game.urace?.adj || game.urace?.noun || 'human';
-    const role = game.flags?.female && game.urole?.name?.f
-        ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
-    const greeting = `${game.urole.greeting} ${game.displayName || game.plname}, the ${race} ${role}, welcome back to NetHack!`;
     // The first flush paints the display state restored with the level.
     await bot();
-    await plineWithContinuation(greeting);
+    await welcome(false);
     await checkSpecialRoom();
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
@@ -3513,9 +3544,7 @@ export async function newgame() {
         rewindEngravingsForSave(g.level);
     // welcome() can wrap and wait before moveloop_preamble(). unixmain's
     // discovery-mode notice follows it, also before calendar effects.
-    await plineWithContinuation(welcomeText());
-    // welcome(TRUE) records entry after its greeting has finished.
-    recordGameLogEvent(initialDungeonEntryText(g), { state: g, turn: 1 });
+    await welcome(true);
     if (g.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }

@@ -13,15 +13,4 @@ export function recordGameLogEvent(text, { state = game, turn = state.moves || 1
 export function gameLogEvents(state = game) {
     return Array.isArray(state.gamelog) ? state.gamelog : [];
 }
-export function initialDungeonEntryText(state = game) {
-    const alignment = state.initAlignment?.name || 'unaligned';
-    const race = state.urace?.adj || state.urace?.noun || 'human';
-    const female = !!state.flags?.female;
-    const roleName = female
-        ? state.urole?.name?.f || state.urole?.name?.m
-        : state.urole?.name?.m || state.urole?.name?.f;
-    const role = roleName || state.urole?.key || 'Adventurer';
-    const player = state.displayName || state.plname || 'Player';
-    return `${player} the ${alignment} ${race} ${role} entered the dungeon`;
-}
 //# sourceMappingURL=gamelog.js.map
