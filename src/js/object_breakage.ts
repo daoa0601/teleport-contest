@@ -253,8 +253,9 @@ export async function breakObjectAtLocation(object: GameObject, {
     const eggExplosion = isPyroliskEgg(object);
     if (heroCaused) applyHeroEggLuckPenalty(object, state);
     if (oilExplosion) {
+        // Blast credit follows the active turn, independently of breakage.
         const explosion = await explodeLitOilPotion(object, x, y, {
-            state, heroCaused, publish, random, rollDice,
+            state, heroCaused: !state.context.mon_moving, publish, random, rollDice,
         });
         if (explosion.heroDied)
             return { destroyed: false, observed: visible || audible, heroDied: true };
@@ -268,7 +269,7 @@ export async function breakObjectAtLocation(object: GameObject, {
     await delobj(object, state, random);
     if (eggExplosion) {
         await explodePyroliskEggAt(x, y, {
-            state, heroCaused, publish, random, rollDice,
+            state, heroCaused: !state.context.mon_moving, publish, random, rollDice,
         });
     }
     return {

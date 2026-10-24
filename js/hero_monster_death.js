@@ -225,7 +225,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
         newsym(x, y);
         const explosion = await resolveMonsterDeathExplosion(monster, x, y, deathExplosion, {
             state: game,
-            heroCaused: true,
+            heroCaused: !game.context.mon_moving,
         });
         if (explosion.heroDied)
             return { killed: true, heroDied: true };

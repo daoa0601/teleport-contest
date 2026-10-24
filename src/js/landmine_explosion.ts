@@ -105,7 +105,7 @@ export async function explodeLandMine(
         random = rn2,
         rollOne = rnd,
         seeSquare = false,
-        heroCaused = false,
+        heroCaused = !state.context.mon_moving,
         finishMonsterDeath = null,
         finishMonsterKill = null,
         resolveLiquid = null,

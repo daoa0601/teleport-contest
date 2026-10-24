@@ -45,7 +45,7 @@ export function turnEggIntoRock(egg) {
     egg.owt = objectWeight(egg);
     return egg;
 }
-export function explodePyroliskEggAt(x, y, { state = game, heroCaused = true, publish, random, rollDice = d, } = {}) {
+export function explodePyroliskEggAt(x, y, { state = game, heroCaused = !state.context.mon_moving, publish, random, rollDice = d, } = {}) {
     return createFireExplosion(x, y, rollDice(3, 6), {
         state,
         heroCaused,

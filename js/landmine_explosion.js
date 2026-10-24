@@ -66,7 +66,7 @@ async function fillMineHoleWithLiquid(x, y, trap, liquid, state, options) {
         return;
     newsym(x, y);
 }
-export async function explodeLandMine(trap, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, seeSquare = false, heroCaused = false, finishMonsterDeath = null, finishMonsterKill = null, resolveLiquid = null, } = {}) {
+export async function explodeLandMine(trap, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, seeSquare = false, heroCaused = !state.context.mon_moving, finishMonsterDeath = null, finishMonsterKill = null, resolveLiquid = null, } = {}) {
     const x = trap.tx;
     const y = trap.ty;
     const oldTyp = state.level?.at?.(x, y)?.typ ?? ROOM;

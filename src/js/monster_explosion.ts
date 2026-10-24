@@ -70,7 +70,7 @@ export function rollMonsterDeathExplosion(monster: Monster, {
 
 export async function resolveMonsterDeathExplosion(monster: Monster, x: number, y: number, explosion: MonsterDeathExplosion, {
     state = game, publish = plineWithContinuation, random = rn2,
-    rollDice = d, heroCaused = false,
+    rollDice = d, heroCaused = !state.context.mon_moving,
 }: MonsterExplosionOptions = {}): Promise<{ heroDied: boolean }> {
     const { swallower, damage } = explosion;
     if (!swallower) {
