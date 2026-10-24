@@ -2654,7 +2654,8 @@ function refreshStatusLines() {
     if (!display || game._statusUpdatesDisabled || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush)
         return;
-    if (game.u.uhp === -1) {
+    // Native bot() needs youmonst.data, installed with the hero's species.
+    if (game.u.uhp === -1 || game.u.umonnum === undefined) {
         game.context.botl = false;
         game.context.time_botl = false;
         return;

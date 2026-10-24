@@ -120,7 +120,7 @@ export async function tty_clear_nhwindow(window) {
         if (window.offx === 0)
             display()?.clearScreen();
         else
-            await restoreMenuCorner(window);
+            await eraseMenuCorner(window);
     }
     window.entries = [];
     window.layout = null;
@@ -197,7 +197,7 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
     window.cancelled = result.cancelled;
     return result;
 }
-export async function tty_select_menu(window, how) {
+export async function tty_select_menu(window, how, roleSelection = false) {
     const previousStatusDisabled = game._statusUpdatesDisabled;
     const restoreStatusUpdates = () => {
         if (previousStatusDisabled === undefined)
@@ -215,34 +215,46 @@ export async function tty_select_menu(window, how) {
             // destroyed, so a corner menu's docorner() can run bot().
             if (window.offx !== 0)
                 restoreStatusUpdates();
-            await tty_dismiss_nhwindow(window);
+            await tty_dismiss_nhwindow(window, roleSelection);
         }
         finally {
             restoreStatusUpdates();
         }
     }
 }
-export async function tty_dismiss_nhwindow(window) {
+export async function tty_dismiss_nhwindow(window, roleSelection = false) {
     window.cancelled = false;
     if (!window.active)
         return;
     window.active = false;
     if (window.offx === 0) {
-        await docrt();
-        await flush_screen(1);
+        if (roleSelection)
+            display()?.clearScreen();
+        else {
+            await docrt();
+            await flush_screen(1);
+        }
     }
     else
-        await restoreMenuCorner(window);
+        await eraseMenuCorner(window, roleSelection);
     window.underlay = null;
 }
-async function restoreMenuCorner(window) {
+async function eraseMenuCorner(window, roleSelection = false) {
     const d = display();
-    if (!d || !window.underlay)
+    if (!d)
         return;
     // erase_menu_or_text() calls docorner(offx, maxrow + 1, 0).
     // A prior full-screen clear must stay blank outside that rectangle.
     const left = Math.max(0, window.offx - 1);
     const bottom = Math.min(d.rows, (window.layout?.maxRows ?? 0) + 1);
+    // During character selection, docorner() clears the base window;
+    // there are no map cells to redraw over the erased name-entry text.
+    if (roleSelection) {
+        clearRect(left, 0, d.cols, bottom);
+        return;
+    }
+    if (!window.underlay)
+        return;
     for (let row = 0; row < bottom; row++) {
         for (let col = left; col < d.cols; col++) {
             const cell = window.underlay[row]?.[col];
