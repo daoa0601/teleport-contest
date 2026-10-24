@@ -158,7 +158,7 @@ export async function lightWieldedArtifact(
 ): Promise<void> {
     if (!artifactEmitsLight(object) || object.lamplit) return;
     beginObjectBurn(object, state);
-    if (!state.blind && !state.u.blindTurns)
+    if (!heroIsBlind(state))
         await publish(equipmentLightMessage(object, true, state));
 }
 

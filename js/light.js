@@ -102,7 +102,7 @@ export async function lightWieldedArtifact(object, state = game, publish = pline
     if (!artifactEmitsLight(object) || object.lamplit)
         return;
     beginObjectBurn(object, state);
-    if (!state.blind && !state.u.blindTurns)
+    if (!heroIsBlind(state))
         await publish(equipmentLightMessage(object, true, state));
 }
 function swallowedLightMessage() {
