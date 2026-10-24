@@ -201,8 +201,10 @@ void test('a hero-laid floor egg hatches a tame monster', async () => {
     await finishEggHatchTimer(event, game, game.moves);
 });
 void test('a hero-laid pack egg cries for its mommy with the C gerund', async () => {
-    // C timeout.c:1121: ing_suffix(cry_sound(mon)) renders the hatchling's
-    // cry as a present participle, straight consonants and dropped e's alike.
+    // C timeout.c:1121: the hatch timer routes cry_sound(mon) through
+    // ing_suffix(). No cry word reaches the doubling or "ie" branches, so
+    // those rules are pinned separately in ing_suffix.test.ts; this locks
+    // the assembled message through the public hatch-timer path.
     const cry = async (species) => {
         freshEggState(2);
         requireFixtureGame(game);
