@@ -498,14 +498,14 @@ Continue from the earliest shared native/JavaScript difference and read the
 whole owning C/Lua mechanic. Shared implementations and passing behavior tests
 do not establish completeness.
 
-Fresh native batches 3711-4630 (276,000 sessions, recorded and scored on
+Fresh native batches 3711-4590 (264,000 sessions, recorded and scored on
 Actions) fail only in single sessions, each fixed at its owner: gas clouds over
 boulders, lycanthrope `dmgval()`, mind-blast `fmon` order, exhaustion killer
 format, liquid relocation redraws, `doup()`/`dodown()` move-command state,
 returning-weapon redraws, `getpos()` status flushing, `mintrap()` escape rolls
 for trapped monsters (and every immediate-trap caller, including boiled pools),
 too-wide `putstr` windows that overlay only their own rows, and a caught
-returning weapon counted as worn armor in `passivemm()`. Batches 4071-4630
+returning weapon counted as worn armor in `passivemm()`. Batches 4071-4590
 have no failures.
 
 Source reviews closed the listed gaps for the inventory-menu case `c069e440`,
