@@ -5,7 +5,8 @@ import { currentAttribute } from './attrib.js';
 import { observeObjectForNaming } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
 import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, TT_PIT, isok, } from './const.js';
-import { canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
+import { canSenseMonster, canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
+import { stumbleOntoMimic } from './mimic.js';
 import { placeObject, remove_object, stack_object, } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { pickupFloorObject } from './pickup.js';
@@ -301,10 +302,13 @@ async function attackMonsterWithWhip(monster, x, y, proficiency, attackMonster, 
         return;
     }
     let snap = true;
-    if (monster.m_ap_type && !state.u?.protectionFromShapeChangers) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(monster.mx, monster.my);
+    // C apply.c:use_whip() stumbles onto an unsensed mimic instead of
+    // clearing its disguise silently; sensed mimics just get flicked.
+    if (monster.m_ap_type
+        && !state.u?.protectionFromShapeChangers
+        && !state.protectionFromShapeChangers
+        && !canSenseMonster(monster)) {
+        await stumbleOntoMimic(monster, state);
         snap = false;
     }
     else {

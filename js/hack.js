@@ -159,7 +159,7 @@ export function heroCanPassWallAt(state, x, y) {
     return !!location && heroPassesWalls(state)
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
 }
-function doorlessDoor(location) {
+export function doorlessDoor(location) {
     return location?.typ === DOOR
         // Rogue doorways have no doors but retain diagonal restrictions.
         && !game.level?.flags.is_rogue_level

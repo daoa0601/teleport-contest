@@ -13,8 +13,9 @@ import {
     LAVAWALL, TT_PIT, isok,
 } from './const.js';
 import {
-    canSpotMonster, map_invisible, newsym, pline, plineWithContinuation,
+    canSenseMonster, canSpotMonster, map_invisible, newsym, pline, plineWithContinuation,
 } from './display.js';
+import { stumbleOntoMimic } from './mimic.js';
 import {
     placeObject, remove_object, stack_object,
 } from './floor_object.js';
@@ -364,10 +365,13 @@ async function attackMonsterWithWhip(
     }
 
     let snap = true;
-    if (monster.m_ap_type && !state.u?.protectionFromShapeChangers) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(monster.mx, monster.my);
+    // C apply.c:use_whip() stumbles onto an unsensed mimic instead of
+    // clearing its disguise silently; sensed mimics just get flicked.
+    if (monster.m_ap_type
+        && !state.u?.protectionFromShapeChangers
+        && !state.protectionFromShapeChangers
+        && !canSenseMonster(monster)) {
+        await stumbleOntoMimic(monster, state);
         snap = false;
     } else {
         await pline(`You flick your bullwhip towards ${monsterObject(monster)}.`);

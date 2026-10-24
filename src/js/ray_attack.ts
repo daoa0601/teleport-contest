@@ -23,7 +23,7 @@ import {
 } from './const.js';
 import { artifactById } from './artifacts.js';
 import {
-    canSeeMonster, newsym, plineWithContinuation, shieldeff,
+    canSeeMonster, canSenseMonster, newsym, plineWithContinuation, shieldeff,
 } from './display.js';
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
@@ -358,7 +358,8 @@ async function hitRayCell(
                 }
             }
         } else if (context.sayMiss || canSeeMonster(monster)
-            && [M_AP_NOTHING, M_AP_MONSTER].includes(M_AP_TYPE(monster))) {
+            && (canSenseMonster(monster)
+                || [M_AP_NOTHING, M_AP_MONSTER].includes(M_AP_TYPE(monster)))) {
             await publish(rayMissMessage(context.displayName(), monster, { x, y, state }));
         }
     } else if (x === state.u.ux && y === state.u.uy

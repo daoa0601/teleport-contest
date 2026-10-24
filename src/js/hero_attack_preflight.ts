@@ -15,7 +15,9 @@ import {
     canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible,
     newsym,
     plineWithContinuation,
+    senseWithTelepathy,
 } from './display.js';
+import { heroDetectsMonsters } from './senses.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -198,7 +200,7 @@ export async function prepareAppliedWeaponAttack(
             if (!revealMonsterAppearance(monster).revealed) newsym(monster.mx, monster.my);
             return { proceed: true, spentTime: false };
         }
-        if (!canSenseMonster(monster)) {
+        if (!senseWithTelepathy(monster) && !heroDetectsMonsters()) {
             await publishHiddenMonster(monster, state);
             return { proceed: false, spentTime: true };
         }

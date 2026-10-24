@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { D_CLOSED, D_ISOPEN, DOOR, HOLE, LAVAPOOL, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const.js';
+import { D_CLOSED, D_ISOPEN, D_NODOOR, DOOR, HOLE, LAVAPOOL, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -239,5 +239,18 @@ void test('a giant knocks a rock-eating hero diagonally toward a closed door', a
     });
     assert.equal(result.knocked, true);
     assert.match(messages[0] ?? '', /^The hill giant knocks you back/);
+});
+void test("a hero's blow cannot knock a monster out of a Rogue-level doorway", async () => {
+    const level = freshObjectRoom({ heroX: 10, heroY: 10, right: 20 });
+    level.flags.is_rogue_level = true;
+    requireFixtureGame(game);
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_NODOOR;
+    const rat = await createMonsterAt('sewer rat', 11, 10, NO_MINVENT);
+    const result = await tryKnockback(game.u, rat, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0, publish: async () => { } });
+    assert.equal(result.knocked, false);
+    assert.equal(rat.mx, 11);
+    assert.equal(rat.my, 10);
 });
 //# sourceMappingURL=knockback.test.js.map

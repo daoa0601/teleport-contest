@@ -17,7 +17,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { monsterHasLineOfSightToHero } from './monster_perception.js';
 import { EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS, } from './const.js';
 import { artifactById } from './artifacts.js';
-import { canSeeMonster, newsym, plineWithContinuation, shieldeff, } from './display.js';
+import { canSeeMonster, canSenseMonster, newsym, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
 import { cansee } from './vision.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
@@ -224,7 +224,8 @@ async function hitRayCell({ x, y, remainingRange }, context) {
             }
         }
         else if (context.sayMiss || canSeeMonster(monster)
-            && [M_AP_NOTHING, M_AP_MONSTER].includes(M_AP_TYPE(monster))) {
+            && (canSenseMonster(monster)
+                || [M_AP_NOTHING, M_AP_MONSTER].includes(M_AP_TYPE(monster)))) {
             await publish(rayMissMessage(context.displayName(), monster, { x, y, state }));
         }
     }

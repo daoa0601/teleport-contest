@@ -16,6 +16,9 @@ import { MONSTER_FLAGS1 } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { prepareAppliedWeaponAttack } from '../js/hero_attack_preflight.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { knownObject } from './support/game-objects.js';
+import { OBJECT_NAMES } from '../js/object_data.js';
+import { rhack } from '../js/cmd.js';
 
 const M1_CONCEAL = 0x00000080;
 
@@ -227,4 +230,29 @@ void test('forcefight bypasses discovery and peaceful confirmation', async () =>
 
     assert.deepEqual(result, { proceed: true, spentTime: false });
     assert.notEqual(game.level.requireAt(12, 10).remembered_glyph?.kind, 'invisible');
+});
+
+void test('an underwater telepath attacks a dry-land hider without a warning', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    // Worn telepathy still senses the monster (tp_sensemon); C's reveal
+    // message is suppressed by telepathy or detection alone, not by the
+    // underwater gate that sensemon() adds on top.
+    const amulet = await knownObject(OBJECT_NAMES.indexOf('amulet of ESP'), {
+        invlet: 'a', where: 'inventory',
+    });
+    game.inventory = [amulet];
+    pushKeys('a' + ' '.repeat(20));
+    await rhack('P'.charCodeAt(0));
+    game.u.uinwater = 1;
+    const concealer = MONSTER_FLAGS1.findIndex(flags => (flags & M1_CONCEAL) !== 0);
+    const monster = await target({ mnum: concealer, mundetected: 1, msleeping: 1 });
+    await floorObject(ARROW, 12, 10, { initialize: false, quan: 1, known: false });
+
+    const result = await prepareAppliedWeaponAttack(monster, null);
+
+    assert.deepEqual(result, { proceed: true, spentTime: false });
+    assert.equal(monster.mundetected, 0);
+    assert.equal(monster.msleeping, 0);
+    assert.doesNotMatch(game._pending_message ?? '', /hiding under|hidden monster/);
 });

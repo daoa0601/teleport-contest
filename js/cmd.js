@@ -5961,7 +5961,32 @@ async function applyTool(item, underlay) {
         game._pending_message = '';
         const result = await useBullwhip(item, direction, {
             state: game,
-            attackMonster: (monster, x, y) => attackHostileMonster(monster, x, y),
+            // C apply.c:use_whip() reaches do_attack() through
+            // uhitm.c:force_attack(): anything that is not a pet is
+            // struck with forcefight forced on, while a pet keeps
+            // do_attack()'s safepet displacement block.
+            attackMonster: async (monster, x, y) => {
+                if (monster.mtame && !game.context.forcefight
+                    && heroMayDisplaceMonster(monster)
+                    && artifactById(game.uwep?.oartifact, game)?.name
+                        !== 'Stormbringer') {
+                    return (await runSafepetDisplacement(monster)) !== 'evaded';
+                }
+                const savedForcefight = game.context.forcefight ?? false;
+                if (!monster.mtame)
+                    game.context.forcefight = true;
+                try {
+                    const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x, y } });
+                    if (!verdict.proceed)
+                        return verdict.spentTime;
+                    return await attackHostileMonster(monster, x, y, {
+                        confirmationOverridden: verdict.confirmationOverridden ?? false,
+                    });
+                }
+                finally {
+                    game.context.forcefight = savedForcefight;
+                }
+            },
         });
         game.context.move = result.spentTime ? 1 : 0;
         return item;
@@ -6923,6 +6948,47 @@ function rejectHeroMove() {
     nomul(0, game);
     return false;
 }
+async function runSafepetDisplacement(monster) {
+    // C ref: hack.c do_attack()/domove(): a tame monster normally yields to
+    // the hero, and ordinary peacefuls share the same displacement path.
+    // Only tame actors flee after refusal.
+    const tame = !!(monster.pet || monster.mtame);
+    const blocked = heroIsPunished() || rn2(7) === 0
+        || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
+            .includes(MONSTER_NAME[monster.mnum] ?? ''))
+        || (IS_OBSTRUCTED(requireGameLevel(game).requireAt(game.u.ux, game.u.uy).typ)
+            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
+    const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
+        .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
+    if ((blocked || inShop) && monster.isshk
+        && !game.context.travel && !game.context.run) {
+        await dopay();
+        return 'paid';
+    }
+    if ((blocked || inShop) && tame) {
+        const flight = await makeMonsterFlee(monster, {
+            turns: rnd(6), announce: false,
+        });
+        if (flight.heroDied)
+            return 'stopped';
+    }
+    if (blocked || inShop) {
+        // C uhitm.c do_attack(): y_monnam(), capitalized.
+        const displayName = monsterName(monster, {
+            state: game, article: 'your', capitalized: true,
+        });
+        await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
+        stopRun(game);
+        return 'stopped';
+    }
+    if (monster.mfrozen || monster.msleeping || !monster.mcanmove
+        || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
+        await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+        stopRun(game);
+        return 'frozen';
+    }
+    return 'evaded';
+}
 async function domoveCore(dx, dy) {
     requirePlayingGame(game);
     const u = game.u;
@@ -7102,44 +7168,8 @@ async function domoveCore(dx, dy) {
             return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
         if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
-            // C ref: hack.c do_attack()/domove(): a tame monster normally
-            // yields to the hero, and ordinary peacefuls share the same
-            // displacement path.  Only tame actors flee after refusal.
-            const tame = !!(monster.pet || monster.mtame);
-            const blocked = heroIsPunished() || rn2(7) === 0
-                || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
-                    .includes(MONSTER_NAME[monster.mnum] ?? ''))
-                || (IS_OBSTRUCTED(game.level.requireAt(u.ux, u.uy).typ)
-                    && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
-            const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
-                .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
-            if ((blocked || inShop) && monster.isshk
-                && !game.context.travel && !game.context.run) {
-                await dopay();
+            if ((await runSafepetDisplacement(monster)) !== 'evaded')
                 return true;
-            }
-            if ((blocked || inShop) && tame) {
-                const flight = await makeMonsterFlee(monster, {
-                    turns: rnd(6), announce: false,
-                });
-                if (flight.heroDied)
-                    return true;
-            }
-            if (blocked || inShop) {
-                // C uhitm.c do_attack(): y_monnam(), capitalized.
-                const displayName = monsterName(monster, {
-                    state: game, article: 'your', capitalized: true,
-                });
-                await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
-                stopRun(game);
-                return true;
-            }
-            if (monster.mfrozen || monster.msleeping || !monster.mcanmove
-                || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
-                await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
-                stopRun(game);
-                return true;
-            }
             // C do_attack() returns FALSE here: a yielding monster takes
             // the same DO_MOVE checks as an unoccupied destination.
         }
