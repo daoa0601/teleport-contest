@@ -8046,6 +8046,13 @@ async function makelevel() {
         const branchp = is_branchlev();
         if (branchp)
             await place_branch(branchp);
+        // C ref: mklev.c makelevel() skip0 tail.  C still counts
+        // ROOM_IS_FILLABLE rooms and draws the bonus-room selection here,
+        // but savelev() memsets svr.rooms when the previous level is
+        // released (save.c:564, reached from goto_level and #wizmakemap),
+        // so Rogue rooms always start with needfill FILL_NONE and the
+        // count is zero: every room is offered to fill_ordinary_room with
+        // no bonus flag and returns at its needfill gate.
         for (const croom of level.rooms.slice(0, level.nroom))
             if (isRoom(croom))
                 await fill_ordinary_room(croom, false);
