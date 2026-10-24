@@ -1,4 +1,5 @@
 import { heroLocomotion } from './hero_locomotion.js';
+import { deferImpossible } from './diagnostics.js';
 // shk.js — Runtime shop ownership and entry policy.
 // C refs: hack.c move_update()/check_special_room(), shk.c inhishop(),
 // shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
@@ -886,16 +887,21 @@ export function unpaidObjectCost(
     costType: 'object' | 'contents' | 'single' = 'object',
 ): number {
     let price = 0;
+    let resident: Shopkeeper | null = null;
+    let billed: BilledObject | null = null;
     for (const roomno of state.u.ushops ?? []) {
-        const resident = shopResident(roomno, state);
+        resident = shopResident(roomno, state);
         if (!resident) continue;
-        const billed = billForObject(object, state, resident);
+        billed = billForObject(object, state, resident);
         if (billed)
             price = billed.entry.price * (costType === 'single' ? 1 : object.quan);
         if (costType === 'contents' && object.contents?.length)
             price += containedBuyCost(object, resident, { unpaidOnly: true, state });
         if (billed || (!object.unpaid && price)) break;
     }
+    // Native tests the last shopkeeper examined; none outside a shop.
+    if (!resident || (object.unpaid && !billed))
+        deferImpossible("unpaid_cost: object wasn't on any bill.", state);
     return price;
 }
 

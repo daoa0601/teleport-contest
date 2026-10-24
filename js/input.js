@@ -1,5 +1,6 @@
 // input.js — The single boundary for NetHack key input.
 // C refs: win/tty/wintty.c:tty_nhgetch(), win/tty/getline.c.
+import { publishDeferredImpossibles } from './diagnostics.js';
 import { KEY_BINDINGS } from './terminal.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
@@ -170,6 +171,8 @@ export function takeCommandKey() {
     return activeInputGate.takeCommandKey();
 }
 export async function nhgetch(inputState = 'other') {
+    // A formatter's impossible() output precedes any later key request.
+    await publishDeferredImpossibles();
     // tty_nhgetch() clears WIN_STOP before reading any key, including a
     // target selection made by an action resumed from the command queue.
     game._suppressMessagesUntilInput = false;

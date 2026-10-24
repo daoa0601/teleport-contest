@@ -3,7 +3,8 @@
 import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_MALE, CORPSTAT_RANDOM, MV_KNOWS_EGG, W_SADDLE, W_TOOL, } from './const.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { game } from './gstate.js';
-import { releaseObjectLeash } from './monster_leash.js';
+import { deferImpossible } from './diagnostics.js';
+import { monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, FIGURINE, LEASH, MAGIC_LAMP, OBJECT_CHARGED, OBJECT_COST, OIL_LAMP, POT_OIL, STATUE, TALLOW_CANDLE, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
@@ -52,14 +53,16 @@ function describeTool(item, details, known, state) {
         return;
     if (item.otyp === LEASH && item.leashmon) {
         const monster = state.level?.monsters.find(actor => actor.m_id === item.leashmon);
-        if (monster && monster.mhp > 0)
+        if (monster && monster.mhp > 0) {
             details.suffix = ` (attached to ${monsterName(monster, {
                 state, article: 'your', suppressIt: true,
             })})`;
+        }
         else {
-            // Native impossible() needs an awaited naming boundary; repair
-            // the stale link without introducing deferred diagnostic state.
-            releaseObjectLeash(item, state);
+            deferImpossible(monster
+                ? `leashed ${monsterTypeName(monster.mnum, monster.female)} #${item.leashmon} is dead`
+                : `leashed monster #${item.leashmon} not found`, state);
+            item.leashmon = 0;
         }
         return;
     }

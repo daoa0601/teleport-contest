@@ -51,11 +51,31 @@ function paniclog(type, reason, state) {
 }
 export async function impossible(reason, { state = game } = {}) {
     requireLiveGame(state);
+    await reportImpossible(diagnosticReason(reason), state, { logged: false });
+}
+// C impossible() called while a synchronous formatter (doname(),
+// unpaid_cost()) builds text. Native logs and prints before the formatter
+// returns, so its caller's message or window always follows the diagnostic.
+// Log now and print before the next message, window, or keystroke.
+export function deferImpossible(reason, state = game) {
+    reason = diagnosticReason(reason);
+    paniclog('impossible', reason, state);
+    (state.program_state.deferred_impossibles ??= []).push(reason);
+}
+export async function publishDeferredImpossibles(state = game) {
+    const pending = state.program_state.deferred_impossibles;
+    if (!pending?.length)
+        return;
+    state.program_state.deferred_impossibles = [];
+    for (const reason of pending)
+        await reportImpossible(reason, state, { logged: true });
+}
+async function reportImpossible(reason, state, { logged }) {
     if (state.program_state.in_impossible)
         await panic('impossible called impossible', { state });
     state.program_state.in_impossible = true;
-    reason = diagnosticReason(reason);
-    paniclog('impossible', reason, state);
+    if (!logged)
+        paniclog('impossible', reason, state);
     if (fuzzerMode(state) === FUZZER_IMPOSSIBLE_PANIC)
         await panic(reason, { state });
     await plineWithContinuation(reason, { urgent: true });

@@ -54,11 +54,34 @@ function paniclog(type: 'panic' | 'impossible', reason: string, state: GameState
 
 export async function impossible(reason: string, { state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
+    await reportImpossible(diagnosticReason(reason), state, { logged: false });
+}
+
+// C impossible() called while a synchronous formatter (doname(),
+// unpaid_cost()) builds text. Native logs and prints before the formatter
+// returns, so its caller's message or window always follows the diagnostic.
+// Log now and print before the next message, window, or keystroke.
+export function deferImpossible(reason: string, state: GameState = game): void {
+    reason = diagnosticReason(reason);
+    paniclog('impossible', reason, state);
+    (state.program_state.deferred_impossibles ??= []).push(reason);
+}
+
+export async function publishDeferredImpossibles(state: GameState = game): Promise<void> {
+    const pending = state.program_state.deferred_impossibles;
+    if (!pending?.length) return;
+    state.program_state.deferred_impossibles = [];
+    for (const reason of pending)
+        await reportImpossible(reason, state, { logged: true });
+}
+
+async function reportImpossible(
+    reason: string, state: GameState, { logged }: { logged: boolean },
+): Promise<void> {
     if (state.program_state.in_impossible)
         await panic('impossible called impossible', { state });
     state.program_state.in_impossible = true;
-    reason = diagnosticReason(reason);
-    paniclog('impossible', reason, state);
+    if (!logged) paniclog('impossible', reason, state);
     if (fuzzerMode(state) === FUZZER_IMPOSSIBLE_PANIC)
         await panic(reason, { state });
 

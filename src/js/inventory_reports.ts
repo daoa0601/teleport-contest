@@ -357,10 +357,11 @@ async function showUnpaid(carried: readonly GameObject[], floor: number, buried:
         for (const container of game.inventory) {
             const contents = unpaidObjects(container.contents ?? []);
             if (!container.contents?.length) continue;
-            const price = contents.reduce((sum, object) => sum + unpaidObjectCost(object), 0);
+            const prices = contents.map(object => unpaidObjectCost(object));
+            const price = prices.reduce((sum, cost) => sum + cost, 0);
             total += price;
-            if (container.cknown) for (const object of contents)
-                lines.push(pricedInventoryLine(object, '>', unpaidObjectCost(object)));
+            if (container.cknown) contents.forEach((object, index) =>
+                lines.push(pricedInventoryLine(object, '>', prices[index] ?? 0)));
             else lines.push(pricedInventoryLine(null, '>', price, `${possessiveName(objectName(container))} contents`));
         }
     }

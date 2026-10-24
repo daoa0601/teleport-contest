@@ -2,6 +2,7 @@ import { warningSymbols } from './warning_symbols.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
+import { publishDeferredImpossibles } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
@@ -2907,6 +2908,7 @@ async function pageTopline(
 // displayed.  Quest pages and other modal producers use this boundary when a
 // time-consuming command has left ordinary prose pending for the scheduler.
 export async function flushPendingTopline() {
+    await publishDeferredImpossibles();
     const pending = game._pending_message || '';
     return pending ? pageTopline(pending) : null;
 }
@@ -2935,6 +2937,7 @@ export async function pline(msg: string): Promise<void> {
 
 export async function plineWithContinuation(msg: string, { noRepeat = false, urgent = false }: ToplineOptions = {}): Promise<number | null | undefined> {
     if (!msg) return;
+    await publishDeferredImpossibles();
     if (game.program_state?.windows_exited) {
         rawPrint(msg);
         game._lastPlineKind = PLNMSG_UNKNOWN;

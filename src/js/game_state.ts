@@ -34,6 +34,8 @@ export interface MonsterHelplessnessReason {
 
 export interface ProgramState {
     beyond_savefile_load?: boolean | number;
+    // impossible() reasons from synchronous formatters, not yet printed.
+    deferred_impossibles?: string[];
     gameover?: boolean;
     in_docrt?: boolean | number;
     in_moveloop?: boolean;
