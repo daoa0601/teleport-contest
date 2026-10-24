@@ -53,36 +53,48 @@ void test('rnl keeps full Luck once the range exceeds fifteen', () => {
     initRng(1n);
     enableRngLog();
     rnl(20);
-    assert.deepEqual(getRngLog().filter(entry => entry.startsWith('rn2(')), ['rn2(50)=4'], 'the nested roll covers all thirteen points of Luck');
+    assert.deepEqual(getRngLog().map(entry => entry.replace(/=\d+$/, '')), ['rn2(50)', 'rnl(20)'], 'the nested roll covers all thirteen points of Luck');
 });
 void test('rnl clamps adjusted draws into the requested range', () => {
-    let highClampSeen = false, lowClampSeen = false;
-    for (let seed = 1n; seed < 40n && !(highClampSeen && lowClampSeen); seed++) {
+    let highClampSeen = false, lowClampSeen = false, skippedSeen = false;
+    for (let seed = 1n; seed < 200n && !(highClampSeen && lowClampSeen && skippedSeen); seed++) {
+        // C rnd.c:rnl() always logs the nested roll when Luck produces an
+        // adjustment, but applies it only when that roll is nonzero.
+        const draw = (luck) => {
+            freshGame({ hero: { uluck: luck, moreluck: 0 } });
+            initRng(seed);
+            enableRngLog();
+            const value = rnl(10);
+            const nested = getRngLog().find(entry => entry.startsWith('rn2(41)='));
+            return { value, applied: nested !== undefined && !nested.endsWith('=0') };
+        };
         freshGame({ hero: { uluck: 0, moreluck: 0 } });
         initRng(seed);
         const base = rnl(10);
-        freshGame({ hero: { uluck: -13, moreluck: 0 } });
-        initRng(seed);
-        enableRngLog();
-        const unlucky = rnl(10);
-        const unluckyAdjusted = getRngLog().length === 2;
-        if (unluckyAdjusted) {
-            assert.equal(unlucky, Math.min(9, base + 4));
+        const unlucky = draw(-13);
+        if (unlucky.applied) {
+            assert.equal(unlucky.value, Math.min(9, base + 4));
             if (base + 4 > 9)
                 highClampSeen = true;
         }
-        freshGame({ hero: { uluck: 13, moreluck: 0 } });
-        initRng(seed);
-        enableRngLog();
-        const lucky = rnl(10);
-        if (getRngLog().length === 2) {
-            assert.equal(lucky, Math.max(0, base - 4));
+        else {
+            assert.equal(unlucky.value, base, 'a zero nested roll leaves the draw alone');
+            skippedSeen = true;
+        }
+        const lucky = draw(13);
+        if (lucky.applied) {
+            assert.equal(lucky.value, Math.max(0, base - 4));
             if (base - 4 < 0)
                 lowClampSeen = true;
+        }
+        else {
+            assert.equal(lucky.value, base, 'a zero nested roll leaves the draw alone');
+            skippedSeen = true;
         }
     }
     assert.ok(highClampSeen, 'some seed pushes bad luck past the top of the range');
     assert.ok(lowClampSeen, 'some seed pushes good luck below the bottom of the range');
+    assert.ok(skippedSeen, 'some seed rolls a zero nested adjustment');
 });
 // C rnd.c:rne(): the exponent runs up to 5 below experience level 15 and to
 // level/3 from there; rne(1) never rolls nonzero, so it always hits the cap.
@@ -110,13 +122,18 @@ void test('rnz draws scale, exponent, and branch in the C order', () => {
     assert.match(entries[0] ?? '', /^rn2\(1000\)=\d+$/);
     const exponentIndex = entries.findIndex(entry => entry.startsWith('rne(4)='));
     assert.ok(exponentIndex > 0, 'rne(4) follows the scale draw');
-    for (let index = 1; index < exponentIndex - 1; index++)
-        assert.match(entries[index] ?? '', /^rn2\(4\)=0$/, 'only zero rolls extend the exponent');
-    assert.match(entries[exponentIndex - 1] ?? '', /^rn2\(4\)=[1-9]$/, 'a nonzero roll ends the exponent');
+    // rne stops at the first nonzero roll or at its cap, whichever comes
+    // first, so every roll before the last is zero and the last may be either.
+    const exponentRolls = entries.slice(1, exponentIndex);
+    assert.ok(exponentRolls.length >= 1 && exponentRolls.length <= 4, 'a level-1 hero caps rne(4) after four nested rolls');
+    for (const entry of exponentRolls.slice(0, -1))
+        assert.match(entry, /^rn2\(4\)=0$/, 'only zero rolls extend the exponent');
+    const zeroRolls = exponentRolls.filter(entry => entry.endsWith('=0')).length;
+    const exponent = Number(/=([0-9]+)$/.exec(entries[exponentIndex] ?? '')?.[1]);
+    assert.equal(exponent, 1 + zeroRolls, 'each zero roll extends the exponent by one');
     assert.match(entries[exponentIndex + 1] ?? '', /^rn2\(2\)=\d+$/);
     assert.match(entries.at(-1) ?? '', /^rnz\(100\)=\d+$/);
     const scale = 1000 + Number(/=([0-9]+)$/.exec(entries[0] ?? '')?.[1]);
-    const exponent = Number(/=([0-9]+)$/.exec(entries[exponentIndex] ?? '')?.[1]);
     const divisor = Number(/=([0-9]+)$/.exec(entries[exponentIndex + 1] ?? '')?.[1]) === 0;
     assert.equal(result, divisor
         ? Math.trunc(100 * 1000 / (scale * exponent))
@@ -129,6 +146,6 @@ void test('d rolls every die through the core stream as one logged call', () => 
     const total = d(3, 6);
     assert.ok(total >= 3 && total <= 18);
     assert.deepEqual(getRngLog().map(entry => entry.replace(/=\d+$/, '')), ['d(3,6)']);
-    assert.equal(d(0, 6), 0, 'zero dice roll no draws and return the empty total');
+    assert.equal(d(0, 6), 0, 'zero dice roll no draws and return an empty total');
 });
 //# sourceMappingURL=rng.test.js.map

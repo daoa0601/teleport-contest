@@ -186,7 +186,6 @@ function hatchlingCry(mnum: number): string {
     return MONSTER_SYMBOL[mnum] === S_EEL ? 'gurgle' : 'chitter';
 }
 
-
 function heroIsDeaf(state: GameState): boolean {
     return !!(state.deaf || state.u?.deaf
         || (state.u?.deafTurns ?? 0) > 0);
