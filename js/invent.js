@@ -45,6 +45,7 @@ import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
+const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 // C check_invent_gold(): only malformed purses may be reorganized.
 export async function checkInventoryGold(why, state = game) {
     const gold = state.inventory.filter(object => object.oclass === COIN_CLASS);
@@ -681,7 +682,8 @@ function itemReadingText(item, state) {
     if (item.otyp === HAWAIIAN_SHIRT)
         return 'Look at the pattern on the shirt';
     if (item.oclass === SCROLL_CLASS) {
-        const magic = item.dknown && (item.otyp !== SCR_BLANK_PAPER || !known)
+        const magic = item.dknown && item.otyp !== SCR_MAIL
+            && (item.otyp !== SCR_BLANK_PAPER || !known)
             ? ' to activate its magic' : '';
         return `Read this scroll${magic}`;
     }

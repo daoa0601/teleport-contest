@@ -101,6 +101,7 @@ interface IdentificationResult { identified: GameObject[]; remaining: number }
 const COIN_CLASS = 12;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
+const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 
 // C check_invent_gold(): only malformed purses may be reorganized.
 export async function checkInventoryGold(why: string, state: GameState = game): Promise<boolean> {
@@ -698,7 +699,8 @@ function itemReadingText(item: GameObject, state: GameState): string | null {
     if (item.otyp === ALCHEMY_SMOCK) return 'Read the slogan on the apron';
     if (item.otyp === HAWAIIAN_SHIRT) return 'Look at the pattern on the shirt';
     if (item.oclass === SCROLL_CLASS) {
-        const magic = item.dknown && (item.otyp !== SCR_BLANK_PAPER || !known)
+        const magic = item.dknown && item.otyp !== SCR_MAIL
+            && (item.otyp !== SCR_BLANK_PAPER || !known)
             ? ' to activate its magic' : '';
         return `Read this scroll${magic}`;
     }
