@@ -94,7 +94,7 @@ async function finishScatteredMonsterDeath(monster, x, y, death, state, options)
         const killed = await options.finishMonsterKill(monster, x, y, death);
         return { killed, heroDied: !!state.program_state.gameover };
     }
-    if (!options.finishMonsterDeath && options.heroCaused)
+    if (options.heroCaused)
         return finishHeroMonsterKillOutcome(monster, x, y, { ...death, publish: options.publish });
     const finish = options.finishMonsterDeath
         || ((victim, deathOptions) => finishEnvironmentalMonsterDeath(victim, state, deathOptions));
@@ -411,7 +411,7 @@ function nextObjectFromPile(pile, state, options) {
         throw new Error(`Cannot split scattered object ${object.o_id}.`);
     return { object: part, lastPiece: false };
 }
-export async function scatterFloorObjects(x, y, force, { state = game, onlyObject = null, mayDestroy = true, mayFracture = true, mayHitHero = true, mayHitMonsters = true, heroCaused = false, publish = async () => { }, random = rn2, rollOne = rnd, rollDice = d, finishMonsterDeath = null, finishMonsterKill = null, } = {}) {
+export async function scatterFloorObjects(x, y, force, { state = game, onlyObject = null, mayDestroy = true, mayFracture = true, mayHitHero = true, mayHitMonsters = true, heroCaused = !state.context.mon_moving, publish = async () => { }, random = rn2, rollOne = rnd, rollDice = d, finishMonsterDeath = null, finishMonsterKill = null, } = {}) {
     requireLiveGame(state);
     const options = {
         state, onlyObject, force, mayDestroy, mayFracture,

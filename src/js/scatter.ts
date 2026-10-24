@@ -150,7 +150,7 @@ async function finishScatteredMonsterDeath(
         const killed = await options.finishMonsterKill(monster, x, y, death);
         return { killed, heroDied: !!state.program_state.gameover };
     }
-    if (!options.finishMonsterDeath && options.heroCaused)
+    if (options.heroCaused)
         return finishHeroMonsterKillOutcome(monster, x, y, { ...death, publish: options.publish });
     const finish = options.finishMonsterDeath
         || ((victim: Monster, deathOptions: HeroMonsterKillOptions) => finishEnvironmentalMonsterDeath(victim, state, deathOptions));
@@ -462,7 +462,7 @@ export async function scatterFloorObjects(
         mayFracture = true,
         mayHitHero = true,
         mayHitMonsters = true,
-        heroCaused = false,
+        heroCaused = !state.context.mon_moving,
         publish = async () => {},
         random = rn2,
         rollOne = rnd,
