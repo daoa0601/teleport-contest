@@ -682,7 +682,7 @@ function achievementLines(final: boolean): string[] {
         [ACH_BOOK, [`${bookHeld ? 'have' : 'have handled'} the Book of the Dead`,
             `${bookHeld ? 'had' : 'handled'} the Book of the Dead`]],
         [ACH_INVK, ["have gained access to Moloch's Sanctum", "gained access to Moloch's Sanctum"]],
-        [ACH_AMUL, [`${ascended ? 'delivered' : amuletHeld ? 'have' : 'have obtained'} the Amulet of Yendor`,
+        [ACH_AMUL, [`${amuletHeld ? 'have' : 'have obtained'} the Amulet of Yendor`,
             `${ascended ? 'delivered' : amuletHeld ? 'had' : 'had obtained'} the Amulet of Yendor`]],
         [ACH_ENDG, ['have reached the Elemental Planes', 'reached the Elemental Planes']],
         [ACH_ASTR, ['have reached the Astral Plane', 'reached the Astral Plane']],

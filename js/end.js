@@ -421,10 +421,10 @@ export async function listVanquished(defquery = 'y') {
     });
 }
 // C insight.c:doborn() (#wizborn): per-species born/died counters plus the
-// genocided (G), extinct (E), or otherwise-gone (X) flag, totaled last.
+// genocided (G), extinct (E), or otherwise-gone (X) flag, ending on a blank
+// line; native formats running totals into a buffer but never displays them.
 export async function doborn() {
     const lines = ['died born'];
-    let bornTotal = 0, diedTotal = 0;
     for (const [mnum, vital] of (game.mvitals || []).entries()) {
         const born = vital?.born ?? 0;
         const died = vital?.died ?? 0;
@@ -435,11 +435,8 @@ export async function doborn() {
             : (gone & G_GONE) === G_GENOD ? 'G'
                 : (gone & G_GONE) !== 0 ? 'X' : ' ';
         lines.push(`${String(died).padStart(4)} ${String(born).padStart(4)} ${flag} ${(MONSTER_NAME[mnum] ?? '').padEnd(30)}`);
-        bornTotal += born;
-        diedTotal += died;
     }
     lines.push('');
-    lines.push(`${String(diedTotal).padStart(4)} ${String(bornTotal).padStart(4)}   ${''.padEnd(30)}`);
     await showTextWindow(lines);
     game._pending_message = '';
     game.context.move = 0;

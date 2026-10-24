@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ACH_SHOP, ACH_SOKO, G_GENOD } from '../js/const.js';
+import { ACH_AMUL, ACH_SHOP, ACH_SOKO, G_GENOD } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { currentConductLines } from '../js/insight.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -25,4 +25,19 @@ void test('#conduct reports broken conducts and achievements in present tense', 
     assert.match(lines, /You have violated the special Sokoban rules once\./);
     assert.match(lines, /You have entered Sokoban\./);
     assert.match(lines, /You have entered a shop\./);
+});
+
+// C insight.c:show_achievements(): the Amulet's present tense is always
+// "have"/"have obtained"; "delivered" is the past tense for an ascension.
+void test('#conduct keeps the Amulet present tense independent of ascension', () => {
+    freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    game.u.uachieved = [ACH_AMUL];
+    game.u.uhave = { amulet: false };
+    game.u.uevent = { ascended: true };
+
+    const lines = currentConductLines().join('\n');
+
+    assert.match(lines, /You have obtained the Amulet of Yendor\./);
+    assert.doesNotMatch(lines, /delivered/);
 });
