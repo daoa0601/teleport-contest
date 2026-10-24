@@ -25,6 +25,9 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Compile strict TypeScript and run behavior tests
+        env:
+          # Hosted runners have four cores; test files share no files or ports.
+          TEST_CONCURRENCY: 4
         run: npm test
 
       - name: Check measurement sources against the approved hash

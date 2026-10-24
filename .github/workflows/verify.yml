@@ -36,7 +36,7 @@ env:
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,6 +48,9 @@ jobs:
           check-latest: true
       - run: npm ci --ignore-scripts
       - name: Compile strict TypeScript and run behavior tests
+        env:
+          # Hosted runners have four cores; test files share no files or ports.
+          TEST_CONCURRENCY: 4
         run: npm test
 
   pool:
