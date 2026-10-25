@@ -83,6 +83,7 @@ export function validSavedObject(value, context) {
         buried: optional(boolean),
         migration: optional(validMigration),
         _fobjOrder: optional(integer),
+        _litSeq: optional(integer),
         lua_ref_cnt: optional(integer),
         oextra: optional(nullable(extra)),
         oartifact: optional(integer),

@@ -154,6 +154,7 @@ export function validSavedObject(value: unknown, context: SavedEntityContext): v
         buried: optional(boolean),
         migration: optional(validMigration),
         _fobjOrder: optional(integer),
+        _litSeq: optional(integer),
         lua_ref_cnt: optional(integer),
         oextra: optional(nullable(extra)),
         oartifact: optional(integer),

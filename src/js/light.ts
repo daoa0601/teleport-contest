@@ -197,16 +197,32 @@ function snuffOrdinaryLight(object: GameObject | null | undefined) {
     return endObjectBurn(object, game, game.moves ?? 0);
 }
 
-function snuffLightsAt(x: number, y: number): void {
-    for (const object of game.level?.objects?.[x]?.[y] || [])
-        snuffOrdinaryLight(object);
-    const carrier = game.level?.monsters?.find(monster =>
+// C light.c:snuff_light_source().  The native light_base list is
+// newest-first and the search returns once one source at the location has
+// been extinguished, so a square holding several burning objects keeps
+// every one of them lit except the most recently lit.  Objects carry the
+// creation order of their light source in _litSeq; entries restored from
+// saves that predate it fall back to object-id order.
+export function snuffLightSource(x: number, y: number, state: GameState = game): void {
+    const candidates: GameObject[] = [...(state.level?.objects?.[x]?.[y] || [])];
+    const carrier = state.level?.monsters?.find(monster =>
         monster.mx === x && monster.my === y);
-    if (!carrier) return;
-    const inventories = new Set([carrier.minvent, carrier.inventory]);
-    for (const inventory of inventories) {
-        for (const object of inventory || []) snuffOrdinaryLight(object);
+    const inventories = new Set([carrier?.minvent, carrier?.inventory]);
+    for (const inventory of inventories)
+        candidates.push(...(inventory || []));
+    if (state.u?.ux === x && state.u?.uy === y)
+        candidates.push(...(state.inventory || []));
+    let target: GameObject | null = null;
+    let newest = -1;
+    for (const object of candidates) {
+        if (!objectShedsLight(object) || artifactEmitsLight(object)) continue;
+        const order = object._litSeq ?? object.o_id;
+        if (order > newest) {
+            newest = order;
+            target = object;
+        }
     }
+    if (target) snuffOrdinaryLight(target);
 }
 
 async function affectCarriedLights(worsen: boolean) {
@@ -352,7 +368,7 @@ export async function lightRoom(
         if (!location) continue;
         location.lit = !!lit;
         if (!lit) {
-            snuffLightsAt(x, y);
+            snuffLightSource(x, y);
             continue;
         }
         const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
@@ -477,6 +493,13 @@ function objectBurnTurns(object: GameObject) {
 }
 
 // begin_burn() stores only the fuel remaining after the next warning
+// C light.c:new_light_source() prepends to light_base, so each lighting
+// gives the object the newest creation slot.
+function registerObjectLightSource(object: GameObject, state: GameState): void {
+    state._lightSerial = (state._lightSerial ?? 0) + 1;
+    object._litSeq = state._lightSerial;
+}
+
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
 // what lets save/restore and an overdue callback reconstruct source state.
 export function beginObjectBurn(
@@ -489,13 +512,19 @@ export function beginObjectBurn(
     const alreadyLit = !!object.lamplit;
     if (artifactEmitsLight(object)) {
         object.lamplit = true;
-        if (!alreadyLit) state.vision_full_recalc = 1;
+        if (!alreadyLit) {
+            registerObjectLightSource(object, state);
+            state.vision_full_recalc = 1;
+        }
         return true;
     }
     if (object.otyp === MAGIC_LAMP) {
         if ((object.spe ?? 0) <= 0) return false;
         object.lamplit = true;
-        if (!alreadyLit) state.vision_full_recalc = 1;
+        if (!alreadyLit) {
+            registerObjectLightSource(object, state);
+            state.vision_full_recalc = 1;
+        }
         return true;
     }
     if (object.otyp === CANDELABRUM_OF_INVOCATION
@@ -508,7 +537,10 @@ export function beginObjectBurn(
     object.lamplit = !!timer;
     if (!timer) return false;
     object.age -= turns;
-    if (!alreadyLit) state.vision_full_recalc = 1;
+    if (!alreadyLit) {
+        registerObjectLightSource(object, state);
+        state.vision_full_recalc = 1;
+    }
     return true;
 }
 
@@ -543,6 +575,7 @@ export function endObjectBurn(
     if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)
         || object.otyp === GOLD_DRAGON_SCALE_MAIL || object.otyp === GOLD_DRAGON_SCALES) {
         object.lamplit = false;
+        delete object._litSeq;
         state.vision_full_recalc = 1;
         return true;
     }
@@ -559,12 +592,14 @@ export function cleanupObjectBurn(
     if (!object.lamplit) return false;
     object.age = (object.age ?? 0) + deadline - currentTurn;
     object.lamplit = false;
+    delete object._litSeq;
     state.vision_full_recalc = 1;
     return true;
 }
 
 function extinguishTimedLight(object: GameObject, state: GameState) {
     object.lamplit = false;
+    delete object._litSeq;
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     state.vision_full_recalc = 1;
 }

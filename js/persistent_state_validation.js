@@ -49,6 +49,7 @@ function validPersistentState(value, entities) {
         _polymorphGenocideCause: optional(oneOf('scroll', 'confusion', 'throne')),
         _encounteredObjectTypes: optional(setOf(integer)),
         _fobjSerial: optional(integer),
+        _lightSerial: optional(integer),
         _heroTrack: optional(arrayOf(validSavedPosition)),
         _initialGoldCount: optional(integer),
         _knownObjectTypes: optional(setOf(integer)),

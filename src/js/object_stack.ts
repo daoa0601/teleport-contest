@@ -65,16 +65,19 @@ export function splitObjectStack(
     if (object.unpaid) splitObjectBill(object, split, state);
     copyObjectTimers(object, split, state);
     // splitobj() copies an active light source after copying its timers.
-    // Each resulting candle stack has its own quantity-dependent radius.
+    // Each resulting candle stack has its own quantity-dependent radius, and
+    // obj_split_light_source() inserts the copy at the head of light_base,
+    // so the split-off stack owns the newer light source.
     if (objectShedsLight(object)) {
         split.lamplit = true;
+        state._lightSerial = (state._lightSerial ?? 0) + 1;
+        split._litSeq = state._lightSerial;
         if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)
             state.vision_full_recalc = 1;
     }
     return split;
 }
 
-// C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
 export async function rejoinObjectStack(
     parent: GameObject, split: GameObject, state: GameState = game,
 ): Promise<GameObject | null> {

@@ -284,6 +284,9 @@ export interface GameState {
     _rndmonstAlignmentMove?: number;
     _prevDecorType?: number;
     _fobjSerial?: number;
+    // C light.c keeps light_base newest-first; object light creation order
+    // decides which source snuff_light_source() finds first.
+    _lightSerial?: number;
 
     // Discovery, artifacts and event history are installed by their owners.
     _knownObjectTypes?: Set<number>;
