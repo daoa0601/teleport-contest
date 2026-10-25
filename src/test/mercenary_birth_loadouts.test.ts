@@ -6,12 +6,12 @@ import { makemonAt } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import {
-    AMULET_OF_LIFE_SAVING, LEATHER_ARMOR, LONG_SWORD, MACE, POT_EXTRA_HEALING,
-    POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
-    POT_POLYMORPH, POT_SICKNESS, POT_SPEED, RING_MAIL, SCR_CREATE_MONSTER,
-    SCR_TELEPORTATION, SPLINT_MAIL, TIN_WHISTLE, WAN_CREATE_MONSTER,
-    WAN_DIGGING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SPEED_MONSTER,
-    WAN_TELEPORTATION,
+    AMULET_OF_LIFE_SAVING, LEATHER_ARMOR, LONG_SWORD, MACE, OBJECT_NAMES,
+    POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING,
+    POT_INVISIBILITY, POT_POLYMORPH, POT_SICKNESS, POT_SPEED, RING_MAIL,
+    SCR_CREATE_MONSTER, SCR_TELEPORTATION, SPLINT_MAIL, TIN_WHISTLE,
+    WAN_CREATE_MONSTER, WAN_DIGGING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
+    WAN_SPEED_MONSTER, WAN_TELEPORTATION,
 } from '../js/object_data.js';
 
 // rnd_defensive_item()/rnd_misc_item() outputs that no other birth-time
@@ -25,17 +25,24 @@ const RESERVOIR_ITEMS = new Set([
     WAN_SPEED_MONSTER, WAN_TELEPORTATION,
 ]);
 
-// makemon.c:m_initweap()/m_initinv() sidearms and armor, kept as numeric
-// constants exactly where the constructor itself uses them.
-const FLAIL = 81;
-const BROADSWORD = 52;
-const SILVER_SABER = 51;
-const PLATE_MAIL = 121;
-const CRYSTAL_PLATE_MAIL = 122;
-const BANDED_MAIL = 125;
-const STUDDED_LEATHER_ARMOR = 131;
-const K_RATION = 294;
-const C_RATION = 295;
+// Sidearms, armor, and rations the C constructors hand mercenaries,
+// resolved by name the way mplayer.ts does rather than by copying the
+// numeric ids out of mklev.ts.
+function objectType(name: string): number {
+    const otyp = OBJECT_NAMES.indexOf(name);
+    if (otyp < 0) throw new Error(`unknown object type: ${name}`);
+    return otyp;
+}
+
+const FLAIL = objectType('flail');
+const BROADSWORD = objectType('broadsword');
+const SILVER_SABER = objectType('silver saber');
+const PLATE_MAIL = objectType('plate mail');
+const CRYSTAL_PLATE_MAIL = objectType('crystal plate mail');
+const BANDED_MAIL = objectType('banded mail');
+const STUDDED_LEATHER_ARMOR = objectType('studded leather armor');
+const K_RATION = objectType('K-ration');
+const C_RATION = objectType('C-ration');
 
 const BODY_ARMORS = new Set([
     PLATE_MAIL, CRYSTAL_PLATE_MAIL, SPLINT_MAIL, BANDED_MAIL,
@@ -79,7 +86,7 @@ void test('soldiers and watchmen never receive officer or elite armor', async ()
     }
 });
 
-void test('guards draw from the light body armor pool only', async () => {
+void test('guards never draw the elite plate armor', async () => {
     for (let seed = 1n; seed <= 24n; seed++) {
         const guard = await bornAt('guard', seed);
         const otyps = guard.minvent.map(item => item.otyp);

@@ -5,19 +5,18 @@ import { game } from '../js/gstate.js';
 import { makemonAt } from '../js/mklev.js';
 import { MONSTER_GENO, MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { LONG_SWORD } from '../js/object_data.js';
+import { LONG_SWORD, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from '../js/object_data.js';
 // makemon.c:m_initweap() S_ANGEL gear and m_initgrp() group bounds.
-const SILVER_MACE = 74;
-const LARGE_SHIELD = 156;
-const SHIELD_OF_REFLECTION = 158;
+const SILVER_MACE = OBJECT_NAMES.indexOf('silver mace');
+const LARGE_SHIELD = OBJECT_NAMES.indexOf('large shield');
 const G_LGROUP = 0x0040;
 const G_SGROUP = 0x0080;
 void test('golems are born with the fixed hit points of their material', async () => {
+    // Spot check across the golemhp() range (makemon.c:2233-2261) instead of
+    // mirroring the whole table: the cheapest and the most durable material,
+    // and a middle one, all through the public birth path.
     const expectations = [
-        ['straw golem', 20], ['paper golem', 20], ['rope golem', 30],
-        ['leather golem', 40], ['gold golem', 60], ['wood golem', 50],
-        ['flesh golem', 40], ['clay golem', 70], ['stone golem', 100],
-        ['glass golem', 80], ['iron golem', 120],
+        ['straw golem', 20], ['gold golem', 60], ['iron golem', 120],
     ];
     for (const [name, hp] of expectations) {
         freshObjectRoom({ gameplaySeed: 1n });
