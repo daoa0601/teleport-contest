@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import {
     AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW,
     CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW,
-    FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_USES_KNOWN,
+    FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_NOVEL, OBJECT_USES_KNOWN,
     ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN,
     WAX_CANDLE, YUMI,
 } from './object_data.js';
@@ -69,7 +69,11 @@ export function prepareBonesObjectForSave<T extends GameObject | null | undefine
     }
     clearPresentation(object);
 
-    if (object.otyp === EGG) {
+    // C bones.c:resetobjs(): delivered mail becomes stamps from bones or
+    // wishing; hand-written mail keeps its marker origin.
+    if (object.otyp === SCR_MAIL) {
+        if (object.spe === 0) object.spe = 1;
+    } else if (object.otyp === EGG) {
         object.spe = 0;
     } else if (object.otyp === TIN && object.corpsenm !== undefined
         && (MONSTER_GENO[object.corpsenm] ?? 0) & G_UNIQ) {

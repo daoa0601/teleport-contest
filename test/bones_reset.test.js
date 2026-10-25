@@ -8,13 +8,13 @@ import { pushKeys } from '../js/input.js';
 import { createCorpstatAt, mklev, saveBonesLevel } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeMonsterFromGame } from '../js/monster_departure.js';
-import { CHEST, CORPSE, FOOD_RATION } from '../js/object_data.js';
+import { CHEST, CORPSE, FOOD_RATION, SCR_MAIL } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
 import { init_objects } from '../js/o_init.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { floorObject, knownObject } from './support/game-objects.js';
-import { floorObjects } from './support/level-state.js';
+import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -98,5 +98,21 @@ void test('the newest duplicate artifact on the bones floor retains its identity
     const objects = floorObjects(requireGameLevel());
     assert.equal(objects.find(object => object.ox === 14)?.oartifact, artifact.id);
     assert.equal(objects.find(object => object.ox === 12)?.oartifact, 0);
+});
+void test('delivered mail saved in bones becomes next-hero stamps while written mail keeps its origin', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    await floorObject(SCR_MAIL, 12, 10, { spe: 0 });
+    await floorObject(SCR_MAIL, 13, 10, { spe: 2 });
+    assert.equal(saveBonesLevel(), true);
+    bonesRoom(storage);
+    pushKeys('yn');
+    await mklev();
+    const delivered = floorObjectsAt(requireGameLevel(), 12, 10).find(object => object.otyp === SCR_MAIL);
+    const written = floorObjectsAt(requireGameLevel(), 13, 10).find(object => object.otyp === SCR_MAIL);
+    assert.ok(delivered, 'bones lost the delivered mail');
+    assert.ok(written, 'bones lost the written mail');
+    assert.equal(delivered.spe, 1);
+    assert.equal(written.spe, 2);
 });
 //# sourceMappingURL=bones_reset.test.js.map
