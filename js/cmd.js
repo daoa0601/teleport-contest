@@ -10,7 +10,7 @@ import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displa
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
-import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_TIME } from './const.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_TIME } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
@@ -1369,6 +1369,20 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         }
         return;
     }
+    if (cannedCommand?.kind === 'kick') {
+        // C queues dokick() with cmdq_add_dir(); getdir() pops that canned
+        // direction instead of reading a key, so feed the bound movement key.
+        const key = kickDirectionKey(cannedCommand.dx, cannedCommand.dy);
+        if (key)
+            queueCommandKeys(String.fromCharCode(key));
+        try {
+            await dokick();
+        }
+        finally {
+            clearCommandKeys();
+        }
+        return;
+    }
     if (cannedCommand?.kind === 'fire') {
         await dofire(cannedCommand.shotLimit ?? 0);
         return;
@@ -2234,6 +2248,20 @@ async function kickLiveMonster(monster, x, y) {
         await useHeroSkill(35);
     game.context.move = 1;
     return true;
+}
+// C getdir() converts a cmdq_add_dir() entry through xytodir() into the
+// currently bound movement key for that delta; mirror that lookup so the
+// queued kick never prompts for a direction.
+function kickDirectionKey(dx, dy) {
+    for (let direction = 0; direction < 8; direction++) {
+        const key = game.commandBindings.keyForDirection(direction);
+        if (!key)
+            continue;
+        const movement = game.commandBindings.movementForKey(key, 0);
+        if (movement && !movement.dz && movement.dx === dx && movement.dy === dy)
+            return key;
+    }
+    return null;
 }
 async function dokick() {
     if (!await admitHeroKick())
@@ -6705,9 +6733,22 @@ async function openLockedDoor(x, y) {
     if (!flags)
         return Boolean(game.context.move);
     game.u.dz = 0;
-    const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
-    if (tool)
-        return pickLock(tool, { target: { x, y } });
+    if (flags & AUTOUNLOCK_APPLY_KEY) {
+        const tool = autokey(true);
+        if (tool)
+            return pickLock(tool, { target: { x, y } });
+    }
+    if (flags & AUTOUNLOCK_KICK && !game.u.usteed
+        && await promptYesNoQuit('Kick it?') === 'y') {
+        // lock.c queues dokick with the door direction; the open command
+        // itself spends no turn, the kick that follows owns the action.
+        game._cannedCommands ||= [];
+        game._cannedCommands.push({
+            kind: 'kick',
+            dx: Math.sign(x - game.u.ux), dy: Math.sign(y - game.u.uy),
+        });
+        return false;
+    }
     return Boolean(game.context.move);
 }
 // C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
