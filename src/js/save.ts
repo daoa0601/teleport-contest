@@ -41,7 +41,8 @@ import { restoreLevelPetHistory, restoreMonsterPetHistory, restoreObjectPetHisto
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 
-type SaveStorage = Pick<StorageBackend, 'setItem'>;
+type SaveStorage = Pick<StorageBackend, 'setItem'>
+    & Partial<Pick<StorageBackend, 'getItem'>>;
 type RestoreStorage = Pick<StorageBackend, 'getItem'>
     & Partial<Pick<StorageBackend, 'removeItem'>>;
 
@@ -97,7 +98,7 @@ export async function dosave(): Promise<void> {
     }
 
     await pline('Saving...');
-    if (!await saveGame()) {
+    if (!await writeSave(game.storage, saveKey(game.plname), true, 'ask')) {
         await docrt();
         game.context.move = 0;
         return;
@@ -119,13 +120,13 @@ export async function dosave(): Promise<void> {
 export async function saveGame(
     storage: SaveStorage | null | undefined = game.storage,
 ): Promise<boolean> {
-    return await writeSave(storage, saveKey(game.plname), true);
+    return await writeSave(storage, saveKey(game.plname), true, 'replace');
 }
 
 export async function saveErrorGame(
     storage: SaveStorage | null | undefined = game.storage,
 ): Promise<boolean> {
-    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false);
+    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false, 'replace');
 }
 
 export function hasErrorSave(
@@ -177,12 +178,13 @@ function undoDateLuck(): number {
 
 async function writeSave(
     storage: SaveStorage | null | undefined, key: string, reportFailure: boolean,
+    overwrite: 'ask' | 'replace',
 ): Promise<boolean> {
     game.program_state.saving = (game.program_state.saving || 0) + 1;
     let saved = false;
     try {
         await prepareGameForSave();
-        if (storage?.setItem) {
+        if (storage?.setItem && (overwrite === 'replace' || await confirmSaveOverwrite(storage, key))) {
             currentLuaLifecycle().syncVariables(game);
             const luck = undoDateLuck();
             try {
@@ -207,6 +209,15 @@ async function writeSave(
     }
     game.program_state.saving--;
     return saved;
+}
+
+// C dosave0() asks after cleanup but before changing luck or writing data.
+async function confirmSaveOverwrite(storage: SaveStorage, key: string): Promise<boolean> {
+    const previous = storage.getItem?.(key);
+    if (previous === undefined || previous === null) return true;
+    clearMessageWindow();
+    await plineWithContinuation('There seems to be an old save file.');
+    return await promptYesNo('Overwrite the old file?') === 'y';
 }
 
 // C restore.c:restgamestate() reports its refusal through You() and returns

@@ -7,7 +7,8 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { doquit } from '../js/end.js';
-import { dosave } from '../js/save.js';
+import { dosave, saveGame } from '../js/save.js';
+import { decodeSavedGame } from '../js/persistent_state_validation.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 function messageRow() {
@@ -21,6 +22,36 @@ function freshConfirmation() {
     game.plname = 'Confirmation';
     game.storage = memoryStorage();
     return resetInputState();
+}
+for (const answer of ['n', 'y']) {
+    void test(`${answer === 'y' ? 'accepting' : 'refusing'} overwrite keeps the requested save snapshot`, async () => {
+        const input = freshConfirmation();
+        assert.equal(await saveGame(), true);
+        game.moves += 5;
+        game.program_state.something_worth_saving = true;
+        let reads = 0;
+        input.beforeRead = () => {
+            assert.ok(++reads < 7, `Unexpected save prompt: ${game._pending_message}`);
+            if (messageRow().includes('--More--')) {
+                assert.match(game._pending_message, /old save file|Overwrite/);
+                input.feed(' ');
+            }
+            else if (game._pending_message.includes('Really save?')) {
+                input.feed('y');
+            }
+            else {
+                assert.match(game._pending_message, /Overwrite the old file\?/);
+                input.feed(answer);
+            }
+        };
+        await dosave();
+        const encoded = game.storage?.getItem('teleport-save:confirmation');
+        assert.ok(encoded);
+        assert.equal(decodeSavedGame(encoded).state.moves, answer === 'y' ? 45 : 40);
+        assert.equal(!!game.program_state.gameover, answer === 'y');
+        assert.equal(game.context.move, 0);
+        assert.equal(game.program_state.saving, 0, 'A refused overwrite must end save processing');
+    });
 }
 for (const [name, answer] of [
     ['no', 'n'], ['Escape', '\x1b'], ['Space', ' '],

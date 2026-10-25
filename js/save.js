@@ -85,7 +85,7 @@ export async function dosave() {
         return;
     }
     await pline('Saving...');
-    if (!await saveGame()) {
+    if (!await writeSave(game.storage, saveKey(game.plname), true, 'ask')) {
         await docrt();
         game.context.move = 0;
         return;
@@ -104,10 +104,10 @@ export async function dosave() {
     game.context.move = 0;
 }
 export async function saveGame(storage = game.storage) {
-    return await writeSave(storage, saveKey(game.plname), true);
+    return await writeSave(storage, saveKey(game.plname), true, 'replace');
 }
 export async function saveErrorGame(storage = game.storage) {
-    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false);
+    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false, 'replace');
 }
 export function hasErrorSave(name, storage = game.storage) {
     try {
@@ -157,12 +157,12 @@ function undoDateLuck() {
     game.u.uluck = luck;
     return before;
 }
-async function writeSave(storage, key, reportFailure) {
+async function writeSave(storage, key, reportFailure, overwrite) {
     game.program_state.saving = (game.program_state.saving || 0) + 1;
     let saved = false;
     try {
         await prepareGameForSave();
-        if (storage?.setItem) {
+        if (storage?.setItem && (overwrite === 'replace' || await confirmSaveOverwrite(storage, key))) {
             currentLuaLifecycle().syncVariables(game);
             const luck = undoDateLuck();
             try {
@@ -190,6 +190,15 @@ async function writeSave(storage, key, reportFailure) {
     }
     game.program_state.saving--;
     return saved;
+}
+// C dosave0() asks after cleanup but before changing luck or writing data.
+async function confirmSaveOverwrite(storage, key) {
+    const previous = storage.getItem?.(key);
+    if (previous === undefined || previous === null)
+        return true;
+    clearMessageWindow();
+    await plineWithContinuation('There seems to be an old save file.');
+    return await promptYesNo('Overwrite the old file?') === 'y';
 }
 // C restore.c:restgamestate() reports its refusal through You() and returns
 // FALSE; dorecover() then waits for the message to be dismissed and discards
