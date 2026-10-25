@@ -5,10 +5,10 @@ import { game } from './gstate.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { detectedTrapDisguise } from './pager_features.js';
 import { trapName } from './trap_name.js';
-import { promptDirection } from './tty_prompts.js';
+import { promptDirection, readDirectionKey } from './tty_prompts.js';
 export async function identifyTrap() {
     game.context.move = 0;
-    const direction = await promptDirection();
+    const direction = await promptDirection(readDirectionKey, { ctrlCommandHint: true });
     if (!direction)
         return;
     const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;
