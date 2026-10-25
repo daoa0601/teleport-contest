@@ -434,7 +434,8 @@ export async function identifyEffect(source: GameObject, {
     let limit = 1;
     if (source.blessed || (!source.cursed && !rn2(5))) {
         limit = rn2(5);
-        if (limit === 1 && source.blessed && (state.u.uluck ?? 0) > 0) limit++;
+        if (limit === 1 && source.blessed
+            && (state.u.uluck ?? 0) + (state.u.moreluck ?? 0) > 0) limit++;
     }
     return identifyPack(limit, !alreadyKnown);
 }
