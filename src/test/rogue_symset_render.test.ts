@@ -13,6 +13,8 @@ import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
+import { gotoLevel } from '../js/level_change.js';
 
 // dat/symbols `start:` sets that a Rogue level can display layer their
 // S_ entries over the base rogue set (symbols.c:load_symset() →
@@ -217,20 +219,18 @@ void test('explosions keep their own colors under RogueEpyx', async () => {
     assert.ok(coloredFrames > 0, 'the fiery border stayed orange');
 });
 
-void test('the gold label falls back to $ for control-character coins', async () => {
-    rogueLevel();
+for (const name of ['RogueEpyx', 'Blank', 'RogueIBM']) {
+    void test(`arriving on Rogue refreshes the gold label for ${name}`, async () => {
+        freshConnectedLevels();
+        requirePlayingGame(game);
+        game.rogue_level = { dnum: 0, dlevel: 2 };
+        applyNethackrc(`OPTIONS=roguesymset:${name}`);
 
-    // RogueEpyx's \x0f and Blank's \x1a coin symbols are control
-    // characters, so botl.c prints the "$" fallback.
-    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
-    assert.match(_statusLine2(), /^[^ ]+ \$:/);
+        await gotoLevel({ dlevel: 2 }, { arrival: 'stairs' });
 
-    applyNethackrc('OPTIONS=roguesymset:Blank');
-    assert.match(_statusLine2(), /^[^ ]+ \$:/);
-
-    applyNethackrc('OPTIONS=roguesymset:RogueIBM');
-    assert.match(_statusLine2(), /^[^ ]+ \*:/);
-});
+        assert.match(_statusLine2(), name === 'RogueIBM' ? /^[^ ]+ \*:/ : /^[^ ]+ \$:/);
+    });
+}
 
 void test('Blank blanks every trap symbol including the vibrating square', async () => {
     const level = rogueLevel();

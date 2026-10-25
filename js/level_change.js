@@ -18,7 +18,7 @@ import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, newsym, reglyphSymbolSet, } from './display.js';
+import { flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, newsym, checkGoldSymbol, reglyphSymbolSet, } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { gainGuardianAngel } from './guardian_angel.js';
@@ -274,6 +274,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     game.u.uz = destinationDepth;
     game.u.utolev = { ...destinationDepth };
     game.u.utotype = 0;
+    checkGoldSymbol();
     const dungeon = game.dungeons[destinationDepth.dnum];
     if (!dungeon)
         throw new Error(`Destination dungeon ${destinationDepth.dnum} is not in the dungeon graph`);

@@ -21,7 +21,7 @@ import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
     flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, newsym,
-    reglyphSymbolSet,
+    checkGoldSymbol, reglyphSymbolSet,
 } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -330,6 +330,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     game.u.uz = destinationDepth;
     game.u.utolev = { ...destinationDepth };
     game.u.utotype = 0;
+    checkGoldSymbol();
     const dungeon = game.dungeons[destinationDepth.dnum];
     if (!dungeon)
         throw new Error(`Destination dungeon ${destinationDepth.dnum} is not in the dungeon graph`);

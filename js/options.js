@@ -16,7 +16,7 @@ import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupType
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, currentBoulderSymbol, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
+import { bot, checkGoldSymbol, clearMessageWindow, currentBoulderSymbol, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
@@ -3050,6 +3050,7 @@ async function doRequestMenuOptions() {
         skipHelp = true;
     }
     if (needsRedraw) {
+        checkGoldSymbol();
         reglyph_darkroom();
         await docrt();
     }
@@ -3339,6 +3340,7 @@ export async function doOptions(menuRequested = false) {
         else
             needsRedraw = await editCompoundOption(name, false);
         if (needsRedraw) {
+            checkGoldSymbol();
             reglyph_darkroom();
             await docrt();
             await flush_screen(1);

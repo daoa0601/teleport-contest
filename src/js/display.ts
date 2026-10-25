@@ -2842,6 +2842,12 @@ export function _statusLine2() {
     return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO).text : '';
 }
 
+// botl.c:check_gold_symbol(). This process flag changes at explicit
+// option and level-change boundaries; dorecover() leaves it alone.
+export function checkGoldSymbol(): void {
+    game.iflags.invis_goldsym = objectClassSymbol(objectClassForType(GOLD_PIECE)) <= ' ';
+}
+
 function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const u = game.u;
     if (!u) return null;
@@ -2859,11 +2865,8 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
     const displayedPower = Math.min(u.uen ?? 0, 9999);
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
-    // botl.c:check_gold_symbol() falls back to '$' when the displayed
-    // coin symbol is a space or control character (RogueEpyx's \x0f,
-    // Blank's \x1a).
     const goldSymbol = activeObjectSymbols()[objectClassForType(GOLD_PIECE)] ?? '$';
-    const goldLabel = goldSymbol > ' ' ? goldSymbol : '$';
+    const goldLabel = game.iflags.invis_goldsym ? '$' : goldSymbol;
     const displayedAc = u.uac ?? 10;
     const displayedGold = Math.max(0, Math.min(999999,
         game._statusGoldOverride ?? heroGoldAmount(game)));

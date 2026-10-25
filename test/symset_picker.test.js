@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { HWALL, LADDER, LA_UP, STAIRS } from '../js/const.js';
-import { docrt, flush_screen, map_object, newsym } from '../js/display.js';
+import { bot, docrt, flush_screen, map_object, newsym } from '../js/display.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -203,6 +203,26 @@ void test('restoring on Rogue discards the displayed primary symbol set', async 
     await flush_screen(1);
     assert.equal(requireScreenCell(2, 3).ch, '*');
 });
+for (const { name, coin } of [{ name: 'RogueEpyx', coin: '\x0f' }, { name: 'Blank', coin: '\x1a' }]) {
+    void test(`restoring ${name} retains the process gold-label fallback until an options redraw`, async () => {
+        freshObjectRoom({ flags: { verbose: false } });
+        requirePlayingGame(game);
+        game.rogue_level = { ...game.u.uz };
+        const storage = memoryStorage();
+        assert.equal(await saveGame(storage), true);
+        const playerName = game.plname;
+        freshObjectRoom({ flags: { verbose: false } });
+        applyNethackrc(`OPTIONS=roguesymset:${name}`);
+        assert.equal(restoreGame(playerName, storage), true);
+        await docrt();
+        await bot();
+        await flush_screen(1);
+        const restoredStatus = screen().split('\n')[23] ?? '';
+        assert.ok(restoredStatus.includes(`${coin}:`), restoredStatus);
+        await driveOptionWindow('roguesymset', name);
+        assert.match(screen().split('\n')[23] ?? '', /\$:/, 'an options redraw refreshes check_gold_symbol()');
+    });
+}
 // do_symset() sets nothing_to_do when the pick is dismissed.
 void test('dismissing the symset picker keeps the current set', async () => {
     freshObjectRoom({ flags: { verbose: false } });
