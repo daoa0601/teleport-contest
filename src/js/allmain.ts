@@ -64,6 +64,7 @@ import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterCover } from './monster_hiding.js';
 import { runDueTimers } from './timer_effects.js';
 import { finishInUseInventory } from './object_cleanup.js';
+import { askKeepRestoredSave } from './save.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -577,6 +578,7 @@ export async function restoregamePreamble() {
     await checkSpecialRoom();
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
+    await askKeepRestoredSave();
     await applyCalendarMessages();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     await fixShopDamage(game);

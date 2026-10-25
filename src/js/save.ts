@@ -225,6 +225,17 @@ async function confirmSaveOverwrite(storage: SaveStorage, key: string): Promise<
 // the save file. The synchronous restoreGame() can only report the refusal,
 // so the caller completes that dialogue through dismissUnhealthyRestore().
 let restoreRefusal: 'unhealthy' | null = null;
+let retainedSave: { storage: RestoreStorage; key: string } | null = null;
+
+// C unixmain.c asks after dorecover()'s welcome; ordinary games consume
+// their file inside dorecover(), while wizard and explore games may keep it.
+export async function askKeepRestoredSave(): Promise<void> {
+    const restored = retainedSave;
+    retainedSave = null;
+    if (!restored) return;
+    if (await promptYesNo('Do you want to keep the save file?') === 'n')
+        restored.storage.removeItem?.(restored.key);
+}
 
 export function restoreRefusedAsUnhealthy(): boolean {
     return restoreRefusal === 'unhealthy';
@@ -246,6 +257,7 @@ export function restoreGame(
     storage: RestoreStorage | null | undefined = game.storage,
 ): boolean {
     restoreRefusal = null;
+    retainedSave = null;
     if (!storage?.getItem) return false;
     const key = saveKey(name);
     try {
@@ -330,7 +342,9 @@ export function restoreGame(
         // level. No old sight bits may suppress its first terrain repaint.
         vision_reset_new_level();
         game.vision_full_recalc = 1;
-        storage.removeItem?.(key);
+        if (game.flags.debug || game.flags.explore || game.discover)
+            retainedSave = { storage, key };
+        else storage.removeItem?.(key);
         return true;
     } catch (error) {
         if (error instanceof PanicTermination) throw error;
