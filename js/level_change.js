@@ -693,6 +693,12 @@ async function restoreCachedMonsterState(cached) {
     restoreMonsterWormHeads(cached.level);
     // Births append in the port, whereas C prepends to fmon.
     for (const monster of cached.level.monsters.slice().reverse()) {
+        // savemon()/restmon() store these two pet times relative to moves.
+        // They resume on the current clock before catch-up checks hunger.
+        if (monster.edog) {
+            monster.edog.droptime += elapsed;
+            monster.edog.hungrytime += elapsed;
+        }
         setShopResidency(monster, false, game);
         await restoreMonsterCover(monster, game);
         if (elapsed > 0)
@@ -706,6 +712,10 @@ async function restoreCachedMonsterState(cached) {
 }
 function restoreCachedLevelMetadata(cached) {
     game._activeSpecialLevel = cached?.activeSpecialLevel || null;
+    // save_adjust_levelflags()/rest_adjust_levelflags() preserve the
+    // remaining stasis duration while its level is stored off-map.
+    if (cached.level.flags.stasis_until !== undefined)
+        cached.level.flags.stasis_until += game.moves - cached.savedAt;
 }
 // C dungeon.c:u_on_rndspot() delegates arrival to the shared lregion owner.
 export async function placeHeroAtRandomArrival(region = null, up = false) {

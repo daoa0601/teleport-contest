@@ -47,14 +47,14 @@ void test('a resident heals and its timed troubles run down while the hero visit
     assert.equal(resident.mspec_used, 0);
 });
 
-void test('a pet abandoned without food becomes feral instead of starving to death off level', async () => {
+void test('a pet already starving at departure becomes feral instead of dying off level', async () => {
     const { source, destination } = freshConnectedLevels();
     requirePlayingGame(game);
     game.flags.verbose = false;
     const pet = await createMonsterAt('housecat', 15, 10, MM_NOGRP | NO_MINVENT);
     initializePet(pet);
     assert.ok(pet.edog);
-    pet.edog.hungrytime = game.moves;
+    pet.edog.hungrytime = game.moves - 800;
 
     await gotoLevel({ dlevel: 2 }, { arrival: 'stairs' });
     assert.ok(source.monsters.includes(pet), 'The distant pet must stay on its original level.');
