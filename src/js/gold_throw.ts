@@ -303,7 +303,9 @@ export async function resolveDirectGoldThrow({
             wakeMonster, angerMonster,
         });
         if (caught) return true;
-    } else if (await shipObject(gold, x, y, { state: requireInitializedGame(state) })) {
+    } else if (await shipObject(gold, x, y, {
+        state: requireInitializedGame(state), publish: plineWithContinuation,
+    })) {
         return true;
     }
     await settleGoldOnFloor(state, gold, x, y, 0, 'sellobj');

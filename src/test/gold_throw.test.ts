@@ -22,6 +22,7 @@ import {
 } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { withMessagePages } from './support/planned-input.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 
 
 const PM_SHOPKEEPER = 271;
@@ -517,4 +518,21 @@ void test('a purse too heavy for the hero drops at the hero\'s feet', async () =
     assert.equal(purse.quantity, 25000);
     assert.deepEqual([purse.ox, purse.oy], [10, 10]);
     assert.equal(floorObjectsAt(level, 10, 10).includes(purse), true);
+});
+
+void test('a purse thrown onto a down ladder is seen falling down it', async () => {
+    const { source } = freshConnectedLevels({ ladder: true });
+    requireFixtureGame(game);
+    // The ladder at 10,10 is the last open square west of the hero.
+    source.requireAt(9, 10).typ = STONE;
+    game.u.ux = 13;
+    const purse = await carriedGold(100, 29001);
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+    await throwGold('h', ' '.repeat(5));
+
+    assert.equal(purse.where, 'migrating', `landed at ${purse.ox},${purse.oy}`);
+    const text = `${messages.join('\n')}\n${game._pending_message}`;
+    assert.match(text, /gold pieces fall down the ladder\./);
 });
