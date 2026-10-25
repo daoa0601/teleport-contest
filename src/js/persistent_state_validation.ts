@@ -60,6 +60,7 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         return closedFieldsMatch<CachedLevelState>(candidate, {
             level: map,
             stairs: validSavedStairways,
+            billObjects: optional(arrayOf(entities.object)),
             heroTrack: optional(arrayOf(validSavedPosition)),
             savedAt: integer,
             activeSpecialLevel: optional(nullable(activeSpecial)),

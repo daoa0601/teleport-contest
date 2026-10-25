@@ -335,6 +335,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
+            game.billObjects = cached.billObjects ?? [];
             restoreEngravings(cached.level);
             cached.stairs = restoreLevelChains(cached.level, cached.stairs);
             game.stairs = cached.stairs;
@@ -353,6 +354,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         if (game.program_state.gameover) return true;
         oinit();
     } else {
+        game.billObjects = [];
         // C mklev() starts with init_mapseen(): a freshly generated level
         // (bones included) joins the overview history before arrival.
         initOverviewRecord(destinationDepth, game);
@@ -716,6 +718,8 @@ function cachedLevelState(level: GameMap, stairs: Stairway | null): CachedLevelS
     return {
         level,
         stairs,
+        // C savelev()/getlev() keep the used-up bill chain with its floor.
+        billObjects: game.billObjects ?? [],
         heroTrack: cloneHeroTrack(),
         savedAt: game.moves ?? 0,
         // Is_special() is level data in C. JS keeps the parsed Lua identity

@@ -448,6 +448,7 @@ async function enterTutorial() {
         game._levelCache = new Map();
     game._levelCache.set(`${oldDepth.dnum ?? 0}:${oldDepth.dlevel ?? 1}`, {
         level: oldLevel, stairs: oldStairs, savedAt: game.moves,
+        billObjects: game.billObjects ?? [],
     });
     game.u.ucamefrom = { ...oldDepth };
     await currentLuaLifecycle().changeTutorialMode(game, true);
@@ -468,6 +469,7 @@ async function enterTutorial() {
     // tutorial level's overview record; this hand-rolled transition must
     // match that mapseen creation.
     initOverviewRecord(game.u.uz, game);
+    game.billObjects = [];
     await mklev();
     // goto_level() arrives through u_on_rndspot(), even when Lua restricts
     // the region to a single square.
