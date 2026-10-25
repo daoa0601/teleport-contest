@@ -85,6 +85,9 @@ function activeObjectSymbols() {
     }
     return ROGUE_OBJECT_SYMBOLS;
 }
+export function objectClassSymbol(index) {
+    return activeObjectSymbols()[index] ?? '';
+}
 // symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
 // else the default rock-class symbol.  optfn_boulder() fills both sets'
 // overrides, while the BOULDER= statement (cfgfiles.c) only fills the
@@ -471,7 +474,7 @@ export function reglyphSymbolSet() {
                 // A displayed rogue set can replace the monster-class
                 // symbol a statue shows (Blank blanks every class).
                 loc.remembered_glyph = { ...memory,
-                    ch: activeMonsterClassSymbol(MONSTER_SYMBOL[memory.corpsenm] ?? 0) };
+                    ch: monsterClassSymbol(MONSTER_SYMBOL[memory.corpsenm] ?? 0) };
                 continue;
             }
             const glyphNumber = memory.glyph;
@@ -1082,7 +1085,7 @@ function objectGlyphAttr(glyph) {
 function displayMonsterGlyph(mnum, female = false, monsterState = 'normal') {
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
-        ch: activeMonsterClassSymbol(MONSTER_SYMBOL[mnum] ?? 0) || '?',
+        ch: monsterClassSymbol(MONSTER_SYMBOL[mnum] ?? 0) || '?',
         // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
         color: rawColor === CLR_GRAY ? NO_COLOR : rawColor,
         decgfx: false, kind: 'monster', mnum, piletop: false,
@@ -1120,7 +1123,7 @@ function heroDisplayGlyph() {
     const glyph = displayMonsterGlyph(mnum, polymorphed ? !!game.u.mfemale : !!game.flags.female);
     return polymorphed ? glyph
         : { ...glyph, ch: game.flags.showrace ? glyph.ch
-                : activeMonsterClassSymbol(HUMAN_CLASS_INDEX) || '@', color: CLR_WHITE };
+                : monsterClassSymbol(HUMAN_CLASS_INDEX) || '@', color: CLR_WHITE };
 }
 // symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
 // Branch stairs retain their default symbols.
@@ -1187,7 +1190,7 @@ function rogueCmapSymbol(set, symbol) {
 // The monster-class tables only change on the Rogue level, where a named
 // set can replace the human symbol (RogueEpyx) or every class (Blank).
 const HUMAN_CLASS_INDEX = MONSTER_CLASS_SYMBOLS.indexOf('@');
-function activeMonsterClassSymbol(index) {
+export function monsterClassSymbol(index) {
     const shown = shownSymbolSet();
     if (shown.rogue) {
         const set = shown.name ? ROGUE_SYMSETS[shown.name.toLowerCase()] : undefined;
@@ -1197,6 +1200,18 @@ function activeMonsterClassSymbol(index) {
             return set.humanSymbol;
     }
     return MONSTER_CLASS_SYMBOLS[index] ?? '';
+}
+// pager.c:is_swallow_sym() and display.c:swallowed() read the same showsyms.
+export function swallowSymbolAppearance(index) {
+    const ascii = ['/', '-', '\\', '|', '|', '\\', '-', '/'][index];
+    if (ascii === undefined)
+        throw new RangeError(`Unknown swallow border ${index}`);
+    if (activeRogueSymset()?.blank)
+        return { ch: BLANK_SYMBOL, dec: false };
+    const alternate = index === 1 ? 'o' : index === 3 || index === 4 ? 'x'
+        : index === 6 ? 's' : undefined;
+    const dec = alternate !== undefined && usesDecSymbols();
+    return { ch: dec ? alternate ?? ascii : ascii, dec };
 }
 // dat/symbols:DECgraphics overrides dungeon symbols independently of the
 // terrain type at the hero's location. Furniture mimicry uses these symbols.
@@ -1318,7 +1333,7 @@ function objectGlyph(object) {
         return randomHallucinatedObjectGlyph();
     }
     const statueSymbol = object.otyp === STATUE && object.corpsenm !== undefined
-        ? activeMonsterClassSymbol(MONSTER_SYMBOL[object.corpsenm] ?? 0)
+        ? monsterClassSymbol(MONSTER_SYMBOL[object.corpsenm] ?? 0)
         : null;
     const species = (object.otyp === CORPSE || object.otyp === STATUE)
         && object.corpsenm !== undefined ? { corpsenm: object.corpsenm } : {};
@@ -2403,14 +2418,10 @@ export function swallowed(first = false) {
     }
     const x = game.u.ux, y = game.u.uy;
     const positions = [
-        [-1, -1, '/', null], [0, -1, '-', 'o'], [1, -1, '\\', null],
-        [-1, 0, '|', 'x'], [1, 0, '|', 'x'],
-        [-1, 1, '\\', null], [0, 1, '-', 's'], [1, 1, '/', null],
+        [-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1],
     ];
     const hallucinating = heroIsHallucinating(game);
-    const blankSwallow = activeRogueSymset()?.blank === true;
-    const dec = !blankSwallow && usesDecSymbols();
-    for (const [index, [dx, dy, ascii, alternate]] of positions.entries()) {
+    for (const [index, [dx, dy]] of positions.entries()) {
         if (index === 4)
             displaySelf();
         const sx = x + dx, sy = y + dy;
@@ -2422,10 +2433,11 @@ export function swallowed(first = false) {
         // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
         if (color === CLR_GRAY)
             color = NO_COLOR;
+        const appearance = swallowSymbolAppearance(index);
         const glyph = {
-            ch: blankSwallow ? BLANK_SYMBOL : dec && alternate ? alternate : ascii,
+            ch: appearance.ch,
             color,
-            decgfx: dec && alternate !== null, kind: 'effect',
+            decgfx: appearance.dec, kind: 'effect',
             glyph: GlyphOffset.swallow + mnum * 8 + index,
         };
         show_glyph_cell(sx, sy, glyph.ch, color, glyph.decgfx, 0, glyph);

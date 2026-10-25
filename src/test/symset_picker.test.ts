@@ -17,6 +17,7 @@ import { gotoLevel } from '../js/level_change.js';
 import { applyNethackrc } from '../js/options.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { farlookText } from './support/farlook.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -135,7 +136,7 @@ void test('choosing Default Symbols from the picker reverts the map', async () =
 // Only selecting the rogue set or crossing a level boundary restores it.
 for (const name of ['plain', 'DECgraphics']) {
     void test(`picking the named primary symbol set ${name} redraws the Rogue level`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: false } });
+        const level = freshObjectRoom({ flags: { verbose: false, tips: false, help: false } });
         requirePlayingGame(game);
         game.rogue_level = { ...game.u.uz };
         level.requireAt(12, 8).typ = STAIRS;
@@ -163,6 +164,9 @@ for (const name of ['plain', 'DECgraphics']) {
         assert.equal(requireScreenCell(2, 3).ch, '$', 'remembered objects use the primary class symbols');
         assert.equal(requireScreenCell(10, 9).color, NO_COLOR, 'Rogue level color rules still apply');
         assert.match(screen().split('\n')[23] ?? '', /\$:/, 'the status line uses the displayed coin symbol');
+
+        const description = await farlookText('l.');
+        assert.match(description, /a pile of coins\b/, description);
 
         await driveOptionWindow('symset', 'Default Symbols', true);
         assert.equal(requireScreenCell(11, 9).ch, '<', 'clearing the primary set leaves showsyms alone on Rogue');

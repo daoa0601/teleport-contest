@@ -5,7 +5,7 @@ import {
     BUFSZ, In_hell, Upolyd, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP,
     TER_MON, TER_OBJ, TRAP_EXPLANATIONS, VIBRATING_SQUARE, WEB,
 } from './const.js';
-import { cmapSymbolAppearance } from './display.js';
+import { cmapSymbolAppearance, monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance } from './display.js';
 import { onQuestStart } from './quest.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
@@ -47,12 +47,7 @@ export function screenDescription(x: number, y: number, description: string): Sc
     };
     const sameSymbol = (candidate: { ch: string; dec?: boolean }): boolean =>
         candidate.ch === appearance.ch && !!candidate.dec === !!appearance.dec;
-    const dec = /^DECgraphics$/i.test(game.symset ?? '') && !Is_rogue_level(game.u.uz);
-    const swallowChars = dec ? ['/', 'o', '\\', 'x', 'x', '\\', 's', '/']
-        : ['/', '-', '\\', '|', '|', '\\', '-', '/'];
-    const swallowDec = dec ? [false, true, false, true, true, false, true, false]
-        : swallowChars.map(() => false);
-    if (swallowChars.some((ch, i) => sameSymbol({ ch, dec: !!swallowDec[i] }))) {
+    if (Array.from({ length: 8 }, (_, index) => swallowSymbolAppearance(index)).some(sameSymbol)) {
         append('the interior of a monster', 'the interior of a monster');
         needLook = true;
     }
@@ -60,27 +55,25 @@ export function screenDescription(x: number, y: number, description: string): Sc
     if (!terrainmode || terrainmode & TER_MON) {
         for (let index = 1; index < MONSTER_CLASS_SYMBOLS.length; index++) {
             const name = MONSTER_CLASS_EXPLAIN[index];
-            if (!name || name === 'invisible monster' || !sameSymbol({ ch: MONSTER_CLASS_SYMBOLS[index] ?? '' })) continue;
+            if (!name || name === 'invisible monster' || !sameSymbol({ ch: monsterClassSymbol(index) })) continue;
             append(withIndefiniteArticle(name), name);
             needLook = true;
         }
-        if (sameSymbol({ ch: '@' }) && x === game.u.ux && y === game.u.uy
+        if (sameSymbol({ ch: monsterClassSymbol(MONSTER_CLASS_SYMBOLS.indexOf('@')) })
+            && x === game.u.ux && y === game.u.uy
             && !Upolyd(game.u) && game.urace
             && !['human', 'elf'].includes(game.urace.name)) append('you', 'you');
     }
     if (!terrainmode || terrainmode & TER_OBJ) {
-        const symbols = Is_rogue_level(game.u.uz)
-            ? ['', ']', ')', ']', '=', ',', '(', ':', '!', '?', '+', '/', '*', '*', '`', '0', '_', '.']
-            : OBJECT_CLASS_SYMBOLS;
         // pager.c matches ROCK_CLASS against the BOULDER override when one
         // is set for this level's symset (ov_rogue_syms on the Rogue level),
         // else the default rock symbol.
         const boulderSymbol = (Is_rogue_level(game.u.uz)
-            ? game.rogueBoulderSym : game.boulderSym) || symbols[14] || '';
-        for (let index = 1; index < symbols.length; index++) {
+            ? game.rogueBoulderSym : game.boulderSym) || OBJECT_CLASS_SYMBOLS[14] || '';
+        for (let index = 1; index < OBJECT_CLASS_SYMBOLS.length; index++) {
             const statue = index === 14 && glyph.kind === 'object' && glyph.statueGlyph;
             const boulder = index === 14 && sameSymbol({ ch: boulderSymbol });
-            if (index === 14 ? !statue && !boulder : !sameSymbol({ ch: symbols[index] ?? '' })) continue;
+            if (index === 14 ? !statue && !boulder : !sameSymbol({ ch: objectClassSymbol(index) })) continue;
             const name = index === 14 ? boulder ? 'boulder' : 'statue'
                 : OBJECT_CLASS_EXPLAIN[index];
             if (!name) continue;
