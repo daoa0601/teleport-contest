@@ -1,10 +1,11 @@
 // Magic portals under the hero.
 // C ref: teleport.c domagicportal().
 import { formatFeltMessage } from './hero_speech.js';
-import { In_endgame } from './const.js';
+import { In_endgame, TT_BURIEDBALL } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makeStunned } from './hero_mental_status.js';
+import { buriedBallToPunishment } from './buried_object.js';
 import { scheduleLevelChange } from './level_change.js';
 import { bringLeashedFollowers } from './teleport.js';
 function dungeonName(level) {
@@ -26,6 +27,10 @@ export async function activateMagicPortal(trap, gotoLevel) {
         await plineWithContinuation('You shudder for a moment.');
         return;
     }
+    // C teleport.c:domagicportal(): a buried ball surfaces before the
+    // leashed-follower check, even when the portal attempt then shudders.
+    if (game.u.utrap && game.u.utraptype === TT_BURIEDBALL)
+        await buriedBallToPunishment(game);
     const { uz, uz0 } = game.u;
     if (uz0 && (uz.dnum !== uz0.dnum || uz.dlevel !== uz0.dlevel))
         return;
