@@ -505,7 +505,8 @@ function updateParanoiaBits(
     if (augmenting) fields = fields.slice(1).replace(/^ /, '');
     fields = fields.replace(/! /g, '!');
     for (const original of fields.split(' ')) {
-        const negated = original.startsWith('!') || /^no[^n]/i.test(original);
+        // C folds "no" but checks the following 'n' case-sensitively.
+        const negated = original.startsWith('!') || /^[nN][oO][^n]/.test(original);
         const token = negated
             ? original.slice(original.startsWith('!') ? 1 : 2) : original;
         const field = token.toLowerCase();

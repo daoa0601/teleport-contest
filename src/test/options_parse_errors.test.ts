@@ -248,6 +248,21 @@ void test('paranoid_confirmation validates its argument list', () => {
         ["deprecated !prayconfirm option takes no parameters (found 'x')"]);
 });
 
+void test('paranoid no-prefix checks the third letter case-sensitively', () => {
+    for (const value of ['NONE', 'noNe']) {
+        const configuration = parseNethackrc(`OPTIONS=paranoid_confirm:+${value}`);
+        assert.deepEqual(configuration.configErrors[0]?.errors.map(error => error.message),
+            [`Unknown paranoid_confirmation parameter '${value.slice(2)}'`], value);
+        assert.equal((configuration.flags.paranoia_bits ?? 0) & PARANOID_PRAY,
+            PARANOID_PRAY, value);
+    }
+    for (const value of ['none', 'NOne']) {
+        const configuration = parseNethackrc(`OPTIONS=paranoid_confirm:${value}`);
+        assert.deepEqual(configuration.configErrors[0]?.errors, [], value);
+        assert.equal(configuration.flags.paranoia_bits, 0, value);
+    }
+});
+
 void test('disclose validates its category letters and defaults bare spellings', () => {
     assert.deepEqual(errorMessages('OPTIONS=disclose:x'), ["Unknown disclose parameter 'x'"]);
     assert.deepEqual(errorMessages('OPTIONS=!disclose:-i'),
