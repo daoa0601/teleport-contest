@@ -19,10 +19,15 @@ export function resetCommandVariables(clearQueues: boolean): void {
     game.iflags.menu_requested = false;
     game._movementAttempt = null;
     if (clearQueues) {
-        game._cannedCommands = [];
-        clearCommandKeys();
+        clearCannedCommands();
         clearRepeatCommand();
     }
+}
+
+// C cmdq_clear(CQ_CANNED): commands and their answers share one queue.
+export function clearCannedCommands(state: GameState = game): void {
+    state._cannedCommands = [];
+    clearCommandKeys();
 }
 
 // C has one multi counter; involuntary delays have a positive mirror here.
@@ -51,7 +56,7 @@ export function nomul(value: number, state: GameState = game): void {
     setMulti(value, state);
     if (value === 0) state._helplessReason = null;
     stopRun(state);
-    state._cannedCommands = [];
+    clearCannedCommands(state);
 }
 
 // Keep the full command count and any occupation. A timed occupation may

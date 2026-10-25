@@ -9,6 +9,7 @@ import { APPLE, BAG_OF_TRICKS, BOULDER, CHEST, CREDIT_CARD, LOCK_PICK, SADDLE, S
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { makeEngravingAt } from '../js/engrave.js';
+import { setSlipperyHands } from '../js/towel.js';
 import { addTrap } from './support/level-state.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
@@ -224,6 +225,74 @@ for (const tool of [SKELETON_KEY, LOCK_PICK, CREDIT_CARD]) {
     });
 }
 
+void test('an unused unlock answer becomes a northwest step after the apply turn', async () => {
+    const engine = await startMenuGame();
+    try {
+        const door = requireGameLevel().requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_CLOSED;
+        game.inventory = [];
+        await addInventoryObject(CREDIT_CARD, { invlet: 'z' });
+        const moves = game.moves;
+
+        await type(engine, '#therecmdmenu\nl');
+        await choose(engine, 'Unlock the door');
+
+        assert.match(screen(), /You can't lock a door with a credit card\./);
+        assert.equal(game.moves, moves + 2, 'applying the card and the queued step each spend a turn');
+        assert.equal(game.u.ux, 9);
+        assert.equal(game.u.uy, 9);
+        assert.equal(requireGameDisplay().grid[10]?.[8]?.ch, '@');
+    } finally { await finish(engine); }
+});
+
+void test('an unused unlock answer follows the current command binding', async () => {
+    const engine = await startMenuGame('BINDINGS=y:inventory\n');
+    try {
+        const door = requireGameLevel().requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_CLOSED;
+        game.inventory = [];
+        await addInventoryObject(CREDIT_CARD, { invlet: 'z' });
+        const moves = game.moves;
+
+        await type(engine, '#therecmdmenu\nl');
+        await choose(engine, 'Unlock the door');
+
+        assert.match(screen(), /credit card\.--More--/);
+        await type(engine, ' ');
+        assert.match(screen(), /z - .*credit card/);
+        assert.equal(game.moves, moves + 1);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
+    } finally { await finish(engine); }
+});
+
+void test('a weapon slipping between turns cancels an unused menu answer', async () => {
+    const engine = await startMenuGame();
+    try {
+        const door = requireGameLevel().requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_CLOSED;
+        await addInventoryObject(CREDIT_CARD, { invlet: 'z' });
+        const weapon = game.uwep;
+        assert.ok(weapon);
+        weapon.cursed = false;
+        const moves = game.moves;
+        await type(engine, '#therecmdmenu\nl');
+        setSlipperyHands(2);
+
+        await choose(engine, 'Unlock the door');
+        for (let page = 0; page < 3 && screen().includes('--More--'); page++)
+            await type(engine, ' ');
+
+        assert.match(screen(), /slips from your hand/);
+        assert.equal(game.moves, moves + 1);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
+    } finally { await finish(engine); }
+});
+
 void test('opening from the there menu uses the chosen direction', async () => {
     const engine = await startMenuGame();
     try {
@@ -425,17 +494,39 @@ void test('dipping waits for the item, then supplies the fountain confirmation',
     } finally { await finish(engine); }
 });
 
-void test('throwing waits for the item and uses the distant target direction', async () => {
+void test('cancelling the item for a menu dip discards the unused confirmation', async () => {
     const engine = await startMenuGame();
     try {
-        await addInventoryObject(APPLE, { invlet: 'z' });
+        requireGameLevel().requireAt(10, 10).typ = FOUNTAIN;
+        const moves = game.moves;
+        await type(engine, '#herecmdmenu\n');
+        await choose(engine, 'Dip something');
+
+        await type(engine, '\x1b');
+
+        assert.match(screen(), /Never mind\./);
+        assert.equal(game.moves, moves);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
+    } finally { await finish(engine); }
+});
+
+void test('a distant menu throw silently cancels and keeps the selected apple', async () => {
+    const engine = await startMenuGame();
+    try {
+        const apple = await addInventoryObject(APPLE, { invlet: 'z' });
+        const moves = game.moves;
         await type(engine, '#therecmdmenu\n_lll,');
         await choose(engine, 'Throw something');
         assert.match(screen(), /What do you want to throw/);
+
         await type(engine, 'z');
+
         assert.doesNotMatch(screen(), /In what direction/);
-        await type(engine, '#herecmdmenu\n');
-        assert.doesNotMatch(screen(), /Pick up/);
+        assert.equal(game.moves, moves);
+        assert.ok(game.inventory.includes(apple), 'the cancelled throw must keep the apple in inventory');
+        await type(engine, 'i');
+        assert.match(screen(), /z - .*apple/);
     } finally { await finish(engine); }
 });
 

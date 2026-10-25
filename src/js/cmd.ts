@@ -130,7 +130,7 @@ import {
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
-import { endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
+import { clearCannedCommands, endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import {
@@ -166,7 +166,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandKey } from './input.js';
+import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
 import { terrainCommand } from './terrain_view.js';
@@ -1290,8 +1290,13 @@ export async function rhack(key: number): Promise<void> {
 
     for (;;) {
         const repeated = takeRepeatCommand();
-        let cannedCommand = game._inDoAgain ? null : game._cannedCommands?.shift() ?? null;
-        if (key === 0 && !cannedCommand && !repeated) {
+        // C rhack() consumes unused answers as command keys before parse().
+        // A non-key response at this boundary cancels the remaining queue.
+        const response = game._inDoAgain ? undefined : takeCommandResponse();
+        let cannedCommand = game._inDoAgain || response !== undefined
+            ? null : game._cannedCommands?.shift() ?? null;
+        if (response !== undefined) key = typeof response === 'number' ? response : 0;
+        if (key === 0 && !cannedCommand && !repeated && response === undefined) {
             key = (await readCommandInput()).key;
             delete game._cursorOverride;
         }
@@ -1312,7 +1317,7 @@ export async function rhack(key: number): Promise<void> {
             return;
         }
         const configured = repeated?.binding ?? configuredCommand(key);
-        if (!cannedCommand) {
+        if (!cannedCommand && response === undefined) {
             game._pending_message = '';
             game._retained_message = '';
         }
@@ -1324,8 +1329,7 @@ export async function rhack(key: number): Promise<void> {
             await setTopline(`Unknown command '${visibleCommandKey(key)}'.`);
             // Unlike a rejected known command, C's unknown-key tail keeps
             // pending movement flags until the next command resolves them.
-            game._cannedCommands = [];
-            clearCommandKeys();
+            clearCannedCommands();
             clearRepeatCommand();
             game.context.move = 0;
             setMulti(0);
@@ -1556,11 +1560,7 @@ async function runCommandHandler(binding: CommandBinding, {
     if (cannedCommand?.kind === 'context-menu') {
         const selection = cannedCommand.selection;
         contextMenuResponses(selection);
-        try {
-            await runCommandHandler(binding);
-        } finally {
-            clearCommandKeys();
-        }
+        await runCommandHandler(binding);
         return;
     }
     if (cannedCommand?.kind === 'command') {
@@ -2814,7 +2814,14 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
     case 'name': queueCommandResponses(['m'.charCodeAt(0), { x: selection.x, y: selection.y }]); return;
     case 'quaff': case 'tip': case 'eat': queueCommandResponses([yes]); return;
     case 'dip': queueCommandResponses(['user-input', yes]); return;
-    case 'throw': queueCommandResponses(['user-input', key]); return;
+    case 'throw': {
+        // act_on_act() keeps the raw offset for throwing. For a distant
+        // vector, getdir() reads dirchars[DIR_ERR]; the pinned recorder
+        // reads NUL and cancels silently. Avoid that out-of-bounds read.
+        const throwDirection = kickDirectionKey(selection.x - game.u.ux, selection.y - game.u.uy);
+        queueCommandResponses(['user-input', throwDirection ?? 0]);
+        return;
+    }
     case 'offer': queueCommandResponses(['user-input']); return;
     case 'untrap-here': queueCommandKeys(String.fromCharCode(game.commandBindings.keyForDirection(8))); return;
     case 'travel': game._travelTarget = { x: selection.x, y: selection.y }; return;
@@ -4349,7 +4356,7 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
 }
 
 async function dodip() {
-    await dip({ fountain: dipFountain });
+    if (await dip({ fountain: dipFountain }) === 'cancelled') resetCommandVariables(true);
 }
 
 function visitedDungeonLevels() {

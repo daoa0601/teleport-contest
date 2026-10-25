@@ -1,6 +1,7 @@
 // C do_wear.c:glibr(). Each turn, slippery fingers shed uncursed rings and
 // any wielded weapon that is not welded or an aklys.
 import { canLetGo } from './hero_inventory.js';
+import { clearCannedCommands } from './command_state.js';
 import { removeHeroAccessory } from './accessory.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
@@ -49,7 +50,7 @@ export async function slipFromSlipperyHands(
             if (!ring) continue;
             await removeHeroAccessory(ring, state);
             await dropInventoryObjectAtHero(ring, { state, publish });
-            state._cannedCommands = [];
+            clearCannedCommands(state);
         }
     }
 
@@ -65,7 +66,7 @@ export async function slipFromSlipperyHands(
         slipped++;
         wasTwoWeapon = true;
         await setSecondaryWeapon(null, state);
-        state._cannedCommands = [];
+        clearCannedCommands(state);
         if (await canLetGo(secondary, '', state)) await dropInventoryObjectAtHero(secondary, { state, publish });
     }
 
@@ -86,6 +87,6 @@ export async function slipFromSlipperyHands(
     await publish(`${kind.startsWith('corpse') ? 'The' : 'Your'} ${otherWeapon ? 'other ' : ''}${kind} ${
         slipped ? 'also ' : ''}${slipVerb(plural)} from your ${which}${hand}.`);
     await setPrimaryWeapon(null, state);
-    state._cannedCommands = [];
+    clearCannedCommands(state);
     if (await canLetGo(primary, '', state)) await dropInventoryObjectAtHero(primary, { state, publish });
 }

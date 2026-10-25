@@ -46,7 +46,7 @@ import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, Is_astralevel, MON
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
+import { clearCannedCommands, endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
 import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
@@ -1081,7 +1081,7 @@ async function rollHeroTeleportitis(): Promise<void> {
     await teleportHero({ chooseDestination: askTeleportDestination });
     if (game.program_state.gameover || (game.u.ux === from.x && game.u.uy === from.y)) return;
     if (!heroNextToLeashedFollowers()) await checkHeroLeashes(from.x, from.y);
-    game._cannedCommands = [];
+    clearCannedCommands();
     clearRepeatCommand();
 }
 

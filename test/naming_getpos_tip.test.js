@@ -21,7 +21,7 @@ void test('first map naming keeps the verbose instruction pager after the tip', 
                 await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
             const input = resetInputState();
             input.feed('name\r');
-            queueCommandKeys(soldier ? 'm' : 'f');
+            queueCommandKeys(soldier ? '#m' : '#f');
             planInput(input, t, [
                 { prompt: /Tip: Farlooking or selecting a map location/, keys: ' ' },
                 { prompt: /For instructions[\s\S]*--More--/, keys: ' ' },

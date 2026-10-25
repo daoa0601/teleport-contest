@@ -20,7 +20,7 @@ void test('a queued object kick omits its repeated announcement without asking f
     game.u.ux = club.ox - 1;
     resetInputState();
     clearMessageWindow();
-    queueCommandKeys('l');
+    queueCommandKeys('\x04l');
     pushKeys(' '.repeat(10));
 
     await rhack(4);

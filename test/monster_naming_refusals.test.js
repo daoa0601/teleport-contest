@@ -16,7 +16,7 @@ import { planInput } from './support/planned-input.js';
 async function nameMonsterAt(t, keys) {
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l.' },
         { prompt: /What do you want to call/, keys: `${keys}\r` },
@@ -89,7 +89,7 @@ void test('hallucinated floor naming announces a bogus caller name', async (t) =
     await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('f');
+    queueCommandKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);

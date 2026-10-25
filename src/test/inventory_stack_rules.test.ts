@@ -16,7 +16,7 @@ void test('#adjust collects potions whose irrelevant erosion knowledge differs',
     second.nomerge = false;
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys(first.invlet);
+    queueCommandKeys('#' + first.invlet);
     planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
     await rhack('#'.charCodeAt(0));
     const potions = game.inventory.filter(object => object.otyp === POT_HEALING);
@@ -32,7 +32,7 @@ void test('#adjust leaves revivable troll corpses in separate stacks', async t =
     second.nomerge = false;
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys(first.invlet);
+    queueCommandKeys('#' + first.invlet);
     planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
     await rhack('#'.charCodeAt(0));
     assert.equal(game.inventory.includes(first), true);
@@ -48,7 +48,7 @@ void test('#adjust keeps poisoned darts apart from plain darts', async t => {
     second.nomerge = false;
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys(first.invlet);
+    queueCommandKeys('#' + first.invlet);
     planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
     await rhack('#'.charCodeAt(0));
     assert.equal(game.inventory.filter(object => object.otyp === DART).length, 2);
@@ -64,7 +64,7 @@ void test('#adjust keeps diluted potions apart from full-strength potions', asyn
     second.nomerge = false;
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys(first.invlet);
+    queueCommandKeys('#' + first.invlet);
     planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
     await rhack('#'.charCodeAt(0));
     assert.equal(game.inventory.filter(object => object.otyp === POT_HEALING).length, 2);
@@ -79,7 +79,7 @@ void test('#adjust keeps stamped mail scrolls of different object-id parity apar
     second.nomerge = false;
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys(first.invlet);
+    queueCommandKeys('#' + first.invlet);
     planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
     await rhack('#'.charCodeAt(0));
     const scrolls = game.inventory.filter(object => object.otyp === SCR_MAIL);
@@ -95,7 +95,7 @@ void test('#adjust collects stamped mail scrolls whose object ids share a parity
     second.nomerge = false;
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys(first.invlet);
+    queueCommandKeys('#' + first.invlet);
     planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
     await rhack('#'.charCodeAt(0));
     const scrolls = game.inventory.filter(object => object.otyp === SCR_MAIL);

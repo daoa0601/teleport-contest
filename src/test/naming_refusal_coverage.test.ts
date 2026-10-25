@@ -16,7 +16,7 @@ import { createStaffedShop } from './support/shop.js';
 async function nameMonsterAt(t: TestContext, proposed: string) {
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l' },
         { prompt: /./, keys: '.' }, // select the monster at the cursor
@@ -70,7 +70,7 @@ void test('naming at the hero square declines without a steed', async t => {
     });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);
@@ -87,7 +87,7 @@ void test('floor naming rejects an unnameable object type', async t => {
     await floorObject(ELVEN_DAGGER, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('f');
+    queueCommandKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);
@@ -103,7 +103,7 @@ void test('floor naming refuses an unrecognized object', async t => {
     scroll.dknown = false;
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('f');
+    queueCommandKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);

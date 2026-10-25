@@ -14,7 +14,7 @@ void test('the monster naming command assigns a normalized name without taking a
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l' },
         { prompt: /soldier/, keys: '.' },
@@ -28,7 +28,7 @@ void test('hallucination prevents monster naming before cursor selection', async
     freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, []);
     await rhack('#'.charCodeAt(0));
     assert.equal(game._pending_message, 'You would never recognize it anyway.');
@@ -38,7 +38,7 @@ void test('monster naming keeps printable high bytes and limits the normalized n
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l.' },
         { prompt: /What do you want to call the soldier\?/, keys: `  \u00a0Café   ${'r'.repeat(68)}\r` },
@@ -52,7 +52,7 @@ void test('unique monsters reject a different name', async (t) => {
     const medusa = await createMonsterAt('Medusa', 11, 10, NO_MINVENT);
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l.' },
         { prompt: /What do you want to call Medusa\?/, keys: 'Watcher\r' },
@@ -77,7 +77,7 @@ for (const { lit, sensed } of [
         assert.equal(!!cansee(13, 10), lit, 'Only the selected tail square changes lighting');
         const input = resetInputState();
         input.feed('name\r');
-        queueCommandKeys('m');
+        queueCommandKeys('#m');
         planInput(input, t, [
             { prompt: /instructions/, keys: 'lll.' },
             ...(lit || sensed ? [{ prompt: /What do you want to call the long worm\?/, keys: 'Coil\r' }] : []),

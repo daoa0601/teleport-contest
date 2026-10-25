@@ -96,8 +96,12 @@ export class InputGate {
         this.commandKeys.length = 0;
     }
 
+    takeCommandResponse(): CommandResponse | undefined {
+        return this.commandKeys.shift();
+    }
+
     takeCommandKey(): number | undefined {
-        const response = this.commandKeys.shift();
+        const response = this.takeCommandResponse();
         if (response === undefined || response === 'user-input') return undefined;
         if (typeof response === 'number') return response;
         this.clearCommandKeys();
@@ -214,6 +218,10 @@ export function queueCommandResponses(responses: readonly CommandResponse[]): vo
 
 export function takeCommandPosition(): Position | null | undefined {
     return activeInputGate.takeCommandPosition();
+}
+
+export function takeCommandResponse(): CommandResponse | undefined {
+    return activeInputGate.takeCommandResponse();
 }
 
 export function clearCommandKeys(): void {

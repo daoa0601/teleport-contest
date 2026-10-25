@@ -5,7 +5,7 @@ import { plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
 import { continueFoodMeal } from './eat.js';
 import { game } from './gstate.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { clearCannedCommands, endVoluntaryMultiTurn } from './command_state.js';
 import type { GameState } from './game_state.js';
 
 export async function stopHeroOccupation(
@@ -25,5 +25,5 @@ export async function stopHeroOccupation(
     }
     if (occupation || (state.multi ?? 0) >= 0)
         endVoluntaryMultiTurn(state);
-    state._cannedCommands = [];
+    clearCannedCommands(state);
 }

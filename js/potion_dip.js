@@ -25,7 +25,7 @@ export async function dip({ fountain, }) {
     const object = await chooseDipTarget('dip');
     if (!object) {
         game.context.move = 0;
-        return;
+        return 'cancelled';
     }
     if (object !== 'hands' && await reportCoveredEquipment(object)) {
         game.context.move = 0;
@@ -78,7 +78,7 @@ export async function dip({ fountain, }) {
     });
     if (!potion) {
         game.context.move = 0;
-        return;
+        return 'cancelled';
     }
     game.context.move = Number(await finishDip(object, potion));
 }

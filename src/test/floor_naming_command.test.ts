@@ -13,7 +13,7 @@ void test('floor naming assigns a type name to the object under the hero', async
     await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('f');
+    queueCommandKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
         { prompt: /Call an? .*ring:/, keys: 'Defense\r' },

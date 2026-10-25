@@ -83,7 +83,7 @@ for (const trapped of [false, true]) {
         requirePlayingGame(game);
         const westClub = await floorObject(CLUB, 9, 10, { initialize: false });
         const eastClub = await floorObject(CLUB, 11, 10, { initialize: false });
-        queueCommandKeys('l');
+        queueCommandKeys('\x04l');
         pushKeys(' ');
 
         await rhack(4);

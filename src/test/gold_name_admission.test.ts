@@ -14,7 +14,7 @@ void test('a queued inventory naming choice rejects gold without asking for a na
     setHeroGoldAmount(game, 37);
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('i$');
+    queueCommandKeys('#i$');
     planInput(input, t, []);
 
     await rhack('#'.charCodeAt(0));
