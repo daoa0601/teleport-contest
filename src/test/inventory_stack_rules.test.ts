@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
-import { CORPSE, DART, POT_HEALING } from '../js/object_data.js';
+import { CORPSE, DART, POT_HEALING, SCR_MAIL } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -70,4 +70,35 @@ void test('#adjust keeps diluted potions apart from full-strength potions', asyn
     assert.equal(game.inventory.filter(object => object.otyp === POT_HEALING).length, 2);
     assert.equal(first.quan, 2);
     assert.equal(second.quan, 3);
+});
+
+void test('#adjust keeps stamped mail scrolls of different object-id parity apart', async t => {
+    freshObjectRoom();
+    const first = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20000 });
+    const second = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20001, nomerge: true });
+    second.nomerge = false;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    queueCommandKeys(first.invlet);
+    planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
+    await rhack('#'.charCodeAt(0));
+    const scrolls = game.inventory.filter(object => object.otyp === SCR_MAIL);
+    assert.equal(scrolls.length, 2);
+    assert.equal(scrolls[0]?.quan, 1);
+    assert.equal(scrolls[1]?.quan, 1);
+});
+
+void test('#adjust collects stamped mail scrolls whose object ids share a parity', async t => {
+    freshObjectRoom();
+    const first = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20002 });
+    const second = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20004, nomerge: true });
+    second.nomerge = false;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    queueCommandKeys(first.invlet);
+    planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
+    await rhack('#'.charCodeAt(0));
+    const scrolls = game.inventory.filter(object => object.otyp === SCR_MAIL);
+    assert.equal(scrolls.length, 1);
+    assert.equal(scrolls[0]?.quan, 2);
 });

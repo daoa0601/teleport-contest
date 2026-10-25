@@ -7,7 +7,7 @@ import type { MessagePublisher } from './display.js';
 import { LOST_THROWN } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
-    CORPSE, EGG, OBJECT_MERGE, POT_OIL, TALLOW_CANDLE,
+    CORPSE, EGG, OBJECT_MERGE, POT_OIL, SCR_MAIL, TALLOW_CANDLE,
     TIN, WAX_CANDLE,
 } from './object_data.js';
 import { deallocateObject, deleteObject, stopObjectTimers } from './object_delete.js';
@@ -123,6 +123,10 @@ export function mergable(
     const objName = objectName(obj);
     if ((otmpName && objName && otmpName !== objName)
         || (obj.otyp === CORPSE && !!otmpName !== !!objName)) return false;
+    // C keeps the two stamped-mail flavors (bones/wished vs hand-written)
+    // apart unless the stack ids share a parity.
+    if (obj.otyp === SCR_MAIL && (obj.spe ?? 0) > 0
+        && (obj.o_id % 2) !== (otmp.o_id % 2)) return false;
     if ((otmp.oartifact ?? 0) !== (obj.oartifact ?? 0)) return false;
     if (!!otmp.known !== !!obj.known && impairedSight) return false;
     return true;

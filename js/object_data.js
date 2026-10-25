@@ -352,6 +352,7 @@ export const WAN_LIGHTNING = 434;
 export const SPE_BLANK_PAPER = 407;
 export const SPE_BOOK_OF_THE_DEAD = 409;
 export const SCR_SCARE_MONSTER = 326;
+export const SCR_MAIL = 364;
 export const GOLD_PIECE = 438;
 export const DILITHIUM_CRYSTAL = 439;
 export const DIAMOND = 440;

@@ -4,6 +4,7 @@ import { game } from './gstate.js';
 import { plineWithContinuation as pline, randomDisplayMonsterName } from './display.js';
 import { isContainer } from './container.js';
 import { inventoryItemDescription } from './invent.js';
+import { objectDescription } from './object_description.js';
 import { definiteName, definiteObjectAction, objectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { monsterName, possessiveName } from './monster_name.js';
@@ -70,7 +71,7 @@ export async function probeObject(object, { state = game } = {}) {
             const items = [];
             for (const content of object.contents)
                 items.push({ text: await inventoryItemDescription(content) });
-            await showInventoryWindow([{ heading: '', items }], { title: `Contents of ${name}:` });
+            await showInventoryWindow([{ heading: '', items }], { title: `Contents of ${await probedContentsTitle(object, state)}:` });
         }
         learned = true;
     }
@@ -83,5 +84,20 @@ export async function probeObject(object, { state = game } = {}) {
         object.known = true;
     }
     return learned;
+}
+// C invent.c:cinv_doname(): the probing contents menu names the box with
+// "trapped" inserted before its lock state even though doname() already
+// shows a just-learned trap, so a trapped box is named twice.
+async function probedContentsTitle(object, state) {
+    let name = await objectDescription(object, { state });
+    if (!object.otrapped)
+        return name;
+    const locked = name.indexOf(' locked ');
+    const unlocked = name.indexOf(' unlocked ');
+    if (locked >= 0 && (unlocked < 0 || locked < unlocked))
+        name = name.replace(' locked ', ' trapped locked ');
+    else if (unlocked >= 0)
+        name = name.replace(' unlocked ', ' trapped unlocked ');
+    return name.replace('an trapped ', 'a trapped ');
 }
 //# sourceMappingURL=magic_probe.js.map

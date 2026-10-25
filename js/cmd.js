@@ -1330,6 +1330,14 @@ async function executeCommandAction(binding, options = {}) {
         game._kickedLoc = null;
     }
 }
+// C invent.c:doperminv(). The recorder's tty port is built without
+// TTY_PERM_INVENT (config.h leaves it commented out and windconf.h is
+// WIN32-only), so it does not advertise WC_PERM_INVENT and the command
+// always reports the unsupported window port.
+async function doPermanentInventory() {
+    game.context.move = 0;
+    await pline("Persistent inventory display is not supported by 'tty'.");
+}
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
 async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
@@ -1576,6 +1584,9 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
     }
     else if (ch === '"') {
         enqueueInventoryAction(await inventoryReport('amulet'));
+    }
+    else if (ch === '|') {
+        await doPermanentInventory();
     }
     else if (key === 127) { // Delete: overview of known terrain.
         await doTerrainOverview();
@@ -3392,6 +3403,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
+    ['perminv', doPermanentInventory],
     ['vanquished', doVanquished],
     ['genocided', doGenocided],
     ['terrain', doTerrainOverview],
