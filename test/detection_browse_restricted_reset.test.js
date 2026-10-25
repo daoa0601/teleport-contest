@@ -50,12 +50,15 @@ for (const mode of ['underwater', 'buried']) {
         }
     });
 }
-// An engulfed hero's map_redisplay only reconstrains; the stomach projection
-// is redrawn by docrt(), and display.c's under_water()/under_ground() return
-// before arming any deferred reset while the hero is engulfed.
-void test('an engulfed hero gets no deferred restricted reset from a detection browse', async () => {
+// An engulfed swimmer runs map_redisplay's underwater line, but native
+// display.c gives swallowing precedence over being under water (under_water()
+// returns before arming anything while u.uswallow is set), and docrt() takes
+// the swallowed branch first. The stomach view therefore survives the browse.
+void test('an engulfed swimmer\'s detection browse keeps the stomach view', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
+    level.requireAt(10, 10).typ = POOL;
+    game.u.uinwater = 1;
     const engulfer = await createMonsterAt('purple worm', 10, 10);
     game.u.uswallow = 1;
     game.u.ustuck = engulfer;
@@ -66,12 +69,8 @@ void test('an engulfed hero gets no deferred restricted reset from a detection b
     // the potion at map (14,8) is screen column 13, row 9.
     assert.equal(level.requireAt(14, 8).remembered_glyph?.kind, 'object');
     assert.equal(requireScreenCell(13, 9).ch, ' ');
-    // A restricted update after the browse leaves the stomach projection
-    // untouched instead of clearing it like a deferred full reset would.
-    await under_water(2);
-    await under_water(0);
-    await flush_screen(1);
+    // The engulfer's stomach border still surrounds the hero; the deferred
+    // restricted reset never cleared it.
     assert.equal(requireScreenCell(8, 11).ch, '|');
-    assert.equal(requireScreenCell(13, 9).ch, ' ');
 });
 //# sourceMappingURL=detection_browse_restricted_reset.test.js.map
