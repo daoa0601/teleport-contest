@@ -17,12 +17,12 @@ import { classifyStatusTerrain } from './status_terrain.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2 } from './rng.js';
-import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
-import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
+import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
+import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
+import { bot, checkGoldSymbol, clearMessageWindow, currentBoulderSymbol, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
@@ -455,8 +455,14 @@ interface ConfigurationSettings {
     characterFilters?: CharacterFilters;
     fruit?: string;
     symset?: string | undefined;
+    // Set when a symset choice explicitly reverted to "default".
+    symsetCleared?: boolean;
+    rogueSymset?: string | undefined;
+    rogueSymsetCleared?: boolean;
     // gs.showsyms[SYM_BOULDER + SYM_OFF_X] override from BOULDER=.
     boulderSym?: string;
+    // optfn_boulder() also writes the rogue set's override.
+    rogueBoulderSym?: string;
     preferred_pet?: PetPreference;
     monTelecontrol?: boolean;
     tutorial_set?: boolean;
@@ -678,6 +684,9 @@ type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'comm
     fruitName?: string;
     preferred_pet?: string;
     boulderSym?: string;
+    rogueBoulderSym?: string;
+    symset?: string | null | undefined;
+    rogueSymset?: string | null | undefined;
 };
 
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
@@ -694,6 +703,9 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     if (result.preferred_pet !== undefined) state.preferred_pet = result.preferred_pet;
     // cnf_line_BOULDER() writes straight into the live symbol override.
     if (result.boulderSym !== undefined) state.boulderSym = result.boulderSym;
+    if (result.rogueBoulderSym !== undefined) state.rogueBoulderSym = result.rogueBoulderSym;
+    if (result.symset !== undefined || result.symsetCleared) state.symset = result.symset || null;
+    if (result.rogueSymset !== undefined || result.rogueSymsetCleared) state.rogueSymset = result.rogueSymset || null;
     return result;
 }
 
@@ -1724,11 +1736,39 @@ function parseConfiguration(
                     // clears the choice, and reports the error; "default"
                     // itself clears the choice without loading (files.c
                     // read_sym_file()).
-                    if (isDefaultSymsetName(val)) result.symset = undefined;
+                    if (isDefaultSymsetName(val)) { result.symset = undefined; result.symsetCleared = true; }
                     else if (SYMSET_NAMES[val.toLowerCase()] === true) result.symset = val;
                     else {
                         result.symset = undefined;
+                        result.symsetCleared = true;
                         addError(`Unable to load symbol set "${val}" from "symbols"`);
+                    }
+                }
+                else if (canonical === 'roguesymset') {
+                    // optfn_roguesymset() loads the rogue set the same way;
+                    // restrictions only filter the interactive menu.
+                    if (isDefaultSymsetName(val)) { result.rogueSymset = undefined; result.rogueSymsetCleared = true; }
+                    else if (SYMSET_NAMES[val.toLowerCase()] === true) result.rogueSymset = val;
+                    else {
+                        result.rogueSymset = undefined;
+                        result.rogueSymsetCleared = true;
+                        addError(`Unable to load symbol set "${val}" from "symbols"`);
+                    }
+                }
+                else if (canonical === 'boulder') {
+                    // optfn_boulder() decodes the raw text after the
+                    // delimiter (spaces included) and writes the first byte
+                    // into both symbol sets; the BOULDER= statement above
+                    // only touches the primary set.
+                    const raw = stripped.slice(colonIdx + 1);
+                    if (!raw) addError(`Missing parameter for '${stripped}'`);
+                    else {
+                        const parsed = parseBoulderSymbolValue(raw);
+                        if ('error' in parsed) addError(parsed.error);
+                        else {
+                            result.boulderSym = parsed.symbol;
+                            result.rogueBoulderSym = parsed.symbol;
+                        }
                     }
                 }
                 else if (canonical === 'menu_headings') {
@@ -1801,6 +1841,9 @@ function parseConfiguration(
                     const option = requestBooleanByName.get(canonical.toLowerCase());
                     if (option) setConfigurationBoolean(result, option, value);
                     else if (canonical === 'bones') result.flags.bones = value;
+                    // optfn_boulder()'s string_for_opt(FALSE) demands a
+                    // value and echoes the typed element verbatim.
+                    else if (canonical === 'boulder') addError(`Missing parameter for '${stripped}'`);
                     else if (canonical === 'reroll') result.flags.reroll = value;
                     // optfn_menu_headings() without a value: inverse, or
                     // none when negated.
@@ -2358,6 +2401,27 @@ const SYMSET_HANDLINGS: Record<string, string> = {
     enhanced1: 'UTF8', enhanced2: 'UTF8',
 };
 
+// dat/symbols `start:` entries in file order with their `Description:` and
+// `Restrictions:` lines, minus MACgraphics whose H_MAC handling both
+// do_symset() menus exclude (it stays loadable through the option).
+// fields: name, description, restricted to primary sets, restricted to
+// rogue sets.
+const SYMSET_LIST: ReadonlyArray<readonly [name: string, desc: string, primary: boolean, rogue: boolean]> = [
+    ['plain', "same as default symbols, except '+' for corner walls", false, false],
+    ['Blank', 'completely blank symbols', false, false],
+    ['IBMgraphics', 'special line-drawing characters used for walls', false, false],
+    ['IBMGraphics_1', '', false, false],
+    ['IBMGraphics_2', '', false, false],
+    ['RogueIBM', '', false, true],
+    ['RogueEpyx', 'rogue level color symbol set like Epyx Rogue', false, true],
+    ['RogueWindows', '', false, true],
+    ['curses', 'approximation of IBMgraphics using DECgraphics', true, false],
+    ['DECgraphics', 'special line-drawing characters used for walls', true, false],
+    ['Enhanced1', 'Enhanced with Unicode glyphs and 24-bit color', true, false],
+    ['Enhanced2', 'Enhanced with more Unicode glyphs and 24-bit color', true, false],
+    ['AmigaFont', 'Amiga hack.font line-drawing and effect characters', false, false],
+];
+
 // files.c:read_sym_file() accepts a name that matches no `start:` line only
 // when it fuzzymatches "Default symbols" (ignoring spaces, '-' and '_') or
 // is exactly "default"; that choice clears the set instead of loading one.
@@ -2374,6 +2438,14 @@ function symsetMenuValue(): string {
     const active = !Is_rogue_level(game.u?.uz) ? ', active' : '';
     const handling = SYMSET_HANDLINGS[name.toLowerCase()] ?? null;
     return `${name}${active}${handling ? `, handler=${handling}` : ''}`;
+}
+
+// options.c:optfn_roguesymset() get_val: the loaded set's name and
+// ", active" while the rogue set is current; no handler is reported.
+function rogueSymsetMenuValue(): string {
+    const name = game.rogueSymset;
+    if (!name) return 'default';
+    return `${name}${Is_rogue_level(game.u?.uz) ? ', active' : ''}`;
 }
 
 // coloratt.c:clr2colorname()/attr2attrname(): the first canonical table
@@ -2517,7 +2589,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('pettype', preferredPetDescription()),
             readonly('soundlib', 'nosound'),
             choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
-            choice('boulder', 'boulder                 [`]'),
+            // optfn_boulder() get_val: the primary override, else the
+            // active set's rock-class symbol (options.c:1238-1241).
+            choice('boulder', `boulder                 [${game.boulderSym || currentBoulderSymbol()}]`),
             choice('crash_email', 'crash_email             [unknown]'),
             choice('crash_name', 'crash_name              [unknown]'),
             choice('crash_urlmax', 'crash_urlmax            [-1]'),
@@ -2537,7 +2611,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('pickup_burden', `pickup_burden           [${compoundMenuValue('pickup_burden')}]`),
             choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
             choice('pile_limit', 'pile_limit              [5]'),
-            choice('roguesymset', 'roguesymset             [default]'),
+            choice('roguesymset', `roguesymset             [${rogueSymsetMenuValue()}]`),
             choice('runmode', `runmode                 [${compoundMenuValue('runmode')}]`),
             choice('scores', `scores                  [${scoreDisplayDescription()}]`),
             choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),
@@ -2917,6 +2991,7 @@ async function doRequestMenuOptions(): Promise<void> {
         skipHelp = true;
     }
     if (needsRedraw) {
+        checkGoldSymbol();
         reglyph_darkroom();
         await docrt();
     }
@@ -2935,6 +3010,9 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'menu_headings') await editMenuHeadings();
     else if (name === 'sortloot') await editSortLoot();
     else if (name === 'sortdiscoveries') await chooseDiscoverySort(0);
+    else if (name === 'symset') return await editSymset(false);
+    else if (name === 'roguesymset') return await editSymset(true);
+    else if (name === 'boulder') return await editBoulderSymbol();
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {
@@ -2951,7 +3029,79 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
             } else await optionError("Missing parameter for 'scores:'");
         } else await setTextOption(name, value);
     }
+
     return false;
+}
+
+// symbols.c:do_symset(): pick-list of every set the symbols file carries,
+// filtered by restrictions, with "Default Symbols" first and the current
+// choice preselected.  handler_symset() flags a redraw even when nothing
+// changes; switch_symbols()/assign_graphics() only re-skin the glyphs.
+async function editSymset(rogueflag: boolean): Promise<boolean> {
+    const current = (rogueflag ? game.rogueSymset : game.symset)?.toLowerCase() ?? null;
+    // add_menu() assigns the letters in order, so spelling them out keeps
+    // the native rows while letting showInventoryWindow preselect the
+    // current choice for PICK_ONE's "preset and new pick" resolution.
+    const items: InventoryMenuItem<string>[] = [
+        { key: 'a', value: 'default', text: 'Default Symbols' },
+        ...SYMSET_LIST.filter(([, , primary, rogue]) => rogueflag ? !primary : !rogue)
+            .map(([name, desc], index) => ({
+                key: String.fromCharCode('b'.charCodeAt(0) + index),
+                value: name,
+                text: `${name.padEnd(17)} ${desc}`,
+            })),
+    ];
+    const currentKey = current
+        ? items.find(item => item.value?.toLowerCase() === current)?.key ?? null
+        : 'a';
+    const selection = await showInventoryWindow([{ items }], {
+        title: rogueflag ? 'Select rogue level symbol set:' : 'Select symbol set:',
+        pickMode: PICK_ONE,
+        preselectedKey: currentKey,
+    });
+    if (selection.key !== 27) {
+        // do_symset() leaves defindx at 0 when the current choice has no
+        // row in the picker (a rogue-restricted primary set, the H_MAC
+        // set); an empty pick is then nothing_to_do, and only a listed
+        // preset is reapplied.
+        const preset = rogueflag ? game.rogueSymset : game.symset;
+        if (selection.value === undefined && currentKey === null) return true;
+        const chosen = selection.value === undefined ? preset ?? null
+            : selection.value === 'default' ? null : selection.value;
+        if (rogueflag) game.rogueSymset = chosen;
+        else game.symset = chosen;
+        const rogueLevel = Is_rogue_level(game.u.uz);
+        // do_symset() calls switch_symbols(TRUE) for every named set;
+        // that copies primary symbols without changing currentgraphics.
+        if (chosen !== null || !rogueflag && !rogueLevel)
+            game.shownSymbols = { rogue: false, name: game.symset ?? null };
+        if (rogueflag && rogueLevel)
+            game.shownSymbols = { rogue: true, name: game.rogueSymset ?? null };
+        reglyphSymbolSet();
+    }
+    return true;
+}
+
+// doset() gives boulder no handler, so the menu prompts and re-runs
+// optfn_boulder() through parseoptions(); mid-game the new symbol lands in
+// both symbol sets' overrides and go.opt_need_redraw triggers doredraw().
+async function editBoulderSymbol(): Promise<boolean> {
+    const value = await getLine('Set boulder to what?',
+        (_character: string, key: number) => key >= 32 && key < 127);
+    if (value === null) return false;
+    if (!value) {
+        await optionError("Missing parameter for 'boulder:'");
+        return false;
+    }
+    const parsed = parseBoulderSymbolValue(value);
+    if ('error' in parsed) {
+        await optionError(parsed.error);
+        return false;
+    }
+    game.boulderSym = parsed.symbol;
+    game.rogueBoulderSym = parsed.symbol;
+    reglyphBoulderSymbols();
+    return true;
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
@@ -3071,7 +3221,11 @@ function simpleMenuSections(): PageLocalMultiSelectSection<string>[] {
                 { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE,
                     itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
             ];
-            for (const [name, description] of names) {
+            for (const [listedName, description] of names) {
+                // doset_simple() shows the rogue set's row in place of
+                // symset while the hero is on the Rogue level.
+                const name = listedName === 'symset' && Is_rogue_level(game.u?.uz)
+                    ? 'roguesymset' : listedName;
                 const option = options.find(item => item.selectable !== false && item.value === name);
                 if (!option || option.selectable === false) throw new Error(`Missing simple option: ${name}`);
                 const boolean = requestBooleanByName.get(name.toLowerCase());
@@ -3115,6 +3269,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
             needsRedraw = applyBooleanVisualChange(option[0]);
         } else needsRedraw = await editCompoundOption(name, false);
         if (needsRedraw) {
+            checkGoldSymbol();
             reglyph_darkroom();
             await docrt();
             await flush_screen(1);

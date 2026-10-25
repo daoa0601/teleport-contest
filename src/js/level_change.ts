@@ -21,6 +21,7 @@ import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
     flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, newsym,
+    checkGoldSymbol, reglyphSymbolSet,
 } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -321,10 +322,15 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         recordOverviewBranch(oldDepth, destinationDepth);
 
     const cached = game._levelCache.get(levelCacheKey(destinationDepth));
+    // goto_level() assigns the destination symbols whenever either end
+    // of the transition is Rogue, discarding do_symset()'s displayed copy.
+    const reassignSymbols = Is_rogue_level(oldDepth) || Is_rogue_level(destinationDepth);
+    if (reassignSymbols) delete game.shownSymbols;
     game.u.uz0 = oldDepth;
     game.u.uz = destinationDepth;
     game.u.utolev = { ...destinationDepth };
     game.u.utotype = 0;
+    checkGoldSymbol();
     const dungeon = game.dungeons[destinationDepth.dnum];
     if (!dungeon)
         throw new Error(`Destination dungeon ${destinationDepth.dnum} is not in the dungeon graph`);
@@ -364,6 +370,13 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         );
         await mklev();
     }
+
+    // Every arrival repaints from glyph numbers against the live symbols
+    // (goto_level() → docrt()), so a cached destination re-skins under
+    // whatever symbol or boulder override changed while the hero was
+    // elsewhere.  Freshly generated levels carry no stale memory, and the
+    // pass is idempotent there.
+    reglyphSymbolSet();
 
     const beforeGlow = async () => {
         if (postMessage.slice(0, 15).toLowerCase() !== 'you materialize') return;

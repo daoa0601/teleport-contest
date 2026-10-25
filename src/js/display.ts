@@ -172,16 +172,44 @@ const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 
+function shownSymbolSet(state: GameState = game) {
+    const rogue = Is_rogue_level(state.u?.uz, state);
+    return state.shownSymbols ?? {
+        rogue, name: (rogue ? state.rogueSymset : state.symset) ?? null,
+    };
+}
+
+function usesDecSymbols(): boolean {
+    const symbols = shownSymbolSet();
+    return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
+}
+
 function activeObjectSymbols() {
-    return Is_rogue_level(game.u?.uz)
-        ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
+    const shown = shownSymbolSet();
+    if (!shown.rogue) return OBJECT_CLASS_SYMBOLS;
+    if (shown.name) {
+        const key = shown.name.toLowerCase();
+        if (ROGUE_SYMSETS[key]?.blank) return BLANK_OBJECT_SYMBOLS;
+        return ROGUE_SYMSET_OBJECT_TABLES[key] ?? ROGUE_OBJECT_SYMBOLS;
+    }
+    return ROGUE_OBJECT_SYMBOLS;
+}
+
+export function objectClassSymbol(index: number): string {
+    return activeObjectSymbols()[index] ?? '';
 }
 
 // symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
-// else the default rock-class symbol.
+// else the default rock-class symbol.  optfn_boulder() fills both sets'
+// overrides, while the BOULDER= statement (cfgfiles.c) only fills the
+// primary one. A named primary selection can display that slot on Rogue.
 export function currentBoulderSymbol(state: GameState = game): string {
-    return !Is_rogue_level(state.u?.uz) && state.boulderSym
-        ? state.boulderSym : '`';
+    if (shownSymbolSet(state).rogue) {
+        const set = activeRogueSymset(state);
+        return state.rogueBoulderSym
+            || (set?.blank ? BLANK_SYMBOL : '`');
+    }
+    return state.boulderSym || '`';
 }
 
 const M3_INFRAVISIBLE = 0x0200;
@@ -491,7 +519,7 @@ export function reglyph_darkroom(): void {
     const darkRoom = game.flags.dark_room ?? true;
     const showDarkFloor = darkRoom && game.flags.color !== false
         && !Is_rogue_level(game.u.uz);
-    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
+    const dec = usesDecSymbols();
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const loc = game.level.at(x, y);
@@ -525,6 +553,106 @@ export function reglyph_darkroom(): void {
             }
         }
     }
+}
+
+// symbols.c:switch_symbols()/assign_graphics() keep every glyph number and
+// let doredraw() resolve characters again; mirror that for the map memory,
+// which stores its character. Object classes differ on Rogue, and terrain
+// characters and branch wall colors also depend on the selected set.
+export function reglyphSymbolSet(): void {
+    if (!game.level) return;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = game.level.at(x, y);
+            const memory = loc?.remembered_glyph;
+            if (!loc || !memory) continue;
+            if (memory.kind === 'object' && !memory.statueGlyph) {
+                const ch = memory.otyp === BOULDER ? currentBoulderSymbol()
+                    : activeObjectSymbols()[objectClassForType(memory.otyp)] ?? memory.ch;
+                loc.remembered_glyph = { ...memory, ch };
+                continue;
+            }
+            if (memory.kind === 'trap') {
+                loc.remembered_glyph = { ...memory,
+                    ch: transientTrapGlyph({ ttyp: memory.trapType }).ch };
+                continue;
+            }
+
+            if (memory.kind === 'object' && memory.statueGlyph && memory.corpsenm !== undefined) {
+                // A displayed rogue set can replace the monster-class
+                // symbol a statue shows (Blank blanks every class).
+                loc.remembered_glyph = { ...memory,
+                    ch: monsterClassSymbol(MONSTER_SYMBOL[memory.corpsenm] ?? 0) };
+                continue;
+            }
+            const glyphNumber = memory.glyph;
+            if (memory.kind !== 'terrain'
+                || typeof glyphNumber !== 'number') continue;
+            const index = rememberedTerrainIndex(glyphNumber);
+            if (index === null) continue;
+            // display.c:reglyph_darkroom() points S_darkroom at the room
+            // symbol only while dark-room display is active; otherwise the
+            // stored character stays the blank SYM_NOTHING one.
+            if (index === CmapSymbol.darkroom) {
+                const showDarkFloor = (game.flags.dark_room ?? true)
+                    && game.flags.color !== false && !shownSymbolSet().rogue;
+                const room = cmapSymbolAppearance(CmapSymbol.room);
+                loc.remembered_glyph = { ...memory,
+                    ch: showDarkFloor ? room.ch : ' ',
+                    decgfx: showDarkFloor ? room.dec : false };
+                continue;
+            }
+            const appearance = cmapSymbolAppearance(index);
+            const wall = index >= CmapSymbol.vwall && index <= CmapSymbol.trwall;
+            const offset = glyphNumber - (index - CmapSymbol.vwall);
+            // clear_all_glyphmap_colors() drops the previous set's G_ wall
+            // colors first; a set that declares its own re-colors the
+            // branch walls (the glyph range names the branch), and any
+            // other set leaves them their set-independent gray.
+            let color = memory.color;
+            if (wall) {
+                if (BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? ''))
+                    color = decWallColors.get(offset) ?? memory.color;
+                else if ([CLR_BROWN, CLR_RED, CLR_YELLOW, CLR_BLUE].includes(memory.color))
+                    color = NO_COLOR;
+            }
+            loc.remembered_glyph = { ...memory, ch: appearance.ch,
+                color: color ?? memory.color, decgfx: appearance.dec };
+        }
+    }
+}
+
+// optfn_boulder() refreshes showsyms[SYM_BOULDER] mid-game and doredraw()
+// repaints every boulder through it, so already-displayed boulders adopt
+// the new symbol immediately.
+export function reglyphBoulderSymbols(): void {
+    if (!game.level) return;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = game.level.at(x, y);
+            const memory = loc?.remembered_glyph;
+            if (!loc || !memory || memory.kind !== 'object' || memory.otyp !== BOULDER) continue;
+            loc.remembered_glyph = { ...memory, ch: currentBoulderSymbol() };
+        }
+    }
+}
+
+// glyphs.c:glyph_to_cmap() restricted to the terrain memory can hold; trap,
+// beam, and effect glyphs keep set-independent characters.
+function rememberedTerrainIndex(glyph: number): number | null {
+    if (glyph === GlyphOffset.cmapStone) return CmapSymbol.stone;
+    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
+        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
+    if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
+        return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
+    if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB) return CmapSymbol.altar;
+    if (glyph >= GlyphOffset.cmapB && glyph < GlyphOffset.zap) {
+        const index = glyph - GlyphOffset.cmapB + CmapSymbol.grave;
+        // The range continues into trap glyphs, which have no
+        // dungeon-symbol table entry and set-independent characters.
+        return index < CmapSymbol.arrowTrap ? index : null;
+    }
+    return null;
 }
 
 function roomMemoryGlyph(dark: boolean, dec: boolean): DisplayGlyph {
@@ -839,12 +967,24 @@ function projectedTerrainType(loc: MapLocation) {
 }
 
 function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
+    const appearance = terrainGlyphChars(loc, x, y);
+    if (!shownSymbolSet().rogue) return appearance;
+    // Every terrain character resolves through the displayed rogue set's
+    // table layered over the base rogue symbols (showsyms[] after
+    // assign_graphics(ROGUESET)): rooms, corridors, unseen-wall stone and
+    // everything Blank replaces included.  show_glyph_cell() applies the
+    // Rogue color rules at paint time.
+    const index = terrainSymbolIndex(loc, x, y, projectedTerrainType(loc), appearance);
+    return { ...cmapSymbolAppearance(index), color: NO_COLOR };
+}
+
+function terrainGlyphChars(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
     const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
-    const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
+    const dec = usesDecSymbols();
     // symbols.c:load_symset() applies these sets' G_ wall colors independently
     // of character handling; the default set leaves wallcolors[] gray.
-    const hasBranchWallColors = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i.test(game.symset ?? '');
+    const hasBranchWallColors = BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? '');
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
@@ -885,8 +1025,6 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
             ? { ch: 'q', color: wallColor, dec: true }
             : { ch: 'x', color: wallColor, dec: true };
     case DOOR:
-        if (rogue)
-            return { ch: '+', color: NO_COLOR, dec: false };
         if (!loc.doormask || loc.doormask & D_BROKEN)
             return dec
                 ? { ch: '~', color: NO_COLOR, dec: true }
@@ -994,7 +1132,7 @@ function displayMonsterGlyph(
 ): GlyphAppearance & Extract<GlyphMetadata, { kind: 'monster' }> {
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
-        ch: MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] || '?',
+        ch: monsterClassSymbol(MONSTER_SYMBOL[mnum] ?? 0) || '?',
         // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
         color: rawColor === CLR_GRAY ? NO_COLOR : rawColor,
         decgfx: false, kind: 'monster', mnum, piletop: false,
@@ -1032,7 +1170,8 @@ function heroDisplayGlyph(): DisplayGlyph {
     const glyph = displayMonsterGlyph(mnum,
         polymorphed ? !!game.u.mfemale : !!game.flags.female);
     return polymorphed ? glyph
-        : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
+        : { ...glyph, ch: game.flags.showrace ? glyph.ch
+            : monsterClassSymbol(HUMAN_CLASS_INDEX) || '@', color: CLR_WHITE };
 }
 
 // symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
@@ -1040,6 +1179,181 @@ function heroDisplayGlyph(): DisplayGlyph {
 const rogueFurnitureSymbols = new Map<number, string>([
     [CmapSymbol.ndoor, '+'], [CmapSymbol.vodoor, '+'], [CmapSymbol.hodoor, '+'],
     [CmapSymbol.upstair, '%'], [CmapSymbol.dnstair, '%'],
+]);
+
+// dat/symbols `start:` bodies for the sets a Rogue level can display,
+// layered over the base rogue set exactly as load_symset() replaces the
+// entries update_rogue_symset() writes. `blank` models the Blank set,
+// which replaces every symbol with \032.
+interface RogueSymsetSymbols {
+    cmap?: ReadonlyMap<number, string>;
+    blank?: boolean;
+    objectClasses?: Partial<Record<number, string>>;
+    boulderSymbol?: string;
+    trapSymbol?: string;
+    humanSymbol?: string;
+    ibm?: boolean;
+    // `Color: Yes` clears nocolor; together with IBM handling, that turns
+    // the Rogue-level color tables on.
+    color?: boolean;
+}
+
+const ROGUE_DOUBLE_WALLS: ReadonlyMap<number, string> = new Map([
+    [CmapSymbol.vwall, '\u00ba'], [CmapSymbol.hwall, '\u00cd'],
+    [CmapSymbol.tlcorn, '\u00c9'], [CmapSymbol.trcorn, '\u00bb'],
+    [CmapSymbol.blcorn, '\u00c8'], [CmapSymbol.brcorn, '\u00bc'],
+    [CmapSymbol.crwall, '\u00ce'], [CmapSymbol.tuwall, '\u00ca'],
+    [CmapSymbol.tdwall, '\u00cb'], [CmapSymbol.tlwall, '\u00b9'], [CmapSymbol.trwall, '\u00cc'],
+    [CmapSymbol.ndoor, '\u00ce'], [CmapSymbol.vodoor, '\u00ce'], [CmapSymbol.hodoor, '\u00ce'],
+    [CmapSymbol.room, '\u00fa'], [CmapSymbol.corr, '\u00b1'], [CmapSymbol.litcorr, '\u00b2'],
+    [CmapSymbol.engrcorr, '\u00b1'],
+    [CmapSymbol.upstair, '\u00f0'], [CmapSymbol.dnstair, '\u00f0'],
+    [CmapSymbol.brupstair, '\u00f0'], [CmapSymbol.brdnstair, '\u00f0'],
+]);
+
+// The three IBMgraphics sets share these S_ entries; their doorway,
+// corridor and floor replacements differ in dat/symbols.
+const IBM_COMMON_SYMBOLS: ReadonlyMap<number, string> = new Map([
+    [CmapSymbol.vwall, '\xb3'], [CmapSymbol.hwall, '\xc4'],
+    [CmapSymbol.tlcorn, '\xda'], [CmapSymbol.trcorn, '\xbf'],
+    [CmapSymbol.blcorn, '\xc0'], [CmapSymbol.brcorn, '\xd9'],
+    [CmapSymbol.crwall, '\xc5'], [CmapSymbol.tuwall, '\xc1'],
+    [CmapSymbol.tdwall, '\xc2'], [CmapSymbol.tlwall, '\xb4'], [CmapSymbol.trwall, '\xc3'],
+    [CmapSymbol.engroom, '\xee'],
+    [CmapSymbol.vbeam, '\xb3'], [CmapSymbol.hbeam, '\xc4'],
+    [CmapSymbol.swallowTopLeft + 3, '\xb3'], [CmapSymbol.swallowTopLeft + 4, '\xb3'],
+    [CmapSymbol.explosionTopLeft + 3, '\xb3'], [CmapSymbol.explosionTopLeft + 5, '\xb3'],
+]);
+
+const ROGUE_SYMSETS: Readonly<Record<string, RogueSymsetSymbols>> = {
+    plain: { cmap: new Map([
+        [CmapSymbol.tlcorn, '+'], [CmapSymbol.trcorn, '+'],
+        [CmapSymbol.blcorn, '+'], [CmapSymbol.brcorn, '+'],
+        [CmapSymbol.crwall, '+'], [CmapSymbol.tuwall, '+'],
+        [CmapSymbol.tdwall, '+'], [CmapSymbol.tlwall, '+'], [CmapSymbol.trwall, '+'],
+    ]) },
+    blank: { blank: true },
+    ibmgraphics: {
+        ibm: true,
+        cmap: new Map([...IBM_COMMON_SYMBOLS,
+            [CmapSymbol.ndoor, '\xfa'], [CmapSymbol.vodoor, '\xfe'], [CmapSymbol.hodoor, '\xfe'],
+            [CmapSymbol.bars, '\xf0'], [CmapSymbol.tree, '\xf1'], [CmapSymbol.room, '\xfa'],
+            [CmapSymbol.corr, '\xb0'], [CmapSymbol.litcorr, '\xb1'], [CmapSymbol.engrcorr, '\xb0'],
+            [CmapSymbol.fountain, '\xf4'], [CmapSymbol.sink, '\xf4'],
+            [CmapSymbol.pool, '\xf7'], [CmapSymbol.ice, '\xfa'],
+            [CmapSymbol.lava, '\xf7'], [CmapSymbol.lavawall, '\xf7'],
+            [CmapSymbol.vodbridge, '\xfa'], [CmapSymbol.hodbridge, '\xfa'], [CmapSymbol.water, '\xf7'],
+        ]),
+    },
+    ibmgraphics_1: { ibm: true, cmap: IBM_COMMON_SYMBOLS },
+    ibmgraphics_2: {
+        ibm: true,
+        cmap: new Map([...IBM_COMMON_SYMBOLS,
+            [CmapSymbol.vodoor, '\xfe'], [CmapSymbol.hodoor, '\xfe'],
+            [CmapSymbol.corr, '\xb0'], [CmapSymbol.litcorr, '\xb1'], [CmapSymbol.engrcorr, '\xb0'],
+        ]),
+    },
+    amigafont: { cmap: new Map([
+        [CmapSymbol.stone, ' '], [CmapSymbol.vwall, '\xc0'], [CmapSymbol.hwall, '\xc1'],
+        [CmapSymbol.tlcorn, '\xc2'], [CmapSymbol.trcorn, '\xc3'],
+        [CmapSymbol.blcorn, '\xc4'], [CmapSymbol.brcorn, '\xc5'], [CmapSymbol.crwall, '\xc6'],
+        [CmapSymbol.tuwall, '\xd8'], [CmapSymbol.tdwall, '\xd6'],
+        [CmapSymbol.tlwall, '\xd7'], [CmapSymbol.trwall, '\xd5'],
+        [CmapSymbol.ndoor, '\xd9'], [CmapSymbol.vodoor, '\x91'], [CmapSymbol.hodoor, '\x92'],
+        [CmapSymbol.vcdoor, '\x93'], [CmapSymbol.hcdoor, '\x94'],
+        [CmapSymbol.bars, '#'], [CmapSymbol.tree, '#'], [CmapSymbol.room, '.'], [CmapSymbol.darkroom, ' '],
+        [CmapSymbol.corr, '\xe5'], [CmapSymbol.litcorr, '\xe5'],
+        [CmapSymbol.upstair, '<'], [CmapSymbol.dnstair, '>'],
+        [CmapSymbol.upladder, '<'], [CmapSymbol.dnladder, '>'], [CmapSymbol.altar, '_'],
+        [CmapSymbol.grave, '\\'], [CmapSymbol.throne, '#'], [CmapSymbol.sink, '{'], [CmapSymbol.fountain, '}'],
+        [CmapSymbol.pool, '*'], [CmapSymbol.ice, '}'], [CmapSymbol.lava, '*'],
+        [CmapSymbol.vodbridge, '*'], [CmapSymbol.hodbridge, '#'],
+        [CmapSymbol.vcdbridge, '#'], [CmapSymbol.hcdbridge, '.'], [CmapSymbol.air, '#'], [CmapSymbol.cloud, '}'],
+        [CmapSymbol.vbeam, '\xf1'], [CmapSymbol.hbeam, '\xf0'],
+        [CmapSymbol.lslant, '\xf2'], [CmapSymbol.rslant, '\xf3'],
+        [CmapSymbol.digbeam, '*'], [CmapSymbol.flashbeam, '!'],
+        [CmapSymbol.boomleft, '{'], [CmapSymbol.boomright, '}'],
+        ...['@', '&', '*', '#'].map((ch, index): [number, string] => [CmapSymbol.shieldFirst + index, ch]),
+        ...['\xf4', '\xf5', '\xf6', '\xf7', '\xef', '\xf8', '\xf9', '\xfa']
+            .map((ch, index): [number, string] => [CmapSymbol.swallowTopLeft + index, ch]),
+        ...['\xe6', '\xea', '\xe7', '\xec', '\xd4', '\xed', '\xe8', '\xeb', '\xe9']
+            .map((ch, index): [number, string] => [CmapSymbol.explosionTopLeft + index, ch]),
+    ]) },
+    rogueibm: {
+        ibm: true,
+        cmap: ROGUE_DOUBLE_WALLS,
+        objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
+    },
+    rogueepyx: {
+        ibm: true,
+        cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
+        objectClasses: { 2: '\x18', 3: '[', 4: '=', 5: '\x0c', 6: '(',
+            7: '\x05', 8: '\u00ad', 9: '\x0e', 10: '+', 11: '\u00e7',
+            12: '\x0f', 13: '\x0f', 14: '`', 15: '0', 16: '_', 17: '.' },
+        trapSymbol: '\x04',
+        humanSymbol: '\x01',
+        color: true,
+    },
+    roguewindows: {
+        ibm: true,
+        cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
+        objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
+    },
+};
+
+const BLANK_SYMBOL = '\x1a';
+const BLANK_OBJECT_SYMBOLS: readonly string[]
+    = ROGUE_OBJECT_SYMBOLS.map(() => BLANK_SYMBOL);
+const ROGUE_SYMSET_OBJECT_TABLES: Readonly<Record<string, readonly string[]>> = Object.fromEntries(
+    Object.entries(ROGUE_SYMSETS)
+        .filter(([, set]) => set.objectClasses !== undefined)
+        .map(([name, set]) => [name, ROGUE_OBJECT_SYMBOLS.map((symbol, index) =>
+            set.objectClasses?.[index] ?? symbol)]),
+);
+
+function activeRogueSymset(state: GameState = game): RogueSymsetSymbols | null {
+    const shown = shownSymbolSet(state);
+    if (!shown.rogue || !shown.name) return null;
+    return ROGUE_SYMSETS[shown.name.toLowerCase()] ?? null;
+}
+
+function rogueCmapSymbol(set: RogueSymsetSymbols | null, symbol: number): string | undefined {
+    if (!set) return undefined;
+    if (set.blank) return BLANK_SYMBOL;
+    return set.cmap?.get(symbol);
+}
+
+// The monster-class tables only change on the Rogue level, where a named
+// set can replace the human symbol (RogueEpyx) or every class (Blank).
+const HUMAN_CLASS_INDEX = MONSTER_CLASS_SYMBOLS.indexOf('@');
+
+export function monsterClassSymbol(index: number): string {
+    const shown = shownSymbolSet();
+    if (shown.rogue) {
+        const set = shown.name ? ROGUE_SYMSETS[shown.name.toLowerCase()] : undefined;
+        if (set?.blank) return BLANK_SYMBOL;
+        if (set?.humanSymbol && index === HUMAN_CLASS_INDEX) return set.humanSymbol;
+    }
+    return MONSTER_CLASS_SYMBOLS[index] ?? '';
+}
+
+// pager.c:is_swallow_sym() and display.c:swallowed() read the same showsyms.
+export function swallowSymbolAppearance(index: number): { ch: string; dec: boolean } {
+    if (!Number.isInteger(index) || index < 0 || index > 7)
+        throw new RangeError(`Unknown swallow border ${index}`);
+    return cmapSymbolAppearance(CmapSymbol.swallowTopLeft + index);
+}
+
+// defsym.h effect symbols follow terrain and traps in showsyms[].
+const DEFAULT_EFFECT_SYMBOLS: ReadonlyMap<number, string> = new Map([
+    [CmapSymbol.vbeam, '|'], [CmapSymbol.hbeam, '-'], [CmapSymbol.lslant, '\\'], [CmapSymbol.rslant, '/'],
+    [CmapSymbol.digbeam, '*'], [CmapSymbol.flashbeam, '!'],
+    [CmapSymbol.boomleft, ')'], [CmapSymbol.boomright, '('],
+    ...['0', '#', '@', '*'].map((ch, index): [number, string] => [CmapSymbol.shieldFirst + index, ch]),
+    ...['/', '-', '\\', '|', '|', '\\', '-', '/']
+        .map((ch, index): [number, string] => [CmapSymbol.swallowTopLeft + index, ch]),
+    ...['/', '-', '\\', '|', ' ', '|', '\\', '-', '/']
+        .map((ch, index): [number, string] => [CmapSymbol.explosionTopLeft + index, ch]),
 ]);
 
 // dat/symbols:DECgraphics overrides dungeon symbols independently of the
@@ -1057,26 +1371,43 @@ const decFurnitureSymbols = new Map<number, string>([
     [CmapSymbol.altar, '{'], [CmapSymbol.pool, '`'], [CmapSymbol.ice, '~'],
     [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
     [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
+    [CmapSymbol.vbeam, 'x'], [CmapSymbol.hbeam, 'q'],
+    [CmapSymbol.swallowTopLeft + 1, 'o'], [CmapSymbol.swallowTopLeft + 3, 'x'],
+    [CmapSymbol.swallowTopLeft + 4, 'x'], [CmapSymbol.swallowTopLeft + 6, 's'],
+    [CmapSymbol.explosionTopLeft + 1, 'o'], [CmapSymbol.explosionTopLeft + 3, 'x'],
+    [CmapSymbol.explosionTopLeft + 5, 'x'], [CmapSymbol.explosionTopLeft + 7, 's'],
 ]);
 
 // symbols.c:assign_graphics() selects the active dungeon symbols. DEC
 // characters retain their alternate font so they do not match ASCII letters.
 export function cmapSymbolAppearance(symbol: number): { ch: string; dec: boolean } {
-    const definition = MAP_SYMBOLS[symbol];
-    if (!definition) throw new RangeError(`Unknown dungeon symbol ${symbol}`);
-    if (Is_rogue_level(game.u.uz))
-        return { ch: rogueFurnitureSymbols.get(symbol) ?? definition.ch, dec: false };
-    const decSymbol = /^DECgraphics$/i.test(game.symset ?? '')
+    const defaultSymbol = MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol);
+    if (defaultSymbol === undefined) throw new RangeError(`Unknown dungeon symbol ${symbol}`);
+    if (shownSymbolSet().rogue) {
+        const set = activeRogueSymset();
+        const ch = rogueCmapSymbol(set, symbol) ?? rogueFurnitureSymbols.get(symbol) ?? defaultSymbol;
+        // wintty.c:g_putch() uses the alternate font for high-bit bytes
+        // without IBM handling, unless eight_bit_tty requests raw bytes.
+        if (!set?.ibm && !game.iflags.wc_eight_bit_input && ch.charCodeAt(0) >= 128)
+            return { ch: String.fromCharCode(ch.charCodeAt(0) & 0x7f), dec: true };
+        return { ch, dec: false };
+    }
+    const decSymbol = usesDecSymbols()
         ? decFurnitureSymbols.get(symbol) : undefined;
-    return { ch: decSymbol ?? definition.ch, dec: decSymbol !== undefined };
+    return { ch: decSymbol ?? defaultSymbol, dec: decSymbol !== undefined };
 }
 
 // display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
-// dat/symbols:DECgraphics assigns these colors to branch wall glyphs.
+// dat/symbols assigns these colors to branch wall glyphs.
 const decWallColors = new Map<GlyphOffset, number>([
     [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
     [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
 ]);
+
+// symbols.c:load_symset() applies these sets' G_ wall colors independently
+// of character handling; every other set leaves branch walls gray
+// (clear_symsetentry() → clear_all_glyphmap_colors()).
+const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i;
 
 function furnitureDisplayGlyph(appearance: number): DisplayGlyph {
     const symbol = MAP_SYMBOLS[appearance];
@@ -1139,8 +1470,7 @@ function randomHallucinatedObjectGlyph(): ObjectGlyph {
     return {
         // display.c routes any boulder object number, including one a
         // hallucinating hero invents, through showsyms[SYM_BOULDER].
-        ch: otyp === BOULDER && !Is_rogue_level(game.u?.uz) && game.boulderSym
-            ? game.boulderSym
+        ch: otyp === BOULDER ? currentBoulderSymbol()
             : activeObjectSymbols()[oclass] || '?',
         // glyphs.c resolves the randomly selected object number through the
         // runtime objects[] table.  o_init() shuffles oc_color together with
@@ -1164,7 +1494,7 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
         return randomHallucinatedObjectGlyph();
     }
     const statueSymbol = object.otyp === STATUE && object.corpsenm !== undefined
-        ? MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[object.corpsenm] ?? 0]
+        ? monsterClassSymbol(MONSTER_SYMBOL[object.corpsenm] ?? 0)
         : null;
     const species = (object.otyp === CORPSE || object.otyp === STATUE)
         && object.corpsenm !== undefined ? { corpsenm: object.corpsenm } : {};
@@ -1181,10 +1511,8 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
         }
         : {
             // display.c sends the boulder object to showsyms[SYM_BOULDER],
-            // which BOULDER= overrides outside the rogue symbol set.
-            ch: object.otyp === BOULDER && !Is_rogue_level(game.u?.uz)
-                && game.boulderSym
-                ? game.boulderSym
+            // whose override each symbol set carries separately.
+            ch: object.otyp === BOULDER ? currentBoulderSymbol()
                 : activeObjectSymbols()[objectClassForType(displayedType)] || '?',
             color: objectColor(object), decgfx: false,
             kind: 'object', otyp: displayedType, ...species, glyph,
@@ -1222,15 +1550,12 @@ export function transientMonsterGlyph(
 export function zapdir_to_glyph(dx: number, dy: number, beamType: number): DisplayGlyph {
     const type = beamType >= 8 ? 0 : beamType;
     const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
-    const ascii = ['|', '-', '\\', '/'][direction];
-    if (ascii === undefined) throw new Error('Beam direction has no display symbol');
-    const dec = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset ?? '')
-        && direction < 2;
+    const appearance = cmapSymbolAppearance(CmapSymbol.vbeam + direction);
     const color = [CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, CLR_BRIGHT_BLUE,
         CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][type];
     if (color === undefined) throw new RangeError(`Unknown beam type ${beamType}`);
-    return { ch: dec ? direction === 0 ? 'x' : 'q' : ascii,
-        color, decgfx: dec, kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
+    return { ch: appearance.ch, color, decgfx: appearance.dec,
+        kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
 }
 
 // Native explosion_to_glyph(): rows run from top left to bottom right.
@@ -1239,23 +1564,20 @@ export function explosionGlyph(style: number, dx: number, dy: number): DisplayGl
     const type = [EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS]
         .includes(style) ? style : EXPL_FIERY;
     const index = (dy + 1) * 3 + dx + 1;
-    const ascii = ['/', '-', '\\', '|', ' ', '|', '\\', '-', '/'][index];
     const color = [CLR_GREEN, CLR_BROWN, CLR_BLUE,
         CLR_MAGENTA, CLR_ORANGE, CLR_WHITE][type - EXPL_NOXIOUS];
-    if (ascii === undefined || color === undefined)
+    if (index < 0 || index > 8 || color === undefined)
         throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
-    const alternate = index === 1 ? 'o' : index === 3 || index === 5 ? 'x'
-        : index === 7 ? 's' : null;
-    const dec = alternate !== null && !Is_rogue_level(game.u.uz)
-        && /^DECgraphics$/i.test(game.symset ?? '');
-    return { ch: dec && alternate ? alternate : ascii, color, decgfx: dec,
+    const appearance = cmapSymbolAppearance(CmapSymbol.explosionTopLeft + index);
+    return { ch: appearance.ch, color, decgfx: appearance.dec,
         kind: 'effect', glyph: GlyphOffset.explodeDark + type * 9 + index };
 }
 
 export function shieldGlyph(character: string): DisplayGlyph {
     const index = ['0', '#', '@', '*'].indexOf(character);
     if (index < 0) throw new RangeError(`Unknown shield symbol ${character}`);
-    return { ch: character, color: CLR_BRIGHT_BLUE, decgfx: false, kind: 'effect',
+    const appearance = cmapSymbolAppearance(CmapSymbol.shieldFirst + index);
+    return { ch: appearance.ch, color: CLR_BRIGHT_BLUE, decgfx: appearance.dec, kind: 'effect',
         glyph: cmapToGlyph(82 + index) };
 }
 
@@ -1377,8 +1699,15 @@ const TRAP_COLOR = [
 ];
 
 export function transientTrapGlyph(trap: Pick<Trap, 'ttyp'>): DisplayGlyph {
+    // Blank replaces every trap symbol including the vibrating square,
+    // while RogueEpyx replaces only the twenty-two real traps.
+    const set = activeRogueSymset();
+    const ch = set?.blank ? BLANK_SYMBOL
+        : trap.ttyp === VIBRATING_SQUARE ? '~'
+            : set?.trapSymbol
+                ?? (trap.ttyp === WEB ? '"' : '^');
     return {
-        ch: trap.ttyp === WEB ? '"' : trap.ttyp === VIBRATING_SQUARE ? '~' : '^',
+        ch,
         color: TRAP_COLOR[trap.ttyp] ?? NO_COLOR, decgfx: false,
         kind: 'trap', trapType: trap.ttyp,
         glyph: cmapToGlyph(CmapSymbol.arrowTrap + trap.ttyp - 1),
@@ -1561,7 +1890,7 @@ function rememberFeltRoom(
     // reglyph_darkroom() uses the floor symbol only with dark_room and color.
     const floor = symbol === CmapSymbol.room
         || dark && (game.flags.dark_room ?? true) && game.flags.color !== false;
-    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
+    const dec = usesDecSymbols();
     const glyph: DisplayGlyph = {
         ch: floor ? dec ? '~' : '.' : ' ',
         color: dark ? 16 : NO_COLOR,
@@ -1616,6 +1945,75 @@ function isRogueShowraceHeroGlyph(glyph: GlyphMetadata | null, x: number, y: num
     return glyph.glyph === heroGlyphNumber;
 }
 
+// HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
+// `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
+// and the object/monster branches of reset_glyphmap().
+function rogueColorsActive(): boolean {
+    return Is_rogue_level(game.u?.uz) && game.flags.color !== false
+        && ROGUE_SYMSETS[game.rogueSymset?.toLowerCase() ?? '']?.color === true;
+}
+
+// display.c:cmap_to_roguecolor().
+function cmapToRogueColor(index: number): number {
+    if (index >= CmapSymbol.vwall && index <= CmapSymbol.hcdoor) return CLR_BROWN;
+    if (index >= CmapSymbol.arrowTrap && index <= CmapSymbol.arrowTrap + 21) return CLR_MAGENTA;
+    if (index === CmapSymbol.corr || index === CmapSymbol.litcorr) return CLR_GRAY;
+    if (index >= CmapSymbol.room && index <= CmapSymbol.water
+        && index !== CmapSymbol.darkroom) return CLR_GREEN;
+    return NO_COLOR;
+}
+
+// The Rogue color tables of reset_glyphmap(); null keeps the glyph's own
+// color where the native branches have no rogue override (explosions, the
+ // branch wall ranges).
+function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): number | null {
+    const glyphNumber = glyph.glyph;
+    if (glyph.kind === 'object' && typeof glyphNumber === 'number') {
+        // Every statue glyph turns red under rogue color, like the four
+        // statue ranges of reset_glyphmap().
+        if (glyph.statueGlyph) return CLR_RED;
+        // reset_glyphmap(): coins yellow, food (including corpses) red,
+        // every other class bright blue.
+        const oclass = objectClassForType(glyph.otyp);
+        // objclass.h indices: coins 12, food 7.
+        return oclass === 12 ? CLR_YELLOW
+            : oclass === 7 ? CLR_RED : CLR_BRIGHT_BLUE;
+    }
+    if (glyph.kind === 'monster' && typeof glyphNumber === 'number') {
+        // map_glyphinfo() yellows the hero's own glyph whatever its sex,
+        // while a steed's glyph (not hero_glyph) keeps the ridden branch.
+        if (x === game.u?.ux && y === game.u?.uy && !Upolyd(game.u)) {
+            const heroNumber = GlyphOffset.monMale
+                + ((game.flags.showrace ? game.urace?.mnum : game.u.umonnum) ?? 0)
+                + (game.flags.female ? MONSTER_COLOR.length : 0);
+            if (glyphNumber === heroNumber) return CLR_YELLOW;
+        }
+        // Ordinary male monsters are yellow; pets, detected, ridden and
+        // female monsters keep no color.
+        return glyphNumber >= GlyphOffset.monMale && glyphNumber < GlyphOffset.monFemale
+            ? CLR_YELLOW : NO_COLOR;
+    }
+    if (typeof glyphNumber !== 'number') return NO_COLOR;
+    // reset_glyphmap() leaves explosions to explode_color() and the branch
+    // wall ranges to wall_color() even with rogue color on.
+    if (glyphNumber >= GlyphOffset.explodeDark && glyphNumber < GlyphOffset.warning)
+        return null;
+    if (glyphNumber >= GlyphOffset.cmapSokoban && glyphNumber < GlyphOffset.cmapA)
+        return null;
+    // The main wall range colors through cmap_to_roguecolor(); the branch
+    // ranges above keep their wall color, and no Rogue level sits in one.
+    if (glyphNumber === GlyphOffset.cmapStone) return NO_COLOR;
+    if (glyphNumber >= GlyphOffset.cmapMain && glyphNumber < GlyphOffset.cmapMines)
+        return cmapToRogueColor(glyphNumber - GlyphOffset.cmapMain + CmapSymbol.vwall);
+    if (glyphNumber >= GlyphOffset.cmapA && glyphNumber < GlyphOffset.altar)
+        return cmapToRogueColor(glyphNumber - GlyphOffset.cmapA + CmapSymbol.ndoor);
+    if (glyphNumber >= GlyphOffset.altar && glyphNumber < GlyphOffset.cmapB)
+        return cmapToRogueColor(CmapSymbol.altar);
+    if (glyphNumber >= GlyphOffset.cmapB && glyphNumber < GlyphOffset.zap)
+        return cmapToRogueColor(glyphNumber - GlyphOffset.cmapB + CmapSymbol.grave);
+    return NO_COLOR;
+}
+
 export function show_glyph_cell(
     x: number, y: number, ch: string, color: number = NO_COLOR, decgfx = false,
     attr = 0, glyph: GlyphMetadata | null = null,
@@ -1623,14 +2021,18 @@ export function show_glyph_cell(
     if (suppressMapOutput() || x === 0) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
-    // display.c:reset_glyphmap() clears every color on the Rogue level
-    // (GMAP_ROGUELEVEL without rogue IBM color); only the hero's own
-    // showrace glyph is re-highlighted afterwards by map_glyphinfo().
-    if (Is_rogue_level(game.u?.uz)) {
-        if (!isRogueShowraceHeroGlyph(glyph, x, y)) color = NO_COLOR;
-        decgfx = false;
-    }
     const nextGlyph: GlyphMetadata = glyph || { kind: 'effect' };
+    // display.c:reset_glyphmap() clears every color on the Rogue level
+    // (GMAP_ROGUELEVEL) unless the loaded rogue set declares IBM handling
+    // with `Color: Yes` (RogueEpyx); then the Rogue color tables apply and
+    // the hero turns yellow instead of the showrace highlight.
+    if (Is_rogue_level(game.u?.uz)) {
+        if (rogueColorsActive()) {
+            const rogueColor = rogueLevelGlyphColor(nextGlyph, x, y);
+            if (rogueColor !== null) color = rogueColor;
+        }
+        else if (!isRogueShowraceHeroGlyph(glyph, x, y)) color = NO_COLOR;
+    }
     // reset_glyphmap() marks a corridor engraving which shares '#'
     // with corridors; tty_print_glyph() makes that glyph inverse.
     if (nextGlyph.glyph === cmapToGlyph(CmapSymbol.engrcorr) && ch === '#'
@@ -2162,14 +2564,11 @@ export function swallowed(first = false) {
     }
 
     const x = game.u.ux, y = game.u.uy;
-    const positions: ReadonlyArray<readonly [number, number, string, string | null]> = [
-        [-1, -1, '/', null], [0, -1, '-', 'o'], [1, -1, '\\', null],
-        [-1, 0, '|', 'x'],                      [1, 0, '|', 'x'],
-        [-1, 1, '\\', null], [0, 1, '-', 's'], [1, 1, '/', null],
+    const positions: ReadonlyArray<readonly [number, number]> = [
+        [-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1],
     ];
     const hallucinating = heroIsHallucinating(game);
-    const dec = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset ?? '');
-    for (const [index, [dx, dy, ascii, alternate]] of positions.entries()) {
+    for (const [index, [dx, dy]] of positions.entries()) {
         if (index === 4) displaySelf();
         const sx = x + dx, sy = y + dy;
         if (sx <= 0 || sx >= COLNO || sy < 0 || sy >= ROWNO) continue;
@@ -2178,9 +2577,11 @@ export function swallowed(first = false) {
         let color = MONSTER_COLOR[mnum] ?? NO_COLOR;
         // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
         if (color === CLR_GRAY) color = NO_COLOR;
+        const appearance = swallowSymbolAppearance(index);
         const glyph: DisplayGlyph = {
-            ch: dec && alternate ? alternate : ascii, color,
-            decgfx: dec && alternate !== null, kind: 'effect',
+            ch: appearance.ch,
+            color,
+            decgfx: appearance.dec, kind: 'effect',
             glyph: GlyphOffset.swallow + mnum * 8 + index,
         };
         show_glyph_cell(sx, sy, glyph.ch, color, glyph.decgfx, 0, glyph);
@@ -2441,6 +2842,12 @@ export function _statusLine2() {
     return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO).text : '';
 }
 
+// botl.c:check_gold_symbol(). This process flag changes at explicit
+// option and level-change boundaries; dorecover() leaves it alone.
+export function checkGoldSymbol(): void {
+    game.iflags.invis_goldsym = objectClassSymbol(objectClassForType(GOLD_PIECE)) <= ' ';
+}
+
 function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const u = game.u;
     if (!u) return null;
@@ -2458,7 +2865,8 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
     const displayedPower = Math.min(u.uen ?? 0, 9999);
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
-    const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
+    const goldSymbol = activeObjectSymbols()[objectClassForType(GOLD_PIECE)] ?? '$';
+    const goldLabel = game.iflags.invis_goldsym ? '$' : goldSymbol;
     const displayedAc = u.uac ?? 10;
     const displayedGold = Math.max(0, Math.min(999999,
         game._statusGoldOverride ?? heroGoldAmount(game)));
@@ -2466,7 +2874,7 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
         : `Xp:${u.ulevel || 1}${game.flags.showexp ? `/${u.uexp || 0}` : ''}`;
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     return {
-        location, gold: `${goldSymbol}:${displayedGold}`,
+        location, gold: `${goldLabel}:${displayedGold}`,
         health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
         experience, moves: game.flags.time ? game.moves : null,
         hunger: hungerLabel ?? '',

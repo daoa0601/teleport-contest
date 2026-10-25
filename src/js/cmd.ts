@@ -5141,6 +5141,10 @@ async function dowhatis(): Promise<void> {
                 waterLevel: Is_waterlevel(game.u.uz),
                 inHell: In_hell(game.u.uz),
                 blind: heroIsBlind(game),
+                // pager.c resolves the override by level, independently of
+                // the symbols currently displayed by do_symset().
+                boulderSymbol: (Is_rogue_level(game.u.uz)
+                    ? game.rogueBoulderSym : game.boulderSym) || '`',
             });
             await plineWithContinuation(result.count
                 ? `${name}        ${result.text}` : "I've never heard of such things.");

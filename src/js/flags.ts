@@ -95,6 +95,7 @@ export interface InterfaceFlags {
     getloc_usemenu?: boolean;
     getloc_moveskip?: boolean;
     in_lava_effects?: number;
+    invis_goldsym?: boolean;
     menu_requested?: boolean;
     deferDecor?: boolean;
     menu_headings?: { attr: number; color: number };

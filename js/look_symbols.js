@@ -28,7 +28,10 @@ export function typedSymbolDescription(symbol, context) {
         append('you', 'you');
     for (let index = 1; index < OBJECT_CLASS_SYMBOLS.length; index++) {
         const name = index === 14 ? 'boulder' : OBJECT_CLASS_EXPLAIN[index];
-        if (symbol === OBJECT_CLASS_SYMBOLS[index] && name)
+        // The typed pass checks ROCK_CLASS against the boulder override
+        // instead of the default rock symbol (pager.c do_screen_description).
+        const rockSymbol = index === 14 ? context.boulderSymbol : OBJECT_CLASS_SYMBOLS[index];
+        if (symbol === rockSymbol && name)
             append(withIndefiniteArticle(name), name);
     }
     if (symbol === 'I') {
