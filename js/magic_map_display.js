@@ -2,7 +2,7 @@
 import { COLNO, ROWNO, TER_MAP, TER_MON, TER_OBJ, TER_TRP } from './const.js';
 import { displayedTrapDescription } from './pager_features.js';
 import { farlookLocationDescription } from './cmd.js';
-import { canSpotHeroSelf, cls, docrt, flush_screen, glyphAt, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, } from './display.js';
+import { canSpotHeroSelf, cls, docrt, flush_screen, glyphAt, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, under_ground, under_water, } from './display.js';
 import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -122,6 +122,13 @@ export async function browseDetectionMap(terrainMode, goal, { objects = null, st
 export async function redisplayDetectionMap(constraints, state = game) {
     reconstrainMap(constraints, state);
     await docrt();
+    // C map_redisplay() defers a full restricted redraw: the turn's
+    // under_water(0)/under_ground(0) clears the map again instead of
+    // repairing only the previous three-by-three viewport.
+    if (state.u.uinwater || state.underwater)
+        await under_water(2);
+    if (state.u.uburied)
+        await under_ground(2);
     await flush_screen(1);
 }
 //# sourceMappingURL=magic_map_display.js.map

@@ -7261,6 +7261,10 @@ async function domoveCore(dx, dy) {
         return true;
     if (await fightEmptyDestination(newx, newy))
         return true;
+    // hack.c:domove() clears a remembered unseen monster at the destination
+    // before trying to move; a displacer-beast swap returned above and skips
+    // this, matching the native !displaceu guard.
+    unmap_invisible(newx, newy);
     if ((dx || dy) && await ridingPreventsMovement()) {
         stopRun(game);
         return true;
