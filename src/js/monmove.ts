@@ -334,6 +334,7 @@ import {
     OBJECT_SUBTYPE,
     PICK_AXE,
     ROCK,
+    SCR_MAIL,
     POT_GAIN_LEVEL,
     POT_HEALING,
     POT_INVISIBILITY,
@@ -2325,7 +2326,10 @@ async function petInventoryAction(
         object.oclass !== BALL_CLASS &&
         object.oclass !== CHAIN_CLASS &&
         object.oclass !== ROCK_CLASS;
-    if (!fetchableClass || isLevelPrize(object, state)) return null;
+    // C dogmove.c:dog_invent() also refuses delivery mail outright, before
+    // dogfood() can spend its obj_resists() draw on the scroll.
+    if (!fetchableClass || object.otyp === SCR_MAIL || isLevelPrize(object, state))
+        return null;
     const edible = dogFood(monster, object, random, calls, state);
     if ((edible <= CADAVER || monster.edog?.mhpmax_penalty && edible === ACCFOOD)
         && monsterCouldReachItem(monster, monster.mx, monster.my, state)) {
