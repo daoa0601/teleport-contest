@@ -58,7 +58,8 @@ for (const mode of ['underwater', 'buried'] as const) {
 }
 
 // An engulfed hero's map_redisplay only reconstrains; the stomach projection
-// is redrawn by docrt() and no deferred restricted reset is armed.
+// is redrawn by docrt(), and display.c's under_water()/under_ground() return
+// before arming any deferred reset while the hero is engulfed.
 void test('an engulfed hero gets no deferred restricted reset from a detection browse', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
@@ -70,8 +71,15 @@ void test('an engulfed hero gets no deferred restricted reset from a detection b
 
     await detectObjects(await uninitializedObject(SPE_DETECT_TREASURE, { blessed: true }));
 
-    // The detection stays in hero memory; the screen shows the engulfer's
-    // stomach border rather than the detected potion.
+    // The detection stays in hero memory while the stomach view hides it:
+    // the potion at map (14,8) is screen column 13, row 9.
     assert.equal(level.requireAt(14, 8).remembered_glyph?.kind, 'object');
-    assert.equal(requireScreenCell(13, 11).ch, ' ');
+    assert.equal(requireScreenCell(13, 9).ch, ' ');
+    // A restricted update after the browse leaves the stomach projection
+    // untouched instead of clearing it like a deferred full reset would.
+    await under_water(2);
+    await under_water(0);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(8, 11).ch, '|');
+    assert.equal(requireScreenCell(13, 9).ch, ' ');
 });
