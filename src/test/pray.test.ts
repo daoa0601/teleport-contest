@@ -312,6 +312,22 @@ void test('divine lightning from #pray names the monster swallowing the hero', a
     assert.ok(!game.program_state.gameover);
 });
 
+void test('#pray tells a permanently blind hero that cured deafness relieved their eyes', async () => {
+    prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 10 } } });
+    requirePlayingGame(game);
+    const altar = game.level.requireAt(10, 10);
+    altar.typ = ALTAR;
+    altar.flags = Align2amask(0);
+    game.u.deafTurns = 2;
+    initRng(3n);
+
+    const messages = await prayAndReadMessages();
+
+    assert.equal(game.u.deafTurns ?? 0, 0, 'the prayer must clear the timed deafness');
+    assert.ok(messages.some(message => message.includes('Your eyes feel better and you can hear again.')),
+        `Expected the combined eye and ear recovery in prayer messages: ${messages.join('\n')}`);
+});
+
 void test('a blind hero feels the deity\'s blessing over the weapon during #pray', async () => {
     prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
