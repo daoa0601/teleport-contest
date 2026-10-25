@@ -52,30 +52,46 @@ void test('a punished hero throws the chained ball no further than the chain', a
     assert.ok(chain && chain.where === 'floor' && chain.ox === 14 && chain.oy === 10, 'the chain is dragged behind the thrown ball');
 });
 void test('a hero held by a monster throws the chained ball only one square', async () => {
+    // The same throw without a holder reaches the chain limit of five squares.
     freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
-    const ball = await holdAttachedBall();
+    const freeBall = await holdAttachedBall();
+    initRng(912n);
+    await throwInventoryObject(freeBall);
+    assert.equal(freeBall.ox, 15, 'an unheld hero throws the chained ball five squares');
+    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = STR19(25);
+    const heldBall = await holdAttachedBall();
     const holder = await createMonsterAt('ogre', 12, 8);
     game.u.ustuck = holder;
     initRng(912n);
-    await throwInventoryObject(ball);
+    await throwInventoryObject(heldBall);
     assert.equal(holder.mx, 12);
-    assert.equal(ball.where, 'floor');
-    assert.equal(ball.ox, 11);
-    assert.equal(ball.oy, 10);
+    assert.equal(heldBall.where, 'floor');
+    assert.equal(heldBall.ox, 11);
+    assert.equal(heldBall.oy, 10);
 });
 void test('a hero stuck in the floor throws the chained ball one square', async () => {
+    // The same throw without the trap reaches the chain limit of five squares.
     freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
-    const ball = await holdAttachedBall();
+    const freeBall = await holdAttachedBall();
+    initRng(913n);
+    await throwInventoryObject(freeBall);
+    assert.equal(freeBall.ox, 15, 'an untrapped hero throws the chained ball five squares');
+    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = STR19(25);
+    const trappedBall = await holdAttachedBall();
     game.u.utrap = 5;
     game.u.utraptype = TT_INFLOOR;
     initRng(913n);
-    await throwInventoryObject(ball);
-    assert.equal(ball.where, 'floor');
-    assert.equal(ball.ox, 11);
-    assert.equal(ball.oy, 10);
+    await throwInventoryObject(trappedBall);
+    assert.equal(trappedBall.where, 'floor');
+    assert.equal(trappedBall.ox, 11);
+    assert.equal(trappedBall.oy, 10);
 });
 //# sourceMappingURL=throw_iron_ball.test.js.map

@@ -506,7 +506,7 @@ void test('swallowed gold vanishes into the digesting engulfer by name', async (
     assert.equal(engulfer.minvent.includes(purse), true);
 });
 
-void test('a purse too heavy for the hero drops at her feet', async () => {
+void test('a purse too heavy for the hero drops at the hero\'s feet', async () => {
     const level = freshGameplayRoom();
     requireFixtureGame(game);
     const purse = await carriedGold(25000, 29037);
