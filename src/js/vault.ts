@@ -40,8 +40,7 @@ import { resetHeroFaint } from './hunger.js';
 import { heroIsDeaf } from './senses.js';
 import { heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { currentMulti, heroHasInvoluntaryDelay } from './command_state.js';
-import { finishHeroHelplessness } from './allmain.js';
+import { heroHasInvoluntaryDelay } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { canSpotMonster, map_invisible } from './display.js';
 import { MONSTER_SOUND } from './monster_data.js';
@@ -234,11 +233,13 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         await removeMonsterFromGame(guard);
         return true;
     }
-    // C invault(): a count-prefixed repeat ends with nomul(0) plus unmul(),
-    // which publishes the recovery message before the name prompt.
-    const repeating = currentMulti(state) > 0;
+    // C invault() follows stop_occupation() with `if (gm.multi > 0)
+    // { nomul(0); unmul((char *) 0); }`, but that block is unreachable:
+    // this tree's stop_occupation() (allmain.c) already calls nomul(0)
+    // whenever there is an occupation or multi >= 0, zeroing a count
+    // repeat.  stopHeroOccupation() models that reset, and native play
+    // prints no recovery message before the name prompt.
     await stopHeroOccupation(state);
-    if (repeating) await finishHeroHelplessness(undefined, state);
     await displayMessageWindow();
     const response = await readGuardName();
     const claimedName = lowercaseAscii(response);

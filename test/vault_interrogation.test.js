@@ -112,9 +112,11 @@ void test('a guard reports interrupted work before asking the hero name', async 
     assert.match(messages.join('\n'), /You stop wiping your face\..*\n.*Hello stranger, who are you\?/);
     assert.equal(game._occupation, null);
 });
-void test('a guard cancels a counted search repeat and reports recovery before the name prompt', async () => {
-    // The residence counter sits one turn below VAULT_GUARD_TIME so the
-    // guard's arrival interrupts the counted repeat during its own turn.
+void test('a guard silently cancels a counted search repeat before asking the hero name', async () => {
+    // Native invault() calls stop_occupation(), which prints the stop
+    // message and resets a count repeat via nomul(0); vault.c's follow-up
+    // `if (gm.multi > 0) { nomul(0); unmul(NULL); }` can never fire after
+    // that reset, so no recovery message appears before the name prompt.
     const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
@@ -148,11 +150,10 @@ void test('a guard cancels a counted search repeat and reports recovery before t
     await moveloop_core();
     const text = messages.join('\n');
     const stop = text.indexOf('You stop searching');
-    const recover = text.indexOf('You can move again');
     const prompt = text.indexOf('Hello stranger, who are you?');
     assert.ok(stop >= 0, `the interrupted repeat must be reported: ${text}`);
-    assert.ok(recover > stop, `canceling the repeat must report recovery: ${text}`);
-    assert.ok(prompt > recover, `recovery must precede the name prompt: ${text}`);
+    assert.ok(prompt > stop, `the stop report must precede the name prompt: ${text}`);
+    assert.equal(text.includes('You can move again'), false, `canceling a count repeat prints no recovery message: ${text}`);
     assert.equal(game.multi ?? 0, 0, 'the remaining counted searches are canceled');
     assert.equal(game._occupation, null);
 });
