@@ -201,7 +201,8 @@ export async function describeDecor({
     } else if (feature) {
         if (waterHere) feature = waterbodyName(x, y, state);
         if (feature !== 'swamp' && surface !== ICE) feature = withIndefiniteArticle(feature);
-        const message = state.flags.verbose
+        // C flags.verbose defaults on.
+        const message = state.flags.verbose !== false
             ? `There is ${feature} here.`
             : `${feature.charAt(0).toUpperCase()}${feature.slice(1)}.`;
         await publish(message, {
