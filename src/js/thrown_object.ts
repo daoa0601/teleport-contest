@@ -22,6 +22,7 @@ import {
     M_AP_TYPE,
     P_CROSSBOW,
     SINK,
+    TT_INFLOOR,
     WEB,
     WT_SPLASH_THRESHOLD,
     ZAP_POS,
@@ -186,6 +187,15 @@ export function heroThrowRange(object: GameObject, state: GameState = game): num
     );
 }
 
+// C throw_gold(): the whole purse uses the thrown-object formula without
+// throwit()'s minimum of one, so a heavy purse can fail to leave the hero.
+export function heroDirectGoldThrowRange(
+    object: GameObject, state: GameState = game,
+): number {
+    return Math.trunc(heroThrowStrength(state) / 2)
+        - Math.trunc((object.owt ?? 1) / 40);
+}
+
 export function heroThrowTrajectory(
     object: GameObject, state: GameState = game, launcher: GameObject | null | undefined = null,
 ): ThrowTrajectory {
@@ -195,10 +205,18 @@ export function heroThrowTrajectory(
     const unweightedRange = Math.trunc(
         (crossbowing ? 18 : heroThrowStrength(state)) / 2,
     );
-    let range = Math.max(
-        1,
-        unweightedRange - Math.trunc((object.owt ?? 1) / 40),
-    );
+    // Balls are easy to throw or at least roll: the iron ball divides its
+    // weight by 100 rather than 40, and a ball still chained to the hero
+    // is limited by the chain (range 5) or by an engulfer holding it (1).
+    const attached = object === state.uball || object === state.u?.uball;
+    let range = unweightedRange
+        - Math.trunc((object.owt ?? 1)
+            / (object.otyp === HEAVY_IRON_BALL ? 100 : 40));
+    if (attached) {
+        if (state.u?.ustuck) range = 1;
+        else if (range >= 5) range = 5;
+    }
+    if (range < 1) range = 1;
     if (isLauncherAmmunition(object)) {
         if (launched) range = crossbowing ? BOLT_LIM : range + 1;
         else if (objectClass(object) !== GEM_CLASS)
@@ -215,6 +233,8 @@ export function heroThrowTrajectory(
     if (object.otyp === BOULDER) range = 20;
     else if (artifactById(object.oartifact, state)?.name === 'Mjollnir')
         range = Math.trunc((range + 1) / 2);
+    else if (attached && state.u?.utrap && state.u?.utraptype === TT_INFLOOR)
+        range = 1;
     if (state.underwater || state.u.uinwater) range = 1;
     return { range, recoil };
 }
