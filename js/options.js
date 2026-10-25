@@ -2079,7 +2079,11 @@ async function editMenuColors() {
             }
         }
         else {
-            const answer = await showInventoryWindow([{ items: colorings.map(rule => ({ text: menuColoringRow(rule) })) }], { title: 'List of menu colors', pickMode: PICK_NONE });
+            // C assigns a non-zero identifier to every row of both the list
+            // and remove menus, so the tty prefixes letters even for this
+            // PICK_NONE listing (unlike the autopickup-exception listing,
+            // whose rows carry a zero identifier).
+            const answer = await showInventoryWindow([{ items: colorings.map(rule => ({ value: rule, text: menuColoringRow(rule) })) }], { title: 'List of menu colors', pickMode: PICK_NONE });
             if (answer.key === 27)
                 return;
         }

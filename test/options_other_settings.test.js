@@ -127,8 +127,8 @@ void test('the options menu lists configured menu colors newest first', async ()
         { match: 'Do what?', keys: '\n' },
     ]);
     const listing = views.find(view => view.text.includes('List of menu colors'))?.text ?? '';
-    assert.ok(listing.indexOf('"cursed item"=light-blue&bold') >= 0, `Newest color listed first:\n${listing}`);
-    assert.ok(listing.indexOf('"blessed.*"=yellow') > listing.indexOf('"cursed item"'), `Older color listed second:\n${listing}`);
+    assert.ok(listing.includes('a - "cursed item"=light-blue&bold'), `Newest color listed first, with its selector letter:\n${listing}`);
+    assert.ok(listing.includes('b - "blessed.*"=yellow'), `Older color listed second, with its selector letter:\n${listing}`);
     assert.equal(game.iflags.menuColorings?.length, 1);
     assert.equal(game.iflags.menuColorings?.[0]?.origstr, 'blessed.*');
     assert.equal(game.iflags.menuColorings?.[0]?.color, 11);
@@ -245,11 +245,11 @@ void test('an over-long menu color pattern is elided at the native byte limit', 
     ]);
     const listing = (views.find(view => view.text.includes('List of menu colors'))?.text ?? '')
         .split('\n').map(row => row.trim());
-    const yRow = listing.find(row => row.startsWith('"yyy'));
-    const zRow = listing.find(row => row.startsWith('"zzz'));
+    const yRow = listing.find(row => row.startsWith('b - "yyy'));
+    const zRow = listing.find(row => row.startsWith('a - "zzz'));
     assert.ok(yRow && zRow, `Both patterns are listed:\n${listing.join('\n')}`);
     assert.ok(!yRow.includes('...'), `A pattern at the row budget is kept whole:\n${yRow}`);
     assert.ok(zRow.endsWith('..."=no-color'), `One byte past the budget is elided:\n${zRow}`);
-    assert.equal(zRow.length, 255, `The elision keeps 241 bytes: 1 + 241 + "..." + "\\"=no-color`);
+    assert.equal(zRow.length, 259, 'The elided row is 4 columns of letter prefix plus the 255-byte row');
 });
 //# sourceMappingURL=options_other_settings.test.js.map
