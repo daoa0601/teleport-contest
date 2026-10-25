@@ -112,6 +112,50 @@ void test('a guard reports interrupted work before asking the hero name', async 
     assert.match(messages.join('\n'), /You stop wiping your face\..*\n.*Hello stranger, who are you\?/);
     assert.equal(game._occupation, null);
 });
+void test('a guard cancels a counted search repeat and reports recovery before the name prompt', async () => {
+    // The residence counter sits one turn below VAULT_GUARD_TIME so the
+    // guard's arrival interrupts the counted repeat during its own turn.
+    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    requirePlayingGame(game);
+    level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
+    level.requireAt(16, 10).typ = CORR;
+    level.requireAt(11, 10).typ = VWALL;
+    game.u.uinvault = 29;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const input = resetInputState();
+    const messages = [];
+    let answered = false;
+    input.beforeRead = () => {
+        const message = game.nhDisplay?.grid.slice(0, 3)
+            .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('') ?? '';
+        messages.push(message);
+        if (message.includes('Hello stranger, who are you?')) {
+            if (!answered)
+                input.feed('TestHero\n');
+            answered = true;
+        }
+        else if (message.includes('--More--'))
+            input.feed(' ');
+        else if (answered)
+            input.feed('.');
+    };
+    input.feed('5s');
+    await moveloop_core();
+    await moveloop_core();
+    const text = messages.join('\n');
+    const stop = text.indexOf('You stop searching');
+    const recover = text.indexOf('You can move again');
+    const prompt = text.indexOf('Hello stranger, who are you?');
+    assert.ok(stop >= 0, `the interrupted repeat must be reported: ${text}`);
+    assert.ok(recover > stop, `canceling the repeat must report recovery: ${text}`);
+    assert.ok(prompt > recover, `recovery must precede the name prompt: ${text}`);
+    assert.equal(game.multi ?? 0, 0, 'the remaining counted searches are canceled');
+    assert.equal(game._occupation, null);
+});
 void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
     const level = arrivingGuard();
     game._vaultGuardArrivalPending = null;
