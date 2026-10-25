@@ -142,7 +142,7 @@ function adjacentEntries(add, x, y, click) {
             add('untrap', 'Attempt to disarm trap');
         add('move', 'Move on the trap');
     }
-    if (glyphAt(x, y)?.glyph === GlyphOffset.object + BOULDER)
+    if (location.remembered_glyph?.glyph === GlyphOffset.object + BOULDER)
         add('move', 'Push the boulder');
     const occupant = monsterAtPosition(level, x, y);
     const monster = occupant && canSpotMonster(occupant) ? occupant : null;

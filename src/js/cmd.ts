@@ -2701,6 +2701,8 @@ async function dotherecmdmenu(): Promise<void> {
 function enqueueContextMenu(selection: ContextMenuSelection | null): void {
     game.context.move = 0;
     if (!selection) return;
+    // act_on_act() sets this before dotherecmdmenu() clears a mouse target.
+    if (selection.action === 'look-at') game._clicklookTarget = { x: selection.x, y: selection.y };
     game._cannedCommands ??= [];
     if (selection.action === 'remove-saddle') game._cannedCommands.push({ kind: 'reqmenu' });
     game._cannedCommands.push({ kind: 'context-menu', selection });
@@ -2816,9 +2818,8 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
     case 'offer': queueCommandResponses(['user-input']); return;
     case 'untrap-here': queueCommandKeys(String.fromCharCode(game.commandBindings.keyForDirection(8))); return;
     case 'travel': game._travelTarget = { x: selection.x, y: selection.y }; return;
-    case 'look-at': game._clicklookTarget = { x: selection.x, y: selection.y }; return;
     case 'attack': case 'cast': case 'dismount': case 'down': case 'drop':
-    case 'inventory': case 'look': case 'loot': case 'move':
+    case 'inventory': case 'look': case 'look-at': case 'loot': case 'move':
     case 'pickup': case 'search': case 'sit': case 'up': case 'wait': return;
     }
 }

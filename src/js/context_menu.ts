@@ -153,7 +153,7 @@ function adjacentEntries(add: AddEntry, x: number, y: number, click: number): vo
         if (trap.ttyp !== VIBRATING_SQUARE) add('untrap', 'Attempt to disarm trap');
         add('move', 'Move on the trap');
     }
-    if (glyphAt(x, y)?.glyph === GlyphOffset.object + BOULDER) add('move', 'Push the boulder');
+    if (location.remembered_glyph?.glyph === GlyphOffset.object + BOULDER) add('move', 'Push the boulder');
     const occupant = monsterAtPosition(level, x, y);
     const monster = occupant && canSpotMonster(occupant) ? occupant : null;
     if (monster && monsterSaddle(monster)) {

@@ -328,6 +328,22 @@ void test('a visible boulder offers pushing', async () => {
         await finish(engine);
     }
 });
+void test('a monster standing on a remembered boulder does not hide the push action', async () => {
+    const engine = await startMenuGame();
+    try {
+        await floorObject(BOULDER, 11, 10);
+        newsym(11, 10);
+        const goblin = await createMonsterAt('goblin', 11, 10);
+        goblin.mpeaceful = true;
+        newsym(11, 10);
+        await type(engine, '#therecmdmenu\nl');
+        assert.match(screen(), /a - Push the boulder/);
+        assert.match(screen(), /Talk to the goblin/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
 void test('peaceful monsters offer talking, swapping and naming', async () => {
     const engine = await startMenuGame();
     try {

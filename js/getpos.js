@@ -619,14 +619,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             const queued = takeRepeatCommand();
             if (queued && queued.kind !== 'key')
                 return null;
-            const read = queued ? queued.key : await readchar('position');
-            if (read === MAP_CLICK_KEY) {
-                const target = game._clicklookTarget;
-                if (target)
-                    return { ...target, pickType: LOOK_TRADITIONAL };
-                continue;
-            }
-            let key = read & 255;
+            let read = queued ? queued.key : await readchar('position');
+            let key = read === MAP_CLICK_KEY ? 0 : read & 255;
             if (!queued && game.iflags.remember_getpos)
                 rememberCommandKey(key);
             if (autoDescription())
@@ -638,15 +632,18 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
-                const read = await readchar('position');
-                if (read === MAP_CLICK_KEY) {
-                    const target = game._clicklookTarget;
-                    if (target)
-                        return { ...target, pickType: LOOK_TRADITIONAL };
-                    continue;
-                }
-                key = read & 255;
+                read = await readchar('position');
+                key = read === MAP_CLICK_KEY ? 0 : read & 255;
                 fast = true;
+            }
+            if (key === 0) {
+                // Native repeat stores the click's NUL key without its
+                // coordinates; getpos initializes those to the hero square.
+                const target = read === MAP_CLICK_KEY ? game._clicklookTarget
+                    : { x: game.u.ux, y: game.u.uy };
+                if (target)
+                    return { ...target, pickType: LOOK_TRADITIONAL };
+                continue;
             }
             const ch = String.fromCharCode(key);
             const pickType = mapPositionPickType(key);
