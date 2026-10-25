@@ -64,6 +64,9 @@ interface ArmorRemovalOptions {
     deferArmorClass?: boolean;
     // Armor_off() is voluntary; polymorph uses Armor_gone().
     voluntary?: boolean;
+    // Removing embedded dragon skin bypasses setworn()'s slot loop, so it
+    // never notifies monsters which remember the hero's resistances.
+    embeddedSkin?: boolean;
 }
 interface ArmorOnOptions { initialDon?: boolean }
 interface ArmorDestructionOptions { state?: GameState; publish?: MessagePublisher }
@@ -76,6 +79,7 @@ type ArmorBonusSource = Pick<GameObject, 'otyp'>
     & Partial<Pick<GameObject, 'spe' | 'enchantment' | 'oeroded' | 'oeroded2'>>;
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty } from './monster_perception.js';
 import {
     captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty,
     propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties,
@@ -391,6 +395,7 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
     cancelledDon = pendingArmorAction(state)?.kind === 'wear'
         && pendingArmorAction(state)?.object === object,
     deferArmorClass = false,
+    embeddedSkin = false,
 }: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object?.otyp);
     if (!slot) return false;
@@ -408,7 +413,7 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
         if (!heroIsBlind(state))
             await plineWithContinuation(equipmentLightMessage(object, false, state));
     }
-    await removeArmorProperties(object, state);
+    await removeArmorProperties(object, state, { embeddedSkin });
     if (object.otyp === CORNUTHAUM) {
         state.u.clairvoyanceBlocked = false;
         refreshProperty('clairvoyant', state);
@@ -895,14 +900,23 @@ export async function applyStartingArmorEffects(state: GameState = game) {
 
 // C do_wear.c:Armor_off() removes both the ordinary dragon resistance and
 // the color-specific extra property after the suit leaves W_ARM.
-export async function removeArmorProperties(object: GameObject, state: GameState = game) {
+export async function removeArmorProperties(
+    object: GameObject, state: GameState = game,
+    { embeddedSkin = false }: { embeddedSkin?: boolean } = {},
+) {
     const color = dragonArmorColor(object);
     const extraProperty = color ? DRAGON_ARMOR_EXTRA_PROPERTY[color] : null;
     const ordinaryProperty = OBJECT_PROPERTY[object?.otyp];
     const slot = armorSlotFor(object?.otyp);
     if (slot) setWornArtifactProperties(object, slot, false, state);
-    if (ordinaryProperty && slot)
+    if (ordinaryProperty && slot) {
         removeWornProperty(ordinaryProperty, object, slot, state);
+        // C worn.c setworn()/setnotworn() call monstunseesu_prop() when an
+        // oc_oprop item leaves its slot: monsters which can see the hero
+        // forget that remembered resistance and may try that attack again.
+        if (!embeddedSkin)
+            monstersForgetHeroResistance(seenResistanceForProperty(ordinaryProperty), state);
+    }
     if (!extraProperty) return;
 
     if (color !== 'gold') removeWornProperty(extraProperty, object, 'uarm', state);

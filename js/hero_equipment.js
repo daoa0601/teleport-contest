@@ -13,7 +13,7 @@ export async function removeHeroEquipment(object, state = game, { deferArmorClas
     if (state.uskin === object) {
         state.uskin = null;
         object.owornmask = (object.owornmask ?? 0) & ~I_SPECIAL;
-        await clearHeroArmor(object, state, { deferArmorClass });
+        await clearHeroArmor(object, state, { deferArmorClass, embeddedSkin: true });
     }
     if (armorSlot && (state[armorSlot] === object
         || state.u?.[armorSlot] === object)) {

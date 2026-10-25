@@ -12,7 +12,9 @@ import { heroGoldAmount } from './hero_gold.js';
 import { couldsee } from './vision.js';
 import { isAccessibleAt } from './terrain_properties.js';
 import {
-    D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok,
+    D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT,
+    M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL,
+    M_SEEN_SLEEP, isok,
 } from './const.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -26,6 +28,7 @@ import {
     SACK, SKELETON_KEY, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER,
     TIN_WHISTLE, TOWEL, WAX_CANDLE,
 } from './object_data.js';
+import type { PropertyName } from './property_types.js';
 
 export interface PerceptionRandomCall {
     range: number;
@@ -121,6 +124,23 @@ export function monsterHasLineOfSightToHero(monster: Monster, state: GameState =
 export function seenResistanceForDamage(damageType: number): number {
     return damageType >= AD_MAGM && damageType <= AD_ACID
         ? M_SEEN_MAGR << (damageType - AD_MAGM) : M_SEEN_NOTHING;
+}
+
+// C mondata.c:cvt_prop_to_mseenres().  Worn items confer these nine
+const M_SEEN_BY_PROPERTY: Partial<Record<PropertyName, number>> = {
+    antimagic: M_SEEN_MAGR,
+    fireResistance: M_SEEN_FIRE,
+    coldResistance: M_SEEN_COLD,
+    sleepResistance: M_SEEN_SLEEP,
+    disintegrationResistance: M_SEEN_DISINT,
+    shockResistance: M_SEEN_ELEC,
+    poisonResistance: M_SEEN_POISON,
+    acidResistance: M_SEEN_ACID,
+    reflection: M_SEEN_REFL,
+};
+
+export function seenResistanceForProperty(property: PropertyName): number {
+    return M_SEEN_BY_PROPERTY[property] ?? M_SEEN_NOTHING;
 }
 
 function monstersThatCanSeeHero(state: GameState, canSeeHero: HeroVisibility | null): Monster[] {
