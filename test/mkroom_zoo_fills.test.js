@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BARRACKS, BEEHIVE, COURT, COCKNEST, GRAVE, HEADSTONE, MORGUE, SHOPBASE, THRONE, ZOO, } from '../js/const.js';
+import { ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DOOR, GRAVE, HEADSTONE, LEPREHALL, MORGUE, OROOM, SHOPBASE, TEMPLE, THRONE, ZOO, } from '../js/const.js';
 import { CHEST, CORPSE, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE, } from '../js/object_data.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
+import { insideRoom } from '../js/room.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { init_objects } from '../js/o_init.js';
@@ -24,8 +25,8 @@ function zooEligibleSquares(level, room) {
     for (let x = room.lx; x <= room.hx; x++) {
         for (let y = room.ly; y <= room.hy; y++) {
             const location = level.at(x, y);
-            if (!location || location.typ <= 6 /* DOOR: SPACE_POS floor */)
-                continue;
+            if (!location || location.typ <= DOOR)
+                continue; // SPACE_POS(typ)
             if (door && ((x === room.lx && door.x === x - 1)
                 || (x === room.hx && door.x === x + 1)
                 || (y === room.ly && door.y === y - 1)
@@ -165,13 +166,13 @@ void test('a court crowns a depth-appropriate ruler with a sceptre and sealed co
             }
     assert.equal(thrones, 1, 'the court must have exactly one throne');
     assert.ok(throne);
-    const rulers = level.monsters.filter(monster => RULER_SPECIES.includes(MONSTER_NAME[monster.mnum] ?? ''));
-    assert.equal(rulers.length, 1, 'one throne, one ruler');
-    const ruler = rulers[0];
+    // C mk_zoo_thronemon() seats the ruler on the throne square; courtmon()
+    // may independently draw further gnome-class or giant-class rulers, so
+    // the throne occupant, not a level-wide census, is the rule under test.
+    const ruler = throne && monsterAtPosition(level, throne.x, throne.y);
+    assert.ok(ruler && RULER_SPECIES.includes(MONSTER_NAME[ruler.mnum] ?? ''), 'the throne must seat a ruler');
     if (!ruler)
-        throw new Error('unreachable: ruler asserted present');
-    assert.equal(ruler.mx, throne.x);
-    assert.equal(ruler.my, throne.y);
+        throw new Error('unreachable: throne ruler asserted present');
     assert.ok(ruler.msleeping, 'the ruler dozes on the throne');
     assert.equal(ruler.mpeaceful, 0, 'the court resists intruders');
     // C mk_zoo_thronemon(): difficulty 5 draws rnd(5) in 1..5, so only the
@@ -195,9 +196,14 @@ void test('an ogre tyrant can hold the throne once the difficulty reaches ten', 
     const level = await generateLevel(10, 83);
     const room = findRoom(level, COURT);
     assert.ok(room, 'depth-10 seed 83 must generate a court');
-    const rulers = level.monsters.filter(monster => RULER_SPECIES.includes(MONSTER_NAME[monster.mnum] ?? ''));
-    assert.ok(rulers.length >= 1, 'the throne must be taken');
-    assert.ok(rulers.some(monster => MONSTER_NAME[monster.mnum] === 'ogre tyrant'), 'rnd(10) can exceed nine at difficulty ten');
+    let throne = null;
+    for (let x = room.lx; x <= room.hx && !throne; x++)
+        for (let y = room.ly; y <= room.hy; y++)
+            if (level.at(x, y)?.typ === THRONE)
+                throne = { x, y };
+    assert.ok(throne, 'the court must have a throne');
+    const occupant = throne && monsterAtPosition(level, throne.x, throne.y);
+    assert.equal(occupant && MONSTER_NAME[occupant.mnum], 'ogre tyrant', 'rnd(10) can exceed nine at difficulty ten, seating the ogre tyrant');
 });
 void test('a zoo leaves the door-facing column empty and covers the rest in gold', async () => {
     const level = await generateLevel(22, 6);
@@ -247,12 +253,54 @@ void test('shops keep one lit doorway and never go big wand or book', async () =
     assert.ok(shops >= 10, `expected a healthy shop sample, saw ${shops}`);
     assert.ok(bigRooms >= 1, 'sample must include at least one big shop room');
 });
-void test('pick_room accepts a multi-doored room one time in five', async () => {
-    // C mkroom.c:pick_room() keeps a room whose doorct is not one only after
-    // a successful !rn2(5) draw; depth-20 seed 1's morgue has four doors.
-    const level = await generateLevel(20, 1);
-    const morgue = findRoom(level, MORGUE);
-    assert.ok(morgue, 'control: the morgue exists');
-    assert.ok(morgue.doorct > 1, `this morgue documents the multi-door acceptance (doorct=${morgue.doorct})`);
+void test('pick_room prefers single doors and accepts multi-door rooms one visit in five', async () => {
+    // C mkroom.c:pick_room() takes a doorct==1 room without a draw and keeps
+    // a multi-doored candidate only when !rn2(5) succeeds.  Swamps are chosen
+    // by mkswamp() and shops by mkshop() (doorct==1 only), so neither feeds
+    // this sample.  With a multi-door fraction f among stair-free ordinary
+    // rooms, always-accept would seat multi-door rooms at rate ~f, while the
+    // one-in-five rule predicts f/(5-4f); with f near 0.9 that is 0.69
+    // against 0.92, so a 0.82*f ceiling rejects always-accept and 1/3-or-more
+    // acceptance while leaving the native rate well below it.
+    const pickedTypes = [COURT, ZOO, BEEHIVE, MORGUE, BARRACKS, LEPREHALL,
+        COCKNEST, ANTHOLE, TEMPLE];
+    let chosen = 0;
+    let chosenMulti = 0;
+    let stairFree = 0;
+    let stairFreeMulti = 0;
+    for (let seed = 1; seed <= 400; seed++) {
+        const level = await generateLevel(12 + (seed % 18), seed);
+        const picked = level.rooms.filter(isRoom)
+            .find(room => pickedTypes.includes(room.rtype));
+        if (picked) {
+            chosen++;
+            if (picked.doorct > 1)
+                chosenMulti++;
+        }
+        for (const room of level.rooms.filter(isRoom)) {
+            if (room.rtype !== OROOM)
+                continue;
+            if (roomHasStair(room, true) || roomHasStair(room, false))
+                continue;
+            stairFree++;
+            if (room.doorct > 1)
+                stairFreeMulti++;
+        }
+    }
+    assert.ok(chosen >= 100, `expected a broad special-room sample, saw ${chosen}`);
+    assert.ok(chosen - chosenMulti >= 5 && chosenMulti >= 5, 'both acceptance outcomes must occur in the sample');
+    const populationRate = stairFreeMulti / stairFree;
+    const acceptanceRate = chosenMulti / chosen;
+    assert.ok(acceptanceRate < 0.82 * populationRate, `multi-door acceptance ${acceptanceRate.toFixed(3)} is too close to the `
+        + `population rate ${populationRate.toFixed(3)} for a one-in-five draw`);
 });
+function roomHasStair(room, up) {
+    for (let stair = game.stairs; stair; stair = stair.next) {
+        if (!!stair.up !== up)
+            continue;
+        if (insideRoom(game.level, room, stair.sx, stair.sy))
+            return true;
+    }
+    return false;
+}
 //# sourceMappingURL=mkroom_zoo_fills.test.js.map
