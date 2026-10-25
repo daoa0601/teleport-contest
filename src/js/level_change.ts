@@ -13,6 +13,7 @@ import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
 import { restoreLevelTimers } from './object_timers.js';
+import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
@@ -335,6 +336,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         try {
             game.level = cached.level;
             restoreEngravings(cached.level);
+            cached.stairs = restoreLevelChains(cached.stairs);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             restoreLevelTimers(game);

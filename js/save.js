@@ -30,6 +30,7 @@ import { oinit } from './mklev.js';
 import { restoreScheduledLevelChange } from './level_change.js';
 import { recorderRestoredTime } from './calendar.js';
 import { restoreSavedTimers } from './object_timers.js';
+import { restoreLevelChains } from './level_restore.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -269,6 +270,7 @@ export function restoreGame(name, storage = game.storage) {
         game._shopFollowMessageTurn = 0;
         game.program_state = { something_worth_saving: true };
         game.fmon = game.level?.monsters[0] ?? null;
+        game.stairs = restoreLevelChains(game.stairs);
         restoreLevelRegions(game, 0);
         // C restores the hero's carried and migrating lights while reading
         // the game state (restore.c:655) and then pushes the current
