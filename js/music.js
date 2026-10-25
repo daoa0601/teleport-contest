@@ -14,6 +14,8 @@ import { zapHeroWithObject } from './hero_self_zap.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
+import { displayRayName } from './ray_name.js';
+import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
@@ -296,7 +298,10 @@ async function playElementalHorn(instrument, element) {
     }
     else {
         if (!heroIsBlind()) {
-            await plineWithContinuation(`A bolt of ${element} blasts out of the horn!`);
+            // C music.c passes flash_str(type, FALSE), so a hallucinating
+            // hero sees a random hallucinatory blast and rolls for it.
+            const flash = displayRayName(element === 'fire' ? AD_FIRE : AD_COLD, 'wand');
+            await plineWithContinuation(`A ${flash} blasts out of the horn!`);
         }
         result = await zapRayWithObject(instrument);
     }
