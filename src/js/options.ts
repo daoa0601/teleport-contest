@@ -42,13 +42,336 @@ import {
 type PetPreference = '' | 'c' | 'd' | 'h' | 'n';
 type PetOption = 'pettype' | 'dogname' | 'catname' | 'horsename';
 
-// optlist.h aliases that reach parseoptions()'s alias pass. "customsymbols"
-// already matches its canonical name first.
-const CONFIGURATION_ALIASES = new Set([
-    'character', 'align', 'altkeyhandler', 'permablind', 'colour', 'customcolours',
-    'permadeaf', 'male', 'use_menu_glyphs', 'hicolor', 'prayconfirm', 'pet',
-    'termcolumns', 'use_truecolour', 'videocolours',
-]);
+// C include/optlist.h, recorder build: every option table entry in file
+// order — [name, alias, isBool, negateok, valok, dupeok, prefix].  The
+// flags drive parseoptions()'s generic checks; options the port does not
+// implement still match silently, and only unmatched elements draw
+// "Unknown option".  Prefix entries (cond_, font) match the whole element
+// text like str_start_is() instead of the value-less name part.
+const OPTION_TABLE = [
+    ['windowtype', null, false, false, true, false, false],
+    ['playmode', null, false, false, true, false, false],
+    ['name', null, false, false, true, false, false],
+    ['role', "character", false, true, true, true, false],
+    ['race', null, false, true, true, true, false],
+    ['gender', null, false, true, true, true, false],
+    ['alignment', "align", false, true, true, true, false],
+    ['accessiblemsg', null, true, true, false, false, false],
+    ['acoustics', null, true, true, false, false, false],
+    ['align_message', null, false, true, true, false, false],
+    ['align_status', null, false, false, true, false, false],
+    ['altkeyhandling', "altkeyhandler", false, false, true, false, false],
+    ['altmeta', null, true, true, false, false, false],
+    ['armorstatus', null, true, true, false, false, false],
+    ['ascii_map', null, true, true, false, false, false],
+    ['"autocompletions"', null, false, false, true, false, false],
+    ['autodescribe', null, true, true, false, false, false],
+    ['autodig', null, true, true, false, false, false],
+    ['autoopen', null, true, true, false, false, false],
+    ['autopickup', null, true, true, false, false, false],
+    ['"autopickup exceptions"', null, false, false, true, false, false],
+    ['autoquiver', null, true, true, false, false, false],
+    ['autounlock', null, false, true, true, false, false],
+    ['bgcolors', null, true, true, false, false, false],
+    ['"bind keys"', null, false, false, true, false, false],
+    ['BIOS', null, true, false, false, false, false],
+    ['blind', "permablind", true, true, false, false, false],
+    ['bones', null, true, true, false, false, false],
+    ['boulder', null, false, false, true, false, false],
+    ['catname', null, false, false, true, false, false],
+    ['checkpoint', null, true, true, false, false, false],
+    ['cmdassist', null, true, true, false, false, false],
+    ['color', "colour", true, true, false, false, false],
+    ['confirm', null, true, true, false, false, false],
+    ['crash_email', null, false, false, true, false, false],
+    ['crash_name', null, false, false, true, false, false],
+    ['crash_urlmax', null, false, false, true, false, false],
+    ['customcolors', "customcolours", true, true, false, false, false],
+    ['customsymbols', "customsymbols", true, true, false, false, false],
+    ['dark_room', null, true, true, false, false, false],
+    ['deaf', "permadeaf", true, true, false, false, false],
+    ['DECgraphics', null, false, true, true, false, false],
+    ['debug_hunger', null, true, true, false, false, false],
+    ['debug_mongen', null, true, true, false, false, false],
+    ['debug_overwrite_stairs', null, true, true, false, false, false],
+    ['disclose', null, false, true, true, false, false],
+    ['dogname', null, false, false, true, false, false],
+    ['dropped_nopick', null, true, true, false, false, false],
+    ['dungeon', null, false, false, true, false, false],
+    ['effects', null, false, false, true, false, false],
+    ['eight_bit_tty', null, true, true, false, false, false],
+    ['extmenu', null, true, true, false, false, false],
+    ['female', "male", true, true, false, false, false],
+    ['fireassist', null, true, true, false, false, false],
+    ['fixinv', null, true, true, false, false, false],
+    ['font_map', null, false, true, true, true, false],
+    ['font_menu', null, false, true, true, true, false],
+    ['font_message', null, false, true, true, true, false],
+    ['font_size_map', null, false, true, true, true, false],
+    ['font_size_menu', null, false, true, true, true, false],
+    ['font_size_message', null, false, true, true, true, false],
+    ['font_size_status', null, false, true, true, true, false],
+    ['font_size_text', null, false, true, true, true, false],
+    ['font_status', null, false, true, true, true, false],
+    ['font_text', null, false, true, true, true, false],
+    ['force_invmenu', null, true, true, false, false, false],
+    ['fruit', null, false, false, true, false, false],
+    ['fullscreen', null, true, true, false, false, false],
+    ['glyph', null, false, false, true, true, false],
+    ['goldX', null, true, true, false, false, false],
+    ['guicolor', null, true, true, false, false, false],
+    ['help', null, true, true, false, false, false],
+    ['herecmd_menu', null, true, true, false, false, false],
+    ['hilite_pet', null, true, true, false, false, false],
+    ['hilite_pile', null, true, true, false, false, false],
+    ['hilite_status', null, false, true, true, true, false],
+    ['hitpointbar', null, true, true, false, false, false],
+    ['horsename', null, false, false, true, false, false],
+    ['IBMgraphics', null, false, true, true, false, false],
+    ['idlecheckpoint', null, true, true, false, false, false],
+    ['ignintr', null, true, true, false, false, false],
+    ['implicit_uncursed', null, true, true, false, false, false],
+    ['legacy', null, true, true, false, false, false],
+    ['lit_corridor', null, true, true, false, false, false],
+    ['lootabc', null, true, true, false, false, false],
+    ['mail', null, true, true, false, false, false],
+    ['map_mode', null, false, true, true, false, false],
+    ['mention_decor', null, true, true, false, false, false],
+    ['mention_map', null, true, true, false, false, false],
+    ['mention_walls', null, true, true, false, false, false],
+    ['menu_deselect_all', null, false, false, true, false, false],
+    ['menu_deselect_page', null, false, false, true, false, false],
+    ['menu_first_page', null, false, false, true, false, false],
+    ['menu_headings', null, false, true, true, false, false],
+    ['menu_invert_all', null, false, false, true, false, false],
+    ['menu_invert_page', null, false, false, true, false, false],
+    ['menu_last_page', null, false, false, true, false, false],
+    ['menu_next_page', null, false, false, true, false, false],
+    ['menu_objsyms', "use_menu_glyphs", false, true, true, false, false],
+    ['menu_overlay', null, true, true, false, false, false],
+    ['menu_previous_page', null, false, false, true, false, false],
+    ['menu_search', null, false, false, true, false, false],
+    ['menu_select_all', null, false, false, true, false, false],
+    ['menu_select_page', null, false, false, true, false, false],
+    ['menu_shift_left', null, false, false, true, false, false],
+    ['menu_shift_right', null, false, false, true, false, false],
+    ['menu_tab_sep', null, true, true, false, false, false],
+    ['menucolors', null, true, true, true, false, false],
+    ['"menu colors"', null, false, false, true, false, false],
+    ['menuinvertmode', null, false, false, true, false, false],
+    ['menustyle', null, false, true, true, false, false],
+    ['"message types"', null, false, false, true, false, false],
+    ['mon_movement', null, true, true, false, false, false],
+    ['monpolycontrol', null, true, true, false, false, false],
+    ['montelecontrol', null, true, true, false, false, false],
+    ['monsters', null, false, false, true, false, false],
+    ['mouse_support', null, false, false, true, false, false],
+    ['msg_window', null, false, true, true, false, false],
+    ['msghistory', null, false, true, true, false, false],
+    ['news', null, true, true, false, false, false],
+    ['nudist', null, true, true, false, false, false],
+    ['null', null, true, true, false, false, false],
+    ['number_pad', null, false, false, true, false, false],
+    ['objects', null, false, false, true, false, false],
+    ['packorder', null, false, false, true, false, false],
+    ['paranoid_confirmation', "prayconfirm", false, true, true, true, false],
+    ['pauper', null, true, true, false, false, false],
+    ['perm_invent', null, true, true, false, false, false],
+    ['perminv_mode', null, false, true, true, false, false],
+    ['petattr', null, false, false, true, false, false],
+    ['pettype', "pet", false, true, true, false, false],
+    ['pickup_burden', null, false, false, true, false, false],
+    ['pickup_stolen', null, true, true, false, false, false],
+    ['pickup_thrown', null, true, true, false, false, false],
+    ['pickup_types', null, false, false, true, false, false],
+    ['pile_limit', null, false, true, true, false, false],
+    ['player_selection', null, false, false, true, false, false],
+    ['popup_dialog', null, true, true, false, false, false],
+    ['preload_tiles', null, true, true, false, false, false],
+    ['price_quotes', null, true, true, false, false, false],
+    ['pushweapon', null, true, true, false, false, false],
+    ['query_menu', null, true, true, false, false, false],
+    ['quick_farsight', null, true, true, false, false, false],
+    ['rawio', null, true, false, false, false, false],
+    ['reroll', null, true, true, false, false, false],
+    ['rest_on_space', null, true, true, false, false, false],
+    ['roguesymset', null, false, false, true, false, false],
+    ['runmode', null, false, true, true, false, false],
+    ['safe_pet', null, true, true, false, false, false],
+    ['safe_wait', null, true, true, false, false, false],
+    ['sanity_check', null, true, true, false, false, false],
+    ['scores', null, false, false, true, false, false],
+    ['scroll_amount', null, false, true, true, false, false],
+    ['scroll_margin', null, false, true, true, false, false],
+    ['selectsaved', null, true, true, false, false, false],
+    ['showdamage', null, true, true, false, false, false],
+    ['showexp', null, true, true, false, false, false],
+    ['showrace', null, true, true, false, false, false],
+    ['showscore', null, true, true, false, false, false],
+    ['showvers', null, true, true, false, false, false],
+    ['silent', null, true, true, false, false, false],
+    ['softkeyboard', null, true, true, false, false, false],
+    ['sortdiscoveries', null, false, true, true, false, false],
+    ['sortloot', null, false, false, true, false, false],
+    ['sortpack', null, true, true, false, false, false],
+    ['sortvanquished', null, false, true, true, false, false],
+    ['soundlib', null, false, false, true, false, false],
+    ['sounds', null, true, true, false, false, false],
+    ['sparkle', null, true, true, false, false, false],
+    ['spot_monsters', null, true, true, false, false, false],
+    ['splash_screen', null, true, true, false, false, false],
+    ['standout', null, true, true, false, false, false],
+    ['status_updates', null, true, true, false, false, false],
+    ['"status condition fields"', null, false, false, true, false, false],
+    ['statushilites', null, false, true, true, true, false],
+    ['"status highlight rules"', null, false, false, true, false, false],
+    ['statuslines', null, false, false, true, false, false],
+    ['suppress_alert', null, false, false, true, true, false],
+    ['symset', null, false, false, true, false, false],
+    ['term_cols', "termcolumns", false, false, true, false, false],
+    ['term_rows', null, false, false, true, false, false],
+    ['terrainstatus', null, true, true, false, false, false],
+    ['tile_file', null, false, false, true, false, false],
+    ['tile_height', null, false, true, true, false, false],
+    ['tile_width', null, false, true, true, false, false],
+    ['tiled_map', null, true, true, false, false, false],
+    ['time', null, true, true, false, false, false],
+    ['timed_delay', null, true, false, false, false, false],
+    ['tips', null, true, true, false, false, false],
+    ['tombstone', null, true, true, false, false, false],
+    ['toptenwin', null, true, true, false, false, false],
+    ['traps', null, false, false, true, false, false],
+    ['travel', null, true, true, false, false, false],
+    ['travel_debug', null, true, true, false, false, false],
+    ['tutorial', null, true, true, false, false, false],
+    ['use_darkgray', null, true, true, false, false, false],
+    ['use_inverse', null, true, true, false, false, false],
+    ['use_truecolor', "use_truecolour", true, true, false, false, false],
+    ['vary_msgcount', null, false, false, true, false, false],
+    ['verbose', null, true, true, false, false, false],
+    ['versinfo', null, false, false, true, false, false],
+    ['voices', null, true, true, false, false, false],
+    ['vt_tiledata', null, true, true, false, false, false],
+    ['vt_sounddata', null, true, true, false, false, false],
+    ['warnings', null, false, false, true, false, false],
+    ['weaponstatus', null, true, true, false, false, false],
+    ['whatis_coord', null, false, true, true, false, false],
+    ['whatis_filter', null, false, true, true, false, false],
+    ['whatis_menu', null, true, true, false, false, false],
+    ['whatis_moveskip', null, true, true, false, false, false],
+    ['windowborders', null, false, true, true, false, false],
+    ['windowcolors', null, false, false, true, true, false],
+    ['wizmgender', null, true, true, false, false, false],
+    ['wizweight', null, true, true, false, false, false],
+    ['wraptext', null, true, true, false, false, false],
+    ['cond_', null, false, true, false, true, true],
+    ['font', null, false, true, true, true, true],
+] as const;
+
+interface OptionTableEntry {
+    name: string;
+    alias: string | null;
+    isBool: boolean;
+    negateok: boolean;
+    valok: boolean;
+    dupeok: boolean;
+    pfx: boolean;
+    minmatch: number;
+    index: number;
+}
+
+interface OptionMatch extends OptionTableEntry {
+    viaAlias: boolean;
+}
+
+const asciiLower = (code: number): number => code >= 65 && code <= 90 ? code + 32 : code;
+
+// C options.c:determine_ambiguities(): minmatch is one past the longest
+// common case-insensitive prefix with any other option name, clamped to
+// [3, name length].
+const OPTION_ENTRIES: readonly OptionTableEntry[] = (() => {
+    const names = OPTION_TABLE.map(entry => entry[0]);
+    const needed = names.map(() => 0);
+    for (const [i, a] of names.entries()) {
+        for (const [j, b] of names.entries()) {
+            if (i === j) continue;
+            let common = 1;
+            while (common <= a.length && common <= b.length
+                && asciiLower(a.charCodeAt(common - 1))
+                    === asciiLower(b.charCodeAt(common - 1))) common++;
+            if (common > (needed[i] ?? 0)) needed[i] = common;
+        }
+    }
+    return OPTION_TABLE.map((entry, index) => ({
+        name: entry[0],
+        alias: entry[1],
+        isBool: entry[2],
+        negateok: entry[3],
+        valok: entry[4],
+        dupeok: entry[5],
+        pfx: entry[6],
+        minmatch: Math.min(Math.max(needed[index] ?? 0, 3), entry[0].length),
+        index,
+    }));
+})();
+
+// C hacklib.c lowc()/strncmpi() over a leading run of the element.
+function asciiNameEqual(name: string, element: string, length: number): boolean {
+    if (length > name.length) return false;
+    for (let i = 0; i < length; i++) {
+        if (asciiLower(name.charCodeAt(i)) !== asciiLower(element.charCodeAt(i))) return false;
+    }
+    return true;
+}
+
+// C options.c:length_without_val(): the element up to the first ':' or
+// '=' whichever leads, with preceding whitespace excluded.
+function lengthWithoutValue(element: string): number {
+    let cut = element.length;
+    for (let i = 0; i < element.length; i++) {
+        if (element.charAt(i) === ':' || element.charAt(i) === '=') { cut = i; break; }
+    }
+    while (cut > 0 && ' \t\n\v\f\r'.includes(element.charAt(cut - 1))) cut--;
+    return cut;
+}
+
+// C options.c:parseoptions()'s match loop: option names in table order at
+// their minimum length, then aliases at full length.  Returns null when no
+// entry matches, which parseoptions() reports as "Unknown option".
+function matchOptionElement(element: string): OptionMatch | null {
+    const nameLength = lengthWithoutValue(element);
+    for (const entry of OPTION_ENTRIES) {
+        if (entry.pfx) {
+            if (entry.name.length <= element.length
+                && asciiNameEqual(entry.name, element, entry.name.length)) {
+                return { ...entry, viaAlias: false };
+            }
+            continue;
+        }
+        if (nameLength >= entry.minmatch
+            && asciiNameEqual(entry.name, element, nameLength)) {
+            return { ...entry, viaAlias: false };
+        }
+    }
+    for (const entry of OPTION_ENTRIES) {
+        const { alias } = entry;
+        if (alias !== null && nameLength === alias.length
+            && asciiNameEqual(alias, element, nameLength)) {
+            return { ...entry, viaAlias: true };
+        }
+    }
+    return null;
+}
+
+// options.c:default_menu_cmd_info[] — the menu_* names that bind a key to
+// a menu paging command rather than configuring a compound option.
+const MENU_KEY_OPTIONS: Record<string, true> = {
+    menu_next_page: true, menu_previous_page: true, menu_first_page: true,
+    menu_last_page: true, menu_select_all: true, menu_invert_all: true,
+    menu_deselect_all: true, menu_select_page: true, menu_invert_page: true,
+    menu_deselect_page: true, menu_search: true, menu_shift_right: true,
+    menu_shift_left: true,
+};
 
 interface ConfigurationSettings {
     configErrors: ConfigurationErrorReport[];
@@ -820,20 +1143,33 @@ function parseConfiguration(
                 negated = !negated;
             }
 
-            if (stripped.toLowerCase().startsWith('cond_')) {
+            // parseoptions() matches each element against the option table
+            // before any handler runs; an element matching nothing is an
+            // unknown option, apart from the S_name:c symbol forms that
+            // parsesymbols() accepts (the symbol tables are not ported, so
+            // they are accepted without validation).
+            const optionMatch = matchOptionElement(stripped);
+            if (!optionMatch) {
+                if (!stripped.startsWith('S_')) addError(`Unknown option '${stripped}'`);
+                continue;
+            }
+            // parseoptions()'s right-to-left recursion retains using_alias
+            // across the elements of one OPTIONS statement.
+            usingAlias ||= optionMatch.viaAlias;
+            const canonical = optionMatch.name;
+
+            if (canonical === 'cond_') {
                 const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
                 if (mask !== null) result.flags.statusConditionMask = mask;
                 continue;
             }
 
             const colonIdx = stripped.search(/[:=]/);
-            const optionName = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trimEnd().toLowerCase();
-            const bindingOption = optionName.trimStart();
+            const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx))
+                .trimEnd().toLowerCase().trimStart();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
-            // C retains using_alias while unwinding the right-to-left
-            // recursion, including aliases belonging to other options.
-            usingAlias ||= CONFIGURATION_ALIASES.has(optionName);
-            const characterFacet = configuredCharacterFacet(bindingOption);
+            const characterFacet = canonical === 'role' || canonical === 'race'
+                || canonical === 'gender' || canonical === 'alignment' ? canonical : null;
             if (characterFacet) {
                 configureCharacterOption(result, {
                     facet: characterFacet, value: colonIdx < 0 ? null : stripped.slice(colonIdx + 1),
@@ -842,30 +1178,32 @@ function parseConfiguration(
                 }, addError);
                 continue;
             }
-            if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
-                && bindingOption !== 'menu_objsyms' && bindingOption !== 'menu_overlay' && bindingOption !== 'menu_tab_sep') {
-                if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), bindingOption);
+            // options.c:shared_menu_optfn() binds a key to one of the
+            // menu paging commands; the other menu_* names are compound
+            // options handled elsewhere.
+            if (MENU_KEY_OPTIONS[canonical] === true) {
+                if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), canonical);
                 continue;
             }
-            if (bindingOption === 'warnings') {
+            if (canonical === 'warnings') {
                 if (!negated && optionValue) setWarningSymbols(optionValue, result.iflags);
                 continue;
             }
-            if (bindingOption === 'pickup_types') {
+            if (canonical === 'pickup_types') {
                 if (!negated) {
                     result.flags.pickup_types = parsePickupTypes(optionValue ?? '').symbols;
                     if (!optionValue) result.flags.pickup = true;
                 }
                 continue;
             }
-            if (bindingOption === 'pile_limit') {
+            if (canonical === 'pile_limit') {
                 if (!negated || !optionValue) {
                     const limit = negated ? 0 : optionValue ? cInteger(optionValue) : 5;
                     result.flags.pile_limit = limit < 0 ? 5 : limit;
                 }
                 continue;
             }
-            if (bindingOption === 'statushilites') {
+            if (canonical === 'statushilites') {
                 // options.c:optfn_statushilites(): negation clears the
                 // duration; a missing value means the 3-turn default, atol()
                 // junk is 0, and negative values clamp to 1.
@@ -876,13 +1214,13 @@ function parseConfiguration(
                 }
                 continue;
             }
-            if (bindingOption === 'runmode') {
+            if (canonical === 'runmode') {
                 const mode = negated ? 'teleport' : ['teleport', 'run', 'walk', 'crawl']
                     .find(mode => optionValue && mode.startsWith(optionValue.toLowerCase()));
                 if (mode) result.flags.runmode = mode;
                 continue;
             }
-            if (bindingOption === 'msg_window') {
+            if (canonical === 'msg_window') {
                 if (!negated || !optionValue) {
                     const initial = optionValue?.charAt(0).toLowerCase() || (negated ? 's' : 'f');
                     if ('scfr'.includes(initial)) result.iflags.prevmsg_window = initial;
@@ -897,14 +1235,14 @@ function parseConfiguration(
                 }
                 continue;
             }
-            if (bindingOption === 'versinfo') {
+            if (canonical === 'versinfo') {
                 const value = Number.parseInt(optionValue ?? '', 10);
                 if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;
                 continue;
             }
-            // determine_ambiguities() permits three-letter name-option
-            // abbreviations. Pettype needs four letters, or the alias "pet".
-            if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
+            // optfn_pettype() and petname_optfn(); the alias "pet" and
+            // abbreviations reach the same handler through the match above.
+            if (canonical === 'pettype') {
                 checkDuplicatePetOption('pettype', usingAlias);
                 const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
                 const preference = configuredPetType(value, negated);
@@ -915,9 +1253,8 @@ function parseConfiguration(
                 else if (!negated) addError(`Missing parameter for '${stripped}'`);
                 continue;
             }
-            const petNameOption = bindingOption.length >= 3
-                ? (['dogname', 'catname', 'horsename'] as const).find(name => name.startsWith(bindingOption))
-                : undefined;
+            const petNameOption = (['dogname', 'catname', 'horsename'] as const)
+                .find(name => name === canonical);
             if (petNameOption) {
                 checkDuplicatePetOption(petNameOption, usingAlias);
                 if (negated) {
@@ -935,29 +1272,29 @@ function parseConfiguration(
                 }
                 continue;
             }
-            if (bindingOption === 'number_pad') {
+            if (canonical === 'number_pad') {
                 if (optionValue && negated) continue;
                 const value = optionValue ? parseInt(optionValue, 10) || 0 : negated ? 0 : 1;
                 if (optionValue && value === 0 && optionValue[0] !== '0') continue;
                 setNumberPadOption(value, result);
                 continue;
             }
-            if (bindingOption === 'menustyle') {
+            if (canonical === 'menustyle') {
                 const initial = optionValue?.[0]?.toLowerCase() ?? (negated ? 'n' : null);
                 const style = menuStyleForInitial(initial);
                 if (style !== undefined) result.flags.menu_style = style;
                 continue;
             }
-            if (bindingOption === 'packorder') {
+            if (canonical === 'packorder') {
                 if (optionValue !== null) changeInventoryOrder(optionValue, result);
                 continue;
             }
-            if (bindingOption === 'sortloot') {
+            if (canonical === 'sortloot') {
                 const mode = optionValue?.[0]?.toLowerCase();
                 if (isLootSortMode(mode)) result.flags.sortloot = mode;
                 continue;
             }
-            if (bindingOption === 'sortdiscoveries') {
+            if (canonical === 'sortdiscoveries') {
                 const initial = optionValue?.charAt(0).toLowerCase();
                 if (negated) result.flags.discosort = 'o';
                 else if (initial === 'o' || initial === '0') result.flags.discosort = 'o';
@@ -968,12 +1305,12 @@ function parseConfiguration(
                 else addError(`Missing parameter for '${stripped}'`);
                 continue;
             }
-            if (bindingOption === 'altmeta' || bindingOption === 'toptenwin' || bindingOption === 'menu_tab_sep') {
+            if (canonical === 'altmeta' || canonical === 'toptenwin' || canonical === 'menu_tab_sep') {
                 const value = booleanOption(optionValue, negated);
-                if (value !== null) result.iflags[bindingOption] = value;
+                if (value !== null) result.iflags[canonical] = value;
                 continue;
             }
-            if (bindingOption === 'scores') {
+            if (canonical === 'scores') {
                 const choices = parseScoreOption(optionValue, negated);
                 if (choices) {
                     result.flags.end_top = choices.end_top;
@@ -982,13 +1319,13 @@ function parseConfiguration(
                 }
                 continue;
             }
-            if (bindingOption === 'fruit') {
+            if (canonical === 'fruit') {
                 if (negated && optionValue !== null) continue;
                 if (negated || optionValue)
                     result.fruit = normalizePreferredFruitName(negated ? '' : optionValue ?? '', result);
                 continue;
             }
-            if (bindingOption === 'rest_on_space') {
+            if (canonical === 'rest_on_space') {
                 const value = booleanOption(optionValue, negated);
                 if (value !== null) {
                     result.flags.rest_on_space = value;
@@ -998,13 +1335,12 @@ function parseConfiguration(
             }
 
             if (colonIdx >= 0) {
-                const key = stripped.slice(0, colonIdx).trim().toLowerCase();
                 const val = stripped.slice(colonIdx + 1).trim();
 
-                if (key === 'name') result.name = val;
-                else if (key === 'playmode' && val === 'debug') result.flags.debug = true;
-                else if (key === 'playmode' && val === 'explore') result.flags.explore = true;
-                else if (key === 'symset') {
+                if (canonical === 'name') result.name = val;
+                else if (canonical === 'playmode' && val === 'debug') result.flags.debug = true;
+                else if (canonical === 'playmode' && val === 'explore') result.flags.explore = true;
+                else if (canonical === 'symset') {
                     // options.c:optfn_symset() loads the set from the
                     // symbols file.  A name no `start:` line carries fails,
                     // clears the choice, and reports the error; "default"
@@ -1017,7 +1353,7 @@ function parseConfiguration(
                         addError(`Unable to load symbol set "${val}" from "symbols"`);
                     }
                 }
-                else if (key === 'menu_headings') {
+                else if (canonical === 'menu_headings') {
                     if (negated)
                         addError('The menu_headings option may not both have a value and be negated.');
                     else {
@@ -1025,12 +1361,11 @@ function parseConfiguration(
                         if (style) result.iflags.menu_headings = style;
                     }
                 }
-                else if (key === 'suppress_alert') {
+                else if (canonical === 'suppress_alert') {
                     const parsed = negated ? null : featureAlertVersion(val);
                     if (parsed && !parsed.future) result.flags.suppress_alert = parsed.version;
                 }
-                else if (key === 'paranoid_confirmation'
-                    || key === 'paranoid_confirm') {
+                else if (canonical === 'paranoid_confirmation') {
                     if (negated) {
                         if (!val) {
                             paranoiaBits = 0;
@@ -1043,9 +1378,9 @@ function parseConfiguration(
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
                 }
-                else if (key === 'autounlock') result.flags.autounlock = val;
-                else if (key === 'disclose') result.flags.disclose = val;
-                else if (key === 'pickup_burden') {
+                else if (canonical === 'autounlock') result.flags.autounlock = val;
+                else if (canonical === 'disclose') result.flags.disclose = val;
+                else if (canonical === 'pickup_burden') {
                     // optfn_pickup_burden() uses the first letter, with 'o'
                     // and 't' both selecting overtaxed.
                     const initial = val.charAt(0).toLowerCase();
@@ -1053,57 +1388,53 @@ function parseConfiguration(
                     if (initial && burden >= 0) result.flags.pickup_burden = burden;
                 }
                 else {
-                    const option = requestBooleanByName.get(key);
+                    const option = requestBooleanByName.get(canonical);
                     const value = booleanOption(val, negated);
                     if (option && value !== null) setConfigurationBoolean(result, option, value);
                 }
             } else {
-                const lname = stripped.toLowerCase();
                 const value = !negated;
 
-                if (lname === 'autopickup' || lname === 'pickup') result.flags.pickup = value;
-                else if (lname === 'color') result.flags.color = value;
-                else if (lname === 'legacy') result.flags.legacy = value;
-                else if (lname === 'pauper') {
+                if (canonical === 'autopickup') result.flags.pickup = value;
+                else if (canonical === 'color') result.flags.color = value;
+                else if (canonical === 'legacy') result.flags.legacy = value;
+                else if (canonical === 'pauper') {
                     result.flags.pauper = value;
                     // options.c applies this implication immediately, so a
                     // later explicit !nudist may still override it.
                     if (value) result.flags.nudist = true;
                 }
-                else if (lname === 'nudist') result.flags.nudist = value;
-                else if (lname === 'blind' || lname === 'permablind')
-                    result.flags.blind = value;
-                else if (lname === 'deaf' || lname === 'permadeaf')
-                    result.flags.deaf = value;
-                else if (lname === 'tutorial') { result.flags.tutorial = value; result.tutorial_set = true; }
-                else if (lname === 'splash_screen') result.iflags.wc_splash_screen = value;
-                else if (lname === 'wizmgender' || lname === 'wizweight') result.iflags[lname] = value;
-                else if (lname === 'montelecontrol') result.monTelecontrol = value;
-                else if (lname === 'pushweapon') result.flags.pushweapon = value;
-                else if (lname === 'showexp') result.flags.showexp = value;
-                else if (lname === 'time') result.flags.time = value;
-                else if (lname === 'verbose') result.flags.verbose = value;
-                else if ((lname === 'paranoid_confirmation'
-                    || lname === 'paranoid_confirm') && negated) {
+                else if (canonical === 'nudist') result.flags.nudist = value;
+                else if (canonical === 'blind') result.flags.blind = value;
+                else if (canonical === 'deaf') result.flags.deaf = value;
+                else if (canonical === 'tutorial') { result.flags.tutorial = value; result.tutorial_set = true; }
+                else if (canonical === 'splash_screen') result.iflags.wc_splash_screen = value;
+                else if (canonical === 'wizmgender' || canonical === 'wizweight') result.iflags[canonical] = value;
+                else if (canonical === 'montelecontrol') result.monTelecontrol = value;
+                else if (canonical === 'pushweapon') result.flags.pushweapon = value;
+                else if (canonical === 'showexp') result.flags.showexp = value;
+                else if (canonical === 'time') result.flags.time = value;
+                else if (canonical === 'verbose') result.flags.verbose = value;
+                else if (canonical === 'paranoid_confirmation' && negated) {
                     paranoiaBits = 0;
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
                 }
                 else {
-                    const option = requestBooleanByName.get(lname);
+                    const option = requestBooleanByName.get(canonical);
                     if (option) setConfigurationBoolean(result, option, value);
-                    else if (lname === 'bones') result.flags.bones = value;
-                    else if (lname === 'reroll') result.flags.reroll = value;
-                    else if (lname === 'female' || lname === 'male') {
-                        const female = lname === 'female' ? value : !value;
+                    else if (canonical === 'bones') result.flags.bones = value;
+                    else if (canonical === 'reroll') result.flags.reroll = value;
+                    else if (canonical === 'female') {
+                        const female = bindingOption === 'male' ? !value : value;
                         result.flags.female = female;
                         result.flags.initgend = Number(female);
                         result.gender = female ? 'female' : 'male';
                     }
-                    else if (lname === 'autounlock') result.flags.autounlock = value;
+                    else if (canonical === 'autounlock') result.flags.autounlock = value;
                     // optfn_menu_headings() without a value: inverse, or
                     // none when negated.
-                    else if (lname === 'menu_headings')
+                    else if (canonical === 'menu_headings')
                         result.iflags.menu_headings = { attr: negated ? C_ATR_NONE : C_ATR_INVERSE, color: NO_COLOR };
                 }
             }
@@ -1111,14 +1442,6 @@ function parseConfiguration(
     }
     if (paranoiaSeen) result.flags.paranoia_bits = paranoiaBits;
     return result;
-}
-
-function configuredCharacterFacet(option: string): CharacterFacet | null {
-    if (option === 'character' || option.length >= 3 && 'role'.startsWith(option)) return 'role';
-    if (option.length >= 3 && 'race'.startsWith(option)) return 'race';
-    if (option.length >= 3 && 'gender'.startsWith(option)) return 'gender';
-    if (option === 'align' || option.length >= 6 && 'alignment'.startsWith(option)) return 'alignment';
-    return null;
 }
 
 // C options.c:parse_role_opt(). Negative lists change filters without
