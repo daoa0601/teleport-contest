@@ -208,7 +208,7 @@ import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { isAutoReturningThrow } from './returning_throw.js';
-import { chooseHeroVolleyCount } from './hero_multishot.js';
+import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
 import { captureThrownObjectFlight, } from './thrown_object.js';
 import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
@@ -6711,13 +6711,21 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         count: volleyCount, index: 1, objectType: item.otyp,
         shooting: launcherMatchesAmmo(item, game.uwep),
     };
-    for (; volley.index <= volley.count; volley.index++) {
-        const stopVolley = await throwSelectedUnit(item, dx, dy, volley);
-        if (game.program_state.gameover)
-            return;
-        await reportHeroEncumbrance(game);
-        if (game.program_state.gameover || stopVolley)
-            break;
+    // end.c:savelife() truncates m_shot so a life-saved hero fires no
+    // further missiles; the loop reads the shared volley for that cut.
+    beginHeroVolley(volley);
+    try {
+        for (; volley.index <= volley.count; volley.index++) {
+            const stopVolley = await throwSelectedUnit(item, dx, dy, volley);
+            if (game.program_state.gameover)
+                return;
+            await reportHeroEncumbrance(game);
+            if (game.program_state.gameover || stopVolley)
+                break;
+        }
+    }
+    finally {
+        finishHeroVolley();
     }
     game.context.move = 1;
 }
