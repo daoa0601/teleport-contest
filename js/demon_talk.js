@@ -66,7 +66,8 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
         if ((state.multi ?? 0) > 0)
             endVoluntaryMultiTurn(state);
     }
-    if (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PRINCE) && monster.minvis) {
+    if (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON)
+        && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PRINCE) && monster.minvis) {
         const unseen = !canSpotMonster(monster);
         monster.minvis = monster.perminvis = false;
         if (unseen && canSpotMonster(monster)) {
