@@ -4,8 +4,8 @@ import test, { type TestContext } from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_EPRI } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import type { AttributeValues } from '../js/roles.js';
 import { ELVEN_DAGGER, SCR_IDENTIFY } from '../js/object_data.js';
-import { heroBeautyDescription } from '../js/mirror.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObject } from './support/game-objects.js';
@@ -61,7 +61,13 @@ void test('a temple priest refuses a new personal name', async t => {
 });
 
 void test('naming at the hero square declines without a steed', async t => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    // C apply.c:beautiful(): charisma 25 (the ACURR(A_CHA) maximum) yields
+    // "sublime", asserted literally so a broken port cannot echo itself.
+    const attributes: AttributeValues = [12, 12, 12, 12, 12, 25];
+    freshObjectRoom({
+        flags: { tips: false, verbose: true },
+        hero: { acurr: { a: [...attributes] }, amax: { a: [...attributes] } },
+    });
     const input = resetInputState();
     input.feed('name\r');
     queueCommandKeys('m');
@@ -72,7 +78,7 @@ void test('naming at the hero square declines without a steed', async t => {
     await rhack('#'.charCodeAt(0));
 
     assert.equal(game._pending_message,
-        `This ${heroBeautyDescription()} creature is called ${game.plname} and cannot be renamed.`);
+        `This sublime creature is called ${game.plname} and cannot be renamed.`);
     assert.equal(game.context.move, 0);
 });
 
