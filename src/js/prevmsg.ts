@@ -130,19 +130,23 @@ export async function doprevMessage(inread = false): Promise<void> {
             await showMessageHistoryWindow({ reversed: false });
         } else if (mode === 'c') {
             // Combination: the first two recalls page single lines (the
-            // pending topline, then the newest remembered one), the third
-            // opens the full window. ttyDisplay->dismiss_more stays ^P for
-            // the whole invocation, so the window pager accepts it too.
+            // pending topline, then the newest remembered one), unless
+            // maxrow wrapped to zero. Only a single-line step in this call
+            // sets dismiss_more to ^P for the window's pager too.
+            let acceptCtrlP = false;
             for (;;) {
                 const cursor = game._messageHistoryCursor;
                 let morc: number;
-                if (cursor === null || cursor === game._messageHistory.length - 1) {
+                const newestSavedLine = cursor === game._messageHistory.length - 1
+                    && game._messageHistoryWriteIndex > 0;
+                if (cursor === null || newestSavedLine) {
+                    acceptCtrlP = true;
                     morc = await redotoplin(cursor === null
                         ? game._toplines : game._messageHistory[cursor] ?? '');
                     stepHistoryBack();
                 } else {
                     game._messageHistoryCursor = null;
-                    morc = await showMessageHistoryWindow({ reversed: false, acceptCtrlP: true });
+                    morc = await showMessageHistoryWindow({ reversed: false, acceptCtrlP });
                 }
                 if (morc !== CTRL_P) break;
             }

@@ -69,6 +69,7 @@ function restoreMessageHistory(saved: readonly string[]): void {
     if (!saved.length) return;
     rememberToplines();
     const session = game._messageHistory.splice(0);
+    game._messageHistoryWriteIndex = 0;
     game._messageHistoryCursor = null;
     for (const message of saved) {
         if (!message) continue;

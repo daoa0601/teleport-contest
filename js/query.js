@@ -1,7 +1,7 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, flush_screen, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, rememberToplines, setTopline } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { NO_COLOR } from './terminal.js';
@@ -68,6 +68,7 @@ async function editLine(prompt, accepts, { suppressStatus = false, inMenu = fals
     if (inMenu) {
         // hooked_tty_getlin() writes to WIN_MESSAGE while the menu stays
         // active. A full screen flush here would replace it with the map.
+        rememberToplines();
         game._pending_message = prompt;
         game._retained_message = '';
     }

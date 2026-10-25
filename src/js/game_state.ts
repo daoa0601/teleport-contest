@@ -436,6 +436,8 @@ export interface GameState {
     // msghistory), with the ^P walk position in _messageHistoryCursor.
     _toplines: string;
     _messageHistory: string[];
+    // cw->maxrow: next ring slot, retained even when the oldest entry drops.
+    _messageHistoryWriteIndex: number;
     _messageHistoryCursor: number | null;
     // C ttyDisplay->toplin == TOPLINE_SPECIAL_PROMPT: a yn/getlin prompt
     // owns the line until the first redotoplin() or clear replaces it.
@@ -510,7 +512,8 @@ export function createGameState(): GameState {
         _monsterSwallower: null, _monsterEngulf: null, warn_obj_cnt: 0, _magicKeyTrapWarningCount: 0,
         bhitpos: { x: 0, y: 0 }, notonhead: false,
         _pending_message: '', _retained_message: '', _last_message: '',
-        _toplines: '', _messageHistory: [], _messageHistoryCursor: null, _promptOwnsTopline: false,
+        _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
+        _messageHistoryCursor: null, _promptOwnsTopline: false,
         _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };
 }

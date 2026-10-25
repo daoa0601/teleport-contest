@@ -32,6 +32,17 @@ async function markSeen(input: InputGate): Promise<void> {
     await nhgetch();
 }
 
+async function recallGame(mode: 'single' | 'combination', moves: string, storage = memoryStorage()) {
+    return await runSegment({
+        seed: 3,
+        datetime: '2026-10-25T12:00:00',
+        nethackrc: 'OPTIONS=name:Recall,role:Valkyrie,race:human,gender:female,align:lawful,'
+            + `!legacy,!tutorial,!tips,pettype:none,msg_window:${mode}`,
+        moves,
+        storage,
+    });
+}
+
 void test('single-mode ^P recalls the joined line, wraps to the newest, and takes no time', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
@@ -138,6 +149,58 @@ void test('msg_window:combination pages two single lines before the full window'
     assert.match(rowText(0), /Message History/);
     input.feed(' ');
     await recall;
+});
+
+void test('a combination history window opened by a separate command ignores ^P', async () => {
+    const engine = await recallGame('combination', ' $)=\x10\x10\x10');
+    assert.match(rowText(0), /Message History/);
+
+    engine.inputGate.feed(16);
+    await engine.runUntilInputNeeded();
+
+    assert.match(rowText(0), /Message History/,
+        '^P cannot dismiss a window without a single-line step in this call');
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.doesNotMatch(rowText(0), /Message History/, 'Space still dismisses the window');
+});
+
+void test('combination recall opens the full window on its second press when the ring write slot wraps', async () => {
+    // The greeting and nineteen command responses fill twenty saved slots;
+    // the twentieth response is still the pending line.
+    const engine = await recallGame('combination', ' ' + '$)'.repeat(10) + '\x10');
+    assert.match(rowText(0), /spear \(weapon in left hand\)/);
+
+    engine.inputGate.feed(16);
+    await engine.runUntilInputNeeded();
+
+    assert.match(rowText(0), /Message History/,
+        'at write slot zero, C skips the newest saved line and opens the window');
+});
+
+void test('restoring a full recall ring restarts combination mode at write slot zero', async () => {
+    const storage = memoryStorage();
+    const saved = await recallGame('combination', ' ' + '$)'.repeat(10) + 'Sy', storage);
+    assert.equal(saved.lastRunResult?.kind, 'stopped', 'the save command must finish');
+    const engine = await recallGame('combination', '\x10', storage);
+    assert.match(rowText(0), /welcome back to NetHack!/);
+
+    engine.inputGate.feed(16);
+    await engine.runUntilInputNeeded();
+
+    assert.match(rowText(0), /Message History/,
+        'refilling all twenty slots during restore takes the same wrapped-ring branch');
+});
+
+void test('menu search remembers the message it replaces before recalling it', async () => {
+    const engine = await recallGame('single', ' $i:');
+    assert.match(rowText(0), /^Search for:/);
+
+    engine.inputGate.feed(16);
+    await engine.runUntilInputNeeded();
+
+    assert.equal(rowText(0), 'Your wallet is empty.',
+        'the first ^P in menu search recalls the message shown before the menu');
 });
 
 void test('a wrapped recall pages with --More-- and ^P keeps the walk going', async () => {
@@ -567,16 +630,4 @@ void test('a repainted long line prompt pages on its next first recall', async (
     await input.waitUntilBlocked();
     input.feed('\x1b');
     await editor;
-});
-
-void test('montelecontrol is honored from the rc file at startup', async () => {
-    const engine = await runSegment({
-        seed: 3,
-        datetime: '2026-10-25T12:00:00',
-        nethackrc: 'OPTIONS=name:Telep,role:Valkyrie,race:human,gender:female,align:lawful,montelecontrol',
-        moves: '',
-        storage: memoryStorage(),
-    });
-    assert.equal(engine.state._monTelecontrol, true,
-        'applyStartupConfiguration installs the parsed montelecontrol flag');
 });

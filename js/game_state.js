@@ -14,7 +14,8 @@ export function createGameState() {
         _monsterSwallower: null, _monsterEngulf: null, warn_obj_cnt: 0, _magicKeyTrapWarningCount: 0,
         bhitpos: { x: 0, y: 0 }, notonhead: false,
         _pending_message: '', _retained_message: '', _last_message: '',
-        _toplines: '', _messageHistory: [], _messageHistoryCursor: null, _promptOwnsTopline: false,
+        _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
+        _messageHistoryCursor: null, _promptOwnsTopline: false,
         _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };
 }

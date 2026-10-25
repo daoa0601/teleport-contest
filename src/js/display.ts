@@ -3213,9 +3213,11 @@ export function messageHistoryCapacity(): number {
 export function rememberToplines(): void {
     const toplines = game._toplines;
     if (!toplines) return;
+    const capacity = messageHistoryCapacity();
     game._messageHistory.push(toplines);
-    if (game._messageHistory.length > messageHistoryCapacity())
+    if (game._messageHistory.length > capacity)
         game._messageHistory.shift();
+    game._messageHistoryWriteIndex = (game._messageHistoryWriteIndex + 1) % capacity;
     game._toplines = '';
     game._messageHistoryCursor = null;
 }
