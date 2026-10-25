@@ -63,16 +63,26 @@ const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
     '+', '/', '*', '*', '`', '0', '_', '.'];
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
+function shownSymbolSet(state = game) {
+    const rogue = Is_rogue_level(state.u?.uz, state);
+    return state.shownSymbols ?? {
+        rogue, name: (rogue ? state.rogueSymset : state.symset) ?? null,
+    };
+}
+function usesDecSymbols() {
+    const symbols = shownSymbolSet();
+    return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
+}
 function activeObjectSymbols() {
-    return Is_rogue_level(game.u?.uz)
+    return shownSymbolSet().rogue
         ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
 }
 // symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
 // else the default rock-class symbol.  optfn_boulder() fills both sets'
 // overrides, while the BOULDER= statement (cfgfiles.c) only fills the
-// primary one, so the Rogue level consults its own slot.
+// primary one. A named primary selection can display that slot on Rogue.
 export function currentBoulderSymbol(state = game) {
-    const override = Is_rogue_level(state.u?.uz)
+    const override = shownSymbolSet(state).rogue
         ? state.rogueBoulderSym : state.boulderSym;
     return override || '`';
 }
@@ -386,7 +396,7 @@ export function reglyph_darkroom() {
     const darkRoom = game.flags.dark_room ?? true;
     const showDarkFloor = darkRoom && game.flags.color !== false
         && !Is_rogue_level(game.u.uz);
-    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
+    const dec = usesDecSymbols();
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const loc = game.level.at(x, y);
@@ -424,9 +434,8 @@ export function reglyph_darkroom() {
 }
 // symbols.c:switch_symbols()/assign_graphics() keep every glyph number and
 // let doredraw() resolve characters again; mirror that for the map memory,
-// which stores its character.  Only terrain glyphs change appearance between
-// the rendered sets (default, DECgraphics), and the branch wall colors move
-// with the DEC set.
+// which stores its character. Object classes differ on Rogue, and terrain
+// characters and branch wall colors also depend on the selected set.
 export function reglyphSymbolSet() {
     if (!game.level)
         return;
@@ -434,8 +443,16 @@ export function reglyphSymbolSet() {
         for (let y = 0; y < ROWNO; y++) {
             const loc = game.level.at(x, y);
             const memory = loc?.remembered_glyph;
-            const glyphNumber = memory?.glyph;
-            if (!loc || !memory || memory.kind !== 'terrain'
+            if (!loc || !memory)
+                continue;
+            if (memory.kind === 'object' && !memory.statueGlyph) {
+                const ch = memory.otyp === BOULDER ? currentBoulderSymbol()
+                    : activeObjectSymbols()[objectClassForType(memory.otyp)] ?? memory.ch;
+                loc.remembered_glyph = { ...memory, ch };
+                continue;
+            }
+            const glyphNumber = memory.glyph;
+            if (memory.kind !== 'terrain'
                 || typeof glyphNumber !== 'number')
                 continue;
             const index = rememberedTerrainIndex(glyphNumber);
@@ -869,7 +886,7 @@ function projectedTerrainType(loc) {
 function terrainGlyphAppearance(loc, x, y) {
     const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
-    const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
+    const dec = usesDecSymbols();
     // symbols.c:load_symset() applies these sets' G_ wall colors independently
     // of character handling; the default set leaves wallcolors[] gray.
     const hasBranchWallColors = BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? '');
@@ -914,7 +931,7 @@ function terrainGlyphAppearance(loc, x, y) {
                 ? { ch: 'q', color: wallColor, dec: true }
                 : { ch: 'x', color: wallColor, dec: true };
         case DOOR:
-            if (rogue)
+            if (shownSymbolSet().rogue)
                 return { ch: '+', color: NO_COLOR, dec: false };
             if (!loc.doormask || loc.doormask & D_BROKEN)
                 return dec
@@ -1087,9 +1104,9 @@ export function cmapSymbolAppearance(symbol) {
     const definition = MAP_SYMBOLS[symbol];
     if (!definition)
         throw new RangeError(`Unknown dungeon symbol ${symbol}`);
-    if (Is_rogue_level(game.u.uz))
+    if (shownSymbolSet().rogue)
         return { ch: rogueFurnitureSymbols.get(symbol) ?? definition.ch, dec: false };
-    const decSymbol = /^DECgraphics$/i.test(game.symset ?? '')
+    const decSymbol = usesDecSymbols()
         ? decFurnitureSymbols.get(symbol) : undefined;
     return { ch: decSymbol ?? definition.ch, dec: decSymbol !== undefined };
 }
@@ -1235,8 +1252,7 @@ export function zapdir_to_glyph(dx, dy, beamType) {
     const ascii = ['|', '-', '\\', '/'][direction];
     if (ascii === undefined)
         throw new Error('Beam direction has no display symbol');
-    const dec = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset ?? '')
-        && direction < 2;
+    const dec = usesDecSymbols() && direction < 2;
     const color = [CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, CLR_BRIGHT_BLUE,
         CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][type];
     if (color === undefined)
@@ -1257,8 +1273,7 @@ export function explosionGlyph(style, dx, dy) {
         throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
     const alternate = index === 1 ? 'o' : index === 3 || index === 5 ? 'x'
         : index === 7 ? 's' : null;
-    const dec = alternate !== null && !Is_rogue_level(game.u.uz)
-        && /^DECgraphics$/i.test(game.symset ?? '');
+    const dec = alternate !== null && usesDecSymbols();
     return { ch: dec && alternate ? alternate : ascii, color, decgfx: dec,
         kind: 'effect', glyph: GlyphOffset.explodeDark + type * 9 + index };
 }
@@ -1574,7 +1589,7 @@ function rememberFeltRoom(x, y, location, symbol) {
     // reglyph_darkroom() uses the floor symbol only with dark_room and color.
     const floor = symbol === CmapSymbol.room
         || dark && (game.flags.dark_room ?? true) && game.flags.color !== false;
-    const dec = /^DECgraphics$/i.test(game.symset || '') && !Is_rogue_level(game.u.uz);
+    const dec = usesDecSymbols();
     const glyph = {
         ch: floor ? dec ? '~' : '.' : ' ',
         color: dark ? 16 : NO_COLOR,
@@ -1641,7 +1656,6 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
     if (Is_rogue_level(game.u?.uz)) {
         if (!isRogueShowraceHeroGlyph(glyph, x, y))
             color = NO_COLOR;
-        decgfx = false;
     }
     const nextGlyph = glyph || { kind: 'effect' };
     // reset_glyphmap() marks a corridor engraving which shares '#'
@@ -2185,7 +2199,7 @@ export function swallowed(first = false) {
         [-1, 1, '\\', null], [0, 1, '-', 's'], [1, 1, '/', null],
     ];
     const hallucinating = heroIsHallucinating(game);
-    const dec = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset ?? '');
+    const dec = usesDecSymbols();
     for (const [index, [dx, dy, ascii, alternate]] of positions.entries()) {
         if (index === 4)
             displaySelf();
@@ -2494,7 +2508,7 @@ function statusLine2Fields(capacity) {
     const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
     const displayedPower = Math.min(u.uen ?? 0, 9999);
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
-    const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
+    const goldSymbol = activeObjectSymbols()[objectClassForType(GOLD_PIECE)] ?? '$';
     const displayedAc = u.uac ?? 10;
     const displayedGold = Math.max(0, Math.min(999999, game._statusGoldOverride ?? heroGoldAmount(game)));
     const experience = polymorphed ? `HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`

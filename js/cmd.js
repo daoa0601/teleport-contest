@@ -53,7 +53,7 @@ import { AD_PHYS } from './monster_attack_types.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
 import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
-import { currentBoulderSymbol, map_engraving, map_trap } from './display.js';
+import { map_engraving, map_trap } from './display.js';
 import { teleportHeroAtWill } from './teleport.js';
 import { mapMagicLevel } from './magic_mapping.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
@@ -5102,7 +5102,10 @@ async function dowhatis() {
                 waterLevel: Is_waterlevel(game.u.uz),
                 inHell: In_hell(game.u.uz),
                 blind: heroIsBlind(game),
-                boulderSymbol: currentBoulderSymbol(),
+                // pager.c resolves the override by level, independently of
+                // the symbols currently displayed by do_symset().
+                boulderSymbol: (Is_rogue_level(game.u.uz)
+                    ? game.rogueBoulderSym : game.boulderSym) || '`',
             });
             await plineWithContinuation(result.count
                 ? `${name}        ${result.text}` : "I've never heard of such things.");

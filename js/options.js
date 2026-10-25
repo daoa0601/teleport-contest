@@ -3131,14 +3131,23 @@ async function editSymset(rogueflag) {
         pickMode: PICK_ONE,
         preselectedKey: currentKey,
     });
-    if (selection.value !== undefined) {
-        const chosen = selection.value === 'default' ? null : selection.value;
+    if (selection.key !== 27) {
+        // With no selected row, do_symset() reapplies the preset entry.
+        const preset = rogueflag ? game.rogueSymset : game.symset;
+        const chosen = selection.value === undefined ? preset ?? null
+            : selection.value === 'default' ? null : selection.value;
         if (rogueflag)
             game.rogueSymset = chosen;
         else
             game.symset = chosen;
-        if (!rogueflag)
-            reglyphSymbolSet();
+        const rogueLevel = Is_rogue_level(game.u.uz);
+        // do_symset() calls switch_symbols(TRUE) for every named set;
+        // that copies primary symbols without changing currentgraphics.
+        if (chosen !== null || !rogueflag && !rogueLevel)
+            game.shownSymbols = { rogue: false, name: game.symset ?? null };
+        if (rogueflag && rogueLevel)
+            game.shownSymbols = { rogue: true, name: game.rogueSymset ?? null };
+        reglyphSymbolSet();
     }
     return true;
 }

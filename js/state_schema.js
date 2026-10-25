@@ -73,6 +73,7 @@ const transientFields = {
     splev_align: true,
     symset: true,
     rogueSymset: true,
+    shownSymbols: true,
     targetX: true,
     targetY: true,
     tutorial_set_in_config: true,

@@ -236,6 +236,9 @@ export interface GameState {
     // gs.symset[ROGUESET].name (options.c:optfn_roguesymset()); the Rogue
     // level's symbol set choice, kept independently of the primary symset.
     rogueSymset?: string | null;
+    // showsyms is a copy: do_symset() can display the primary set on Rogue
+    // and leave that copy unchanged when the primary choice is cleared.
+    shownSymbols?: { rogue: boolean; name: string | null };
     // showsyms[SYM_BOULDER + SYM_OFF_X] override set by BOULDER=; the
     // primary set only, so rogue levels keep their own boulder symbol.
     boulderSym?: string;

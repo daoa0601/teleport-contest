@@ -1,34 +1,42 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { LADDER, LA_UP } from '../js/const.js';
-import { flush_screen, newsym } from '../js/display.js';
+import { HWALL, LADDER, LA_UP, STAIRS } from '../js/const.js';
+import { docrt, flush_screen, map_object, newsym } from '../js/display.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
+import { floorObject } from './support/game-objects.js';
 import { requireScreenCell } from './support/screen.js';
 import { CLR_BROWN, NO_COLOR } from '../js/terminal.js';
+import { BOULDER, GOLD_PIECE } from '../js/object_data.js';
+import { gotoLevel } from '../js/level_change.js';
+import { applyNethackrc } from '../js/options.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
 function menuRow(name) {
-    const row = screen().split('\n').find(line => {
-        const text = line.replace(/^\s*[a-zA-Z?] [-+*#] /, '');
-        return text.startsWith(`${name} `);
-    });
-    const key = row?.match(/^\s*([a-zA-Z?]) [-+*#] /)?.[1];
-    return row && key ? { key, text: row.replace(/^\s*[a-zA-Z?] [-+*#] /, '') } : null;
+    for (const line of screen().split('\n')) {
+        const row = line.match(/(?:^|\s)([a-zA-Z?]) [-+*#] (.*)$/);
+        const key = row?.[1];
+        const text = row?.[2];
+        if (key && text?.startsWith(`${name} `))
+            return { key, text };
+    }
+    return null;
 }
-// Opens the simple options menu with 'O', selects `option`, and interacts
+// Opens options with 'O' (or 'mO' for the full menu), selects `option`, and interacts
 // with the follow-up window: whenever its rows contain `name`, that key is
 // pressed; otherwise the menu pages forward.  Every screen the follow-up
 // shows is captured.  The options menu itself is dismissed afterwards.
-async function driveOptionWindow(option, name) {
+async function driveOptionWindow(option, name, fullMenu = false) {
     const input = resetInputState();
     const pickerScreens = [];
-    let pickingOption = true;
-    let pickingTarget = false;
+    let stage = fullMenu ? 'prefix' : 'option';
     const selectRow = (wanted) => {
         const row = menuRow(wanted);
         if (!row)
@@ -37,26 +45,36 @@ async function driveOptionWindow(option, name) {
         return true;
     };
     input.beforeRead = () => {
-        if (pickingOption) {
+        if (stage === 'prefix') {
+            input.feed('O');
+            stage = 'option';
+            return;
+        }
+        if (stage === 'confirm') {
+            input.feed('\r');
+            stage = 'target';
+            return;
+        }
+        if (stage === 'option') {
             if (selectRow(option)) {
-                pickingOption = false;
-                pickingTarget = true;
+                stage = fullMenu ? 'confirm' : 'target';
             }
             else
                 input.feed(' ');
             return;
         }
-        if (pickingTarget) {
+        if (stage === 'target') {
             pickerScreens.push(screen());
             if (selectRow(name))
-                pickingTarget = false;
+                stage = 'done';
             else
                 input.feed(' ');
             return;
         }
         input.feed('\x1b');
     };
-    await rhack('O'.charCodeAt(0));
+    await rhack((fullMenu ? 'm' : 'O').charCodeAt(0));
+    await flush_screen(1);
     input.beforeRead = null;
     return { pickerScreens };
 }
@@ -95,6 +113,92 @@ void test('choosing Default Symbols from the picker reverts the map', async () =
     await driveOptionWindow('symset', 'Default Symbols');
     assert.equal(game.symset, null);
     assert.equal(screen().split('\n')[cell.row]?.charAt(cell.column), '<');
+});
+// do_symset() copies a named primary set into showsyms even on Rogue.
+// Only selecting the rogue set or crossing a level boundary restores it.
+for (const name of ['plain', 'DECgraphics']) {
+    void test(`picking the named primary symbol set ${name} redraws the Rogue level`, async () => {
+        const level = freshObjectRoom({ flags: { verbose: false } });
+        requirePlayingGame(game);
+        game.rogue_level = { ...game.u.uz };
+        level.requireAt(12, 8).typ = STAIRS;
+        level.upstair = { x: 12, y: 8 };
+        const ladder = installLadderUp(13, 8);
+        level.requireAt(11, 8).typ = HWALL;
+        await floorObject(GOLD_PIECE, 11, 10, { dknown: true });
+        const rememberedGold = await floorObject(GOLD_PIECE, 3, 2, { dknown: true });
+        map_object(rememberedGold);
+        newsym(12, 8);
+        newsym(11, 8);
+        newsym(11, 10);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(11, 9).ch, '%');
+        assert.equal(requireScreenCell(10, 11).ch, '*');
+        const { pickerScreens } = await driveOptionWindow('symset', name, true);
+        assert.ok(pickerScreens.some(view => view.includes('Select symbol set:')));
+        assert.equal(game.symset, name);
+        assert.equal(requireScreenCell(11, 9).ch, '<', 'ordinary stairs use the primary symbols');
+        assert.equal(requireScreenCell(ladder.column, ladder.row).ch, name === 'DECgraphics' ? '≤' : '<');
+        assert.equal(requireScreenCell(10, 9).ch, name === 'DECgraphics' ? '─' : '-');
+        assert.equal(requireScreenCell(10, 11).ch, '$', 'visible objects use the primary class symbols');
+        assert.equal(requireScreenCell(2, 3).ch, '$', 'remembered objects use the primary class symbols');
+        assert.equal(requireScreenCell(10, 9).color, NO_COLOR, 'Rogue level color rules still apply');
+        assert.match(screen().split('\n')[23] ?? '', /\$:/, 'the status line uses the displayed coin symbol');
+        await driveOptionWindow('symset', 'Default Symbols', true);
+        assert.equal(requireScreenCell(11, 9).ch, '<', 'clearing the primary set leaves showsyms alone on Rogue');
+        assert.equal(requireScreenCell(ladder.column, ladder.row).ch, name === 'DECgraphics' ? '≤' : '<');
+        await driveOptionWindow('roguesymset', 'Default Symbols', true);
+        assert.equal(requireScreenCell(11, 9).ch, '%', 'selecting rogue defaults restores Rogue symbols');
+        assert.equal(requireScreenCell(ladder.column, ladder.row).ch, '<');
+        assert.equal(requireScreenCell(10, 11).ch, '*');
+        assert.equal(requireScreenCell(2, 3).ch, '*');
+    });
+}
+void test('a primary symbol selection displays its boulder override while typed look uses the Rogue override', async () => {
+    freshObjectRoom({ flags: { verbose: false, help: false, tips: false } });
+    requirePlayingGame(game);
+    applyNethackrc('BOULDER=57');
+    game.rogue_level = { ...game.u.uz };
+    await floorObject(BOULDER, 11, 10, { dknown: true });
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, '`');
+    await driveOptionWindow('symset', 'DECgraphics', true);
+    assert.equal(requireScreenCell(10, 11).ch, '9');
+    resetInputState().feed('/?`\n');
+    await rhack(0);
+    await flush_screen(1);
+    assert.match(screen().split('\n')[0] ?? '', /boulder/, 'pager.c resolves boulders against the level override rather than showsyms');
+});
+void test('level travel restores Rogue symbols after picking a named primary symbol set', async () => {
+    const { source } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    source.requireAt(11, 10).typ = STAIRS;
+    source.upstair = { x: 11, y: 10 };
+    await driveOptionWindow('symset', 'DECgraphics', true);
+    assert.equal(requireScreenCell(10, 11).ch, '<');
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    await gotoLevel({ dlevel: 2 }, { arrival: 'stairs' });
+    await gotoLevel({ dlevel: 1 }, { arrival: 'stairs' });
+    input.beforeRead = null;
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, '%');
+});
+void test('restoring on Rogue discards the displayed primary symbol set', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    map_object(await floorObject(GOLD_PIECE, 3, 2, { dknown: true }));
+    await driveOptionWindow('symset', 'DECgraphics', true);
+    assert.equal(requireScreenCell(2, 3).ch, '$');
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame(game.plname, storage), true);
+    await docrt();
+    await flush_screen(1);
+    assert.equal(requireScreenCell(2, 3).ch, '*');
 });
 // do_symset() sets nothing_to_do when the pick is dismissed.
 void test('dismissing the symset picker keeps the current set', async () => {

@@ -4,7 +4,7 @@
 import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
+import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint, reglyphSymbolSet } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreSavedLightSources } from './light.js';
 import { promptChoice, promptYesNo } from './query.js';
@@ -340,6 +340,8 @@ export function restoreGame(
         // newest-first order.
         restoreSavedLightSources(game);
         restoreSavedTimers(game);
+        // dorecover() assigns Rogue symbols again before the first redraw.
+        reglyphSymbolSet();
         // C restore.c:dorecover() rebuilds transient vision after loading the
         // level. No old sight bits may suppress its first terrain repaint.
         vision_reset_new_level();
@@ -378,6 +380,7 @@ function resetRestoredInstanceState(): void {
     delete game._rndmonstAlignment;
     delete game._rndmonstAlignmentMove;
     delete game._runtimeVersionInfoInitialized;
+    delete game.shownSymbols;
 
     // A panic save can interrupt helplessness. Native multi, its completion
     // message, and its callback are all unsaved, including prayer/digestion data.
