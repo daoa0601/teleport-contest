@@ -122,6 +122,7 @@ void test('dismissing the symset picker keeps the current set', async () => {
     game.symset = 'DECgraphics';
 
     const input = resetInputState();
+    const pickerViews: string[] = [];
     let pickingOption = true;
     let escapeCount = 0;
     input.beforeRead = () => {
@@ -133,11 +134,14 @@ void test('dismissing the symset picker keeps the current set', async () => {
             } else input.feed(' ');
             return;
         }
+        pickerViews.push(screen());
         escapeCount++;
         input.feed('\x1b');
     };
     await rhack('O'.charCodeAt(0));
     input.beforeRead = null;
+    assert.ok(pickerViews.some(view => /Select symbol set:/.test(view)),
+        'selecting symset opened the picker');
     assert.ok(escapeCount >= 2, 'the escape dismissed both the picker and the options menu');
 
     assert.equal(game.symset, 'DECgraphics');
@@ -254,4 +258,24 @@ void test('switching symbol sets recolors remembered branch walls', async () => 
 
     await driveOptionWindow('symset', 'Default Symbols');
     assert.equal(requireScreenCell(cell.column, cell.row).color, NO_COLOR);
+});
+
+// DECgraphics redraws pool, ice, lava and water glyphs too; those live in
+// the cmap range after the grave, and doredraw() repaints them from the
+// new showsyms.
+void test('switching to DECgraphics redraws a remembered pool', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    const location = game.level?.at(3, 2);
+    assert.ok(location, 'the map exposes the test cell');
+    location.remembered_glyph = { ch: '}', color: NO_COLOR, decgfx: false,
+        kind: 'terrain', terrainName: 'water',
+        glyph: cmapToGlyph(CmapSymbol.pool) };
+    const cell = { column: 2, row: 3 };
+
+    await driveOptionWindow('symset', 'DECgraphics');
+    assert.equal(requireScreenCell(cell.column, cell.row).ch, '\u25c6');
+
+    await driveOptionWindow('symset', 'Default Symbols');
+    assert.equal(requireScreenCell(cell.column, cell.row).ch, '}');
 });

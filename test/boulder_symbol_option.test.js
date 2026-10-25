@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { flush_screen, newsym } from '../js/display.js';
+import { docrt, flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
+import { GlyphOffset } from '../js/glyph_numbers.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -74,5 +75,70 @@ void test('typed look moves the boulder meaning to the override symbol', async (
     assert.match(zero, /^0 +a boulder or an iron ball$/, zero);
     assert.doesNotMatch(grave, /boulder/, grave);
     assert.match(grave, /^` +an engraving$/, grave);
+});
+function screen() {
+    return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+}
+// Mirrors the fullOptions() driver from options_interactive.test.ts: open
+// the full menu with 'm'+'O', page to `option`, toggle it, submit with
+// Enter, then answer the follow-up prompt with `response` one key at a
+// time.
+async function editViaFullMenu(option, response) {
+    const input = resetInputState();
+    const command = rhack('m'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    let selecting = true;
+    let picked = false;
+    let answer = '';
+    input.beforeRead = () => {
+        const view = screen();
+        if (!selecting) {
+            if (!answer)
+                answer = view.includes(`Set ${option} to what?`) ? response : '\x1b';
+            input.feed(answer.charAt(0));
+            answer = answer.slice(1);
+            return;
+        }
+        if (picked) {
+            // One pick only; the menu letters are page-local, so re-reading
+            // the same page would toggle the row off again.
+            selecting = false;
+            input.feed('\n');
+            return;
+        }
+        const row = view.split('\n').find(line => line.replace(/^\s*[a-zA-Z?] [-+*#] /, '').startsWith(`${option} `));
+        const key = row?.match(/^\s*([a-zA-Z]) [-+] /)?.[1];
+        if (key && row) {
+            input.feed(key);
+            picked = true;
+        }
+        else
+            input.feed(' ');
+    };
+    input.feed('O');
+    await command;
+    input.beforeRead = null;
+}
+// optfn_boulder() refreshes showsyms[SYM_BOULDER] and doredraw() repaints
+// every boulder glyph, so a boulder already on the map changes symbol at
+// once when the option is set from the options menu.
+void test('changing the boulder option mid-game redraws displayed boulders', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    // A remembered boulder outside the room: doredraw() repaints it from
+    // glyph memory, not from a live projection of the floor.
+    const location = game.level?.at(3, 2);
+    assert.ok(location, 'the map exposes the test cell');
+    location.remembered_glyph = { ch: '`', color: 7, decgfx: false,
+        kind: 'object', otyp: BOULDER, glyph: GlyphOffset.object + BOULDER,
+        statueGlyph: false, piletop: false };
+    const cell = { column: 2, row: 3 };
+    await editViaFullMenu('boulder', '9\n');
+    // The full-menu overlay leaves the physical screen for the next
+    // redraw; doredraw() is what repaints the boulder with its new symbol.
+    await docrt();
+    await flush_screen(1);
+    assert.equal(game.boulderSym, '9');
+    assert.equal(requireScreenCell(cell.column, cell.row).ch, '9');
 });
 //# sourceMappingURL=boulder_symbol_option.test.js.map

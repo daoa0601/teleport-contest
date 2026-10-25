@@ -16,7 +16,7 @@ import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupType
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphSymbolSet } from './display.js';
+import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
@@ -3160,6 +3160,7 @@ async function editBoulderSymbol() {
     }
     game.boulderSym = parsed.symbol;
     game.rogueBoulderSym = parsed.symbol;
+    reglyphBoulderSymbols();
     return true;
 }
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection

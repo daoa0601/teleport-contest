@@ -460,6 +460,22 @@ export function reglyphSymbolSet() {
         }
     }
 }
+// optfn_boulder() refreshes showsyms[SYM_BOULDER] mid-game and doredraw()
+// repaints every boulder through it, so already-displayed boulders adopt
+// the new symbol immediately.
+export function reglyphBoulderSymbols() {
+    if (!game.level)
+        return;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = game.level.at(x, y);
+            const memory = loc?.remembered_glyph;
+            if (!loc || !memory || memory.kind !== 'object' || memory.otyp !== BOULDER)
+                continue;
+            loc.remembered_glyph = { ...memory, ch: currentBoulderSymbol() };
+        }
+    }
+}
 // glyphs.c:glyph_to_cmap() restricted to the terrain memory can hold; trap,
 // beam, and effect glyphs keep set-independent characters.
 function rememberedTerrainIndex(glyph) {
@@ -471,8 +487,12 @@ function rememberedTerrainIndex(glyph) {
         return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
     if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB)
         return CmapSymbol.altar;
-    if (glyph === GlyphOffset.cmapB)
-        return CmapSymbol.grave;
+    if (glyph >= GlyphOffset.cmapB && glyph < GlyphOffset.zap) {
+        const index = glyph - GlyphOffset.cmapB + CmapSymbol.grave;
+        // The range continues into trap glyphs, which have no
+        // dungeon-symbol table entry and set-independent characters.
+        return index < CmapSymbol.arrowTrap ? index : null;
+    }
     return null;
 }
 function roomMemoryGlyph(dark, dec) {
