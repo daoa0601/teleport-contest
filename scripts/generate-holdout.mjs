@@ -59,8 +59,8 @@ function options(argv) {
     }
     if (opts.jobs > 4)
         throw new Error('use at most four isolated recorder workers');
-    if (!opts.kinds.length || opts.kinds.some(kind => !['recipe', 'fuzz', 'explore', 'deep'].includes(kind))) {
-        throw new Error('kinds must contain recipe, fuzz, explore, or deep');
+    if (!opts.kinds.length || opts.kinds.some(kind => !['recipe', 'fuzz', 'explore', 'deep', 'wide'].includes(kind))) {
+        throw new Error('kinds must contain recipe, fuzz, explore, deep, or wide');
     }
     if (opts.recipes && !opts.kinds.includes('recipe'))
         throw new Error('--recipes requires recipe in --kinds');
@@ -148,6 +148,8 @@ function makeCandidate(index, seeds, kinds, recipes) {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
+    if (kinds.includes('wide'))
+        rotation.push('wide');
     const schedule = rotation.filter(kind => kinds.includes(kind));
     const kind = itemAt(schedule, index % schedule.length);
     let character = characterAt(index);
@@ -247,7 +249,7 @@ async function record(input, output, install) {
 async function main() {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep] [--recipes NAME,...] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide] [--recipes NAME,...] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
@@ -364,7 +366,7 @@ async function main() {
 }
 void main().catch((error) => { console.error(errorMessage(error)); process.exitCode = 1; });
 function parseKind(value) {
-    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep')
+    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide')
         return value;
     throw new Error(`Unknown candidate kind: ${value}`);
 }

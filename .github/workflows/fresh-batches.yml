@@ -94,8 +94,8 @@ jobs:
 
       - name: Record fresh sessions
         run: |
-          KINDS=(deep,explore deep,explore,fuzz recipe,fuzz deep,explore,recipe)
-          K=${KINDS[$((N % 4))]}
+          KINDS=(deep,explore deep,explore,fuzz recipe,fuzz deep,explore,recipe wide wide,explore)
+          K=${KINDS[$((N % 6))]}
           echo "$K" > kinds.txt
           mkdir -p out
           node scripts/generate-holdout.mjs --out "fresh$N" --count "$SESSIONS" --jobs 3 --kinds "$K" > out/generate.log 2>&1 \

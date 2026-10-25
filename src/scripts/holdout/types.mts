@@ -1,7 +1,7 @@
 import { arrayValue, booleanValue, numberValue, objectValue, stringValue } from '../lib/session-types.mjs';
 import type { Character } from './recipes.mjs';
 import type { CalendarDate, DateCategory } from './calendar.mjs';
-export type GeneratorKind = 'recipe' | 'fuzz' | 'explore' | 'deep';
+export type GeneratorKind = 'recipe' | 'fuzz' | 'explore' | 'deep' | 'wide';
 export interface CandidateSpec {
     id: string;
     kind: GeneratorKind;
@@ -49,8 +49,8 @@ export interface HoldoutManifest {
     configuration: { kinds: GeneratorKind[]; recipes?: string[] };
 }
 export function decodeGeneratorKind(value: unknown): GeneratorKind {
-    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep') return value;
-    throw new Error('generator kind must be recipe, fuzz, explore, or deep');
+    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide') return value;
+    throw new Error('generator kind must be recipe, fuzz, explore, deep, or wide');
 }
 function decodeDateCategory(value: unknown): DateCategory {
     if (value === 'ordinary' || value === 'fullMoon' || value === 'newMoon' || value === 'friday13' || value === 'night') return value;

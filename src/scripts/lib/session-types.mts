@@ -23,7 +23,7 @@ export interface MenuAction {
 }
 export type SessionAction = KeysAction | MenuAction;
 export interface PolicyConfig {
-    kind: 'fuzz' | 'explore';
+    kind: 'fuzz' | 'explore' | 'wide';
     seed: number;
     maxSteps: number;
     name?: string;
@@ -31,7 +31,7 @@ export interface PolicyConfig {
 }
 export type DriverConfig = SessionAction[] | PolicyConfig;
 export interface DriverSummary {
-    kind: 'fuzz' | 'explore';
+    kind: 'fuzz' | 'explore' | 'wide';
     seed: number;
     maxSteps: number;
     keysSent: number;
@@ -152,14 +152,14 @@ export function decodeDriver(value: unknown): DriverConfig {
 }
 export function decodePolicyConfig(value: unknown): PolicyConfig {
     const driver = objectValue(value, 'driver');
-    if (driver.kind !== 'fuzz' && driver.kind !== 'explore') throw new Error('driver kind must be fuzz or explore');
+    if (driver.kind !== 'fuzz' && driver.kind !== 'explore' && driver.kind !== 'wide') throw new Error('driver kind must be fuzz, explore, or wide');
     return { kind: driver.kind, seed: numberValue(driver.seed, 'driver seed'), maxSteps: numberValue(driver.maxSteps, 'driver maxSteps'),
         ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
         ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }) };
 }
 function decodeSummary(value: unknown): DriverSummary {
     const data = objectValue(value, 'driver summary');
-    if (data.kind !== 'fuzz' && data.kind !== 'explore') throw new Error('invalid driver summary kind');
+    if (data.kind !== 'fuzz' && data.kind !== 'explore' && data.kind !== 'wide') throw new Error('invalid driver summary kind');
     const promptKeys: Record<string, number> = {};
     for (const [key, count] of Object.entries(objectValue(data.promptKeys, 'prompt counts'))) promptKeys[key] = numberValue(count, key);
     return { kind: data.kind, seed: numberValue(data.seed, 'seed'), maxSteps: numberValue(data.maxSteps, 'maxSteps'),
