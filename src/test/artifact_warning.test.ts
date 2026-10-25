@@ -67,7 +67,7 @@ function captureMessages() {
     };
     installPagerInput(input, {
         expected:
-            /You dump some of your gear to lose weight|Pheew!|You fall into the molten lava|You burn to a crisp|You try to crawl out of the water|Your potion of healing dilutes|You are no longer using two weapons|You climb up the stairs|amulet of life saving|But wait|medallion crumbles|You give up your attempt|You fall into the pool|You sink like a rock|You start to float in the air|You begin two-weapon combat|Sting|Orcrist|Grimtooth|Sunsword|Next action|materialize|cold wind|You fall asleep|You wake up|You finish|You feel|You turn into|You return to/,
+            /You dump some of your gear to lose weight|Pheew!|You fall into the molten lava|You burn to a crisp|You try to crawl out of the water|Your potion of healing dilutes|You are no longer using two weapons|You climb up the stairs|amulet of life saving|But wait|medallion crumbles|You give up your attempt|You fall into the pool|You sink like a rock|You start to float in the air|You begin two-weapon combat|Sting|Orcrist|Grimtooth|Sunsword|Next action|materialize|You find yourself on solid ground|cold wind|You fall asleep|You wake up|You finish|You feel|You turn into|You return to/,
         limit: 32,
     });
     const pager = input.display;

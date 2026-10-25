@@ -320,11 +320,18 @@ async function finishLiquidDeath(options) {
     // owns life saving and the wizard/explore recovery question.
     return await finishHeroDeath({ ...options, deathLineShown: options.deathLineShown ?? true });
 }
-async function teleportHeroOutOfLiquid({ state, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
+async function teleportHeroOutOfLiquid({ state, random, rollOne, publish, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
     const destination = safeTeleportDestination(state, random, rollOne);
     if (!destination)
         return null;
-    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
+    // C trap.c:6936/7021 call safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT):
+    // a light hero may drag an adjacent ball, and the verbose materialize
+    // line precedes the landing effects (teleport.c:545-547).
+    const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
+    if (state.flags?.verbose !== false) {
+        await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
+            ? 'the same' : 'a different'} location!`);
+    }
     return finishLiquidTeleport(movement, {
         state,
         repaint,
@@ -354,7 +361,7 @@ async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, 
         if (state.program_state?.gameover)
             return { entered: true, moved: false, died: true };
         const escape = await teleportHeroOutOfLiquid({
-            state, random, rollOne, repaint, resetVision,
+            state, random, rollOne, publish, repaint, resetVision,
             recalculateVision, applyLandingEffects,
         });
         if (escape)
@@ -527,7 +534,7 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
             || hero.flying;
         if (!airborne) {
             const escape = await teleportHeroOutOfLiquid({
-                state, random, rollOne, repaint, resetVision,
+                state, random, rollOne, publish, repaint, resetVision,
                 recalculateVision, applyLandingEffects,
             });
             if (escape)
@@ -921,10 +928,11 @@ export async function heroLiquidEffects(options = {}) {
             return { entered: true, moved: false, died: true };
         const destination = safeTeleportDestination(state, random, rollOne);
         if (destination) {
-            const movement = await moveHeroByTeleport(destination.x, destination.y, state);
-            // C trap.c:5189 -> safe_teleds(TELEDS_TELEPORT) -> teleds():
-            // the rescue relocation still prints the verbose materialize
-            // line (teleport.c:545-547).
+            const movement = await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
+            // C trap.c:5189 -> safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT)
+            // -> teleds(): a light hero may drag an adjacent ball, and the
+            // rescue relocation still prints the verbose materialize line
+            // (teleport.c:545-547).
             if (state.flags?.verbose !== false) {
                 await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
                     ? 'the same' : 'a different'} location!`);

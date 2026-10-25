@@ -45,7 +45,18 @@ void test('a wizard who declines lava death recovers and teleports to safety', a
     try {
         assert.match(text, /Die\? \[yn\]/);
         input.feed('n');
+        // safe_teleds(TELEDS_TELEPORT) announces the rescue before landing.
+        let materialized = false;
+        for (;;) {
+            const blocked = await Promise.race([
+                input.waitUntilBlocked().then(() => true), burning.then(() => false),
+            ]);
+            if (!blocked) break;
+            materialized ||= (game._pending_message ?? '').includes('You materialize in');
+            input.feed(' ');
+        }
         const result = await burning;
+        assert.ok(materialized, 'the lava rescue prints the materialize line');
         assert.ok(result?.entered);
         assert.equal(result.died, false);
         assert.equal(!!game.program_state.gameover, false);
