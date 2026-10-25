@@ -49,7 +49,7 @@ import { BOULDER } from './object_data.js';
 import { loseHeroHp } from './hero_damage.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { updateHeroRegions } from './regions.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
@@ -123,10 +123,11 @@ function floorBoulder(x: number, y: number): GameObject | null {
         .find(object => object.otyp === BOULDER) || null;
 }
 
+// C m_at() also finds a long worm by any of its tail segments.
 function monsterAt(x: number, y: number): Monster | null {
     return game.level?.monsters?.find(monster =>
         monsterHasMapPosition(monster) && !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
+        && monsterOccupiesPosition(monster, x, y)) || null;
 }
 
 function wallPassage(location: MapLocation) {
@@ -241,7 +242,7 @@ async function collideWithMonster(monster: Monster, x: number, y: number, option
         ? `You bump into ${name}.`
         : `You find ${name} by bumping into ${monsterObjectPronoun(monster, { noIt: true })}.`);
     await wakeMonster(monster);
-    if (!canSpotMonster(monster)) map_invisible(x, y);
+    if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
     await angerMonster(monster);
 
     // C dothrow.c:hurtle_step() instapetrify()s an unarmored hero.
