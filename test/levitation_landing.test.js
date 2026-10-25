@@ -304,7 +304,7 @@ void test('a lava rescue triggers the landing trap without auto-pickup', async (
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     installPagerInput(resetInputState(), {
-        expected: /amulet of life saving|molten lava|burn to a crisp|But wait|medallion|feel much better|still burning|bear trap/, limit: 10,
+        expected: /amulet of life saving|molten lava|burn to a crisp|But wait|medallion|feel much better|still burning|You materialize|bear trap/, limit: 11,
     });
     await applyHeroLocationEffects();
     assert.ok(!game.program_state?.gameover);
