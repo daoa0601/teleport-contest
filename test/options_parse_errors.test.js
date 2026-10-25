@@ -171,16 +171,27 @@ void test('paranoid_confirmation validates its argument list', () => {
 void test('disclose validates its category letters and defaults bare spellings', () => {
     assert.deepEqual(errorMessages('OPTIONS=disclose:x'), ["Unknown disclose parameter 'x'"]);
     assert.deepEqual(errorMessages('OPTIONS=!disclose:-i'), ['The disclose option may not both have a value and be negated.']);
-    assert.equal(parseNethackrc('OPTIONS=disclose').flags.disclose, '');
-    assert.equal(parseNethackrc('OPTIONS=!disclose').flags.disclose, 'none');
-    // "all" and "none" name the whole set (strcmpi, case-insensitive),
-    // and prefix letters fold case through lowc() while the diagnostic
-    // keeps the original.
-    assert.equal(parseNethackrc('OPTIONS=disclose:none').flags.disclose, 'none');
-    assert.equal(parseNethackrc('OPTIONS=disclose:ALL').flags.disclose, 'all');
+    // The six slots persist like end_disclose[]: a bare option prompts
+    // yes everywhere, negation discloses nothing, and "all"/"none" name
+    // the whole set (strcmpi, case-insensitive).
+    assert.equal(parseNethackrc('OPTIONS=disclose').flags.disclose, 'y i y a y v y g y c y o');
+    assert.equal(parseNethackrc('OPTIONS=!disclose').flags.disclose, '- i - a - v - g - c - o');
+    assert.equal(parseNethackrc('OPTIONS=disclose:none').flags.disclose, '- i - a - v - g - c - o');
+    assert.equal(parseNethackrc('OPTIONS=disclose:ALL').flags.disclose, 'y i y a y v y g y c y o');
     assert.deepEqual(errorMessages('OPTIONS=disclose:none'), []);
     assert.deepEqual(errorMessages('OPTIONS=disclose:Yi'), []);
-    assert.equal(parseNethackrc('OPTIONS=disclose:-i -a -v -g -c -o').flags.disclose, '-i -a -v -g -c -o');
+    assert.equal(parseNethackrc('OPTIONS=disclose:Yi').flags.disclose, 'y i');
+    assert.equal(parseNethackrc('OPTIONS=disclose:-i -a -v -g -c -o').flags.disclose, '- i - a - v - g - c - o');
+    // The walk stops at the first bad character: the inventory keeps its
+    // prefix, the attribs category is never reached, and earlier lines
+    // survive a later failure.
+    const partial = parseNethackrc('OPTIONS=disclose:+i x +a');
+    assert.deepEqual(errorMessages('OPTIONS=disclose:+i x +a'), ["Unknown disclose parameter 'x'"]);
+    assert.equal(partial.flags.disclose, '+ i');
+    assert.equal(parseNethackrc('OPTIONS=disclose:+v\nOPTIONS=disclose:x').flags.disclose, '+ v');
+    // A first statement that fails before any category leaves every slot
+    // at its zero-initialized default.
+    assert.equal(parseNethackrc('OPTIONS=disclose:x').flags.disclose, undefined);
 });
 void test('menu paging key options require a key and refuse negation', () => {
     assert.deepEqual(errorMessages('OPTIONS=menu_next_page:'), ["Missing parameter for 'menu_next_page:'"]);
@@ -243,17 +254,53 @@ void test('name and pickup_burden demand a value with or without a delimiter', (
     assert.deepEqual(errorMessages('OPTIONS=name'), ["Missing parameter for 'name'"]);
     assert.deepEqual(errorMessages('OPTIONS=pickup_burden'), ["Missing parameter for 'pickup_burden'"]);
 });
-void test('a long male value falls through to the plain assignment', () => {
-    // strncmpi() runs past "male" onto the delimiter, so only
-    // flags.female is written; initgend keeps its prior setting.
-    const configuration = parseNethackrc('OPTIONS=male:false');
-    assert.equal(configuration.flags.female, false);
-    assert.equal(configuration.flags.initgend, undefined);
-    assert.equal(configuration.gender, null);
-    // The short male spelling still inverts through the alias branch.
+void test('abbreviated or long-valued gender spellings fall through to the plain assignment', () => {
+    // strncmpi() runs past "female"/"male" onto the delimiter whenever
+    // max(value length, 3) exceeds the spelling, so only flags.female is
+    // written; initgend keeps its prior setting.
+    for (const element of ['male:false', 'fem:true', 'fema:false', 'female:00000001']) {
+        const configuration = parseNethackrc(`OPTIONS=${element}`);
+        assert.equal(configuration.flags.initgend, undefined, element);
+        assert.equal(configuration.gender, null, element);
+    }
+    assert.equal(parseNethackrc('OPTIONS=fem:true').flags.female, true);
+    assert.equal(parseNethackrc('OPTIONS=fema:false').flags.female, false);
+    assert.equal(parseNethackrc('OPTIONS=female:00000001').flags.female, true);
+    assert.equal(parseNethackrc('OPTIONS=male:false').flags.female, false);
+    // The short male spelling still inverts through the alias branch,
+    // and a bare or short-valued female spelling still sets initgend.
     const inverted = parseNethackrc('OPTIONS=male:off');
     assert.equal(inverted.flags.female, true);
     assert.equal(inverted.flags.initgend, 1);
+    assert.equal(parseNethackrc('OPTIONS=fem').flags.initgend, 1);
+    assert.equal(parseNethackrc('OPTIONS=female:true').flags.initgend, 1);
+});
+void test('duplicate detection runs before the negation refusal', () => {
+    // The counter bumps even for a refused option, so the second line
+    // draws complain_about_duplicate() and then bad_negation().
+    assert.deepEqual(errorMessages('OPTIONS=fruit:x\nOPTIONS=!fruit'), ['compound option specified multiple times: fruit',
+        'The fruit option may not both have a value and be negated.']);
+    assert.deepEqual(errorMessages('OPTIONS=!fruit\nOPTIONS=fruit:x'), ['The fruit option may not both have a value and be negated.',
+        'compound option specified multiple times: fruit']);
+    // The second line's option function still runs.
+    assert.equal(parseNethackrc('OPTIONS=!fruit\nOPTIONS=fruit:x').fruit, 'x');
+});
+void test('booleans this build skips accept values and negations silently', () => {
+    // optfn_boolean() returns before the value checks for null-address
+    // options, and set_wiznofuz options fail silently during startup.
+    assert.deepEqual(errorMessages('OPTIONS=showscore:junk'), []);
+    assert.deepEqual(errorMessages('OPTIONS=!debug_hunger:1'), []);
+    assert.deepEqual(errorMessages('OPTIONS=BIOS:junk'), []);
+    assert.deepEqual(parseNethackrc('OPTIONS=showscore:junk').configErrors[0]?.errors, []);
+    // The generic negation check still runs before the option function.
+    assert.deepEqual(errorMessages('OPTIONS=!BIOS'), ['The BIOS option may not both have a value and be negated.']);
+});
+void test('a bare cond element reports the condition diagnostic', () => {
+    // parse_cond_option() returns 2 when the element holds nothing past
+    // the prefix and 1 when the condition name matches nothing.
+    assert.deepEqual(errorMessages('OPTIONS=cond'), ['Unknown condition option cond (2)']);
+    assert.deepEqual(errorMessages('OPTIONS=cond_bogus'), ['Unknown condition option cond_bogus (1)']);
+    assert.deepEqual(errorMessages('OPTIONS=cond_blind'), []);
 });
 void test('bind_key parameter complaints surface from BINDINGS lines', () => {
     assert.deepEqual(errorMessages('BINDINGS=h:toggle'), ["'toggle' requires a parameter"]);

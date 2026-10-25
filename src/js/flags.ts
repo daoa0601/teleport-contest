@@ -33,7 +33,7 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     versinfo?: number;
     autounlock?: string | number | boolean;
     debug_fuzzer?: number;
-    disclose?: string;
+    disclose?: string | undefined;
     end_top?: number;
     end_around?: number;
     end_own?: boolean;
