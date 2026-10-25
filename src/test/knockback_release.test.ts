@@ -50,6 +50,7 @@ void test('a fatal knockback into a wall ends the game before the stun roll', as
     });
 
     assert.equal(result.knocked, true);
+    assert.equal(result.defenderDied, true, 'callers learn the hero died');
     assert.equal(!!game.program_state.gameover, true, 'the wall bump is fatal');
     assert.equal(!!game.u.stunned || (game.u.stunnedTurns ?? 0) > 0, false);
     assert.equal(messages.some(message => /stagger/i.test(message)), false);
