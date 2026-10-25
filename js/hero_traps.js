@@ -435,9 +435,10 @@ async function triggerLandmine(trap, { failedUntrap = false, forceTrap = false, 
 }
 // C trap.c:set_utrap(): only a change between trapped and free marks the
 // status line, since the trapped conditions follow u.utrap.
+// C set_utrap() always ends in float_vs_flight(), which sets disp.botl even
+// when a caller already counted u.utrap down to zero (trapmove()).
 export function setHeroTrap(turns, type, state = game) {
-    if (!state.u.utrap !== !turns)
-        state.context.botl = true;
+    state.context.botl = true;
     state.u.utrap = turns;
     state.u.utraptype = turns ? type : 0;
     refreshMovementProperties(state);
