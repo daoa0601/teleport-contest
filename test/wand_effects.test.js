@@ -8,6 +8,7 @@ import { ARROW_TRAP, DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDG
 import { map_invisible } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { buryObject } from '../js/buried_object.js';
+import { addObjectToContainer } from '../js/object_container.js';
 import { game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
 import { resetInputState } from '../js/input.js';
@@ -233,6 +234,19 @@ void test('probing removes an empty remembered invisible monster marker', async 
     map_invisible(11, 10);
     await zap(WAN_PROBING);
     assert.notEqual(level.requireAt(11, 10).remembered_glyph?.kind, 'invisible');
+});
+void test('probing a trapped chest names the trap again in its contents menu', async () => {
+    room();
+    requirePlayingGame(game);
+    const chest = await floorObject(CHEST, 11, 10, { olocked: true, otrapped: true });
+    await addObjectToContainer(chest, await knownObject(DAGGER));
+    const input = resetInputState();
+    await answerPrompts(zap(WAN_PROBING), input, [
+        { prompt: /The chest is trapped!--More--/, keys: ' ' },
+        { prompt: /trapped trapped locked chest containing \d+ items?[\s\S]*\(end\)/, keys: ' ' },
+    ]);
+    assert.equal(chest.tknown, true);
+    assert.equal(chest.cknown, true);
 });
 void test('probing down identifies buried objects without digging them up', async () => {
     room();
