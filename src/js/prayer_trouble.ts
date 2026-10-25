@@ -320,7 +320,9 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     }
     case Trouble.BLIND: {
         let message = '';
-        if ((hero.blindTurns ?? 0) > 0) {
+        // C tests Blinded (any non-blocked blindness, not just its timeout)
+        // when reporting that the eyes recover alongside cured deafness.
+        if (heroIsBlinded(state)) {
             state.context.botl = true;
             const singleEye = heroEyeCount(state) === 1;
             const eyes = singleEye ? heroEyeName(state) : makePlural(heroEyeName(state));
