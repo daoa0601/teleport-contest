@@ -16,7 +16,7 @@ const miscellaneousKeys = [
     { name: 'count', description: 'Prefix: for digits when preceding a command with a count', numberPadOnly: true },
 ] as const;
 
-function keyText(key: number): string {
+export function keyText(key: number): string {
     return key === 32 ? '<space>' : key === 27 ? '<esc>'
         : key === 10 ? '<enter>' : key === 127 ? '<del>' : visibleCommandKey(key);
 }
@@ -50,6 +50,28 @@ export function describeCommandKey(key: number): string | null {
     if (command.handler === 'do_reqmenu')
         return 'movement prefix: move without autopickup and without attacking\nnon-movement prefix: request menu or modify command (#reqmenu)';
     return commandDescription(command) + (command.name === '#' ? '' : ` (#${command.name})`);
+}
+
+// C cmd.c:help_dir(): after an invalid direction given to a caller whose
+// prompt starts with '^', a letter key might have meant its control command.
+export function controlKeyHintLines(key: number): string[] {
+    const isLetter = (key >= '@'.charCodeAt(0) && key <= 'Z'.charCodeAt(0))
+        || (key >= 'a'.charCodeAt(0) && key <= 'z'.charCodeAt(0));
+    if (!isLetter && key !== '['.charCodeAt(0)) return [];
+    const sym = String.fromCharCode(key).toUpperCase();
+    const ctrl = sym.charCodeAt(0) - 'A'.charCodeAt(0) + 1;
+    const explain = describeCommandKey(ctrl);
+    const wizardOnly = 'EFGIVW'.includes(sym);
+    if (explain === null || (wizardOnly && !game.flags.debug)) return [];
+    return [
+        `Are you trying to use ^${sym}${wizardOnly ? '' : ' as specified in the Guidebook'}?`,
+        '',
+        `${keyText(ctrl).padEnd(8)}${explain}.`,
+        '',
+        'To use that command, hold down the <Ctrl> key as a shift',
+        `and press the <${sym}> key.`,
+        '',
+    ];
 }
 
 export async function whatDoesCommand(): Promise<void> {
