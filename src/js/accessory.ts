@@ -10,6 +10,7 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { armorOffMessage, findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty } from './monster_perception.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import {
     AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP,
@@ -328,7 +329,12 @@ export function clearHeroAccessory(
     object.wornSlot = null;
     object.owornmask = (object.owornmask ?? 0) & ~position.mask;
     const property = OBJECT_PROPERTY[object.otyp];
-    if (property) removeWornProperty(property, object, slot, state);
+    if (property) {
+        removeWornProperty(property, object, slot, state);
+        // C worn.c setworn()/setnotworn(): an oc_oprop item leaving its slot
+        // makes observing monsters forget the hero's remembered resistance.
+        monstersForgetHeroResistance(seenResistanceForProperty(property), state);
+    }
     setWornArtifactProperties(object, slot, false, state);
     if (slot !== 'uamul') changeRingBonus(object, -1, state, deferArmorClass);
     if (object.otyp === AMULET_OF_STRANGULATION && heroIsStrangled(state)) {

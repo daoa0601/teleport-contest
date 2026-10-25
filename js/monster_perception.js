@@ -10,7 +10,7 @@ import { AD_MAGM, AD_ACID } from './monster_attack_types.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { couldsee } from './vision.js';
 import { isAccessibleAt } from './terrain_properties.js';
-import { D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_MAGR, M_SEEN_NOTHING, isok, } from './const.js';
+import { D_CLOSED, D_LOCKED, G_GENOD, IS_DOOR, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, isok, } from './const.js';
 import { isContainer } from './container.js';
 import { ARROW, BAG_OF_HOLDING, BAG_OF_TRICKS, BLINDFOLD, BOOMERANG, CANDY_BAR, CORPSE, CREDIT_CARD, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEASH, LEATHER_JACKET, LEMBAS_WAFER, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_MARKER, MAGIC_WHISTLE, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, SACK, SKELETON_KEY, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, } from './object_data.js';
 const M1_WALLWALK = 0x00000008;
@@ -87,6 +87,21 @@ export function monsterHasLineOfSightToHero(monster, state = game) {
 export function seenResistanceForDamage(damageType) {
     return damageType >= AD_MAGM && damageType <= AD_ACID
         ? M_SEEN_MAGR << (damageType - AD_MAGM) : M_SEEN_NOTHING;
+}
+// C mondata.c:cvt_prop_to_mseenres().  Worn items confer these nine
+const M_SEEN_BY_PROPERTY = {
+    antimagic: M_SEEN_MAGR,
+    fireResistance: M_SEEN_FIRE,
+    coldResistance: M_SEEN_COLD,
+    sleepResistance: M_SEEN_SLEEP,
+    disintegrationResistance: M_SEEN_DISINT,
+    shockResistance: M_SEEN_ELEC,
+    poisonResistance: M_SEEN_POISON,
+    acidResistance: M_SEEN_ACID,
+    reflection: M_SEEN_REFL,
+};
+export function seenResistanceForProperty(property) {
+    return M_SEEN_BY_PROPERTY[property] ?? M_SEEN_NOTHING;
 }
 function monstersThatCanSeeHero(state, canSeeHero) {
     if (state.u?.uswallow)
