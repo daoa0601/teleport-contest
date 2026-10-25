@@ -29,12 +29,9 @@ void test('answering the autounlock kick offer runs the kick at the door without
         { prompt: /This door is locked\.--More--/, keys: ' ' },
         { prompt: /Kick it\?/, keys: 'y' },
     ]);
-    // The open command takes no turn; the queued kick owns the action.
+    // The open command takes no turn; the kick that follows owns the action.
     assert.equal(game.context.move, 0);
     assert.equal(door.doormask, D_LOCKED);
-    const canned = game._cannedCommands ?? [];
-    assert.equal(canned.length, 1);
-    assert.equal(canned[0]?.kind, 'kick');
     // No direction key is available, so the kick must reuse the door
     // direction recorded with the command.
     await answerPrompts(rhack(0), input, []);
@@ -44,7 +41,7 @@ void test('answering the autounlock kick offer runs the kick at the door without
     assert.equal(door.doormask, D_BROKEN);
 });
 for (const answer of ['n', 'q']) {
-    void test(`declining the autounlock kick offer with '${answer}' queues no kick`, async () => {
+    void test(`declining the autounlock kick offer with '${answer}' runs no kick`, async () => {
         const door = lockedDoorEast();
         const input = resetInputState();
         pushKeys('l');
@@ -55,7 +52,9 @@ for (const answer of ['n', 'q']) {
         // Looking at the door taught the hero something, so the open
         // still spends its turn exactly as the native res dictates.
         assert.equal(game.context.move, 1);
-        assert.equal(game._cannedCommands?.length ?? 0, 0);
+        // The next command runs as typed: no kick takes its place.
+        await answerPrompts(rhack('.'.charCodeAt(0)), input, []);
+        assert.doesNotMatch(game._pending_message ?? '', /kick|Whammm|Thwack|crashes open/i);
         assert.equal(door.doormask, D_LOCKED);
         assert.equal(game._kickedLoc ?? null, null);
     });
@@ -68,7 +67,10 @@ void test('a mounted hero gets no kick offer for a locked door', async () => {
     pushKeys('l');
     await answerPrompts(rhack('o'.charCodeAt(0)), input, []);
     assert.match(game._pending_message ?? '', /This door is locked\./);
-    assert.equal(game._cannedCommands?.length ?? 0, 0);
+    // No kick offer intervenes: the next typed command still runs.
+    await answerPrompts(rhack('.'.charCodeAt(0)), input, []);
+    assert.doesNotMatch(game._pending_message ?? '', /kick|Whammm|Thwack|crashes open/i);
     assert.equal(door.doormask, D_LOCKED);
+    assert.equal(game._kickedLoc ?? null, null);
 });
 //# sourceMappingURL=open_autounlock_kick.test.js.map

@@ -22,29 +22,30 @@ void test('a declined force keeps pick progress alive without its chest target',
     await continueCountedCommand();
     assert.equal(chest.olocked, true);
     await stopHeroOccupation();
-    // Forcing with a blade asks about the same chest; declining drops only
-    // the box target of the interrupted pick, not its progress.
+    // Forcing with a blade asks about the same chest; declining must not
+    // wipe the interrupted pick's progress.
     game.uwep = game.u.uwep = await addInventoryObject(DAGGER, { invlet: 'b' });
     pushKeys('force\n');
     await answerPrompts(rhack('#'.charCodeAt(0)), input, [
         { prompt: /here; force its lock\?/, keys: 'n' },
     ]);
     assert.match(game._pending_message, /You decide not to force the issue\./);
-    assert.equal(game._lockAttempt?.key, 'pick-lock');
-    assert.equal(game._lockAttempt.usedtime, 1);
-    assert.equal(game._lockAttempt.container, undefined);
-    // Applying the card again resumes that target-less attempt, which
-    // spends its turn and then stops silently on the next one.
+    // Applying the card again resumes the target-less attempt instead of
+    // asking for a direction or a fresh chest question.
     await answerPrompts(rhack('a'.charCodeAt(0)), input, [
         { prompt: /Apply what|use or apply/, keys: 'a' },
     ]);
-    assert.equal(game._occupation?.key, 'pick-lock');
-    assert.equal(game._occupation.container, undefined);
     assert.match(game._pending_message, /You resume your attempt at picking the lock\./);
+    // The resumed attempt finds no target: it stops silently on its next
+    // turn, and a fresh apply asks about the chest again instead of
+    // resuming once more.
     initRng(1n);
     await continueCountedCommand();
-    assert.equal(game._occupation, null);
-    assert.equal(game._lockAttempt?.usedtime ?? 0, 0);
+    await answerPrompts(rhack('a'.charCodeAt(0)), input, [
+        { prompt: /Apply what|use or apply/, keys: 'a' },
+        { prompt: /In what direction/, keys: '.' },
+        { prompt: /here; unlock it\?/, keys: 'q' },
+    ]);
     assert.equal(chest.olocked, true);
 });
 //# sourceMappingURL=force_decline_pick_progress.test.js.map
