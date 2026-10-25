@@ -66,7 +66,8 @@ import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName 
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
 import { identifyPack } from './invent.js';
-import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE } from './const.js';
+import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS,
+    MGIVENNAME, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
@@ -3254,7 +3255,10 @@ function wizardLevelMenu() {
 
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
         if (In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
-        rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE });
+        // C print_dungeon(TRUE) emits the dungeon name via add_menu_heading(),
+        // which skips menu coloring.
+        rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE,
+            itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
 
         for (const event of dungeonLayoutEvents(dnum)) {
             const key = menuLetter(choiceIndex++);

@@ -12,7 +12,15 @@ import type { TerminalCell, TerminalColor } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 
 const ATR_NONE = 0;
-export interface TextMenuLine { text: string; attr?: number; color?: TerminalColor; col?: number }
+export interface TextMenuLine {
+    text: string;
+    attr?: number;
+    color?: TerminalColor;
+    col?: number;
+    // Entry-level add_menu() flags; MENU_ITEMFLAGS_SKIPMENUCOLORS keeps a
+    // heading out of menucolor rule matching.
+    itemflags?: number;
+}
 export type MenuUnderlay = readonly (readonly TerminalCell[])[];
 export interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
 export interface MenuLayout<T extends TextMenuLine> {
@@ -139,7 +147,6 @@ export interface TtyMenuEntry<T> extends TextMenuLine {
     identifier: T | null;
     selector?: string;
     group?: string;
-    itemflags?: number;
 }
 interface TtyMenuRow<T> extends TextMenuLine {
     identifier: T | null;

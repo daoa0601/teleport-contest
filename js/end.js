@@ -41,7 +41,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, } from './const.js';
+import { A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, MENU_ITEMFLAGS_SKIPMENUCOLORS, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
@@ -543,11 +543,14 @@ function visitedMainDungeonLevels() {
 }
 function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
     const cause = deathCause || deathCauseRecord(killer, deathVerb);
+    // C print_mapseen() emits each dungeon's name line via add_menu_heading(),
+    // which skips menu coloring; the level lines below it are add_menu_str().
+    const dungeonHeading = (text) => ({ text, itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
     if (game._tutorialActive) {
         return [
-            'The Dungeons of Doom:',
+            dungeonHeading('The Dungeons of Doom:'),
             '   Level 1:',
-            'The Tutorial:',
+            dungeonHeading('The Tutorial:'),
             '   Level 1: <- You were here.',
             '      Final resting place for',
             `         you, ${cause}.`,
@@ -557,7 +560,7 @@ function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
     const first = levels[0] || 1;
     const last = levels.at(-1) || first;
     const range = first === last ? `level ${first}` : `levels ${first} to ${last}`;
-    const lines = [`The Dungeons of Doom: ${range}`];
+    const lines = [dungeonHeading(`The Dungeons of Doom: ${range}`)];
     for (const level of levels) {
         const current = (game.u?.uz?.dnum ?? 0) === 0
             && (game.u?.uz?.dlevel ?? 1) === level;

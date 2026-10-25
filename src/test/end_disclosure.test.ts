@@ -13,7 +13,8 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
 import { makePlural } from '../js/object_grammar.js';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
-import { ATR_BOLD, ATR_INVERSE, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { applyNethackrc } from '../js/options.js';
 import { C_ATR_BOLD, C_ATR_INVERSE } from '../js/color_attr.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -216,6 +217,40 @@ for (const { description, question, heading, nextQuestion, count, mvflags } of [
         }
     });
 }
+
+void test('the dungeon overview heading keeps its style under menucolor rules', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    // print_mapseen() emits the dungeon name via add_menu_heading(), which
+    // skips menu coloring; the level lines below it are add_menu_str() rows.
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
+    game.storage = memoryStorage();
+    game.flags.tombstone = false;
+    const input = resetInputState();
+    const ending = finishOrdinaryDeath({ killer: 'a falling rock' });
+    try {
+        await advanceToQuestion(input, /dungeon overview/);
+        input.feed('y');
+        await input.waitUntilBlocked();
+        const grid = game.nhDisplay?.grid ?? [];
+        const rows = grid.map(row => row.map(cell => cell.ch).join(''));
+        const headingIndex = rows.findIndex(row => row.includes('The Dungeons of Doom:'));
+        assert.ok(headingIndex >= 0, `The overview shows its dungeon heading:\n${rows.join('\n')}`);
+        for (const cell of grid[headingIndex] ?? [])
+            if (cell.ch !== ' ') assert.equal(cell.color, NO_COLOR, 'the dungeon heading keeps its style');
+        const levelIndex = rows.findIndex(row => /Level \d+:/.test(row));
+        assert.ok(levelIndex >= 0, 'The overview shows a level line');
+        const levelRow = grid[levelIndex] ?? [];
+        const levelText = rows[levelIndex] ?? '';
+        for (const cell of levelRow.slice(levelText.indexOf('Level'),
+            levelText.indexOf('Level') + 'Level'.length))
+            assert.equal(cell.color, CLR_RED, 'a level line takes the rule');
+        input.feed('\x1b');
+        await input.waitUntilBlocked();
+    } finally {
+        await declineRemainingPrompts(input, ending);
+    }
+});
 
 void test('the vanquished list orders by monster level with native indentation', () => {
     freshPlayableRoom();

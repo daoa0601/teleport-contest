@@ -6,6 +6,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
+import { chooseWizardLevelDestination } from '../js/cmd.js';
 import { doenhance, ensureHeroSkills } from '../js/skills.js';
 import { displayQuestText } from '../js/quest_pager.js';
 import type { QuestText } from '../js/quest_pager.js';
@@ -18,6 +19,8 @@ import { ATR_BOLD, CLR_GREEN, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import type { TerminalCell } from '../js/terminal.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createSpecialLevel } from './support/topology.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 
 async function packWithBlessedDagger() {
     freshObjectRoom();
@@ -170,5 +173,22 @@ void test('the skill enhancement group headings keep their own style', async () 
         // same window, proving the headings are exempt rather than missed.
         const rows = cells.filter(row => row.some(cell => cell.color === CLR_RED));
         assert.ok(rows.length > 0, 'some skill rows are recolored');
+    });
+});
+
+void test('the level teleport menu dungeon headings keep their own style', async () => {
+    freshConnectedLevels();
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
+    game.specialLevels = new Map([['earth', createSpecialLevel({ dnum: 0, dlevel: 2 })]]);
+
+    // C print_dungeon(TRUE) emits each dungeon name via add_menu_heading(),
+    // which skips menu coloring, while the level rows around it are
+    // add_menu() rows.
+    await withBlockingWindow(() => chooseWizardLevelDestination(), cells => {
+        const found = rowCells(cells, 'The Dungeons of Doom');
+        for (const cell of found.row.slice(found.start, found.start + 'The Dungeons of Doom'.length))
+            assert.equal(cell.color, NO_COLOR, 'the dungeon heading keeps its own style');
+        const rows = cells.filter(row => row.some(cell => cell.color === CLR_RED));
+        assert.ok(rows.length > 0, 'some level rows are recolored');
     });
 });

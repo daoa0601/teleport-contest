@@ -517,7 +517,8 @@ export async function showPagedPickOneMenu<T>({ rows, choices, prompt = null }: 
             const selectable = identifier !== undefined && row.text.slice(1, 4) === ' - ';
             tty_add_menu(window, { text: selectable ? row.text.slice(4) : row.text,
                 identifier: selectable ? identifier : null,
-                ...(selectable ? { selector } : {}), attr: row.attr ?? ATR_NONE });
+                ...(selectable ? { selector } : {}), attr: row.attr ?? ATR_NONE,
+                itemflags: row.itemflags ?? 0 });
         }
         tty_end_menu(window, prompt);
         const result = await tty_select_menu(window, PICK_ONE);
