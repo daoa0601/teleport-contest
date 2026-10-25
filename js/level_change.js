@@ -24,7 +24,7 @@ import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
 import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, setShopResidency, sendMonsterToLimbo, } from './monster_migration.js';
 import { collectLevelFollowers } from './monster_followers.js';
-import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
+import { restoreMonsterCover, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
@@ -34,7 +34,7 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely, bringLeashedFollowers } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
-import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { killGenocidedMonsters } from './mon.js';
 import { dismountHero } from './steed.js';
@@ -687,7 +687,6 @@ function cachedLevelState(level, stairs) {
 function restoreCachedHeroTrack(cached) {
     game._heroTrack = cloneHeroTrack(cached?.heroTrack || []);
 }
-const M1_CONCEAL = 0x00000080;
 // C getlev() restores each resident before separately arriving monsters.
 async function restoreCachedMonsterState(cached) {
     const elapsed = game.moves - cached.savedAt;
@@ -695,10 +694,7 @@ async function restoreCachedMonsterState(cached) {
     // Births append in the port, whereas C prepends to fmon.
     for (const monster of cached.level.monsters.slice().reverse()) {
         setShopResidency(monster, false, game);
-        if (monster !== game.u.usteed && monster.mundetected
-            && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL)) {
-            await hideMonsterUnder(monster, game);
-        }
+        await restoreMonsterCover(monster, game);
         if (elapsed > 0)
             catchUpMonster(monster, elapsed, game);
         await restoreMonsterShape(monster, game);

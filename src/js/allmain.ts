@@ -61,6 +61,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
+import { restoreMonsterCover } from './monster_hiding.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -528,10 +529,8 @@ export async function restoregamePreamble() {
     game._encumbranceLevel = 0;
 
     // C getlev() closes dorecover() with a fixup pass over every monster on
-    // the restored current level. Its other steps — steed and engulfer
-    // relinking, placement, hidden cover, and shopkeeper residency — are
-    // restored directly from the saved graph, and elapsed time is zero at a
-    // plain restore, so restore_cham() is the piece this pass still owes.
+    // the restored current level. Ownership links survive the saved graph,
+    // but hiding cover must be rechecked before restoring each shape.
     // Births append in the port, whereas C's fmon chain keeps the newest
     // monster first. The pass runs where C runs it, before vision_reset()
     // (restore.c:926) and with program_state.restoring still set, so plain
@@ -544,6 +543,7 @@ export async function restoregamePreamble() {
     game.vision_full_recalc = 0;
     try {
         for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+            await restoreMonsterCover(monster, game);
             await restoreMonsterShape(monster, game);
             if (game.program_state.gameover) return;
         }

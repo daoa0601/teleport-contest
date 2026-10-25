@@ -19,6 +19,13 @@ const COIN_CLASS = 12;
 const M1_FLY = 0x1, M1_AMORPHOUS = 0x4, M1_CLING = 0x10;
 const M1_CONCEAL = 0x80, M1_HIDE = 0x100, M1_NOLIMBS = 0x6000, M1_SLITHY = 0x80000;
 const S_EYE = 5, S_MIMIC = 13, S_LIGHT = 25, S_EEL = 57;
+// C restore.c:getlev() rechecks existing cover before catch-up and shape
+// changes. A saved mundetected bit alone does not establish valid cover.
+export async function restoreMonsterCover(monster, state = game) {
+    if (monster !== state.u.usteed && monster.mundetected
+        && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
+        await hideMonsterUnder(monster, state);
+}
 // Restored hiders get their attempt before normal vision can expose their spot.
 // Only that square's vision bits are hidden, and hideunder sees restored vision.
 export async function hideMonsterOnRestore(monster, state = game) {
