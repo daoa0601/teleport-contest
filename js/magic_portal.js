@@ -23,14 +23,15 @@ async function addPortalStun() {
 }
 export async function activateMagicPortal(trap, gotoLevel) {
     requirePlayingGame(game);
+    // C teleport.c:domagicportal() (1450-1451): a buried ball surfaces
+    // before the leashed-follower check, so it comes back up even when the
+    // portal attempt then shudders.
+    if (game.u.utrap && game.u.utraptype === TT_BURIEDBALL)
+        await buriedBallToPunishment(game);
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         return;
     }
-    // C teleport.c:domagicportal(): a buried ball surfaces before the
-    // leashed-follower check, even when the portal attempt then shudders.
-    if (game.u.utrap && game.u.utraptype === TT_BURIEDBALL)
-        await buriedBallToPunishment(game);
     const { uz, uz0 } = game.u;
     if (uz0 && (uz.dnum !== uz0.dnum || uz.dlevel !== uz0.dlevel))
         return;
