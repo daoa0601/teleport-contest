@@ -236,6 +236,40 @@ void test('a Wizard can decline a difficult uncursed book after the native abili
     assert.ok(!game._occupation);
     assert.equal(game._helplessTurns || 0, 0);
 });
+// C spell.c:study_book(): when the uncursed comprehension roll fails, the
+// whole cursed_book() table still applies to the blameless book, the study
+// delay is spent immobilized, and only the 1-in-3 crumble roll destroys it.
+for (const [seed, kept] of [[1n, true], [4n, false]]) {
+    void test(`an uncursed book beyond its reader ${kept ? 'survives its failure curse' : 'crumbles after its failure curse'}`, async () => {
+        freshObjectRoom({ role: 'caveman', hero: { ulevel: 1, uhp: 40, uhpmax: 40 } });
+        requirePlayingGame(game);
+        game.u.acurr.a[A_INT] = 3;
+        game.u.amax.a[A_INT] = 3;
+        const source = await book(SPE_LIGHT, { blessed: false });
+        const before = { x: game.u.ux, y: game.u.uy };
+        initRng(seed);
+        const input = resetInputState();
+        input.feed([source.invlet, ' '.charCodeAt(0), ' '.charCodeAt(0), ' '.charCodeAt(0)]);
+        await rhack('r'.charCodeAt(0));
+        // The level-1 failure roll teleports the reader before the delay.
+        assert.ok(game.u.ux !== before.x || game.u.uy !== before.y);
+        assert.equal(game._helplessTurns, 1);
+        assert.equal(game._helplessReason, 'reading a book');
+        assert.equal(game.context.spbook?.delay, 0);
+        assert.equal(game.context.move, 1);
+        assert.equal(kept, source.where === 'inventory');
+        if (kept) {
+            assert.equal(source.in_use, false);
+            assert.match(game._pending_message, /materialize in a different location!/);
+        }
+        else {
+            assert.equal(source.where, 'gone');
+            assert.match(game._pending_message, /crumbles to dust!/);
+        }
+        await finishHeroHelplessness();
+        assert.equal(game._lastPlineMessage, 'You can move again.');
+    });
+}
 void test('lenses accelerate actual study without changing the spell or book identity', async (t) => {
     const elapsed = [];
     for (const lenses of [false, true]) {
