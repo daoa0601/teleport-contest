@@ -20,7 +20,7 @@ import { makemonNear, mksobj } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterDigests, monsterIsWhirly, } from './monster_data.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
+import { OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
 import { makePlural } from './object_grammar.js';
@@ -141,17 +141,82 @@ function snuffOrdinaryLight(object) {
         return false;
     return endObjectBurn(object, game, game.moves ?? 0);
 }
-function snuffLightsAt(x, y) {
-    for (const object of game.level?.objects?.[x]?.[y] || [])
-        snuffOrdinaryLight(object);
-    const carrier = game.level?.monsters?.find(monster => monster.mx === x && monster.my === y);
-    if (!carrier)
-        return;
-    const inventories = new Set([carrier.minvent, carrier.inventory]);
-    for (const inventory of inventories) {
-        for (const object of inventory || [])
-            snuffOrdinaryLight(object);
+// C light.c:snuff_light_source().  The native light_base list is
+// newest-first and the search returns once one source at the location has
+// been extinguished, so a square holding several burning objects keeps
+// every one of them lit except the one closest to the list head.  _litSeq
+// tracks that list position: raising on each lighting, and reversed by
+// restoreLightSourceBatch() below when C would reload a saved batch.
+export function snuffLightSource(x, y, state = game) {
+    const candidates = [...(state.level?.objects?.[x]?.[y] || [])];
+    const carrier = state.level?.monsters?.find(monster => monster.mx === x && monster.my === y);
+    const inventories = new Set([carrier?.minvent, carrier?.inventory]);
+    for (const inventory of inventories)
+        candidates.push(...(inventory || []));
+    if (state.u?.ux === x && state.u?.uy === y)
+        candidates.push(...(state.inventory || []));
+    let target = null;
+    let newest = -1;
+    for (const object of candidates) {
+        if (!objectShedsLight(object) || artifactEmitsLight(object))
+            continue;
+        const order = object._litSeq ?? 0;
+        if (order > newest) {
+            newest = order;
+            target = object;
+        }
     }
+    if (target)
+        snuffOrdinaryLight(target);
+}
+// C mkobj.c:obj_is_local(): a light is global when its outermost owner is
+// the hero or a migrating carrier, and level-local otherwise.
+function lightObjectIsGlobal(object) {
+    let outermost = object;
+    while (outermost.where === 'contained' && outermost.container)
+        outermost = outermost.container;
+    switch (outermost.where) {
+        case 'inventory':
+        case 'migrating':
+            return true;
+        case 'minvent':
+            return !outermost.ocarry || outermost.ocarry.mx === 0;
+        case 'buried':
+        case 'contained':
+        case 'floor':
+        case 'free':
+        case 'gone':
+        case 'onbill':
+            return false;
+    }
+}
+// C light.c:save_light_sources() writes a batch (the global lights, or one
+// level's lights) newest-first, and restore_light_sources() pushes each
+// entry back onto the front of light_base, so a restored batch returns
+// reversed and ahead of the lights that never left the list.  Re-stamp the
+// batch the same way: previously-oldest first, above every other light.
+export function restoreLightSourceBatch(batch, state = game) {
+    const lights = (batch ?? [])
+        .filter(object => objectLightRadius(object, state) > 0)
+        .sort((left, right) => (left._litSeq ?? 0) - (right._litSeq ?? 0));
+    if (!lights.length)
+        return;
+    const base = state._lightSerial ?? 0;
+    lights.forEach((object, index) => {
+        object._litSeq = base + lights.length - index;
+    });
+    state._lightSerial = base + lights.length;
+}
+// C getlev() restores the entered level's light sources after the level
+// data (restore.c:1145); other levels keep waiting in their files.
+export function restoreLevelLightSources(state = game) {
+    restoreLightSourceBatch(objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)), state);
+}
+// C restore.c:655 reloads the global batch while reading the game state,
+// then getlev() pushes the current level's batch in front of it.
+export function restoreSavedLightSources(state = game) {
+    restoreLightSourceBatch(objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
+    restoreLevelLightSources(state);
 }
 async function affectCarriedLights(worsen) {
     let stillLit = 0;
@@ -295,7 +360,7 @@ export async function lightRoom(lit, { radius = 5, source, finishMonsterKill } =
             continue;
         location.lit = !!lit;
         if (!lit) {
-            snuffLightsAt(x, y);
+            snuffLightSource(x, y);
             continue;
         }
         const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
@@ -413,6 +478,12 @@ function objectBurnTurns(object) {
         return candleBurnTurns(object.age ?? 0);
     return lampBurnTurns(object.age ?? 0);
 }
+// C light.c:new_light_source() prepends to light_base, so each lighting
+// gives the object the newest slot in the list order that snuff searches.
+function registerObjectLightSource(object, state) {
+    state._lightSerial = (state._lightSerial ?? 0) + 1;
+    object._litSeq = state._lightSerial;
+}
 // begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
 // what lets save/restore and an overdue callback reconstruct source state.
@@ -424,16 +495,20 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
     const alreadyLit = !!object.lamplit;
     if (artifactEmitsLight(object)) {
         object.lamplit = true;
-        if (!alreadyLit)
+        if (!alreadyLit) {
+            registerObjectLightSource(object, state);
             state.vision_full_recalc = 1;
+        }
         return true;
     }
     if (object.otyp === MAGIC_LAMP) {
         if ((object.spe ?? 0) <= 0)
             return false;
         object.lamplit = true;
-        if (!alreadyLit)
+        if (!alreadyLit) {
+            registerObjectLightSource(object, state);
             state.vision_full_recalc = 1;
+        }
         return true;
     }
     if (object.otyp === CANDELABRUM_OF_INVOCATION
@@ -447,8 +522,10 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
     if (!timer)
         return false;
     object.age -= turns;
-    if (!alreadyLit)
+    if (!alreadyLit) {
+        registerObjectLightSource(object, state);
         state.vision_full_recalc = 1;
+    }
     return true;
 }
 // apply.c:dorub() performs this type change before the released djinni can
@@ -479,6 +556,7 @@ export function endObjectBurn(object, state = game, currentTurn = state.moves ??
     if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)
         || object.otyp === GOLD_DRAGON_SCALE_MAIL || object.otyp === GOLD_DRAGON_SCALES) {
         object.lamplit = false;
+        delete object._litSeq;
         state.vision_full_recalc = 1;
         return true;
     }
@@ -493,11 +571,13 @@ export function cleanupObjectBurn(object, deadline, state = game, currentTurn = 
         return false;
     object.age = (object.age ?? 0) + deadline - currentTurn;
     object.lamplit = false;
+    delete object._litSeq;
     state.vision_full_recalc = 1;
     return true;
 }
 function extinguishTimedLight(object, state) {
     object.lamplit = false;
+    delete object._litSeq;
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     state.vision_full_recalc = 1;
 }

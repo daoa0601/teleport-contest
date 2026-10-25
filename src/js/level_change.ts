@@ -12,6 +12,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
+import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -336,6 +337,11 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             restoreCachedLevelMetadata(cached);
             await restoreCachedMonsterState(cached);
             restoreLevelRegions(game, game.moves - cached.savedAt);
+            // C getlev() reloads the level's saved light sources onto the
+            // front of light_base (restore.c:1145), reversed from the
+            // newest-first save order and ahead of the hero's carried
+            // lights that never left the list.
+            restoreLevelLightSources(game);
         } finally {
             game.program_state.in_getlev = false;
         }

@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
 import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
+import { restoreSavedLightSources } from './light.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { requireInitializedHero } from './hero_types.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -268,6 +269,12 @@ export function restoreGame(name, storage = game.storage) {
         game.program_state = { something_worth_saving: true };
         game.fmon = game.level?.monsters[0] ?? null;
         restoreLevelRegions(game, 0);
+        // C restores the hero's carried and migrating lights while reading
+        // the game state (restore.c:655) and then pushes the current
+        // level's own batch back in front while loading the level
+        // (restore.c:1145); each batch returns reversed from its saved
+        // newest-first order.
+        restoreSavedLightSources(game);
         // C restore.c:dorecover() rebuilds transient vision after loading the
         // level. No old sight bits may suppress its first terrain repaint.
         vision_reset_new_level();

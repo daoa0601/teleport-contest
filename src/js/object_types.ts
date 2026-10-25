@@ -91,6 +91,10 @@ export interface GameObject {
     // Extraction and replacement update links in stages. A monster-carried
     // object retains its owner even after the monster leaves the map.
     contents?: GameObject[];
+    // C light.c creation order of this object's light source (light_base
+    // is newest-first).  Used only while lamplit; a fresh value is assigned
+    // each time the object is (re)lit or split off while lit.
+    _litSeq?: number;
     container?: GameObject | null;
     ocarry?: Monster | null;
     carrierMid?: number | null;

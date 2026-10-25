@@ -13,7 +13,7 @@ import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_
 import { deleteObject } from './object_delete.js';
 import { removeObjectAndContentsFromBill } from './shk.js';
 import { artifactEmitsLight } from './artifacts.js';
-import { endObjectBurn, objectShedsLight } from './light.js';
+import { endObjectBurn, objectShedsLight, snuffLightSource } from './light.js';
 import { monsterCanEngulf, monsterTypeName } from './monster_data.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
@@ -119,7 +119,7 @@ async function prepareMonsterPickup(
         else if (object.how_lost === LOST_DROPPED) object.how_lost = LOST_NONE;
     }
     attachCursedFigurineTimer(object, state);
-    return snuff && !artifactEmitsLight(object);
+    return snuff;
 }
 
 // Carrying effects precede merging; engulfing snuffs the surviving object.
@@ -140,7 +140,7 @@ export async function addObjectToMonsterInventory(
     }
     const extinguish = await prepareMonsterPickup(monster, object, state);
     const carried = await linkObjectToMonsterInventory(monster, object, { atFront, state });
-    if (extinguish) endObjectBurn(carried, state, state.moves);
+    if (extinguish && monster.mx > 0) snuffLightSource(monster.mx, monster.my, state);
     return carried;
 }
 
@@ -151,7 +151,7 @@ export async function addCreatedObjectToMonsterInventory(
     assertCreatedObject(object, state);
     const extinguish = await prepareMonsterPickup(monster, object, state);
     const carried = await linkCreatedObjectToMonsterInventory(monster, object, { atFront, state });
-    if (extinguish) endObjectBurn(carried, state, state.moves);
+    if (extinguish && monster.mx > 0) snuffLightSource(monster.mx, monster.my, state);
     return carried;
 }
 
