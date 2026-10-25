@@ -5,12 +5,11 @@ import { restoreBallAndChainPlacement } from './ball.js';
 import { consumeInventoryItem } from './invent.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './terrain_properties.js';
+import { plineWithContinuation } from './display.js';
+import { objectName, pluralizeObjectNoun } from './objnam.js';
 
 export async function doneObjectCleanup(): Promise<void> {
-    // inven_inuse(TRUE) finishes one item from each active stack, quietly.
-    for (const object of [...game.inventory]) {
-        if (object.in_use) await consumeInventoryItem(object);
-    }
+    await finishInUseInventory(true);
 
     const flightFields = ['_thrownObject', '_kickedObject'] as const;
     if (flightFields.some(field => game[field]?.where === 'free')) {
@@ -34,4 +33,18 @@ export async function doneObjectCleanup(): Promise<void> {
 
     const chain = game.uchain || game.u.uchain;
     if (chain?.where === 'free') await restoreBallAndChainPlacement(-1);
+}
+
+// C restore.c:inven_inuse(). Announce before consuming, so a pager still
+// shows the in-use stack until its message is acknowledged.
+export async function finishInUseInventory(quietly: boolean): Promise<void> {
+    for (const object of [...game.inventory]) {
+        if (!object.in_use) continue;
+        if (!quietly) {
+            const noun = objectName(object);
+            const name = object.quan === 1 ? noun : pluralizeObjectNoun(object, noun);
+            await plineWithContinuation(`Finishing off ${name}...`);
+        }
+        await consumeInventoryItem(object);
+    }
 }

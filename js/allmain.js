@@ -47,6 +47,7 @@ import { purgeDeadMonsters } from './monster_level_departure.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterCover } from './monster_hiding.js';
 import { runDueTimers } from './timer_effects.js';
+import { finishInUseInventory } from './object_cleanup.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -375,6 +376,7 @@ export async function restoregamePreamble() {
                 return;
         }
         game.program_state.in_getlev = false;
+        await finishInUseInventory(false);
         // C dorecover() rebuilds vision, then expires timers while map and
         // status output are still suppressed by program_state.restoring.
         vision_reset_new_level();
