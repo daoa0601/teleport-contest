@@ -228,6 +228,7 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
     clearHeroRemains(game);
     setPropertyTimeout('unchanging', 0);
     removeIntrinsicProperty('unchanging');
+    await flush_screen(1);
     // end.c:savelife() truncates any in-flight volley (endmultishot(FALSE)).
     stopRemainingVolleyShots(game);
     const holder = game.u.ustuck;
