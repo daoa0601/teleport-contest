@@ -74,17 +74,28 @@ function usesDecSymbols() {
     return !symbols.rogue && /^DECgraphics$/i.test(symbols.name ?? '');
 }
 function activeObjectSymbols() {
-    return shownSymbolSet().rogue
-        ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
+    const shown = shownSymbolSet();
+    if (!shown.rogue)
+        return OBJECT_CLASS_SYMBOLS;
+    if (shown.name) {
+        const key = shown.name.toLowerCase();
+        if (ROGUE_SYMSETS[key]?.blank)
+            return BLANK_OBJECT_SYMBOLS;
+        return ROGUE_SYMSET_OBJECT_TABLES[key] ?? ROGUE_OBJECT_SYMBOLS;
+    }
+    return ROGUE_OBJECT_SYMBOLS;
 }
 // symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
 // else the default rock-class symbol.  optfn_boulder() fills both sets'
 // overrides, while the BOULDER= statement (cfgfiles.c) only fills the
 // primary one. A named primary selection can display that slot on Rogue.
 export function currentBoulderSymbol(state = game) {
-    const override = shownSymbolSet(state).rogue
-        ? state.rogueBoulderSym : state.boulderSym;
-    return override || '`';
+    if (shownSymbolSet(state).rogue) {
+        const set = activeRogueSymset(state);
+        return state.rogueBoulderSym
+            || (set?.blank ? BLANK_SYMBOL : '`');
+    }
+    return state.boulderSym || '`';
 }
 const M3_INFRAVISIBLE = 0x0200;
 const M1_MINDLESS = 0x00010000;
@@ -451,6 +462,14 @@ export function reglyphSymbolSet() {
                 loc.remembered_glyph = { ...memory, ch };
                 continue;
             }
+            if (memory.kind === 'trap') {
+                // A named rogue set replaces every trap symbol (RogueEpyx).
+                const rogueTrap = activeRogueSymset()?.trapSymbol;
+                const ch = memory.trapType === VIBRATING_SQUARE ? '~'
+                    : rogueTrap ?? (memory.trapType === WEB ? '"' : '^');
+                loc.remembered_glyph = { ...memory, ch };
+                continue;
+            }
             const glyphNumber = memory.glyph;
             if (memory.kind !== 'terrain'
                 || typeof glyphNumber !== 'number')
@@ -458,6 +477,18 @@ export function reglyphSymbolSet() {
             const index = rememberedTerrainIndex(glyphNumber);
             if (index === null)
                 continue;
+            // display.c:reglyph_darkroom() points S_darkroom at the room
+            // symbol only while dark-room display is active; otherwise the
+            // stored character stays the blank SYM_NOTHING one.
+            if (index === CmapSymbol.darkroom) {
+                const showDarkFloor = (game.flags.dark_room ?? true)
+                    && game.flags.color !== false && !shownSymbolSet().rogue;
+                const room = cmapSymbolAppearance(CmapSymbol.room);
+                loc.remembered_glyph = { ...memory,
+                    ch: showDarkFloor ? room.ch : ' ',
+                    decgfx: showDarkFloor ? room.dec : false };
+                continue;
+            }
             const appearance = cmapSymbolAppearance(index);
             const wall = index >= CmapSymbol.vwall && index <= CmapSymbol.trwall;
             const offset = glyphNumber - (index - CmapSymbol.vwall);
@@ -884,6 +915,23 @@ function projectedTerrainType(loc) {
     return projectedTWallType(loc);
 }
 function terrainGlyphAppearance(loc, x, y) {
+    const appearance = terrainGlyphChars(loc, x, y);
+    if (!shownSymbolSet().rogue)
+        return appearance;
+    // Walls, corners, secret doors and corridors draw through the active
+    // symbol set's table; anything the table leaves alone (and the blank
+    // an unseen wall produces) keeps the base characters.
+    const typ = projectedTerrainType(loc);
+    const rogueIndex = typ >= VWALL && typ <= TRWALL ? typ
+        : typ === SDOOR ? (loc.horizontal ? CmapSymbol.hwall : CmapSymbol.vwall)
+            : typ === CORR
+                ? (loc.waslit || game.flags?.lit_corridor ? CmapSymbol.litcorr : CmapSymbol.corr)
+                : null;
+    if (rogueIndex !== null && appearance.ch !== ' ')
+        return { ...cmapSymbolAppearance(rogueIndex), color: NO_COLOR };
+    return appearance;
+}
+function terrainGlyphChars(loc, x, y) {
     const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = usesDecSymbols();
@@ -931,8 +979,15 @@ function terrainGlyphAppearance(loc, x, y) {
                 ? { ch: 'q', color: wallColor, dec: true }
                 : { ch: 'x', color: wallColor, dec: true };
         case DOOR:
-            if (shownSymbolSet().rogue)
-                return { ch: '+', color: NO_COLOR, dec: false };
+            if (shownSymbolSet().rogue) {
+                // The named rogue sets replace the doorway characters too.
+                const index = !loc.doormask || loc.doormask & D_BROKEN
+                    ? CmapSymbol.ndoor
+                    : loc.doormask & D_ISOPEN
+                        ? (loc.horizontal ? CmapSymbol.hodoor : CmapSymbol.vodoor)
+                        : (loc.horizontal ? CmapSymbol.hcdoor : CmapSymbol.vcdoor);
+                return { ...cmapSymbolAppearance(index), color: NO_COLOR };
+            }
             if (!loc.doormask || loc.doormask & D_BROKEN)
                 return dec
                     ? { ch: '~', color: NO_COLOR, dec: true }
@@ -1037,7 +1092,7 @@ function objectGlyphAttr(glyph) {
 function displayMonsterGlyph(mnum, female = false, monsterState = 'normal') {
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
-        ch: MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] || '?',
+        ch: activeMonsterClassSymbol(MONSTER_SYMBOL[mnum] ?? 0) || '?',
         // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
         color: rawColor === CLR_GRAY ? NO_COLOR : rawColor,
         decgfx: false, kind: 'monster', mnum, piletop: false,
@@ -1074,7 +1129,8 @@ function heroDisplayGlyph() {
         throw new Error('Hero glyph requires an initialized species');
     const glyph = displayMonsterGlyph(mnum, polymorphed ? !!game.u.mfemale : !!game.flags.female);
     return polymorphed ? glyph
-        : { ...glyph, ch: game.flags.showrace ? glyph.ch : '@', color: CLR_WHITE };
+        : { ...glyph, ch: game.flags.showrace ? glyph.ch
+                : activeMonsterClassSymbol(HUMAN_CLASS_INDEX) || '@', color: CLR_WHITE };
 }
 // symbols.c:init_rogue_symbols() changes ordinary stairs and open doorways.
 // Branch stairs retain their default symbols.
@@ -1082,6 +1138,76 @@ const rogueFurnitureSymbols = new Map([
     [CmapSymbol.ndoor, '+'], [CmapSymbol.vodoor, '+'], [CmapSymbol.hodoor, '+'],
     [CmapSymbol.upstair, '%'], [CmapSymbol.dnstair, '%'],
 ]);
+const ROGUE_DOUBLE_WALLS = new Map([
+    [CmapSymbol.vwall, '\u00ba'], [CmapSymbol.hwall, '\u00cd'],
+    [CmapSymbol.tlcorn, '\u00c9'], [CmapSymbol.trcorn, '\u00bb'],
+    [CmapSymbol.blcorn, '\u00c8'], [CmapSymbol.brcorn, '\u00bc'],
+    [CmapSymbol.crwall, '\u00ce'], [CmapSymbol.tuwall, '\u00ca'],
+    [CmapSymbol.tdwall, '\u00cb'], [CmapSymbol.tlwall, '\u00b9'], [CmapSymbol.trwall, '\u00cc'],
+    [CmapSymbol.ndoor, '\u00ce'], [CmapSymbol.vodoor, '\u00ce'], [CmapSymbol.hodoor, '\u00ce'],
+    [CmapSymbol.room, '\u00fa'], [CmapSymbol.corr, '\u00b1'], [CmapSymbol.litcorr, '\u00b2'],
+    [CmapSymbol.engrcorr, '\u00b1'],
+    [CmapSymbol.upstair, '\u00f0'], [CmapSymbol.dnstair, '\u00f0'],
+    [CmapSymbol.brupstair, '\u00f0'], [CmapSymbol.brdnstair, '\u00f0'],
+]);
+const ROGUE_SYMSETS = {
+    plain: { cmap: new Map([
+            [CmapSymbol.tlcorn, '+'], [CmapSymbol.trcorn, '+'],
+            [CmapSymbol.blcorn, '+'], [CmapSymbol.brcorn, '+'],
+            [CmapSymbol.crwall, '+'], [CmapSymbol.tuwall, '+'],
+            [CmapSymbol.tdwall, '+'], [CmapSymbol.tlwall, '+'], [CmapSymbol.trwall, '+'],
+        ]) },
+    blank: { blank: true },
+    rogueibm: {
+        cmap: ROGUE_DOUBLE_WALLS,
+        objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
+    },
+    rogueepyx: {
+        cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
+        objectClasses: { 2: '\x18', 3: '[', 4: '=', 5: '\x0c', 6: '(',
+            7: '\x05', 8: '\u00ad', 9: '\x0e', 10: '+', 11: '\u00e7',
+            12: '\x0f', 13: '\x0f', 14: '`', 15: '0', 16: '_', 17: '.' },
+        trapSymbol: '\x04',
+        humanSymbol: '\x01',
+        color: true,
+    },
+    roguewindows: {
+        cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
+        objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
+    },
+};
+const BLANK_SYMBOL = '\x1a';
+const BLANK_OBJECT_SYMBOLS = ROGUE_OBJECT_SYMBOLS.map(() => BLANK_SYMBOL);
+const ROGUE_SYMSET_OBJECT_TABLES = Object.fromEntries(Object.entries(ROGUE_SYMSETS)
+    .filter(([, set]) => set.objectClasses !== undefined)
+    .map(([name, set]) => [name, ROGUE_OBJECT_SYMBOLS.map((symbol, index) => set.objectClasses?.[index] ?? symbol)]));
+function activeRogueSymset(state = game) {
+    const shown = shownSymbolSet(state);
+    if (!shown.rogue || !shown.name)
+        return null;
+    return ROGUE_SYMSETS[shown.name.toLowerCase()] ?? null;
+}
+function rogueCmapSymbol(set, symbol) {
+    if (!set)
+        return undefined;
+    if (set.blank)
+        return BLANK_SYMBOL;
+    return set.cmap?.get(symbol);
+}
+// The monster-class tables only change on the Rogue level, where a named
+// set can replace the human symbol (RogueEpyx) or every class (Blank).
+const HUMAN_CLASS_INDEX = MONSTER_CLASS_SYMBOLS.indexOf('@');
+function activeMonsterClassSymbol(index) {
+    const shown = shownSymbolSet();
+    if (shown.rogue) {
+        const set = shown.name ? ROGUE_SYMSETS[shown.name.toLowerCase()] : undefined;
+        if (set?.blank)
+            return BLANK_SYMBOL;
+        if (set?.humanSymbol && index === HUMAN_CLASS_INDEX)
+            return set.humanSymbol;
+    }
+    return MONSTER_CLASS_SYMBOLS[index] ?? '';
+}
 // dat/symbols:DECgraphics overrides dungeon symbols independently of the
 // terrain type at the hero's location. Furniture mimicry uses these symbols.
 const decFurnitureSymbols = new Map([
@@ -1104,8 +1230,11 @@ export function cmapSymbolAppearance(symbol) {
     const definition = MAP_SYMBOLS[symbol];
     if (!definition)
         throw new RangeError(`Unknown dungeon symbol ${symbol}`);
-    if (shownSymbolSet().rogue)
-        return { ch: rogueFurnitureSymbols.get(symbol) ?? definition.ch, dec: false };
+    if (shownSymbolSet().rogue) {
+        const set = activeRogueSymset();
+        return { ch: rogueCmapSymbol(set, symbol)
+                ?? rogueFurnitureSymbols.get(symbol) ?? definition.ch, dec: false };
+    }
     const decSymbol = usesDecSymbols()
         ? decFurnitureSymbols.get(symbol) : undefined;
     return { ch: decSymbol ?? definition.ch, dec: decSymbol !== undefined };
@@ -1199,7 +1328,7 @@ function objectGlyph(object) {
         return randomHallucinatedObjectGlyph();
     }
     const statueSymbol = object.otyp === STATUE && object.corpsenm !== undefined
-        ? MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[object.corpsenm] ?? 0]
+        ? activeMonsterClassSymbol(MONSTER_SYMBOL[object.corpsenm] ?? 0)
         : null;
     const species = (object.otyp === CORPSE || object.otyp === STATUE)
         && object.corpsenm !== undefined ? { corpsenm: object.corpsenm } : {};
@@ -1401,7 +1530,10 @@ const TRAP_COLOR = [
 ];
 export function transientTrapGlyph(trap) {
     return {
-        ch: trap.ttyp === WEB ? '"' : trap.ttyp === VIBRATING_SQUARE ? '~' : '^',
+        // A named rogue set can replace every trap symbol (RogueEpyx).
+        ch: trap.ttyp === VIBRATING_SQUARE ? '~'
+            : activeRogueSymset()?.trapSymbol
+                ?? (trap.ttyp === WEB ? '"' : '^'),
         color: TRAP_COLOR[trap.ttyp] ?? NO_COLOR, decgfx: false,
         kind: 'trap', trapType: trap.ttyp,
         glyph: cmapToGlyph(CmapSymbol.arrowTrap + trap.ttyp - 1),
@@ -1644,20 +1776,77 @@ function isRogueShowraceHeroGlyph(glyph, x, y) {
         + (game.flags.female ? MONSTER_COLOR.length : 0);
     return glyph.glyph === heroGlyphNumber;
 }
+// HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
+// `Color: Yes`) keeps color on the Rogue level through cmap_to_roguecolor()
+// and the object/monster branches of reset_glyphmap().
+function rogueColorsActive() {
+    return Is_rogue_level(game.u?.uz) && game.flags.color !== false
+        && ROGUE_SYMSETS[game.rogueSymset?.toLowerCase() ?? '']?.color === true;
+}
+// display.c:cmap_to_roguecolor().
+function cmapToRogueColor(index) {
+    if (index >= CmapSymbol.vwall && index <= CmapSymbol.hcdoor)
+        return CLR_BROWN;
+    if (index >= CmapSymbol.arrowTrap && index <= CmapSymbol.arrowTrap + 21)
+        return CLR_MAGENTA;
+    if (index === CmapSymbol.corr || index === CmapSymbol.litcorr)
+        return CLR_GRAY;
+    if (index >= CmapSymbol.room && index <= CmapSymbol.water
+        && index !== CmapSymbol.darkroom)
+        return CLR_GREEN;
+    return NO_COLOR;
+}
+function rogueLevelGlyphColor(glyph, x, y) {
+    const glyphNumber = glyph.glyph;
+    if (glyph.kind === 'object' && typeof glyphNumber === 'number') {
+        // reset_glyphmap(): coins yellow, food (including corpses) red,
+        // every other class bright blue.
+        const oclass = objectClassForType(glyph.otyp);
+        // objclass.h indices: coins 12, food 7.
+        return oclass === 12 ? CLR_YELLOW
+            : oclass === 7 ? CLR_RED : CLR_BRIGHT_BLUE;
+    }
+    if (glyph.kind === 'monster' && typeof glyphNumber === 'number') {
+        // Ordinary male monsters (and the male hero) are yellow; pets,
+        // detected, ridden and female monsters keep no color.
+        return glyphNumber >= GlyphOffset.monMale && glyphNumber < GlyphOffset.monFemale
+            ? CLR_YELLOW : NO_COLOR;
+    }
+    if (typeof glyphNumber !== 'number')
+        return NO_COLOR;
+    // The branch wall ranges keep wall_color() even with rogue color, and
+    // no Rogue level is inside a branch, so only the main range colors.
+    if (glyphNumber === GlyphOffset.cmapStone)
+        return NO_COLOR;
+    if (glyphNumber >= GlyphOffset.cmapMain && glyphNumber < GlyphOffset.cmapMines)
+        return cmapToRogueColor(glyphNumber - GlyphOffset.cmapMain + CmapSymbol.vwall);
+    if (glyphNumber >= GlyphOffset.cmapA && glyphNumber < GlyphOffset.altar)
+        return cmapToRogueColor(glyphNumber - GlyphOffset.cmapA + CmapSymbol.ndoor);
+    if (glyphNumber >= GlyphOffset.altar && glyphNumber < GlyphOffset.cmapB)
+        return cmapToRogueColor(CmapSymbol.altar);
+    if (glyphNumber >= GlyphOffset.cmapB && glyphNumber < GlyphOffset.zap)
+        return cmapToRogueColor(glyphNumber - GlyphOffset.cmapB + CmapSymbol.grave);
+    void x;
+    void y;
+    return NO_COLOR;
+}
 export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr = 0, glyph = null) {
     if (suppressMapOutput() || x === 0)
         return;
     const loc = game.level?.at(x, y);
     if (!loc)
         return;
+    const nextGlyph = glyph || { kind: 'effect' };
     // display.c:reset_glyphmap() clears every color on the Rogue level
-    // (GMAP_ROGUELEVEL without rogue IBM color); only the hero's own
-    // showrace glyph is re-highlighted afterwards by map_glyphinfo().
+    // (GMAP_ROGUELEVEL) unless the loaded rogue set declares IBM handling
+    // with `Color: Yes` (RogueEpyx); then the Rogue color tables apply and
+    // the hero turns yellow instead of the showrace highlight.
     if (Is_rogue_level(game.u?.uz)) {
-        if (!isRogueShowraceHeroGlyph(glyph, x, y))
+        if (rogueColorsActive())
+            color = rogueLevelGlyphColor(nextGlyph, x, y);
+        else if (!isRogueShowraceHeroGlyph(glyph, x, y))
             color = NO_COLOR;
     }
-    const nextGlyph = glyph || { kind: 'effect' };
     // reset_glyphmap() marks a corridor engraving which shares '#'
     // with corridors; tty_print_glyph() makes that glyph inverse.
     if (nextGlyph.glyph === cmapToGlyph(CmapSymbol.engrcorr) && ch === '#'

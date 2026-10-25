@@ -314,8 +314,12 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         game._specialLevelPrototype = specialPrototypeAt(destinationDepth.dnum, destinationDepth.dlevel);
         await mklev();
     }
-    if (reassignSymbols)
-        reglyphSymbolSet();
+    // Every arrival repaints from glyph numbers against the live symbols
+    // (goto_level() → docrt()), so a cached destination re-skins under
+    // whatever symbol or boulder override changed while the hero was
+    // elsewhere.  Freshly generated levels carry no stale memory, and the
+    // pass is idempotent there.
+    reglyphSymbolSet();
     const beforeGlow = async () => {
         if (postMessage.slice(0, 15).toLowerCase() !== 'you materialize')
             return;
