@@ -7,7 +7,7 @@ import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
 import { clearCommandKeys, readchar, takeCommandKey } from './input.js';
-import { promptKey } from './tty_prompts.js';
+import { yn_function } from './query.js';
 import { rn2 } from './rng.js';
 import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT,
@@ -277,7 +277,7 @@ async function chooseGetobjLetter(
         }
         // C tty_yn_function() marks an answered prompt as already read.
         // A one-line query stays painted through a silent action. Wrapped
-        // queries have already been erased by promptKey()'s tty cleanup.
+        // queries have already been erased by tty_yn_function()'s cleanup.
         if (answered) game._pending_message = '';
         const letter = String.fromCharCode(key);
         const object = game.inventory.find(candidate => candidate.invlet === letter) ?? null;
@@ -432,9 +432,10 @@ async function readInventoryCount(firstKey: number): Promise<{ key: number; coun
     }
 }
 
-// C getobj() uses tty_yn_function(), which acknowledges unread prose before
-// replacing the topline with its object question, including on a retry.
+// C getobj() has already consumed its queued selection or user-input marker.
+// Its interactive query must leave later canned answers for the caller.
 async function askInventoryPrompt(prompt: string): Promise<number> {
     await flushPendingTopline();
-    return promptKey(prompt);
+    const { answer } = await yn_function(prompt, null, '', false);
+    return answer.charCodeAt(0);
 }

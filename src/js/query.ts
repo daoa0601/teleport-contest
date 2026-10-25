@@ -4,7 +4,7 @@
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, rememberToplines, setTopline } from './display.js';
 import { game } from './gstate.js';
-import { nhgetch, readchar } from './input.js';
+import { nhgetch, readchar, takeCommandKey } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
@@ -205,6 +205,9 @@ export async function yn_function(
         const valid = !responses || answer === '\0' || responses.includes(answer);
         return { answer: valid ? answer : defaultAnswer || '\x1b', count: game._ynNumber ?? 0n };
     }
+    const canned = addCommandQueue ? takeCommandKey() : undefined;
+    if (canned !== undefined)
+        return { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
     const result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
     if (addCommandQueue) rememberCommandKey(result.answer ? result.answer.charCodeAt(0) : 0);
     return result;

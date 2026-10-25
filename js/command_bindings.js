@@ -33,6 +33,7 @@ export class CommandBindings {
     phoneLayout;
     restOnSpace;
     menuAliases;
+    mouseButtons = new Map();
     constructor() {
         this.bindings = [];
         this.specialKeys = new Map();
@@ -48,6 +49,8 @@ export class CommandBindings {
         this.phoneLayout = false;
         this.restOnSpace = false;
         this.menuAliases = [];
+        this.bindMouseButton(1, 'therecmdmenu');
+        this.bindMouseButton(2, 'clicklook');
         for (const command of NATIVE_COMMANDS) {
             if (command.name !== null && command.key)
                 this.add(command.key, command);
@@ -58,6 +61,21 @@ export class CommandBindings {
     }
     lookup(key) {
         return this.bindings.find(binding => binding.key === key) ?? null;
+    }
+    mouseCommand(button) {
+        return this.mouseButtons.get(button) ?? null;
+    }
+    bindMouseButton(button, name) {
+        if (name.toLowerCase() === 'nothing') {
+            this.mouseButtons.set(button, null);
+            return true;
+        }
+        const command = NATIVE_COMMANDS.find(entry => entry.name?.toLowerCase() === name.toLowerCase()
+            && entry.flags & NATIVE_COMMAND_FLAGS.MOUSECMD);
+        if (!command)
+            return false;
+        this.mouseButtons.set(button, command);
+        return true;
     }
     bindSpecialKey(key, name) {
         if (!name || !this.specialKeys.has(name))

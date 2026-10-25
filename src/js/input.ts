@@ -6,6 +6,12 @@ import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import type { TerminalReadKeyOptions } from './terminal.js';
+import type { Position } from './map_types.js';
+import { isok } from './const.js';
+
+export type CommandResponse = number | 'user-input' | Position;
+export interface MapClick extends Position { button: 1 | 2 }
+export const MAP_CLICK_KEY = 256;
 
 export type KeyInput = string | number;
 type InputState = 'other' | 'command' | 'direction' | 'position';
@@ -26,9 +32,10 @@ function keyCode(key: KeyInput): number {
 export class InputGate {
     beforeRead: (() => void | Promise<void>) | null;
     display: KeyReader | null;
-    private readonly queue: number[];
-    private readonly commandKeys: number[];
-    private pendingRead: ((code: number) => void) | null;
+    private readonly queue: (number | MapClick)[];
+    private readonly commandKeys: CommandResponse[];
+    private pendingRead: ((input: number | MapClick) => void) | null;
+    private mapClick: MapClick | null = null;
     private blockedWaiters: (() => void)[];
     private fuzzerCommandIndex = 0;
     private lastFuzzerCommand = 0;
@@ -52,17 +59,37 @@ export class InputGate {
         // The pinned Unix tty retains ICRNL for external keyboard input.
         // Generated fuzzer bytes bypass this source conversion.
         if (code === 13) code = 10;
+        this.feedInput(code);
+    }
+
+    feedMapClick(x: number, y: number, button: 1 | 2): void {
+        if (!Number.isInteger(x) || !Number.isInteger(y) || !isok(x, y) || button !== 1 && button !== 2)
+            throw new RangeError('A map click must be within the dungeon map');
+        this.feedInput({ x, y, button });
+    }
+
+    takeMapClick(): MapClick | null {
+        const click = this.mapClick;
+        this.mapClick = null;
+        return click;
+    }
+
+    private feedInput(input: number | MapClick): void {
         if (!this.pendingRead) {
-            this.queue.push(code);
+            this.queue.push(input);
             return;
         }
         const resolve = this.pendingRead;
         this.pendingRead = null;
-        resolve(code);
+        resolve(input);
     }
 
     queueCommandKeys(keys: string): void {
         this.commandKeys.push(...[...keys].map(keyCode));
+    }
+
+    queueCommandResponses(responses: readonly CommandResponse[]): void {
+        this.commandKeys.push(...responses);
     }
 
     clearCommandKeys(): void {
@@ -70,26 +97,45 @@ export class InputGate {
     }
 
     takeCommandKey(): number | undefined {
-        return this.commandKeys.shift();
+        const response = this.commandKeys.shift();
+        if (response === undefined || response === 'user-input') return undefined;
+        if (typeof response === 'number') return response;
+        this.clearCommandKeys();
+        return 27;
+    }
+
+    takeCommandPosition(): Position | null | undefined {
+        const response = this.commandKeys.shift();
+        if (response === undefined) return undefined;
+        if (typeof response === 'object') return response;
+        this.clearCommandKeys();
+        return null;
     }
 
     async readKey(inputState: InputState = 'other'): Promise<number> {
         // tty input belongs to the player. Command owners consume canned
         // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
+        this.mapClick = null;
         if (game.iflags.debug_fuzzer) return this.randomKey(inputState);
         const queued = this.queue.shift();
-        if (queued !== undefined) return queued;
+        if (queued !== undefined) return this.inputKey(queued);
         if (this.display) {
             const code = await this.display.readKey({ bindings: KEY_BINDINGS.VI_KEYS });
             return code === 13 ? 10 : code;
         }
 
-        const key = new Promise<number>(resolve => {
+        const key = new Promise<number | MapClick>(resolve => {
             this.pendingRead = resolve;
         });
         this.notifyBlocked();
-        return key;
+        return this.inputKey(await key);
+    }
+
+    private inputKey(input: number | MapClick): number {
+        if (typeof input === 'number') return input;
+        this.mapClick = input;
+        return MAP_CLICK_KEY;
     }
 
     // C cmd.c:randomkey(). The table index and repeat key survive prompts.
@@ -134,6 +180,7 @@ export class InputGate {
     clear() {
         this.queue.length = 0;
         this.commandKeys.length = 0;
+        this.mapClick = null;
     }
 
     get isBlocked() {
@@ -159,6 +206,14 @@ export function pushKeys(keys: KeyInput | readonly KeyInput[]): void {
 
 export function queueCommandKeys(keys: string): void {
     activeInputGate.queueCommandKeys(keys);
+}
+
+export function queueCommandResponses(responses: readonly CommandResponse[]): void {
+    activeInputGate.queueCommandResponses(responses);
+}
+
+export function takeCommandPosition(): Position | null | undefined {
+    return activeInputGate.takeCommandPosition();
 }
 
 export function clearCommandKeys(): void {
@@ -191,6 +246,18 @@ export async function readchar(inputState: InputState = 'other') {
     // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
     if (game.iflags.debug_fuzzer) return activeInputGate.readKey(inputState);
     let key = await nhgetch(inputState);
+    if (key === MAP_CLICK_KEY) {
+        // C readchar_core(): every nh_poskey click records its location
+        // and queues the command bound to that button, including getpos.
+        const click = activeInputGate.takeMapClick();
+        game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
+        const command = click ? game.commandBindings.mouseCommand(click.button) : null;
+        if (command?.name) {
+            game._cannedCommands ??= [];
+            game._cannedCommands.push({ kind: 'command', name: command.name });
+        }
+        return key;
+    }
     if (key === -1) {
         key = 27;
     } else if (key === 27 && game.iflags?.altmeta && inputState !== 'other') {

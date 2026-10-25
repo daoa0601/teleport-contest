@@ -2,6 +2,7 @@ import type { CommandDefinition } from './command_data.js';
 import type { GameObject } from './object_types.js';
 import type { TerminalCell } from './terminal.js';
 import type { InventoryAction } from './invent.js';
+import type { ContextMenuSelection } from './context_menu.js';
 
 export type NativeCommand = CommandDefinition;
 
@@ -23,7 +24,9 @@ export type CannedCommand =
     | { kind: 'kick'; dx: number; dy: number }
     | { kind: 'reqmenu' }
     | { kind: 'inventory-action'; action: InventoryAction }
-    | { kind: 'fire'; shotLimit: number };
+    | { kind: 'fire'; shotLimit: number }
+    | { kind: 'context-menu'; selection: ContextMenuSelection }
+    | { kind: 'command'; name: string };
 
 export type DirectionalRunMode = 0 | 1 | 2 | 3;
 

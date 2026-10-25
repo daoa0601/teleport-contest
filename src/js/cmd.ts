@@ -1,3 +1,7 @@
+import { selectContextMenu } from './context_menu.js';
+import type { ContextMenuSelection } from './context_menu.js';
+import { CLICK_1, CLICK_2 } from './const.js';
+import { MAP_CLICK_KEY, queueCommandResponses } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
@@ -140,9 +144,6 @@ import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.j
 import { strikeIronBarsWithWeapon } from './projectile_bars.js';
 import { fightSeenWebWithForce } from './hero_web_fight.js';
 import { wormCrossesBetween } from './monster_worm.js';
-import {
-    floorObjectDescription,
-} from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { dopay } from './shop_pay_command.js';
 import { inventoryReport } from './inventory_reports.js';
@@ -169,7 +170,7 @@ import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandKey }
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
 import { terrainCommand } from './terrain_view.js';
-import { selectTravelMenuPosition } from './getpos.js';
+import { autoDescribePosition, selectTravelMenuPosition } from './getpos.js';
 import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import {
@@ -1289,10 +1290,17 @@ export async function rhack(key: number): Promise<void> {
 
     for (;;) {
         const repeated = takeRepeatCommand();
-        const cannedCommand = game._inDoAgain ? null : game._cannedCommands?.shift() ?? null;
+        let cannedCommand = game._inDoAgain ? null : game._cannedCommands?.shift() ?? null;
         if (key === 0 && !cannedCommand && !repeated) {
             key = (await readCommandInput()).key;
             delete game._cursorOverride;
+        }
+        if (key === MAP_CLICK_KEY) {
+            cannedCommand = game._cannedCommands?.shift() ?? null;
+            if (!cannedCommand) {
+                resetCommandVariables(true);
+                return;
+            }
         }
         delete game._statusGoldOverride;
         if (!cannedCommand && !repeated && [0, -1, 255, 27].includes(key)) {
@@ -1308,13 +1316,7 @@ export async function rhack(key: number): Promise<void> {
             game._pending_message = '';
             game._retained_message = '';
         }
-        const cannedName = cannedCommand?.kind === 'swap-weapon'
-            ? 'swap' : cannedCommand?.kind;
-        const command = cannedCommand?.kind === 'inventory-action'
-            ? inventoryActionCommand(cannedCommand.action)
-            : cannedCommand
-                ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
-                : configured.command;
+        const command = cannedCommand ? cannedCommandDefinition(cannedCommand) : configured.command;
         if (!command) {
             // C parse()/rhack() report an unknown key with
             // custompline(SUPPRESS_HISTORY): the previous line is
@@ -1351,7 +1353,10 @@ export async function rhack(key: number): Promise<void> {
             resetCommandVariables(true);
             return;
         }
-        let binding: CommandBinding = { ...configured, command };
+        let binding: CommandBinding = { ...configured, command,
+            key: cannedCommand
+                ? commandExecutionKey(command.name)?.charCodeAt(0) ?? null : configured.key,
+        };
         prepareTimedCommand(binding);
         if (command.handler === 'doextcmd') {
             clearRepeatCommand();
@@ -1407,6 +1412,18 @@ export async function rhack(key: number): Promise<void> {
         await executeCommandAction(binding, { cannedCommand });
         return;
     }
+}
+
+function cannedCommandDefinition(queued: CannedCommand): NativeCommand | null {
+    let name: string;
+    switch (queued.kind) {
+    case 'inventory-action': return inventoryActionCommand(queued.action);
+    case 'context-menu': name = contextMenuCommand(queued.selection); break;
+    case 'command': name = queued.name; break;
+    case 'swap-weapon': name = 'swap'; break;
+    case 'rub': case 'apply': case 'wield': case 'kick': case 'reqmenu': case 'fire': name = queued.kind; break;
+    }
+    return NATIVE_COMMANDS.find(command => command.name === name) ?? null;
 }
 
 // C cmd.c:do_repeat(). Preserve the saved queue even when its execution
@@ -1533,6 +1550,21 @@ async function runCommandHandler(binding: CommandBinding, {
         }
         await pline(`#${command.name}: unknown extended command.`);
         game.context.move = 0;
+        return;
+    }
+
+    if (cannedCommand?.kind === 'context-menu') {
+        const selection = cannedCommand.selection;
+        contextMenuResponses(selection);
+        try {
+            await runCommandHandler(binding);
+        } finally {
+            clearCommandKeys();
+        }
+        return;
+    }
+    if (cannedCommand?.kind === 'command') {
+        await runCommandHandler(binding);
         return;
     }
 
@@ -2639,55 +2671,156 @@ async function doannotate() {
     game.context.move = 0;
 }
 
-async function doherecmdmenu() {
-    const x = game.u?.ux, y = game.u?.uy;
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    const floorObject = pile[0];
-    const entries: ChoiceMenuItem[] = [];
-    let accelerator = 97;
-    const add = (text: string) => {
-        entries.push({ key: String.fromCharCode(accelerator++), text });
+async function doherecmdmenu(): Promise<void> {
+    enqueueContextMenu(await selectContextMenu(game.u.ux, game.u.uy, CLICK_1));
+}
+
+async function dotherecmdmenu(): Promise<void> {
+    game.iflags.getdir_click = CLICK_1 | CLICK_2;
+    const target = game._clicklookTarget;
+    if (target && isok(target.x, target.y)) {
+        enqueueContextMenu(await selectContextMenu(target.x, target.y,
+            target.x === game.u.ux && target.y === game.u.uy ? CLICK_1 : game.iflags.getdir_click));
+        game._clicklookTarget = null;
+        game.iflags.getdir_click = 0;
+        return;
+    }
+    const direction = await promptDirection();
+    const click = game.iflags.getdir_click;
+    game.iflags.getdir_click = 0;
+    if (!direction || !isok(game.u.ux + direction.dx, game.u.uy + direction.dy)) {
+        resetCommandVariables(true);
+        return;
+    }
+    enqueueContextMenu(await selectContextMenu(
+        game.u.ux + direction.dx, game.u.uy + direction.dy,
+        direction.dx || direction.dy ? click : CLICK_1,
+    ));
+}
+
+function enqueueContextMenu(selection: ContextMenuSelection | null): void {
+    game.context.move = 0;
+    if (!selection) return;
+    game._cannedCommands ??= [];
+    if (selection.action === 'remove-saddle') game._cannedCommands.push({ kind: 'reqmenu' });
+    game._cannedCommands.push({ kind: 'context-menu', selection });
+}
+
+// C cmd.c:doclicklook() retains the clicked location for later commands.
+async function doclicklook(): Promise<void> {
+    game.context.move = 0;
+    const target = game._clicklookTarget;
+    if (target && isok(target.x, target.y)) await autoDescribePosition(target.x, target.y);
+}
+
+async function domouseaction(): Promise<void> {
+    game.context.move = 0;
+    const target = game._clicklookTarget;
+    if (target && isok(target.x, target.y)) mouseAction(target);
+}
+
+// C cmd.c:domouseaction(), the optional mouse binding which chooses an action.
+function mouseAction(click: Position): void {
+    requirePlayingGame(game);
+    let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
+    const queue = (name: string) => {
+        game._cannedCommands ??= [];
+        game._cannedCommands.push({ kind: 'command', name });
     };
-
-    if (floorObject) {
-        if (pile.length === 1 || isContainer(floorObject) || floorObject.oclass === 7)
-            observeObjectForNaming(floorObject);
-        const description = await floorObjectDescription(floorObject);
-        add(`Pick up ${pile.length > 1 ? 'items' : description}`);
-        if ([
-            LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING,
-        ].includes(floorObject.otyp)) {
-            add(`Loot ${description}`);
-            add(`Tip ${description}`);
+    if (game.flags.travel !== false) {
+        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+            game._travelTarget = { x: click.x, y: click.y };
+            queue('retravel');
+            return;
         }
-        if (floorObject.oclass === 7) add(`Eat ${description}`);
+        const location = game.level?.at(click.x, click.y);
+        if (!dx && !dy) {
+            if (location?.typ === FOUNTAIN || location?.typ === SINK) queue('quaff');
+            else if (location?.typ === THRONE) queue('sit');
+            else {
+                let stair = game.stairs;
+                while (stair && (stair.sx !== click.x || stair.sy !== click.y)) stair = stair.next;
+                const object = game.level?.objects[click.x]?.[click.y]?.[0];
+                if (stair) queue(stair.up ? 'up' : 'down');
+                else queue(object ? isContainer(object) ? 'loot' : 'pickup' : 'wait');
+            }
+            return;
+        }
+        if (!monsterAtPosition(game.level, click.x, click.y) && !heroTestMove(click.x, click.y)) {
+            if (location?.typ === DOOR && location.doormask & (D_CLOSED | D_LOCKED))
+                queue(location.doormask & D_LOCKED ? 'kick' : 'open');
+            else if (location && location.typ <= SCORR) queue('search');
+            else queue(contextMenuCommand({ action: 'move', x: click.x, y: click.y }));
+            return;
+        }
+    } else {
+        if (Math.abs(dx) > 2 * Math.abs(dy)) dy = 0;
+        else if (Math.abs(dy) > 2 * Math.abs(dx)) dx = 0;
+        dx = Math.sign(dx);
+        dy = Math.sign(dy);
+        if (!dx && !dy) {
+            queue('wait');
+            return;
+        }
     }
-    if ((game.inventory || []).length) {
-        add('Inventory');
-        add('Drop items');
-    }
-    add('Rest one turn');
-    add('Search around you');
-    add('Look at what is here');
-    if ((game.spells || []).length) add('Cast a spell');
+    queue(contextMenuCommand({ action: 'move', x: game.u.ux + Math.sign(dx), y: game.u.uy + Math.sign(dy) }));
+}
 
-    // create_nhwindow(NHW_MENU) retires the extended-command prompt before
-    // tty paints the corner window.  Preserve that already-cleared row as
-    // part of the underlay which Escape restores.
-    game._pending_message = '';
-    game._retained_message = '';
-    game.nhDisplay?.clearRow(0);
-    const underlay = snapshotMenuUnderlay();
-    const key = await showChoiceWindow({
-        title: 'What do you want to do?',
-        entries,
-    });
-    restoreMenuUnderlay(underlay);
-    game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1,
-        (game.u?.uy ?? 0) + 1);
-    // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
-    // This accepted boundary dismisses with Escape before that action graph.
-    game.context.move = key === 0 || key === 27 ? 0 : 1;
+function contextMenuCommand(selection: ContextMenuSelection): string {
+    switch (selection.action) {
+    case 'move': case 'attack': {
+        const dx = Math.sign(selection.x - game.u.ux), dy = Math.sign(selection.y - game.u.uy);
+        const direction = TRAVEL_DIRECTIONS.findIndex(([x, y]) => x === dx && y === dy);
+        const name = ['west', 'north', 'east', 'south', 'northwest', 'northeast', 'southeast', 'southwest'][direction];
+        if (!name) throw new Error('A contextual move needs an adjacent target');
+        return `move${name}`;
+    }
+    case 'lock': case 'saddle': return 'apply';
+    case 'untrap-door': case 'untrap-here': return 'untrap';
+    case 'remove-saddle': return 'loot';
+    case 'dismount': return 'ride';
+    case 'look-at': return 'clicklook';
+    case 'travel': return 'retravel';
+    case 'open': case 'kick': case 'close': case 'search': case 'showtrap':
+    case 'untrap': case 'ride': case 'chat': case 'name': case 'quaff': case 'dip':
+    case 'sit': case 'up': case 'down': case 'pickup': case 'loot': case 'tip':
+    case 'eat': case 'drop': case 'wait': case 'look': case 'offer':
+    case 'inventory': case 'cast': case 'throw': return selection.action;
+    }
+}
+
+function contextMenuResponses(selection: ContextMenuSelection): void {
+    const dx = Math.sign(selection.x - game.u.ux), dy = Math.sign(selection.y - game.u.uy);
+    const direction = kickDirectionKey(dx, dy);
+    const key = direction ?? 0;
+    const yes = 'y'.charCodeAt(0);
+    switch (selection.action) {
+    case 'open': case 'untrap-door': case 'kick': case 'close': case 'showtrap':
+    case 'untrap': case 'ride': case 'chat': queueCommandResponses([key]); return;
+    case 'lock': {
+        const tool = [SKELETON_KEY, LOCK_PICK, CREDIT_CARD]
+            .map(type => game.inventory.find(object => object.otyp === type)).find(object => object);
+        if (tool?.invlet) queueCommandResponses([tool.invlet.charCodeAt(0), key, yes]);
+        return;
+    }
+    case 'remove-saddle': queueCommandResponses([key, yes]); return;
+    case 'saddle': {
+        const saddle = game.inventory.find(object => object.otyp === SADDLE);
+        if (saddle?.invlet) queueCommandResponses([saddle.invlet.charCodeAt(0), key]);
+        return;
+    }
+    case 'name': queueCommandResponses(['m'.charCodeAt(0), { x: selection.x, y: selection.y }]); return;
+    case 'quaff': case 'tip': case 'eat': queueCommandResponses([yes]); return;
+    case 'dip': queueCommandResponses(['user-input', yes]); return;
+    case 'throw': queueCommandResponses(['user-input', key]); return;
+    case 'offer': queueCommandResponses(['user-input']); return;
+    case 'untrap-here': queueCommandKeys(String.fromCharCode(game.commandBindings.keyForDirection(8))); return;
+    case 'travel': game._travelTarget = { x: selection.x, y: selection.y }; return;
+    case 'look-at': game._clicklookTarget = { x: selection.x, y: selection.y }; return;
+    case 'attack': case 'cast': case 'dismount': case 'down': case 'drop':
+    case 'inventory': case 'look': case 'loot': case 'move':
+    case 'pickup': case 'search': case 'sit': case 'up': case 'wait': return;
+    }
 }
 
 async function doname() {
@@ -3509,6 +3642,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['debugfuzzer', wizFuzzer],
     ['annotate', doannotate],
     ['herecmdmenu', doherecmdmenu],
+    ['therecmdmenu', dotherecmdmenu],
+    ['clicklook', doclicklook],
+    ['mouseaction', domouseaction],
     ['adjust', doadjust],
     ['altadjust', adjustSplit],
     ['levelchange', wizLevelChange],
