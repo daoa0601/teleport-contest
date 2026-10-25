@@ -6,6 +6,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME, MONSTER_RESISTS, requireMonsterData } from './monster_data.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { monsterName } from './monster_name.js';
+import { redrawMonsterWormSegments } from './monster_worm.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './display.js';
@@ -27,8 +28,7 @@ export async function grantMonsterCorpseIntrinsic(
             setMonsterPermanentInvisibility(monster);
             if (!monster.invis_blkd) {
                 newsym(monster.mx, monster.my);
-                for (const segment of monster.wormSegments ?? [])
-                    if (segment.x) newsym(segment.x, segment.y);
+                if (monster.wormno) redrawMonsterWormSegments(monster);
             }
             if (visible) {
                 const change = !canSpotMonster(monster) ? 'vanishes'

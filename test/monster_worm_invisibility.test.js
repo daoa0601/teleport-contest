@@ -2,12 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
+import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { grantMonsterCorpseIntrinsic } from '../js/monster_corpse_intrinsic.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
 import { makeMonsterInvisible } from '../js/monster_invisibility_magic.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
+import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -27,6 +31,21 @@ async function visibleWorm() {
     }
     return worm;
 }
+void test('stalker flesh and a wand refresh the same hallucinated worm tail from its tip toward its head', async () => {
+    const wandTarget = await visibleWorm();
+    game.u.seeInvisible = true;
+    game.u.hallucinationTurns = 20;
+    initRng(7n);
+    await makeMonsterInvisible(wandTarget);
+    const perceivedTail = wandTarget.wormSegments.map(segment => glyphAt(segment.x, segment.y)?.glyph);
+    const eater = await visibleWorm();
+    game.u.seeInvisible = true;
+    game.u.hallucinationTurns = 20;
+    initRng(7n);
+    await grantMonsterCorpseIntrinsic(eater, MONSTER_NAME.indexOf('stalker'));
+    for (const [index, segment] of eater.wormSegments.entries())
+        assert.equal(glyphAt(segment.x, segment.y)?.glyph, perceivedTail[index], `The same invisibility change must give segment ${segment.x},${segment.y} the same hallucinated appearance.`);
+});
 void test('a make-invisible wand erases every visible long-worm tail segment immediately', async () => {
     const worm = await visibleWorm();
     await makeMonsterInvisible(worm);
