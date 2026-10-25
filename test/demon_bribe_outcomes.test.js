@@ -137,14 +137,20 @@ void test('a demon of the hero\'s own alignment halves its demand', async () => 
     assert.equal(scene.finish().find(message => /demands/.test(message ?? '')), 'A water demon demands 2250 zorkmids for safe passage.');
 });
 void test('gold carried only inside a container backs no bribe', async () => {
-    const bag = await addInventoryObject(OBJECT_NAMES.indexOf('sack'));
-    await knownObject(GOLD_PIECE, { quantity: 5000, where: 'contained', container: bag });
-    const scene = await briber({});
+    // C minion.c:demon_talk() prices the demand from money_cnt(gi.invent),
+    // which sees only gold carried directly, never a container's contents.
+    const scene = await briber({ gold: 100 });
     requirePlayingGame(game);
-    pushKeys(' '.repeat(20));
+    const bag = await addInventoryObject(OBJECT_NAMES.indexOf('sack'));
+    const bagged = await knownObject(GOLD_PIECE, { quantity: 5000, where: 'contained', container: bag });
+    initRng(5n);
+    pushKeys(' \n' + ' '.repeat(20));
     const paid = await talkToDemon(scene.demon, game);
     assert.equal(paid, false);
-    assert.deepEqual(scene.finish(), []);
-    assert.equal(!!scene.demon.mpeaceful, false, 'a purseless hero only angers the demon');
+    assert.equal(scene.finish().find(message => /demands/.test(message ?? '')), 'A water demon demands 45 zorkmids for safe passage.', 'the demand is priced from the 100 loose coins, not the bagged 5000');
+    assert.equal(!!scene.demon.mpeaceful, false, 'the shortfall only angers the demon');
+    assert.equal(bagged.quantity, 5000);
+    assert.equal(bagged.where, 'contained', 'the untouched hoard stays in its sack');
+    assert.equal(heroGoldAmount(game), 100);
 });
 //# sourceMappingURL=demon_bribe_outcomes.test.js.map
