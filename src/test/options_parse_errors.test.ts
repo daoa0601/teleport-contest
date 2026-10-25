@@ -94,3 +94,47 @@ void test('environment options accept repeats without the duplicate complaint', 
     // Elements apply right to left, so the first spelling in the list wins.
     assert.equal(configuration.flags.runmode, 'run');
 });
+
+void test('a boolean value outside the true and false spellings is invalid', () => {
+    const configuration = parseNethackrc('OPTIONS=time:2,name:Traveler');
+    assert.deepEqual(
+        (configuration.configErrors[0]?.errors ?? []).map(error => error.message),
+        ["'time:2' is not valid for a boolean"],
+    );
+    assert.notEqual(configuration.flags.time, true);
+});
+
+void test('a negated boolean refuses its parameter', () => {
+    const configuration = parseNethackrc('OPTIONS=!time:1,name:Traveler');
+    assert.deepEqual(
+        (configuration.configErrors[0]?.errors ?? []).map(error => error.message),
+        ["Negated boolean 'time' should not have a parameter"],
+    );
+    assert.notEqual(configuration.flags.time, true);
+});
+
+void test('boolean values spell on and off', () => {
+    for (const [value, expected] of [['true', true], ['yes', true], ['on', true],
+        ['1', true], ['tru', true], ['false', false], ['no', false], ['off', false],
+        ['0', false], ['01', true]] as const) {
+        assert.equal(parseNethackrc(`OPTIONS=color:${value}`).flags.color, expected, value);
+    }
+    // A space after the delimiter keeps the value off C's digit check.
+    const spaced = parseNethackrc('OPTIONS=color: 1');
+    assert.deepEqual(
+        (spaced.configErrors[0]?.errors ?? []).map(error => error.message),
+        ["'color: 1' is not valid for a boolean"],
+    );
+});
+
+void test('a valok boolean accepts any other value as on', () => {
+    assert.equal(parseNethackrc('OPTIONS=menucolors:junk').flags.menucolors, true);
+    assert.equal(parseNethackrc('OPTIONS=!menucolors:junk').flags.menucolors, undefined);
+});
+
+void test('gender booleans accept values like any boolean', () => {
+    assert.equal(parseNethackrc('OPTIONS=male:true').flags.female, false);
+    assert.equal(parseNethackrc('OPTIONS=female:false').flags.female, false);
+    assert.equal(parseNethackrc('OPTIONS=male:false').flags.female, false);
+    assert.equal(parseNethackrc('OPTIONS=female:yes').flags.female, true);
+});

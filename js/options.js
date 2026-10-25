@@ -476,20 +476,6 @@ function escapeKeyCode(character) {
         default: return character.charCodeAt(0);
     }
 }
-function booleanOption(value, negated) {
-    if (!value)
-        return !negated;
-    if (negated)
-        return null;
-    const text = value.toLowerCase();
-    if ('true'.startsWith(text) || 'yes'.startsWith(text) || text === 'on'
-        || (/^\d/.test(text) && parseInt(text, 10) === 1))
-        return true;
-    if ('false'.startsWith(text) || 'no'.startsWith(text) || text === 'off'
-        || (/^\d/.test(text) && parseInt(text, 10) === 0))
-        return false;
-    return null;
-}
 function setNumberPadOption(value, settings) {
     if (!settings.commandBindings.setNumberPad(value))
         return;
@@ -1146,6 +1132,54 @@ function parseConfiguration(rc, result, report, fromFile) {
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx))
                 .trimEnd().toLowerCase().trimStart();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            // optfn_boolean(): a boolean's value must spell on or off —
+            // a prefix of true/false/yes/no, exactly "on"/"off", or a
+            // leading digit whose atoi() is 1 or 0.  A negated boolean
+            // takes no value at all, and the one valok boolean
+            // (menucolors) accepts anything else as on.  The value is the
+            // raw text after the delimiter, spaces included.
+            let booleanSetting = null;
+            if (optionMatch.isBool) {
+                const rawValue = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                const text = rawValue.toLowerCase();
+                const number = /^\d/.test(text) ? Number.parseInt(text, 10) : null;
+                if (!rawValue) {
+                    booleanSetting = !negated;
+                }
+                else if (negated) {
+                    addError(`Negated boolean '${canonical}' should not have a parameter`);
+                    continue;
+                }
+                else if ('true'.startsWith(text) || 'yes'.startsWith(text) || text === 'on'
+                    || number === 1) {
+                    booleanSetting = true;
+                }
+                else if ('false'.startsWith(text) || 'no'.startsWith(text) || text === 'off'
+                    || number === 0) {
+                    booleanSetting = false;
+                }
+                else if (!optionMatch.valok) {
+                    addError(`'${stripped}' is not valid for a boolean`);
+                    continue;
+                }
+                else {
+                    booleanSetting = true;
+                }
+            }
+            // optfn_boolean()'s female/male special case: the male alias
+            // inverts the resolved value, but only while strncmpi()'s
+            // max(value length, 3) run stays inside the four-letter name
+            // (a longer value compares the delimiter and falls through to
+            // the plain assignment).
+            if (canonical === 'female' && booleanSetting !== null) {
+                const valueLength = colonIdx < 0 ? 0 : stripped.length - colonIdx - 1;
+                const maleSpelling = bindingOption === 'male' && Math.max(valueLength, 3) <= 4;
+                const female = maleSpelling ? !booleanSetting : booleanSetting;
+                result.flags.female = female;
+                result.flags.initgend = Number(female);
+                result.gender = female ? 'female' : 'male';
+                continue;
+            }
             const characterFacet = canonical === 'role' || canonical === 'race'
                 || canonical === 'gender' || canonical === 'alignment' ? canonical : null;
             if (characterFacet) {
@@ -1303,9 +1337,8 @@ function parseConfiguration(rc, result, report, fromFile) {
                 continue;
             }
             if (canonical === 'altmeta' || canonical === 'toptenwin' || canonical === 'menu_tab_sep') {
-                const value = booleanOption(optionValue, negated);
-                if (value !== null)
-                    result.iflags[canonical] = value;
+                if (booleanSetting !== null)
+                    result.iflags[canonical] = booleanSetting;
                 continue;
             }
             if (canonical === 'scores') {
@@ -1325,10 +1358,9 @@ function parseConfiguration(rc, result, report, fromFile) {
                 continue;
             }
             if (canonical === 'rest_on_space') {
-                const value = booleanOption(optionValue, negated);
-                if (value !== null) {
-                    result.flags.rest_on_space = value;
-                    result.commandBindings.setRestOnSpace(value, { initial: true });
+                if (booleanSetting !== null) {
+                    result.flags.rest_on_space = booleanSetting;
+                    result.commandBindings.setRestOnSpace(booleanSetting, { initial: true });
                 }
                 continue;
             }
@@ -1399,13 +1431,13 @@ function parseConfiguration(rc, result, report, fromFile) {
                 }
                 else {
                     const option = requestBooleanByName.get(canonical);
-                    const value = booleanOption(val, negated);
+                    const value = booleanSetting;
                     if (option && value !== null)
                         setConfigurationBoolean(result, option, value);
                 }
             }
             else {
-                const value = !negated;
+                const value = booleanSetting ?? !negated;
                 if (canonical === 'autopickup')
                     result.flags.pickup = value;
                 else if (canonical === 'color')
@@ -1456,12 +1488,6 @@ function parseConfiguration(rc, result, report, fromFile) {
                         result.flags.bones = value;
                     else if (canonical === 'reroll')
                         result.flags.reroll = value;
-                    else if (canonical === 'female') {
-                        const female = bindingOption === 'male' ? !value : value;
-                        result.flags.female = female;
-                        result.flags.initgend = Number(female);
-                        result.gender = female ? 'female' : 'male';
-                    }
                     else if (canonical === 'autounlock')
                         result.flags.autounlock = value;
                     // optfn_menu_headings() without a value: inverse, or
