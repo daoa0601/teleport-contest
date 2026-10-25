@@ -297,11 +297,11 @@ export async function advanceHeroPetrification({
     return { active: false, died: !!died, turns: 0 };
 }
 
+// C mondata.c:poly_when_stoned(): a non-stone golem hero becomes a stone
+// golem only if stone golems have not been genocided.
 function heroPolymorphsWhenStoned(state: GameState = game): boolean {
-    const form = state.u?.umonnum;
     return heroIsPolymorphed(state)
-        && form !== undefined && MONSTER_SYMBOL[form] === S_GOLEM
-        && form !== PM_STONE_GOLEM;
+        && formCanBecomeStoneGolem(state.u?.umonnum, state);
 }
 
 export function formCanBecomeStoneGolem(mnum: number | undefined, state: GameState = game): boolean {
