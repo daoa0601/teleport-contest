@@ -496,8 +496,7 @@ export function uInitMisc(handednessRoll) {
     // the live alignment record.  Quest readiness consumes all three.
     u.ualignbase = [u.ualign.type, u.ualign.type];
     const configuredNudist = Object.prototype.hasOwnProperty.call(g.flags || {}, 'nudist');
-    u.uroleplay = {
-        ...roleplay,
+    u.uroleplay = roleplay ?? {
         pauper: !!g.flags?.pauper,
         nudist: configuredNudist
             ? !!g.flags.nudist : !!g.flags?.pauper,
