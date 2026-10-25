@@ -257,9 +257,10 @@ export function visiblePriestName(priest, state = game) {
         return 'A nearby voice';
     return monsterName(priest, { state, capitalized: true });
 }
+// C can_speak uses !helpless(priest); monst.h helpless() is only
+// msleeping || !mcanmove, so a monster frozen mid-action still speaks.
 function priestCanSpeak(priest, state = game) {
-    return !state.u?.deaf && !priest.msleeping
-        && priest.mcanmove !== 0 && !((priest.mfrozen ?? 0) > 0);
+    return !state.u?.deaf && !priest.msleeping && priest.mcanmove !== 0;
 }
 // C intemple() keeps TEMPLE repeatable and rate-limits each class of entry
 // message on the resident's epri record.  plineWithContinuation is important:
