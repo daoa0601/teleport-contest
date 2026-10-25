@@ -34,6 +34,7 @@ import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_dr
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory } from './monster_restore.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
@@ -3839,6 +3840,7 @@ function restoreBonesFloorOrder(level) {
 // arrive immediately after the old hero's death, on the new hero's clock.
 function restoreBonesClock(level, savedAt) {
     const adjustment = game.moves - savedAt;
+    restoreLevelPetHistory(level, adjustment);
     const restoreObjectClock = (object, frozen = false) => {
         if (!frozen && !object.ageRelative && !ageStoresFuel(object))
             object.age += adjustment;

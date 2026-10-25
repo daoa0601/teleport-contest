@@ -31,6 +31,7 @@ import { restoreScheduledLevelChange } from './level_change.js';
 import { recorderRestoredTime } from './calendar.js';
 import { restoreSavedTimers } from './object_timers.js';
 import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory, restoreMonsterPetHistory, restoreObjectPetHistory } from './monster_restore.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -43,6 +44,7 @@ function snapshotState() {
     };
 }
 function restoreLevelMonsters(level, moves) {
+    restoreLevelPetHistory(level, 0);
     restoreEngravings(level, moves);
     if (!validMonsterWormBodies(level))
         throw new Error('Invalid saved worm bodies');
@@ -53,12 +55,22 @@ function restoreLevelMonsters(level, moves) {
 function restoreSavedMonsters(state) {
     if (state.level)
         restoreLevelMonsters(state.level, state.moves);
-    for (const cached of state._levelCache?.values() ?? [])
+    for (const cached of state._levelCache?.values() ?? []) {
         restoreLevelMonsters(cached.level, state.moves);
-    for (const monster of state._migratingMonsters || [])
+        restoreObjectPetHistory(cached.billObjects ?? [], 0);
+    }
+    for (const monster of state._migratingMonsters || []) {
+        restoreMonsterPetHistory(monster, 0);
+        restoreObjectPetHistory(monster.minvent || monster.inventory || [], 0);
         restoreMonsterInventoryOwnership(monster);
-    if (state.u.usteed)
+    }
+    if (state.u.usteed) {
+        restoreMonsterPetHistory(state.u.usteed, 0);
         restoreMonsterInventoryOwnership(state.u.usteed);
+    }
+    restoreObjectPetHistory([
+        ...state.inventory, ...state.migratingObjects ?? [], ...state.billObjects ?? [],
+    ], 0);
 }
 export async function dosave() {
     // C save.c:dosave() clears WIN_MESSAGE before asking and after either

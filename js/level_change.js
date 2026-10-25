@@ -13,6 +13,7 @@ import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
 import { restoreLevelTimers } from './object_timers.js';
 import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory, restoreObjectPetHistory } from './monster_restore.js';
 import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
@@ -698,15 +699,11 @@ function restoreCachedHeroTrack(cached) {
 // C getlev() restores each resident before separately arriving monsters.
 async function restoreCachedMonsterState(cached) {
     const elapsed = game.moves - cached.savedAt;
+    restoreLevelPetHistory(cached.level, elapsed);
+    restoreObjectPetHistory(cached.billObjects ?? [], elapsed);
     restoreMonsterWormHeads(cached.level);
     // Births append in the port, whereas C prepends to fmon.
     for (const monster of cached.level.monsters.slice().reverse()) {
-        // savemon()/restmon() store these two pet times relative to moves.
-        // They resume on the current clock before catch-up checks hunger.
-        if (monster.edog) {
-            monster.edog.droptime += elapsed;
-            monster.edog.hungrytime += elapsed;
-        }
         setShopResidency(monster, false, game);
         await restoreMonsterCover(monster, game);
         if (elapsed > 0)
