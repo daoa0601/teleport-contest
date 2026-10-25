@@ -1761,7 +1761,7 @@ function parseConfiguration(
                     result.flags.paranoia_bits = paranoiaBits;
                 }
                 else {
-                    const option = requestBooleanByName.get(canonical);
+                    const option = requestBooleanByName.get(canonical.toLowerCase());
                     const value = booleanSetting;
                     if (option && value !== null) setConfigurationBoolean(result, option, value);
                 }
@@ -1798,7 +1798,7 @@ function parseConfiguration(
                     } else addError(`${canonical} requires a value; use 'none' to cancel all`);
                 }
                 else {
-                    const option = requestBooleanByName.get(canonical);
+                    const option = requestBooleanByName.get(canonical.toLowerCase());
                     if (option) setConfigurationBoolean(result, option, value);
                     else if (canonical === 'bones') result.flags.bones = value;
                     else if (canonical === 'reroll') result.flags.reroll = value;

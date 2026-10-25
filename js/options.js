@@ -1789,7 +1789,7 @@ function parseConfiguration(rc, result, report, fromFile) {
                     result.flags.paranoia_bits = paranoiaBits;
                 }
                 else {
-                    const option = requestBooleanByName.get(canonical);
+                    const option = requestBooleanByName.get(canonical.toLowerCase());
                     const value = booleanSetting;
                     if (option && value !== null)
                         setConfigurationBoolean(result, option, value);
@@ -1846,7 +1846,7 @@ function parseConfiguration(rc, result, report, fromFile) {
                         addError(`${canonical} requires a value; use 'none' to cancel all`);
                 }
                 else {
-                    const option = requestBooleanByName.get(canonical);
+                    const option = requestBooleanByName.get(canonical.toLowerCase());
                     if (option)
                         setConfigurationBoolean(result, option, value);
                     else if (canonical === 'bones')

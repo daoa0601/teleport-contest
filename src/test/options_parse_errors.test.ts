@@ -132,6 +132,12 @@ void test('boolean values spell on and off', () => {
     );
 });
 
+void test('mixed-case boolean names like goldX set their flag with or without a value', () => {
+    assert.equal(parseNethackrc('OPTIONS=goldX').flags.goldX, true);
+    assert.equal(parseNethackrc('OPTIONS=goldX:on').flags.goldX, true);
+    assert.equal(parseNethackrc('OPTIONS=goldX:off').flags.goldX, false);
+});
+
 void test('a valok boolean accepts any other value as on', () => {
     assert.equal(parseNethackrc('OPTIONS=menucolors:junk').flags.menucolors, true);
     assert.equal(parseNethackrc('OPTIONS=!menucolors:junk').flags.menucolors, undefined);
