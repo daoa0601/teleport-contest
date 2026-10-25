@@ -62,7 +62,8 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
     }
     const helmet = state.uarmh || hero.uarmh || null;
     if (objectBreaksOnImpact(object, random)) {
-        const blindIncrement = heroCanBeBlindedByObject(object.otyp, state) ? rollOne(25) : 0;
+        // C dothrow.c passes &gy.youmonst as both magr and mdef here.
+        const blindIncrement = heroCanBeBlindedByObject(object.otyp, state, { thrownByHero: true }) ? rollOne(25) : 0;
         const broken = await breakObject();
         if (state.program_state.gameover)
             return null;

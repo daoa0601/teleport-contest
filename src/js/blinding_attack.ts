@@ -77,11 +77,22 @@ export function heroCanBeBlindedByContact(
 
 export function monsterCanBeBlindedByObject(
     monster: Monster | null | undefined, objectType: number,
-    { heroInsideTarget = false, state = game }: { heroInsideTarget?: boolean; state?: GameState } = {},
+    {
+        attackerSpecies = null,
+        heroInsideTarget = false,
+        state = game,
+    }: {
+        /** C magr species, or null for the C null-aggressor callers. */
+        attackerSpecies?: number | null;
+        heroInsideTarget?: boolean;
+        state?: GameState;
+    } = {},
 ) {
     if (!monster || ![CREAM_PIE, BLINDING_VENOM].includes(objectType)) return false;
     if ((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_NOEYES) return false;
     if (!monster?.mcansee && (monster?.mblinded ?? 0) === 0) return false;
+    // "a crow will not pluck out the eye of another crow"
+    if (attackerSpecies === PM_RAVEN && monster.mnum === PM_RAVEN) return false;
     if (heroInsideTarget) return false;
     if (objectType !== BLINDING_VENOM) return true;
     return !wearsVisoredHelmet(
@@ -162,7 +173,14 @@ function heroCanBeBlindedByCreamPie(state: GameState): boolean {
     return heroHasEyes(state) && !blindfolded(state);
 }
 
-export function heroCanBeBlindedByObject(objectType: number, state: GameState): boolean {
+export function heroCanBeBlindedByObject(
+    objectType: number, state: GameState,
+    { thrownByHero = false }: { thrownByHero?: boolean } = {},
+): boolean {
+    // can_blnd(): the hero is both magr and mdef for a self-thrown hit, so
+    // "a crow will not pluck out the eye of another crow" protects a raven.
+    // Monster-thrown objects pass a null aggressor and skip this branch.
+    if (thrownByHero && heroSpecies(state) === PM_RAVEN) return false;
     if (objectType === CREAM_PIE)
         return heroCanBeBlindedByCreamPie(state);
     if (objectType === BLINDING_VENOM)

@@ -9,6 +9,7 @@ import { plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
+import { heroSpecies } from './hero_species.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { consumeInventoryItem } from './invent.js';
@@ -165,7 +166,13 @@ export async function resolveHeroObjectContact(
         break;
     case CREAM_PIE: case BLINDING_VENOM: {
         monster.msleeping = 0;
-        const canBlind = monsterCanBeBlindedByObject(monster, object.otyp, { state, heroInsideTarget: !!state.u.uswallow });
+        // C uhitm.c passes &gy.youmonst as magr: a raven hero cannot blind
+        // another raven.
+        const canBlind = monsterCanBeBlindedByObject(monster, object.otyp, {
+            state,
+            attackerSpecies: heroSpecies(state),
+            heroInsideTarget: !!state.u.uswallow,
+        });
         await publish(heroBlindingObjectHitMessage(monster, object, {
             canBlind, state, thrown: mode !== 'melee',
             describeTarget: () => monsterName(monster, { state }),
