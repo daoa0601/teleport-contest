@@ -6,8 +6,10 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initializePet } from '../js/dog.js';
-import { initRng } from '../js/rng.js';
+import { knownObject } from './support/game-objects.js';
+import { HELMET, SPE_NOVEL } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
+import { initRng } from '../js/rng.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -117,5 +119,271 @@ void test('chat with a cancelled incubus complains about a severe headache', asy
     await runExtendedCommand('chat', 'l');
     assert.equal(game._pending_message, 'The incubus acts as though he has got a severe headache.');
     assert.equal(game.context.move, 1);
+});
+async function chatSetup(species, { hero, seed, monster: overrides = {}, clock, } = {}) {
+    freshObjectRoom(hero ? { hero } : undefined);
+    if (clock)
+        clock();
+    if (seed !== undefined)
+        initRng(seed);
+    const monster = await createMonsterAt(species, 11, 10);
+    monster.msleeping = 0;
+    if (overrides.mpeaceful !== undefined)
+        monster.mpeaceful = overrides.mpeaceful;
+    if (overrides.mtame !== undefined)
+        monster.mtame = overrides.mtame;
+    if (overrides.female !== undefined)
+        monster.female = overrides.female;
+    if (overrides.mhp !== undefined)
+        monster.mhp = overrides.mhp;
+    if (overrides.mhpmax !== undefined)
+        monster.mhpmax = overrides.mhpmax;
+    if (overrides.mcan !== undefined)
+        monster.mcan = overrides.mcan;
+    await runExtendedCommand('chat', 'l');
+    return monster;
+}
+void test('a full moon night werewolf howls at the hero', async () => {
+    await chatSetup(263, {
+        seed: 0, monster: { mpeaceful: 1 },
+        clock: () => { game.flags.moonphase = 4; game.datetime = '20020115230000'; },
+    });
+    assert.equal(game._pending_message, 'The werewolf throws back her head and lets out a blood curdling howl!');
+    assert.equal(game.context.move, 1);
+    game.datetime = null;
+    game.flags.moonphase = 0;
+});
+void test('a full moon night wererat lets out a shriek instead of a howl', async () => {
+    await chatSetup(261, {
+        seed: 0, monster: { mpeaceful: 1 },
+        clock: () => { game.flags.moonphase = 4; game.datetime = '20020115230000'; },
+    });
+    assert.equal(game._pending_message, 'The wererat throws back her head and lets out a blood curdling shriek!');
+    game.datetime = null;
+    game.flags.moonphase = 0;
+});
+void test('a werewolf under a new moon only whispers about the moon', async () => {
+    await chatSetup(263, {
+        seed: 1, monster: { mpeaceful: 1 },
+        clock: () => { game.flags.moonphase = 1; game.datetime = '20020115230000'; },
+    });
+    assert.equal(game._pending_message, 'The werewolf whispers inaudibly.  All you can make out is "moon".');
+    game.datetime = null;
+    game.flags.moonphase = 0;
+});
+void test('a tame vampire wearies during the day', async (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 1, 12) });
+    await chatSetup('vampire', {
+        hero: { protectionFromShapeChangers: true },
+        monster: { mtame: 5, mpeaceful: 1 },
+        clock: () => { game.datetime = '20020115120000'; },
+    });
+    assert.equal(game._pending_message, '"I find myself growing a little weary."');
+    game.datetime = null;
+});
+void test('a tame vampire begs at night', async (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 1, 12) });
+    await chatSetup('vampire', {
+        hero: { protectionFromShapeChangers: true },
+        monster: { mtame: 5, mpeaceful: 1 },
+        clock: () => { game.datetime = '20020115230000'; },
+    });
+    assert.equal(game._pending_message, '"I beg you, help me satisfy this growing craving!"');
+    game.datetime = null;
+});
+void test('a tame vampire cracks at midnight', async (t) => {
+    t.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 1, 12) });
+    await chatSetup('vampire', {
+        hero: { protectionFromShapeChangers: true },
+        monster: { mtame: 5, mpeaceful: 1 },
+        clock: () => { game.datetime = '20020116010000'; },
+    });
+    assert.equal(game._pending_message, '"I can stand this craving no longer!"');
+    game.datetime = null;
+});
+void test('a hostile vampire threatens to come after a man', async () => {
+    await chatSetup('vampire', {
+        hero: { protectionFromShapeChangers: true }, seed: 0, monster: { mpeaceful: 0 },
+    });
+    assert.equal(game._pending_message, '"I vill come after a man without regret!"');
+});
+void test('a hostile vampire wants to suck blood', async () => {
+    await chatSetup('vampire', {
+        hero: { protectionFromShapeChangers: true }, seed: 1, monster: { mpeaceful: 0 },
+    });
+    assert.equal(game._pending_message, '"I vant to suck your blood!"');
+});
+void test('a vampire lord sneers at a silver dragon hero', async () => {
+    await chatSetup('vampire', {
+        hero: { protectionFromShapeChangers: true }, monster: { mpeaceful: 0 },
+        clock: () => {
+            game.u.umonnum = 145; // silver dragon
+        },
+    });
+    assert.equal(game._pending_message, '"Fool!  Your silver sheen does not frighten me!"');
+});
+for (const [message, seed] of [
+    ['The giant boasts about his gem collection.', 3],
+    ['The giant complains about a diet of mutton.', 1],
+    ['The giant shouts "Fee Fie Foe Foo!" and guffaws.', 0],
+]) {
+    void test(`a hostile giant ${message.slice(10, 40)}`, async () => {
+        await chatSetup('giant', { seed, monster: { mpeaceful: 0, female: false } });
+        assert.equal(game._pending_message, message);
+        assert.equal(game.context.move, 1);
+    });
+}
+void test('a peaceful Kop just wants the facts', async () => {
+    await chatSetup('Keystone Kop', { monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"Just the facts, Sir."');
+});
+for (const [message, seed] of [
+    ['"Anything you say can be used against you."', 0],
+    ['"Stop in the name of the Law!"', 2],
+    ['"You\'re under arrest!"', 6],
+]) {
+    void test(`a hostile Kop declares ${message}`, async () => {
+        await chatSetup('Keystone Kop', { seed, monster: { mpeaceful: 0 } });
+        assert.equal(game._pending_message, message);
+    });
+}
+for (const [message, seed] of [
+    ['"What lousy pay we\'re getting here!"', 1],
+    ['"The food\'s not fit for Orcs!"', 2],
+    ['"My feet hurt, I\'ve been on them all day!"', 0],
+]) {
+    void test(`a peaceful soldier grumbles ${message}`, async () => {
+        await chatSetup('soldier', { seed, monster: { mpeaceful: 1 } });
+        assert.equal(game._pending_message, message);
+    });
+}
+for (const [message, seed] of [
+    ['"Surrender!"', 0],
+    ['"Resistance is useless!"', 1],
+    ['"You\'re dog meat!"', 2],
+]) {
+    void test(`a hostile soldier shouts ${message}`, async () => {
+        await chatSetup('soldier', { seed, monster: { mpeaceful: 0 } });
+        assert.equal(game._pending_message, message);
+    });
+}
+void test('a vault guard without hero gold asks the hero to follow', async () => {
+    await chatSetup('guard', { monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"Please follow me."');
+});
+void test('a tame djinni is out of wishes', async () => {
+    await chatSetup('djinni', { monster: { mtame: 5, mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"Sorry, I\'m all out of wishes."');
+});
+void test('a freed djinni enjoys it', async () => {
+    await chatSetup('djinni', { monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"I\'m free!"');
+});
+for (const [message, seed] of [
+    ['The leprechaun giggles.', 0],
+    ['The leprechaun snickers.', 1],
+    ['The leprechaun laughs.', 2],
+    ['The leprechaun chuckles.', 4],
+]) {
+    void test(`a leprechaun ${message}`, async () => {
+        await chatSetup('leprechaun', { seed, monster: { mpeaceful: 1 } });
+        assert.equal(game._pending_message, message);
+    });
+}
+void test('a peaceful lawful minion holds out hope', async () => {
+    await chatSetup('Angel', { monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"It\'s not too late."');
+});
+void test('a peaceful demon minion despairs', async () => {
+    await chatSetup('marilith', { monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"We\'re all doomed."');
+});
+void test('a water nymph greets a sailor', async () => {
+    await chatSetup('water nymph', { seed: 13, monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, '"Hello, sailor."');
+});
+void test('a water nymph comes on to the hero', async () => {
+    await chatSetup('water nymph', { seed: 0, monster: { mpeaceful: 1 } });
+    assert.equal(game._pending_message, 'The water nymph comes on to you.');
+});
+for (const [species, message] of [
+    ['Woodland-elf', 'The Woodland-elf curses orcs.'],
+    ['plains centaur', 'The plains centaur discusses hunting.'],
+    ['apprentice', 'The apprentice talks about spellcraft.'],
+    ['tourist', '"Aloha."'],
+]) {
+    void test(`a peaceful ${species} chats about its interest`, async () => {
+        await chatSetup(species, { monster: { mpeaceful: 1 } });
+        assert.equal(game._pending_message, message);
+    });
+}
+void test('a wounded hobbit complains about the dungeon', async () => {
+    await chatSetup('hobbit', { monster: { mpeaceful: 1, mhp: 5, mhpmax: 10 } });
+    assert.equal(game._pending_message, 'The hobbit complains about unpleasant dungeon conditions.');
+});
+void test('a healthy hobbit asks about the One Ring', async () => {
+    await chatSetup('hobbit', { monster: { mpeaceful: 1, mhp: 10, mhpmax: 10 } });
+    assert.equal(game._pending_message, 'The hobbit asks you about the One Ring.');
+});
+void test('a hallucinating hero hears a gnome business plan', async () => {
+    await chatSetup('gnome', {
+        seed: 0, monster: { mpeaceful: 1, female: false },
+        clock: () => { game.u.hallucinationTurns = 20; },
+    });
+    assert.equal(game._pending_message, '"Phase one, collect underpants."');
+});
+void test('a sober gnome grunts its orcish reply', async () => {
+    await chatSetup('gnome', { monster: { mpeaceful: 1, female: false } });
+    assert.equal(game._pending_message, 'The gnome grunts.');
+});
+void test('a wounded Death collector misquotes Snuff', async () => {
+    freshObjectRoom();
+    const novel = await knownObject(SPE_NOVEL, {});
+    novel.novelidx = 38; // Snuff: no Death, so no misquote suffix
+    game.inventory.push(novel);
+    const death = await createMonsterAt('Death', 11, 10);
+    death.msleeping = 0;
+    await runExtendedCommand('chat', 'l');
+    assert.equal(game._pending_message, 'AH, SO YOU HAVE A COPY OF /SNUFF/.');
+    assert.equal(game.context.deathNotice, true);
+});
+void test('Death quotes The Wee Free Men without a misquote', async () => {
+    freshObjectRoom();
+    const novel = await knownObject(SPE_NOVEL, {});
+    novel.novelidx = 29; // The Wee Free Men
+    game.inventory.push(novel);
+    const death = await createMonsterAt('Death', 11, 10);
+    death.msleeping = 0;
+    await runExtendedCommand('chat', 'l');
+    assert.equal(game._pending_message, 'AH, SO YOU HAVE A COPY OF /THE WEE FREE MEN/.');
+});
+void test('a helmeted hero is asked to undress by a nurse', async () => {
+    freshObjectRoom();
+    game.uarmh = game.u.uarmh = await knownObject(HELMET, {});
+    const nurse = await createMonsterAt('nurse', 11, 10);
+    nurse.mpeaceful = 1;
+    nurse.msleeping = 0;
+    await runExtendedCommand('chat', 'l');
+    assert.equal(game._pending_message, '"Please undress so I can examine you."');
+});
+void test('an endgame player monster prefers talking to its own class', async () => {
+    freshObjectRoom();
+    game.astral_level = { dnum: 5, dlevel: 1, flags: { town: false }, alignment: 0 };
+    game.u.uz = { dnum: 5, dlevel: 1 };
+    const knight = await createMonsterAt('knight', 11, 10);
+    knight.mpeaceful = 0;
+    knight.msleeping = 0;
+    await runExtendedCommand('chat', 'l');
+    const other = game._pending_message;
+    freshObjectRoom();
+    game.astral_level = { dnum: 5, dlevel: 1, flags: { town: false }, alignment: 0 };
+    game.u.uz = { dnum: 5, dlevel: 1 };
+    const wizard = await createMonsterAt('wizard', 11, 10);
+    wizard.mpeaceful = 0;
+    wizard.msleeping = 0;
+    await runExtendedCommand('chat', 'l');
+    assert.ok(/^"Talk\? -- /.test(other ?? ''), `expected player-monster talk: ${other}`);
+    assert.notEqual(game._pending_message, other);
+    game.astral_level = undefined;
 });
 //# sourceMappingURL=monster_chat.test.js.map
