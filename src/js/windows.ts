@@ -5,7 +5,8 @@
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
-import { C_ATR_INVERSE, NO_COLOR, terminalAttrFromCAttr } from './terminal.js';
+import { NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import type { GameDisplay } from './game_display.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu,
@@ -54,11 +55,10 @@ export interface ChoiceWindowOptions {
     entries: readonly ChoiceMenuEntry[];
 }
 
-export interface PageLocalMenuItem<T> {
+export interface PageLocalMenuItem<T> extends TextMenuLine {
     key?: string;
     groupAccelerator?: string;
     itemFlags?: number;
-    text: string;
     value: T;
     selectable?: true;
     separatorBefore?: boolean;
@@ -378,6 +378,7 @@ export async function showMultiSelectWindow<T>({
                 if (!pageLocalKeys && !item.key) throw new TypeError('The menu item requires a selector');
                 if (item.separatorBefore) tty_add_menu(window, { identifier: null, text: '--' });
                 tty_add_menu(window, { identifier: item, text: item.text,
+                    attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR,
                     ...(item.key ? { selector: item.key } : {}),
                     ...(item.groupAccelerator ? { group: item.groupAccelerator } : {}), itemflags: item.itemFlags ?? 0 });
             }

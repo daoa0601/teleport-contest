@@ -6,7 +6,8 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { ATR_BOLD, C_ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD } from '../js/color_attr.js';
 function assertMenuHeading(text, attr, color) {
     const row = requireGameDisplay().grid.find(cells => cells.map(cell => cell.ch).join('').includes(text));
     assert.ok(row, `The menu displays the heading "${text}"`);

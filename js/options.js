@@ -22,7 +22,8 @@ import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
-import { C_ATR_INVERSE, C_ATR_NONE, NO_COLOR } from './terminal.js';
+import { CLR_BLACK, CLR_WHITE, NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
 import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 // optlist.h aliases that reach parseoptions()'s alias pass. "customsymbols"
 // already matches its canonical name first.
@@ -1964,14 +1965,13 @@ async function editPickupTypes(preserveStatus = false) {
 // options.c:handle_add_list_remove(): the shared add/list/remove chooser.
 // With nothing to act on, only "add" and "exit" are offered.
 async function chooseAddListRemove(kind, count) {
-    const items = [
+    const choices = [
         { key: 'a', value: 'add', text: `add new ${kind}` },
-        ...(count ? [
-            { key: 'l', value: 'list', text: `list ${kind}s` },
-            { key: 'r', value: 'remove', text: `remove existing ${kind}` },
-        ] : []),
+        { key: 'l', value: 'list', text: `list ${kind}s` },
+        { key: 'r', value: 'remove', text: `remove existing ${kind}` },
         { key: 'x', value: 'done', text: 'exit this menu', itemFlags: MENU_ITEMFLAGS_SELECTED },
     ];
+    const items = count ? choices : choices.filter(item => item.value !== 'list' && item.value !== 'remove');
     const picks = await showMultiSelectWindow({
         title: 'Do what?', omitHeadings: true, pickOne: true, signalEscape: true,
         sections: [{ items }],
@@ -2088,23 +2088,27 @@ async function editMenuColors() {
 // handler_menu_colors(): `"pattern"="=color&attr` minus one leading quote of
 // the C suffix buffer, i.e. the pattern's closing quote is kept; the color
 // name's blank becomes '-', there is no attribute half for ATR_NONE, and an
-// overflowing original string is elided with "...".
+// overflowing original string is elided with "..." at the byte level.
 function menuColoringRow(rule) {
     const color = colorName(rule.color).replace(/ /g, '-');
     const suffix = `"=${color}${rule.attr !== 0 ? `&${attributeName(rule.attr)}` : ''}`;
-    const limit = 255 - suffix.length;
-    const shown = rule.origstr.length > limit
+    // C: ln = BUFSZ - strlen("\"\"=suffix") - 1, and strncat() counts bytes.
+    const limit = 254 - suffix.length;
+    const shown = new TextEncoder().encode(rule.origstr).length > limit
         ? `${cutConfigBytes(rule.origstr, limit - 3)}...` : rule.origstr;
     return `"${shown}${suffix}`;
 }
 // coloratt.c:query_color(): PICK_ONE over the canonical color names; Escape
 // is -1, an accepted-but-empty pick keeps the current value, and a second
-// entry behind "no color" wins over it.
+// entry behind "no color" wins over it. basic_menu_colors() installs a
+// coloring per name — except black, white, and "no color", which stay plain.
 async function queryColorMenu(title, current) {
     const picks = await showMultiSelectWindow({
         title, omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
         sections: [{ items: COLOR_NAMES.slice(0, 16).map(([name, color]) => ({
                     value: color, text: name,
+                    color: color === CLR_BLACK || color === CLR_WHITE || color === NO_COLOR
+                        ? NO_COLOR : color,
                     itemFlags: color === current ? MENU_ITEMFLAGS_SELECTED : 0,
                 })) }],
     });
@@ -2115,13 +2119,14 @@ async function queryColorMenu(title, current) {
     const [chosen = current, alternate] = picks;
     return alternate !== undefined && chosen === NO_COLOR ? alternate : chosen;
 }
-// coloratt.c:query_attr(): PICK_ONE over the canonical attribute names; a
-// second entry behind the current default wins over it.
+// coloratt.c:query_attr(): PICK_ONE over the canonical attribute names, each
+// drawn in its own attribute; a second entry behind the current default wins
+// over it.
 async function queryAttributeMenu(title, current) {
     const picks = await showMultiSelectWindow({
         title, omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
         sections: [{ items: ATTRIBUTE_NAMES.slice(0, 7).map(([name, attr]) => ({
-                    value: attr, text: name,
+                    value: attr, text: name, attr: terminalAttrFromCAttr(attr),
                     itemFlags: attr === current ? MENU_ITEMFLAGS_SELECTED : 0,
                 })) }],
     });
@@ -2238,6 +2243,8 @@ async function editCompoundOption(name, fullMenu) {
         await editMenuHeadings();
     else if (name === 'sortloot')
         await editSortLoot();
+    else if (name === 'sortdiscoveries')
+        await chooseDiscoverySort(0);
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {

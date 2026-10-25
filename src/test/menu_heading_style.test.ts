@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { ATR_BOLD, C_ATR_BOLD, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD } from '../js/color_attr.js';
 import { showInventoryWindow, showMultiSelectWindow } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 

@@ -7,7 +7,8 @@ import { doClassGenocide, doGenocide } from '../js/genocide.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { ATR_BOLD, C_ATR_BOLD, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD } from '../js/color_attr.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 function recordSpecies(name, mvflags) {

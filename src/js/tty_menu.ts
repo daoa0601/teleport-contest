@@ -5,7 +5,8 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
-import { C_ATR_INVERSE, NO_COLOR, terminalAttrFromCAttr } from './terminal.js';
+import { NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import type { TerminalCell, TerminalColor } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 
