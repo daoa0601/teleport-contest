@@ -721,6 +721,8 @@ async function leaveWater({ state, location, publish, }) {
 // mounted-steed dismount, and the ceiling-hider check, none of which the
 // direct drown()/lava_effects() calls perform. Entries 'drown' and 'lava'
 // also skip their terrain-entry guards, including being held by a monster.
+// Entry 'turn' is moveloop_core()'s pooleffects(FALSE) for a hero who did
+// not move: it leaves a submerged swimmer or breather out of drown().
 export async function heroLiquidEffects(options = {}) {
     const { state = game, publish = plineWithContinuation, random = rn2, recalculateVision = vision_recalc, resetVision = vision_reset, repaint = newsym, rollDice = d, rollOne = rnd, chooseTeleportDestination = null, applyLandingEffects = async () => { }, die = finishLiquidDeath, entry = 'spot-effects', } = options;
     const fromFloatDown = entry === 'float-down';
@@ -775,6 +777,8 @@ export async function heroLiquidEffects(options = {}) {
         }
         if (heroStaysAboveWater(state, location))
             return leftWater ? { left: true } : null;
+        if (entry === 'turn' && u.uinwater && heroCanLiveUnderwater(state))
+            return null;
     }
     // drown() maps the water by touch before any entry message can page.
     if (state === game)
