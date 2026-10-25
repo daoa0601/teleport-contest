@@ -17,11 +17,15 @@ export type TerminalCursor = [col: number, row: number, visible: number];
 export type KeyBindings = Readonly<Partial<Record<string, string | number>>>;
 export type KeyMapper = (event: KeyboardEvent) => number | null | undefined;
 export type InterruptHandler = () => void;
+// Called when a read finds no queued key: it may throw (end of scripted
+// input), return a key code, or return nothing to wait as usual.
+export type EmptyQueueHandler = () => number | null | undefined;
 
 export interface TerminalReadKeyOptions {
     bindings?: KeyBindings;
     keyMapper?: KeyMapper | null;
     onInterrupt?: InterruptHandler | null;
+    onEmptyQueue?: EmptyQueueHandler | null;
 }
 
 export interface TerminalOptions {
@@ -329,6 +333,8 @@ span.terminal-cursor {
         this._waitEpoch++;
         const queuedCode = this._inputQueue.shift();
         if (queuedCode !== undefined) return Promise.resolve(queuedCode);
+        const fallback = options?.onEmptyQueue?.();
+        if (fallback !== undefined && fallback !== null) return Promise.resolve(fallback);
         return new Promise<number>((resolve) => {
             this._inputResolver = resolve;
         });

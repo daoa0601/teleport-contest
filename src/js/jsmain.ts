@@ -11,14 +11,14 @@ import type { Terminal, TerminalCell, TerminalColor } from './terminal.js';
 import { initRng, enableRngLog, getRngLog } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
-import { newgame, moveloop_core, restoregamePreamble } from './allmain.js';
+import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './allmain.js';
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import type { NethackConfiguration } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { parseCharacterName } from './character_name.js';
 import type { ParsedCharacterName } from './character_name.js';
 import { GameDisplay } from './game_display.js';
-import { DEC_TO_UNICODE, NO_COLOR } from './terminal.js';
+import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
@@ -448,7 +448,7 @@ export class Engine {
         try {
             started = await this.start();
             if (!started) return;
-            while (!this.state.program_state?.gameover) await moveloop_core();
+            while (!this.state.program_state?.gameover) await runMoveloopCore();
         } catch (error) {
             if (error instanceof PanicTermination)
                 this.lastRunResult = { kind: 'panicked', reason: error.message, stack: error.stack };
@@ -491,6 +491,59 @@ export class Engine {
     // of the official ranking; see API.md.
     getAnimationFramesByStep(): AnimationFrame[][] {
         return this.capture.animationFramesByStep;
+    }
+}
+
+// ── Interactive play — the contest play-page contract ──
+//
+// The contest's play page (and frozen/playability_runner.mjs) constructs a
+// NethackGame, attaches its display and storage through these fields, awaits
+// start(), then calls moveloop_core() once per command until gameover.
+export interface NethackGameOptions {
+    seed?: number;
+    datetime?: string | null;
+    nethackrc?: string;
+    storage?: StorageBackend | null;
+}
+
+export class NethackGame {
+    _pendingDisplay: GameDisplay | null = null;
+    _pendingStorage: StorageBackend | null = null;
+    _storage: StorageBackend | null;
+    engine: Engine | null = null;
+    private readonly options: NethackGameOptions;
+
+    constructor(options: NethackGameOptions = {}) {
+        this.options = options;
+        this._storage = options.storage ?? null;
+    }
+
+    // Runs the game up to its first key request. Each later moveloop_core()
+    // call reads one key from the display and runs to the next request.
+    async start(): Promise<void> {
+        const display = this._pendingDisplay ?? game.nhDisplay ?? new GameDisplay(null);
+        const engine = new Engine({
+            seed: this.options.seed ?? 0,
+            datetime: this.options.datetime ?? null,
+            nethackrc: this.options.nethackrc ?? '',
+            storage: this._pendingStorage ?? this._storage,
+            display,
+        });
+        this.engine = engine;
+        const advance = async (): Promise<void> => {
+            // A refused character or panic save stops without a gameover.
+            if ((await engine.runUntilInputNeeded()).kind !== 'input-needed')
+                engine.state.program_state.gameover = true;
+        };
+        await advance();
+        bindPlayStep({
+            state: engine.state,
+            step: async () => {
+                if (engine.state.program_state.gameover) return;
+                engine.inputGate.feedOne(await display.readKey({ bindings: KEY_BINDINGS.VI_KEYS }));
+                await advance();
+            },
+        });
     }
 }
 

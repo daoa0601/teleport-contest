@@ -13,7 +13,7 @@
 
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 import type { StatusLine2Fields } from './status_layout.js';
-import type { KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
+import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 
 const TOPLINE_EMPTY = 0;
 const TOPLINE_NEED_MORE = 1;
@@ -155,6 +155,7 @@ export class GameDisplay {
         return this.terminal.readKey({
             keyMapper: this.keyMapper,
             onInterrupt: this.onInterrupt,
+            onEmptyQueue: this.onEmptyQueue,
             ...extraOptions,
         });
     }
@@ -163,6 +164,8 @@ export class GameDisplay {
     keyMapper: KeyMapper | null = null;
     /** Ctrl-C handler. */
     onInterrupt: InterruptHandler | null = null;
+    /** Scripted-input hook for reads that find the queue empty. */
+    onEmptyQueue: EmptyQueueHandler | null = null;
     // --- NetHack-specific methods ---
 
     putstr_message(msg: string) {
