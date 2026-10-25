@@ -65,6 +65,9 @@ function graphReplacer() {
         // restore.c:restobjchn() clears these traversal marks on every object.
         if (identity.kind === 'object')
             delete saved.bypass;
+        // save.c:savemon() clears a flash interrupted by a panic save.
+        if (identity.kind === 'monster')
+            saved.mtemplit = 0;
         return saved;
     };
 }
