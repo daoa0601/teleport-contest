@@ -4,7 +4,17 @@ import { MM_NOMSG } from '../js/const.js';
 import { makemonAt } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { LEATHER_ARMOR, LONG_SWORD, MACE, RING_MAIL, SPLINT_MAIL, TIN_WHISTLE, } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, LEATHER_ARMOR, LONG_SWORD, MACE, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_POLYMORPH, POT_SICKNESS, POT_SPEED, RING_MAIL, SCR_CREATE_MONSTER, SCR_TELEPORTATION, SPLINT_MAIL, TIN_WHISTLE, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SPEED_MONSTER, WAN_TELEPORTATION, } from '../js/object_data.js';
+// rnd_defensive_item()/rnd_misc_item() outputs that no other birth-time
+// reservoir can hand a mercenary; m_initweap()'s offensive tail is excluded.
+const RESERVOIR_ITEMS = new Set([
+    AMULET_OF_LIFE_SAVING,
+    POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING,
+    POT_INVISIBILITY, POT_POLYMORPH, POT_SICKNESS, POT_SPEED,
+    SCR_CREATE_MONSTER, SCR_TELEPORTATION,
+    WAN_CREATE_MONSTER, WAN_DIGGING, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
+    WAN_SPEED_MONSTER, WAN_TELEPORTATION,
+]);
 // makemon.c:m_initweap()/m_initinv() sidearms and armor, kept as numeric
 // constants exactly where the constructor itself uses them.
 const FLAIL = 81;
@@ -31,7 +41,7 @@ async function bornAt(name, seed, x = 12, y = 10) {
     assert.ok(monster, `${name} must be born (seed ${seed})`);
     return monster;
 }
-void test('every mercenary rank wears exactly one body armor matching its rank budget', async () => {
+void test('every mercenary rank wears exactly one body armor', async () => {
     for (const name of MERCENARY_RANKS) {
         for (let seed = 1n; seed <= 24n; seed++) {
             const monster = await bornAt(name, seed);
@@ -91,6 +101,25 @@ void test('watchmen usually carry an ordinary tin whistle', async () => {
     }
     assert.ok(whistles > 12, `most watchmen carry whistles (${whistles}/24)`);
 });
+void test('officers with elite budgets wear plate armor that sergeants cannot', async () => {
+    const elite = [PLATE_MAIL, CRYSTAL_PLATE_MAIL];
+    for (const name of ['captain', 'lieutenant', 'watch captain']) {
+        let plated = 0;
+        for (let seed = 1n; seed <= 24n; seed++) {
+            const officer = await bornAt(name, seed);
+            if (officer.minvent.some(item => elite.includes(item.otyp)))
+                plated++;
+        }
+        assert.ok(plated > 0, `${name} never drew plate or crystal plate mail across 24 births`);
+    }
+    for (let seed = 1n; seed <= 24n; seed++) {
+        const sergeant = await bornAt('sergeant', seed);
+        const otyps = sergeant.minvent.map(item => item.otyp);
+        for (const forbidden of elite) {
+            assert.ok(!otyps.includes(forbidden), `sergeant wears armor beyond its budget (seed ${seed})`);
+        }
+    }
+});
 void test('officers receive the sidearm of their rank', async () => {
     const ranks = [
         ['sergeant', [FLAIL, MACE]],
@@ -105,7 +134,7 @@ void test('officers receive the sidearm of their rank', async () => {
         }
     }
 });
-void test('officers draw campaign rations, plain soldiers rarely carry magic', async () => {
+void test('officers draw campaign rations', async () => {
     let rations = 0;
     for (let seed = 1n; seed <= 24n; seed++) {
         const sergeant = await bornAt('sergeant', seed);
@@ -113,5 +142,18 @@ void test('officers draw campaign rations, plain soldiers rarely carry magic', a
             rations++;
     }
     assert.ok(rations > 0, 'sergeants carry rations');
+});
+void test('plain soldiers rarely carry the reservists\' magic gear', async () => {
+    const counts = { sergeant: 0, soldier: 0 };
+    for (let seed = 1n; seed <= 96n; seed++) {
+        for (const name of ['sergeant', 'soldier']) {
+            const monster = await bornAt(name, seed);
+            if (monster.minvent.some(item => RESERVOIR_ITEMS.has(item.otyp))) {
+                counts[name]++;
+            }
+        }
+    }
+    assert.ok(counts.sergeant >= 10, `sergeants draw reservoir items (${counts.sergeant}/96)`);
+    assert.ok(counts.soldier <= 6, `soldiers skip the magic reservoirs most of the time (${counts.soldier}/96)`);
 });
 //# sourceMappingURL=mercenary_birth_loadouts.test.js.map

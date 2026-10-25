@@ -5,8 +5,8 @@ import { game } from '../js/gstate.js';
 import { makemonAt } from '../js/mklev.js';
 import { MONSTER_GENO, MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { LONG_SWORD } from '../js/object_data.js';
 // makemon.c:m_initweap() S_ANGEL gear and m_initgrp() group bounds.
-const LONG_SWORD = 54;
 const SILVER_MACE = 74;
 const LARGE_SHIELD = 156;
 const SHIELD_OF_REFLECTION = 158;
@@ -58,7 +58,7 @@ void test('Angels are born with a blessed, rustproof weapon and a real shield', 
         assert.ok(angel.minvent.some(item => item.otyp === LARGE_SHIELD || item.otyp === SHIELD_OF_REFLECTION), `Angel receives a shield (seed ${seed})`);
     }
 });
-void test('Archons always carry the shield of reflection of a demon lord', async () => {
+void test('Archon lords always carry a shield of reflection', async () => {
     for (let seed = 1n; seed <= 24n; seed++) {
         freshObjectRoom({ gameplaySeed: seed });
         const archon = await makemonAt(MONSTER_NAME.indexOf('Archon'), 12, 10, MM_NOMSG);
