@@ -131,7 +131,8 @@ export async function pickLock(tool: GameObject | null, {
             const attempt: PickLockOccupation = previous.key === 'pick-lock' ? previous : {
                 key: 'pick-lock', text: '', remaining: 51, tool,
                 container: previous.container,
-                x: previous.container.ox, y: previous.container.oy,
+                x: previous.container?.ox ?? state.u.ux,
+                y: previous.container?.oy ?? state.u.uy,
                 chance: previous.chance, usedtime: previous.usedtime,
             };
             attempt.text = lockAction(attempt);
@@ -321,6 +322,13 @@ export async function continuePicking(occupation: PickLockOccupation, state: Gam
             state._occupation = null;
             return false;
         }
+    } else {
+        // A declined #force drops the box target of an interrupted pick;
+        // native picklock() then matches no door against the hero's
+        // direction tile and silently stops.
+        occupation.usedtime = 0;
+        state._occupation = null;
+        return false;
     }
     const usedtime = occupation.usedtime++;
     const action = lockAction(occupation);
@@ -375,7 +383,11 @@ function lockAction(attempt: PickLockOccupation): string {
     if (attempt.container && !attempt.container.olocked)
         return `locking the ${attempt.container.otyp === CHEST ? 'chest' : 'box'}`;
     if (attempt.tool?.otyp === LOCK_PICK || attempt.tool?.otyp === CREDIT_CARD) return 'picking the lock';
-    return `unlocking the ${attempt.door ? 'door' : attempt.container?.otyp === CHEST ? 'chest' : 'box'}`;
+    if (attempt.door) return 'unlocking the door';
+    if (attempt.container)
+        return `unlocking the ${attempt.container.otyp === CHEST ? 'chest' : 'box'}`;
+    // A target-less leftover resumes under the generic picking label.
+    return 'picking the lock';
 }
 
 function lockPickChance(tool: GameObject | null, box: GameObject | undefined, state: GameState): number {
