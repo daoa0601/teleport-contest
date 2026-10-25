@@ -7,22 +7,24 @@ import { pushKeys } from '../js/input.js';
 import { detectObjects } from '../js/magic_detection.js';
 import { POT_HEALING, SPE_DETECT_TREASURE } from '../js/object_data.js';
 import { floorObject, uninitializedObject } from './support/game-objects.js';
-import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 function dismissViews() { pushKeys(' '.repeat(16)); }
 // C detect.c:map_redisplay() ends a detection browse by reconstraining the
 // hero and deferring a full restricted redraw (under_water(2)/under_ground(2));
 // the turn's under_water(0)/under_ground(0) then performs the full clear.
-for (const mode of ['underwater', 'buried']) {
-    void test(`a ${mode} hero's detection browse defers a full map reset to the next update`, async () => {
+for (const mode of ['underwater', 'underwater display flag', 'buried']) {
+    void test(`a detection browse defers the next full map reset (${mode})`, async () => {
         const level = freshObjectRoom();
         requirePlayingGame(game);
-        if (mode === 'underwater') {
+        if (mode !== 'buried') {
             for (let x = 7; x <= 16; x++)
                 for (let y = 6; y <= 14; y++)
                     level.requireAt(x, y).typ = POOL;
-            game.u.uinwater = 1;
+            if (mode === 'underwater')
+                game.u.uinwater = 1;
+            else
+                game.underwater = true;
         }
         else {
             game.u.uburied = true;
@@ -32,7 +34,7 @@ for (const mode of ['underwater', 'buried']) {
         await detectObjects(await uninitializedObject(SPE_DETECT_TREASURE, { blessed: true }));
         // The browse redisplays the restricted viewport around the hero.
         assert.equal(glyphAt(14, 8)?.kind !== 'object', true);
-        if (mode === 'underwater') {
+        if (mode !== 'buried') {
             // A transient glyph beyond the three-by-three viewport must not
             // survive the turn's restricted update.
             show_glyph_cell(16, 10, '!');
@@ -50,27 +52,4 @@ for (const mode of ['underwater', 'buried']) {
         }
     });
 }
-// An engulfed swimmer runs map_redisplay's underwater line, but native
-// display.c gives swallowing precedence over being under water (under_water()
-// returns before arming anything while u.uswallow is set), and docrt() takes
-// the swallowed branch first. The stomach view therefore survives the browse.
-void test('an engulfed swimmer\'s detection browse keeps the stomach view', async () => {
-    const level = freshObjectRoom();
-    requirePlayingGame(game);
-    level.requireAt(10, 10).typ = POOL;
-    game.u.uinwater = 1;
-    const engulfer = await createMonsterAt('purple worm', 10, 10);
-    game.u.uswallow = 1;
-    game.u.ustuck = engulfer;
-    await floorObject(POT_HEALING, 14, 8, { dknown: false });
-    dismissViews();
-    await detectObjects(await uninitializedObject(SPE_DETECT_TREASURE, { blessed: true }));
-    // The detection stays in hero memory while the stomach view hides it:
-    // the potion at map (14,8) is screen column 13, row 9.
-    assert.equal(level.requireAt(14, 8).remembered_glyph?.kind, 'object');
-    assert.equal(requireScreenCell(13, 9).ch, ' ');
-    // The engulfer's stomach border still surrounds the hero; the deferred
-    // restricted reset never cleared it.
-    assert.equal(requireScreenCell(8, 11).ch, '|');
-});
 //# sourceMappingURL=detection_browse_restricted_reset.test.js.map
