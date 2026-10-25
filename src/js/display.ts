@@ -960,18 +960,13 @@ function projectedTerrainType(loc: MapLocation) {
 function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
     const appearance = terrainGlyphChars(loc, x, y);
     if (!shownSymbolSet().rogue) return appearance;
-    // Walls, corners, secret doors and corridors draw through the active
-    // symbol set's table; anything the table leaves alone (and the blank
-    // an unseen wall produces) keeps the base characters.
-    const typ = projectedTerrainType(loc);
-    const rogueIndex = typ >= VWALL && typ <= TRWALL ? typ
-        : typ === SDOOR ? (loc.horizontal ? CmapSymbol.hwall : CmapSymbol.vwall)
-        : typ === CORR
-            ? (loc.waslit || game.flags?.lit_corridor ? CmapSymbol.litcorr : CmapSymbol.corr)
-            : null;
-    if (rogueIndex !== null && appearance.ch !== ' ')
-        return { ...cmapSymbolAppearance(rogueIndex), color: NO_COLOR };
-    return appearance;
+    // Every terrain character resolves through the displayed rogue set's
+    // table layered over the base rogue symbols (showsyms[] after
+    // assign_graphics(ROGUESET)): rooms, corridors, unseen-wall stone and
+    // everything Blank replaces included.  show_glyph_cell() applies the
+    // Rogue color rules at paint time.
+    const index = terrainSymbolIndex(loc, x, y, projectedTerrainType(loc), appearance);
+    return { ...cmapSymbolAppearance(index), color: NO_COLOR };
 }
 
 function terrainGlyphChars(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
@@ -1021,15 +1016,6 @@ function terrainGlyphChars(loc: MapLocation, x: number, y: number): GlyphAppeara
             ? { ch: 'q', color: wallColor, dec: true }
             : { ch: 'x', color: wallColor, dec: true };
     case DOOR:
-        if (shownSymbolSet().rogue) {
-            // The named rogue sets replace the doorway characters too.
-            const index = !loc.doormask || loc.doormask & D_BROKEN
-                ? CmapSymbol.ndoor
-                : loc.doormask & D_ISOPEN
-                    ? (loc.horizontal ? CmapSymbol.hodoor : CmapSymbol.vodoor)
-                    : (loc.horizontal ? CmapSymbol.hcdoor : CmapSymbol.vcdoor);
-            return { ...cmapSymbolAppearance(index), color: NO_COLOR };
-        }
         if (!loc.doormask || loc.doormask & D_BROKEN)
             return dec
                 ? { ch: '~', color: NO_COLOR, dec: true }
@@ -1877,9 +1863,15 @@ function cmapToRogueColor(index: number): number {
     return NO_COLOR;
 }
 
-function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): number {
+// The Rogue color tables of reset_glyphmap(); null keeps the glyph's own
+// color where the native branches have no rogue override (explosions, the
+ // branch wall ranges).
+function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): number | null {
     const glyphNumber = glyph.glyph;
     if (glyph.kind === 'object' && typeof glyphNumber === 'number') {
+        // Every statue glyph turns red under rogue color, like the four
+        // statue ranges of reset_glyphmap().
+        if (glyph.statueGlyph) return CLR_RED;
         // reset_glyphmap(): coins yellow, food (including corpses) red,
         // every other class bright blue.
         const oclass = objectClassForType(glyph.otyp);
@@ -1888,14 +1880,28 @@ function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): numbe
             : oclass === 7 ? CLR_RED : CLR_BRIGHT_BLUE;
     }
     if (glyph.kind === 'monster' && typeof glyphNumber === 'number') {
-        // Ordinary male monsters (and the male hero) are yellow; pets,
-        // detected, ridden and female monsters keep no color.
+        // map_glyphinfo() yellows the hero's own glyph whatever its sex,
+        // while a steed's glyph (not hero_glyph) keeps the ridden branch.
+        if (x === game.u?.ux && y === game.u?.uy && !Upolyd(game.u)) {
+            const heroNumber = GlyphOffset.monMale
+                + ((game.flags.showrace ? game.urace?.mnum : game.u.umonnum) ?? 0)
+                + (game.flags.female ? MONSTER_COLOR.length : 0);
+            if (glyphNumber === heroNumber) return CLR_YELLOW;
+        }
+        // Ordinary male monsters are yellow; pets, detected, ridden and
+        // female monsters keep no color.
         return glyphNumber >= GlyphOffset.monMale && glyphNumber < GlyphOffset.monFemale
             ? CLR_YELLOW : NO_COLOR;
     }
     if (typeof glyphNumber !== 'number') return NO_COLOR;
-    // The branch wall ranges keep wall_color() even with rogue color, and
-    // no Rogue level is inside a branch, so only the main range colors.
+    // reset_glyphmap() leaves explosions to explode_color() and the branch
+    // wall ranges to wall_color() even with rogue color on.
+    if (glyphNumber >= GlyphOffset.explodeDark && glyphNumber < GlyphOffset.warning)
+        return null;
+    if (glyphNumber >= GlyphOffset.cmapSokoban && glyphNumber < GlyphOffset.cmapA)
+        return null;
+    // The main wall range colors through cmap_to_roguecolor(); the branch
+    // ranges above keep their wall color, and no Rogue level sits in one.
     if (glyphNumber === GlyphOffset.cmapStone) return NO_COLOR;
     if (glyphNumber >= GlyphOffset.cmapMain && glyphNumber < GlyphOffset.cmapMines)
         return cmapToRogueColor(glyphNumber - GlyphOffset.cmapMain + CmapSymbol.vwall);
@@ -1905,7 +1911,6 @@ function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): numbe
         return cmapToRogueColor(CmapSymbol.altar);
     if (glyphNumber >= GlyphOffset.cmapB && glyphNumber < GlyphOffset.zap)
         return cmapToRogueColor(glyphNumber - GlyphOffset.cmapB + CmapSymbol.grave);
-    void x; void y;
     return NO_COLOR;
 }
 
@@ -1922,7 +1927,10 @@ export function show_glyph_cell(
     // with `Color: Yes` (RogueEpyx); then the Rogue color tables apply and
     // the hero turns yellow instead of the showrace highlight.
     if (Is_rogue_level(game.u?.uz)) {
-        if (rogueColorsActive()) color = rogueLevelGlyphColor(nextGlyph, x, y);
+        if (rogueColorsActive()) {
+            const rogueColor = rogueLevelGlyphColor(nextGlyph, x, y);
+            if (rogueColor !== null) color = rogueColor;
+        }
         else if (!isRogueShowraceHeroGlyph(glyph, x, y)) color = NO_COLOR;
     }
     // reset_glyphmap() marks a corridor engraving which shares '#'

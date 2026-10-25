@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { BEAR_TRAP, HWALL, STAIRS, TLCORNER } from '../js/const.js';
+import { BEAR_TRAP, EXPL_FIERY, FOUNTAIN, HWALL, STAIRS, TLCORNER } from '../js/const.js';
 import { displaySelf, flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { GOLD_PIECE } from '../js/object_data.js';
+import { GOLD_PIECE, STATUE } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
-import { CLR_BROWN, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
+import { explode } from '../js/explosion.js';
+import { CLR_BROWN, CLR_ORANGE, CLR_RED, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
+import { requireScreenCell } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -121,4 +123,62 @@ void test('the default rogue set still strips colors and shows percent stairs', 
     assert.equal(rogueCell(12, 10)?.color, NO_COLOR);
     assert.equal(rogueCell(13, 10)?.ch, '%');
     assert.equal(rogueCell(13, 10)?.color, NO_COLOR);
+});
+
+void test('named rogue sets redraw room floors with the centered dot', async () => {
+    rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:RogueIBM');
+
+    newsym(11, 10);
+    await flush_screen(1);
+
+    assert.equal(rogueCell(11, 10)?.ch, 'ú');
+});
+
+void test('Blank blanks fountains and unseen stone as well', async () => {
+    const level = rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:Blank');
+    const fountain = level.requireAt(14, 10);
+    fountain.typ = FOUNTAIN;
+
+    newsym(14, 10);
+    await flush_screen(1);
+
+    assert.equal(rogueCell(14, 10)?.ch, '\x1a');
+});
+
+void test('a female hero is also yellow under RogueEpyx colors', async () => {
+    rogueLevel();
+    game.flags.female = true;
+    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
+
+    displaySelf();
+    await flush_screen(1);
+
+    assert.equal(rogueCell(game.u.ux, game.u.uy)?.ch, '\x01');
+    assert.equal(rogueCell(game.u.ux, game.u.uy)?.color, CLR_YELLOW);
+});
+
+void test('statues turn red under RogueEpyx colors', async () => {
+    rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
+    await floorObject(STATUE, 14, 10, { dknown: true, corpsenm: 0 });
+
+    newsym(14, 10);
+    await flush_screen(1);
+
+    assert.equal(rogueCell(14, 10)?.color, CLR_RED);
+});
+
+void test('explosions keep their own colors under RogueEpyx', async () => {
+    rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
+    let coloredFrames = 0;
+    game.animationFrame = async () => {
+        if (requireScreenCell(13, 10).color === CLR_ORANGE) coloredFrames++;
+    };
+
+    await explode(14, 10, 11, 0, 9, EXPL_FIERY);
+
+    assert.ok(coloredFrames > 0, 'the fiery border stayed orange');
 });
