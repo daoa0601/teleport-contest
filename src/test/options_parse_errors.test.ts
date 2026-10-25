@@ -435,6 +435,15 @@ void test('an unknown condition suffix reports both option errors', () => {
     }
 });
 
+void test('a condition prefix without a name reports the short-option error', () => {
+    for (const element of ['cond_', '!cond_', 'COND_']) {
+        const option = element.replace(/^!/, '');
+        assert.deepEqual(errorMessages(`OPTIONS=${element}`),
+            [`Unknown condition option ${option} (2)`,
+                `bad option suffix variation '${option}'`], element);
+    }
+});
+
 void test('bind_key parameter complaints surface from BINDINGS lines', () => {
     assert.deepEqual(errorMessages('BINDINGS=h:toggle'),
         ["'toggle' requires a parameter"]);

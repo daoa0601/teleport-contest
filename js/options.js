@@ -1227,7 +1227,7 @@ function parseConfiguration(rc, result, report, fromFile) {
                 if (mask !== null)
                     result.flags.statusConditionMask = mask;
                 else {
-                    addError(`Unknown condition option ${stripped} (${stripped.length <= 4 ? 2 : 1})`);
+                    addError(`Unknown condition option ${stripped} (${stripped.length <= canonical.length ? 2 : 1})`);
                     // parseoptions() adds this only for a full prefix
                     // match; the abbreviation "cond" gets one error.
                     if (asciiNameEqual(canonical, stripped, canonical.length)) {
