@@ -3,7 +3,7 @@
 // that share this status surface.
 import { OBJECT_TIMER_KIND, queuedTimers } from './object_timers.js';
 import { propertyTimeout } from './properties.js';
-import { showTextWindow } from './windows.js';
+import { showDisclosureOverlay } from './windows.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 // timeout.c:propertynames[], C order. Hallucination resistance is listed
 // here (unlike the #wizintrinsic table, which omits Grayswandir's property).
@@ -177,8 +177,12 @@ export async function wizTimeoutQueue() {
         const turns = stasisUntil - (state.moves ?? 0);
         lines.push('', `Level is no-teleport for ${turns + 1} ${turns > 0 ? 'turns' : 'more turn'}.`);
     }
-    await showTextWindow(lines);
+    // C builds the listing with putstr in an NHW_MENU window, which tty
+    // paints over the live map at a corner offset and dismisses by
+    // restoring it; the disclosure overlay owns that geometry.
+    await showDisclosureOverlay(lines, { restoreUnderlay: true });
     state._pending_message = '';
+    state._retained_message = '';
     state.context.move = 0;
 }
 //# sourceMappingURL=timeout_queue.js.map
