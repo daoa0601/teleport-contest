@@ -3,6 +3,7 @@ import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ATR_BOLD, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD } from '../js/color_attr.js';
 import { showInventoryWindow, showMultiSelectWindow } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -10,7 +11,7 @@ for (const kind of ['inventory', 'selection']) {
     for (const gameover of [false, true]) {
         void test(`${kind} class headings ${gameover ? 'suppress highlighting after game over' : 'use the configured attributes and color'}`, async () => {
             freshPlayableRoom();
-            game.iflags.menu_headings = { attr: ATR_BOLD, color: CLR_RED };
+            game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
             game.program_state.gameover = gameover;
             const input = resetInputState();
             const sections = [{ heading: 'Weapons', items: [{ key: 'a', text: 'a dagger', value: 'dagger' }] }];
@@ -33,7 +34,7 @@ for (const kind of ['inventory', 'selection']) {
 
 void test('a selection menu uses the configured prompt style above its class headings', async () => {
     freshPlayableRoom();
-    game.iflags.menu_headings = { attr: ATR_BOLD, color: CLR_RED };
+    game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
     const input = resetInputState();
     const operation = showMultiSelectWindow({ title: 'Take what?', sections: [
         { heading: 'Weapons', items: [{ key: 'a', text: 'a dagger', value: 'dagger' }] },

@@ -14,6 +14,7 @@ import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME } from '../js
 import { makePlural } from '../js/object_grammar.js';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD, C_ATR_INVERSE } from '../js/color_attr.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -352,16 +353,16 @@ for (const [name, key] of [['Enter', '\n'], ['Space', ' ']] as const) {
 }
 
 for (const category of ['v', 'g'] as const) {
-    for (const { ask, style, attr } of [
-        { ask: false, style: 'default', attr: ATR_INVERSE },
-        { ask: true, style: 'default', attr: ATR_INVERSE },
-        { ask: false, style: 'bold', attr: ATR_BOLD },
-        { ask: true, style: 'bold', attr: ATR_BOLD },
+    for (const { ask, style, stored, attr } of [
+        { ask: false, style: 'default', stored: C_ATR_INVERSE, attr: ATR_INVERSE },
+        { ask: true, style: 'default', stored: C_ATR_INVERSE, attr: ATR_INVERSE },
+        { ask: false, style: 'bold', stored: C_ATR_BOLD, attr: ATR_BOLD },
+        { ask: true, style: 'bold', stored: C_ATR_BOLD, attr: ATR_BOLD },
     ]) {
         void test(`${ask ? 'prompted' : 'automatic'} ${category === 'v' ? 'vanquished' : 'genocided'} disclosure ${ask ? 'omits' : 'uses'} ${style} class heading attributes`, async () => {
             freshPlayableRoom({ moves: 40 });
             requirePlayingGame(game);
-            if (style === 'bold') game.iflags.menu_headings = { attr, color: NO_COLOR };
+            if (style === 'bold') game.iflags.menu_headings = { attr: stored, color: NO_COLOR };
             recordSpecies('newt', 1, category === 'g' ? G_GENOD : 0);
             recordSpecies('jackal', 2, category === 'g' ? G_GENOD : 0);
             game.flags.vanqSortmode = 5;

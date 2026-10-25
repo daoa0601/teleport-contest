@@ -11,6 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { ATR_BOLD, ATR_INVERSE, ATR_NONE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD, C_ATR_INVERSE } from '../js/color_attr.js';
 void test('area filtering cycles to targets across connected stone and walls', async () => {
     const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { blindTurns: 5 } });
     for (const [x, typ] of [[10, STONE], [11, VWALL], [12, STONE], [13, VWALL]]) {
@@ -214,9 +215,11 @@ void test('configured whatis_menu opens the monster menu during quick look', asy
     ]);
     assert.equal(game.context.move, 0);
 });
-for (const [style, attr, color] of [
-    ['default', ATR_INVERSE, NO_COLOR], ['bold', ATR_BOLD, NO_COLOR],
-    ['red', ATR_INVERSE, CLR_RED], ['bold red', ATR_BOLD, CLR_RED],
+for (const [style, stored, attr, color] of [
+    ['default', C_ATR_INVERSE, ATR_INVERSE, NO_COLOR],
+    ['bold', C_ATR_BOLD, ATR_BOLD, NO_COLOR],
+    ['red', C_ATR_INVERSE, ATR_INVERSE, CLR_RED],
+    ['bold red', C_ATR_BOLD, ATR_BOLD, CLR_RED],
 ]) {
     void test(`quick-look target menu uses ${style} prompt styling`, async () => {
         freshObjectRoom({ flags: { tips: false, verbose: false } });
@@ -224,7 +227,7 @@ for (const [style, attr, color] of [
         newsym(11, 10);
         applyNethackrc('OPTIONS=whatis_menu');
         if (style !== 'default')
-            game.iflags.menu_headings = { attr, color };
+            game.iflags.menu_headings = { attr: stored, color };
         const input = resetInputState();
         input.feed('m');
         const operation = rhack(';'.charCodeAt(0));

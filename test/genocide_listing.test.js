@@ -8,6 +8,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ATR_BOLD, NO_COLOR } from '../js/terminal.js';
+import { C_ATR_BOLD } from '../js/color_attr.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 function recordSpecies(name, mvflags) {
@@ -139,7 +140,7 @@ for (const order of [6, 7]) {
     });
 }
 void test('genocide class ordering uses the configured heading style and low-to-high monster level', async () => {
-    freshGameplayRoom({ flags: { vanqSortmode: 5 }, iflags: { menu_headings: { attr: ATR_BOLD, color: NO_COLOR } } });
+    freshGameplayRoom({ flags: { vanqSortmode: 5 }, iflags: { menu_headings: { attr: C_ATR_BOLD, color: NO_COLOR } } });
     recordSpecies('gnome', G_GENOD);
     recordSpecies('gnome leader', G_GENOD);
     recordSpecies('giant ant', G_GENOD);

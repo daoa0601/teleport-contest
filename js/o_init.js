@@ -15,6 +15,7 @@ import { callObjectType, objectTypeIsCallable } from './object_call.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { heroIsBlind } from './senses.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { FLINT, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
 import { OBJECT_CLASS_LABELS, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, priceQuoteSuffix, } from './object_knowledge.js';
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
@@ -431,7 +432,7 @@ function compareDiscoveryNames(left, right) {
     return a < b ? -1 : a > b ? 1 : 0;
 }
 function discoveryHeading(text) {
-    return { text, attr: game.iflags.menu_headings?.attr ?? ATR_INVERSE };
+    return { text, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE) };
 }
 function discoveredRelics() {
     const lines = [];

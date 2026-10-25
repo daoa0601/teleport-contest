@@ -6,6 +6,7 @@ import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
 import { NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import type { TerminalCell, TerminalColor } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 
@@ -202,7 +203,7 @@ export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>
 export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null = null): void {
     requireWindow(window);
     if (prompt !== null) {
-        const heading: TtyMenuRow<T> = { text: prompt, attr: game.iflags.menu_headings?.attr ?? 1,
+        const heading: TtyMenuRow<T> = { text: prompt, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
             color: game.iflags.menu_headings?.color ?? NO_COLOR,
             identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1 };
         window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE, color: NO_COLOR });

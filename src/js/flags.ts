@@ -66,6 +66,14 @@ export interface AutopickupExceptionRule {
     regex: PosixRegex;
 }
 
+// C coloratt.c:struct menucoloring (gm.menu_colorings), kept newest first.
+// attr holds the C ATR_* value (wintype.h), color a CLR_* constant.
+export interface MenuColoringRule {
+    origstr: string;
+    color: number;
+    attr: number;
+}
+
 export interface InterfaceFlags {
     autopickupExceptions?: AutopickupExceptionRule[];
     messageTypes?: MessageTypeRule[];
@@ -112,4 +120,6 @@ export interface InterfaceFlags {
     wc_inverse?: boolean;
     wc_splash_screen?: boolean;
     warningSymbols?: string;
+    menuColorings?: MenuColoringRule[];
+    hiliteDelta?: number;
 }
