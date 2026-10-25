@@ -68,6 +68,7 @@ import {
 import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
+import { redrawMonsterWormSegments } from './monster_worm.js';
 import { monstersObserveHeroResistance } from './monster_perception.js';
 import {
     blessObjectState, curseObjectState, unblessObjectState,
@@ -892,11 +893,10 @@ async function applySupportedDirectEffect({
         const cursedPotion = !!potion.cursed;
         const angered = !!monster.minvis && cursedPotion;
 
-        const invisibility = setMonsterPermanentInvisibility(
-            monster, !cursedPotion,
-        );
-        if (!monster.invis_blkd && invisibility.changed) {
+        setMonsterPermanentInvisibility(monster, !cursedPotion);
+        if (!monster.invis_blkd) {
             await repaintMonster(monster);
+            if (monster.wormno) redrawMonsterWormSegments(monster);
         }
 
         const spottedAfter = !!spotMonster(monster);
