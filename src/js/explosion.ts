@@ -274,7 +274,7 @@ export async function explode(x: number, y: number, type: number, damage: number
         }
         if (damageType === AD_FIRE) await burnAwayHeroSlime(state, publish);
         let heroDamage = source.heroDamage;
-        if (state.u.uinvulnerable || state.u.invulnerable || (state.u.invulnerableTurns ?? 0) > 0) {
+        if (propertyIsActive('invulnerable', state)) {
             heroDamage = 0;
             await publish('You are unharmed!');
         } else if ([AD_PHYS, AD_ACID].includes(damageType)
