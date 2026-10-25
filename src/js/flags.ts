@@ -16,7 +16,7 @@ export type GameBooleanFlag =
     | 'menucolors' | 'mon_movement' | 'null' | 'pickup_stolen'
     | 'pickup_thrown' | 'price_quotes' | 'pushweapon' | 'query_menu'
     | 'quick_farsight' | 'rest_on_space' | 'safe_dog' | 'safe_wait'
-    | 'showdamage' | 'showexp' | 'showrace' | 'showscore' | 'showvers' | 'silent'
+    | 'showdamage' | 'showexp' | 'showrace' | 'showvers' | 'silent'
     | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
     | 'time' | 'tips' | 'tombstone' | 'travel' | 'use_inverse' | 'verbose'
     | 'weaponstatus'

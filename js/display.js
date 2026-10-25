@@ -33,7 +33,6 @@ import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_
 import { rn2, rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE, } from './random_text_data.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
-import { botlScore } from './status_score.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { nearCapacity } from './weight.js';
@@ -2370,21 +2369,18 @@ export function _statusLine1() {
         + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
         + `Ch:${currentAttribute(A_CHA)}`;
     const align = u.ualign?.type === -1 ? 'Chaotic' : u.ualign?.type === 0 ? 'Neutral' : 'Lawful';
-    // botl.c:do_statusline1() and the BL_SCORE field append " S:%ld" when
-    // the SCORE_ON_BOTL 'showscore' option is enabled.
-    const score = game.flags.showscore ? ` S:${botlScore(game)}` : '';
     if (game.flags.hitpointbar) {
         const hp = Upolyd(u) ? u.mh : u.uhp;
         const maximum = Upolyd(u) ? u.mhmax : u.uhpmax;
         const critical = !!game.level && !!game.urole && !!game.urace && criticallyLowHp(true, game);
-        return `${hitpointBar(title, hp ?? 0, maximum ?? 0, critical)} ${stats} ${align}${score}`;
+        return `${hitpointBar(title, hp ?? 0, maximum ?? 0, critical)} ${stats} ${align}`;
     }
     // C uses cursor-forward for gap between title and stats
     // C pads to align stats starting at a fixed column
     const gap = Math.max(1, 31 - title.length);
     if (gap > 4)
-        return `${title}\x1b[${gap}C${stats} ${align}${score}`;
-    return `${title}${' '.repeat(gap)}${stats} ${align}${score}`;
+        return `${title}\x1b[${gap}C${stats} ${align}`;
+    return `${title}${' '.repeat(gap)}${stats} ${align}`;
 }
 // C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.
