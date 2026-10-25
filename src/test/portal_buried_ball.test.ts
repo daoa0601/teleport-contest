@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MAGIC_PORTAL, TT_BURIEDBALL } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { LEASH } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
 import { activateMagicPortal } from '../js/magic_portal.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { buryFloorObjectsAt } from '../js/buried_object.js';
 import { punishHero } from '../js/punishment.js';
 import { addTrap } from './support/level-state.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 
@@ -52,14 +53,17 @@ void test('a buried ball still surfaces when a stuck leashed pet shudders the po
     await buryFloorObjectsAt(ux, uy);
     assert.equal(game.u.utraptype, TT_BURIEDBALL);
 
-    // Every room square but the hero's is occupied, and the leashed pet is
-    // stranded on stone off the room, so next_to_u() cannot succeed and the
+    // A cursed leash on a pet with no reachable square beside the hero is
+    // C's stuck follower (apply.c:904): mnexto() fails everywhere, and the
+    // cursed leash blocks the slack release, so next_to_u() fails and the
+    // portal shudders.
     const pet = await createMonsterAt('newt', 8, 8);
-    placeMonsterAt(pet, 20, 9);
     pet.mleashed = 1;
+    await addInventoryObject(LEASH, { cursed: true, leashmon: pet.m_id });
     for (let x = 8; x <= 18; x++) {
         for (let y = 8; y <= 12; y++) {
-            if (x !== ux || y !== uy) await createMonsterAt('newt', x, y);
+            if ((x !== ux || y !== uy) && !(x === 8 && y === 8))
+                await createMonsterAt('newt', x, y);
         }
     }
 
