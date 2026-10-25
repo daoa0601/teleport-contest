@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { BEAR_TRAP, P_RIDING, TT_BEARTRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { AMULET_OF_LIFE_SAVING, SADDLE } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, RING_MAIL, SADDLE } from '../js/object_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { W_AMUL } from '../js/const.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -14,7 +14,7 @@ import { ensureHeroSkills } from '../js/skills.js';
 import { putSaddleOnMonster } from '../js/steed.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
-import { knownObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addTrap } from './support/level-state.js';
@@ -25,6 +25,7 @@ import { performMonsterHeroAttack } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { installPagerInput } from './support/pager-input.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 
 void test('a steed does not retaliate after an elemental attacker explodes and is life saved', async () => {
     freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
@@ -381,3 +382,73 @@ for (const lifesaving of [false, true]) {
         }
     });
 }
+
+void test('a hallucinating hero is told to find a designated driver', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    await createSaddledSteed();
+    game.u.hallucinationTurns = 20;
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.equal(game._pending_message, 'Maybe you should find a designated driver.');
+    assert.equal(game.u.usteed, undefined);
+    assert.equal(game.context.move, 0);
+});
+
+void test('a hero with a wounded left leg cannot mount', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    await createSaddledSteed();
+    game.u._woundedLegTurns = 5;
+    game.u._woundedLegSide = 'left';
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.equal(game._pending_message, 'Your left leg is in no shape for riding.');
+    assert.equal(game.u.usteed, undefined);
+    assert.equal(game.context.move, 0);
+});
+
+void test('involuntary levitation keeps the hero from reaching the steed', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    await createSaddledSteed();
+    grantIntrinsicProperty('levitation', 'outside');
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.equal(game._pending_message, 'You cannot reach the saddled pony.');
+    assert.equal(game.u.usteed, undefined);
+    assert.equal(game.context.move, 0);
+});
+
+void test('a hero levitating at will mounts and the steed floats up to them', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    await createSaddledSteed();
+    grantIntrinsicProperty('levitation', 'potion');
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.equal(game._pending_message,
+        'The saddled pony magically floats up!  You mount the saddled pony.');
+    assert.equal(game.u.usteed !== null, true);
+    assert.equal(game.context.move, 1);
+});
+
+void test('eroded metallic armor is too stiff to mount from', async () => {
+    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    await createSaddledSteed();
+    const mail = await addInventoryObject(RING_MAIL);
+    mail.oeroded = 1;
+    game.uarm = game.u.uarm = mail;
+
+    await runExtendedCommand('ride', 'l');
+
+    assert.equal(game._pending_message,
+        'Your rusty armor is too stiff to be able to mount the saddled pony.');
+    assert.equal(game.u.usteed, undefined);
+    assert.equal(game.context.move, 0);
+});
