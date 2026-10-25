@@ -1547,7 +1547,7 @@ async function settleHeroLiquidAfterAction() {
     }
     if (game.u?.umoved)
         return null;
-    return applyHeroLiquidEffects(plineWithContinuation);
+    return applyHeroLiquidEffects(plineWithContinuation, { entry: 'turn' });
 }
 async function drainQueuedHelplessRecoveryMessage() {
     const game = requireInitializedGame();

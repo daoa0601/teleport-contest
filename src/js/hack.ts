@@ -159,7 +159,7 @@ export interface HeroLiquidOptions {
     chooseTeleportDestination?: (() => Promise<Position | null>) | null;
     applyLandingEffects?: LandingEffect;
     die?: LiquidDeathHandler;
-    entry?: 'spot-effects' | 'float-down' | 'drown' | 'lava';
+    entry?: 'spot-effects' | 'turn' | 'float-down' | 'drown' | 'lava';
 }
 interface LiquidTeleportContext {
     state: PlayingGameState;
@@ -858,6 +858,8 @@ async function leaveWater({
 // mounted-steed dismount, and the ceiling-hider check, none of which the
 // direct drown()/lava_effects() calls perform. Entries 'drown' and 'lava'
 // also skip their terrain-entry guards, including being held by a monster.
+// Entry 'turn' is moveloop_core()'s pooleffects(FALSE) for a hero who did
+// not move: it leaves a submerged swimmer or breather out of drown().
 export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promise<LiquidEffectResult | null | undefined> {
     const {
         state = game,
@@ -925,6 +927,8 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         }
         if (heroStaysAboveWater(state, location))
             return leftWater ? { left: true } : null;
+        if (entry === 'turn' && u.uinwater && heroCanLiveUnderwater(state))
+            return null;
     }
 
     // drown() maps the water by touch before any entry message can page.

@@ -18,7 +18,7 @@ import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID,
-    WATER_WALKING_BOOTS,
+    SCR_BLANK_PAPER, SCR_LIGHT, WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -773,3 +773,20 @@ void test('dumping gear in a pool leaves the armor class for the turn loop', asy
     assert.equal(game.u.uac, wornClass);
     assert.equal(findArmorClass(game), wornClass + 1);
 });
+
+for (const entry of ['turn', 'spot-effects'] as const) {
+    void test(`a breathing hero already under water ${entry === 'turn' ? 'keeps dry scrolls while waiting' : 'soaks scrolls entering a new spot'}`, async () => {
+        poolAtHero();
+        requireFixtureGame(game);
+        game.u.uinwater = 1;
+        grantIntrinsicProperty('magicalBreathing', 'outside');
+        const scroll = await addInventoryObject(SCR_LIGHT);
+
+        await heroLiquidEffects({ ...noDisplay, entry, random: () => 0, publish: async () => {} });
+
+        // C moveloop_core()'s pooleffects(FALSE) skips drown(); spoteffects()
+        // still lets drown() soak the pack now and then.
+        assert.equal(scroll.otyp, entry === 'turn' ? SCR_LIGHT : SCR_BLANK_PAPER);
+        assert.equal(!!game.u.uinwater, true);
+    });
+}
