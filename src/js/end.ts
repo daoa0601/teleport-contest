@@ -8,6 +8,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
+import { stopRemainingVolleyShots } from './hero_multishot.js';
 import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn, setMulti } from './command_state.js';
@@ -227,7 +228,8 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
     clearHeroRemains(game);
     setPropertyTimeout('unchanging', 0);
     removeIntrinsicProperty('unchanging');
-    await flush_screen(1);
+    // end.c:savelife() truncates any in-flight volley (endmultishot(FALSE)).
+    stopRemainingVolleyShots(game);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
         if (!holder) throw new Error('Swallowed hero has no engulfing monster');

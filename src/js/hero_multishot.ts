@@ -119,3 +119,24 @@ export async function endHeroVolley(
     }
     volley.count = volley.index;
 }
+
+// C keeps m_shot in global state, so end.c:savelife() can cut a hero's
+// in-flight volley short through endmultishot(FALSE). Track the active
+// volley the same way: the throw loop holds this object by reference.
+let activeVolley: HeroProjectileVolley | null = null;
+
+export function beginHeroVolley(volley: HeroProjectileVolley): void {
+    activeVolley = volley;
+}
+
+export function finishHeroVolley(): void {
+    activeVolley = null;
+}
+
+// C end.c:savelife() -> endmultishot(FALSE): the current missile becomes
+// the last one, without the "You stop throwing" announcement.
+export function stopRemainingVolleyShots(state: GameState = game): void {
+    if (activeVolley && !state.context.mon_moving
+        && activeVolley.index < activeVolley.count)
+        activeVolley.count = activeVolley.index;
+}
