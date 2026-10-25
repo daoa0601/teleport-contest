@@ -18,11 +18,11 @@ import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
-import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
+import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
+import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphSymbolSet } from './display.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
@@ -2400,6 +2400,27 @@ const SYMSET_HANDLINGS: Record<string, string> = {
     enhanced1: 'UTF8', enhanced2: 'UTF8',
 };
 
+// dat/symbols `start:` entries in file order with their `Description:` and
+// `Restrictions:` lines, minus MACgraphics whose H_MAC handling both
+// do_symset() menus exclude (it stays loadable through the option).
+// fields: name, description, restricted to primary sets, restricted to
+// rogue sets.
+const SYMSET_LIST: ReadonlyArray<readonly [name: string, desc: string, primary: boolean, rogue: boolean]> = [
+    ['plain', "same as default symbols, except '+' for corner walls", false, false],
+    ['Blank', 'completely blank symbols', false, false],
+    ['IBMgraphics', 'special line-drawing characters used for walls', false, false],
+    ['IBMGraphics_1', '', false, false],
+    ['IBMGraphics_2', '', false, false],
+    ['RogueIBM', '', false, true],
+    ['RogueEpyx', 'rogue level color symbol set like Epyx Rogue', false, true],
+    ['RogueWindows', '', false, true],
+    ['curses', 'approximation of IBMgraphics using DECgraphics', true, false],
+    ['DECgraphics', 'special line-drawing characters used for walls', true, false],
+    ['Enhanced1', 'Enhanced with Unicode glyphs and 24-bit color', true, false],
+    ['Enhanced2', 'Enhanced with more Unicode glyphs and 24-bit color', true, false],
+    ['AmigaFont', 'Amiga hack.font line-drawing and effect characters', false, false],
+];
+
 // files.c:read_sym_file() accepts a name that matches no `start:` line only
 // when it fuzzymatches "Default symbols" (ignoring spaces, '-' and '_') or
 // is exactly "default"; that choice clears the set instead of loading one.
@@ -2987,6 +3008,8 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'menu_headings') await editMenuHeadings();
     else if (name === 'sortloot') await editSortLoot();
     else if (name === 'sortdiscoveries') await chooseDiscoverySort(0);
+    else if (name === 'symset') return await editSymset(false);
+    else if (name === 'roguesymset') return await editSymset(true);
     else if (name === 'boulder') return await editBoulderSymbol();
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
@@ -3004,7 +3027,43 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
             } else await optionError("Missing parameter for 'scores:'");
         } else await setTextOption(name, value);
     }
+
     return false;
+}
+
+// symbols.c:do_symset(): pick-list of every set the symbols file carries,
+// filtered by restrictions, with "Default Symbols" first and the current
+// choice preselected.  handler_symset() flags a redraw even when nothing
+// changes; switch_symbols()/assign_graphics() only re-skin the glyphs.
+async function editSymset(rogueflag: boolean): Promise<boolean> {
+    const current = (rogueflag ? game.rogueSymset : game.symset)?.toLowerCase() ?? null;
+    // add_menu() assigns the letters in order, so spelling them out keeps
+    // the native rows while letting showInventoryWindow preselect the
+    // current choice for PICK_ONE's "preset and new pick" resolution.
+    const items: InventoryMenuItem<string>[] = [
+        { key: 'a', value: 'default', text: 'Default Symbols' },
+        ...SYMSET_LIST.filter(([, , primary, rogue]) => rogueflag ? !primary : !rogue)
+            .map(([name, desc], index) => ({
+                key: String.fromCharCode('b'.charCodeAt(0) + index),
+                value: name,
+                text: `${name.padEnd(17)} ${desc}`,
+            })),
+    ];
+    const currentKey = current
+        ? items.find(item => item.value?.toLowerCase() === current)?.key ?? null
+        : 'a';
+    const selection = await showInventoryWindow([{ items }], {
+        title: rogueflag ? 'Select rogue level symbol set:' : 'Select symbol set:',
+        pickMode: PICK_ONE,
+        preselectedKey: currentKey,
+    });
+    if (selection.value !== undefined) {
+        const chosen = selection.value === 'default' ? null : selection.value;
+        if (rogueflag) game.rogueSymset = chosen;
+        else game.symset = chosen;
+        if (!rogueflag) reglyphSymbolSet();
+    }
+    return true;
 }
 
 // doset() gives boulder no handler, so the menu prompts and re-runs

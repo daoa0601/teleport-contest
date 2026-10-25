@@ -422,6 +422,50 @@ export function reglyph_darkroom() {
         }
     }
 }
+// symbols.c:switch_symbols()/assign_graphics() keep every glyph number and
+// let doredraw() resolve characters again; mirror that for the map memory,
+// which stores its character.  Only terrain glyphs change appearance between
+// the rendered sets (default, DECgraphics), and the branch wall colors move
+// with the DEC set.
+export function reglyphSymbolSet() {
+    if (!game.level)
+        return;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = game.level.at(x, y);
+            const memory = loc?.remembered_glyph;
+            const glyphNumber = memory?.glyph;
+            if (!loc || !memory || memory.kind !== 'terrain'
+                || typeof glyphNumber !== 'number')
+                continue;
+            const index = rememberedTerrainIndex(glyphNumber);
+            if (index === null)
+                continue;
+            const appearance = cmapSymbolAppearance(index);
+            const wall = index >= CmapSymbol.vwall && index <= CmapSymbol.trwall;
+            const offset = glyphNumber - (index - CmapSymbol.vwall);
+            const decColor = decWallColors.get(offset) ?? MAP_SYMBOLS[index]?.color;
+            const color = appearance.dec && wall ? decColor : memory.color;
+            loc.remembered_glyph = { ...memory, ch: appearance.ch,
+                color: color ?? memory.color, decgfx: appearance.dec };
+        }
+    }
+}
+// glyphs.c:glyph_to_cmap() restricted to the terrain memory can hold; trap,
+// beam, and effect glyphs keep set-independent characters.
+function rememberedTerrainIndex(glyph) {
+    if (glyph === GlyphOffset.cmapStone)
+        return CmapSymbol.stone;
+    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
+        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
+    if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
+        return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
+    if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB)
+        return CmapSymbol.altar;
+    if (glyph === GlyphOffset.cmapB)
+        return CmapSymbol.grave;
+    return null;
+}
 function roomMemoryGlyph(dark, dec) {
     return {
         ch: dec ? '~' : '.', color: dark ? 16 : NO_COLOR, decgfx: dec,
