@@ -8,6 +8,8 @@ import type { GameMap } from '../js/game.js';
 import type { Monster } from '../js/monster_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { addCreatedObjectToContainer } from '../js/object_container.js';
+import { carriedGold } from '../js/gold.js';
 import { AMULET_OF_YENDOR, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -183,8 +185,9 @@ void test('gold carried only inside a container backs no bribe', async () => {
     const scene = await briber({ gold: 100 });
     requirePlayingGame(game);
     const bag = await addInventoryObject(OBJECT_NAMES.indexOf('sack'));
-    const bagged = await knownObject(GOLD_PIECE,
-        { quantity: 5000, where: 'contained', container: bag });
+    const bagged = await addCreatedObjectToContainer(bag,
+        await knownObject(GOLD_PIECE, { quantity: 5000 }));
+    assert.ok(bagged && bag.contents?.includes(bagged), 'the hoard sits inside the sack');
     initRng(5n);
     pushKeys(' \n' + ' '.repeat(20));
 
@@ -198,4 +201,5 @@ void test('gold carried only inside a container backs no bribe', async () => {
     assert.equal(bagged.quantity, 5000);
     assert.equal(bagged.where, 'contained', 'the untouched hoard stays in its sack');
     assert.equal(heroGoldAmount(game), 100);
+    assert.equal(carriedGold(game), 5100, 'the sack gold is still carried, just not loose');
 });

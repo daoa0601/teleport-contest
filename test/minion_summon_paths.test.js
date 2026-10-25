@@ -76,21 +76,35 @@ void test('Demonbane leaves a demon summoner puzzled and alone', async () => {
     assert.equal(result.count, 0);
     assert.equal(result.created.length, 0);
 });
+// C minion.c:msummon() sends a demon lord to dprince()/dlord() on a 1/50 and
+// 1/20 roll; with every lord and prince gone, those fall back to ndemon().
 void test('a demon lord whose peers are gone falls back to ordinary demons', async () => {
-    freshObjectRoom();
-    requirePlayingGame(game);
-    const lord = await createMonsterAt('Yeenoghu', 11, 10, NO_MINVENT);
-    lord.msleeping = 0;
-    genocideDemons({ lordsOnly: true });
-    absorbMessages();
-    initRng(3n);
-    const result = await msummon(lord);
-    assert.equal(result.created.length, 1);
-    const [summoned] = result.created;
+    const summonWithSeed = async (seed, genocided) => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const lord = await createMonsterAt('Yeenoghu', 11, 10, NO_MINVENT);
+        lord.msleeping = 0;
+        if (genocided)
+            genocideDemons({ lordsOnly: true });
+        absorbMessages();
+        initRng(seed);
+        return (await msummon(lord)).created;
+    };
+    const isLordOrPrince = (mnum) => !!((MONSTER_FLAGS2[mnum] ?? 0) & (M2_LORD | M2_PRINCE));
+    let lordSeed = null;
+    for (let seed = 1n; seed <= 400n && lordSeed === null; seed++) {
+        const [answer] = await summonWithSeed(seed, false);
+        if (answer && isLordOrPrince(answer.mnum))
+            lordSeed = seed;
+    }
+    assert.ok(lordSeed !== null, 'some summons must call on a living lord or prince');
+    const created = await summonWithSeed(lordSeed, true);
+    assert.equal(created.length, 1);
+    const [summoned] = created;
     assert.ok(summoned, 'the fallback summon must exist');
     const flags = MONSTER_FLAGS2[summoned.mnum] ?? 0;
     assert.ok(flags & M2_DEMON, 'the fallback summon is still a demon');
-    assert.ok(!(flags & (M2_LORD | M2_PRINCE)), 'no extinct lord or prince answers');
+    assert.ok(!isLordOrPrince(summoned.mnum), 'no extinct lord or prince answers');
 });
 void test('a demon lord summons nothing once every demon is genocided', async () => {
     freshObjectRoom();
