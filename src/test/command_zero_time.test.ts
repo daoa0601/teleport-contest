@@ -33,11 +33,11 @@ void test('the full options command opens its editable options menu without time
     assert.equal(game.context.move, 0);
 });
 
-void test("the persistent inventory command reports the disabled option without taking time", async () => {
+void test("the persistent inventory command reports the unsupported window port without taking time", async () => {
     const input = freshTurnRoom();
     input.feed('|');
     await rhack(0);
     assert.equal(game._pending_message,
-        "Persistent inventory ('perm_invent' option) is not presently enabled.");
+        "Persistent inventory display is not supported by 'tty'.");
     assert.equal(game.context.move, 0);
 });
