@@ -29,6 +29,8 @@ import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { CLR_BLACK, CLR_WHITE, NO_COLOR } from './terminal.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
+import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { C_ATR_INVERSE, C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
@@ -372,6 +374,32 @@ const MENU_KEY_OPTIONS: Record<string, true> = {
     menu_shift_left: true,
 };
 
+// C hacklib.c str_start_is(name, value, TRUE): the value is a leading
+// substring of the name, case-insensitively; an empty value matches.
+function ciPrefixOf(name: string, value: string): boolean {
+    return value.length <= name.length
+        && name.slice(0, value.length).toLowerCase() === value.toLowerCase();
+}
+
+// C hacklib.c visctrl(): how diagnostics name a control or meta byte.
+function visctrl(code: number): string {
+    let text = '';
+    if (code > 0x7f) text += 'M-';
+    const c = code & 0x7f;
+    if (c < 0x20) text += `^${String.fromCharCode(c | 0x40)}`;
+    else if (c === 0x7f) text += '^?';
+    else text += String.fromCharCode(c);
+    return text;
+}
+
+// options.c unlocktypes[][]: autounlock action names and their bits.
+const AUTOUNLOCK_TYPES = [
+    ['untrap', AUTOUNLOCK_UNTRAP],
+    ['apply-key', AUTOUNLOCK_APPLY_KEY],
+    ['kick', AUTOUNLOCK_KICK],
+    ['force', AUTOUNLOCK_FORCE],
+] as const;
+
 interface ConfigurationSettings {
     configErrors: ConfigurationErrorReport[];
     flags: GameFlags;
@@ -421,7 +449,12 @@ const PARANOIA_ARGUMENTS = [
     ['none', 4, 0], ['all', 3, ~0],
 ] as const;
 
-function updateParanoiaBits(current: number, rawValue: string): number {
+function updateParanoiaBits(
+    current: number, rawValue: string, addError: (message: string) => void,
+): number {
+    // optfn_paranoid_confirmation() condenses the value, treats a leading
+    // + or - as augmenting, and reports the first token that matches no
+    // paranoia argument while keeping the changes before it.
     let fields = rawValue.trim().replace(/[ \t]+/g, ' ').toLowerCase();
     const augmenting = fields.startsWith('+') || fields.startsWith('-');
     const removing = fields.startsWith('-');
@@ -432,7 +465,10 @@ function updateParanoiaBits(current: number, rawValue: string): number {
         const negated = field.startsWith('!') || /^no[^n]/.test(field);
         if (negated) field = field.slice(field.startsWith('!') ? 1 : 2);
         const entry = PARANOIA_ARGUMENTS.find(([name, minimum]) => field.length >= minimum && name.startsWith(field));
-        if (!entry) break; // C retains changes made before an invalid argument.
+        if (!entry) {
+            addError(`Unknown paranoid_confirmation parameter '${field}'`);
+            break;
+        }
         const bit = entry[2];
         if (!bit) {
             if (!augmenting) bits = 0;
@@ -1222,14 +1258,32 @@ function parseConfiguration(
                 continue;
             }
             // options.c:shared_menu_optfn() binds a key to one of the
-            // menu paging commands; the other menu_* names are compound
-            // options handled elsewhere.
+            // menu paging commands: negation is refused outright, the key
+            // is mandatory, and illegal_menu_cmd_key() rejects control and
+            // printable reserved keys and default object-class symbols.
             if (MENU_KEY_OPTIONS[canonical] === true) {
-                if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), canonical);
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (negated) {
+                    addError(`The ${canonical} option may not be negated.`);
+                } else if (!raw) {
+                    addError(`Missing parameter for '${stripped}'`);
+                } else {
+                    const key = bindingKeyCode(raw);
+                    const letter = (key >= 65 && key <= 90) || (key >= 97 && key <= 122);
+                    if (key === 0 || key === 13 || key === 10 || key === 27 || key === 32
+                        || (key >= 48 && key <= 57) || (letter && key !== 64)) {
+                        addError(`Reserved menu command key '${visctrl(key)}'`);
+                    } else if (OBJECT_CLASS_SYMBOLS.slice(1).includes(String.fromCharCode(key))) {
+                        addError(`Menu command key '${visctrl(key)}' is an object class`);
+                    } else result.commandBindings.bindMenuKey(key, canonical);
+                }
                 continue;
             }
             if (canonical === 'warnings') {
-                if (!negated && optionValue) setWarningSymbols(optionValue, result.iflags);
+                // optfn_warnings() → warning_opts(): a value is mandatory
+                // at startup (string_for_env_opt(FALSE)).
+                if (!optionValue) addError(`Missing parameter for '${stripped}'`);
+                else setWarningSymbols(optionValue, result.iflags);
                 continue;
             }
             if (canonical === 'pickup_types') {
@@ -1240,6 +1294,12 @@ function parseConfiguration(
                 continue;
             }
             if (canonical === 'pile_limit') {
+                // optfn_pile_limit(): negation clears the limit but may
+                // not carry a value.
+                if (negated && optionValue !== null) {
+                    addError(`The ${canonical} option may not both have a value and be negated.`);
+                    continue;
+                }
                 if (!negated || !optionValue) {
                     const limit = negated ? 0 : optionValue ? cInteger(optionValue) : 5;
                     result.flags.pile_limit = limit < 0 ? 5 : limit;
@@ -1258,20 +1318,41 @@ function parseConfiguration(
                 continue;
             }
             if (canonical === 'runmode') {
-                const mode = negated ? 'teleport' : ['teleport', 'run', 'walk', 'crawl']
-                    .find(mode => optionValue && mode.startsWith(optionValue.toLowerCase()));
-                if (mode) result.flags.runmode = mode;
+                // optfn_runmode(): negation picks teleport; the value must
+                // prefix one of the four modes; a value is mandatory.
+                if (negated) result.flags.runmode = 'teleport';
+                else {
+                    const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                    if (!raw) addError(`Value is mandatory for ${canonical}`);
+                    else {
+                        const mode = (['teleport', 'run', 'walk', 'crawl'] as const)
+                            .find(name => ciPrefixOf(name, raw));
+                        if (mode) result.flags.runmode = mode;
+                        else addError(`Unknown ${canonical} parameter '${raw}'`);
+                    }
+                }
                 continue;
             }
             if (canonical === 'msg_window') {
-                if (!negated || !optionValue) {
-                    const initial = optionValue?.charAt(0).toLowerCase() || (negated ? 's' : 'f');
+                // optfn_msg_window(): a value's first letter names the
+                // window mode; negation with a value is refused.
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw) result.iflags.prevmsg_window = negated ? 's' : 'f';
+                else if (negated) {
+                    addError(`The ${canonical} option may not both have a value and be negated.`);
+                } else {
+                    const initial = raw.charAt(0).toLowerCase();
                     if ('scfr'.includes(initial)) result.iflags.prevmsg_window = initial;
+                    else addError(`Unknown ${canonical} parameter '${raw}'`);
                 }
                 continue;
             }
             if (bindingOption === 'prayconfirm') {
-                if (!optionValue) {
+                // optfn_paranoid_confirmation()'s deprecated alias: any
+                // value is an error, otherwise it becomes ±pray.
+                if (optionValue !== null && optionValue !== '') {
+                    addError(`deprecated ${negated ? '!' : ''}prayconfirm option takes no parameters (found '${optionValue}')`);
+                } else {
                     paranoiaBits = negated ? paranoiaBits & ~PARANOID_PRAY : paranoiaBits | PARANOID_PRAY;
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
@@ -1279,8 +1360,14 @@ function parseConfiguration(
                 continue;
             }
             if (canonical === 'versinfo') {
-                const value = Number.parseInt(optionValue ?? '', 10);
-                if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;
+                // optfn_versinfo(): 1, 2, 4, or their sums; this build
+                // carries no git branch, so the default is the number.
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                const value = cInteger(raw);
+                if (!raw) addError(`'${canonical}' requires a value; defaulting to 1`);
+                else if (!value || (value & ~7) !== 0) {
+                    addError(`'${canonical}' must be one of 1, 2, 4, or the sum of two or all three of those`);
+                } else result.flags.versinfo = value;
                 continue;
             }
             // optfn_pettype() and petname_optfn(); the alias "pet" and
@@ -1314,25 +1401,53 @@ function parseConfiguration(
                 continue;
             }
             if (canonical === 'number_pad') {
-                if (optionValue && negated) continue;
-                const value = optionValue ? parseInt(optionValue, 10) || 0 : negated ? 0 : 1;
-                if (optionValue && value === 0 && optionValue[0] !== '0') continue;
-                setNumberPadOption(value, result);
+                // optfn_number_pad(): the bare spelling (or any form at
+                // most ten characters long) means number_pad:1; a value
+                // must be -1..4, and a zero must be written with a
+                // leading '0'.
+                const compat = stripped.length <= 10;
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw) {
+                    if (!compat) addError(`Missing parameter for '${stripped}'`);
+                    setNumberPadOption(1, result);
+                } else {
+                    const mode = cInteger(raw);
+                    if (mode < -1 || mode > 4 || (mode === 0 && raw.charAt(0) !== '0')) {
+                        addError(`Illegal ${canonical} parameter '${raw}'`);
+                    } else setNumberPadOption(mode, result);
+                }
                 continue;
             }
             if (canonical === 'menustyle') {
-                const initial = optionValue?.[0]?.toLowerCase() ?? (negated ? 'n' : null);
+                // optfn_menustyle(): a value is required once the spelling
+                // exceeds five characters; shorter abbreviations take the
+                // default full menus, or traditional when negated.
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw && stripped.length > 5 && !negated) {
+                    addError(`Missing parameter for '${stripped}'`);
+                    continue;
+                }
+                const initial = raw ? raw.charAt(0).toLowerCase() : negated ? 'n' : 'f';
                 const style = menuStyleForInitial(initial);
                 if (style !== undefined) result.flags.menu_style = style;
+                else addError(`Unknown ${canonical} parameter '${raw}'`);
                 continue;
             }
             if (canonical === 'packorder') {
-                if (optionValue !== null) changeInventoryOrder(optionValue, result);
+                // optfn_packorder(): an empty value is a silent error.
+                if (optionValue) changeInventoryOrder(optionValue, result);
                 continue;
             }
             if (canonical === 'sortloot') {
-                const mode = optionValue?.[0]?.toLowerCase();
-                if (isLootSortMode(mode)) result.flags.sortloot = mode;
+                // optfn_sortloot(): a value is mandatory
+                // (string_for_env_opt(FALSE)).
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw) addError(`Missing parameter for '${stripped}'`);
+                else {
+                    const mode = raw.charAt(0).toLowerCase();
+                    if (isLootSortMode(mode)) result.flags.sortloot = mode;
+                    else addError(`Unknown ${canonical} parameter '${raw}'`);
+                }
                 continue;
             }
             if (canonical === 'sortdiscoveries') {
@@ -1351,18 +1466,24 @@ function parseConfiguration(
                 continue;
             }
             if (canonical === 'scores') {
+                // optfn_scores(): a value is mandatory; an explicit value
+                // replaces all three display choices.
                 const choices = parseScoreOption(optionValue, negated);
-                if (choices) {
+                if (!choices) addError(`Missing parameter for '${stripped}'`);
+                else {
                     result.flags.end_top = choices.end_top;
                     result.flags.end_around = choices.end_around;
                     result.flags.end_own = choices.end_own;
+                    if (choices.error) addError(choices.error);
                 }
                 continue;
             }
             if (canonical === 'fruit') {
-                if (negated && optionValue !== null) continue;
-                if (negated || optionValue)
-                    result.fruit = normalizePreferredFruitName(negated ? '' : optionValue ?? '', result);
+                // optfn_fruit(): the value is mandatory at startup and is
+                // condensed before the name is sanitized.
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw) addError(`Missing parameter for '${stripped}'`);
+                else result.fruit = normalizePreferredFruitName(raw, result);
                 continue;
             }
             if (canonical === 'rest_on_space') {
@@ -1373,15 +1494,85 @@ function parseConfiguration(
                 continue;
             }
 
+            // optfn_autounlock(): bare means apply-key, negation none, and
+            // a value is a '+'- or space-separated list whose members
+            // prefix or fuzzymatch an unlock type; 'none' cannot mix.
+            if (canonical === 'autounlock') {
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw) {
+                    result.flags.autounlock = negated ? 0 : AUTOUNLOCK_APPLY_KEY;
+                } else {
+                    const sep = raw.includes('+') ? '+' : ' ';
+                    let bits = 0;
+                    let none = negated;
+                    let invalid: string | null = null;
+                    for (const piece of raw.split(sep)) {
+                        const op = piece.trim();
+                        if (ciPrefixOf('none', op)) { none = true; continue; }
+                        const type = AUTOUNLOCK_TYPES.find(([name]) =>
+                            ciPrefixOf(name, op) || fuzzyMatch(op, name));
+                        if (!type) { invalid = op; break; }
+                        bits |= type[1];
+                    }
+                    if (invalid !== null) {
+                        addError(`Invalid value for "autounlock": "${invalid}"`);
+                    } else if (none && bits !== 0) {
+                        addError("Invalid value combination for \"autounlock\": 'none' with some");
+                    } else result.flags.autounlock = none ? 0 : bits;
+                }
+                continue;
+            }
+
+            // optfn_disclose(): no value means prompt-yes everywhere,
+            // negation discloses nothing, and a value lists categories with
+            // optional y/n/?/+/-/# prefixes (k and d are legacy aliases).
+            if (canonical === 'disclose') {
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (raw && negated) {
+                    addError(`The ${canonical} option may not both have a value and be negated.`);
+                    continue;
+                }
+                if (!raw) result.flags.disclose = negated ? 'none' : '';
+                else {
+                    result.flags.disclose = raw;
+                    for (const character of raw) {
+                        if ('iavgcokd'.includes(character.toLowerCase())
+                            || 'yn?+-# '.includes(character)) continue;
+                        addError(`Unknown ${canonical} parameter '${character}'`);
+                        break;
+                    }
+                }
+                continue;
+            }
+
             if (colonIdx >= 0) {
                 const val = stripped.slice(colonIdx + 1).trim();
 
-                if (canonical === 'name') result.name = val;
-                // optfn_playmode() refuses a duplicate outright after the
-                // generic complaint; its remaining value checks follow in a
-                // later commit.
-                else if (canonical === 'playmode' && !duplicateOption && val === 'debug') result.flags.debug = true;
-                else if (canonical === 'playmode' && !duplicateOption && val === 'explore') result.flags.explore = true;
+                // optfn_name(): the value is mandatory at startup.
+                if (canonical === 'name') {
+                    if (val) result.name = val;
+                    else addError(`Missing parameter for '${stripped}'`);
+                }
+                // optfn_playmode(): duplicates refuse outright; the value
+                // prefixes normal/play, explore/discovery, debug/wizard.
+                else if (canonical === 'playmode') {
+                    const raw = stripped.slice(colonIdx + 1);
+                    const matches = (word: string, length: number): boolean =>
+                        raw.length >= length
+                        && raw.slice(0, length).toLowerCase() === word.slice(0, length);
+                    if (duplicateOption || !raw) {
+                        // optn_err without a diagnostic.
+                    } else if (matches('normal', 6) || raw.toLowerCase() === 'play') {
+                        result.flags.debug = false;
+                        result.flags.explore = false;
+                    } else if (matches('explore', 6) || matches('discovery', 9)) {
+                        result.flags.explore = true;
+                        result.flags.debug = false;
+                    } else if (matches('debug', 5) || matches('wizard', 6)) {
+                        result.flags.debug = true;
+                        result.flags.explore = false;
+                    } else addError(`Invalid value for "playmode":${raw}`);
+                }
                 else if (canonical === 'symset') {
                     // options.c:optfn_symset() loads the set from the
                     // symbols file.  A name no `start:` line carries fails,
@@ -1413,21 +1604,30 @@ function parseConfiguration(
                             paranoiaBits = 0;
                             paranoiaSeen = true;
                             result.flags.paranoia_bits = 0;
-                        }
+                        } else addError(`!${canonical} does not accept a value`);
                         continue;
                     }
-                    paranoiaBits = updateParanoiaBits(paranoiaBits, val);
+                    if (!val) {
+                        addError(`${canonical} requires a value; use 'none' to cancel all`);
+                        continue;
+                    }
+                    paranoiaBits = updateParanoiaBits(paranoiaBits, val, addError);
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
                 }
-                else if (canonical === 'autounlock') result.flags.autounlock = val;
-                else if (canonical === 'disclose') result.flags.disclose = val;
                 else if (canonical === 'pickup_burden') {
-                    // optfn_pickup_burden() uses the first letter, with 'o'
-                    // and 't' both selecting overtaxed.
-                    const initial = val.charAt(0).toLowerCase();
+                    // optfn_pickup_burden(): a value is mandatory
+                    // (string_for_env_opt(FALSE)); its first letter picks
+                    // the burden, with 'o' and 't' both selecting overtaxed.
+                    const raw = stripped.slice(colonIdx + 1);
+                    if (!raw) {
+                        addError(`Missing parameter for '${stripped}'`);
+                        continue;
+                    }
+                    const initial = raw.charAt(0).toLowerCase();
                     const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
-                    if (initial && burden >= 0) result.flags.pickup_burden = burden;
+                    if (burden >= 0) result.flags.pickup_burden = burden;
+                    else addError(`Unknown ${canonical} parameter '${raw}'`);
                 }
                 else {
                     const option = requestBooleanByName.get(canonical);
@@ -1457,17 +1657,20 @@ function parseConfiguration(
                 else if (canonical === 'showexp') result.flags.showexp = value;
                 else if (canonical === 'time') result.flags.time = value;
                 else if (canonical === 'verbose') result.flags.verbose = value;
-                else if (canonical === 'paranoid_confirmation' && negated) {
-                    paranoiaBits = 0;
-                    paranoiaSeen = true;
-                    result.flags.paranoia_bits = paranoiaBits;
+                else if (canonical === 'paranoid_confirmation') {
+                    // Without a delimiter: negation clears every bit; the
+                    // bare option demands a value.
+                    if (negated) {
+                        paranoiaBits = 0;
+                        paranoiaSeen = true;
+                        result.flags.paranoia_bits = paranoiaBits;
+                    } else addError(`${canonical} requires a value; use 'none' to cancel all`);
                 }
                 else {
                     const option = requestBooleanByName.get(canonical);
                     if (option) setConfigurationBoolean(result, option, value);
                     else if (canonical === 'bones') result.flags.bones = value;
                     else if (canonical === 'reroll') result.flags.reroll = value;
-                    else if (canonical === 'autounlock') result.flags.autounlock = value;
                     // optfn_menu_headings() without a value: inverse, or
                     // none when negated.
                     else if (canonical === 'menu_headings')
