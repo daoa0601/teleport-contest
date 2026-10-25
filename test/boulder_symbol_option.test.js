@@ -141,4 +141,31 @@ void test('changing the boulder option mid-game redraws displayed boulders', asy
     assert.equal(game.boulderSym, '9');
     assert.equal(requireScreenCell(cell.column, cell.row).ch, '9');
 });
+// optfn_boulder() get_val falls back to the active set's rock-class
+// symbol, which Blank replaces with \032 on the Rogue level.
+void test('the options menu boulder row follows the displayed rock symbol', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    applyNethackrc('OPTIONS=roguesymset:Blank');
+    const input = resetInputState();
+    const command = rhack('m'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    let row = null;
+    input.beforeRead = () => {
+        const found = screen().split('\n').find(line => line.replace(/^\s*[a-zA-Z?] [-+*#] /, '').startsWith('boulder '));
+        if (found) {
+            row = found;
+            input.feed('\x1b');
+        }
+        else
+            input.feed(' ');
+    };
+    input.feed('O');
+    await command;
+    input.beforeRead = null;
+    delete game.rogue_level;
+    assert.ok(row, 'the full options menu offered the boulder row');
+    assert.match(row, /boulder +\[\x1a\]/);
+});
 //# sourceMappingURL=boulder_symbol_option.test.js.map

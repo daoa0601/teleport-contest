@@ -463,11 +463,15 @@ export function reglyphSymbolSet() {
                 continue;
             }
             if (memory.kind === 'trap') {
-                // A named rogue set replaces every trap symbol (RogueEpyx).
-                const rogueTrap = activeRogueSymset()?.trapSymbol;
-                const ch = memory.trapType === VIBRATING_SQUARE ? '~'
-                    : rogueTrap ?? (memory.trapType === WEB ? '"' : '^');
-                loc.remembered_glyph = { ...memory, ch };
+                loc.remembered_glyph = { ...memory,
+                    ch: transientTrapGlyph({ ttyp: memory.trapType }).ch };
+                continue;
+            }
+            if (memory.kind === 'object' && memory.statueGlyph && memory.corpsenm !== undefined) {
+                // A displayed rogue set can replace the monster-class
+                // symbol a statue shows (Blank blanks every class).
+                loc.remembered_glyph = { ...memory,
+                    ch: activeMonsterClassSymbol(MONSTER_SYMBOL[memory.corpsenm] ?? 0) };
                 continue;
             }
             const glyphNumber = memory.glyph;
@@ -1367,12 +1371,13 @@ export function zapdir_to_glyph(dx, dy, beamType) {
     const ascii = ['|', '-', '\\', '/'][direction];
     if (ascii === undefined)
         throw new Error('Beam direction has no display symbol');
-    const dec = usesDecSymbols() && direction < 2;
+    const blankBeam = activeRogueSymset()?.blank === true;
+    const dec = !blankBeam && usesDecSymbols() && direction < 2;
     const color = [CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, CLR_BRIGHT_BLUE,
         CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][type];
     if (color === undefined)
         throw new RangeError(`Unknown beam type ${beamType}`);
-    return { ch: dec ? direction === 0 ? 'x' : 'q' : ascii,
+    return { ch: blankBeam ? BLANK_SYMBOL : dec ? direction === 0 ? 'x' : 'q' : ascii,
         color, decgfx: dec, kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
 }
 // Native explosion_to_glyph(): rows run from top left to bottom right.
@@ -1388,8 +1393,10 @@ export function explosionGlyph(style, dx, dy) {
         throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
     const alternate = index === 1 ? 'o' : index === 3 || index === 5 ? 'x'
         : index === 7 ? 's' : null;
-    const dec = alternate !== null && usesDecSymbols();
-    return { ch: dec && alternate ? alternate : ascii, color, decgfx: dec,
+    const blankExplosion = activeRogueSymset()?.blank === true;
+    const dec = !blankExplosion && alternate !== null && usesDecSymbols();
+    return { ch: blankExplosion ? BLANK_SYMBOL : dec && alternate ? alternate : ascii,
+        color, decgfx: dec,
         kind: 'effect', glyph: GlyphOffset.explodeDark + type * 9 + index };
 }
 export function shieldGlyph(character) {
@@ -1515,11 +1522,15 @@ const TRAP_COLOR = [
     CLR_BRIGHT_BLUE, CLR_BRIGHT_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_ORANGE,
 ];
 export function transientTrapGlyph(trap) {
+    // Blank replaces every trap symbol including the vibrating square,
+    // while RogueEpyx replaces only the twenty-two real traps.
+    const set = activeRogueSymset();
+    const ch = set?.blank ? BLANK_SYMBOL
+        : trap.ttyp === VIBRATING_SQUARE ? '~'
+            : set?.trapSymbol
+                ?? (trap.ttyp === WEB ? '"' : '^');
     return {
-        // A named rogue set can replace every trap symbol (RogueEpyx).
-        ch: trap.ttyp === VIBRATING_SQUARE ? '~'
-            : activeRogueSymset()?.trapSymbol
-                ?? (trap.ttyp === WEB ? '"' : '^'),
+        ch,
         color: TRAP_COLOR[trap.ttyp] ?? NO_COLOR, decgfx: false,
         kind: 'trap', trapType: trap.ttyp,
         glyph: cmapToGlyph(CmapSymbol.arrowTrap + trap.ttyp - 1),
@@ -2397,7 +2408,8 @@ export function swallowed(first = false) {
         [-1, 1, '\\', null], [0, 1, '-', 's'], [1, 1, '/', null],
     ];
     const hallucinating = heroIsHallucinating(game);
-    const dec = usesDecSymbols();
+    const blankSwallow = activeRogueSymset()?.blank === true;
+    const dec = !blankSwallow && usesDecSymbols();
     for (const [index, [dx, dy, ascii, alternate]] of positions.entries()) {
         if (index === 4)
             displaySelf();
@@ -2411,7 +2423,8 @@ export function swallowed(first = false) {
         if (color === CLR_GRAY)
             color = NO_COLOR;
         const glyph = {
-            ch: dec && alternate ? alternate : ascii, color,
+            ch: blankSwallow ? BLANK_SYMBOL : dec && alternate ? alternate : ascii,
+            color,
             decgfx: dec && alternate !== null, kind: 'effect',
             glyph: GlyphOffset.swallow + mnum * 8 + index,
         };
@@ -2706,14 +2719,18 @@ function statusLine2Fields(capacity) {
     const maximumHp = Math.min((polymorphed ? u.mhmax : u.uhpmax) ?? 0, 9999);
     const displayedPower = Math.min(u.uen ?? 0, 9999);
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
+    // botl.c:check_gold_symbol() falls back to '$' when the displayed
+    // coin symbol is a space or control character (RogueEpyx's \x0f,
+    // Blank's \x1a).
     const goldSymbol = activeObjectSymbols()[objectClassForType(GOLD_PIECE)] ?? '$';
+    const goldLabel = goldSymbol > ' ' ? goldSymbol : '$';
     const displayedAc = u.uac ?? 10;
     const displayedGold = Math.max(0, Math.min(999999, game._statusGoldOverride ?? heroGoldAmount(game)));
     const experience = polymorphed ? `HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`
         : `Xp:${u.ulevel || 1}${game.flags.showexp ? `/${u.uexp || 0}` : ''}`;
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     return {
-        location, gold: `${goldSymbol}:${displayedGold}`,
+        location, gold: `${goldLabel}:${displayedGold}`,
         health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
         experience, moves: game.flags.time ? game.moves : null,
         hunger: hungerLabel ?? '',

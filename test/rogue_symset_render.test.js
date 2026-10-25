@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { BEAR_TRAP, EXPL_FIERY, FOUNTAIN, HWALL, STAIRS, TLCORNER } from '../js/const.js';
-import { displaySelf, flush_screen, newsym } from '../js/display.js';
+import { BEAR_TRAP, EXPL_FIERY, FOUNTAIN, HWALL, STAIRS, TLCORNER, VIBRATING_SQUARE } from '../js/const.js';
+import { _statusLine2, displaySelf, flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, STATUE } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
@@ -145,5 +145,39 @@ void test('explosions keep their own colors under RogueEpyx', async () => {
     };
     await explode(14, 10, 11, 0, 9, EXPL_FIERY);
     assert.ok(coloredFrames > 0, 'the fiery border stayed orange');
+});
+void test('the gold label falls back to $ for control-character coins', async () => {
+    rogueLevel();
+    // RogueEpyx's \x0f and Blank's \x1a coin symbols are control
+    // characters, so botl.c prints the "$" fallback.
+    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
+    assert.match(_statusLine2(), /^[^ ]+ \$:/);
+    applyNethackrc('OPTIONS=roguesymset:Blank');
+    assert.match(_statusLine2(), /^[^ ]+ \$:/);
+    applyNethackrc('OPTIONS=roguesymset:RogueIBM');
+    assert.match(_statusLine2(), /^[^ ]+ \*:/);
+});
+void test('Blank blanks every trap symbol including the vibrating square', async () => {
+    const level = rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:Blank');
+    const trap = addTrap(level, BEAR_TRAP, 14, 10);
+    trap.tseen = true;
+    const square = addTrap(level, VIBRATING_SQUARE, 15, 10);
+    square.tseen = true;
+    newsym(14, 10);
+    newsym(15, 10);
+    await flush_screen(1);
+    assert.equal(rogueCell(14, 10)?.ch, '\x1a');
+    assert.equal(rogueCell(15, 10)?.ch, '\x1a');
+});
+void test('RogueEpyx blanks neither the vibrating square nor plain walls', async () => {
+    const level = rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
+    const square = addTrap(level, VIBRATING_SQUARE, 15, 10);
+    square.tseen = true;
+    newsym(15, 10);
+    await flush_screen(1);
+    // dat/symbols:RogueEpyx replaces the twenty-two real traps only.
+    assert.equal(rogueCell(15, 10)?.ch, '~');
 });
 //# sourceMappingURL=rogue_symset_render.test.js.map

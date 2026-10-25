@@ -396,3 +396,65 @@ void test('switching to DECgraphics redraws a remembered pool', async () => {
     await driveOptionWindow('symset', 'Default Symbols');
     assert.equal(requireScreenCell(cell.column, cell.row).ch, '}');
 });
+
+// do_symset() leaves defindx at 0 when the current primary choice has no
+// row in the picker (a rogue-restricted set like RogueEpyx), so an empty
+// pick is nothing_to_do and the display keeps the Rogue symbols.
+void test('an empty picker pick keeps an unlisted primary set displayed', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    applyNethackrc('OPTIONS=symset:RogueEpyx');
+    const cell = installLadderUp(12, 8);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(cell.column, cell.row).ch, '<');
+
+    const input = resetInputState();
+    const pickerViews: string[] = [];
+    let sentPrefix = false;
+    let pickingOption = true;
+    let submitting = false;
+    let pickingTarget = false;
+    input.beforeRead = () => {
+        if (!sentPrefix) {
+            sentPrefix = true;
+            input.feed('O');
+            return;
+        }
+        if (pickingOption) {
+            const row = menuRow('symset');
+            if (row) {
+                input.feed(row.key);
+                pickingOption = false;
+                submitting = true;
+            } else input.feed(' ');
+            return;
+        }
+        if (submitting) {
+            submitting = false;
+            pickingTarget = true;
+            input.feed('\n');
+            return;
+        }
+        if (pickingTarget) {
+            pickerViews.push(screen());
+            pickingTarget = false;
+            // Enter with no row picked and no preset row: nothing to do.
+            input.feed('\n');
+            return;
+        }
+        input.feed('\x1b');
+    };
+    await rhack('m'.charCodeAt(0));
+    input.beforeRead = null;
+    delete game.rogue_level;
+
+    assert.ok(pickerViews.some(view => /Select symbol set:/.test(view)),
+        'selecting symset opened the picker');
+    assert.equal(game.symset, 'RogueEpyx');
+    assert.equal(game.shownSymbols, undefined);
+    // The full-menu overlay leaves the physical screen for the next redraw.
+    await docrt();
+    await flush_screen(1);
+    assert.equal(requireScreenCell(cell.column, cell.row).ch, '<');
+});

@@ -22,7 +22,7 @@ import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSel
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
+import { bot, clearMessageWindow, currentBoulderSymbol, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet } from './display.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
@@ -2590,8 +2590,8 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('soundlib', 'nosound'),
             choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
             // optfn_boulder() get_val: the primary override, else the
-            // active rock-class symbol.
-            choice('boulder', `boulder                 [${game.boulderSym || '`'}]`),
+            // active set's rock-class symbol (options.c:1238-1241).
+            choice('boulder', `boulder                 [${game.boulderSym || currentBoulderSymbol()}]`),
             choice('crash_email', 'crash_email             [unknown]'),
             choice('crash_name', 'crash_name              [unknown]'),
             choice('crash_urlmax', 'crash_urlmax            [-1]'),
@@ -3059,8 +3059,12 @@ async function editSymset(rogueflag: boolean): Promise<boolean> {
         preselectedKey: currentKey,
     });
     if (selection.key !== 27) {
-        // With no selected row, do_symset() reapplies the preset entry.
+        // do_symset() leaves defindx at 0 when the current choice has no
+        // row in the picker (a rogue-restricted primary set, the H_MAC
+        // set); an empty pick is then nothing_to_do, and only a listed
+        // preset is reapplied.
         const preset = rogueflag ? game.rogueSymset : game.symset;
+        if (selection.value === undefined && currentKey === null) return true;
         const chosen = selection.value === undefined ? preset ?? null
             : selection.value === 'default' ? null : selection.value;
         if (rogueflag) game.rogueSymset = chosen;
