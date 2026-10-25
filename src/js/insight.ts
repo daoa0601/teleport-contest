@@ -20,7 +20,7 @@ import {
     ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN,
     ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE,
     P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
-    SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
+    SICK_NONVOMITABLE, SICK_VOMITABLE, TERMINAL_COLS, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { simpleArmorName } from './armor.js';
@@ -378,9 +378,11 @@ function paginateAttributeLines(lines: readonly string[]): TextPage[] {
     const count = Math.ceil(lines.length / contentRows);
     const pages: TextPage[] = [];
     for (let index = 0; index < count; index++) {
+        // tty_end_menu() cuts each entry to cols - 2 characters after the
+        // menu's leading column, so the final terminal column stays blank.
         const pageLines = lines.slice(
             index * contentRows, (index + 1) * contentRows,
-        );
+        ).map(line => line.slice(0, TERMINAL_COLS - 1));
         // tty numbers the pages only when the window needs more than one.
         const marker = count > 1 ? ` (${index + 1} of ${count})` : ' (end)';
         pageLines.push(marker);

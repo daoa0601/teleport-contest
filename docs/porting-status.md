@@ -550,9 +550,8 @@ mapped; worm flipping clips segments instead of transforming the chain (no
 `#wizfliplevel`); `postmov()`'s accessibility `notice_mon()` hook; returning
 artifacts with an absent attacker; `validvamp()`'s `monpolycontrol` prompt;
 experience-percentage status highlighting; host-system mail; dumplog file
-writing. Two public sessions differ only on screens: the enhance-menu clipping
-in seed0107 and the recorder host's configuration path in seed2200's option
-help.
+writing. One public session differs only on screens: the recorder host's
+configuration path in seed2200's option help.
 
 Run one full suite or corpus at a time. Keep ownership of yielded sessions until
 exit, and terminate owned children if a check is abandoned. Prefer focused
