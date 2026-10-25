@@ -2962,10 +2962,12 @@ export async function cloneHeroMonsterForm(state = game) {
     clone.mhp = Math.trunc(u.mh / 2);
     u.mh -= clone.mhp;
     state.context.botl = true;
+    // C cloneu() never redraws the clone's square after taming it: the glyph
+    // cached by makemon()'s newsym() (warning digit for a blind warned hero,
+    // hostile monster glyph otherwise) stays until something else redraws it.
     if (!u.uconduct)
         u.uconduct = {};
     u.uconduct.pets = (u.uconduct.pets ?? 0) + 1;
-    newsym(clone.mx, clone.my);
     return clone;
 }
 // C refs: teleport.c enexto()/collect_coords() and makemon.c makemon().
