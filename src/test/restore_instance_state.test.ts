@@ -259,8 +259,7 @@ for (const recovery of ['paralysis', 'prayer', 'digestion', 'mimicry'] as const)
         assert.equal(await saveGame(storage), true);
 
         const restored = await runSegment({
-            // Acknowledge recovery and welcome before issuing movement.
-            seed: 901, datetime: '20260913190000', storage, moves: '  l',
+            seed: 901, datetime: '20260913190000', storage, moves: ' l',
             nethackrc: 'OPTIONS=name:Interrupted,!legacy,!tutorial,pettype:none',
         });
 
