@@ -219,6 +219,12 @@ export async function continueVaultGuardArrival(state = game) {
         await removeMonsterFromGame(guard);
         return true;
     }
+    // C invault() follows stop_occupation() with `if (gm.multi > 0)
+    // { nomul(0); unmul((char *) 0); }`, but that block is unreachable:
+    // this tree's stop_occupation() (allmain.c) already calls nomul(0)
+    // whenever there is an occupation or multi >= 0, zeroing a count
+    // repeat.  stopHeroOccupation() models that reset, and native play
+    // prints no recovery message before the name prompt.
     await stopHeroOccupation(state);
     await displayMessageWindow();
     const response = await readGuardName();

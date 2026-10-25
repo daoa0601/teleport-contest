@@ -128,6 +128,50 @@ void test('a guard reports interrupted work before asking the hero name', async 
     assert.equal(game._occupation, null);
 });
 
+void test('a guard silently cancels a counted search repeat before asking the hero name', async () => {
+    // Native invault() calls stop_occupation(), which prints the stop
+    // message and resets a count repeat via nomul(0); vault.c's follow-up
+    // `if (gm.multi > 0) { nomul(0); unmul(NULL); }` can never fire after
+    // that reset, so no recovery message appears before the name prompt.
+    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    requirePlayingGame(game);
+    level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
+    level.requireAt(16, 10).typ = CORR;
+    level.requireAt(11, 10).typ = VWALL;
+    game.u.uinvault = 29;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const input = resetInputState();
+    const messages: string[] = [];
+    let answered = false;
+    input.beforeRead = () => {
+        const message = game.nhDisplay?.grid.slice(0, 3)
+            .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('') ?? '';
+        messages.push(message);
+        if (message.includes('Hello stranger, who are you?')) {
+            if (!answered) input.feed('TestHero\n');
+            answered = true;
+        } else if (message.includes('--More--')) input.feed(' ');
+        else if (answered) input.feed('.');
+    };
+    input.feed('5s');
+
+    await moveloop_core();
+    await moveloop_core();
+
+    const text = messages.join('\n');
+    const stop = text.indexOf('You stop searching');
+    const prompt = text.indexOf('Hello stranger, who are you?');
+    assert.ok(stop >= 0, `the interrupted repeat must be reported: ${text}`);
+    assert.ok(prompt > stop, `the stop report must precede the name prompt: ${text}`);
+    assert.equal(text.includes('You can move again'), false,
+        `canceling a count repeat prints no recovery message: ${text}`);
+    assert.equal(game.multi ?? 0, 0, 'the remaining counted searches are canceled');
+    assert.equal(game._occupation, null);
+});
+
 void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
     const level = arrivingGuard();
     game._vaultGuardArrivalPending = null;
