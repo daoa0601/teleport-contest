@@ -16,6 +16,7 @@ import { applyNethackrc } from '../js/options.js';
 import { C_ATR_BOLD, C_ATR_INVERSE } from '../js/color_attr.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { createDungeon } from './support/topology.js';
 import { createMonsterAt } from './support/monsters.js';
 const M2_PNAME = 0x00080000;
 const G_UNIQ = 0x1000;
@@ -198,6 +199,8 @@ for (const { description, question, heading, nextQuestion, count, mvflags } of [
 void test('the dungeon overview heading keeps its style under menucolor rules', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom' })];
+    game.branches = [];
     // print_mapseen() emits the dungeon name via add_menu_heading(), which
     // skips menu coloring; the level lines below it are add_menu_str() rows.
     applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
