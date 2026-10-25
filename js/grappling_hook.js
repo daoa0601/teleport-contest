@@ -7,6 +7,7 @@ import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { prepareMapPositionHighlights, shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
@@ -201,7 +202,14 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, desc
         }
         else {
             await pline(`You are yanked toward the ${surface}!`);
+            const from = { x: state.u.ux, y: state.u.uy };
             await hurtle(Math.sign(target.x - state.u.ux), Math.sign(target.y - state.u.uy));
+            // C use_grapple() runs spoteffects(TRUE) after hurtle(): the
+            // landing square still triggers its trap and autopickup.
+            await finishDestinationSpotEffects({
+                oldx: from.x, oldy: from.y,
+                newx: state.u.ux, newy: state.u.uy,
+            });
         }
         return { spentTime: true };
     }
