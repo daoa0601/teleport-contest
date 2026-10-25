@@ -47,6 +47,11 @@ void test('the boulder option refuses clashing symbols', () => {
     assert.deepEqual(fileErrors('OPTIONS=boulder:^A').map(error => error.message), ['boulder symbol cannot be a control character']);
     assert.deepEqual(fileErrors('OPTIONS=boulder:').map(error => error.message), ["Missing parameter for 'boulder:'"]);
     assert.deepEqual(fileErrors('OPTIONS=boulder').map(error => error.message), ["Missing parameter for 'boulder'"]);
+    // string_for_opt() echoes the element as typed.
+    assert.deepEqual(fileErrors('OPTIONS=BOULDER').map(error => error.message), ["Missing parameter for 'BOULDER'"]);
+    // char is signed natively, so an escaped high byte is a negative
+    // control character there.
+    assert.deepEqual(fileErrors('OPTIONS=boulder:\\200').map(error => error.message), ['boulder symbol cannot be a control character']);
     // '0' is warning symbol zero, which the C clash test skips.
     assert.deepEqual(fileErrors('OPTIONS=boulder:0').map(error => error.message), []);
 });

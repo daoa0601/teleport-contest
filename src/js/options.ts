@@ -1841,8 +1841,9 @@ function parseConfiguration(
                     const option = requestBooleanByName.get(canonical.toLowerCase());
                     if (option) setConfigurationBoolean(result, option, value);
                     else if (canonical === 'bones') result.flags.bones = value;
-                    // optfn_boulder()'s string_for_opt(FALSE) demands a value.
-                    else if (canonical === 'boulder') addError(`Missing parameter for 'boulder'`);
+                    // optfn_boulder()'s string_for_opt(FALSE) demands a
+                    // value and echoes the typed element verbatim.
+                    else if (canonical === 'boulder') addError(`Missing parameter for '${stripped}'`);
                     else if (canonical === 'reroll') result.flags.reroll = value;
                     // optfn_menu_headings() without a value: inverse, or
                     // none when negated.

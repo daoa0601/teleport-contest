@@ -549,8 +549,17 @@ export function reglyphSymbolSet(): void {
             const appearance = cmapSymbolAppearance(index);
             const wall = index >= CmapSymbol.vwall && index <= CmapSymbol.trwall;
             const offset = glyphNumber - (index - CmapSymbol.vwall);
-            const decColor = decWallColors.get(offset) ?? MAP_SYMBOLS[index]?.color;
-            const color = appearance.dec && wall ? decColor : memory.color;
+            // clear_all_glyphmap_colors() drops the previous set's G_ wall
+            // colors first; a set that declares its own re-colors the
+            // branch walls (the glyph range names the branch), and any
+            // other set leaves them their set-independent gray.
+            let color = memory.color;
+            if (wall) {
+                if (BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? ''))
+                    color = decWallColors.get(offset) ?? memory.color;
+                else if ([CLR_BROWN, CLR_RED, CLR_YELLOW, CLR_BLUE].includes(memory.color))
+                    color = NO_COLOR;
+            }
             loc.remembered_glyph = { ...memory, ch: appearance.ch,
                 color: color ?? memory.color, decgfx: appearance.dec };
         }
@@ -887,7 +896,7 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
     // symbols.c:load_symset() applies these sets' G_ wall colors independently
     // of character handling; the default set leaves wallcolors[] gray.
-    const hasBranchWallColors = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i.test(game.symset ?? '');
+    const hasBranchWallColors = BRANCH_WALL_COLOR_SYMSETS.test(game.symset ?? '');
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
@@ -1115,11 +1124,16 @@ export function cmapSymbolAppearance(symbol: number): { ch: string; dec: boolean
 }
 
 // display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
-// dat/symbols:DECgraphics assigns these colors to branch wall glyphs.
+// dat/symbols assigns these colors to branch wall glyphs.
 const decWallColors = new Map<GlyphOffset, number>([
     [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
     [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
 ]);
+
+// symbols.c:load_symset() applies these sets' G_ wall colors independently
+// of character handling; every other set leaves branch walls gray
+// (clear_symsetentry() → clear_all_glyphmap_colors()).
+const BRANCH_WALL_COLOR_SYMSETS = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i;
 
 function furnitureDisplayGlyph(appearance: number): DisplayGlyph {
     const symbol = MAP_SYMBOLS[appearance];

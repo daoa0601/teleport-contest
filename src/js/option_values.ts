@@ -19,13 +19,15 @@ export function textOptionValue(name: string): string | null {
 // options.c:optfn_boulder(): escapes() decodes the value, then the first
 // byte replaces the boulder symbol in both symbol sets. A monster-class or
 // warning symbol is refused ("boulder symbol would conflict"); the warning
-// test covers '1'..'5' only, so '0' passes. A control byte is refused first.
+// test covers '1'..'5' only, so '0' passes. char is signed in the native
+// build, so a decoded byte of 128..255 is negative there and is refused as
+// a control character together with everything below space.
 export function parseBoulderSymbolValue(value: string): { symbol: string } | { error: string } {
     const symbol = decodeOptionEscapes(value).charAt(0);
     const code = symbol.charCodeAt(0);
     const monsterClash = MONSTER_CLASS_SYMBOLS.indexOf(symbol) > 0;
     const warningClash = code >= 49 && code < 48 + WARNCOUNT;
-    if (!(code >= 32)) return { error: 'boulder symbol cannot be a control character' };
+    if (!(code >= 32) || code > 127) return { error: 'boulder symbol cannot be a control character' };
     if (monsterClash) return { error: `Badoption - boulder symbol '${symbol}' would conflict with a monster symbol` };
     if (warningClash) return { error: `Badoption - boulder symbol '${symbol}' would conflict with a warning symbol` };
     return { symbol };

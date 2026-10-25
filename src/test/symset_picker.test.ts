@@ -4,10 +4,13 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { LADDER, LA_UP } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
+import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
+import { CLR_BROWN, NO_COLOR } from '../js/terminal.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -141,6 +144,7 @@ void test('dismissing the symset picker keeps the current set', async () => {
 });
 
 // The rogue picker lists the Rogue*-restricted sets and drops the
+// primary-restricted ones, with the rogue-level title.
 void test('the roguesymset picker lists rogue-eligible sets', async () => {
     freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
@@ -231,4 +235,23 @@ void test('the simple options menu offers roguesymset on the Rogue level', async
         'the primary symset row is hidden on the Rogue level');
 
     assert.equal(game.rogueSymset, 'RogueEpyx');
+});
+
+// clear_all_glyphmap_colors() runs before the new set's G_ wall colors are
+// applied, so remembered branch walls trade their color with every switch.
+void test('switching symbol sets recolors remembered branch walls', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    const location = game.level?.at(3, 2);
+    assert.ok(location, 'the map exposes the test cell');
+    location.remembered_glyph = { ch: '-', color: NO_COLOR, decgfx: false,
+        kind: 'terrain', terrainName: 'wall',
+        glyph: cmapToGlyph(CmapSymbol.hwall, GlyphOffset.cmapMines) };
+    const cell = { column: 2, row: 3 };
+
+    await driveOptionWindow('symset', 'DECgraphics');
+    assert.equal(requireScreenCell(cell.column, cell.row).color, CLR_BROWN);
+
+    await driveOptionWindow('symset', 'Default Symbols');
+    assert.equal(requireScreenCell(cell.column, cell.row).color, NO_COLOR);
 });
