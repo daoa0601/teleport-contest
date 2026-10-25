@@ -70,9 +70,14 @@ export function backgroundEnlightenmentLines(final: EnlightenmentFinal = 0): str
     lines.push(game.moves === 1
         ? `  You ${final ? 'had' : 'have'} just started your adventure.`
         : `  You entered the dungeon ${game.moves} turn${game.moves === 1 ? '' : 's'} ago.`);
+    // insight.c reads iflags.at_night/at_midnight for the final report:
+    // the clock as it stood when the game ended, not disclosure time.
+    const finalClock = final ? game._finalNight : undefined;
     const hour = recorderLocalHour(game.datetime);
-    if (hour === 0) lines.push(`  It ${final ? 'was' : 'is'} the midnight hour.`);
-    else if (hour < 6 || hour > 21) lines.push(`  It ${final ? 'was' : 'is'} nighttime.`);
+    if (finalClock ? finalClock.midnight : hour === 0)
+        lines.push(`  It ${final ? 'was' : 'is'} the midnight hour.`);
+    else if (finalClock ? finalClock.night : hour < 6 || hour > 21)
+        lines.push(`  It ${final ? 'was' : 'is'} nighttime.`);
     if (game.flags.moonphase === 4 || game.flags.moonphase === 0)
         lines.push(`  There ${final ? 'was' : 'is'} a ${game.flags.moonphase === 4 ? 'full' : 'new'} moon in effect${final ? ' when your adventure ended' : ''}.`);
     if (game.flags.friday13)

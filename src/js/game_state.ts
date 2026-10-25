@@ -302,6 +302,9 @@ export interface GameState {
     gamelog?: Array<{ turn: number; text: string }>;
     _bonesSaved?: boolean;
     _canMakeBones?: boolean;
+    // C iflags.at_night/at_midnight: captured when the game ends so the
+    // final disclosure reports the death-time clock, not disclosure time.
+    _finalNight?: { night: boolean; midnight: boolean };
     _deathKiller?: string;
     _polymorphGenocideCause?: HeroGenocideCause;
     _shopRepossession?: ShopRepossession;

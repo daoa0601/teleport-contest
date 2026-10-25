@@ -85,6 +85,7 @@ const transientFields = {
     _pickWarningMove: true,
     _pickupEncumbrance: true,
     _canMakeBones: true,
+    _finalNight: true,
     _wailMessageMove: true,
     bhitpos: true,
     notonhead: true,

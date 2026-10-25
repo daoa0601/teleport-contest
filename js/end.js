@@ -1,7 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 import { formatFeltMessage } from './hero_speech.js';
-import { recorderLocalEpochSeconds } from './calendar.js';
+import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { cureHeroSickness } from './hero_illness.js';
@@ -1278,6 +1278,13 @@ async function startGameExit(outcome, deathType = DIED) {
         await doneObjectCleanup();
     // really_done() fixes the finish time before any disclosure can wait.
     const endtime = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000;
+    // end.c:1169-1170 snapshots at_night/at_midnight here, before any
+    // disclosure prompt can wait, so a slow answer cannot rewrite them.
+    const finalHour = recorderLocalHour(game.datetime);
+    game._finalNight = {
+        night: finalHour < 6 || finalHour > 21,
+        midnight: finalHour === 0,
+    };
     if (achievementEntries(game).length || !game.flags.beginner) {
         if (game.u.uroleplay?.blind)
             recordAchievement(game, ACH_BLND);
