@@ -9,6 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { bot, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
+import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID, WATER_WALKING_BOOTS, } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
@@ -657,5 +658,24 @@ void test('a hallucinating hero falls into molten lava of an imagined liquid', a
     for (const message of falls)
         assert.match(message, /^You fall into the molten [a-z -]+!$/);
     assert.ok([...falls].some(message => message !== 'You fall into the molten lava!'));
+});
+// C trap.c:emergency_disrobe() never calls find_ac(); a fire-damaged suit
+// keeps its old status-line AC until moveloop_core() recomputes u.uac.
+void test('dumping gear in a pool leaves the armor class for the turn loop', async () => {
+    poolAtHero();
+    requireFixtureGame(game);
+    const armor = await addInventoryObject(LEATHER_ARMOR, { oclass: 3 });
+    await wearHeroArmor(armor);
+    const wornClass = findArmorClass(game);
+    armor.oeroded = 1;
+    await addInventoryObject(LOADSTONE);
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: async () => { },
+        random: range => range - 1,
+        die: async () => assert.fail('the hero should escape'),
+    });
+    assert.equal(game.u.uac, wornClass);
+    assert.equal(findArmorClass(game), wornClass + 1);
 });
 //# sourceMappingURL=hack.test.js.map

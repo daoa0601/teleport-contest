@@ -42,7 +42,7 @@ import { shopkeeperBlockingDoor } from './shop_blocking.js';
 import { shopkeeperName } from './monster_name.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, } from './weight.js';
-import { destroyWornArmor, findArmorClass, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, } from './armor.js';
+import { destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, } from './armor.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
 import { propertyIsActive, refreshMovementProperties, setPropertyTimeout } from './properties.js';
@@ -617,8 +617,7 @@ async function emergencyDisrobe(state, random) {
             return { escaped: false, dropped, died: true };
         dropped = true;
     }
-    if (dropped)
-        findArmorClass(state);
+    // emergency_disrobe() leaves u.uac to moveloop_core()'s find_ac().
     return { escaped: true, dropped };
 }
 async function wakeHeroForCrawl(state, publish) {
