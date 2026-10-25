@@ -32,7 +32,7 @@ import {
     addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig,
 } from './shop_damage.js';
 import {
-    canSeeMonster, newsym, plineWithContinuation,
+    canSeeMonster, displayLiquidName, newsym, plineWithContinuation,
 } from './display.js';
 import { explode } from './explosion.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -156,8 +156,10 @@ function alignmentWord(alignment: number): string {
     return 'neutral';
 }
 
-function liquidName(typ: number): string {
-    return typ === LAVAPOOL ? 'lava' : 'water';
+// C do_name.c hliquid(): dig.c names flowing or refusing liquids through
+// it, so hallucinating heroes see a randomly displayed substitute.
+function liquidName(typ: number, state: GameState = game): string {
+    return displayLiquidName(typ === LAVAPOOL ? 'lava' : 'water', state);
 }
 
 function monsterSubject(monster: Monster, state: GameState = game): string {
@@ -243,7 +245,7 @@ export async function digCheckFailMessage(
         break;
     case DIGCHECK_FAIL_WATERLEVEL:
         await plineWithContinuation(
-            `The ${liquidName(POOL)} splashes and subsides.`);
+            `The ${liquidName(POOL, state)} splashes and subsides.`);
         break;
     default:
         break;
@@ -322,9 +324,9 @@ export async function digHole({
         deleteTrap(trap, state);
         newsym(digX, digY);
     } else if (isPoolOrLava(digX, digY, state)) {
-        const liquid = isLavaAt(digX, digY, state) ? 'lava' : 'water';
-        await plineWithContinuation(`The ${liquid} `
-            + 'sloshes furiously for a moment, then subsides.');
+        await plineWithContinuation(`The ${
+            liquidName(isLavaAt(digX, digY, state) ? LAVAPOOL : POOL, state)
+        } sloshes furiously for a moment, then subsides.`);
         await wakeMonstersNearWithMessages(
             state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state,
         );
@@ -658,7 +660,7 @@ export async function liquidFlow(
 
     if (fillMessage) {
         await plineWithContinuation(
-            fillMessage.replace('%s', liquidName(typ)));
+            fillMessage.replace('%s', liquidName(typ, state)));
     }
     // handle object damage before hero damage; affects potential bones
     const pile = pileAt(x, y, state);
