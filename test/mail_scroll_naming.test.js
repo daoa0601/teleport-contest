@@ -17,27 +17,25 @@ void test('an identified scroll of mail omits "uncursed" from its inventory name
     });
     assert.equal(await inventoryItemDescription(mail), 'a scroll of mail');
 });
-void test('ordinary scrolls keep "uncursed" next to the same mail scroll', async () => {
+void test('ordinary scrolls keep "uncursed" while implicit_uncursed is on', async () => {
     freshObjectRoom();
-    const mail = await addInventoryObject(SCROLL_OF_MAIL, {
-        spe: 1, bknown: true, known: true, dknown: true, typeKnown: true,
-    });
     const scroll = await addInventoryObject(SCR_IDENTIFY, {
         bknown: true, known: true, dknown: true, typeKnown: true,
     });
     assert.equal(await inventoryItemDescription(scroll), 'an uncursed scroll of identify');
-    // The suppression is not a naming accident: the mail scroll stays
-    // wishable-looking prose while its neighbors spell out the beatitude.
-    assert.notEqual(await inventoryItemDescription(mail), await inventoryItemDescription(scroll));
 });
 void test('turning implicit_uncursed off shows the mail scroll as uncursed', async () => {
     freshObjectRoom();
     game.flags.implicit_uncursed = false;
-    const mail = await addInventoryObject(SCROLL_OF_MAIL, {
-        spe: 1, bknown: true, known: true, dknown: true, typeKnown: true,
-    });
-    assert.equal(await inventoryItemDescription(mail), 'an uncursed scroll of mail');
-    game.flags.implicit_uncursed = true;
+    try {
+        const mail = await addInventoryObject(SCROLL_OF_MAIL, {
+            spe: 1, bknown: true, known: true, dknown: true, typeKnown: true,
+        });
+        assert.equal(await inventoryItemDescription(mail), 'an uncursed scroll of mail');
+    }
+    finally {
+        game.flags.implicit_uncursed = true;
+    }
 });
 void test('a scroll of mail with unknown beatitude counts as fully identified', async () => {
     freshObjectRoom();
