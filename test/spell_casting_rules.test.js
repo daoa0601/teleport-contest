@@ -273,4 +273,42 @@ void test('Knight clerical casting ignores metal suit and helmet penalties', asy
     assert.equal(percentSuccess(clerical), clericalChance);
     assert.ok(percentSuccess(attack) < attackChance);
 });
+// C spell.c:percent_success() combines the role tables, armor penalties and
+// the special-spell adjustments into one exact percentage; the numbers below
+// are computed from the C formula for each configuration.
+void test('percent success matches the native role and armor tables exactly', async () => {
+    learnSpell(SPE_FORCE_BOLT, { level: 30, intelligence: 18, wisdom: 18 });
+    requirePlayingGame(game);
+    await trainSpellSkill(SPE_FINGER_OF_DEATH, P_SKILLED);
+    // Int 18: chance 99 - isqrt(2900) = 46; splcaster 1: 46*19/15 - 1.
+    assert.equal(percentSuccess({ otyp: SPE_FINGER_OF_DEATH }), 57);
+    learnSpell(spellType('magic missile'), { level: 1 });
+    requirePlayingGame(game);
+    assert.equal(percentSuccess({ otyp: spellType('magic missile') }), 100);
+    wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('large shield')));
+    // The Wizard's special spell keeps splcaster at 1+3-4 = 0 despite the
+    // shield and halves the heavy-shield chance: 119/2*20/15.
+    assert.equal(percentSuccess({ otyp: spellType('magic missile') }), 78);
+    learnSpell(spellType('cure sickness'), { role: 'healer', level: 1, intelligence: 15, wisdom: 15 });
+    requirePlayingGame(game);
+    // Wisdom 15, basic healing skill: 82 - 53 = 29; splcaster 3-3-4 = -4.
+    assert.equal(percentSuccess({ otyp: spellType('cure sickness') }), 50);
+    learnSpell(SPE_FORCE_BOLT, { role: 'valkyrie', level: 1, intelligence: 10, wisdom: 10 });
+    requirePlayingGame(game);
+    assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 36);
+    // A level 3 escape spell at experience level 1 is hopeless: 55 - isqrt(8300).
+    assert.equal(percentSuccess({ otyp: SPE_HASTE_SELF }), 0);
+    learnSpell(SPE_FORCE_BOLT, { level: 1, intelligence: 10, wisdom: 10 });
+    requirePlayingGame(game);
+    assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 94);
+    wearHeroArmor(await addInventoryObject(CHAIN_MAIL));
+    // splcaster 1+10: 75*9/15 - 11.
+    assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 34);
+    wearHeroArmor(await addInventoryObject(ROBE));
+    // A robe over the mail halves the suit penalty: splcaster 6.
+    assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 64);
+    wearHeroArmor(await addInventoryObject(HELMET));
+    // A metal helmet adds +4 on top of the robe-adjusted suit: splcaster 10.
+    assert.equal(percentSuccess({ otyp: SPE_FORCE_BOLT }), 40);
+});
 //# sourceMappingURL=spell_casting_rules.test.js.map
