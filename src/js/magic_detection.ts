@@ -21,7 +21,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { GOLD_PIECE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { objectClassForType, observeObject, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { objectClassForType, OBJECT_CLASS_NAMES, observeObject, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { rnd } from './rng.js';
@@ -264,7 +264,7 @@ export async function detectObjects(source: GameObject | null, { state = game, o
     }
     const stale = clearStaleObjects(objectClass, 0, state);
     let what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === 9)
-        ? 'something' : objectClass ? objectClassDescription(objectClass) : 'objects';
+        ? 'something' : objectClass ? OBJECT_CLASS_NAMES[objectClass] : 'objects';
     if (boulderClass && objectClass !== ROCK_CLASS) what += ' and/or large stones';
     if (!stale && !elsewhere) {
         if (!here) {
@@ -432,8 +432,3 @@ function monsterGold(monster: Monster, objectClass: number) {
         && monsterObjects(monster).some(object => object.otyp === GOLD_PIECE);
 }
 
-function objectClassDescription(objectClass: number) {
-    return ['', 'strange objects', 'weapons', 'armor', 'rings', 'amulets',
-        'tools', 'food', 'potions', 'scrolls', 'spellbooks', 'wands', 'coins',
-        'gems', 'large stones', 'iron balls', 'chains', 'venoms'][objectClass];
-}

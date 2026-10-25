@@ -3,15 +3,15 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CRYSTAL_BALL } from '../js/object_data.js';
+import { CRYSTAL_BALL, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { objectTypeKnown } from '../js/shk.js';
 import { ALTAR, M_AP_FURNITURE, ROOM } from '../js/const.js';
+import { objectTypeKnown } from '../js/shk.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createMonsterAt } from './support/monsters.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('invoking a crystal ball while blind spends a turn without using a charge', async (t) => {
@@ -44,6 +44,23 @@ for (const command of ['apply', 'invoke']) {
         assert.equal(game.context.move, 1);
     });
 }
+// C detect.c:object_detect() describes a gem-class search with
+// def_oc_syms[GEM_CLASS].name, which is "rocks", not "gems".
+void test('a gem-class crystal-ball search under the hero senses rocks', async (t) => {
+    freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    await floorObject(OBJECT_NAMES.indexOf('ruby'), game.u.ux, game.u.uy);
+    const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });
+    const input = resetInputState();
+    input.feed('invoke\r');
+    planInput(input, t, [
+        { prompt: /What do you want to invoke\?/, keys: ball.invlet },
+        { prompt: /What do you look for\?/, keys: '*' },
+    ]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game._lastPlineMessage, 'You sense rocks nearby.');
+    assert.equal(ball.spe, 1);
+    assert.equal(game.context.move, 1);
+});
 void test('cancelling a crystal-ball search preserves its charges and takes one turn', async (t) => {
     freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });

@@ -33,6 +33,13 @@ export const OBJECT_CLASS_EXPLAIN = [
     'potion', 'scroll', 'spellbook', 'wand', 'pile of coins', 'gem or rock',
     'boulder or statue', 'iron ball', 'iron chain', 'splash of venom',
 ];
+// C drawing.c:def_oc_syms[].name (defsym.h OBJCLASS names), used by
+// detect.c:object_detect() to describe what was detected.
+export const OBJECT_CLASS_NAMES = [
+    '', 'illegal objects', 'weapons', 'armor', 'rings', 'amulets', 'tools',
+    'food', 'potions', 'scrolls', 'spellbooks', 'wands', 'coins', 'rocks',
+    'large stones', 'iron balls', 'chains', 'venoms',
+];
 export const OBJECT_CLASS_LABELS = {
     2: 'Weapons',
     3: 'Armor',
