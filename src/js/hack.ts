@@ -65,7 +65,7 @@ import {
     inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED,
 } from './weight.js';
 import {
-    destroyWornArmor, findArmorClass, heroHasWaterWalking,
+    destroyWornArmor, heroHasWaterWalking,
     heroKnowsLavaWalking, heroKnowsWaterWalking,
 } from './armor.js';
 
@@ -745,7 +745,7 @@ async function emergencyDisrobe(state: GameState, random: RandomBelow): Promise<
             return { escaped: false, dropped, died: true };
         dropped = true;
     }
-    if (dropped) findArmorClass(state);
+    // emergency_disrobe() leaves u.uac to moveloop_core()'s find_ac().
     return { escaped: true, dropped };
 }
 
