@@ -379,11 +379,12 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     // none on a level reloaded from bones.
     const bonesArrival = game._restoredBones;
     if (bonesArrival) {
-        // maybe_lvltport_feedback() (do.c:2031) delivers only the
-        // "You materialize" line this early, and beforeGlow() above
-        // already did.  Any other deferred message waits until
-        // goto_level() has returned (deferred_goto(), do.c:2085-2096),
-        // after every arrival line below.
+        // maybe_lvltport_feedback() (do.c:1854) delivers only the
+        // "You materialize" line this early, unless a glowing Sting
+        // already did during docrt().  Any other deferred message waits
+        // until goto_level() has returned (deferred_goto(),
+        // do.c:2085-2096), after every arrival line below.
+        await beforeGlow();
         if (enteredValley) {
             await plineWithContinuation(
                 'You arrive at the Valley of the Dead...',
