@@ -28,6 +28,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, } from './monster_speed.js';
 import { setMonsterPermanentInvisibility, } from './monster_invisibility.js';
+import { redrawMonsterWormSegments } from './monster_worm.js';
 import { monstersObserveHeroResistance } from './monster_perception.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, } from './object_state.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
@@ -683,9 +684,11 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         const sawIt = !!spotMonster(monster);
         const cursedPotion = !!potion.cursed;
         const angered = !!monster.minvis && cursedPotion;
-        const invisibility = setMonsterPermanentInvisibility(monster, !cursedPotion);
-        if (!monster.invis_blkd && invisibility.changed) {
+        setMonsterPermanentInvisibility(monster, !cursedPotion);
+        if (!monster.invis_blkd) {
             await repaintMonster(monster);
+            if (monster.wormno)
+                redrawMonsterWormSegments(monster);
         }
         const spottedAfter = !!spotMonster(monster);
         let invisibilityMessage = null;

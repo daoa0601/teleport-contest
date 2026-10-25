@@ -6,6 +6,7 @@ import { wakeMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { setMonsterPermanentInvisibility, } from './monster_invisibility.js';
 import { monsterName as nameMonster } from './monster_name.js';
+import { redrawMonsterWormSegments } from './monster_worm.js';
 import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';
 function knownInvisible(monster, state = game) {
@@ -27,7 +28,11 @@ export async function makeMonsterInvisible(monster) {
     revealMonsterAppearance(monster);
     const name = nameMonster(monster, { capitalized: true });
     setMonsterPermanentInvisibility(monster);
-    newsym(monster.mx, monster.my);
+    if (!monster.invis_blkd) {
+        newsym(monster.mx, monster.my);
+        if (monster.wormno)
+            redrawMonsterWormSegments(monster);
+    }
     let identified = false;
     if (!wasInvisible && knownInvisible(monster)) {
         await pline(`${name} turns transparent!`);

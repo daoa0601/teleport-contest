@@ -13,6 +13,7 @@ import {
     setMonsterPermanentInvisibility,
 } from './monster_invisibility.js';
 import { monsterName as nameMonster } from './monster_name.js';
+import { redrawMonsterWormSegments } from './monster_worm.js';
 import { heroIsBlind } from './senses.js';
 import { cansee } from './vision.js';
 
@@ -35,7 +36,10 @@ export async function makeMonsterInvisible(monster: Monster) {
     const name = nameMonster(monster, { capitalized: true });
 
     setMonsterPermanentInvisibility(monster);
-    newsym(monster.mx, monster.my);
+    if (!monster.invis_blkd) {
+        newsym(monster.mx, monster.my);
+        if (monster.wormno) redrawMonsterWormSegments(monster);
+    }
 
     let identified = false;
     if (!wasInvisible && knownInvisible(monster)) {
