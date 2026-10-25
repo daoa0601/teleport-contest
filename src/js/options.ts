@@ -3204,7 +3204,11 @@ function simpleMenuSections(): PageLocalMultiSelectSection<string>[] {
                 { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE,
                     itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
             ];
-            for (const [name, description] of names) {
+            for (const [listedName, description] of names) {
+                // doset_simple() shows the rogue set's row in place of
+                // symset while the hero is on the Rogue level.
+                const name = listedName === 'symset' && Is_rogue_level(game.u?.uz)
+                    ? 'roguesymset' : listedName;
                 const option = options.find(item => item.selectable !== false && item.value === name);
                 if (!option || option.selectable === false) throw new Error(`Missing simple option: ${name}`);
                 const boolean = requestBooleanByName.get(name.toLowerCase());

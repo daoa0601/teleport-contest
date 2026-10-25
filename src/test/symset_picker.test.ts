@@ -187,3 +187,48 @@ void test('the roguesymset picker lists rogue-eligible sets', async () => {
 
     assert.equal(game.rogueSymset, 'RogueWindows');
 });
+
+// options.c:doset_simple() swaps the simple menu's symset row for the
+// rogue set's while the hero is on the Rogue level.
+void test('the simple options menu offers roguesymset on the Rogue level', async () => {
+    freshObjectRoom({ flags: { verbose: false } });
+    requirePlayingGame(game);
+    game.rogue_level = { ...game.u.uz };
+    game.rogueSymset = 'RogueIBM';
+
+    const input = resetInputState();
+    const views: string[] = [];
+    let pickingOption = true;
+    let pickingTarget = false;
+    input.beforeRead = () => {
+        if (pickingOption) {
+            views.push(screen());
+            const rogueRow = menuRow('roguesymset');
+            if (rogueRow) {
+                input.feed(rogueRow.key);
+                pickingOption = false;
+                pickingTarget = true;
+            } else input.feed(' ');
+            return;
+        }
+        if (pickingTarget) {
+            const row = menuRow('RogueEpyx');
+            if (row) {
+                input.feed(row.key);
+                pickingTarget = false;
+            } else input.feed(' ');
+            return;
+        }
+        input.feed('\x1b');
+    };
+    await rhack('O'.charCodeAt(0));
+    input.beforeRead = null;
+    delete game.rogue_level;
+
+    assert.ok(views.some(view => / [-+*#] roguesymset +\[RogueIBM, active\]/.test(view)),
+        'the symset row is replaced by the active rogue set');
+    assert.ok(!views.some(view => / [-+*#] symset /.test(view)),
+        'the primary symset row is hidden on the Rogue level');
+
+    assert.equal(game.rogueSymset, 'RogueEpyx');
+});
