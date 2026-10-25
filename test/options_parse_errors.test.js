@@ -180,6 +180,12 @@ void test('paranoid no-prefix checks the third letter case-sensitively', () => {
         assert.equal(configuration.flags.paranoia_bits, 0, value);
     }
 });
+void test('prayconfirm parameter errors preserve spaces after either delimiter', () => {
+    for (const element of ['prayconfirm: x', 'prayconfirm= x', '!prayconfirm: x']) {
+        const option = element.startsWith('!') ? '!prayconfirm' : 'prayconfirm';
+        assert.deepEqual(errorMessages(`OPTIONS=${element}`), [`deprecated ${option} option takes no parameters (found ' x')`], element);
+    }
+});
 void test('disclose validates its category letters and defaults bare spellings', () => {
     assert.deepEqual(errorMessages('OPTIONS=disclose:x'), ["Unknown disclose parameter 'x'"]);
     assert.deepEqual(errorMessages('OPTIONS=!disclose:-i'), ['The disclose option may not both have a value and be negated.']);

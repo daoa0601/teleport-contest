@@ -1434,8 +1434,9 @@ function parseConfiguration(
             if (bindingOption === 'prayconfirm') {
                 // optfn_paranoid_confirmation()'s deprecated alias: any
                 // value is an error, otherwise it becomes ±pray.
-                if (optionValue !== null && optionValue !== '') {
-                    addError(`deprecated ${negated ? '!' : ''}prayconfirm option takes no parameters (found '${optionValue}')`);
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (raw) {
+                    addError(`deprecated ${negated ? '!' : ''}prayconfirm option takes no parameters (found '${raw}')`);
                 } else {
                     paranoiaBits = negated ? paranoiaBits & ~PARANOID_PRAY : paranoiaBits | PARANOID_PRAY;
                     paranoiaSeen = true;
