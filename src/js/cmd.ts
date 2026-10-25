@@ -66,7 +66,7 @@ import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName 
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
 import { identifyPack } from './invent.js';
-import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS,
+import { DIED, ESCAPED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS,
     MGIVENNAME, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
@@ -2158,6 +2158,16 @@ export async function travelStairs(up: boolean) {
         return false;
     }
     stairs.u_traversed = true;
+    // C dungeon.c:prev_level(): an up branch stair from dungeon 0 level 1
+    // ends the game as an escape unless the hero carries the Amulet, and
+    // only then lets goto_level() enter the endgame.
+    if (up && stairs.tolev.dnum !== game.u.uz.dnum
+        && game.u.uz.dnum === 0 && game.u.uz.dlevel === 1
+        && !game.u.uhave?.amulet) {
+        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+        game.context.move = 1;
+        return true;
+    }
     const changed = await gotoLevel(stairs.tolev, {
         arrival: up ? 'downstairs' : 'stairs',
         ladder: !!stairs.isladder,
