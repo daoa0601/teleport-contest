@@ -14,7 +14,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { InputGate, resetInputState } from '../js/input.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { createDungeon } from './support/topology.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
 
 const MINES = 1;
 
@@ -124,9 +124,6 @@ void test('a tutorial death discloses the start level through the shared project
         createDungeon({ dname: 'The Tutorial' }),
     ];
     game.branches = [];
-    const tutorial = game.dungeons[1];
-    assert.ok(tutorial, 'the tutorial dungeon exists');
-    tutorial.dunlev_ureached = 1;
     initOverviewRecord({ dnum: 0, dlevel: 1 }, game);
     initOverviewRecord({ dnum: 1, dlevel: 1 }, game);
     game.u.uz = { dnum: 1, dlevel: 1 };
@@ -139,4 +136,29 @@ void test('a tutorial death discloses the start level through the shared project
         '      Final resting place for',
         '         you, killed by a falling rock.',
     ].join('\n'));
+});
+
+void test('a death in the Planes discloses endgame levels before the dungeon', () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    game.dungeons = [
+        createDungeon({ dname: 'The Dungeons of Doom' }),
+        createDungeon({ dname: 'The Elemental Planes', num_dunlevs: 6, depth_start: -5 }),
+    ];
+    game.astral_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
+    game.branches = [];
+    initOverviewRecord({ dnum: 0, dlevel: 1 }, game);
+    for (let dlevel = 1; dlevel <= 5; dlevel++)
+        initOverviewRecord({ dnum: 1, dlevel }, game);
+    game.u.uz = { dnum: 1, dlevel: 1 };
+    const died = disclosureText(null, 'killed by Famine');
+    const lines = died.split('\n');
+    assert.equal(lines[0], 'The Elemental Planes:');
+    assert.equal(lines[1], '   Astral Plane: <- You were here.');
+    assert.equal(lines[2], '      Final resting place for');
+    assert.equal(lines[3], '         you, killed by Famine.');
+    assert.equal(lines[4], '   Plane of Water:');
+    assert.equal(lines[7], '   Plane of Earth:');
+    assert.equal(lines[8], 'The Dungeons of Doom:');
+    assert.equal(lines[9], '   Level 1:');
 });
