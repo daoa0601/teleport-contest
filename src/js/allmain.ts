@@ -1883,11 +1883,13 @@ async function monsterAttackMessage(
                     : attack.attackType === 6 ? 'stings' : 'hits';
     // C hitmsg() requires adjacent slots in the species' attack array.
     // getmattk() replacements use a separate buffer and cannot be adjacent.
-    // Artifact prose skips hitmsg(), so it does not update that prior slot.
+    // Artifact prose skips hitmsg(), so it does not update that prior slot,
+    // and neither does a corpse hit that starts the hero's petrification.
     const again = previousAttack?.hit
         && previousAttack.kind === 'hero-attack'
         && !previousAttack.specialMessage
         && previousAttack.effect !== 'physical-hug'
+        && previousAttack.effect !== 'petrifying-corpse'
         && previousAttack.attackType === attack.attackType
         && previousAttack.attackIndex + 1 === attack.attackIndex
         && previousAttack.effectiveAttack === MONSTER_ATTACKS[monster.mnum]?.[previousAttack.attackIndex]
