@@ -51,6 +51,12 @@ void test('tutorial entry retains the old armor class until its entry message is
     assert.equal(entryFound, true, 'startup must reach the tutorial entry message');
     assert.equal(engine.state.inventory.length, 0);
     assert.equal(engine.state.u.uac, startingArmorClass);
+    // C's goto_level() bookkeeping marks the tutorial dungeon's reached
+    // level, so the disclosure heading shows no empty level range.
+    const tutorialDnum = engine.state.dungeons.findIndex(
+        dungeon => dungeon.dname === 'The Tutorial');
+    assert.ok(tutorialDnum > 0, 'the tutorial dungeon exists');
+    assert.equal(engine.state.dungeons[tutorialDnum]?.dunlev_ureached, 1);
 });
 
 void test('tutorial entry acknowledges the starting engraving before accepting a command', async () => {

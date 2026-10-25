@@ -1,6 +1,6 @@
 import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { initOverviewRecord } from './dungeon.js';
+import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
@@ -618,6 +618,17 @@ async function enterTutorial() {
     game.u.ucamefrom = { ...oldDepth };
     await currentLuaLifecycle().changeTutorialMode(game, true);
     game.u.uz = { ...target };
+    // C's tutorial entry runs through goto_level(), which records the
+    // reached level for the destination dungeon (do.c:1678-1685) before
+    // mklev(); the hand-rolled transition must match that bookkeeping or
+    // the tutorial heading prints an empty level range.
+    const targetDungeon = game.dungeons[target.dnum];
+    if (targetDungeon) {
+        const reached = targetDungeon.dunlev_ureached || 0;
+        targetDungeon.dunlev_ureached = dungeonBuildsUp(target, game) && reached
+            ? Math.min(reached, target.dlevel)
+            : Math.max(reached, target.dlevel);
+    }
     game._specialLevelPrototype = 'tut-1';
     // C's tutorial entry runs through goto_level(), so mklev() creates the
     // tutorial level's overview record; this hand-rolled transition must
