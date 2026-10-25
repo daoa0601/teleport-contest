@@ -217,6 +217,14 @@ void test('unrestricted autopickup reports all types without thrown-item wording
     assert.ok((await enlightenmentText(true)).includes('Autopickup is on for all types.'));
 });
 
+void test('autopickup exceptions are named in the enlightenment autopickup line', async () => {
+    freshGameplayRoom({ flags: { pickup: true, pickup_types: '' } });
+    applyNethackrc('AUTOPICKUP_EXCEPTION="<arrow"');
+    const lines = await enlightenmentText(true);
+    assert.ok(lines.includes('Autopickup is on for all types, with exceptions.'));
+    assert.ok(!lines.some(line => line.includes('plus thrown')));
+});
+
 void test('the Eyes of the Overworld explain why intrinsic blindness is blocked', async () => {
     freshGameplayRoom({ flags: { debug: true }, hero: { permaBlind: true } });
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));

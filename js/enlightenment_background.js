@@ -186,6 +186,9 @@ function autopickupDescription() {
     if (costlySpot(game.u.ux, game.u.uy))
         return 'on, but temporarily disabled while inside the shop';
     const types = game.flags.pickup_types;
-    return `on for ${types ? `'${types}'` : 'all types'}${types && game.flags.pickup_thrown !== false ? ' plus thrown' : ''}`;
+    // C appends ", with exceptions" whenever ga.apelist holds any rule.
+    const exceptions = (game.iflags.autopickupExceptions?.length ?? 0) > 0
+        ? ', with exceptions' : '';
+    return `on for ${types ? `'${types}'` : 'all types'}${types && game.flags.pickup_thrown !== false ? ' plus thrown' : ''}${exceptions}`;
 }
 //# sourceMappingURL=enlightenment_background.js.map
