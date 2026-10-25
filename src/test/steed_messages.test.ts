@@ -101,3 +101,23 @@ void test('a kicked steed gallops under its saddled name', async () => {
     assert.deepEqual(messages, ['The saddled pony gallops!']);
     assert.ok((game.u.ugallop ?? 0) > 0);
 });
+
+void test('kicking a barely tame steed throws the hero and wounds both legs', async () => {
+    const steed = await mountedSteed('pony');
+    steed.mtame = 1;
+    const health = game.u.uhp ?? 0;
+
+
+    await runExtendedCommand('kick', 'y');
+
+    assert.match(game._pending_message,
+        /You kick the saddled pony\.  You are thrown off of the saddled pony!/);
+    assert.equal(game.u.usteed, null);
+    assert.equal(steed.mtame, 0);
+    assert.ok((game.u.uhp ?? 0) <= health - 10 && (game.u.uhp ?? 0) >= health - 19,
+        'riding accident damage is rn1(10,10)');
+    const turns = game.u._woundedLegTurns ?? 0;
+    assert.ok(turns >= 5 && turns <= 9, 'both legs are wounded for rn1(5,5) turns');
+    assert.equal(game.u._woundedLegSide, 'both');
+    assert.equal(game.context.move, 1);
+});

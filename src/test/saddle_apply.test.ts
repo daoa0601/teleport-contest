@@ -51,3 +51,41 @@ void test('a kitten cannot wear a saddle', async () => {
     assert.equal(game._pending_message, "You can't saddle such a creature.");
     assert.equal(game.context.move, 1);
 });
+
+void test('applying a saddle to yourself is only a joke', async () => {
+    freshPlayableRoom();
+    const saddle = await addInventoryObject(SADDLE);
+
+    await applyInventoryObject(saddle, '.');
+
+    assert.equal(saddle.where, 'inventory');
+    assert.equal(game._pending_message, 'Saddle yourself?  Very funny...');
+    assert.equal(game.context.move, 0);
+});
+
+void test('saddling an amorous demon shames the hero instead', async () => {
+    freshPlayableRoom({ hero: { ulevel: 10 } });
+    const demon = await createMonsterAt('amorous demon', game.u.ux + 1, game.u.uy);
+    const saddle = await addInventoryObject(SADDLE);
+
+    await applyInventoryObject(saddle, 'l');
+
+    assert.equal(saddle.where, 'inventory');
+    assert.equal(game._pending_message, 'Shame on you!');
+    assert.equal(game.context.move, 1);
+    assert.ok(!demon.saddle);
+});
+
+void test('a wild pony resists an unskilled low-level saddling attempt', async () => {
+    freshPlayableRoom({ role: 'barbarian', hero: { ulevel: 1 } });
+    const pony = await createMonsterAt('pony', game.u.ux + 1, game.u.uy);
+    pony.mtame = 0;
+    const saddle = await addInventoryObject(SADDLE);
+
+    await applyInventoryObject(saddle, 'l');
+
+    assert.equal(saddle.where, 'inventory');
+    assert.equal(game._pending_message, 'The pony resists!');
+    assert.equal(game.context.move, 1);
+    assert.ok(!pony.saddle);
+});
