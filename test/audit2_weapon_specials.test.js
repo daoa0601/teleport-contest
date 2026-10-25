@@ -4,7 +4,7 @@
 // weapon_dam_bonus(), weapon.c select_hwep()/select_rwep()).
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AKLYS, DAGGER, DART, DWARVISH_MATTOCK, LONG_SWORD, MACE, OBJECT_NAMES, PICK_AXE, } from '../js/object_data.js';
+import { AKLYS, DAGGER, DART, DWARVISH_MATTOCK, LONG_SWORD, MACE, OBJECT_NAMES, } from '../js/object_data.js';
 import { P_BARE_HANDED_COMBAT, P_BASIC, P_DAGGER, P_EXPERT, P_ISRESTRICTED, P_LANCE, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, W_ARMG, W_WEP, NO_MINVENT, } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
@@ -135,15 +135,21 @@ void test('skill bonuses follow the native two-weapon, martial arts, and riding 
 void test('hand-to-hand monster weapon choice respects the native preferences', async () => {
     freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     initRng(1n);
+    // hwep[] prefers the silver saber to the mace, so only the
+    // mon_hates_silver() skip makes the demon settle for the mace.
     const marilith = await createMonsterAt('marilith', 10, 8);
     await addObjectToMonsterInventory(marilith, await uninitializedObject(typeOf('silver saber')));
-    await addObjectToMonsterInventory(marilith, await uninitializedObject(LONG_SWORD));
-    assert.equal(selectHandToHandWeapon(marilith)?.otyp, LONG_SWORD);
+    await addObjectToMonsterInventory(marilith, await uninitializedObject(MACE));
+    assert.equal(selectHandToHandWeapon(marilith)?.otyp, MACE);
+    const orcLeader = await createMonsterAt('orc captain', 9, 7);
+    await addObjectToMonsterInventory(orcLeader, await uninitializedObject(typeOf('silver saber')));
+    await addObjectToMonsterInventory(orcLeader, await uninitializedObject(MACE));
+    assert.equal(selectHandToHandWeapon(orcLeader)?.otyp, typeOf('silver saber'));
     const giant = await createMonsterAt('hill giant', 10, 7);
     await addObjectToMonsterInventory(giant, await uninitializedObject(LONG_SWORD));
     await addObjectToMonsterInventory(giant, await uninitializedObject(typeOf('club')));
     assert.equal(selectHandToHandWeapon(giant)?.otyp, typeOf('club'));
-    const balrog = await createMonsterAt('balrog', 9, 7);
+    const balrog = await createMonsterAt('balrog', 9, 8);
     await setPrimaryWeapon(await uninitializedObject(LONG_SWORD), game);
     await addObjectToMonsterInventory(balrog, await uninitializedObject(LONG_SWORD));
     await addObjectToMonsterInventory(balrog, await uninitializedObject(typeOf('bullwhip')));
@@ -223,13 +229,15 @@ void test('role skill ceilings match the native class tables', async () => {
             assert.equal(entry.skill, P_BASIC, `${role} begins trained in bare hands`);
         }
     }
-    // An untrained weapon stays unskilled rather than starting basic.
-    freshObjectRoom({ role: 'valkyrie', hero: { ulevel: 1 } });
+    // A weapon in the role's table stays unskilled until carried: the
+    // Barbarian kit carries no dagger, so his in-table dagger skill starts
+    // untrained (C skill_init() promotes only carried weapons to Basic).
+    freshObjectRoom({ role: 'barbarian', hero: { ulevel: 1 } });
     const skills = ensureHeroSkills(game);
     assert.ok(skills);
     const daggerSkill = skills[P_DAGGER];
-    assert.ok(daggerSkill, 'the valkyrie dagger skill must initialize');
+    assert.ok(daggerSkill, 'the barbarian dagger skill must initialize');
+    assert.equal(daggerSkill.maxSkill, P_BASIC);
     assert.equal(daggerSkill.skill, P_UNSKILLED);
-    assert.equal(daggerSkill.maxSkill, P_EXPERT);
 });
 //# sourceMappingURL=audit2_weapon_specials.test.js.map
