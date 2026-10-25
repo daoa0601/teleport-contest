@@ -10,6 +10,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { controlKeyHintLines } from './command_help.js';
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
@@ -69,7 +70,7 @@ export async function readDirectionKey(message = 'In what direction? ') {
     clearMessageWindow();
     return key;
 }
-export async function promptDirection(readKey = readDirectionKey) {
+export async function promptDirection(readKey = readDirectionKey, { ctrlCommandHint = false } = {}) {
     for (;;) {
         const key = await readKey('In what direction? ');
         const code = (typeof key === 'number' ? key : String(key).charCodeAt(0)) & 255;
@@ -103,7 +104,8 @@ export async function promptDirection(readKey = readDirectionKey) {
                 return null;
             const helpRequested = code === game.commandBindings.specialKey('getdir.help');
             if (helpRequested || game.flags?.cmdassist !== false) {
-                await showTextPages([directionAssistPage(!helpRequested)], {
+                const assistPage = directionAssistPage(!helpRequested, ctrlCommandHint && !helpRequested ? code : null);
+                await showTextPages([assistPage], {
                     validKeys: [27, 32, 10, 13],
                 });
                 await restoreCommandMap();
@@ -167,10 +169,12 @@ export async function restoreCommandMap() {
 }
 // C help_dir(): use the current movement bindings and hide diagonals when
 // the hero's body cannot use them. Explicit help omits the error heading.
-export function directionAssistPage(invalidDirection = true) {
+export function directionAssistPage(invalidDirection = true, ctrlHintKey = null) {
     const bindings = game.commandBindings;
     const key = (direction) => visibleCommandKey(bindings.keyForDirection(direction) ?? 0);
     const lines = invalidDirection ? ['cmdassist: Invalid direction key!', ''] : [];
+    if (ctrlHintKey !== null)
+        lines.push(...controlKeyHintLines(ctrlHintKey));
     lines.push(`Valid direction keys${game.u.umonnum === GRID_BUG ? ' in your current form' : ''} are:`);
     if (game.u.umonnum === GRID_BUG) {
         lines.push(`             ${key(2)}   `, '             |   ', `          ${key(0)}- . -${key(4)}`, '             |   ', `             ${key(6)}   `);
