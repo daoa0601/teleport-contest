@@ -1,28 +1,19 @@
 // game_display.js — NetHack-specific display wrapper around Terminal.
 // Edit freely; the contest only freezes isaac64.js and terminal.js.
 //
-// Adds game state properties (topMessage, toplines, toplin) and
-// message window handling. Delegates all terminal operations to
-// the wrapped Terminal instance.
+// Adds game-specific display state (status retention, the stopped topline)
+// and delegates all terminal operations to the wrapped Terminal instance.
 //
 // Usage:
 //   const terminal = new Terminal('game-container');
 //   const display = new GameDisplay(terminal);
 //   // display.setCell, display.readKey etc. all delegate to terminal
-//   // display.topMessage, display.putstr_message are NetHack-specific
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
-const TOPLINE_EMPTY = 0;
-const TOPLINE_NEED_MORE = 1;
 export class GameDisplay {
     terminal;
     mapFrameCells = new Set();
-    topMessage;
-    toplines;
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline = null;
-    messages;
-    toplin;
-    messageWinFlags;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines = null;
     statusLine2Fields = null;
@@ -38,12 +29,6 @@ export class GameDisplay {
         else {
             this.terminal = new Terminal(terminalOrContainerId != null ? terminalOrContainerId : null, { rows: 24, cols: 80 });
         }
-        // NetHack-specific message state
-        this.topMessage = null;
-        this.toplines = '';
-        this.messages = [];
-        this.toplin = TOPLINE_EMPTY;
-        this.messageWinFlags = 0;
     }
     // --- Delegate all Terminal properties and methods ---
     get rows() { return this.terminal.rows; }
@@ -158,16 +143,6 @@ export class GameDisplay {
     /** Scripted-input hook for reads that find the queue empty. */
     onEmptyQueue = null;
     // --- NetHack-specific methods ---
-    putstr_message(msg) {
-        this.clearRow(0);
-        this.putstr(0, 0, msg, CLR_GRAY);
-        this.topMessage = msg.trimEnd();
-        this.toplines = this.topMessage;
-        this.toplin = this.topMessage ? TOPLINE_NEED_MORE : TOPLINE_EMPTY;
-        this.messages.push(this.topMessage);
-        if (this.messages.length > 20)
-            this.messages.shift();
-    }
     moveCursorTo(col, row = 0) {
         this.setCursor(col, row);
     }

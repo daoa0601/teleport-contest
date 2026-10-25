@@ -13,7 +13,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { QUEST_LUA_SOURCE } from './quest_data.js';
 import { LuaTable } from './lua/runtime.js';
-import { flushPendingTopline, plineWithContinuation } from './display.js';
+import { flushPendingTopline, plineWithContinuation, putMessageHistory } from './display.js';
 import { showTextWindow, showTextMenuOverlay } from './windows.js';
 const M2_PNAME = 0x00080000;
 // C com_pager_core(): each attempted section opens its own Lua state,
@@ -96,8 +96,10 @@ export async function displayQuestText(text, state = game) {
         state._pending_message = '';
         state._retained_message = '';
     }
+    // C questpgr.c: putmsghistory(out_line, FALSE) remembers the synopsis
+    // without displaying it.
     if (text.synopsis)
-        state.nhDisplay?.messages.push(text.synopsis);
+        putMessageHistory(text.synopsis);
     return true;
 }
 export async function qtPager(messageId, state = game) {

@@ -5,7 +5,7 @@ import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { game } from './gstate.js';
 import type { CommandInput } from './command_types.js';
 import { readchar } from './input.js';
-import { flush_screen, pline } from './display.js';
+import { flush_screen, setTopline } from './display.js';
 
 export async function readCommandInput(): Promise<CommandInput> {
     game._commandCount = 0;
@@ -48,7 +48,7 @@ async function readCommandCount(): Promise<CommandInput> {
                 ? 'Count: ' : `Count: ${count}`;
             if (count || showZero) backspaced = false;
             clearCommandMessage();
-            await pline(text);
+            await setTopline(text);
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }

@@ -111,7 +111,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, rememberToplines, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -565,8 +565,18 @@ function appendTurnMessage(message) {
     const game = requireInitializedGame();
     if (game._suppressMessagesUntilInput)
         return;
-    game._pending_message = game._pending_message
+    const joins = !!game._pending_message;
+    game._pending_message = joins
         ? `${game._pending_message}  ${message}` : message;
+    // update_topl()'s negotiation keeps gt.toplines in step with the
+    // deferred publisher: a joinable line extends it, otherwise the
+    // previous line is remembered first.
+    if (joins)
+        game._toplines = `${game._toplines}  ${message}`;
+    else {
+        rememberToplines();
+        game._toplines = message;
+    }
     game._last_message = game._pending_message;
     game._lastPlineMessage = message;
 }

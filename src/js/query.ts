@@ -7,6 +7,7 @@ import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 
 interface LineInputOptions {
     suppressStatus?: boolean;
@@ -90,8 +91,39 @@ async function editLine(
     }
     clearSuppressedStatus();
     renderEditor();
+    // The loop head keeps gt.toplines equal to the query and typed text.
+    game._toplines = `${prompt} ${value}`;
+    let doprev = false;
     for (;;) {
         const key = await nhgetch();
+        if (key === 16) {
+            // C hooked_tty_getlin(): ^P browses with inread clear. Single
+            // and first-press combination walk two entries and keep the
+            // recalled line visible; the other modes page the full window
+            // and repaint the prompt with the typed text.
+            const mode = messageWindowMode();
+            if (mode === 's' || (mode === 'c' && !doprev)) {
+                if (!doprev) await doprevMessage(false);
+                await doprevMessage(false);
+                doprev = true;
+                game._toplines = `${prompt} ${value}`;
+                continue;
+            }
+            await doprevMessage(false);
+            doprev = false;
+            game._messageHistoryCursor = null;
+            game._pending_message = `${prompt} ${value}`;
+            game._toplines = game._pending_message;
+            clearSuppressedStatus();
+            renderEditor();
+            continue;
+        }
+        if (doprev) {
+            // The first ordinary key after browsing only resets the walk;
+            // it is still processed by this pass.
+            game._messageHistoryCursor = null;
+            doprev = false;
+        }
         // pgetchar() returns signed char in the pinned build: 0xff becomes
         // EOF, which hooked_tty_getlin() cancels even after typed text.
         if (key === -1 || key === 0xff) return finish(null);
@@ -206,7 +238,9 @@ export async function tty_yn_function(
     };
     const finish = (answer: string, count = 0n): TtyPromptAnswer => {
         game._ynNumber = count;
-        if (game.nhDisplay) game.nhDisplay.toplines = message + (count ? `#${count}` : answer);
+        // clean_up rewrites gt.toplines with the answered question; the
+        // recorded answer names the key like C key2txt().
+        game._toplines = message + (count ? `#${count}` : keyText(answer.charCodeAt(0)));
         // Native cleanup marks the question seen even when fuzzer input
         // bypasses tty_nhgetch(). Keep a one-line question visible.
         game._pending_message = '';
@@ -215,8 +249,39 @@ export async function tty_yn_function(
         return { answer, count };
     };
     if (responses === null) return finish(await readAnswer());
+    let doprev = false;
     for (;;) {
         const character = await readAnswer();
+        if (character === '\x10') {
+            if (messageWindowMode() !== 's') {
+                // Full, combination, and reverse page the window with
+                // inread clear, then repaint the question.
+                await doprevMessage(false);
+                clearMessageWindow();
+                game._messageHistoryCursor = null;
+                await setTopline(message);
+                await flush_screen(1);
+                renderChoicePrompt(message);
+            } else {
+                // Two recalls initially: gt.toplines holds the question
+                // prompt, so the first press already shows one entry back.
+                if (!doprev) await doprevMessage(true);
+                await doprevMessage(true);
+                doprev = true;
+            }
+            continue;
+        }
+        if (doprev) {
+            // The key typed after single-mode browsing is discarded and the
+            // question repainted, exactly like tty_yn_function().
+            clearMessageWindow();
+            game._messageHistoryCursor = null;
+            doprev = false;
+            await setTopline(message);
+            await flush_screen(1);
+            renderChoicePrompt(message);
+            continue;
+        }
         if (character === '\x1b') return finish(responses.includes('q') ? 'q'
             : responses.includes('n') ? 'n' : defaultAnswer);
         // strchr(quitchars, q) also matches the string's terminating NUL.

@@ -1415,6 +1415,25 @@ function parseConfiguration(rc, result, report, fromFile) {
                 }
                 continue;
             }
+            if (canonical === 'msghistory') {
+                // optfn_msghistory(): atoi() of the value, negation clears
+                // the count; tty_create_nhwindow(NHW_MESSAGE) clamps the
+                // recall ring to 20..MAX_MSG_HISTORY when it is used.
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (negated && raw) {
+                    addError(`The ${canonical} option may not both have a value and be negated.`);
+                }
+                else if (negated) {
+                    result.iflags.msg_history = 0;
+                }
+                else if (raw) {
+                    result.iflags.msg_history = cInteger(raw);
+                }
+                else {
+                    addError(`Missing parameter for '${stripped}'`);
+                }
+                continue;
+            }
             if (bindingOption === 'prayconfirm') {
                 // optfn_paranoid_confirmation()'s deprecated alias: any
                 // value is an error, otherwise it becomes ±pray.
@@ -2632,7 +2651,7 @@ function requestMenuSections() {
                 readonly('catname', game.flags.catname || '(none)'),
                 readonly('dogname', game.flags.dogname || '(none)'),
                 readonly('horsename', game.flags.horsename || '(none)'),
-                readonly('msghistory', '20'),
+                readonly('msghistory', String(game.iflags.msg_history ?? 20)),
                 readonly('pettype', preferredPetDescription()),
                 readonly('soundlib', 'nosound'),
                 choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),

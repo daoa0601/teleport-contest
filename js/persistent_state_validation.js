@@ -1,6 +1,7 @@
 import { SAVE_VERSION } from './state_schema.js';
-import { decodeSavedGraph, isSavedRecord } from './saved_graph.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, mapOf, nullable, numericRecordOf, oneOf, optional, setOf, string, } from './saved_validation.js';
+import { BUFSZ, MAX_MSG_HISTORY } from './const.js';
+import { decodeSavedGraph, isSavedRecord } from './saved_graph.js';
 import { createSavedEntityChecks } from './entity_validation.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { OBJECT_SPELL_CATEGORY } from './object_data.js';
@@ -58,6 +59,7 @@ function validPersistentState(value, entities) {
         _levelAnnotations: optional(mapOf(string, string)),
         _levelCache: optional(mapOf(string, cachedLevel)),
         _lifeSavedCount: optional(integer),
+        _messageHistory: validMessageHistory,
         _migratingMonsters: optional(arrayOf(entities.monster)),
         _nextAttribCheck: optional(integer),
         _nextIdent: optional(integer),
@@ -171,6 +173,13 @@ function validPersistentState(value, entities) {
     }))
         return false;
     return true;
+}
+// C save.c:save_msghistory() archives the tty recall ring oldest-first;
+// entries are non-empty toplines and the ring never exceeds
+// MAX_MSG_HISTORY slots.
+function validMessageHistory(value) {
+    return arrayOf(string)(value) && value.length <= MAX_MSG_HISTORY
+        && value.every(msg => msg.length > 0 && msg.length < BUFSZ);
 }
 function validSpell(value) {
     return closedFieldsMatch(value, {

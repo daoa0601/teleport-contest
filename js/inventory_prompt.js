@@ -1,7 +1,7 @@
 import { ingSuffix } from './hacklib.js';
 // Inventory selection shared by commands which use NetHack's getobj flow.
 // C ref: invent.c getobj().
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, pline, setTopline } from './display.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
@@ -13,6 +13,8 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_dat
 import { splitObjectStack } from './object_stack.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
+import { keyText } from './prevmsg.js';
+import { putMessageHistory } from './display.js';
 const CANCELLED = { cancelled: true, object: null, none: false, count: null };
 const HANDS = { cancelled: false, object: null, none: true, count: null };
 const COIN_CLASS = 12;
@@ -367,19 +369,26 @@ async function readInventoryCount(firstKey) {
             showZero = key === 48;
         }
         else if (key === 8 || key === 127) {
-            if (!count)
+            if (!count) {
+                putMessageHistory(`Count: ${count} ${keyText(key)}`);
                 return { key, count: 0 };
+            }
             count = Math.trunc(count / 10);
             backspaced = true;
         }
-        else
+        else {
+            // C get_count(GC_SAVEHIST): the typed count and the accepting
+            // key join the recall history, even when the count is refused.
+            putMessageHistory(`Count: ${count} ${keyText(key)}`);
             return { key, count: key === 27 ? 0 : count };
+        }
         if (count > 9 || backspaced) {
             const text = backspaced && !count && !showZero ? 'Count: ' : `Count: ${count}`;
             if (count || showZero)
                 backspaced = false;
             clearMessageWindow();
-            await pline(text);
+            // The echo itself is custompline(SUPPRESS_HISTORY).
+            await setTopline(text);
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }

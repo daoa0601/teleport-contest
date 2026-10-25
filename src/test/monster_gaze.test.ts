@@ -42,7 +42,7 @@ function gazeRoom(expected: RegExp) {
             assert.equal(blocked, true, 'the completed monster actions must return to command input');
             const display = requireGameDisplay();
             const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
-            const prose = game._pending_message || display.topMessage || display.toplines;
+            const prose = game._pending_message || game._toplines;
             assert.match(prose, expected, 'unexpected prose while completing the gaze turn');
             if (screen.includes('--More--')) {
                 input.feed(' ');

@@ -26,7 +26,7 @@ import { statusTerrain } from './status_terrain.js';
 import { hitpointBar } from './status_hitpoint_bar.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, MAX_MSG_HISTORY, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -3143,6 +3143,10 @@ export async function setTopline(msg) {
         vision_recalc(0);
     if (game.u.ux)
         await flush_screen(1);
+    // Every caller models a tty_putstr(WIN_MESSAGE, ATR_NOHISTORY) prompt:
+    // remember_topl() archives the negotiated line, and the prompt itself
+    // is shown without being remembered.
+    rememberToplines();
     replaceTopline(msg);
     game._lastPlineMessage = msg;
     game._lastPlineKind = PLNMSG_UNKNOWN;
@@ -3153,6 +3157,34 @@ function replaceTopline(msg) {
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
+}
+// C tty topl.c:remember_topl(): archive gt.toplines into the WIN_MESSAGE
+// recall ring and clear the negotiated topline. The port keeps the ring
+// oldest-first on game state so ^P recall and save/restore share it.
+export function rememberToplines() {
+    const toplines = game._toplines;
+    if (!toplines)
+        return;
+    // tty_create_nhwindow(NHW_MESSAGE) clamps iflags.msg_history into
+    // 20..MAX_MSG_HISTORY; the ring is that many slots.
+    const capacity = Math.max(20, Math.min(MAX_MSG_HISTORY, game.iflags.msg_history ?? 20));
+    game._messageHistory.push(toplines);
+    if (game._messageHistory.length > capacity)
+        game._messageHistory.shift();
+    game._toplines = '';
+    game._messageHistoryCursor = null;
+}
+// C tty topl.c:tty_putmsghistory(msg, FALSE): remember what is pending and
+// make this line the current topline without displaying it. The quest pager
+// synopsis, novel tribute attribution, and count echoes use this path.
+export function putMessageHistory(message) {
+    // putmsghistory() marks a displayed topline as seen before replacing it.
+    if (game._pending_message) {
+        game._retained_message = game._pending_message;
+        game._pending_message = '';
+    }
+    rememberToplines();
+    game._toplines = message;
 }
 function decodeMixedTopline(message) {
     const cells = [];
@@ -3186,7 +3218,7 @@ function decodeMixedTopline(message) {
     }
     return cells;
 }
-function toplineRows(message, columns, { splitWords = true } = {}) {
+export function toplineRows(message, columns, { splitWords = true } = {}) {
     const cells = decodeMixedTopline(message);
     // tty update_topl() replaces a space with a newline. A single oversized
     // word is left intact; topl_putsym() then wraps it at the last column.
@@ -3278,7 +3310,7 @@ export async function showMessageMenu(letter, pickMode, message) {
 }
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
-async function pageTopline(message, { urgent = false, dismissKey } = {}) {
+export async function pageTopline(message, { urgent = false, dismissKey } = {}) {
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
     const lines = toplineRows(message, columns);
@@ -3441,20 +3473,27 @@ async function updateTopline(msg, options = {}) {
         // keeps WIN_STOP set through the following survival question.
         if (game.nhDisplay)
             game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
+        game._toplines = fits && !restarts ? `${game._toplines}  ${msg}` : msg;
         if (!restarts)
             return null;
+        // "You die" clears WIN_STOP and is remembered like any new line.
+        rememberToplines();
+        game._toplines = msg;
         game._suppressMessagesUntilInput = false;
         replaceTopline(msg);
         return wraps ? await pageTopline(msg, paging) : null;
     }
     let dismissal;
     if (!pending) {
+        rememberToplines();
+        game._toplines = msg;
         replaceTopline(msg);
         dismissal = wraps
             ? await pageTopline(msg, paging) : null;
     }
     else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
+        game._toplines = `${game._toplines}  ${msg}`;
         replaceTopline(`${pending}  ${msg}`);
         dismissal = null;
     }
@@ -3464,6 +3503,8 @@ async function updateTopline(msg, options = {}) {
         if (dismissal === 27)
             paging.dismissKey = 1;
         // Escape suppresses later lines, not the line which forced this pager.
+        rememberToplines();
+        game._toplines = msg;
         replaceTopline(msg);
         if (wraps)
             dismissal = await pageTopline(msg, paging);

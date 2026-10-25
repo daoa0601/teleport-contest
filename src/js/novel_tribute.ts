@@ -1,6 +1,6 @@
 // C do_name.c:noveltitle() and files.c:choose_passage()/read_tribute().
 import { game } from './gstate.js';
-import { plineWithContinuation } from './display.js';
+import { plineWithContinuation, putMessageHistory } from './display.js';
 import { rn2 } from './rng.js';
 import { NOVEL_PASSAGES } from './tribute_data.js';
 import { showTextMenuOverlay } from './windows.js';
@@ -50,9 +50,8 @@ export async function readNovelTribute(book: GameObject, title: string, state: G
     attribution = attribution.includes('[') ? attribution.trim().replace(/\s+/gu, ' ')
         : `[${title}, by Terry Pratchett]`;
     attribution = attribution.replace(/\][^\]]*$/u, `; passage #${passage}]`);
-    if (state.nhDisplay?.messages) {
-        state.nhDisplay.messages.push(attribution);
-        if (state.nhDisplay.messages.length > 20) state.nhDisplay.messages.shift();
-    }
+    // C files.c: putmsghistory(lastline, FALSE) files the attribution for
+    // ^P recall without displaying it.
+    putMessageHistory(attribution);
     return true;
 }

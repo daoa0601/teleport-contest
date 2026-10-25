@@ -16,6 +16,7 @@ const DEFAULT_COMMAND_KEYS = new Map([
     ['quaff', 'q'], ['quiver', 'Q'], ['read', 'r'], ['remove', 'R'],
     ['reqmenu', 'm'], ['run', 'G'], ['rush', 'g'], ['save', 'S'],
     ['search', 's'], ['swap', 'x'],
+    ['prevmsg', String.fromCharCode(16)],
     ['seeamulet', '"'], ['seearmor', '['], ['seerings', '='], ['seeweapon', ')'],
     ['seetools', '('], ['seeall', '*'], ['inventtype', 'I'],
     ['showgold', '$'], ['showspells', '+'], ['terrain', String.fromCharCode(127)],

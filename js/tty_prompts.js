@@ -10,6 +10,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { controlKeyHintLines } from './command_help.js';
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
@@ -23,20 +24,59 @@ async function paintKeyPrompt(message, cursorOffset = 0) {
 }
 export async function promptKey(message, cursorOffset = 0) {
     const queuedKey = takeCommandKey();
-    if (queuedKey !== undefined)
+    if (queuedKey !== undefined) {
+        // tty_yn_function()'s clean_up records the answered prompt even
+        // when its key came from the command queue.
+        game._toplines = `${message}${keyText(queuedKey)}`;
         return queuedKey;
+    }
     // tty_yn_function() clears WIN_STOP before painting its question,
     // including when fuzzer input will bypass nhgetch().
     game._suppressMessagesUntilInput = false;
     const coveredRows = await paintKeyPrompt(message, cursorOffset);
-    // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
-    const key = await readchar();
+    let doprev = false;
+    let key;
+    for (;;) {
+        // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
+        key = await readchar();
+        if (key === 16) {
+            if (messageWindowMode() !== 's') {
+                // Full, combination, and reverse page the window with
+                // inread clear, then repaint the question.
+                await doprevMessage(false);
+                clearMessageWindow();
+                game._messageHistoryCursor = null;
+                await paintKeyPrompt(message, cursorOffset);
+            }
+            else {
+                // Two recalls initially: the pending gt.toplines already
+                // holds the prompt, so the first press shows one entry back.
+                if (!doprev)
+                    await doprevMessage(true);
+                await doprevMessage(true);
+                doprev = true;
+            }
+            continue;
+        }
+        if (doprev) {
+            // The key typed after single-mode browsing is discarded and the
+            // question repainted, exactly like tty_yn_function().
+            clearMessageWindow();
+            game._messageHistoryCursor = null;
+            doprev = false;
+            await paintKeyPrompt(message, cursorOffset);
+            continue;
+        }
+        break;
+    }
     // Fuzzer input bypasses nhgetch(); tty_yn_function's cleanup still marks
     // its question as read.
     if (game._pending_message) {
         game._retained_message = game._pending_message;
         game._pending_message = '';
     }
+    // clean_up rewrites gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
     // C tty_yn_function() retains a one-line query, but clears wrapped ones.
     if (coveredRows > 1)
         clearMessageWindow(coveredRows);

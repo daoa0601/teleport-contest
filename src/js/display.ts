@@ -49,6 +49,7 @@ import {
     In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
     MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum,
+    MAX_MSG_HISTORY,
 } from './const.js';
 import {
     NO_COLOR, ATR_INVERSE, CLR_BLACK,
@@ -3181,6 +3182,10 @@ export async function setTopline(msg: string) {
     // flushes the map or negotiates tty's previous-topline pager.
     if (game.vision_full_recalc) vision_recalc(0);
     if (game.u.ux) await flush_screen(1);
+    // Every caller models a tty_putstr(WIN_MESSAGE, ATR_NOHISTORY) prompt:
+    // remember_topl() archives the negotiated line, and the prompt itself
+    // is shown without being remembered.
+    rememberToplines();
     replaceTopline(msg);
     game._lastPlineMessage = msg;
     game._lastPlineKind = PLNMSG_UNKNOWN;
@@ -3192,6 +3197,34 @@ function replaceTopline(msg: string): void {
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
+}
+
+// C tty topl.c:remember_topl(): archive gt.toplines into the WIN_MESSAGE
+// recall ring and clear the negotiated topline. The port keeps the ring
+// oldest-first on game state so ^P recall and save/restore share it.
+export function rememberToplines(): void {
+    const toplines = game._toplines;
+    if (!toplines) return;
+    // tty_create_nhwindow(NHW_MESSAGE) clamps iflags.msg_history into
+    // 20..MAX_MSG_HISTORY; the ring is that many slots.
+    const capacity = Math.max(20, Math.min(MAX_MSG_HISTORY, game.iflags.msg_history ?? 20));
+    game._messageHistory.push(toplines);
+    if (game._messageHistory.length > capacity) game._messageHistory.shift();
+    game._toplines = '';
+    game._messageHistoryCursor = null;
+}
+
+// C tty topl.c:tty_putmsghistory(msg, FALSE): remember what is pending and
+// make this line the current topline without displaying it. The quest pager
+// synopsis, novel tribute attribution, and count echoes use this path.
+export function putMessageHistory(message: string): void {
+    // putmsghistory() marks a displayed topline as seen before replacing it.
+    if (game._pending_message) {
+        game._retained_message = game._pending_message;
+        game._pending_message = '';
+    }
+    rememberToplines();
+    game._toplines = message;
 }
 
 function decodeMixedTopline(message: string): ToplineCell[] {
@@ -3226,7 +3259,7 @@ function decodeMixedTopline(message: string): ToplineCell[] {
     return cells;
 }
 
-function toplineRows(
+export function toplineRows(
     message: string, columns: number, { splitWords = true }: { splitWords?: boolean } = {},
 ): [ToplineCell[], ...ToplineCell[][]] {
     const cells = decodeMixedTopline(message);
@@ -3323,7 +3356,7 @@ export async function showMessageMenu(
 
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
-async function pageTopline(
+export async function pageTopline(
     message: string, { urgent = false, dismissKey }: ToplinePagingOptions = {},
 ): Promise<number> {
     const display = game.nhDisplay;
@@ -3493,18 +3526,25 @@ async function updateTopline(
         // keeps WIN_STOP set through the following survival question.
         if (game.nhDisplay)
             game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
+        game._toplines = fits && !restarts ? `${game._toplines}  ${msg}` : msg;
         if (!restarts) return null;
+        // "You die" clears WIN_STOP and is remembered like any new line.
+        rememberToplines();
+        game._toplines = msg;
         game._suppressMessagesUntilInput = false;
         replaceTopline(msg);
         return wraps ? await pageTopline(msg, paging) : null;
     }
     let dismissal;
     if (!pending) {
+        rememberToplines();
+        game._toplines = msg;
         replaceTopline(msg);
         dismissal = wraps
             ? await pageTopline(msg, paging) : null;
     } else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
+        game._toplines = `${game._toplines}  ${msg}`;
         replaceTopline(`${pending}  ${msg}`);
         dismissal = null;
     } else {
@@ -3512,6 +3552,8 @@ async function updateTopline(
         // xwaitforspace() replaces dismiss_more with 1 on Escape.
         if (dismissal === 27) paging.dismissKey = 1;
         // Escape suppresses later lines, not the line which forced this pager.
+        rememberToplines();
+        game._toplines = msg;
         replaceTopline(msg);
         if (wraps)
             dismissal = await pageTopline(msg, paging);

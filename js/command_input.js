@@ -4,7 +4,7 @@ import { setMulti } from './command_state.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { game } from './gstate.js';
 import { readchar } from './input.js';
-import { flush_screen, pline } from './display.js';
+import { flush_screen, setTopline } from './display.js';
 export async function readCommandInput() {
     game._commandCount = 0;
     setMulti(0);
@@ -49,7 +49,7 @@ async function readCommandCount() {
             if (count || showZero)
                 backspaced = false;
             clearCommandMessage();
-            await pline(text);
+            await setTopline(text);
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }

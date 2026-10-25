@@ -194,6 +194,7 @@ import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
+    setTopline, putMessageHistory,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
     monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph,
@@ -201,6 +202,7 @@ import { displayLiquidName, displayMessageWindow,
     see_traps, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
+import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { transformMagicLampToOilLamp } from './light.js';
 import {
     dozap,
@@ -1314,7 +1316,10 @@ export async function rhack(key: number): Promise<void> {
                 ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
                 : configured.command;
         if (!command) {
-            await pline(`Unknown command '${visibleCommandKey(key)}'.`);
+            // C parse()/rhack() report an unknown key with
+            // custompline(SUPPRESS_HISTORY): the previous line is
+            // remembered, the complaint itself is not.
+            await setTopline(`Unknown command '${visibleCommandKey(key)}'.`);
             // Unlike a rejected known command, C's unknown-key tail keeps
             // pending movement flags until the next command resolves them.
             game._cannedCommands = [];
@@ -1335,9 +1340,11 @@ export async function rhack(key: number): Promise<void> {
             const which = prefixKey ? visibleCommandKey(prefixKey)
                 : prefix.handler === 'do_reqmenu'
                     ? 'move-no-pickup or request-menu' : prefix.name;
-            if (menuPrefix)
-                await pline(`The ${command.name} command does not accept '${which}' prefix.`);
-            else {
+            if (menuPrefix) {
+                // C rhack() reports the M-prefix refusal with
+                // custompline(SUPPRESS_HISTORY), unlike the g/G/F variant.
+                await setTopline(`The ${command.name} command does not accept '${which}' prefix.`);
+            } else {
                 const vertical = command.handler === 'doup' || command.handler === 'dodown';
                 await pline(`The '${which}' prefix should be followed by a movement command${vertical ? ' other than up or down' : ''}.`);
             }
@@ -1595,7 +1602,11 @@ async function runCommandHandler(binding: CommandBinding, {
         await wizMap();
         return;
     }
-
+    if (key === 16) { // Ctrl-P: doprev_message(), a GENERALCMD redisplay.
+        await doprevMessage();
+        game.context.move = 0;
+        return;
+    }
     if (ch === 'i') {
         enqueueInventoryAction(await ddoinv());
     } else if (ch === 'I') {
@@ -1716,8 +1727,8 @@ async function runCommandHandler(binding: CommandBinding, {
         game.context.move = 0;
     } else {
         // Unknown command
+        await setTopline(`Unknown command '${ch}'.`);
         game.context.move = 0;
-        await pline(`Unknown command '${ch}'.`);
     }
 }
 
@@ -3857,6 +3868,7 @@ async function readInventorySplitCount(): Promise<number | null> {
     await flushPendingTopline();
     let key = await promptKey('Split off how many?', 1);
     if (key < 48 || key > 57) return null;
+    const firstDigit = key - 48;
     let count = BigInt(key - 48);
     let showCount = true;
     for (;;) {
@@ -3873,6 +3885,10 @@ async function readInventorySplitCount(): Promise<number | null> {
             showCount = count > 0n;
         } else {
             clearMessageWindow();
+            // C get_count(GC_CONDHIST): "Count: N <key>" joins the recall
+            // history when the final count differs from its first digit.
+            if (Number(count) !== firstDigit)
+                putMessageHistory(`Count: ${count} ${keyText(key)}`);
             return key === 32 || key === 10 || key === 13 ? Number(count) : null;
         }
     }
@@ -4671,8 +4687,35 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
             display?.setCursor(insertion, 0);
     };
 
+    let doprev = false;
     for (;;) {
         const key = await nhgetch();
+        if (key === 16) {
+            // C win/tty/getline.c hooked_tty_getlin(): the "#" editor
+            // browses history with ^P like any getlin, with inread clear
+            // so full/combination modes page their windows.
+            const mode = messageWindowMode();
+            if (mode === 's' || (mode === 'c' && !doprev)) {
+                if (!doprev) await doprevMessage(false);
+                await doprevMessage(false);
+                doprev = true;
+            } else {
+                await doprevMessage(false);
+                doprev = false;
+                game._messageHistoryCursor = null;
+                await redrawCommand();
+            }
+            // The loop head keeps gt.toplines equal to the typed line.
+            game._toplines = command ? `${initiator} ${completion || command}` : initiator;
+            continue;
+        }
+        if (doprev) {
+            // The first ordinary key after single-mode browsing only
+            // repaints the prompt; the key itself is still processed.
+            game._messageHistoryCursor = null;
+            doprev = false;
+            await redrawCommand();
+        }
         if (key === 27) {
             // tty_getlin(): Escape first clears non-empty input; only Escape
             // at an already empty prompt cancels the extended command.
@@ -4684,6 +4727,7 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
             }
             game._pending_message = '';
             game._retained_message = '';
+            game._toplines = '';
             game.nhDisplay?.clearRow(0);
             game.context.move = 0;
             return null;
@@ -4717,6 +4761,7 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
     // editor is not an unread message for a later cls() to acknowledge.
     game._pending_message = '';
     game._retained_message = '';
+    game._toplines = '';
     game.nhDisplay?.clearRow(0);
     const normalizedCommand = (completion || command)
         .trim()
