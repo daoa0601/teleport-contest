@@ -1,8 +1,8 @@
 import { arrayValue, booleanValue, numberValue, objectValue, stringValue } from '../lib/session-types.mjs';
 export function decodeGeneratorKind(value) {
-    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep')
+    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide')
         return value;
-    throw new Error('generator kind must be recipe, fuzz, explore, or deep');
+    throw new Error('generator kind must be recipe, fuzz, explore, deep, or wide');
 }
 function decodeDateCategory(value) {
     if (value === 'ordinary' || value === 'fullMoon' || value === 'newMoon' || value === 'friday13' || value === 'night')

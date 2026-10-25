@@ -60,8 +60,8 @@ function options(argv: readonly string[]): GeneratorOptions | null {
         if (!Number.isSafeInteger(opts[key]) || opts[key] < 1) throw new Error(`${key} must be a positive integer`);
     }
     if (opts.jobs > 4) throw new Error('use at most four isolated recorder workers');
-    if (!opts.kinds.length || opts.kinds.some(kind => !['recipe', 'fuzz', 'explore', 'deep'].includes(kind))) {
-        throw new Error('kinds must contain recipe, fuzz, explore, or deep');
+    if (!opts.kinds.length || opts.kinds.some(kind => !['recipe', 'fuzz', 'explore', 'deep', 'wide'].includes(kind))) {
+        throw new Error('kinds must contain recipe, fuzz, explore, deep, or wide');
     }
     if (opts.recipes && !opts.kinds.includes('recipe')) throw new Error('--recipes requires recipe in --kinds');
     opts.maxAttempts = requestedMaxAttempts ?? opts.count * 3;
@@ -137,6 +137,7 @@ function makeCandidate(index: number, seeds: Set<number>, kinds: readonly Genera
     const rotation: GeneratorKind[] = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep' as const] : [])];
+    if (kinds.includes('wide')) rotation.push('wide');
     const schedule = rotation.filter(kind => kinds.includes(kind));
     const kind = itemAt(schedule, index % schedule.length);
     let character = characterAt(index);
@@ -232,7 +233,7 @@ async function record(input: string, output: string, install: string): Promise<v
 async function main(): Promise<void> {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep] [--recipes NAME,...] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep,wide] [--recipes NAME,...] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
@@ -343,7 +344,7 @@ async function main(): Promise<void> {
 void main().catch((error: unknown) => { console.error(errorMessage(error)); process.exitCode = 1; });
 
 function parseKind(value: string): GeneratorKind {
-    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep') return value;
+    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide') return value;
     throw new Error(`Unknown candidate kind: ${value}`);
 }
 

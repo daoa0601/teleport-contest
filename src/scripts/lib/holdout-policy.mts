@@ -1,5 +1,5 @@
 import { decodePolicyConfig, itemAt } from './session-types.mjs';
-import type { Cursor, DriverSummary, SessionDriver } from './session-types.mjs';
+import type { Cursor, DriverSummary, PolicyConfig, SessionDriver } from './session-types.mjs';
 type Position = { x: number; y: number };
 type ScreenCursor = readonly [number, number] | Cursor;
 type Direction = 'h' | 'j' | 'k' | 'l' | 'y' | 'u' | 'b' | 'n';
@@ -78,7 +78,7 @@ function previousNode(previous: Map<string, string | null>, node: string): strin
     return parent;
 }
 function isDirection(key: string): key is Direction { return Object.hasOwn(DIRS, key); }
-// holdout-policy.mjs — C-screen-driven holdout drivers (fuzz / explore).
+// holdout-policy.mjs — C-screen-driven holdout drivers (fuzz / explore / wide).
 //
 // A policy is an object driver for the native recorder: nextKey(lines, {cursor})
 // returns the next single key to send (or null once the driver is done), and
@@ -646,7 +646,7 @@ function pickWeighted(rand: () => number, entries: readonly (readonly [string, n
 
 /**
  * Create a holdout driver.
- * config: { kind: 'fuzz'|'explore', seed: integer, maxSteps: integer,
+ * config: { kind: 'fuzz'|'explore'|'wide', seed: integer, maxSteps: integer,
  *           name?: string }
  */
 export function createHoldoutPolicy(input: unknown): SessionDriver & { acceptsGameExit: true; summary: DriverSummary } {
@@ -654,13 +654,14 @@ export function createHoldoutPolicy(input: unknown): SessionDriver & { acceptsGa
     const kind = config.kind;
     const seed = config?.seed;
     const maxSteps = config?.maxSteps;
-    if (kind !== 'fuzz' && kind !== 'explore') {
-        throw new Error(`holdout policy kind must be 'fuzz' or 'explore': ${kind}`);
+    if (kind !== 'fuzz' && kind !== 'explore' && kind !== 'wide') {
+        throw new Error(`holdout policy kind must be 'fuzz', 'explore', or 'wide': ${kind}`);
     }
     if (!Number.isInteger(seed)) throw new Error('holdout policy needs an integer seed');
     if (!Number.isInteger(maxSteps) || maxSteps < 1 || maxSteps > 1_000_000) {
         throw new Error(`holdout policy needs 1..1000000 maxSteps: ${maxSteps}`);
     }
+    if (kind === 'wide') return createWidePolicy(config);
     const playerName = typeof config.name === 'string' && config.name.trim()
         ? config.name.trim().slice(0, 32) : null;
     const rand = mulberry32(seed);
@@ -1192,4 +1193,266 @@ export function createHoldoutPolicy(input: unknown): SessionDriver & { acceptsGa
             };
         },
     };
+}
+
+// cmd.c:extcmdlist. Host commands (shell, suspend, bug reporting), saving and
+// quitting do not belong in a policy which must keep supplying game input.
+const WIDE_EXTENDED = ['pray', 'chat', 'offer', 'turn', 'monster', 'ride', 'sit',
+    'force', 'loot', 'tip', 'wipe', 'jump', 'invoke', 'rub', 'untrap', 'terrain',
+    'overview', 'conduct', 'annotate', 'name', 'adjust', 'dip', 'enhance', 'quiver',
+    'vanquished', 'genocided', 'history', 'lookaround', 'herecmdmenu', 'therecmdmenu'];
+const WIDE_ITEM_KEYS = 'qrztfZpPRWTAxXdDaiIewCE';
+const WIDE_INFO_KEYS = 'OvV:;/?\\`$+="[()*^@&|\x18\x10\x0f\x06\x14\x05\x12\x01';
+const EXIT_CHOICE = /\b(quit|save|shell|suspend|exploremode)\b|no return|leave the dungeon|escape the dungeon/i;
+
+/** A separate policy keeps legacy fuzz/explore choices and random draws intact. */
+function createWidePolicy(config: PolicyConfig): SessionDriver & { acceptsGameExit: true; summary: DriverSummary } {
+    const { seed, maxSteps } = config;
+    const rand = mulberry32(seed);
+    const choose = <T,>(values: readonly T[]): T => itemAt(values, Math.floor(rand() * values.length));
+    const drainBudget = 96 + Math.floor(maxSteps / 8);
+    const summary: DriverSummary = {
+        kind: 'wide', seed, maxSteps, keysSent: 0, calls: 0, stopReason: null,
+        dead: false, dlvl: null, turns: null, maxTurns: null, hp: null, hpMax: null,
+        hunger: null, exploredCells: 0, descends: 0, attacks: 0, doorsOpened: 0,
+        promptKeys: {}, lastClass: null,
+    };
+    let prefix = '';
+    let extended: string | null = null;
+    let lineInput: { query: string; target: string; remaining: string } | null = null;
+    let targetingMoves: number | null = null;
+    let menuHeading: string | null = null;
+    let menuPicks = new Set<string>();
+    let menuLimit = 0;
+
+    function send(key: string): string {
+        summary.keysSent++;
+        return key;
+    }
+
+    function startLine(query: string, target: string): string {
+        lineInput = { query, target, remaining: target + '\r' };
+        return continueLine(query);
+    }
+
+    function continueLine(visible: string): string {
+        if (!lineInput) return send(ESC);
+        // tty_get_ext_cmd() can complete a whole word before we type it all.
+        if (lineInput.query === '#' && visible.slice(1).trim() === lineInput.target) {
+            lineInput = null;
+            return send('\r');
+        }
+        const key = lineInput.remaining.charAt(0);
+        lineInput.remaining = lineInput.remaining.slice(1);
+        if (!lineInput.remaining) lineInput = null;
+        return send(key);
+    }
+
+    function nextKey(lines: readonly string[], info?: { cursor?: Cursor }): string | null {
+        summary.calls++;
+        if (summary.stopReason) return null;
+        const rows = decodeScreen(lines);
+        const cursor = info?.cursor;
+        const status = parseStatus(rows);
+        const cls = classifyRows(rows, cursor);
+        const active = rows[cursor?.[1] ?? 0]?.trim() ?? '';
+        summary.lastClass = cls.kind;
+        if (status) {
+            summary.hp = status.hp;
+            summary.hpMax = status.hpMax;
+            summary.hunger = status.hunger;
+            summary.dlvl = status.dlvl;
+            summary.turns = status.turns;
+            if (status.turns !== null) summary.maxTurns = Math.max(summary.maxTurns ?? 0, status.turns);
+        }
+        if (cls.kind === 'death' || status?.hp === 0) summary.dead = true;
+        if (summary.keysSent >= maxSteps + drainBudget) {
+            summary.stopReason = summary.dead ? 'death-bound' : 'prompt-overrun';
+            if (!summary.dead) {
+                throw new Error(`wide policy seed ${seed}: no command boundary after ${summary.keysSent} keys (${cls.kind}: ${active.slice(0, 120)})`);
+            }
+            return null;
+        }
+        if (summary.dead) {
+            if (cls.kind === 'more' || cls.kind === 'unknown') return send(' ');
+            if (cls.kind === 'menu') return send('\r');
+            return send(/\bDie\?/i.test(cls.detail) ? 'y' : 'n');
+        }
+        if (cls.kind !== 'command' && cls.kind !== 'unknown') {
+            summary.promptKeys[cls.kind] = (summary.promptKeys[cls.kind] ?? 0) + 1;
+        }
+        if (cls.kind === 'more') return send(' ');
+
+        const draining = summary.keysSent >= maxSteps;
+        if (lineInput) {
+            if (active.startsWith(lineInput.query)) {
+                if (!draining) return continueLine(active);
+                lineInput = null;
+                return send(ESC);
+            }
+            lineInput = null;
+        }
+        if ((!cursor || cursor[1] <= 2) && /^#\s*\w*$/.test(active)) {
+            const command = extended ?? choose(WIDE_EXTENDED);
+            extended = null;
+            return draining ? send(ESC) : startLine('#', command);
+        }
+
+        if (cls.kind === 'getpos' && targetingMoves === null) {
+            targetingMoves = 1 + Math.floor(rand() * 3);
+            if (rand() < 0.12) { targetingMoves = null; return send(ESC); }
+        }
+        if (targetingMoves !== null && (cls.kind === 'getpos' || cls.kind === 'command')) {
+            if (draining) { targetingMoves = null; return send(ESC); }
+            if (targetingMoves-- > 0) return send(choose(DIR_KEYS));
+            targetingMoves = null;
+            return send(rand() < 0.5 ? '.' : ',');
+        }
+
+        // Menus have the same footer for PICK_ONE, PICK_ANY and PICK_NONE.
+        // Reobserve after every selector: PICK_ONE may already have closed.
+        if (cls.kind === 'menu') return menuKey(rows, draining);
+        menuHeading = null;
+        menuPicks.clear();
+
+        if (cls.kind === 'chargen') return send('y');
+        if (cls.kind === 'direction') {
+            if (prefix) return sendPrefix();
+            return send(draining || rand() < 0.12 ? ESC : choose([...DIR_KEYS, '.', '<', '>']));
+        }
+        if (cls.kind === 'yn') {
+            if (EXIT_CHOICE.test(cls.detail)) return send(cls.choices?.includes('n') ? 'n' : ESC);
+            if (draining || rand() < 0.10) return send(ESC);
+            return send(choose((cls.choices ?? 'yn').replaceAll('/', '').split('')));
+        }
+
+        // Unlike the narrow legacy classifier, wide must accept object-class
+        // punctuation and inventory ranges, including questions wrapped to row 1.
+        const liveTop = !cursor || cursor[1] <= 2;
+        const bracket = liveTop ? active.match(/\[([^\]]+)\]\s*(?:\([^)]*\))?\s*$/) : null;
+        if (bracket) {
+            const choices = wideObjectChoices(itemAt(bracket, 1));
+            if (draining || rand() < 0.12) return send(ESC);
+            if (choices.length) return send(choose(choices));
+            return send(active.includes('?') ? '?' : ESC);
+        }
+        if (cls.kind === 'text') {
+            if (draining || rand() < 0.15) return send(ESC);
+            if (NAME_PROMPT_RE.test(cls.detail)) {
+                return startLine(cls.detail.trim(), config.name?.trim().slice(0, 32) || 'Holdout');
+            }
+            if (/what (?:do you want to (?:write|engrave)|should.*(?:name|call))|name|call|annotat|write|engrave|search for/i.test(cls.detail)) {
+                return startLine(cls.detail.trim(), 'wide');
+            }
+            return send(ESC);
+        }
+        if (cls.kind === 'count') {
+            if (prefix) return sendPrefix();
+            return send(draining ? ESC : choose([...DIR_KEYS, 's', '.']));
+        }
+        if (cls.kind !== 'command') { prefix = ''; return send(ESC); }
+        if (prefix) return sendPrefix();
+        if (draining && (!cursor || cls.cursorOnMap)) {
+            summary.stopReason = 'max-steps';
+            return null;
+        }
+        if (draining) return send(ESC);
+        return commandKey(rows, cursor, status);
+    }
+
+    function menuKey(rows: readonly string[], draining: boolean): string {
+        const entries = rows.flatMap((row, index) => {
+            const match = row.match(/(?:^|\s)([a-zA-Z$]) ([-+*#]) (\S.*)/);
+            return match ? [{ key: itemAt(match, 1), selected: match[2] !== '-', text: itemAt(match, 3), row: index }] : [];
+        });
+        const heading = rows.slice(0, entries[0]?.row ?? 1).join('\n');
+        if (menuHeading !== heading) {
+            menuHeading = heading;
+            menuPicks = new Set();
+            menuLimit = rand() < 0.5 ? 1 : 2;
+            if (!draining && rand() < 0.12) return send(ESC);
+        }
+        const available = entries.filter(entry => !entry.selected && !menuPicks.has(entry.key) && !EXIT_CHOICE.test(entry.text));
+        if (draining || menuPicks.size >= menuLimit) return send('\r');
+        if (!available.length) {
+            const page = rows.join('\n').match(/\((\d+) of (\d+)\)/);
+            return send(page && Number(page[1]) < Number(page[2]) ? ' ' : '\r');
+        }
+        const entry = choose(available);
+        menuPicks.add(entry.key);
+        return send(entry.key);
+    }
+
+    function sendPrefix(): string {
+        const key = prefix.charAt(0);
+        prefix = prefix.slice(1);
+        return send(key);
+    }
+
+    function commandKey(rows: readonly string[], cursor: ScreenCursor | undefined, status: Status | null): string {
+        const hero = findHero(rows, cursor, status);
+        const bottom = (status?.statusRow ?? rows.length) - 1;
+        summary.exploredCells = rows.slice(1, bottom).reduce((count, row) => count + row.replaceAll(' ', '').length, 0);
+        const action = pickWeighted(rand, [['move', 36], ['item', 22], ['door', 6],
+            ['info', 10], ['extended', 16], ['travel', 4], ['prefix', 8],
+            ['pickup', 4], ['search', 4], ['rest', 2], ['eat', status?.hunger ? 8 : 2]]);
+        if (action === 'item') return send(choose(WIDE_ITEM_KEYS.split('')));
+        if (action === 'door') {
+            const key = choose(['c', 'o', '\x04']);
+            if (key === 'o') summary.doorsOpened++;
+            return send(key);
+        }
+        if (action === 'info') return send(choose(WIDE_INFO_KEYS.split('')));
+        if (action === 'extended') { extended = choose(WIDE_EXTENDED); return send('#'); }
+        if (action === 'travel') {
+            const key = choose(['_', '<', '>']);
+            if (key === '>') summary.descends++;
+            return send(key);
+        }
+        if (action === 'pickup') return send(',');
+        if (action === 'search') return send('s');
+        if (action === 'rest') return send('.');
+        if (action === 'eat') return send('e');
+
+        const walkable = hero ? DIR_KEYS.filter(dir => {
+            const x = hero.x + DIRS[dir][1], y = hero.y + DIRS[dir][0];
+            const cell = cellAt(rows, x, y, bottom);
+            return cell !== undefined && (WALKABLE.has(cell) || MONSTER_RE.test(cell));
+        }) : [];
+        const dir = choose(walkable.length && rand() < 0.85 ? walkable : DIR_KEYS);
+        if (action === 'prefix') {
+            const modifier = choose(['m', 'g', 'G', 'F', 'shift', 'count', 'count-n']);
+            if (modifier === 'shift') return send(dir.toUpperCase());
+            // Small counts exercise parse()/get_count() without long occupations.
+            // 'n' introduces a count with number_pad; otherwise it moves southeast
+            // before the ordinary digit-prefixed move.
+            if (modifier === 'count-n') {
+                prefix = String(2 + Math.floor(rand() * 4)) + dir;
+                return send('n');
+            }
+            prefix = dir;
+            return send(modifier === 'count' ? String(2 + Math.floor(rand() * 4)) : modifier);
+        }
+        if (hero && adjacentMonster(rows, hero, bottom).some(monster => monster.dir === dir)) summary.attacks++;
+        return send(dir);
+    }
+
+    return {
+        nextKey, acceptsGameExit: true,
+        get exhausted() { return summary.stopReason !== null; },
+        get summary() { return { ...summary, promptKeys: { ...summary.promptKeys } }; },
+    };
+}
+
+function wideObjectChoices(advertised: string): string[] {
+    const options = (advertised.split(/\bor\b/)[0] ?? '').replaceAll(/\s/g, '');
+    const expanded = options.replaceAll(/([a-z])-([a-z])|([A-Z])-([A-Z])/g,
+        (_match: string, lowerStart: string | undefined, lowerEnd: string | undefined,
+            upperStart: string | undefined, upperEnd: string | undefined) => {
+            const first = (lowerStart ?? upperStart ?? '').charCodeAt(0);
+            const last = (lowerEnd ?? upperEnd ?? '').charCodeAt(0);
+            if (last < first) return '';
+            return Array.from({ length: last - first + 1 }, (_, offset) => String.fromCharCode(first + offset)).join('');
+        });
+    return Array.from(new Set(expanded.replaceAll(/[?*]/g, '').split('')));
 }
