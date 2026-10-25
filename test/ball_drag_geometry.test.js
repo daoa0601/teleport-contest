@@ -110,7 +110,7 @@ void test('a carried ball lets the chain trail one square behind the hero', asyn
 // C ball.c:drag_ball() drag label water branch: a chain over a pool that is
 // not a mere continuation of the ball's water jerks the hero back onto the
 // chain square and drags the ball onto it as well.
-void test('a pool under the chain jerks the hero back into the water', async () => {
+void test('a pool under the chain jerks the water-walking hero back onto it', async () => {
     const level = freshObjectRoom({
         heroX: 10, heroY: 10, flags: { pickup: false, verbose: true },
     });

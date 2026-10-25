@@ -35,19 +35,27 @@ void test('descending with an iron ball acknowledges the fall before clearing th
 });
 
 // C ball.c:drag_down(): a loose ball left on the floor smacks into the
-// descending hero before the ordinary tumbling damage.
-void test('a surviving stair descent collision with the loose ball still costs blood', async () => {
+// descending hero; the separate tumbling losehp() comes afterwards
+// (do.c:1792), so only the message itself proves the collision branch ran.
+void test('a surviving stair descent collision with the loose ball announces the smack', async () => {
     const { destination } = freshConnectedLevels();
     requirePlayingGame(game);
     game.u.uhp = game.u.uhpmax = 1000;
-    pushKeys(' '.repeat(30));
+    const input = resetInputState();
+    const seenLines: string[] = [];
+    input.beforeRead = () => {
+        seenLines.push(requireScreenRow(0).map(cell => cell.ch).join(''));
+        input.feed(' ');
+    };
     await punishHero();
     initRng(1n);
 
     await rhack('>'.charCodeAt(0));
 
     assert.equal(game.level, destination);
-    assert.ok(game.u.uhp < 1000, 'the ball collision and tumble both draw blood');
+    assert.ok(seenLines.some(line => /The iron ball smacks into you!/.test(line)),
+        'the collision message must reach the message pager');
+    assert.ok(game.u.uhp < 1000, 'the collision draws blood on top of the tumble');
     assert.ok(game.u.uhp > 950);
     assert.ok(game.uball && game.uchain, 'the punishment survives the landing');
 });
