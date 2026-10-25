@@ -4,8 +4,11 @@ import { wearHeroArmor } from '../js/armor.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { showEnlightenment } from '../js/insight.js';
 import { resetInputState } from '../js/input.js';
-import { CLOAK_OF_MAGIC_RESISTANCE } from '../js/object_data.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { CLOAK_OF_MAGIC_RESISTANCE, LONG_SWORD, SHORT_SWORD } from '../js/object_data.js';
+import { P_BASIC, P_LONG_SWORD, P_SHORT_SWORD, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TERMINAL_COLS } from '../js/const.js';
+import { ensureHeroSkills } from '../js/skills.js';
+import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
+import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -97,4 +100,51 @@ void test('a one-page enlightenment report ends with (end), a longer one numbers
             assert.deepEqual(footers, footers.map((_, page) => ` (${page + 1} of ${footers.length})`));
         }
     }
+});
+
+// C tty_end_menu() cuts an entry to cols - 2 characters, so the ^X menu never
+// draws its final column even when an enlightenment line would reach it.
+void test('enlightenment clips a full-width two-weapon skill line like the tty menu', async () => {
+    freshObjectRoom({ role: 'samurai', flags: { debug: true } });
+    requirePlayingGame(game);
+    const skills = ensureHeroSkills(game);
+    assert.ok(skills);
+    for (const skill of [P_LONG_SWORD, P_SHORT_SWORD]) {
+        const entry = skills[skill];
+        assert.ok(entry);
+        entry.skill = P_BASIC;
+    }
+    const twoWeapon = skills[P_TWO_WEAPON_COMBAT];
+    assert.ok(twoWeapon);
+    twoWeapon.skill = P_UNSKILLED;
+    await setPrimaryWeapon(await addInventoryWeapon(LONG_SWORD));
+    await setSecondaryWeapon(await addInventoryWeapon(SHORT_SWORD));
+    game.u.twoweap = true;
+
+    const input = resetInputState();
+    const report = showEnlightenment({ basic: false, magic: true });
+    let row = '';
+    let lastColumn = '';
+    try {
+        for (;;) {
+            const blocked = await Promise.race([
+                input.waitUntilBlocked().then(() => true), report.then(() => false),
+            ]);
+            if (!blocked) break;
+            for (const cells of requireGameDisplay().grid) {
+                const text = cells.map(cell => cell.ch).join('');
+                if (text.includes('short sword is also limited')) {
+                    row = text;
+                    lastColumn = cells[TERMINAL_COLS - 1]?.ch ?? '';
+                }
+            }
+            input.feed(' ');
+        }
+    } finally {
+        input.feed('\x1b');
+        await report;
+    }
+    assert.equal(row.trimEnd(),
+        '  Your skill in short sword is also limited by being unskilled with two weapons');
+    assert.equal(lastColumn, ' ');
 });
