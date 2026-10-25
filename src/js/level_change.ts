@@ -336,7 +336,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         try {
             game.level = cached.level;
             restoreEngravings(cached.level);
-            cached.stairs = restoreLevelChains(cached.stairs);
+            cached.stairs = restoreLevelChains(cached.level, cached.stairs);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             restoreLevelTimers(game);

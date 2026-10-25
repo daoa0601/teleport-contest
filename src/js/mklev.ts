@@ -3954,7 +3954,7 @@ async function getbones(): Promise<boolean> {
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
-    game.stairs = restoreLevelChains(payload.stairs || null);
+    game.stairs = restoreLevelChains(game.level, payload.stairs || null);
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
     }));

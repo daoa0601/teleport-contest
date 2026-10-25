@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { STAIRS } from '../js/const.js';
+import { DOOR, D_NODOOR, HWALL, SHOP_WALL_COST, STAIRS } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { addShopDamage, shopkeeperRepairsDamage } from '../js/shop_damage.js';
+import { hasShopkeeperData } from '../js/shop_types.js';
+import { vision_recalc } from '../js/vision.js';
+import { createStaffedShop } from './support/shop.js';
+import { installPagerInput } from './support/pager-input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { u_on_upstairs } from '../js/mklev.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -38,4 +44,32 @@ for (const cached of [false, true]) {
         assert.equal(game.u.uy, 10);
     });
 }
+
+void test('restoring lets the shopkeeper repair the older saved breach first', async () => {
+    freshObjectRoom();
+    const { roomno, shopkeeper } = await createStaffedShop({ keeperX: 12, keeperY: 10 });
+    for (const y of [9, 11]) {
+        const wall = requireGameLevel().requireAt(8, y);
+        wall.typ = HWALL;
+        wall.roomno = roomno;
+        wall.edge = true;
+        addShopDamage(8, y, SHOP_WALL_COST);
+        wall.typ = DOOR;
+        wall.doormask = D_NODOOR;
+    }
+    game.moves += 5;
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame(game.plname, storage), true);
+    vision_recalc(0);
+    const keeper = requireGameLevel().monsters.find(monster => monster.m_id === shopkeeper.m_id);
+    assert.ok(keeper && hasShopkeeperData(keeper));
+    const input = resetInputState();
+    installPagerInput(input, { expected: /incantation|wall closes/, limit: 3 });
+
+    await shopkeeperRepairsDamage(keeper);
+
+    assert.equal(requireGameLevel().requireAt(8, 9).typ, HWALL, 'The older breach is repaired');
+    assert.equal(requireGameLevel().requireAt(8, 11).typ, DOOR, 'One repair leaves the newer breach open');
+});
 

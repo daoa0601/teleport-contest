@@ -280,7 +280,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         try {
             game.level = cached.level;
             restoreEngravings(cached.level);
-            cached.stairs = restoreLevelChains(cached.stairs);
+            cached.stairs = restoreLevelChains(cached.level, cached.stairs);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             restoreLevelTimers(game);
