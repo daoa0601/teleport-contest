@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '../js/const.js';
+import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOM, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
@@ -11,12 +11,13 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { rhack } from '../js/cmd.js';
 import { clearMessageWindow } from '../js/display.js';
-import { saveGame, restoreGame } from '../js/save.js';
+import { dosave, saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { restoreBonesMonsters } from '../js/bones_monster.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { createRoom } from './support/topology.js';
 
 async function templePriest() {
@@ -134,6 +135,37 @@ void test('a restored priest gives fresh temple-entry feedback despite a recent 
     await rhack('l'.charCodeAt(0));
 
     assert.match(game._lastPlineMessage, /You experience an unusual sense of peace/);
+});
+
+void test('refusing to overwrite a save preserves the recent temple visit', async () => {
+    await templePriest();
+    requirePlayingGame(game);
+    game.plname = 'TempleVisitor';
+    game.storage = memoryStorage();
+    assert.equal(await saveGame(), true);
+    game.program_state.something_worth_saving = true;
+    game.level.requireAt(6, 10).typ = ROOM;
+    game.u.ux = 6;
+    game.u.urooms = [];
+
+    await rhack('l'.charCodeAt(0));
+    assert.match(game._lastPlineMessage, /You experience an unusual sense of peace/);
+    await rhack('h'.charCodeAt(0));
+    assert.equal(game.u.ux, 6, 'The hero must leave the temple before saving');
+    const input = resetInputState();
+
+    await answerPrompts(dosave(), input, [
+        { prompt: /Really save\?/, keys: 'y' },
+        { prompt: /There seems to be an old save file\.\s*--More--/, keys: ' ' },
+        { prompt: /Overwrite the old file\?/, keys: 'n' },
+    ]);
+    assert.equal(!!game.program_state.gameover, false);
+    clearMessageWindow();
+    input.beforeRead = () => input.feed(' ');
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 7, 'The hero must re-enter the temple');
+    assert.equal(game._pending_message, '', 'A recent visit must suppress repeated priest feedback');
 });
 
 void test('a bones priest accepts donations at its shrine on the restored dungeon level', async () => {

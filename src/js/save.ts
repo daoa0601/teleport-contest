@@ -150,9 +150,7 @@ export async function askAboutPanicSave(): Promise<boolean> {
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
 
-async function prepareGameForSave(): Promise<void> {
-    game.u.invulnerable = false;
-    await doneObjectCleanup();
+function prepareMonstersForSave(): void {
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
     for (const level of levels) {
         if (!level) continue;
@@ -183,8 +181,12 @@ async function writeSave(
     game.program_state.saving = (game.program_state.saving || 0) + 1;
     let saved = false;
     try {
-        await prepareGameForSave();
+        // C dosave0() finishes interrupted actions even if overwrite is refused.
+        game.u.invulnerable = false;
+        await doneObjectCleanup();
         if (storage?.setItem && (overwrite === 'replace' || await confirmSaveOverwrite(storage, key))) {
+            // savemonchn() resets temple visits only when saving proceeds.
+            prepareMonstersForSave();
             currentLuaLifecycle().syncVariables(game);
             const luck = undoDateLuck();
             try {
@@ -211,7 +213,7 @@ async function writeSave(
     return saved;
 }
 
-// C dosave0() asks after cleanup but before changing luck or writing data.
+// C dosave0() asks after interrupted-action cleanup, before saving level data.
 async function confirmSaveOverwrite(storage: SaveStorage, key: string): Promise<boolean> {
     const previous = storage.getItem?.(key);
     if (previous === undefined || previous === null) return true;
