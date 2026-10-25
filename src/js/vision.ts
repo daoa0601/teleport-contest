@@ -258,6 +258,163 @@ export function visionCellBlocksLight(level: GameMap, x: number, y: number): boo
     return false;
 }
 
+/* ====================================================================== *
+ * Left and right pointer updates (C vision.c dig_point()/fill_point()).
+ * Pointers follow the native rules: a clear spot points at the first
+ * stone beyond it, a blocked spot at the outermost connected blocker.
+ * Updating one cell keeps every other row bit untouched, which matters
+ * when the table is deliberately non-canonical: C blocks moats only when
+ * the hero is submerged at the moment the table is (re)built, and later
+ * single-cell updates must not rewrite that decision level-wide.
+ * ====================================================================== */
+function dig_point(row: number, col: number): void {
+    const clearRow = visionRow(viz_clear, row);
+    const leftPointers = visionRow(left_ptrs, row);
+    const rightPointers = visionRow(right_ptrs, row);
+    if (clearRow[col]) return; /* already done */
+
+    clearRow[col] = 1;
+
+    if (col === 0) { /* left edge */
+        if (clearRow[1]) {
+            rightPointers[0] = visionValue(rightPointers, 1);
+        } else {
+            rightPointers[0] = 1;
+            for (let i = 1; i <= visionValue(rightPointers, 1); i++) leftPointers[i] = 1;
+        }
+    } else if (col === COLNO - 1) { /* right edge */
+        if (clearRow[COLNO - 2]) {
+            leftPointers[COLNO - 1] = visionValue(leftPointers, COLNO - 2);
+        } else {
+            leftPointers[COLNO - 1] = COLNO - 2;
+            for (let i = visionValue(leftPointers, COLNO - 2); i < COLNO - 1; i++)
+                rightPointers[i] = COLNO - 2;
+        }
+    } else {
+        const leftClear = !!visionValue(clearRow, col - 1);
+        const rightClear = !!visionValue(clearRow, col + 1);
+        const leftBase = visionValue(leftPointers, col - 1);
+        const rightLimit = visionValue(rightPointers, col + 1);
+        if (leftClear && rightClear) {
+            /* Both sides clear */
+            for (let i = leftBase; i <= col; i++) {
+                if (!clearRow[i]) continue; /* catch non-end case */
+                rightPointers[i] = rightLimit;
+            }
+            for (let i = col; i <= rightLimit; i++) {
+                if (!clearRow[i]) continue; /* catch non-end case */
+                leftPointers[i] = leftBase;
+            }
+        } else if (leftClear) {
+            /* Left side clear, right side blocked. */
+            for (let i = col + 1; i <= rightLimit; i++)
+                leftPointers[i] = col + 1;
+
+            for (let i = leftBase; i <= col; i++) {
+                if (!clearRow[i]) continue; /* catch non-end case */
+                rightPointers[i] = col + 1;
+            }
+            leftPointers[col] = leftBase;
+        } else if (rightClear) {
+            /* Right side clear, left side blocked. */
+            for (let i = leftBase; i < col; i++)
+                rightPointers[i] = col - 1;
+
+            for (let i = col; i <= rightLimit; i++) {
+                if (!clearRow[i]) continue; /* catch non-end case */
+                leftPointers[i] = col - 1;
+            }
+            rightPointers[col] = rightLimit;
+        } else {
+            /* Both sides blocked */
+            for (let i = leftBase; i < col; i++)
+                rightPointers[i] = col - 1;
+
+            for (let i = col + 1; i <= rightLimit; i++)
+                leftPointers[i] = col + 1;
+
+            leftPointers[col] = col - 1;
+            rightPointers[col] = col + 1;
+        }
+    }
+}
+
+function fill_point(row: number, col: number): void {
+    const clearRow = visionRow(viz_clear, row);
+    const leftPointers = visionRow(left_ptrs, row);
+    const rightPointers = visionRow(right_ptrs, row);
+    if (!clearRow[col]) return;
+
+    clearRow[col] = 0;
+
+    if (col === 0) {
+        if (clearRow[1]) { /* adjacent is clear */
+            rightPointers[0] = 0;
+        } else {
+            rightPointers[0] = visionValue(rightPointers, 1);
+            for (let i = 1; i <= visionValue(rightPointers, 1); i++) leftPointers[i] = 0;
+        }
+    } else if (col === COLNO - 1) {
+        if (clearRow[COLNO - 2]) { /* adjacent is clear */
+            leftPointers[COLNO - 1] = COLNO - 1;
+        } else {
+            leftPointers[COLNO - 1] = visionValue(leftPointers, COLNO - 2);
+            for (let i = visionValue(leftPointers, COLNO - 2); i < COLNO - 1; i++)
+                rightPointers[i] = COLNO - 1;
+        }
+    } else {
+        const leftClear = !!visionValue(clearRow, col - 1);
+        const rightClear = !!visionValue(clearRow, col + 1);
+        const leftBase = visionValue(leftPointers, col - 1);
+        const rightLimit = visionValue(rightPointers, col + 1);
+        if (leftClear && rightClear) {
+            /* Both sides clear */
+            for (let i = leftBase + 1; i <= col; i++)
+                rightPointers[i] = col;
+
+            if (leftBase === 0) /* catch the end case */
+                rightPointers[0] = col;
+
+            for (let i = col; i < rightLimit; i++)
+                leftPointers[i] = col;
+
+            if (rightLimit === COLNO - 1) /* catch the end case */
+                leftPointers[COLNO - 1] = col;
+        } else if (leftClear) {
+            /* Left side clear, right side blocked. */
+            for (let i = col; i <= rightLimit; i++)
+                leftPointers[i] = col;
+
+            for (let i = leftBase + 1; i < col; i++)
+                rightPointers[i] = col;
+
+            /* C falls out of that loop with i == col for this end case. */
+            if (leftBase === 0) rightPointers[col] = col;
+
+            rightPointers[col] = rightLimit;
+        } else if (rightClear) {
+            /* Right side clear, left side blocked. */
+            for (let i = leftBase; i <= col; i++)
+                rightPointers[i] = col;
+
+            for (let i = col + 1; i < rightLimit; i++)
+                leftPointers[i] = col;
+
+            /* C falls out of that loop with i == right_ptrs[col+1] here. */
+            if (rightLimit === COLNO - 1) leftPointers[rightLimit] = col;
+
+            leftPointers[col] = leftBase;
+        } else {
+            /* Both sides blocked */
+            for (let i = leftBase; i <= col; i++)
+                rightPointers[i] = rightLimit;
+
+            for (let i = col; i <= rightLimit; i++)
+                leftPointers[i] = leftBase;
+        }
+    }
+}
+
 // C ref: vision_reset() — rebuild viz_clear and left/right ptrs
 export function vision_reset(): void {
     const level = game.level;
@@ -303,19 +460,17 @@ export function vision_reset(): void {
     game._viz_rmax = null;
 }
 
-// C ref: vision.c:block_point()/unblock_point().  The source updates its
-// blocker dig table immediately but defers the expensive vision_recalc() to
-// the ordinary scheduler boundary.  Rebuilding the compact JS table is
-// equivalent to the incremental fill/dig operation; retain the old visible
-// row bounds so vision_recalc() can repaint cells which become hidden.
+// C ref: vision.c recalc_block_point() -> block_point()/unblock_point() ->
+// fill_point()/dig_point().  The single cell joins or leaves the blocker
+// table incrementally; every other row bit keeps its current value.  C
+// only requests the deferred vision_recalc() when the hero could see the
+// changed cell.
 export function vision_note_blocker_change(x: number, y: number): void {
-    if (!game.level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO) return;
+    const level = game.level;
+    if (!level || y < 0 || y >= ROWNO || x < 0 || x >= COLNO) return;
     const wasInVisibilityMap = !!game.viz_array?.[y]?.[x];
-    const oldRmin = game._viz_rmin ?? null;
-    const oldRmax = game._viz_rmax ?? null;
-    vision_reset();
-    game._viz_rmin = oldRmin;
-    game._viz_rmax = oldRmax;
+    if (visionCellBlocksLight(level, x, y)) fill_point(y, x);
+    else dig_point(y, x);
     if (wasInVisibilityMap) game.vision_full_recalc = 1;
 }
 

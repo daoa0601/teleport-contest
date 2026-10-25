@@ -111,7 +111,7 @@ import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, objectResistsDestruction, } from './object_state.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
-import { monsterEmitsLight, vision_note_blocker_change } from './vision.js';
+import { monsterEmitsLight, vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
 import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem, } from './muse.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionFillRect, specialSelectionMatch, } from './selvar.js';
@@ -3961,6 +3961,10 @@ export async function mklev() {
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');
     await level_finalize_topology();
     g.in_mklev = false;
+    // C pairs mklev() with vision_reset() (allmain.c) before anything can
+    // query sight, so the blocker dig table never outlives the level it
+    // was built for. Direct mklev() callers get that same fresh table here.
+    vision_reset_new_level();
 }
 export function countLevelFeatures(state = game) {
     const lvl = state.level;
