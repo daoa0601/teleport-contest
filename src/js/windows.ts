@@ -7,7 +7,8 @@ import { nhgetch } from './input.js';
 import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
+import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED,
+    MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
 import type { GameDisplay } from './game_display.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu,
     tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
@@ -141,12 +142,15 @@ function clearRect(left: number, top: number, right: number, bottom: number): vo
     }
 }
 
-// C windows.c:add_menu_heading() suppresses class highlighting in disclosure.
+// C windows.c:add_menu_heading() suppresses class highlighting in disclosure
+// and passes MENU_ITEMFLAGS_SKIPMENUCOLORS so menucoloring rules leave the
+// heading's own style alone.
 export function addMenuHeading<T>(window: TtyMenuWindow<T>, text: string): void {
     tty_add_menu(window, {
         identifier: null, text,
         attr: game.program_state.gameover ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
         color: game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR,
+        itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS,
     });
 }
 
@@ -166,7 +170,8 @@ export async function showInventoryWindow<T = never>(sections: readonly Inventor
             if (!section.items.length) continue;
             if (section.heading != null) {
                 if (headingAttr === undefined) addMenuHeading(window, section.heading);
-                else tty_add_menu(window, { identifier: null, text: section.heading, attr: headingAttr });
+                else tty_add_menu(window, { identifier: null, text: section.heading, attr: headingAttr,
+                    itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
             }
             for (const item of section.items) tty_add_menu(window, {
                 identifier: item.key || item.value !== undefined ? item : null,

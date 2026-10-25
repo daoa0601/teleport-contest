@@ -8,9 +8,10 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
-import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, ATR_INVERSE, CLR_GREEN, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
+import { PosixRegex } from '../js/posix_regex.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
@@ -167,6 +168,28 @@ void test('menu headings offer the native color and attribute pickers', async ()
     assert.deepEqual(game.iflags.menu_headings, { attr: 1, color: 11 });
     assert.match(await optionRow('menu_headings'), /\[yellow&bold\]/);
 });
+void test('the color picker replaces active menucolor rules while it is open', async () => {
+    freshObjectRoom();
+    // A catch-all rule would recolor every picker row if it stayed active;
+    // coloratt.c:basic_menu_colors() swaps the player's rules out for the
+    // duration and restores them afterwards.
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=green');
+    const views = await fullOptions(['menu_headings'], [
+        { match: 'How to highlight menu headings:', keys: '\x1b' },
+    ]);
+    const rows = views[0]?.rows;
+    const nameCells = (name) => {
+        const row = rows?.find(cells => cells.map(cell => cell.ch).join('').includes(`- ${name}`));
+        const start = row?.map(cell => cell.ch).join('').indexOf(name) ?? -1;
+        return row && start >= 0 ? row.slice(start, start + name.length) : [];
+    };
+    for (const cell of nameCells('red'))
+        assert.equal(cell.color, CLR_RED, 'the "red" name keeps its own color');
+    for (const cell of nameCells('black'))
+        assert.equal(cell.color, NO_COLOR, 'black stays uncolored');
+    assert.equal(game.iflags.menuColorings?.length, 1, 'the player rule is restored');
+    assert.equal(game.flags.menucolors, true, 'the menucolors toggle is restored');
+});
 void test('boolean toggles from the options menu refresh the status fields', async () => {
     freshObjectRoom();
     await fullOptions(['showexp', 'time'], []);
@@ -235,8 +258,8 @@ void test('an over-long menu color pattern is elided at the native byte limit', 
     // through the O command: beside the `"=no-color` suffix, 244 bytes
     // remain and the elision keeps 241 of them.
     game.iflags.menuColorings = [
-        { origstr: 'z'.repeat(245), color: 8, attr: 0 },
-        { origstr: 'y'.repeat(244), color: 8, attr: 0 },
+        { origstr: 'z'.repeat(245), color: 8, attr: 0, regex: new PosixRegex('z') },
+        { origstr: 'y'.repeat(244), color: 8, attr: 0, regex: new PosixRegex('y') },
     ];
     const views = await fullOptions(['menu colors'], [
         { match: 'Do what?', keys: 'l' },

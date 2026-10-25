@@ -502,8 +502,9 @@ function matchAttributeName(text: string, addError: ((message: string) => void) 
     return -1;
 }
 
-// C coloratt.c:add_menu_coloring(). Menus are not colored in this port, but
-// the parsed rule is kept for the options menu's count and listing.
+// C coloratt.c:add_menu_coloring(). The compiled pattern is kept on the
+// rule like C's ->match regex_t; the first matching rule (newest first)
+// colors the menu entry at the add_menu() seam.
 function parseMenuColoring(valueText: string, addError: (message: string) => void): MenuColoringRule | null {
     // coloratt.c copies the statement into str[BUFSZ] before parsing, so a
     // '=' past byte 255 is invisible and the line looks malformed.
@@ -534,14 +535,15 @@ function parseMenuColoring(valueText: string, addError: (message: string) => voi
         while (end >= 0 && /[ \t]/.test(pattern.charAt(end))) end--;
         if (pattern.charAt(end) === quote) pattern = pattern.slice(1, end);
     }
+    let regex: PosixRegex;
     try {
-        new PosixRegex(pattern);
+        regex = new PosixRegex(pattern);
     } catch (error) {
         if (!(error instanceof SyntaxError)) throw error;
         addError(`Menucolor regex error: ${error.message}`);
         return null;
     }
-    return { origstr: pattern, color, attr };
+    return { origstr: pattern, color, attr, regex };
 }
 
 // C coloratt.c:color_attr_parse_str(): "color&attr", "color", or "attr"
@@ -2012,20 +2014,19 @@ async function editMenuColors(): Promise<void> {
                 (_character: string, key: number) => key >= 32 && key < 127);
             if (pattern === null) return;
             if (pattern) {
-                let valid = true;
+                let regex: PosixRegex | null = null;
                 try {
-                    new PosixRegex(pattern);
+                    regex = new PosixRegex(pattern);
                 } catch (error) {
                     if (!(error instanceof SyntaxError)) throw error;
-                    valid = false;
                     await optionError(`MENUCOLORS regex: ${error.message}`);
                 }
-                if (valid) {
+                if (regex) {
                     const color = await queryColorMenu('Pick a color', NO_COLOR);
                     if (color !== null) {
                         const attr = await queryAttributeMenu('Pick an attribute', 0);
                         if (attr !== null) {
-                            (game.iflags.menuColorings ??= []).unshift({ origstr: pattern, color, attr });
+                            (game.iflags.menuColorings ??= []).unshift({ origstr: pattern, color, attr, regex });
                             game.flags.menucolors = true;
                         }
                     }
@@ -2071,20 +2072,57 @@ function menuColoringRow(rule: MenuColoringRule): string {
     return `"${shown}${suffix}`;
 }
 
+// coloratt.c:basic_menu_colors(): query_color() temporarily replaces the
+// player's rules with one coloring per canonical color name (black, white,
+// and "no color" stay plain) and forces menucolors on; the alternate list
+// is built once and reused (gc.color_colorings). Rules are prepended in
+// colornames order, so the "light <foo>" names end up ahead of the basic
+// ones and win as substrings.
+let alternateMenuColors: MenuColoringRule[] | null = null;
+let savedMenuColors: { menucolors: boolean; colorings: MenuColoringRule[] | null } | null = null;
+
+function basicMenuColors(loadColors: boolean): void {
+    if (loadColors) {
+        savedMenuColors = { menucolors: game.flags.menucolors === true,
+            colorings: game.iflags.menuColorings ?? null };
+        game.flags.menucolors = true;
+        if (alternateMenuColors) {
+            game.iflags.menuColorings = alternateMenuColors;
+            return;
+        }
+        game.iflags.menuColorings = [];
+        for (const [name, color] of COLOR_NAMES.slice(0, 16)) {
+            if (color === CLR_BLACK || color === CLR_WHITE || color === NO_COLOR) continue;
+            game.iflags.menuColorings.unshift(
+                { origstr: name, color, attr: C_ATR_NONE, regex: new PosixRegex(name) });
+        }
+        alternateMenuColors = game.iflags.menuColorings;
+    } else if (savedMenuColors) {
+        game.flags.menucolors = savedMenuColors.menucolors;
+        if (savedMenuColors.colorings) game.iflags.menuColorings = savedMenuColors.colorings;
+        else delete game.iflags.menuColorings;
+        savedMenuColors = null;
+    }
+}
+
 // coloratt.c:query_color(): PICK_ONE over the canonical color names; Escape
 // is -1, an accepted-but-empty pick keeps the current value, and a second
-// entry behind "no color" wins over it. basic_menu_colors() installs a
-// coloring per name — except black, white, and "no color", which stay plain.
+// entry behind "no color" wins over it. Each name is colored by the
+// temporary basic_menu_colors() rule that matches it.
 async function queryColorMenu(title: string, current: number): Promise<number | null> {
-    const picks = await showMultiSelectWindow<number>({
-        title, omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
-        sections: [{ items: COLOR_NAMES.slice(0, 16).map(([name, color]) => ({
-            value: color, text: name,
-            color: color === CLR_BLACK || color === CLR_WHITE || color === NO_COLOR
-                ? NO_COLOR : color,
-            itemFlags: color === current ? MENU_ITEMFLAGS_SELECTED : 0,
-        })) }],
-    });
+    basicMenuColors(true);
+    let picks: number[] | null;
+    try {
+        picks = await showMultiSelectWindow<number>({
+            title, omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
+            sections: [{ items: COLOR_NAMES.slice(0, 16).map(([name, color]) => ({
+                value: color, text: name,
+                itemFlags: color === current ? MENU_ITEMFLAGS_SELECTED : 0,
+            })) }],
+        });
+    } finally {
+        basicMenuColors(false);
+    }
     if (picks === null) return null;
     if (!picks.length) return current;
     const [chosen = current, alternate] = picks;
