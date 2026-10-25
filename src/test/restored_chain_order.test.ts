@@ -1,15 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DOOR, D_NODOOR, HWALL, SHOP_WALL_COST, STAIRS } from '../js/const.js';
+import { DOOR, D_NODOOR, HWALL, PIT, SHOP_WALL_COST, STAIRS } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addShopDamage, shopkeeperRepairsDamage } from '../js/shop_damage.js';
 import { hasShopkeeperData } from '../js/shop_types.js';
+import { initRng } from '../js/rng.js';
+import { detectTraps } from '../js/trap_detection.js';
 import { vision_recalc } from '../js/vision.js';
 import { createStaffedShop } from './support/shop.js';
 import { installPagerInput } from './support/pager-input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { u_on_upstairs } from '../js/mklev.js';
+import { maketrap, u_on_upstairs } from '../js/mklev.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -71,5 +73,33 @@ void test('restoring lets the shopkeeper repair the older saved breach first', a
 
     assert.equal(requireGameLevel().requireAt(8, 9).typ, HWALL, 'The older breach is repaired');
     assert.equal(requireGameLevel().requireAt(8, 11).typ, DOOR, 'One repair leaves the newer breach open');
+});
+
+void test('hallucinating trap detection visits the older restored trap before newer traps', async () => {
+    freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
+    requireGameLevel().requireAt(30, 10).typ = DOOR;
+    await maketrap(30, 10, PIT);
+    initRng(123n);
+    resetInputState().feed('.');
+    await detectTraps(null);
+    const single = requireGameLevel().requireAt(30, 10).remembered_glyph;
+    assert.ok(single?.kind === 'object');
+
+    freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
+    requireGameLevel().requireAt(30, 10).typ = DOOR;
+    requireGameLevel().requireAt(32, 10).typ = DOOR;
+    await maketrap(30, 10, PIT);
+    await maketrap(32, 10, PIT);
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame(game.plname, storage), true);
+    initRng(123n);
+    resetInputState().feed('.');
+
+    await detectTraps(null);
+
+    const older = requireGameLevel().requireAt(30, 10).remembered_glyph;
+    assert.ok(older?.kind === 'object');
+    assert.equal(older.otyp, single.otyp, 'The older restored trap gets the first imaginary object');
 });
 
