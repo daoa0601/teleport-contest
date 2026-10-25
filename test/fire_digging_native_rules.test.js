@@ -44,14 +44,25 @@ void test('an Earth cave-in leaves a wall-walking xorn inside the new rock', { t
         }
         assert.fail('Digging did not finish within 32 turns.');
     })();
-    const boundary = await Promise.race([
-        digging.then(() => 'finished'),
-        input.waitUntilBlocked().then(() => 'prompt'),
-    ]);
-    if (boundary === 'prompt') {
+    // The native dig occupation pages between its start message and the
+    // cave-in announcement; acknowledge each --More-- until it finishes.
+    let acknowledgedStart = false;
+    for (;;) {
+        const boundary = await Promise.race([
+            digging.then(() => 'finished'),
+            input.waitUntilBlocked().then(() => 'prompt'),
+        ]);
+        if (boundary === 'finished')
+            break;
         const display = requireGameDisplay();
         const prompt = Array.from({ length: display.cols }, (_, column) => display.getChar(column + 1, 1)).join('');
-        assert.match(prompt, /^You start digging\.  You hit the rock with all your might\.\s*--More--/);
+        if (!acknowledgedStart) {
+            acknowledgedStart = true;
+            assert.match(prompt, /^You start digging\.  You hit the rock with all your might\.\s*--More--/);
+        }
+        else {
+            assert.match(prompt, /--More--/, 'The cave-in must page its own announcement.');
+        }
         input.feed(' ');
     }
     await digging;
