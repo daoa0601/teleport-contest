@@ -7,8 +7,13 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { flush_screen, pline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { nhgetch, resetInputState } from '../js/input.js';
+import { nhgetch, queueCommandKeys, resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { ARROW, DAGGER } from '../js/object_data.js';
+import { answerPrompts } from './support/input-boundaries.js';
+import { planInput } from './support/planned-input.js';
+import { runSegment } from '../js/jsmain.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -187,18 +192,53 @@ void test('single-mode ^P in a question discards the first following key and rec
         'clean_up files the prompt with its recorded answer');
 });
 
-void test('msghistory bounds the recall ring', async () => {
+void test('a full recall ring skips its oldest entry and wraps to the pending line', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
-    game.iflags.msg_history = 200; // clamped to MAX_MSG_HISTORY at the ring
+    game.iflags.msg_history = 200; // the ring clamps to MAX_MSG_HISTORY
+    game.iflags.prevmsg_window = 's';
     const input = resetInputState();
     for (let index = 0; index < 130; index++) {
         await pline(`Message number ${index}.`);
         await markSeen(input);
     }
-    assert.equal(game._messageHistory.length, 128, 'the ring keeps MAX_MSG_HISTORY entries');
-    assert.equal(game._messageHistory[0], 'Message number 1.');
-    assert.equal(game._messageHistory[127], 'Message number 128.');
+    const recalled: string[] = [];
+    for (let press = 0; press < 132; press++) {
+        await rhack(16);
+        recalled.push(rowText(0));
+    }
+    assert.equal(recalled[0], 'Message number 129.', 'the pending line recalls first');
+    assert.ok(recalled.includes('Message number 2.'), 'the walk reaches the oldest displayed entry');
+    assert.ok(!recalled.includes('Message number 1.'),
+        "a full ring never displays the entry occupying maxrow's own slot");
+    const wrap = recalled.indexOf('Message number 129.', 1);
+    assert.ok(wrap > 0 && recalled[wrap - 1] === 'Message number 2.',
+        'the walk wraps to the pending line right after the oldest displayed entry');
+});
+
+void test('a full ring omits its oldest entry from the reversed window', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.msg_history = 200;
+    game.iflags.prevmsg_window = 'r';
+    const input = resetInputState();
+    for (let index = 0; index < 130; index++) {
+        await pline(`Message number ${index}.`);
+        await markSeen(input);
+    }
+    const seen: string[] = [];
+    const recall = rhack(16);
+    for (let page = 0; page < 6; page++) {
+        await input.waitUntilBlocked();
+        seen.push(...requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('').trim()));
+        input.feed(' ');
+    }
+    await recall;
+    assert.ok(seen.some(row => row.includes('Message number 129.')),
+        'the pending topline leads the reversed window');
+    assert.ok(seen.some(row => row.includes('Message number 2.')));
+    assert.ok(!seen.some(row => row.includes('Message number 1.')),
+        'the reversed walk stops before the slot holding the oldest entry');
 });
 
 void test('save and restore carry the recall ring', async () => {
@@ -218,10 +258,194 @@ void test('save and restore carry the recall ring', async () => {
     game.nhDisplay = new GameDisplay(null);
     await pline('Three follows.'); // remembers the restored pending line
     await rhack(16);
-    assert.deepEqual(game._messageHistory, ['One forgotten turn.', 'Two remembered turns.']);
     assert.equal(rowText(0), 'Three follows.');
     await rhack(16);
     assert.equal(rowText(0), 'Two remembered turns.', 'restored entries recall oldest-first');
     await rhack(16);
     assert.equal(rowText(0), 'One forgotten turn.');
+});
+
+
+void test('the # editor files the line before its prompt and keeps its own text out of history', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.extmenu = false;
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    await pline('Before the hash.');
+    await markSeen(input);
+
+    const editor = rhack('#'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed('\x10'); // browse inside the editor; the ESC cancels it
+    await input.waitUntilBlocked();
+    input.feed('\x1b');
+    await editor;
+
+    await pline('After the cancel.');
+    await rhack(16);
+    assert.equal(rowText(0), 'After the cancel.');
+    await rhack(16);
+    assert.equal(rowText(0), 'Before the hash.',
+        'the SUPPRESS_HISTORY prompt files the line it replaces');
+    await rhack(16);
+    assert.equal(rowText(0), 'After the cancel.',
+        'neither the "# " line nor any editor text is remembered');
+});
+
+void test('a line prompt records the answer typed into it', async t => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const input = resetInputState();
+    await addInventoryObject(ARROW, { invlet: 'a', quan: 4, oextra: { oname: 'First Flight' } });
+    input.feed('name\r');
+    queueCommandKeys('ia');
+    planInput(input, t, [{
+        prompt: /What do you want to name these arrows named First Flight\?/,
+        keys: 'Fletching\r',
+    }]);
+
+    await rhack('#'.charCodeAt(0));
+    await pline('Named and done.');
+    await rhack(16);
+    assert.equal(rowText(0), 'Named and done.');
+    await rhack(16);
+    assert.match(rowText(0), /name these arrows named First Flight\? Fletching$/,
+        'gt.toplines follows the typed text, not the empty prompt');
+});
+
+void test('a free-form question answers ^P like any key and records it', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    await addInventoryObject(DAGGER, { invlet: 'a' });
+    const drop = rhack('d'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    assert.match(rowText(0), /What do you want to drop\?/);
+    input.feed('\x10'); // resp==NULL prompts answer ^P like any other key
+    await input.waitUntilBlocked();
+    assert.match(rowText(0), /don't have that object/,
+        'the ^P answer reaches getobj as an ordinary key');
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    assert.match(rowText(0), /What do you want to drop\?/,
+        'the question is asked again');
+    input.feed('\xe1'); // M-a survives readchar()'s signed-char decode
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    assert.match(rowText(0), /What do you want to drop\?/);
+    input.feed('\x1b');
+    await drop;
+
+    await pline('Dropped nothing.');
+    await rhack(16);
+    assert.equal(rowText(0), 'Never mind.  Dropped nothing.');
+    await rhack(16);
+    assert.ok(rowText(0).endsWith('What do you want to drop? [a or ?*] <esc>'));
+    await rhack(16);
+    assert.equal(rowText(0), "You don't have that object.");
+    await rhack(16);
+    assert.ok(rowText(0).endsWith('What do you want to drop? [a or ?*] M-a'),
+        'a meta answer is named M-a like visctrl()');
+    await rhack(16);
+    assert.equal(rowText(0), "You don't have that object.");
+    await rhack(16);
+    assert.ok(rowText(0).endsWith('What do you want to drop? [a or ?*] ^P'),
+        'key2txt() records the ^P answer itself');
+});
+
+void test('a hidden message that does not fit still files the stopped line', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const stopped = 'A distant rumble grows louder as the ceiling cracks. '.repeat(2);
+    input.feed('\x1b');
+    await pline(stopped); // wraps; Escape suppresses everything after it
+    const hidden = 'Another long hidden line follows here and cannot fit beside the stopped one.';
+    await pline(hidden);
+    await pline('Visible end.');
+    await markSeen(input);
+
+    await rhack(16);
+    assert.equal(rowText(0), 'Visible end.');
+    await rhack(16);
+    assert.equal(rowText(0), hidden, 'the hidden line is still filed for recall');
+    // The stopped entry wraps, so its recall pages like any wrapped line.
+    const stoppedRecall = rhack(16);
+    await input.waitUntilBlocked();
+    assert.match(rowText(0), /^A distant rumble/);
+    assert.match(rowText(1), /--More--/);
+    input.feed(' ');
+    await stoppedRecall;
+    assert.equal(rowText(0), '', 'a dismissed wrapped recall clears the line');
+});
+
+void test('the split count files its yn answer and only the conditional final count', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const stack = await addInventoryObject(DAGGER, { invlet: 'a', quan: 9 });
+    await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+        { prompt: /Weapons/, keys: stack.invlet },
+        { prompt: /Adjust inventory by splitting this stack/, keys: 'I' },
+    ]);
+    await answerPrompts(rhack(0), input, [
+        { prompt: /Split off how many\? /, keys: '5' },
+        { prompt: /Count: 5 /, keys: '2' },
+        { prompt: /Count: 52 /, keys: ' ' },
+    ]);
+
+    await rhack(16);
+    assert.equal(rowText(0), 'Amount to split from current stack must be less than 9.');
+    await rhack(16);
+    assert.equal(rowText(0), 'Count: 52 <space>',
+        'only the final conditional count enters history');
+    await rhack(16);
+    assert.equal(rowText(0), 'Split off how many? 5',
+        'the yn answer is recorded with its trailing space');
+    await rhack(16);
+    assert.equal(rowText(0), 'Amount to split from current stack must be less than 9.',
+        'the walk wraps back to the newest entry');
+});
+
+void test('Escape in a split count files a zero count', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const stack = await addInventoryObject(DAGGER, { invlet: 'a', quan: 9 });
+    await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+        { prompt: /Weapons/, keys: stack.invlet },
+        { prompt: /Adjust inventory by splitting this stack/, keys: 'I' },
+    ]);
+    await answerPrompts(rhack(0), input, [
+        { prompt: /Split off how many\? /, keys: '5' },
+        { prompt: /Count: 5 /, keys: '\x1b' },
+    ]);
+
+    await rhack(16);
+    assert.equal(rowText(0), 'Never mind.');
+    await rhack(16);
+    assert.equal(rowText(0), 'Count: 0 <esc>',
+        'Escape breaks the count with a zero value like get_count()');
+    await rhack(16);
+    assert.equal(rowText(0), 'Split off how many? 5');
+});
+
+void test('startup clamps msghistory like tty window creation', async () => {
+    for (const [config, expected] of [['msghistory:-5', 128], ['msghistory:300', 128],
+        ['msghistory:5', 20], ['!msghistory', 20]] as const) {
+        const engine = await runSegment({
+            seed: 3,
+            datetime: '2026-10-25T12:00:00',
+            nethackrc: `OPTIONS=name:Clamper,role:Valkyrie,race:human,gender:female,align:lawful,${config}`,
+            moves: '',
+            storage: memoryStorage(),
+        });
+        assert.equal(engine.state.iflags.msg_history, expected, config);
+    }
 });

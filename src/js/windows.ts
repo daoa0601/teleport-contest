@@ -204,14 +204,18 @@ export async function showInventoryWindow<T = never>(sections: readonly Inventor
  */
 export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     marker = '--More--', restoreUnderlay = false,
-    pagerStyle = 'text', extraDismissKey = null,
+    pagerStyle = 'text', extraDismissKey = null, skipPendingPager = false,
 }: {
     marker?: string; restoreUnderlay?: boolean;
     pagerStyle?: 'text' | 'menu'; extraDismissKey?: number | null;
+    skipPendingPager?: boolean;
 } = {}): Promise<number> {
     const d = display();
     if (!d) return 27;
-    await displayMessageWindow();
+    // tty_display_nhwindow() pages a NEED_MORE topline before the window,
+    // but a TOPLINE_SPECIAL_PROMPT line is only erased, never paged.
+    if (skipPendingPager) clearMessageWindow();
+    else await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);

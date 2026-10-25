@@ -100,11 +100,16 @@ export async function showInventoryWindow(sections, { pickMode = PICK_NONE, head
  * `--More--`; menu-built overviews retain their rows and use the native
  * menu layout and page controls.
  */
-export async function showDisclosureOverlay(lines, { marker = '--More--', restoreUnderlay = false, pagerStyle = 'text', extraDismissKey = null, } = {}) {
+export async function showDisclosureOverlay(lines, { marker = '--More--', restoreUnderlay = false, pagerStyle = 'text', extraDismissKey = null, skipPendingPager = false, } = {}) {
     const d = display();
     if (!d)
         return 27;
-    await displayMessageWindow();
+    // tty_display_nhwindow() pages a NEED_MORE topline before the window,
+    // but a TOPLINE_SPECIAL_PROMPT line is only erased, never paged.
+    if (skipPendingPager)
+        clearMessageWindow();
+    else
+        await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);

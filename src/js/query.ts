@@ -103,13 +103,13 @@ async function editLine(
             // and repaint the prompt with the typed text.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
-                if (!doprev) await doprevMessage(false);
-                await doprevMessage(false);
+                if (!doprev) await doprevMessage(false, true);
+                await doprevMessage(false, true);
                 doprev = true;
                 game._toplines = `${prompt} ${value}`;
                 continue;
             }
-            await doprevMessage(false);
+            await doprevMessage(false, true);
             doprev = false;
             game._messageHistoryCursor = null;
             game._pending_message = `${prompt} ${value}`;
@@ -156,6 +156,9 @@ async function editLine(
             }
         }
         game._pending_message = `${prompt} ${value}`;
+        // The loop head rebuilds gt.toplines from the query and the text
+        // typed so far before every key (getline.c:81).
+        game._toplines = game._pending_message;
         clearSuppressedStatus();
         renderEditor();
     }
@@ -256,7 +259,7 @@ export async function tty_yn_function(
             if (messageWindowMode() !== 's') {
                 // Full, combination, and reverse page the window with
                 // inread clear, then repaint the question.
-                await doprevMessage(false);
+                await doprevMessage(false, true);
                 clearMessageWindow();
                 game._messageHistoryCursor = null;
                 await setTopline(message);
@@ -265,8 +268,8 @@ export async function tty_yn_function(
             } else {
                 // Two recalls initially: gt.toplines holds the question
                 // prompt, so the first press already shows one entry back.
-                if (!doprev) await doprevMessage(true);
-                await doprevMessage(true);
+                if (!doprev) await doprevMessage(true, true);
+                await doprevMessage(true, true);
                 doprev = true;
             }
             continue;

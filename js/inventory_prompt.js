@@ -377,10 +377,11 @@ async function readInventoryCount(firstKey) {
             backspaced = true;
         }
         else {
-            // C get_count(GC_SAVEHIST): the typed count and the accepting
-            // key join the recall history, even when the count is refused.
-            putMessageHistory(`Count: ${count} ${keyText(key)}`);
-            return { key, count: key === 27 ? 0 : count };
+            const finalCount = key === 27 ? 0 : count;
+            // C get_count(GC_SAVEHIST): the final count and the accepting
+            // key join the recall history; Escape breaks with a zero count.
+            putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
+            return { key, count: finalCount };
         }
         if (count > 9 || backspaced) {
             const text = backspaced && !count && !showZero ? 'Count: ' : `Count: ${count}`;

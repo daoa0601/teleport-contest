@@ -3158,6 +3158,11 @@ function replaceTopline(msg) {
     game._retained_message = '';
     game._last_message = msg;
 }
+// tty_create_nhwindow(NHW_MESSAGE) sizes the recall ring: iflags.msg_history
+// clamped into 20..MAX_MSG_HISTORY slots.
+export function messageHistoryCapacity() {
+    return Math.max(20, Math.min(MAX_MSG_HISTORY, game.iflags.msg_history ?? 20));
+}
 // C tty topl.c:remember_topl(): archive gt.toplines into the WIN_MESSAGE
 // recall ring and clear the negotiated topline. The port keeps the ring
 // oldest-first on game state so ^P recall and save/restore share it.
@@ -3165,11 +3170,8 @@ export function rememberToplines() {
     const toplines = game._toplines;
     if (!toplines)
         return;
-    // tty_create_nhwindow(NHW_MESSAGE) clamps iflags.msg_history into
-    // 20..MAX_MSG_HISTORY; the ring is that many slots.
-    const capacity = Math.max(20, Math.min(MAX_MSG_HISTORY, game.iflags.msg_history ?? 20));
     game._messageHistory.push(toplines);
-    if (game._messageHistory.length > capacity)
+    if (game._messageHistory.length > messageHistoryCapacity())
         game._messageHistory.shift();
     game._toplines = '';
     game._messageHistoryCursor = null;
@@ -3473,12 +3475,16 @@ async function updateTopline(msg, options = {}) {
         // keeps WIN_STOP set through the following survival question.
         if (game.nhDisplay)
             game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
-        game._toplines = fits && !restarts ? `${game._toplines}  ${msg}` : msg;
+        if (fits && !restarts)
+            game._toplines = `${game._toplines}  ${msg}`;
+        else {
+            // update_topl() remembers the replaced line even while WIN_STOP
+            // hides this one (topl.c:272-281).
+            rememberToplines();
+            game._toplines = msg;
+        }
         if (!restarts)
             return null;
-        // "You die" clears WIN_STOP and is remembered like any new line.
-        rememberToplines();
-        game._toplines = msg;
         game._suppressMessagesUntilInput = false;
         replaceTopline(msg);
         return wraps ? await pageTopline(msg, paging) : null;

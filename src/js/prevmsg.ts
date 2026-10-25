@@ -4,7 +4,7 @@
 // build through putstr()/display_nhwindow()/destroy_nhwindow().
 
 import { game } from './gstate.js';
-import { pageTopline, toplineRows } from './display.js';
+import { messageHistoryCapacity, pageTopline, toplineRows } from './display.js';
 import { showDisclosureOverlay } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 
@@ -34,36 +34,51 @@ export function keyText(key: number): string {
         visible -= 0x80;
     }
     if (visible < 32) return `${meta}^${String.fromCharCode(visible + 64)}`;
+    if (visible === 127) return `${meta}^?`;
     return `${meta}${String.fromCharCode(visible)}`;
 }
 
 // One step back through the recall ring. tty_doprev_message() decrements
 // cw->maxcol and resets it to maxrow once the walk leaves the filled slots.
+// In a full ring the oldest message occupies maxrow's own slot, so the walk
+// reaches the pending line there instead of displaying that entry.
 function stepHistoryBack(): void {
     const history = game._messageHistory;
-    if (game._messageHistoryCursor === null) {
+    const cursor = game._messageHistoryCursor;
+    if (cursor === null) {
         game._messageHistoryCursor = history.length ? history.length - 1 : null;
-    } else if (game._messageHistoryCursor > 0) {
-        game._messageHistoryCursor--;
-    } else {
-        game._messageHistoryCursor = null;
+        return;
     }
+    if (cursor <= 0) {
+        game._messageHistoryCursor = null;
+        return;
+    }
+    // In a full ring the oldest message occupies maxrow's own slot, so a
+    // walk about to reach it returns to the pending line instead.
+    game._messageHistoryCursor = cursor - 1 === 0
+        && history.length === messageHistoryCapacity()
+        ? null : cursor - 1;
 }
 
 // C tty topl.c:redotoplin(): repaint a recalled line at the top. Wrapped
-// lines page with --More-- accepting ^P so one press can keep walking;
-// a single line just becomes the pending topline again.
-async function redotoplin(text: string): Promise<number> {
+// lines page with --More-- accepting ^P so one press can keep walking,
+// except while a prompt owns the line: redotoplin() skips more() when the
+// previous topline state was TOPLINE_SPECIAL_PROMPT. A single line just
+// becomes the pending topline again.
+async function redotoplin(text: string, fromPrompt = false): Promise<number> {
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
-    if (toplineRows(text, columns).length > 1)
+    const lines = toplineRows(text, columns);
+    if (lines.length > 1 && !fromPrompt)
         return await pageTopline(text, { dismissKey: CTRL_P });
     if (display) {
-        display.clearRow(0);
-        const row = toplineRows(text, columns)[0];
-        for (const [column, cell] of row.entries())
-            display.setCell(column, 0, cell.ch, NO_COLOR, 0);
-        display.setCursor(row.length, 0);
+        for (const [row, line] of lines.entries()) {
+            display.clearRow(row);
+            for (const [column, cell] of line.entries())
+                display.setCell(column, row, cell.ch, NO_COLOR, 0);
+        }
+        const last = lines.at(-1) ?? lines[0];
+        display.setCursor(last.length, lines.length - 1);
     }
     game._pending_message = text;
     game._retained_message = '';
@@ -76,12 +91,17 @@ async function redotoplin(text: string): Promise<number> {
 // through process_text_window() because putstr() (unlike add_menu()) owns
 // cw->data, and destroy_nhwindow() erases the corner again.
 async function showMessageHistoryWindow(
-    { reversed, acceptCtrlP }: { reversed: boolean; acceptCtrlP?: boolean },
+    { reversed, acceptCtrlP, fromPrompt }: {
+        reversed: boolean; acceptCtrlP?: boolean; fromPrompt?: boolean;
+    },
 ): Promise<number> {
     const lines: string[] = ['Message History', ''];
     if (reversed) {
         lines.push(game._toplines);
-        for (let index = game._messageHistory.length - 1; index >= 0; index--)
+        // A full ring keeps its oldest message in maxrow's own slot, where
+        // the reversed walk stops before listing it.
+        const oldest = game._messageHistory.length === messageHistoryCapacity() ? 1 : 0;
+        for (let index = game._messageHistory.length - 1; index >= oldest; index--)
             lines.push(game._messageHistory[index] ?? '');
     } else {
         lines.push(...game._messageHistory, game._toplines);
@@ -89,21 +109,23 @@ async function showMessageHistoryWindow(
     return await showDisclosureOverlay(lines, {
         restoreUnderlay: true,
         extraDismissKey: acceptCtrlP ? CTRL_P : null,
+        skipPendingPager: !!fromPrompt,
     });
 }
 
 // C cmd.c:doprev_message() -> win/tty/topl.c:tty_doprev_message(). The
 // prompt owners call this with inread set, which forces the single-message
-// branch exactly like ttyDisplay->inread does; they manage their own
-// repainting around the call. Takes no game time and draws no randomness.
-export async function doprevMessage(inread = false): Promise<void> {
+// branch exactly like ttyDisplay->inread does, and with fromPrompt so a
+// pending prompt line is never paged over; they manage their own repainting
+// around the call. Takes no game time and draws no randomness.
+export async function doprevMessage(inread = false, fromPrompt = false): Promise<void> {
     const mode = messageWindowMode();
     if (mode !== 's' && !inread) {
         if (mode === 'f') {
             // Full: the window lists the ring oldest-first with the pending
             // topline last, and the walk cursor restarts.
             game._messageHistoryCursor = null;
-            await showMessageHistoryWindow({ reversed: false });
+            await showMessageHistoryWindow({ reversed: false, fromPrompt });
         } else if (mode === 'c') {
             // Combination: the first two recalls page single lines (the
             // pending topline, then the newest remembered one), the third
@@ -114,26 +136,27 @@ export async function doprevMessage(inread = false): Promise<void> {
                 let morc: number;
                 if (cursor === null || cursor === game._messageHistory.length - 1) {
                     morc = await redotoplin(cursor === null
-                        ? game._toplines : game._messageHistory[cursor] ?? '');
+                        ? game._toplines : game._messageHistory[cursor] ?? '', fromPrompt);
                     stepHistoryBack();
                 } else {
                     game._messageHistoryCursor = null;
-                    morc = await showMessageHistoryWindow({ reversed: false, acceptCtrlP: true });
+                    morc = await showMessageHistoryWindow(
+                        { reversed: false, acceptCtrlP: true, fromPrompt });
                 }
                 if (morc !== CTRL_P) break;
             }
         } else {
             // Reversed: the pending topline leads, then the ring newest-first.
             game._messageHistoryCursor = null;
-            await showMessageHistoryWindow({ reversed: true });
+            await showMessageHistoryWindow({ reversed: true, fromPrompt });
         }
     } else if (mode === 's') {
         // Single: each ^P walks one entry further back, wrapping to the
-        // pending topline again after the oldest remembered entry.
+        // pending topline again after the oldest displayed entry.
         for (;;) {
             const cursor = game._messageHistoryCursor;
             const morc = await redotoplin(cursor === null
-                ? game._toplines : game._messageHistory[cursor] ?? '');
+                ? game._toplines : game._messageHistory[cursor] ?? '', fromPrompt);
             stepHistoryBack();
             if (morc !== CTRL_P) break;
         }

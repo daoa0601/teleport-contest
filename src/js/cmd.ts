@@ -165,7 +165,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
+import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
 import { terrainCommand } from './terrain_view.js';
@@ -194,7 +194,7 @@ import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    setTopline, putMessageHistory,
+    setTopline, putMessageHistory, rememberToplines,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
     monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph,
@@ -3862,18 +3862,24 @@ async function adjustSplit(): Promise<void> {
     await doadjust(split, object);
 }
 
-// C cmd.c:get_count(GC_ECHOFIRST): digits extend the count and either erase
-// key removes its last digit. A non-digit accepts only space or return.
+// C cmd.c:get_count(GC_ECHOFIRST | GC_CONDHIST) behind doorganize's split:
+// the yn answer names the first digit, each "Count: N" echo is
+// custompline(SUPPRESS_HISTORY), and only a final count differing from the
+// first digit is filed for recall, with Escape leaving a count of zero.
 async function readInventorySplitCount(): Promise<number | null> {
     await flushPendingTopline();
-    let key = await promptKey('Split off how many?', 1);
+    let key = await promptKey('Split off how many? ');
     if (key < 48 || key > 57) return null;
     const firstDigit = key - 48;
     let count = BigInt(key - 48);
     let showCount = true;
     for (;;) {
+        const text = `Count: ${showCount ? count : ''}`;
         clearMessageWindow();
-        key = await promptKey(`Count: ${showCount ? count : ''}`);
+        await setTopline(text);
+        await flush_screen(0);
+        game.nhDisplay?.setCursor(text.length, 0);
+        key = await readchar();
         if (key >= 48 && key <= 57) {
             const nextCount = count * 10n + BigInt(key - 48);
             // AppendLongDigit() reports native long overflow; get_count()
@@ -3885,10 +3891,12 @@ async function readInventorySplitCount(): Promise<number | null> {
             showCount = count > 0n;
         } else {
             clearMessageWindow();
-            // C get_count(GC_CONDHIST): "Count: N <key>" joins the recall
-            // history when the final count differs from its first digit.
-            if (Number(count) !== firstDigit)
-                putMessageHistory(`Count: ${count} ${keyText(key)}`);
+            // GC_CONDHIST: "Count: N <key>" joins the recall history only
+            // when the final count differs from its first digit; Escape
+            // breaks with a count of zero.
+            const finalCount = key === 27 ? 0 : Number(count);
+            if (finalCount !== firstDigit)
+                putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
             return key === 32 || key === 10 || key === 13 ? Number(count) : null;
         }
     }
@@ -4658,12 +4666,17 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
     let command = '';
     let completion: string | null = null;
     const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
+    // custompline(SUPPRESS_HISTORY) files the line before the prompt, then
+    // the loop head makes the "# " line the current topline (getline.c:81).
+    rememberToplines();
+    game._toplines = `${initiator} `;
     game._pending_message = initiator;
     await flush_screen(1);
     game.nhDisplay?.setCursor(initiator.length + 1, 0);
 
     const redrawCommand = async () => {
         const displayedCommand = completion || command;
+        game._toplines = command ? `${initiator} ${displayedCommand}` : `${initiator} `;
         game._pending_message = command
             ? `${initiator} ${displayedCommand}` : initiator;
         await flush_screen(1);
@@ -4693,20 +4706,19 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
         if (key === 16) {
             // C win/tty/getline.c hooked_tty_getlin(): the "#" editor
             // browses history with ^P like any getlin, with inread clear
-            // so full/combination modes page their windows.
+            // so full/combination modes page their windows. A prompt owns
+            // the line, so a wrapped recall never pages.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
-                if (!doprev) await doprevMessage(false);
-                await doprevMessage(false);
+                if (!doprev) await doprevMessage(false, true);
+                await doprevMessage(false, true);
                 doprev = true;
             } else {
-                await doprevMessage(false);
+                await doprevMessage(false, true);
                 doprev = false;
                 game._messageHistoryCursor = null;
                 await redrawCommand();
             }
-            // The loop head keeps gt.toplines equal to the typed line.
-            game._toplines = command ? `${initiator} ${completion || command}` : initiator;
             continue;
         }
         if (doprev) {
