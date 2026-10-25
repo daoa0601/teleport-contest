@@ -88,7 +88,9 @@ export async function displayQuestText(text: QuestText | null, state: GameState 
             await flushPendingTopline();
         state._pending_message = '';
         state._retained_message = '';
-        if (text.output === 'menu') await showTextMenuOverlay(text.lines);
+        // C questpgr.c:451 deliver_by_window() fills the window with
+        // putstr() even for menu-style output.
+        if (text.output === 'menu') await showTextMenuOverlay(text.lines, { viaPutstr: true });
         else await showTextWindow(text.lines);
         state._pending_message = '';
         state._retained_message = '';

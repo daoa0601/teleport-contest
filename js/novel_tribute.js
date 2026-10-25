@@ -37,7 +37,8 @@ export async function readNovelTribute(book, title, state = game) {
     const lines = passages[passage - 1];
     if (!lines)
         throw new Error(`Novel ${title} has no passage ${passage}`);
-    await showTextMenuOverlay(lines);
+    // C files.c:3601 outputs the passage with putstr().
+    await showTextMenuOverlay(lines, { viaPutstr: true });
     let attribution = '';
     for (let index = lines.length - 1; index >= 0; index--) {
         const line = lines[index];

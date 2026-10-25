@@ -6,7 +6,7 @@ import { nhgetch } from './input.js';
 import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
+import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
 export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
 export const ATR_NONE = 0;
@@ -38,12 +38,15 @@ function clearRect(left, top, right, bottom) {
         }
     }
 }
-// C windows.c:add_menu_heading() suppresses class highlighting in disclosure.
+// C windows.c:add_menu_heading() suppresses class highlighting in disclosure
+// and passes MENU_ITEMFLAGS_SKIPMENUCOLORS so menucoloring rules leave the
+// heading's own style alone.
 export function addMenuHeading(window, text) {
     tty_add_menu(window, {
         identifier: null, text,
         attr: game.program_state.gameover ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
         color: game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR,
+        itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS,
     });
 }
 /**
@@ -64,14 +67,16 @@ export async function showInventoryWindow(sections, { pickMode = PICK_NONE, head
                 if (headingAttr === undefined)
                     addMenuHeading(window, section.heading);
                 else
-                    tty_add_menu(window, { identifier: null, text: section.heading, attr: headingAttr });
+                    tty_add_menu(window, { identifier: null, text: section.heading, attr: headingAttr,
+                        itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
             }
             for (const item of section.items)
                 tty_add_menu(window, {
                     identifier: item.key || item.value !== undefined ? item : null,
                     text: item.text, attr: item.attr ?? ATR_NONE,
                     ...(item.key ? { selector: item.key } : {}),
-                    itemflags: item.key === preselectedKey ? MENU_ITEMFLAGS_SELECTED : 0,
+                    itemflags: (item.itemflags ?? 0)
+                        | (item.key === preselectedKey ? MENU_ITEMFLAGS_SELECTED : 0),
                 });
         }
         tty_end_menu(window, title);
@@ -186,8 +191,13 @@ async function pageDisclosureWindow(d, lines, marker) {
  * Display Lua `nh.text()` output.  Despite its name, that API creates an
  * NHW_MENU/PICK_NONE window in C.  With tty menu_overlay enabled, sparse menu
  * rows are painted over the live map at the computed corner offset.
+ *
+ * `viaPutstr` marks windows C fills with putstr() instead of add_menu_str()
+ * (the shop bill, the unpaid-items list, novel passages, the quest pager);
+ * putstr() never passes through add_menu()'s menucoloring, so their lines
+ * carry MENU_ITEMFLAGS_SKIPMENUCOLORS.
  */
-export async function showTextMenuOverlay(lines) {
+export async function showTextMenuOverlay(lines, { viaPutstr = false, } = {}) {
     if (!display())
         return 27;
     const window = tty_create_nhwindow(NHW_MENU);
@@ -195,6 +205,7 @@ export async function showTextMenuOverlay(lines) {
         await tty_start_menu(window);
         for (const line of lines)
             tty_add_menu(window, { identifier: null,
+                ...(viaPutstr ? { itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS } : {}),
                 ...(typeof line === 'string' ? { text: line } : line) });
         tty_end_menu(window);
         return (await tty_select_menu(window, PICK_NONE)).key;
@@ -254,7 +265,8 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
             for (const item of section.items) {
                 if (item.selectable === false) {
                     tty_add_menu(window, { identifier: null, text: item.text,
-                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR });
+                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR,
+                        itemflags: item.itemFlags ?? 0 });
                     continue;
                 }
                 if (!pageLocalKeys && !item.key)
@@ -391,7 +403,8 @@ export async function showPagedPickOneMenu({ rows, choices, prompt = null }) {
             const selectable = identifier !== undefined && row.text.slice(1, 4) === ' - ';
             tty_add_menu(window, { text: selectable ? row.text.slice(4) : row.text,
                 identifier: selectable ? identifier : null,
-                ...(selectable ? { selector } : {}), attr: row.attr ?? ATR_NONE });
+                ...(selectable ? { selector } : {}), attr: row.attr ?? ATR_NONE,
+                itemflags: row.itemflags ?? 0 });
         }
         tty_end_menu(window, prompt);
         const result = await tty_select_menu(window, PICK_ONE);

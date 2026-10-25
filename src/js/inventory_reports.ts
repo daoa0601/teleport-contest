@@ -333,7 +333,9 @@ async function showBill(bill: readonly BillLine[]): Promise<void> {
         total += line.price;
     }
     lines.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
-    await showTextMenuOverlay(lines);
+    // C shk.c:4229 fills the bill window with putstr(), which never reaches
+    // add_menu()'s menucoloring.
+    await showTextMenuOverlay(lines, { viaPutstr: true });
 }
 
 async function showUnpaid(carried: readonly GameObject[], floor: number, buried: number): Promise<void> {
@@ -379,7 +381,8 @@ async function showUnpaid(carried: readonly GameObject[], floor: number, buried:
         if (!carried.length) await pline(`You aren't carrying any unpaid items but there ${verb} ${extra} ${where}.`);
         else lines.push('', `(There ${verb} ${extra} more unpaid object${extra === 1 ? '' : 's'} ${where}.)`);
     }
-    if (carried.length) await showTextMenuOverlay(lines);
+    // C invent.c:3703 fills the unpaid-items window with putstr().
+    if (carried.length) await showTextMenuOverlay(lines, { viaPutstr: true });
 }
 
 function unknownContainer(object: GameObject): boolean {

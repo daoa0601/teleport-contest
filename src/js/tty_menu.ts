@@ -1,7 +1,8 @@
 // Native tty menu window ownership (win/tty/wintty.c).
 import { BUFSZ, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
-    MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT } from './const.js';
+    MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
 import { game } from './gstate.js';
+import { getMenuColoring } from './menu_coloring.js';
 import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
@@ -11,7 +12,15 @@ import type { TerminalCell, TerminalColor } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 
 const ATR_NONE = 0;
-export interface TextMenuLine { text: string; attr?: number; color?: TerminalColor; col?: number }
+export interface TextMenuLine {
+    text: string;
+    attr?: number;
+    color?: TerminalColor;
+    col?: number;
+    // Entry-level add_menu() flags; MENU_ITEMFLAGS_SKIPMENUCOLORS keeps a
+    // heading out of menucolor rule matching.
+    itemflags?: number;
+}
 export type MenuUnderlay = readonly (readonly TerminalCell[])[];
 export interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
 export interface MenuLayout<T extends TextMenuLine> {
@@ -138,7 +147,6 @@ export interface TtyMenuEntry<T> extends TextMenuLine {
     identifier: T | null;
     selector?: string;
     group?: string;
-    itemflags?: number;
 }
 interface TtyMenuRow<T> extends TextMenuLine {
     identifier: T | null;
@@ -186,10 +194,23 @@ export async function tty_start_menu<T>(window: TtyMenuWindow<T>): Promise<void>
 
 export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>): void {
     requireWindow(window);
+    // C windows.c:add_menu() consults the menucoloring rules before the
+    // entry reaches the window port: the first matching rule replaces both
+    // the caller's color and attribute, so entries that carry their own
+    // style are recolored too. Headings opt out with SKIPMENUCOLORS.
+    let attr = entry.attr;
+    let color = entry.color;
+    if (!((entry.itemflags ?? 0) & MENU_ITEMFLAGS_SKIPMENUCOLORS)) {
+        const rule = getMenuColoring(entry.text);
+        if (rule) {
+            attr = terminalAttrFromCAttr(rule.attr);
+            color = rule.color;
+        }
+    }
     window.entries.push({
         text: entry.identifier === null ? entry.text : selectableMenuText(entry.selector || '?', entry.text),
-        attr: entry.attr ?? ATR_NONE,
-        color: entry.color ?? NO_COLOR,
+        attr: attr ?? ATR_NONE,
+        color: color ?? NO_COLOR,
         identifier: entry.identifier,
         key: entry.selector ?? '',
         group: entry.group ?? '',

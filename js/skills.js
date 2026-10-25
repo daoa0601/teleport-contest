@@ -2,7 +2,7 @@
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
 import { formatFeltMessage } from './hero_speech.js';
 import { OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE } from './object_data.js';
-import { MAXULEV, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, } from './const.js';
+import { MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { flushPendingTopline, plineWithContinuation } from './display.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
@@ -487,7 +487,9 @@ function enhancementMenu(speedy, state) {
         items.push({ text: '' });
     const longest = Math.max(...skills.map((proficiency, skill) => proficiency.skill ? skillName(skill, state).length : 0));
     for (const group of SKILL_GROUPS) {
-        items.push({ text: group.heading, attr: ATR_INVERSE });
+        // C weapon.c:doenhance() emits the group heading through
+        // add_menu_heading(), which skips menu coloring.
+        items.push({ text: group.heading, attr: ATR_INVERSE, itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
         for (let skill = group.first; skill <= group.last; skill++) {
             const proficiency = requiredSkill(skills, skill);
             if (proficiency.skill === P_ISRESTRICTED)

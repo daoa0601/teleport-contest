@@ -8,10 +8,11 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { applyNethackrc, parseNethackrc } from '../js/options.js';
-import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { applyNethackrc, doOptions, parseNethackrc } from '../js/options.js';
+import { ATR_BOLD, ATR_INVERSE, CLR_GREEN, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
+import { PosixRegex } from '../js/posix_regex.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -204,6 +205,31 @@ void test('menu headings offer the native color and attribute pickers', async ()
     assert.match(await optionRow('menu_headings'), /\[yellow&bold\]/);
 });
 
+void test('the color picker replaces active menucolor rules while it is open', async () => {
+    freshObjectRoom();
+    // A catch-all rule would recolor every picker row if it stayed active;
+    // coloratt.c:basic_menu_colors() swaps the player's rules out for the
+    // duration and restores them afterwards.
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=green');
+
+    const views = await fullOptions(['menu_headings'], [
+        { match: 'How to highlight menu headings:', keys: '\x1b' },
+    ]);
+
+    const rows = views[0]?.rows;
+    const nameCells = (name: string) => {
+        const row = rows?.find(cells => cells.map(cell => cell.ch).join('').includes(`- ${name}`));
+        const start = row?.map(cell => cell.ch).join('').indexOf(name) ?? -1;
+        return row && start >= 0 ? row.slice(start, start + name.length) : [];
+    };
+    for (const cell of nameCells('red'))
+        assert.equal(cell.color, CLR_RED, 'the "red" name keeps its own color');
+    for (const cell of nameCells('black'))
+        assert.equal(cell.color, NO_COLOR, 'black stays uncolored');
+    assert.equal(game.iflags.menuColorings?.length, 1, 'the player rule is restored');
+    assert.equal(game.flags.menucolors, true, 'the menucolors toggle is restored');
+});
+
 void test('boolean toggles from the options menu refresh the status fields', async () => {
     freshObjectRoom();
 
@@ -296,8 +322,8 @@ void test('an over-long menu color pattern is elided at the native byte limit', 
     // through the O command: beside the `"=no-color` suffix, 244 bytes
     // remain and the elision keeps 241 of them.
     game.iflags.menuColorings = [
-        { origstr: 'z'.repeat(245), color: 8, attr: 0 },
-        { origstr: 'y'.repeat(244), color: 8, attr: 0 },
+        { origstr: 'z'.repeat(245), color: 8, attr: 0, regex: new PosixRegex('z') },
+        { origstr: 'y'.repeat(244), color: 8, attr: 0, regex: new PosixRegex('y') },
     ];
 
     const views = await fullOptions(['menu colors'], [
@@ -314,4 +340,72 @@ void test('an over-long menu color pattern is elided at the native byte limit', 
     assert.ok(!yRow.includes('...'), `A pattern at the row budget is kept whole:\n${yRow}`);
     assert.ok(zRow.endsWith('..."=no-color'), `One byte past the budget is elided:\n${zRow}`);
     assert.equal(zRow.length, 259, 'The elided row is 4 columns of letter prefix plus the 255-byte row');
+});
+
+void test('options menu section headings keep their style under menucolor rules', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
+
+    // options.c:8831 adds the full menu's section titles via add_menu_heading(),
+    // whose MENU_ITEMFLAGS_SKIPMENUCOLORS keeps them out of rule matching,
+    // while doset_add_menu() rows take the rule.
+    const full = resetInputState();
+    const fullCommand = rhack('m'.charCodeAt(0));
+    await full.waitUntilBlocked();
+    full.feed('O');
+    await full.waitUntilBlocked();
+    let grid = game.nhDisplay?.grid ?? [];
+    let rows = grid.map(row => row.map(cell => cell.ch).join(''));
+    const heading = grid[rows.findIndex(row => row.includes('Booleans (selecting will toggle value):'))];
+    assert.ok(heading, 'the full options menu shows its Booleans heading');
+    for (const cell of heading) if (cell.ch !== ' ') assert.equal(cell.color, NO_COLOR);
+    const choiceRow = grid[rows.findIndex(row => / [-+] view help for options menu/.test(row))];
+    assert.ok(choiceRow, 'the full options menu offers its help entry');
+    const choiceText = rows[grid.indexOf(choiceRow)] ?? '';
+    const helpColumn = choiceText.indexOf('view help');
+    for (const cell of choiceRow.slice(helpColumn, helpColumn + 'view help'.length))
+        assert.equal(cell.color, CLR_RED, 'an option row takes the rule');
+    full.feed('\x1b');
+    await fullCommand;
+
+    // options.c:8585 builds the simple menu's section headings the same way.
+    const simple = resetInputState();
+    const simpleCommand = doOptions();
+    await simple.waitUntilBlocked();
+    grid = game.nhDisplay?.grid ?? [];
+    rows = grid.map(row => row.map(cell => cell.ch).join(''));
+    const simpleHeading = grid[rows.findIndex(row => row.includes('General'))];
+    assert.ok(simpleHeading, 'the simple options menu shows its General heading');
+    for (const cell of simpleHeading) if (cell.ch !== ' ') assert.equal(cell.color, NO_COLOR);
+    const fruitRow = grid[rows.findIndex(row => / [-+] fruit /.test(row))];
+    assert.ok(fruitRow, 'the simple options menu lists fruit');
+    const fruitText = rows[grid.indexOf(fruitRow)] ?? '';
+    for (const cell of fruitRow.slice(fruitText.indexOf('fruit'), fruitText.indexOf('fruit') + 'fruit'.length))
+        assert.equal(cell.color, CLR_RED);
+    simple.feed('\x1b');
+    await simpleCommand;
+});
+
+void test('the status-conditions heading keeps its style under menucolor rules', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
+
+    // botl.c:1411 emits the "sorted ..." row via add_menu_heading(); the
+    // cond_ rows around it are plain add_menu() rows.
+    const views = await fullOptions(['status condition fields'], [
+        { match: 'Choose status conditions to toggle', keys: '\x1b' },
+    ]);
+    const rows = views[0]?.rows ?? [];
+    const rowText = (cells: readonly CapturedCell[]) => cells.map(cell => cell.ch).join('');
+    const sorted = rows.find(cells => rowText(cells).includes('sorted alphabetically'));
+    assert.ok(sorted, `The condition editor lists its sort order:\n${views[0]?.text ?? ''}`);
+    const sortedText = rowText(sorted);
+    for (const cell of sorted.slice(sortedText.indexOf('sorted'),
+        sortedText.indexOf('sorted') + 'sorted'.length))
+        assert.equal(cell.color, NO_COLOR);
+    const condition = rows.find(cells => / [-+] cond_/.test(rowText(cells)));
+    assert.ok(condition, 'The condition editor lists cond_ rows');
+    const conditionText = rowText(condition);
+    for (const cell of condition.slice(conditionText.indexOf('cond_'), conditionText.indexOf('cond_') + 5))
+        assert.equal(cell.color, CLR_RED);
 });
