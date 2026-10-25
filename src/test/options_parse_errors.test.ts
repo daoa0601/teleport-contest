@@ -269,3 +269,28 @@ void test('autounlock parses its action list into a bitmask', () => {
     assert.deepEqual(errorMessages('OPTIONS=!autounlock:kick'),
         ["Invalid value combination for \"autounlock\": 'none' with some"]);
 });
+
+void test('BINDINGS lines report unparseable keys and unknown commands', () => {
+    assert.deepEqual(errorMessages('BINDINGS=qq:search'),
+        ["Unknown key binding key 'qq'"]);
+    assert.deepEqual(errorMessages('BINDINGS=h:notacommand'),
+        ["Unknown key binding command 'notacommand'"]);
+    // A binding without a separator is silently not a binding.
+    assert.deepEqual(errorMessages('BINDINGS=nothing'), []);
+});
+
+void test('a menu command key binding carries both illegal-key diagnostics', () => {
+    // illegal_menu_cmd_key() reports the reserved key, then
+    // parsebindings() adds its own "Bad menu key" line.
+    assert.deepEqual(errorMessages('BINDINGS=F:menu_next_page'),
+        ["Reserved menu command key 'F'", 'Bad menu key F:menu_next_page']);
+    // '@' is the one letter a menu command may keep.
+    assert.deepEqual(errorMessages('BINDINGS=@:menu_next_page'), []);
+    assert.equal(parseNethackrc('BINDINGS=@:menu_next_page')
+        .commandBindings.menuCommand('@'.charCodeAt(0)), '>'.charCodeAt(0));
+});
+
+void test('bind_key parameter complaints surface from BINDINGS lines', () => {
+    assert.deepEqual(errorMessages('BINDINGS=h:toggle'),
+        ["'toggle' requires a parameter"]);
+});

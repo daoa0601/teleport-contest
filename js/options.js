@@ -371,6 +371,20 @@ const AUTOUNLOCK_TYPES = [
     ['kick', AUTOUNLOCK_KICK],
     ['force', AUTOUNLOCK_FORCE],
 ];
+// options.c illegal_menu_cmd_key(): the reserved control, space, digit,
+// and letter keys ('@' excepted), then the default object-class symbols.
+function menuCommandKeyError(key) {
+    const character = String.fromCharCode(key);
+    const letter = (key >= 65 && key <= 90) || (key >= 97 && key <= 122);
+    if (key === 0 || key === 13 || key === 10 || key === 27 || key === 32
+        || (key >= 48 && key <= 57) || (letter && key !== 64)) {
+        return `Reserved menu command key '${visctrl(key)}'`;
+    }
+    if (OBJECT_CLASS_SYMBOLS.slice(1).includes(character)) {
+        return `Menu command key '${visctrl(key)}' is an object class`;
+    }
+    return null;
+}
 const DEFAULT_PARANOIA_BITS = PARANOID_PRAY | PARANOID_SWIM | PARANOID_TRAP;
 const MENU_STYLES = [
     ['traditional', '[prompt for object class(es), then', ' ask y/n for each item in those classes]'],
@@ -947,15 +961,39 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
             break;
         }
         case 'BINDINGS':
+            // options.c:parsebindings(): each field is "key:command"; an
+            // unparseable key or unknown command is reported, a menu-command
+            // key must pass illegal_menu_cmd_key() (whose own diagnostic
+            // precedes parsebindings()'s "Bad menu key"), and bind_key()
+            // reports its parameter complaints while accepting the binding.
             for (const field of bindingFields(parsed.valueText)) {
                 const separator = field.indexOf(':');
                 if (separator < 0)
                     continue;
-                const code = bindingKeyCode(field.slice(0, separator));
+                const keyText = field.slice(0, separator);
                 const command = field.slice(separator + 1).trim();
-                if (code && command && !result.commandBindings.bindSpecialKey(code, command)
-                    && !result.commandBindings.bindMenuKey(code, command))
-                    result.commandBindings.bindKey(code, command);
+                const code = bindingKeyCode(keyText);
+                if (!code) {
+                    addError(`Unknown key binding key '${keyText}'`);
+                    continue;
+                }
+                if (result.commandBindings.bindSpecialKey(code, command))
+                    continue;
+                if (MENU_KEY_OPTIONS[command] === true) {
+                    const illegal = menuCommandKeyError(code);
+                    if (illegal) {
+                        addError(illegal);
+                        addError(`Bad menu key ${visctrl(code)}:${command}`);
+                    }
+                    else
+                        result.commandBindings.bindMenuKey(code, command);
+                    continue;
+                }
+                const bound = result.commandBindings.bindKey(code, command);
+                if (!bound.accepted)
+                    addError(`Unknown key binding command '${command}'`);
+                else if (bound.error)
+                    addError(bound.error);
             }
             break;
         case 'AUTOCOMPLETE':
@@ -1230,22 +1268,13 @@ function parseConfiguration(rc, result, report, fromFile) {
             // printable reserved keys and default object-class symbols.
             if (MENU_KEY_OPTIONS[canonical] === true) {
                 const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
-                if (negated) {
-                    addError(`The ${canonical} option may not be negated.`);
-                }
-                else if (!raw) {
+                if (!raw)
                     addError(`Missing parameter for '${stripped}'`);
-                }
                 else {
                     const key = bindingKeyCode(raw);
-                    const letter = (key >= 65 && key <= 90) || (key >= 97 && key <= 122);
-                    if (key === 0 || key === 13 || key === 10 || key === 27 || key === 32
-                        || (key >= 48 && key <= 57) || (letter && key !== 64)) {
-                        addError(`Reserved menu command key '${visctrl(key)}'`);
-                    }
-                    else if (OBJECT_CLASS_SYMBOLS.slice(1).includes(String.fromCharCode(key))) {
-                        addError(`Menu command key '${visctrl(key)}' is an object class`);
-                    }
+                    const illegal = menuCommandKeyError(key);
+                    if (illegal)
+                        addError(illegal);
                     else
                         result.commandBindings.bindMenuKey(key, canonical);
                 }
