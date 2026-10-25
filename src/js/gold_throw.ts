@@ -48,7 +48,6 @@ import { finishMonsterEating } from './monster_eating.js';
 import { makeShopkeeperHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { sellHeroDroppedObject } from './shop_sell.js';
-import { heroIsDeaf } from './senses.js';
 import { OBJECT_COST } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { shipObject } from './object_migration.js';
@@ -113,7 +112,9 @@ async function finishShopkeeperCatch(
             0, Math.trunc(monster.eshk.credit ?? 0),
         ) + value;
         await pline(`You have ${monster.eshk.credit} ${currency(monster.eshk.credit, { state })} in credit.`);
-    } else if (!heroIsDeaf(state)) {
+    } else {
+        // C ghitm verbalizes this without a Deaf guard; unlike the shk.c
+        // call sites, the pinned dokick.c speech prints for deaf heroes.
         await pline('"Thanks, scum!"');
     }
 }
@@ -126,7 +127,8 @@ async function finishGuardCatch(monster: Monster, state: GameState): Promise<voi
             : monster.mpeaceful
                 ? "I'll take care of that; please move along."
                 : "I'll take that; now get moving.";
-    if (!heroIsDeaf(state)) await pline(`"${speech}"`);
+    // dokick.c ghitm verbalizes guard speech unconditionally.
+    await pline(`"${speech}"`);
 }
 
 async function finishMercenaryCatch(monster: Monster, value: number, state: GameState): Promise<void> {
@@ -138,7 +140,8 @@ async function finishMercenaryCatch(monster: Monster, value: number, state: Game
             + (state.u?.ulevel ?? 1) * rn2(5)) / charisma);
         if (value > required) monster.mpeaceful = 1;
     }
-    if (heroIsDeaf(state)) return;
+    // dokick.c ghitm verbalizes mercenary replies unconditionally.
+
 
     if (!monster.mpeaceful) {
         await pline(required
@@ -190,7 +193,7 @@ export async function resolveGoldMonsterContact({
         await finishShopkeeperCatch(
             monster, value, state,
         );
-    } else if (monster.ispriest && !heroIsDeaf(state)) {
+    } else if (monster.ispriest) {
         await pline(monster.mpeaceful
             ? '"Thank you for your contribution."' : '"Thanks, scum!"');
     } else if (monster.isgd) {

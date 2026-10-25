@@ -119,6 +119,11 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
         if (flight.destroyed || flight.migrated)
             return flight;
         if (flight.contact) {
+            // throwit_mon_hit(): a keeper who caught the missile in flight
+            // owns it already; no thitmonst, no landing.
+            if (flight.contact.isshk && thrown.where === 'minvent'
+                && thrown.ocarry === flight.contact)
+                return { ...flight, consumed: true };
             await snuffThrownCandle(thrown, state);
             const eggPieOrVenom = await hitMonsterWithThrownEggPieOrVenom(flight.contact, thrown, { state, target: { x: flight.x, y: flight.y } });
             if (eggPieOrVenom?.heroDied)

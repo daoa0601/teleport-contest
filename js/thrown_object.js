@@ -23,6 +23,7 @@ import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
+import { shopkeeperCatch } from './shop_damage.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
@@ -277,6 +278,16 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             const previousY = y;
             x = nextX;
             y = nextY;
+            // zap.c bhit() lets the shop's keeper intercept a flying
+            // pick-axe on any in-shop square of its path.
+            if (isPick(object)) {
+                const catcher = await shopkeeperCatch(object, x, y, requireInitializedGame(state));
+                if (catcher) {
+                    contact = catcher;
+                    stoppedBy = 'monster';
+                    break;
+                }
+            }
             if (IS_WATERWALL(location.typ) || location.typ === LAVAWALL) {
                 stoppedBy = 'liquid-wall';
                 break;
