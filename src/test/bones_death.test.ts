@@ -5,9 +5,11 @@ import { createBonesFromDeath, dropHeroInventoryForBones } from '../js/bones_dea
 import {
     BURNING,
     FOUNTAIN,
+    G_GENOD,
     GRAVE,
     HEADSTONE,
     LEAVESTATUE,
+    NON_PM,
     PIT,
     ROOM,
     W_ARM,
@@ -21,11 +23,13 @@ import { beginObjectBurn } from '../js/light.js';
 import {
     CORPSE,
     DAGGER,
+    FOOD_RATION,
     LEATHER_ARMOR,
     MUMMY_WRAPPING,
     OIL_LAMP,
     STATUE,
 } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
@@ -40,6 +44,7 @@ import { freshPlayableRoom } from './support/playable-room.js';
 const PM_GHOST = 287;
 const PM_HUMAN_ARCHEOLOGIST = 331;
 const PM_HUMAN_MUMMY = 192;
+const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
 
 void test('a nearby object-loving monster can inherit a dead hero item', async () => {
     freshPlayableRoom({ seed: 1n });
@@ -224,3 +229,105 @@ for (const square of ['room floor', 'existing grave', 'fountain', 'pit']) {
         }
     });
 }
+
+void test('the killer species decides what rises from the dead hero', async () => {
+    freshPlayableRoom({ seed: 41n });
+    const human = races[0];
+    const elf = races[1];
+    assert.ok(human);
+    assert.ok(elf);
+    const wraith = MONSTER_NAME.indexOf('wraith');
+    const vampire = MONSTER_NAME.indexOf('vampire');
+    const ghoul = MONSTER_NAME.indexOf('ghoul');
+    const zombie = MONSTER_NAME.indexOf('kobold zombie');
+    const skeleton = MONSTER_NAME.indexOf('skeleton');
+    const lich = MONSTER_NAME.indexOf('lich');
+    const mummy = MONSTER_NAME.indexOf('human mummy');
+
+    assert.equal(setHeroRemainsFromMonster({ mnum: wraith, mcan: 0 }), PM_WRAITH,
+        'a wraith killer raises a wraith');
+    assert.equal(setHeroRemainsFromMonster({ mnum: mummy, mcan: 0 }), human.mummynum,
+        'a mummy killer raises the hero race mummy');
+    assert.equal(setHeroRemainsFromMonster({ mnum: zombie, mcan: 0 }), human.zombienum,
+        'a zombie killer raises the hero race zombie');
+    assert.equal(setHeroRemainsFromMonster({ mnum: lich, mcan: 0 }), human.zombienum,
+        'a lich also converts its victim to a zombie');
+    assert.equal(setHeroRemainsFromMonster({ mnum: vampire, mcan: 0 }), vampire,
+        'a vampire raises a human victim as a vampire');
+    assert.equal(setHeroRemainsFromMonster({ mnum: ghoul, mcan: 0 }), ghoul,
+        'a ghoul killer raises a ghoul');
+    assert.equal(setHeroRemainsFromMonster({ mnum: skeleton, mcan: 0 }), NON_PM,
+        'a skeleton is not a zombie maker');
+    assert.equal(setHeroRemainsFromMonster({ mnum: zombie, mcan: 1 }), NON_PM,
+        'a cancelled zombie maker converts nobody');
+
+    game.urace = elf;
+    assert.equal(setHeroRemainsFromMonster({ mnum: vampire, mcan: 0 }), NON_PM,
+        'a vampire does not raise a non-human victim');
+    assert.equal(setHeroRemainsFromMonster({ mnum: mummy, mcan: 0 }), elf.mummynum,
+        'an elven mummy victim rises as an elf mummy');
+
+    game.mvitals = [];
+    game.mvitals[PM_WRAITH] = { born: 0, died: 0, mvflags: G_GENOD };
+    assert.equal(setHeroRemainsFromMonster({ mnum: wraith, mcan: 0 }), NON_PM,
+        'a genocided riser leaves plain remains');
+});
+
+void test('a wraith victim rises in their bones as a named wraith with their vigor', async () => {
+    freshPlayableRoom({
+        seed: 51n,
+        hero: {
+            uz: { dnum: 0, dlevel: 8 },
+            ulevel: 6,
+            uhpmax: 41,
+            uluck: 1,
+        },
+    });
+    requirePlayingGame(game);
+    init_objects();
+    game.storage = memoryStorage();
+    game._canMakeBones = true;
+    game.plname = 'Nine';
+    const dagger = await addInventoryObject(DAGGER);
+    setHeroRemainsFromMonster({ mnum: MONSTER_NAME.indexOf('wraith'), mcan: 0 });
+
+    assert.equal(await createBonesFromDeath('killed by a wraith', async () => 'y'), true);
+
+    const wraith = requireGameLevel().monsters.find(monster => monster.mnum === PM_WRAITH);
+    assert.ok(wraith, 'the bones wraith is missing');
+    assert.equal(wraith.name, 'Nine');
+    assert.equal(wraith.m_lev, 6);
+    assert.equal(wraith.mhp, 41);
+    assert.equal(wraith.mhpmax, 41);
+    assert.equal(wraith.msleeping, 1);
+    assert.equal(wraith.minvent?.includes(dagger), true);
+    assert.equal(wraith.minvent?.some(object => object.otyp === MUMMY_WRAPPING), false);
+    assert.deepEqual(floorObjectsAt(game.level, 10, 10), []);
+});
+
+void test('dropped death gear is cursed unless the native roll spares it', async () => {
+    for (const [seed, cursedDagger, cursedRation] of [
+        [2n, true, true],
+        [11n, false, true],
+    ] as const) {
+        freshPlayableRoom({ seed });
+        requirePlayingGame(game);
+        init_objects();
+        game.storage = memoryStorage();
+        game._canMakeBones = true;
+        const dagger = await addInventoryObject(DAGGER);
+        const ration = await addInventoryObject(FOOD_RATION, { blessed: true });
+        initRng(seed);
+
+        await dropHeroInventoryForBones(10, 10);
+
+        const remains = floorObjectsAt(game.level, 10, 10);
+        assert.equal(remains.includes(dagger), true);
+        assert.equal(remains.includes(ration), true);
+        assert.equal(game.inventory.length, 0);
+        assert.equal(!!dagger.cursed, cursedDagger, `dagger curse on seed ${seed}`);
+        assert.equal(!!dagger.blessed, false, `dagger blessing on seed ${seed}`);
+        assert.equal(!!ration.cursed, cursedRation, `ration curse on seed ${seed}`);
+        assert.equal(!!ration.blessed, !cursedRation, `ration blessing on seed ${seed}`);
+    }
+});
