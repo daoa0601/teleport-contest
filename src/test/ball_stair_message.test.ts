@@ -4,7 +4,7 @@ import { dragBallDownStairs } from '../js/ball.js';
 import { rhack } from '../js/cmd.js';
 import { plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pushKeys, resetInputState } from '../js/input.js';
+import { resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
