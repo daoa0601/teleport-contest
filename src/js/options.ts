@@ -455,6 +455,10 @@ interface ConfigurationSettings {
     characterFilters?: CharacterFilters;
     fruit?: string;
     symset?: string | undefined;
+    // Set when a symset choice explicitly reverted to "default".
+    symsetCleared?: boolean;
+    rogueSymset?: string | undefined;
+    rogueSymsetCleared?: boolean;
     // gs.showsyms[SYM_BOULDER + SYM_OFF_X] override from BOULDER=.
     boulderSym?: string;
     // optfn_boulder() also writes the rogue set's override.
@@ -681,6 +685,8 @@ type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'comm
     preferred_pet?: string;
     boulderSym?: string;
     rogueBoulderSym?: string;
+    symset?: string | null | undefined;
+    rogueSymset?: string | null | undefined;
 };
 
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
@@ -698,6 +704,8 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     // cnf_line_BOULDER() writes straight into the live symbol override.
     if (result.boulderSym !== undefined) state.boulderSym = result.boulderSym;
     if (result.rogueBoulderSym !== undefined) state.rogueBoulderSym = result.rogueBoulderSym;
+    if (result.symset !== undefined || result.symsetCleared) state.symset = result.symset || null;
+    if (result.rogueSymset !== undefined || result.rogueSymsetCleared) state.rogueSymset = result.rogueSymset || null;
     return result;
 }
 
@@ -1728,10 +1736,22 @@ function parseConfiguration(
                     // clears the choice, and reports the error; "default"
                     // itself clears the choice without loading (files.c
                     // read_sym_file()).
-                    if (isDefaultSymsetName(val)) result.symset = undefined;
+                    if (isDefaultSymsetName(val)) { result.symset = undefined; result.symsetCleared = true; }
                     else if (SYMSET_NAMES[val.toLowerCase()] === true) result.symset = val;
                     else {
                         result.symset = undefined;
+                        result.symsetCleared = true;
+                        addError(`Unable to load symbol set "${val}" from "symbols"`);
+                    }
+                }
+                else if (canonical === 'roguesymset') {
+                    // optfn_roguesymset() loads the rogue set the same way;
+                    // restrictions only filter the interactive menu.
+                    if (isDefaultSymsetName(val)) { result.rogueSymset = undefined; result.rogueSymsetCleared = true; }
+                    else if (SYMSET_NAMES[val.toLowerCase()] === true) result.rogueSymset = val;
+                    else {
+                        result.rogueSymset = undefined;
+                        result.rogueSymsetCleared = true;
                         addError(`Unable to load symbol set "${val}" from "symbols"`);
                     }
                 }
@@ -2398,6 +2418,14 @@ function symsetMenuValue(): string {
     return `${name}${active}${handling ? `, handler=${handling}` : ''}`;
 }
 
+// options.c:optfn_roguesymset() get_val: the loaded set's name and
+// ", active" while the rogue set is current; no handler is reported.
+function rogueSymsetMenuValue(): string {
+    const name = game.rogueSymset;
+    if (!name) return 'default';
+    return `${name}${Is_rogue_level(game.u?.uz) ? ', active' : ''}`;
+}
+
 // coloratt.c:clr2colorname()/attr2attrname(): the first canonical table
 // entry naming the value.
 function colorName(color: number): string {
@@ -2561,7 +2589,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('pickup_burden', `pickup_burden           [${compoundMenuValue('pickup_burden')}]`),
             choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
             choice('pile_limit', 'pile_limit              [5]'),
-            choice('roguesymset', 'roguesymset             [default]'),
+            choice('roguesymset', `roguesymset             [${rogueSymsetMenuValue()}]`),
             choice('runmode', `runmode                 [${compoundMenuValue('runmode')}]`),
             choice('scores', `scores                  [${scoreDisplayDescription()}]`),
             choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),

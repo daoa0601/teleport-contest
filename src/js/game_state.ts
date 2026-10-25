@@ -233,7 +233,9 @@ export interface GameState {
     preferred_pet?: string;
     petname_used?: number;
     symset?: string | null;
-    // showsyms[SYM_BOULDER + SYM_OFF_X] override set by BOULDER=; the
+    // gs.symset[ROGUESET].name (options.c:optfn_roguesymset()); the Rogue
+    // level's symbol set choice, kept independently of the primary symset.
+    rogueSymset?: string | null;
     // primary set only, so rogue levels keep their own boulder symbol.
     boulderSym?: string;
     // The same override in the rogue set: options.c:optfn_boulder() writes
