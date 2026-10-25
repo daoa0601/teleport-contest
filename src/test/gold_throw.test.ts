@@ -3,11 +3,11 @@ import type { Monster } from '../js/monster_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IRONBARS, STONE, WEB } from '../js/const.js';
+import { ICE, IRONBARS, STONE, W_ARMH, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { DIAMOND, GOLD_PIECE } from '../js/object_data.js';
+import { DIAMOND, GOLD_PIECE, HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { resetInputState } from '../js/input.js';
 import { throwInventoryObject } from './support/commands.js';
@@ -22,6 +22,7 @@ import {
 } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { withMessagePages } from './support/planned-input.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
 
 
 const PM_SHOPKEEPER = 271;
@@ -449,4 +450,89 @@ void test('swallowed gold moves whole into the engulfer inventory', async () => 
     assert.equal(engulfer.minvent.includes(purse), true);
     assert.equal(purse.where, 'minvent');
     assert.equal(purse.quantity, 29);
+});
+
+void test('an up-thrown purse announces the ceiling bounce and helmet save', async () => {
+    freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(31, 29031);
+    const helmet = await addInventoryObject(HELMET, {
+        invlet: 'a', worn: true, owornmask: W_ARMH,
+    });
+    game.uarmh = game.u.uarmh = helmet;
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+    initRng(29032n);
+
+    await throwGold('<', ' ');
+
+    const text = messages.join('\n') + '\n' + game._pending_message;
+    assert.match(text,
+        /The gold hits the ceiling, then falls back on top of your head\./);
+    assert.match(text, /Fortunately, you are wearing a helm\!/);
+    assert.deepEqual([purse.ox, purse.oy], [10, 10]);
+});
+
+void test('a down-thrown purse announces the surface it lands on', async () => {
+    const level = freshGameplayRoom();
+    requireFixtureGame(game);
+    level.requireAt(10, 10).typ = ICE;
+    const purse = await carriedGold(37, 29033);
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+    initRng(29034n);
+
+    await throwGold('>');
+
+    assert.match(messages.join('\n') + '\n' + game._pending_message,
+        /The gold hits the ice\./);
+    assert.deepEqual([purse.ox, purse.oy], [10, 10]);
+});
+
+void test('swallowed gold vanishes into the digesting engulfer by name', async () => {
+    freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(29, 29035);
+    const engulfer = await createMonsterAt('purple worm', 10, 10);
+    game.u.uswallow = true;
+    game.u.ustuck = engulfer;
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+    initRng(29036n);
+
+    await throwGold('l');
+
+    assert.match(messages.join('\n') + '\n' + game._pending_message,
+        /The gold disappears into the purple worm's entrails\./);
+    assert.equal(engulfer.minvent.includes(purse), true);
+});
+
+void test('a purse too heavy for the hero drops at the hero\'s feet', async () => {
+    const level = freshGameplayRoom();
+    requireFixtureGame(game);
+    const purse = await carriedGold(25000, 29037);
+    initRng(29038n);
+
+    await throwGold('l');
+
+    assert.equal(purse.quantity, 25000);
+    assert.deepEqual([purse.ox, purse.oy], [10, 10]);
+    assert.equal(floorObjectsAt(level, 10, 10).includes(purse), true);
+});
+
+void test('a purse thrown onto a down ladder is seen falling down it', async () => {
+    const { source } = freshConnectedLevels({ ladder: true });
+    requireFixtureGame(game);
+    // The ladder at 10,10 is the last open square west of the hero.
+    source.requireAt(9, 10).typ = STONE;
+    game.u.ux = 13;
+    const purse = await carriedGold(100, 29001);
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+    await throwGold('h', ' '.repeat(5));
+
+    assert.equal(purse.where, 'migrating', `landed at ${purse.ox},${purse.oy}`);
+    const text = `${messages.join('\n')}\n${game._pending_message}`;
+    assert.match(text, /gold pieces fall down the ladder\./);
 });
