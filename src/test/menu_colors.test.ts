@@ -6,6 +6,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
+import { doenhance, ensureHeroSkills } from '../js/skills.js';
+import { displayQuestText } from '../js/quest_pager.js';
+import type { QuestText } from '../js/quest_pager.js';
+import { luaText } from '../js/lua/messages.js';
 import { ddoinv } from '../js/invent.js';
 import { DAGGER, FOOD_RATION } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
@@ -32,6 +36,19 @@ async function withInventoryMenu(
     inspect(requireGameDisplay(game).grid);
     input.feed('\x1b');
     await command;
+}
+
+// Display a blocking window, assert against the painted screen, dismiss.
+async function withBlockingWindow(
+    open: () => Promise<unknown>,
+    inspect: (cells: readonly (readonly TerminalCell[])[]) => void,
+): Promise<void> {
+    const input = resetInputState();
+    const pending = open();
+    await input.waitUntilBlocked();
+    inspect(requireGameDisplay(game).grid);
+    input.feed('\x1b');
+    await pending;
 }
 
 function rowCells(cells: readonly (readonly TerminalCell[])[], fragment: string): {
@@ -112,5 +129,46 @@ void test('turning menucolors off leaves menu entries uncolored', async () => {
         }
         for (const cell of rowCells(cells, 'Weapons').row)
             if (cell.ch !== ' ') assert.equal(cell.color, NO_COLOR, 'the heading stays uncolored');
+    });
+});
+
+void test('putstr-filled windows stay plain while add_menu_str windows are recolored', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
+    const questText: QuestText = { output: 'menu', raw: '',
+        lines: ['"So you have returned, pilgrim."', '"Go forth again."'], synopsis: null };
+
+    // questpgr.c deliver_by_window() fills the window with putstr(), which
+    // never passes through add_menu()'s menucoloring.
+    await withBlockingWindow(() => displayQuestText(questText), cells => {
+        const found = rowCells(cells, 'So you have returned');
+        for (const cell of found.row.slice(found.start, found.start + 'So you have returned'.length)) {
+            assert.equal(cell.color, NO_COLOR, 'the quest passage stays uncolored');
+            assert.equal(cell.attr, 0);
+        }
+    });
+
+    // nhlua.c nh.text() builds the same window with add_menu_str(), whose
+    // rows do take the menucoloring.
+    await withBlockingWindow(() => luaText('The lua text window speaks.'), cells => {
+        const found = rowCells(cells, 'lua text window');
+        for (const cell of found.row.slice(found.start, found.start + 'lua text window'.length))
+            assert.equal(cell.color, CLR_RED, 'the lua text window is recolored');
+    });
+});
+
+void test('the skill enhancement group headings keep their own style', async () => {
+    freshObjectRoom();
+    ensureHeroSkills(game);
+    applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
+
+    await withBlockingWindow(() => doenhance(), cells => {
+        for (const heading of ['Fighting Skills', 'Weapon Skills', 'Spellcasting Skills'])
+            for (const cell of rowCells(cells, heading).row)
+                if (cell.ch !== ' ') assert.equal(cell.color, NO_COLOR, `${heading} keeps its own style`);
+        // The catch-all rule still recolors the ordinary skill rows in the
+        // same window, proving the headings are exempt rather than missed.
+        const rows = cells.filter(row => row.some(cell => cell.color === CLR_RED));
+        assert.ok(rows.length > 0, 'some skill rows are recolored');
     });
 });

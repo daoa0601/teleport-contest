@@ -31,7 +31,8 @@ import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectW
 import { CLR_BLACK, CLR_WHITE, NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
 import {
-    BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
+    BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
+    MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -2184,7 +2185,8 @@ async function doRequestMenuOptions(): Promise<void> {
     let giveBooleanMessage = game.iflags.optionMessages !== false;
     for (;;) {
         const sections = requestMenuSections().map(section => ({ items: [
-            { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE } as const,
+            { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE,
+                itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS } as const,
             ...section.items,
         ] }));
         if (!skipHelp) sections.unshift({ items: [
@@ -2373,7 +2375,8 @@ function simpleMenuSections(): PageLocalMultiSelectSection<string>[] {
         ...SIMPLE_OPTION_SECTIONS.map(([heading, names]) => {
             const items: (PageLocalMenuItem<string> | MenuLabel)[] = [
                 { selectable: false, text: '' },
-                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE },
+                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE,
+                    itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
             ];
             for (const [name, description] of names) {
                 const option = options.find(item => item.selectable !== false && item.value === name);

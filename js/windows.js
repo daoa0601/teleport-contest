@@ -75,7 +75,8 @@ export async function showInventoryWindow(sections, { pickMode = PICK_NONE, head
                     identifier: item.key || item.value !== undefined ? item : null,
                     text: item.text, attr: item.attr ?? ATR_NONE,
                     ...(item.key ? { selector: item.key } : {}),
-                    itemflags: item.key === preselectedKey ? MENU_ITEMFLAGS_SELECTED : 0,
+                    itemflags: (item.itemflags ?? 0)
+                        | (item.key === preselectedKey ? MENU_ITEMFLAGS_SELECTED : 0),
                 });
         }
         tty_end_menu(window, title);
@@ -190,8 +191,13 @@ async function pageDisclosureWindow(d, lines, marker) {
  * Display Lua `nh.text()` output.  Despite its name, that API creates an
  * NHW_MENU/PICK_NONE window in C.  With tty menu_overlay enabled, sparse menu
  * rows are painted over the live map at the computed corner offset.
+ *
+ * `viaPutstr` marks windows C fills with putstr() instead of add_menu_str()
+ * (the shop bill, the unpaid-items list, novel passages, the quest pager);
+ * putstr() never passes through add_menu()'s menucoloring, so their lines
+ * carry MENU_ITEMFLAGS_SKIPMENUCOLORS.
  */
-export async function showTextMenuOverlay(lines) {
+export async function showTextMenuOverlay(lines, { viaPutstr = false, } = {}) {
     if (!display())
         return 27;
     const window = tty_create_nhwindow(NHW_MENU);
@@ -199,6 +205,7 @@ export async function showTextMenuOverlay(lines) {
         await tty_start_menu(window);
         for (const line of lines)
             tty_add_menu(window, { identifier: null,
+                ...(viaPutstr ? { itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS } : {}),
                 ...(typeof line === 'string' ? { text: line } : line) });
         tty_end_menu(window);
         return (await tty_select_menu(window, PICK_NONE)).key;
@@ -258,7 +265,8 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
             for (const item of section.items) {
                 if (item.selectable === false) {
                     tty_add_menu(window, { identifier: null, text: item.text,
-                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR });
+                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR,
+                        itemflags: item.itemFlags ?? 0 });
                     continue;
                 }
                 if (!pageLocalKeys && !item.key)

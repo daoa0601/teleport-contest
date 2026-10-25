@@ -6,7 +6,7 @@ import { autoUnlockFlags } from './lock_pick.js';
 import { statusVersion } from './status_version.js';
 import { statusConditionOptions } from './status_conditions.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
-import { MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 const RUN_MODES = ['teleport', 'run', 'walk', 'crawl'];
 const BURDEN_NAMES = ['unencumbered', 'burdened', 'stressed', 'strained', 'overtaxed', 'overloaded'];
 const UNLOCK_ACTIONS = [
@@ -121,7 +121,8 @@ async function editStatusConditions() {
             sections: [{ items: [
                         { key: 'S', value: 'sort', text: `change sort order from "${current}" to "${next}"`,
                             itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
-                        { selectable: false, text: `sorted ${current}`, attr: 1 },
+                        { selectable: false, text: `sorted ${current}`, attr: 1,
+                            itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
                         ...choices.map(option => ({ value: option.bit, text: `cond_${option.name.padEnd(14)}`,
                             itemFlags: option.enabled ? MENU_ITEMFLAGS_SELECTED : 0 })),
                     ] }],

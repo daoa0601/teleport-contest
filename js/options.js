@@ -24,7 +24,7 @@ import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { CLR_BLACK, CLR_WHITE, NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, C_ATR_NONE, terminalAttrFromCAttr } from './color_attr.js';
-import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 // optlist.h aliases that reach parseoptions()'s alias pass. "customsymbols"
 // already matches its canonical name first.
 const CONFIGURATION_ALIASES = new Set([
@@ -2219,7 +2219,8 @@ async function doRequestMenuOptions() {
     let giveBooleanMessage = game.iflags.optionMessages !== false;
     for (;;) {
         const sections = requestMenuSections().map(section => ({ items: [
-                { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE },
+                { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE,
+                    itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
                 ...section.items,
             ] }));
         if (!skipHelp)
@@ -2421,7 +2422,8 @@ function simpleMenuSections() {
         ...SIMPLE_OPTION_SECTIONS.map(([heading, names]) => {
             const items = [
                 { selectable: false, text: '' },
-                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE },
+                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE,
+                    itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
             ];
             for (const [name, description] of names) {
                 const option = options.find(item => item.selectable !== false && item.value === name);

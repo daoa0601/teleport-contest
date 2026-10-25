@@ -338,7 +338,9 @@ async function showBill(bill) {
         total += line.price;
     }
     lines.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
-    await showTextMenuOverlay(lines);
+    // C shk.c:4229 fills the bill window with putstr(), which never reaches
+    // add_menu()'s menucoloring.
+    await showTextMenuOverlay(lines, { viaPutstr: true });
 }
 async function showUnpaid(carried, floor, buried) {
     const extra = floor + buried;
@@ -391,8 +393,9 @@ async function showUnpaid(carried, floor, buried) {
         else
             lines.push('', `(There ${verb} ${extra} more unpaid object${extra === 1 ? '' : 's'} ${where}.)`);
     }
+    // C invent.c:3703 fills the unpaid-items window with putstr().
     if (carried.length)
-        await showTextMenuOverlay(lines);
+        await showTextMenuOverlay(lines, { viaPutstr: true });
 }
 function unknownContainer(object) {
     let container = object.container;
