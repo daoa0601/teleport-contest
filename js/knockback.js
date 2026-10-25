@@ -169,6 +169,9 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
         else
             await hurtleHero(dx, dy, distance, finishMonsterDeath ? { finishMonsterDeath } : {});
         moved = state.u.ux !== x || state.u.uy !== y;
+        // A fatal hurtle ends the game inside C's hurtle(); nothing follows.
+        if (state.program_state.gameover)
+            return { knocked: true, moved, heroDied: true, defenderDied: true };
         if (attackerMonster)
             setMonsterApparentHeroPosition(attackerMonster, state, random);
         if (!state.u.stunned && !((state.u.stunnedTurns ?? 0) > 0) && random(4) === 0) {
