@@ -154,7 +154,9 @@ export async function grantAmuletWish() {
         game.u.uevent = {};
     game.u.uevent.amulet_wish = 1;
     await flushPendingTopline();
-    await pline('The Amulet is bestowing a wish upon you!');
+    // C allmain.c:449 uses urgent_pline() so the announcement overrides the
+    // message suppression left by an Escape at --More--.
+    await plineWithContinuation('The Amulet is bestowing a wish upon you!', { urgent: true });
     await makeWish();
     return true;
 }
