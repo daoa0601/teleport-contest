@@ -12,6 +12,8 @@ import { G_GENOD } from '../js/const.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { installPagerInput } from './support/pager-input.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { loadScoreRecords } from '../js/score_records.js';
+import { memoryStorage } from './support/memory-storage.js';
 // Monster class symbols for S_ANT and S_SNAKE (mkclass() input classes).
 const S_ANT = 1;
 const S_SNAKE = 45;
@@ -176,7 +178,7 @@ void test('magic resistance blocks the destroy-armor spell with a field of force
     assert.match(text, /A field of force surrounds you!/, text);
     assert.doesNotMatch(text, /skin itches/, text);
 });
-void test('a weaken-you spell drains strength with the caster named in the loss', async () => {
+void test('a weaken-you spell drains one point of strength', async () => {
     freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     const apprentice = await createMonsterAt('apprentice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -198,6 +200,39 @@ void test('a weaken-you spell drains strength with the caster named in the loss'
     const text = messages.join('\n');
     assert.match(text, /You suddenly feel weaker!/, text);
     assert.equal(game.u.acurr.a[A_STR], strengthBefore - 1, 'a level 7 caster rolls rnd(1) strength loss');
+});
+void test('a fatal weaken-you names the caster in the strength-loss death', async () => {
+    // C mcastu.c:mcast_weaken_you() passes losestr() a killer built by
+    // death_inflicted_by(kbuf, "strength loss", mtmp), so a hero already at
+    // the strength minimum dies to that named cause.
+    freshObjectRoom({
+        flags: { bones: false, disclose: '-i -a -v -c -o' },
+        hero: { uhp: 1, uhpmax: 500, uac: -1000 },
+    });
+    requirePlayingGame(game);
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    game.u.acurr.a[A_STR] = 3;
+    const apprentice = await createMonsterAt('apprentice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    apprentice.mpeaceful = 0;
+    apprentice.m_lev = 7;
+    apprentice.mux = game.u.ux;
+    apprentice.muy = game.u.uy;
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /^/, limit: 24 });
+    await performMonsterHeroAttack(apprentice, game, {
+        random: limit => limit - 1,
+        rollOne: sides => sides,
+        rollDice: count => count,
+    });
+    await flushPendingTopline();
+    const text = messages.join('\n');
+    assert.match(text, /You suddenly feel weaker!/, text);
+    assert.equal(game.program_state.gameover, true, text);
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by strength loss inflicted by an apprentice');
 });
 void test('a curse-items spell offers unhelpful help', async () => {
     freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
@@ -242,7 +277,7 @@ void test('a small psi bolt gives only a slight headache', async () => {
     await flushPendingTopline();
     const text = messages.join('\n');
     assert.match(text, /You get a slight headache\./, text);
-    assert.equal(game.u.uhp, 500 - 4, 'the four-point psi bolt is applied after its message');
+    assert.equal(game.u.uhp, 500 - 4, 'the four-point psi bolt damage is applied');
 });
 void test('an insect spell falls back to sticks-to-snakes when ants are genocided', async () => {
     freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
