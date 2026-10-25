@@ -78,6 +78,7 @@ export function splitObjectStack(
     return split;
 }
 
+// C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
 export async function rejoinObjectStack(
     parent: GameObject, split: GameObject, state: GameState = game,
 ): Promise<GameObject | null> {

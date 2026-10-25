@@ -23,10 +23,6 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { gotoLevel } from '../js/level_change.js';
 import { installPagerInput } from './support/pager-input.js';
-function screen() {
-    assert.ok(game.nhDisplay);
-    return game.nhDisplay.grid.map((row) => row.map((cell) => cell.ch).join('')).join('\n');
-}
 function freshDarkRoom() {
     const level = freshObjectRoom({ left: 2, right: 30 });
     requirePlayingGame(game);
@@ -98,7 +94,7 @@ void test('a restore reverses the saved light order, so the older light takes th
     assert.equal(!!revivedCandles.lamplit, false, 'the restored head is the previously-older candle');
     assert.equal(!!revivedLamp.lamplit, true);
 });
-void test('re-entering a level reverses its saved lights ahead of the hero\'s carried ones', async () => {
+void test('re-entering a level reverses its saved light order', async () => {
     freshConnectedLevels();
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {

@@ -552,14 +552,14 @@ function objectBurnTurns(object: GameObject) {
     return lampBurnTurns(object.age ?? 0);
 }
 
-// begin_burn() stores only the fuel remaining after the next warning
 // C light.c:new_light_source() prepends to light_base, so each lighting
-// gives the object the newest creation slot.
+// gives the object the newest slot in the list order that snuff searches.
 function registerObjectLightSource(object: GameObject, state: GameState): void {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
 }
 
+// begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
 // what lets save/restore and an overdue callback reconstruct source state.
 export function beginObjectBurn(

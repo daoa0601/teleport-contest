@@ -64,6 +64,7 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
     }
     return split;
 }
+// C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
 export async function rejoinObjectStack(parent, split, state = game) {
     const latest = state.context.objsplit;
     if (latest?.parent_oid !== parent.o_id || latest.child_oid !== split.o_id)
