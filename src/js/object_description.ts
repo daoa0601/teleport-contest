@@ -12,7 +12,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import {
     AMULET_OF_YENDOR, BAG_OF_TRICKS, CHEST, CORPSE, CRYSKNIFE, EGG,
     FAKE_AMULET_OF_YENDOR, GOLD_PIECE, HORN_OF_PLENTY, LARGE_BOX,
-    OBJECT_CHARGED, OBJECT_UNIQUE, POT_WATER, SLIME_MOLD, STATUE,
+    OBJECT_NAMES, OBJECT_CHARGED, OBJECT_UNIQUE, POT_WATER, SLIME_MOLD, STATUE,
 } from './object_data.js';
 import { objectClassDescription } from './object_description_details.js';
 import { objectDescriptionPrice } from './object_description_price.js';
@@ -142,8 +142,10 @@ export function objectBlessingDescription(object: GameObject, state: GameState =
         && (object.blessed || object.cursed)) return null;
     if (object.cursed) return 'cursed';
     if (object.blessed) return 'blessed';
+    const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
     const retainsUncursed = (!(object.known || override) || !OBJECT_CHARGED[object.otyp]
         || object.oclass === ARMOR_CLASS || object.oclass === RING_CLASS)
+        && object.otyp !== SCROLL_OF_MAIL
         && object.otyp !== FAKE_AMULET_OF_YENDOR && object.otyp !== AMULET_OF_YENDOR
         && state.urole?.key !== 'priest';
     return state.flags.implicit_uncursed === false || retainsUncursed ? 'uncursed' : null;

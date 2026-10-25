@@ -62,7 +62,8 @@ export function objectNeedsFullIdentification(object) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
     const typeKnown = objectTypeKnown(object);
-    if (!object.known || !object.bknown || !object.dknown || !typeKnown)
+    if (!object.known || (!object.bknown && object.otyp !== SCR_MAIL)
+        || !object.dknown || !typeKnown)
         return true;
     if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
         || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp)))
