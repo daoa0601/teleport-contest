@@ -19,6 +19,21 @@ function main() {
     };
     console.log(JSON.stringify(summary));
     writeFileSync('score-summary.json', JSON.stringify({ ...summary, results: bundle.results }, null, 2));
+    const ledger = process.argv[2];
+    if (ledger)
+        checkPassingLedger(ledger, bundle.results);
+}
+// A public session listed in the ledger passed on the integration branch; a
+// change that stops it passing is a regression even when its RNG still matches.
+function checkPassingLedger(ledger, results) {
+    const passed = new Set(results.filter(result => result.passed).map(result => result.session));
+    const required = readFileSync(ledger, 'utf8').split('\n').map(line => line.trim())
+        .filter(line => line && !line.startsWith('#'));
+    const lost = required.filter(session => !passed.has(session));
+    for (const session of lost)
+        console.error(`Public session no longer passes: ${session}`);
+    if (lost.length)
+        process.exitCode = 1;
 }
 function decodeBundle(value) {
     const bundle = objectValue(value, 'score bundle');
