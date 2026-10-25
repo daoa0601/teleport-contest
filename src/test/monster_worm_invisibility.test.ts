@@ -9,10 +9,12 @@ import { grantMonsterCorpseIntrinsic } from '../js/monster_corpse_intrinsic.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
 import { makeMonsterInvisible } from '../js/monster_invisibility_magic.js';
+import { monsterName } from '../js/monster_name.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import type { Position } from '../js/map_types.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion_hit.js';
-import { initRng } from '../js/rng.js';
+import { initRng, rn2Display } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -35,25 +37,43 @@ async function visibleWorm() {
     return worm;
 }
 
-void test('stalker flesh and a wand refresh the same hallucinated worm tail from its tip toward its head', async () => {
-    const wandTarget = await visibleWorm();
-    game.u.seeInvisible = true;
-    game.u.hallucinationTurns = 20;
-    initRng(7n);
-    await makeMonsterInvisible(wandTarget);
-    const perceivedTail = wandTarget.wormSegments.map(segment => glyphAt(segment.x, segment.y)?.glyph);
+function assertPerceivedSpecies(point: Position, species: number, part: string) {
+    const glyph = glyphAt(point.x, point.y);
+    assert.ok(glyph?.kind === 'monster', `The ${part} at ${point.x},${point.y} must remain visible.`);
+    assert.equal(glyph.mnum, species,
+        `The ${part} at ${point.x},${point.y} must receive its native hallucinated appearance.`);
+}
 
-    const eater = await visibleWorm();
-    game.u.seeInvisible = true;
-    game.u.hallucinationTurns = 20;
-    initRng(7n);
+for (const effect of ['a wand', 'stalker flesh']) {
+    void test(`${effect} redraws a hallucinated worm's head, then its tail from tip to head`, async () => {
+        const worm = await visibleWorm();
+        const nearHead = worm.wormSegments[0];
+        const middle = worm.wormSegments[1];
+        const tip = worm.wormSegments[2];
+        assert.ok(nearHead && middle && tip);
+        game.u.seeInvisible = true;
+        game.u.hallucinationTurns = 20;
+        initRng(7n);
 
-    await grantMonsterCorpseIntrinsic(eater, MONSTER_NAME.indexOf('stalker'));
+        // Both C callers format Monnam first. mon_set_minvis() redraws the
+        // head, then see_wsegs() walks from wtails toward wheads. Each visible
+        // cell gets one random_monster(newsym_rn2), or rn2(NUMMONS), appearance.
+        monsterName(worm, { capitalized: true });
+        const headSpecies = rn2Display(MONSTER_NAME.length);
+        const tipSpecies = rn2Display(MONSTER_NAME.length);
+        const middleSpecies = rn2Display(MONSTER_NAME.length);
+        const nearHeadSpecies = rn2Display(MONSTER_NAME.length);
+        initRng(7n);
 
-    for (const [index, segment] of eater.wormSegments.entries())
-        assert.equal(glyphAt(segment.x, segment.y)?.glyph, perceivedTail[index],
-            `The same invisibility change must give segment ${segment.x},${segment.y} the same hallucinated appearance.`);
-});
+        if (effect === 'a wand') await makeMonsterInvisible(worm);
+        else await grantMonsterCorpseIntrinsic(worm, MONSTER_NAME.indexOf('stalker'));
+
+        assertPerceivedSpecies({ x: worm.mx, y: worm.my }, headSpecies, 'head');
+        assertPerceivedSpecies(tip, tipSpecies, 'tail tip');
+        assertPerceivedSpecies(middle, middleSpecies, 'middle segment');
+        assertPerceivedSpecies(nearHead, nearHeadSpecies, 'segment nearest the head');
+    });
+}
 
 void test('a make-invisible wand erases every visible long-worm tail segment immediately', async () => {
     const worm = await visibleWorm();
