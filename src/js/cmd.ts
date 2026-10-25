@@ -1501,6 +1501,14 @@ interface CommandActionOptions {
     cannedCommand?: CannedCommand | null;
 }
 
+// C invent.c:doperminv(). The tty port advertises the persistent inventory
+// window, but the option cannot be enabled in this port, so only the
+// not-enabled message is reachable; the enabled paths need that window.
+async function doPermanentInventory(): Promise<void> {
+    game.context.move = 0;
+    await pline("Persistent inventory ('perm_invent' option) is not presently enabled.");
+}
+
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
 async function runCommandHandler(binding: CommandBinding, {
@@ -1698,6 +1706,8 @@ async function runCommandHandler(binding: CommandBinding, {
         enqueueInventoryAction(await inventoryReport('rings'));
     } else if (ch === '"') {
         enqueueInventoryAction(await inventoryReport('amulet'));
+    } else if (ch === '|') {
+        await doPermanentInventory();
     } else if (key === 127) { // Delete: overview of known terrain.
         await doTerrainOverview();
     } else if (key === 27) { // Escape cancels without producing a message.
@@ -3426,6 +3436,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
+    ['perminv', doPermanentInventory],
     ['vanquished', doVanquished],
     ['genocided', doGenocided],
     ['terrain', doTerrainOverview],
