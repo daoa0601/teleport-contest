@@ -81,6 +81,9 @@ export async function readDirectionKey(message = 'In what direction? ') {
     const key = (await readchar('direction')) & 255;
     if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
         rememberCommandKey(key);
+    // getdir() asks through yn_function(), whose clean_up rewrites
+    // gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
     clearMessageWindow();
     return key;
 }

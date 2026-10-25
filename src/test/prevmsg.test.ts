@@ -20,6 +20,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { promptChoice } from '../js/query.js';
+import { readDirectionKey } from '../js/tty_prompts.js';
 
 function rowText(row: number): string {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
@@ -637,4 +638,21 @@ void test('^P in the extended-command editor drops the auto-completed suffix', a
     // typed prefix, and an inexact prefix is an unknown extended command.
     await recallGame('single', ' $#pr\x10\r');
     assert.match(rowText(0), /^#pr: unknown extended command\./);
+});
+
+void test('a direction prompt files its question with the answered key', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const direction = readDirectionKey();
+    await input.waitUntilBlocked();
+    input.feed('h');
+    assert.equal(await direction, 'h'.charCodeAt(0));
+
+    await pline('Afterwards.'); // remembers the answered direction prompt
+    await rhack(16);
+    await rhack(16);
+    assert.equal(rowText(0), 'In what direction? h',
+        'getdir() answers through yn_function(), which records the key');
 });
