@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { G_EXTINCT, MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
+import { G_EXTINCT, MM_ANGRY, MM_NOTAIL, NO_MINVENT, PANICLOG } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -10,6 +10,7 @@ import { monsterStatusLine } from '../js/monster_status.js';
 import { cutWorm, initializeMonsterWormBody } from '../js/monster_worm.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
 import { assertWormBody } from './support/worms.js';
 async function wormWithTail() {
@@ -30,6 +31,22 @@ void test('a blow to the head cannot sever the worm', async () => {
     await cutWorm(worm, worm.mx, worm.my, true, { rollOne: () => 20 });
     assert.equal(worm.wormSegments.length, 5);
     assert.equal(worm.mhp, 80);
+});
+void test('cutting a nonexistent segment reports the bad position and leaves the worm alive', async () => {
+    const worm = await wormWithTail();
+    const storage = memoryStorage();
+    game.storage = storage;
+    installPagerInput(resetInputState(), {
+        expected: /cutworm: no segment|Program in disorder|Please report/,
+        limit: 4,
+    });
+    await cutWorm(worm, 1, 0, true, { rollOne: () => 20 });
+    assert.equal(worm.wormSegments.length, 5);
+    assert.equal(worm.mhp, 80);
+    assert.equal(!!game.program_state.gameover, false);
+    const report = JSON.parse((storage.getItem(PANICLOG) ?? '').trim());
+    assert.ok(report && typeof report === 'object' && 'reason' in report);
+    assert.equal(report.reason, 'cutworm: no segment at (1,0)');
 });
 for (const [blade, chance, cuts] of [
     [false, 16, false], [false, 17, true], [true, 6, false], [true, 7, true],

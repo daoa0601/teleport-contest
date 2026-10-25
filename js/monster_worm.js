@@ -2,6 +2,7 @@
 // C refs: makemon.c:initworm(), worm.c:place_worm_tail_randomly(), wormgone().
 import { MAX_NUM_WORMS, MHPMAX, MON_FLOOR, NORMAL_SPEED, isok, xdir, ydir } from './const.js';
 import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
+import { impossible } from './diagnostics.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { cloneMonster } from './monster_clone.js';
@@ -34,8 +35,10 @@ export async function cutWorm(monster, x, y, sliceOrChop, { state = game, random
     if (rollOne(20) + (sliceOrChop ? 10 : 0) < 17)
         return;
     const cutIndex = monster.wormSegments.findIndex(point => point.x === x && point.y === y);
-    if (cutIndex < 0)
-        throw new Error(`Worm ${monster.m_id} has no segment at ${x},${y}.`);
+    if (cutIndex < 0) {
+        await impossible(`cutworm: no segment at (${x},${y})`, { state });
+        return;
+    }
     if (cutIndex === monster.wormSegments.length - 1) {
         removeWormTailTip(monster);
         return;
