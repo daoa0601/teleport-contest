@@ -5,7 +5,7 @@ import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { uInitMisc } from '../js/u_init.js';
+import { uInitInventoryAttrs, uInitMisc } from '../js/u_init.js';
 import { races } from '../js/roles.js';
 import { vision_recalc } from '../js/vision.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -19,6 +19,9 @@ void test('gnome and dwarf infravision follows the current body while elf and or
         assert.ok(race);
         const level = freshObjectRoom({ race });
         uInitMisc(1);
+        await uInitInventoryAttrs();
+        game.u.ux = game.u.ux0 = 10;
+        game.u.uy = game.u.uy0 = 10;
         grantIntrinsicProperty('warning', 'outside');
         const monster = await createMonsterAt('soldier', 14, 10, MM_NOGRP | NO_MINVENT);
         monster.mpeaceful = false;
