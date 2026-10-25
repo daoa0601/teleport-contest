@@ -473,13 +473,20 @@ function removeGasCloud(region: GasCloud, state: GameState): void {
     const last = level.regions.pop();
     if (last && last !== region) level.regions[index] = last;
     region.ttl = -2;
-    if (!region.visible || state.level !== game.level) return;
-
     // C remove_region() unblocks only spots nothing else still blocks; a
     // boulder or another cloud keeps the old view without a recalc.
+    // Native clears u.uinwater for the unblocking pass, so a moat stops
+    // blocking once the cloud above it is gone even while the hero stays
+    // submerged; the dig touches only the cloud's own cells.
+    const inWater = state.u.uinwater ?? 0;
+    const gameUnderwater = game.underwater ?? false;
+    state.u.uinwater = 0;
+    game.underwater = false;
     for (const cell of region.cells)
         if (!visionCellBlocksLight(level, cell.x, cell.y))
             vision_note_blocker_change(cell.x, cell.y);
+    state.u.uinwater = inWater;
+    game.underwater = gameUnderwater;
     if (heroIsBlind(state)) return;
     for (const cell of region.cells)
         if (cansee(cell.x, cell.y)) newsym(cell.x, cell.y);
