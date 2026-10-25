@@ -62,6 +62,7 @@ import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterCover } from './monster_hiding.js';
+import { runDueTimers } from './timer_effects.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -547,15 +548,19 @@ export async function restoregamePreamble() {
             await restoreMonsterShape(monster, game);
             if (game.program_state.gameover) return;
         }
+        game.program_state.in_getlev = false;
+        // C dorecover() rebuilds vision, then expires timers while map and
+        // status output are still suppressed by program_state.restoring.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
+        await runDueTimers();
+        if (game.program_state.gameover) return;
     } finally {
         game.program_state.in_getlev = false;
         game.program_state.restoring = false;
-        // C dorecover() rebuilds the unsaved vision state (restore.c:926-928)
-        // and clears program_state.restoring before docrt(); docrt() pages
-        // any pending line at cls()'s message flush, as tty does.
-        vision_reset_new_level();
-        game.vision_full_recalc = 1;
     }
+    // C clears program_state.restoring before docrt(), which pages any
+    // pending line at cls()'s message flush.
     await docrt();
 
     // The first flush paints the display state restored with the level.
