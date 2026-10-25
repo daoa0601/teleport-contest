@@ -394,6 +394,7 @@ export class Engine {
             g.iflags.msg_history = Math.max(20,
                 Math.min(MAX_MSG_HISTORY, g.iflags.msg_history >>> 0));
         g.commandBindings = opts.commandBindings;
+        g._monTelecontrol = !!opts.monTelecontrol;
         g.symset = opts.symset || null;
         g.rogueSymset = opts.rogueSymset || null;
         if (opts.boulderSym !== undefined) g.boulderSym = opts.boulderSym;

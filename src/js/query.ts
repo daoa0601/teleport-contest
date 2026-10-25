@@ -91,7 +91,10 @@ async function editLine(
     }
     clearSuppressedStatus();
     renderEditor();
-    // The loop head keeps gt.toplines equal to the query and typed text.
+    // hooked_tty_getlin() marks the line TOPLINE_SPECIAL_PROMPT
+    // (getline.c:56), and the loop head keeps gt.toplines equal to the
+    // query and typed text.
+    game._promptOwnsTopline = true;
     game._toplines = `${prompt} ${value}`;
     let doprev = false;
     for (;;) {
@@ -103,13 +106,13 @@ async function editLine(
             // and repaint the prompt with the typed text.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
-                if (!doprev) await doprevMessage(false, true);
-                await doprevMessage(false, true);
+                if (!doprev) await doprevMessage(false);
+                await doprevMessage(false);
                 doprev = true;
                 game._toplines = `${prompt} ${value}`;
                 continue;
             }
-            await doprevMessage(false, true);
+            await doprevMessage(false);
             doprev = false;
             game._messageHistoryCursor = null;
             game._pending_message = `${prompt} ${value}`;
@@ -229,6 +232,8 @@ export async function tty_yn_function(
     await setTopline(message);
     await flush_screen(1);
     renderChoicePrompt(message);
+    // tty_yn_function() marks the line TOPLINE_SPECIAL_PROMPT (topl.c:402).
+    game._promptOwnsTopline = true;
     let displayed = message;
     let coveredRows = (game.nhDisplay?.cursorRow ?? 0) + 1;
     const paint = (text: string) => {
@@ -244,6 +249,8 @@ export async function tty_yn_function(
         // clean_up rewrites gt.toplines with the answered question; the
         // recorded answer names the key like C key2txt().
         game._toplines = message + (count ? `#${count}` : keyText(answer.charCodeAt(0)));
+        // clean_up leaves TOPLINE_NON_EMPTY (topl.c:552).
+        game._promptOwnsTopline = false;
         // Native cleanup marks the question seen even when fuzzer input
         // bypasses tty_nhgetch(). Keep a one-line question visible.
         game._pending_message = '';
@@ -259,7 +266,7 @@ export async function tty_yn_function(
             if (messageWindowMode() !== 's') {
                 // Full, combination, and reverse page the window with
                 // inread clear, then repaint the question.
-                await doprevMessage(false, true);
+                await doprevMessage(false);
                 clearMessageWindow();
                 game._messageHistoryCursor = null;
                 await setTopline(message);
@@ -268,8 +275,8 @@ export async function tty_yn_function(
             } else {
                 // Two recalls initially: gt.toplines holds the question
                 // prompt, so the first press already shows one entry back.
-                if (!doprev) await doprevMessage(true, true);
-                await doprevMessage(true, true);
+                if (!doprev) await doprevMessage(true);
+                await doprevMessage(true);
                 doprev = true;
             }
             continue;

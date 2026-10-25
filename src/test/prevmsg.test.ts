@@ -449,3 +449,134 @@ void test('startup clamps msghistory like tty window creation', async () => {
         assert.equal(engine.state.iflags.msg_history, expected, config);
     }
 });
+
+void test('a wrapped entry recalled from a question pages with --More--', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const long = 'You hear the distant tone of a bell being struck over and over without any pause.';
+    input.feed(' ');
+    await pline(long);
+    await markSeen(input);
+    await pline('Short now.');
+    await markSeen(input);
+
+    const question = promptChoice('Really try?', ['y', 'n'], 'n');
+    await input.waitUntilBlocked();
+    input.feed(16);
+    await input.waitUntilBlocked();
+    // The first press steps past the empty prompt line and shows the line
+    // the question replaced; only the wrapped entry beyond it pages.
+    assert.equal(rowText(0), 'Short now.');
+    input.feed(16);
+    await input.waitUntilBlocked();
+    assert.match(rowText(0), /^You hear the distant tone/);
+    assert.match(rowText(1), /--More--/,
+        'the entry was drawn after toplin left TOPLINE_SPECIAL_PROMPT');
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('y');
+    await input.waitUntilBlocked();
+    input.feed('y');
+    assert.equal(await question, 'y');
+});
+
+void test('a history window replaces a repainted question without paging it', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 'f';
+    const input = resetInputState();
+    await pline('Alpha line here.');
+    await markSeen(input);
+    await pline('Beta line now.');
+    await markSeen(input);
+    await pline('Gamma falls.');
+    await markSeen(input);
+
+    const question = promptChoice('Really try?', ['y', 'n'], 'n');
+    await input.waitUntilBlocked();
+    input.feed(16); // the fresh prompt owns the line: no acknowledgment
+    await input.waitUntilBlocked();
+    assert.doesNotMatch(rowText(0), /--More--/,
+        'a TOPLINE_SPECIAL_PROMPT line is never paged over');
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed(16); // reading this press acknowledges the question itself
+    await input.waitUntilBlocked();
+    // tty_nhgetch() demotes TOPLINE_NEED_MORE to NON_EMPTY on the keypress
+    // (wintty.c:4169-4171), so tty_display_nhwindow()'s pending
+    // acknowledgment (wintty.c:1969-1970) never fires for this window.
+    assert.doesNotMatch(rowText(0), /--More--/);
+    assert.match(rowText(0), /Message History/);
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('y');
+    assert.equal(await question, 'y');
+});
+
+void test('the adjust destination records the answer after the prompt space', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const dagger = await addInventoryObject(DAGGER, { invlet: 'a' });
+    await answerPrompts(rhack('i'.charCodeAt(0)), input, [
+        { prompt: /Weapons/, keys: dagger.invlet },
+        { prompt: /Adjust inventory by assigning new letter/, keys: 'i' },
+    ]);
+    await answerPrompts(rhack(0), input, [
+        { prompt: /Adjust letter to what/, keys: 'b' },
+    ]);
+    assert.equal(dagger.invlet, 'b');
+
+    await pline('Adjusted.');
+    await rhack(16);
+    assert.equal(rowText(0), 'Moving: b - a +0 dagger.  Adjusted.');
+    await rhack(16);
+    assert.ok(rowText(0).endsWith('(? see used letters)? b'),
+        'yn_function() builds its prompt as "%s " before the answer');
+});
+
+void test('a repainted long line prompt pages on its next first recall', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.extmenu = false;
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    await pline('Before the hash.');
+    await markSeen(input);
+
+    const editor = rhack('#'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed('w'.repeat(90));
+    await input.waitUntilBlocked();
+    input.feed(16); // browse: the prompt-owned line draws without a pager
+    await input.waitUntilBlocked();
+    assert.doesNotMatch(rowText(1), /--More--/,
+        'the first recall after the prompt itself never pages');
+    input.feed('w'); // an ordinary key repaints the longer line
+    await input.waitUntilBlocked();
+    input.feed(16);
+    await input.waitUntilBlocked();
+    assert.ok([rowText(1), rowText(2)].some(text => text.includes('--More--')),
+        'addtopl() left TOPLINE_NEED_MORE, so this recall pages (topl.c:139)');
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('\x1b');
+    await input.waitUntilBlocked();
+    input.feed('\x1b');
+    await editor;
+});
+
+void test('montelecontrol is honored from the rc file at startup', async () => {
+    const engine = await runSegment({
+        seed: 3,
+        datetime: '2026-10-25T12:00:00',
+        nethackrc: 'OPTIONS=name:Telep,role:Valkyrie,race:human,gender:female,align:lawful,montelecontrol',
+        moves: '',
+        storage: memoryStorage(),
+    });
+    assert.equal(engine.state._monTelecontrol, true,
+        'applyStartupConfiguration installs the parsed montelecontrol flag');
+});

@@ -1430,7 +1430,9 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         await wizMap();
         return;
     }
-    if (key === 16) { // Ctrl-P: doprev_message(), a GENERALCMD redisplay.
+    if (binding.command?.handler === 'doprev_message') {
+        // Ctrl-P: doprev_message(), a GENERALCMD redisplay that follows the
+        // binding rather than one raw key.
         await doprevMessage();
         game.context.move = 0;
         return;
@@ -3935,7 +3937,7 @@ async function doadjust(selected = null, splitting = null) {
     await flushPendingTopline();
     let destination = '';
     for (let attempt = 1;; attempt++) {
-        let key = await promptKey(destinationPrompt, 1);
+        let key = await promptKey(`${destinationPrompt} `);
         if (key === 63 || key === 42) {
             key = await selectUsedInventoryLetter(splitting ? source : null);
             if (!key)
@@ -4634,12 +4636,14 @@ async function editExtendedCommand() {
     let completion = null;
     const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
     // custompline(SUPPRESS_HISTORY) files the line before the prompt, then
-    // the loop head makes the "# " line the current topline (getline.c:81).
+    // the loop head makes the "# " line the current topline (getline.c:81),
+    // and hooked_tty_getlin() marks it TOPLINE_SPECIAL_PROMPT (getline.c:56).
     rememberToplines();
     game._toplines = `${initiator} `;
     game._pending_message = initiator;
     await flush_screen(1);
     game.nhDisplay?.setCursor(initiator.length + 1, 0);
+    game._promptOwnsTopline = true;
     const redrawCommand = async () => {
         const displayedCommand = completion || command;
         game._toplines = command ? `${initiator} ${displayedCommand}` : `${initiator} `;
@@ -4676,12 +4680,12 @@ async function editExtendedCommand() {
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
                 if (!doprev)
-                    await doprevMessage(false, true);
-                await doprevMessage(false, true);
+                    await doprevMessage(false);
+                await doprevMessage(false);
                 doprev = true;
             }
             else {
-                await doprevMessage(false, true);
+                await doprevMessage(false);
                 doprev = false;
                 game._messageHistoryCursor = null;
                 await redrawCommand();
@@ -4707,6 +4711,8 @@ async function editExtendedCommand() {
             game._pending_message = '';
             game._retained_message = '';
             game._toplines = '';
+            // getline.c:213 leaves TOPLINE_NON_EMPTY behind its prompt.
+            game._promptOwnsTopline = false;
             game.nhDisplay?.clearRow(0);
             game.context.move = 0;
             return null;
@@ -4742,6 +4748,7 @@ async function editExtendedCommand() {
     game._pending_message = '';
     game._retained_message = '';
     game._toplines = '';
+    game._promptOwnsTopline = false;
     game.nhDisplay?.clearRow(0);
     const normalizedCommand = (completion || command)
         .trim()

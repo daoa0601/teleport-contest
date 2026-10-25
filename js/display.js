@@ -3033,6 +3033,7 @@ export function clearMessageWindow(coveredRows) {
     const rows = coveredRows ?? toplineRows(text, display?.cols ?? COLNO).length;
     game._pending_message = '';
     game._retained_message = '';
+    game._promptOwnsTopline = false;
     if (!display)
         return;
     display.clearRow(0);
@@ -3157,6 +3158,7 @@ function replaceTopline(msg) {
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
+    game._promptOwnsTopline = false;
 }
 // tty_create_nhwindow(NHW_MESSAGE) sizes the recall ring: iflags.msg_history
 // clamped into 20..MAX_MSG_HISTORY slots.

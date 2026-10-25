@@ -104,6 +104,7 @@ const transientFields = {
     _inDoAgain: true,
     _toplines: true,
     _messageHistoryCursor: true,
+    _promptOwnsTopline: true,
     _ynNumber: true,
     _movementAttempt: true,
     _whatdoesShown: true,
