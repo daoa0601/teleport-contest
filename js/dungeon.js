@@ -149,6 +149,32 @@ export function level_difficulty() {
         difficulty = difficulty > 25 ? 50 : difficulty * 2;
     return difficulty;
 }
+// C dungeon.c:init_mapseen(): generating a level for the first time
+// creates its overview record before the hero learns anything about it.
+// mklev() owns the call in C; the JS level-transition owners call this at
+// the same boundary so bones levels are covered as well.
+export function initOverviewRecord(location, state = game) {
+    const key = `${location.dnum}:${location.dlevel}`;
+    if (state._overviewRecords?.has(key))
+        return;
+    if (!state._overviewRecords)
+        state._overviewRecords = new Map();
+    state._overviewRecords.set(key, {
+        flags: {
+            notreachable: false, forgot: false, sokosolved: false, bigroom: false,
+            roguelevel: false, oracle: false, castle: false, castletune: false,
+            ludios: false, valley: false, msanctum: false, vibrating_square: false,
+            quest_summons: false, questing: false,
+        },
+        features: {
+            nshop: 0, shoptype: 0, nfount: 0, nsink: 0, naltar: 0,
+            altarAlignment: null, ntemple: 0, nthrone: 0, ngrave: 0, ntree: 0,
+        },
+        branch: null,
+        seenRooms: [],
+        untendedRooms: [],
+    });
+}
 // C dungeon.c:recalc_mapseen().  The overview records what the hero has
 // learned about the current level, not every feature in the live map.
 export function recordMappedOverviewState({ discoveredRoom = null, state = game } = {}) {

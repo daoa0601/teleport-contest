@@ -4277,6 +4277,90 @@ function overviewAutomaticNote(dnum, dlevel, record) {
         return "Moloch's Sanctum.";
     return null;
 }
+// C dungeon.c print_mapseen() branch note (br_string2 plus the upward
+// destination depth): shared by the live #overview and the final disclosure.
+function overviewBranchLine(branch) {
+    if (!branch)
+        return null;
+    const target = game.dungeons?.[branch.dnum]?.dname || 'another dungeon';
+    const direction = branch.up ? 'up' : 'down';
+    const description = branch.type === 'portal'
+        ? branch.dnum === game.quest_dnum && game.u.uevent?.qexpelled ? 'Sealed portal' : 'Portal'
+        : branch.type === 'no_end1' ? 'Connection'
+            : branch.type === 'no_end2' ? `One way stairs ${direction}` : `Stairs ${direction}`;
+    const targetLevel = branch.up && !In_endgame(branch)
+        ? `, level ${dungeonDepth(branch.dnum, branch.dlevel)}` : '';
+    return `      ${description} to ${target}${targetLevel}.`;
+}
+// C dungeon.c print_mapseen() rephrases the hero's own death reason so the
+// "Final resting place for you, ..." line reads in the second person.  Each
+// strsubst() swaps only the first match (hacklib.c), not every occurrence.
+function overviewYouCause(cause) {
+    return cause.replace(' himself', ' yourself')
+        .replace(' herself', ' yourself')
+        .replace(' his ', ' your ')
+        .replace(' her ', ' your ');
+}
+// C dungeon.c show_overview() with why > 0: the end-of-game disclosure
+// bypasses the interesting-level filter and prints every visited level in
+// every dungeon with its full mapseen projection.  Endgame levels print
+// first when the game ends in the Planes.
+export function dungeonOverviewDisclosure(ending, cause) {
+    // show_overview() lazily recalculates the current level before building
+    // the window.
+    recordMappedOverviewState();
+    const hereVerb = ending === 'ascended' ? 'are'
+        : ending === 'escaped' ? 'left from' : 'were';
+    const visited = [...visitedDungeonLevels().entries()]
+        .sort(([left], [right]) => left - right);
+    const endgame = ([dnum]) => In_endgame({ dnum, dlevel: 1 });
+    const ordered = In_endgame(game.u.uz)
+        ? [...visited.filter(endgame), ...visited.filter(entry => !endgame(entry))]
+        : visited.filter(entry => !endgame(entry));
+    const lines = [];
+    for (const [dnum, levelSet] of ordered) {
+        if (!game.dungeons?.[dnum])
+            continue;
+        lines.push({ text: dungeonOverviewHeading(dnum),
+            itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS });
+        for (const dlevel of [...levelSet].sort((left, right) => left - right)) {
+            lines.push(...overviewDisclosureLevel(dnum, dlevel, ending, hereVerb, cause));
+        }
+    }
+    return lines;
+}
+function overviewDisclosureLevel(dnum, dlevel, ending, hereVerb, cause) {
+    const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
+    const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
+    const current = (game.u?.uz?.dnum ?? 0) === dnum
+        && (game.u?.uz?.dlevel ?? 1) === dlevel;
+    const prototype = game.flags?.debug && specialLevelAt({ dnum, dlevel })
+        ? specialPrototypeAt(dnum, dlevel) : null;
+    const title = In_endgame({ dnum, dlevel })
+        ? endgameLevelName({ dnum, dlevel })
+        : `Level ${overviewDepth(dnum, dlevel)}`;
+    const lines = [`   ${title}:${prototype ? ` [${prototype}]` : ''}${annotation ? ` "${annotation}"` : ''}${current ? ` <- You ${hereVerb} here.` : ''}`];
+    if (record?.flags.forgot)
+        return lines;
+    const featureLine = overviewFeatureLine(record?.features);
+    if (featureLine)
+        lines.push(featureLine);
+    const automaticNote = overviewAutomaticNote(dnum, dlevel, record);
+    if (automaticNote)
+        lines.push(`      ${automaticNote}`);
+    if (record?.flags.quest_summons)
+        lines.push(`      Summoned by ${questLeaderName()}.`);
+    const branchLine = overviewBranchLine(record?.branch ?? null);
+    if (branchLine)
+        lines.push(branchLine);
+    // died_here: the current hero's own resting place is disclosed before
+    // bones are created, so it never reveals whether bones are produced.
+    if (!ending && current) {
+        lines.push('      Final resting place for');
+        lines.push(`         you, ${overviewYouCause(cause)}.`);
+    }
+    return lines;
+}
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
@@ -4323,19 +4407,9 @@ async function doDungeonOverview() {
                     addLine(`      ${automaticNote}`);
                 if (record?.flags.quest_summons)
                     addLine(`      Summoned by ${questLeaderName()}.`);
-                if (record?.branch) {
-                    const branch = record.branch;
-                    const target = game.dungeons?.[record.branch.dnum]?.dname
-                        || 'another dungeon';
-                    const direction = branch.up ? 'up' : 'down';
-                    const description = branch.type === 'portal'
-                        ? branch.dnum === game.quest_dnum && game.u.uevent?.qexpelled ? 'Sealed portal' : 'Portal'
-                        : branch.type === 'no_end1' ? 'Connection'
-                            : branch.type === 'no_end2' ? `One way stairs ${direction}` : `Stairs ${direction}`;
-                    const targetLevel = branch.up && !In_endgame(branch)
-                        ? `, level ${dungeonDepth(branch.dnum, branch.dlevel)}` : '';
-                    addLine(`      ${description} to ${target}${targetLevel}.`);
-                }
+                const branchLine = overviewBranchLine(record?.branch ?? null);
+                if (branchLine)
+                    addLine(branchLine);
             }
         }
         tty_end_menu(window);

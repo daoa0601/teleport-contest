@@ -9,7 +9,7 @@ import {
 } from './const.js';
 import { heroIsPunished, placeBallAndChain, releaseCarriedBall, unplaceBallAndChain } from './ball.js';
 import { cls, docrt, flush_screen, plineWithContinuation } from './display.js';
-import { insideWizardTower, levelIsWizardTower, specialPrototypeAt } from './dungeon.js';
+import { initOverviewRecord, insideWizardTower, levelIsWizardTower, specialPrototypeAt } from './dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { placeHeroAtRandomArrival, resolveHeroArrivalCollision } from './level_change.js';
@@ -42,6 +42,9 @@ export async function wizMakeMap(): Promise<void> {
     if (game.program_state.gameover) return;
     await discardOldLevel();
     game._specialLevelPrototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
+    // C's wiz_makemap discards the overview (rm_mapseen) and then mklev()
+    // re-creates an empty record via init_mapseen().
+    initOverviewRecord(game.u.uz, game);
     await mklev();
     // C goto_level() keeps bones familiarity local to that arrival;
     // replacing the current map does not announce familiarity.
