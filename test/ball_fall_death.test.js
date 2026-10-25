@@ -48,6 +48,16 @@ void test('a fatal downstairs pull uses its complete death description', async (
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'dragged downstairs by an iron ball');
 });
+// C ball.c:drag_down(): a ball left on the floor behind the hero can strike
+// her on the way down; the collision killer is distinct from the tether pull.
+void test('a fatal stair descent collision with the loose ball uses its complete death description', async () => {
+    fatalFallLevels();
+    await punishHero();
+    initRng(1n);
+    await rhack('>'.charCodeAt(0));
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by an iron ball collision');
+});
 void test('a fatal ball blow in a pit finishes the move without placing the cleaned-up pair again', async () => {
     const { source } = fatalFallLevels();
     requirePlayingGame(game);
