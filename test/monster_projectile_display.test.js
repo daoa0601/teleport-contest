@@ -57,9 +57,10 @@ void test('a sighted hero does not learn the appearance of a completely unseen t
     requirePlayingGame(game);
     const state = game;
     state.context.mon_moving = true;
-    for (let x = 7; x <= 16; x++)
+    for (let x = 7; x <= 16; x++) {
         level.requireAt(x, 10).typ = STONE;
-    vision_note_blocker_change(10, 10);
+        vision_note_blocker_change(x, 10);
+    }
     vision_recalc(0);
     const source = await createMonsterAt('orc', 8, 8, NO_MINVENT | MM_NOGRP);
     const potion = await knownObject(POT_WATER);
