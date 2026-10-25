@@ -141,6 +141,13 @@ for (const own of [false, true]) {
                 own ? 'OPTIONS=scores:own' : '',
             ].join('\n'),
         });
+        if (own) {
+            // C parseoptions() still applies a repeated compound option
+            // after config_error_add() reports it.
+            assert.match(visibleText(), /compound option specified multiple times: scores\./);
+            engine.inputGate.feed('\r ');
+            await engine.runUntilInputNeeded();
+        }
         requirePlayingGame(game);
         engine.state.u.urexp = 100;
         engine.inputGate.feed('#quit\ny');
