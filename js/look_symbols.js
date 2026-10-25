@@ -62,10 +62,11 @@ export function typedSymbolDescription(symbol, context) {
     // with explanations also participate in the native dungeon-symbol pass.
     if (symbol === '^')
         append('a trap', 'arrow trap');
-    // A web is a trap cmap: add_cmap_descr() reports the first trap symbol
-    // as "a trap", keeping the web name only for the encyclopedia lookup.
+    // The web is a trap cmap, but add_cmap_descr() renders "a trap" only
+    // for a first match; the amulet class matches '"' first, so the web
+    // append branch contributes an("web").
     if (symbol === '"')
-        append('a trap', 'web');
+        append('a web', 'web');
     if (symbol === '~' && (!count || context.inHell))
         append('a vibrating square', 'vibrating square');
     if (symbol === '#')
