@@ -6,7 +6,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, C_ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
 function assertMenuHeading(text, attr, color) {
     const row = requireGameDisplay().grid.find(cells => cells.map(cell => cell.ch).join('').includes(text));
     assert.ok(row, `The menu displays the heading "${text}"`);
@@ -144,7 +144,7 @@ for (const configured of [false, true]) {
     void test(`extended-command headings use ${configured ? 'configured' : 'default'} highlighting`, async () => {
         freshObjectRoom({ flags: { debug: false } });
         if (configured)
-            game.iflags.menu_headings = { attr: ATR_BOLD, color: CLR_RED };
+            game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
         const input = resetInputState();
         input.feed('k');
         const operation = rhack('?'.charCodeAt(0));
@@ -162,7 +162,7 @@ for (const configured of [false, true]) {
 }
 void test('a debugging command search highlights its section heading', async () => {
     freshObjectRoom({ flags: { debug: true } });
-    game.iflags.menu_headings = { attr: ATR_BOLD, color: CLR_RED };
+    game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
     const input = resetInputState();
     input.feed('k:');
     const operation = rhack('?'.charCodeAt(0));

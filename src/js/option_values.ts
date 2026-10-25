@@ -14,7 +14,8 @@ export function textOptionValue(name: string): string | null {
 }
 
 export function isTextOption(name: string): boolean {
-    return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines', 'scores', 'suppress_alert'].includes(name);
+    return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines',
+        'scores', 'suppress_alert', 'statushilites'].includes(name);
 }
 
 export async function setTextOption(name: string, value: string): Promise<void> {
@@ -49,6 +50,16 @@ export async function setTextOption(name: string, value: string): Promise<void> 
         if (cInteger(value) !== 2 && cInteger(value) !== 3)
             await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
         break;
+    case 'statushilites': {
+        // optfn_statushilites(): a missing value means the 3-turn default,
+        // atol() of junk is 0 (off), and negative durations clamp to 1. The
+        // highlight rules themselves are not part of this port, so only the
+        // duration is kept; the status refresh that reset_status_hilites()
+        // forces happens with the next bot().
+        const delta = value ? cInteger(value) : 3;
+        game.iflags.hiliteDelta = delta < 0 ? 1 : delta;
+        break;
+    }
     case 'hilite_status': await rejectInvalidStatusField(value); break;
     case 'suppress_alert': {
         const parsed = featureAlertVersion(value);

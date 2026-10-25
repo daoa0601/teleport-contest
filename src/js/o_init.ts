@@ -21,6 +21,7 @@ import type { GameObject } from './object_types.js';
 import type { DiscoverySortMode } from './flags.js';
 import { heroIsBlind } from './senses.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './terminal.js';
 import {
     FLINT,
     AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD,
@@ -463,7 +464,7 @@ function compareDiscoveryNames(left: string, right: string): number {
 }
 
 function discoveryHeading(text: string): TextMenuEntry {
-    return { text, attr: game.iflags.menu_headings?.attr ?? ATR_INVERSE };
+    return { text, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE) };
 }
 
 function discoveredRelics(): string[] {

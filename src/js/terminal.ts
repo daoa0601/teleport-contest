@@ -59,6 +59,25 @@ export const ATR_INVERSE = 1;
 export const ATR_BOLD = 2;
 export const ATR_UNDERLINE = 4;
 
+// The wintype.h ATR_* enumeration used in color_attr values.
+export const C_ATR_NONE = 0;
+export const C_ATR_BOLD = 1;
+export const C_ATR_DIM = 2;
+export const C_ATR_ITALIC = 3;
+export const C_ATR_ULINE = 4;
+export const C_ATR_BLINK = 5;
+export const C_ATR_INVERSE = 7;
+// That enumeration mapped onto this terminal's attribute bits; C's dim and
+// italic have no representation in the recorded grid.
+const C_ATTR_TERMINAL_BITS: Readonly<Record<number, number>> = {
+    0: ATR_NONE, 1: ATR_BOLD, 2: ATR_NONE, 3: ATR_NONE,
+    4: ATR_UNDERLINE, 5: ATR_BLINK, 7: ATR_INVERSE,
+};
+
+export function terminalAttrFromCAttr(attr: number): number {
+    return C_ATTR_TERMINAL_BITS[attr] ?? ATR_NONE;
+}
+
 // --- Highlight aliases ---
 // HI_METAL, HI_WOOD, HI_GOLD, HI_ZAP moved to const.js (game-specific)
 

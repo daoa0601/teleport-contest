@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { objectNeedsFullIdentification } from '../js/invent.js';
 import { POT_EXTRA_HEALING, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
-import { ATR_BOLD, CLR_RED } from '../js/terminal.js';
+import { ATR_BOLD, C_ATR_BOLD, CLR_RED } from '../js/terminal.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -57,7 +57,7 @@ void test('wizard identify selects an object class without identifying other cla
 void test('wizard identify uses the configured class heading style', async () => {
     freshObjectRoom({ flags: { debug: true } });
     await addInventoryObject(POT_HEALING, { known: false, bknown: false });
-    game.iflags.menu_headings = { attr: ATR_BOLD, color: CLR_RED };
+    game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
     const input = resetInputState();
     const operation = rhack(9);
     try {

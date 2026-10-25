@@ -5,8 +5,8 @@
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
+import { C_ATR_INVERSE, NO_COLOR, terminalAttrFromCAttr } from './terminal.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED } from './const.js';
-import { NO_COLOR } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu,
     tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
@@ -145,7 +145,7 @@ function clearRect(left: number, top: number, right: number, bottom: number): vo
 export function addMenuHeading<T>(window: TtyMenuWindow<T>, text: string): void {
     tty_add_menu(window, {
         identifier: null, text,
-        attr: game.program_state.gameover ? ATR_NONE : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
+        attr: game.program_state.gameover ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
         color: game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR,
     });
 }

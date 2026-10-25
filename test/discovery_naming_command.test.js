@@ -6,7 +6,7 @@ import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
 import { recordObjectCall, recordObjectKnowledge } from '../js/object_knowledge.js';
 import { renameDiscoveredType } from '../js/o_init.js';
-import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
+import { ATR_BOLD, C_ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
@@ -57,7 +57,7 @@ for (const { style, configured, gameover } of [
         await addInventoryObject(RIN_PROTECTION, { typeKnown: false });
         recordObjectCall(RIN_PROTECTION, 'Defense');
         if (configured)
-            game.iflags.menu_headings = { attr: ATR_BOLD, color: CLR_RED };
+            game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
         game.program_state.gameover = gameover;
         const input = resetInputState();
         const operation = renameDiscoveredType();

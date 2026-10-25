@@ -33,7 +33,7 @@ import {
     MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName,
 } from './monster_data.js';
-import { ATR_BOLD, NO_COLOR } from './terminal.js';
+import { ATR_BOLD, C_ATR_INVERSE, NO_COLOR, terminalAttrFromCAttr } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj } from './mklev.js';
 import { adjustedMonsterLevel } from './monster_hit_points.js';
@@ -477,7 +477,7 @@ export function vanquishedLines(ask = false): TextMenuEntry[] {
         if (classHeaders && (mlet !== previousClass || (riderHeader && !rider))) {
             lines.push({
                 text: upstart(rider ? 'Rider' : MONSTER_CLASS_EXPLAIN[mlet] ?? ''),
-                attr: ask ? ATR_NONE : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
+                attr: ask ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
             });
             riderHeader = rider;
             previousClass = mlet;
@@ -591,7 +591,7 @@ function genocidedLines(
         if (classHeaders && mlet !== previousClass) {
             lines.push({
                 text: upstart(MONSTER_CLASS_EXPLAIN[mlet] ?? ''),
-                attr: ask ? ATR_NONE : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
+                attr: ask ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
             });
             previousClass = mlet;
         }

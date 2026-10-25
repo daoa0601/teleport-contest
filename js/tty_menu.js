@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
-import { NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, NO_COLOR, terminalAttrFromCAttr } from './terminal.js';
 const ATR_NONE = 0;
 function display() { return game.nhDisplay; }
 function putLine(col, row, text, attr = ATR_NONE) {
@@ -146,7 +146,7 @@ export function tty_add_menu(window, entry) {
 export function tty_end_menu(window, prompt = null) {
     requireWindow(window);
     if (prompt !== null) {
-        const heading = { text: prompt, attr: game.iflags.menu_headings?.attr ?? 1,
+        const heading = { text: prompt, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
             color: game.iflags.menu_headings?.color ?? NO_COLOR,
             identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1 };
         window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE, color: NO_COLOR });

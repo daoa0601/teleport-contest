@@ -9,7 +9,7 @@ import { findAlignment, findGender, findRace, findRole, randomCharacterOption } 
 import { NATIVE_COMMANDS } from './command_data.js';
 import { resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
-import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuColoringRule, MenuStyle } from './flags.js';
 import type { ConfigurationErrorReport } from './config_errors.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
@@ -18,7 +18,7 @@ import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
-import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
+import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -28,8 +28,9 @@ import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import { C_ATR_INVERSE, C_ATR_NONE, NO_COLOR } from './terminal.js';
 import {
-    BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
+    BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -459,49 +460,69 @@ function fuzzyMatch(input: string, name: string): boolean {
     return input[i] === undefined && name[j] === undefined;
 }
 
-// C coloratt.c:colornames[] and attrnames[].
-const MENUCOLOR_COLOR_NAMES = [
-    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
-    'orange', 'light green', 'yellow', 'light blue', 'light magenta',
-    'light cyan', 'white', 'no color', 'transparent', 'purple',
-    'light purple', 'bright purple', 'grey', 'bright red', 'bright green',
-    'bright blue', 'bright magenta', 'bright cyan',
+// C coloratt.c:colornames[]: the sixteen canonical names first (the picker
+// and clr2colorname() stop at the null entry), aliases after them.  Values
+// are CLR_* constants.
+const COLOR_NAMES: readonly (readonly [string, number])[] = [
+    ['black', 0], ['red', 1], ['green', 2], ['brown', 3], ['blue', 4],
+    ['magenta', 5], ['cyan', 6], ['gray', 7], ['orange', 9],
+    ['light green', 10], ['yellow', 11], ['light blue', 12],
+    ['light magenta', 13], ['light cyan', 14], ['white', 15], ['no color', 8],
+    ['transparent', 8], ['purple', 5], ['light purple', 13],
+    ['bright purple', 13], ['grey', 7], ['bright red', 9], ['bright green', 10],
+    ['bright blue', 12], ['bright magenta', 13], ['bright cyan', 14],
 ];
-const MENUCOLOR_ATTR_NAMES = [
-    'none', 'bold', 'dim', 'italic', 'underline', 'blink', 'inverse',
-    'normal', 'uline', 'reverse',
+// C coloratt.c:attrnames[]; values are the wintype.h ATR_* constants.
+const ATTRIBUTE_NAMES: readonly (readonly [string, number])[] = [
+    ['none', 0], ['bold', 1], ['dim', 2], ['italic', 3], ['underline', 4],
+    ['blink', 5], ['inverse', 7],
+    ['normal', 0], ['uline', 4], ['reverse', 7],
 ];
 
-// C coloratt.c:add_menu_coloring(). The coloring list itself is not kept
-// (menus are not colored in this port), but every diagnostic is emitted.
-function parseMenuColoring(valueText: string, addError: (message: string) => void): boolean {
+// coloratt.c:match_str2clr(); returns CLR_MAX when nothing matched.  A
+// non-null addError mirrors the unsuppressed config_error_add() calls.
+function matchColorName(text: string, addError: ((message: string) => void) | null): number {
+    const named = COLOR_NAMES.find(([name]) => fuzzyMatch(text, name));
+    if (named) return named[1];
+    const digits = text.match(/^\d+/)?.[0];
+    const color = digits === undefined ? CLR_MAX : Number(digits);
+    if (color < 0 || color >= CLR_MAX) {
+        addError?.(`Unknown color '${cutConfigBytes(text, 60)}'`);
+        return CLR_MAX;
+    }
+    return color;
+}
+
+// coloratt.c:match_str2attr(); returns -1 when nothing matched.
+function matchAttributeName(text: string, addError: ((message: string) => void) | null): number {
+    const named = ATTRIBUTE_NAMES.find(([name]) => fuzzyMatch(text, name));
+    if (named) return named[1];
+    addError?.(`Unknown text attribute '${cutConfigBytes(text, 50)}'`);
+    return -1;
+}
+
+// C coloratt.c:add_menu_coloring(). Menus are not colored in this port, but
+// the parsed rule is kept for the options menu's count and listing.
+function parseMenuColoring(valueText: string, addError: (message: string) => void): MenuColoringRule | null {
     // coloratt.c copies the statement into str[BUFSZ] before parsing, so a
     // '=' past byte 255 is invisible and the line looks malformed.
     const value = cutConfigBytes(valueText, BUFSZ - 1);
     const equals = value.indexOf('=');
     if (equals < 0) {
         addError('Malformed MENUCOLOR');
-        return false;
+        return null;
     }
     let tail = value.slice(equals + 1).replace(/[ \t]+/g, ' ').trim();
     const ampersand = tail.indexOf('&');
     if (ampersand >= 0) tail = tail.slice(0, ampersand);
-    if (!MENUCOLOR_COLOR_NAMES.some(name => fuzzyMatch(tail, name))) {
-        // match_str2clr() falls back to atoi() when no name matched and the
-        // text starts with a digit; anything outside 0..CLR_MAX-1 fails.
-        const digits = tail.match(/^\d+/)?.[0];
-        if (digits === undefined || Number(digits) >= CLR_MAX) {
-            addError(`Unknown color '${cutConfigBytes(tail, 60)}'`);
-            return false;
-        }
-    }
+    const color = matchColorName(tail, addError);
+    if (color >= CLR_MAX) return null;
+    let attr = 0;
     if (ampersand >= 0) {
         const attribute = value.slice(equals + 1)
             .replace(/[ \t]+/g, ' ').trim().slice(ampersand + 1);
-        if (!MENUCOLOR_ATTR_NAMES.some(name => fuzzyMatch(attribute, name))) {
-            addError(`Unknown text attribute '${cutConfigBytes(attribute, 50)}'`);
-            return false;
-        }
+        attr = matchAttributeName(attribute, addError);
+        if (attr === -1) return null;
     }
     // The regexp portion is not condensed by mungspaces(); a matching pair
     // of quotes around it is stripped.
@@ -517,9 +538,34 @@ function parseMenuColoring(valueText: string, addError: (message: string) => voi
     } catch (error) {
         if (!(error instanceof SyntaxError)) throw error;
         addError(`Menucolor regex error: ${error.message}`);
-        return false;
+        return null;
     }
-    return true;
+    return { origstr: pattern, color, attr };
+}
+
+// C coloratt.c:color_attr_parse_str(): "color&attr", "color", or "attr"
+// (a lone name is tried as an attribute first). Returns null on failure;
+// matchColorName()/matchAttributeName() emit C's diagnostics.
+function parseColorAttr(
+    text: string, addError: (message: string) => void,
+): { attr: number; color: number } | null {
+    const ampersand = text.indexOf('&');
+    if (ampersand >= 0) {
+        const left = text.slice(0, ampersand);
+        const right = text.slice(ampersand + 1);
+        let color = matchColorName(left, addError);
+        let attr = matchAttributeName(right, addError);
+        if (color >= CLR_MAX && attr === -1) {
+            color = matchColorName(right, addError);
+            attr = matchAttributeName(left, addError);
+        }
+        if (color >= CLR_MAX || attr === -1) return null;
+        return { attr, color };
+    }
+    const attr = matchAttributeName(text, null);
+    if (attr !== -1) return { attr, color: NO_COLOR };
+    const color = matchColorName(text, addError);
+    return color >= CLR_MAX ? null : { attr: C_ATR_NONE, color };
 }
 
 // C options.c:add_autopickup_exception(): sscanf() forms `"<%s`, `">%s`, or
@@ -585,9 +631,14 @@ function handleConfigStatement(
     case 'ROGUESYMBOLS': case 'SYMBOLS': case 'WIZKIT':
     case 'QT_TILEWIDTH': case 'QT_TILEHEIGHT': case 'QT_FONTSIZE': case 'QT_COMPACT':
         break;
-    case 'MENUCOLOR':
-        if (parseMenuColoring(parsed.valueText, addError)) result.flags.menucolors = true;
+    case 'MENUCOLOR': {
+        const rule = parseMenuColoring(parsed.valueText, addError);
+        if (rule) {
+            result.flags.menucolors = true;
+            (result.iflags.menuColorings ??= []).unshift(rule);
+        }
         break;
+    }
     case 'BINDINGS':
         for (const field of bindingFields(parsed.valueText)) {
             const separator = field.indexOf(':');
@@ -810,6 +861,17 @@ function parseConfiguration(
                 }
                 continue;
             }
+            if (bindingOption === 'statushilites') {
+                // options.c:optfn_statushilites(): negation clears the
+                // duration; a missing value means the 3-turn default, atol()
+                // junk is 0, and negative values clamp to 1.
+                if (negated) result.iflags.hiliteDelta = 0;
+                else {
+                    const delta = optionValue ? cInteger(optionValue) : 3;
+                    result.iflags.hiliteDelta = delta < 0 ? 1 : delta;
+                }
+                continue;
+            }
             if (bindingOption === 'runmode') {
                 const mode = negated ? 'teleport' : ['teleport', 'run', 'walk', 'crawl']
                     .find(mode => optionValue && mode.startsWith(optionValue.toLowerCase()));
@@ -951,6 +1013,14 @@ function parseConfiguration(
                         addError(`Unable to load symbol set "${val}" from "symbols"`);
                     }
                 }
+                else if (key === 'menu_headings') {
+                    if (negated)
+                        addError('The menu_headings option may not both have a value and be negated.');
+                    else {
+                        const style = parseColorAttr(val, addError);
+                        if (style) result.iflags.menu_headings = style;
+                    }
+                }
                 else if (key === 'suppress_alert') {
                     const parsed = negated ? null : featureAlertVersion(val);
                     if (parsed && !parsed.future) result.flags.suppress_alert = parsed.version;
@@ -1027,6 +1097,10 @@ function parseConfiguration(
                         result.gender = female ? 'female' : 'male';
                     }
                     else if (lname === 'autounlock') result.flags.autounlock = value;
+                    // optfn_menu_headings() without a value: inverse, or
+                    // none when negated.
+                    else if (lname === 'menu_headings')
+                        result.iflags.menu_headings = { attr: negated ? C_ATR_NONE : C_ATR_INVERSE, color: NO_COLOR };
                 }
             }
         }
@@ -1605,6 +1679,30 @@ function symsetMenuValue(): string {
     return `${name}${active}${handling ? `, handler=${handling}` : ''}`;
 }
 
+// coloratt.c:clr2colorname()/attr2attrname(): the first canonical table
+// entry naming the value.
+function colorName(color: number): string {
+    return COLOR_NAMES.find(([, value]) => value === color)?.[0] ?? 'no color';
+}
+
+function attributeName(attr: number): string {
+    return ATTRIBUTE_NAMES.find(([, value]) => value === attr)?.[0] ?? 'none';
+}
+
+// options.c:optfn_menu_headings() get_val: color_attr_to_str() followed by
+// strNsubst() turning each blank into '-'.
+function menuHeadingsValue(): string {
+    const style = game.iflags.menu_headings ?? { attr: C_ATR_INVERSE, color: NO_COLOR };
+    return `${colorName(style.color)}&${attributeName(style.attr)}`.replace(/ /g, '-');
+}
+
+// options.c:optfn_statushilites() get_val.
+function statusHilitesValue(): string {
+    const delta = game.iflags.hiliteDelta ?? 0;
+    return delta ? `${delta} (on: highlight status for ${delta} turns)`
+        : "0 (off: don't highlight status fields)";
+}
+
 function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     const { role, race, gender, alignment } = requestMenuIdentity();
     const choice = (name: string, text: string): PageLocalMenuItem<string> => ({
@@ -1730,7 +1828,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('fruit', `fruit                   [${game.fruitName}]`),
             choice('glyph', 'glyph                   [(to be done)]'),
             choice('hilite_status', 'hilite_status           [(none)]'),
-            choice('menu_headings', 'menu_headings           [no-color&inverse]'),
+            choice('menu_headings', `${'menu_headings'.padEnd(24)}[${menuHeadingsValue()}]`),
             choice('menu_objsyms', 'menu_objsyms            [conditional]'),
             choice('menuinvertmode', 'menuinvertmode          [1]'),
             choice('menustyle', `menustyle               [${MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]}]`),
@@ -1748,7 +1846,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),
             choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
             choice('sortvanquished', 'sortvanquished          [t: traditional: by monster level]'),
-            choice('statushilites', "statushilites           [0 (off: don't highlight status fields)]"),
+            choice('statushilites', `${'statushilites'.padEnd(24)}[${statusHilitesValue()}]`),
             choice('statuslines', 'statuslines             [2]'),
             choice('suppress_alert', 'suppress_alert          [(none)]'),
             choice('symset', `symset                  [${symsetMenuValue()}]`),
@@ -1759,9 +1857,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
         ] },
         { heading: 'Other settings:', items: [
             choice('autocompletions', 'autocompletions         [(0 currently set)]'),
-            choice('autopickup_exceptions', 'autopickup exceptions   [(0 currently set)]'),
+            choice('autopickup_exceptions', `${'autopickup exceptions'.padEnd(24)}[(${game.iflags.autopickupExceptions?.length ?? 0} currently set)]`),
             choice('bind_keys', 'bind keys               [(0 currently set)]'),
-            choice('menu_colors', 'menu colors             [(0 currently set)]'),
+            choice('menu_colors', `${'menu colors'.padEnd(24)}[(${game.iflags.menuColorings?.length ?? 0} currently set)]`),
             choice('message_types', 'message types           [(0 currently set)]'),
             choice('status_conditions', `status condition fields [${compoundMenuValue('status_conditions')}]`),
             choice('status_highlights', 'status highlight rules  [(0 currently set)]'),
@@ -1835,6 +1933,183 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
     const parsed = parsePickupTypes(value);
     game.flags.pickup_types = parsed.symbols;
     if (parsed.invalid) await optionError("Unknown pickup_types parameter ''");
+}
+
+// options.c:handle_add_list_remove(): the shared add/list/remove chooser.
+// With nothing to act on, only "add" and "exit" are offered.
+async function chooseAddListRemove(kind: string, count: number): Promise<'add' | 'list' | 'remove' | 'done'> {
+    type Action = 'add' | 'list' | 'remove' | 'done';
+    const items: SelectableMenuItem<Action>[] = [
+        { key: 'a', value: 'add', text: `add new ${kind}` },
+        ...(count ? [
+            { key: 'l', value: 'list' as Action, text: `list ${kind}s` },
+            { key: 'r', value: 'remove' as Action, text: `remove existing ${kind}` },
+        ] : []),
+        { key: 'x', value: 'done', text: 'exit this menu', itemFlags: MENU_ITEMFLAGS_SELECTED },
+    ];
+    const picks = await showMultiSelectWindow<Action>({
+        title: 'Do what?', omitHeadings: true, pickOne: true, signalEscape: true,
+        sections: [{ items }],
+    });
+    // PICK_ONE may return the preselected exit together with the new choice.
+    const [first = 'done', second] = picks ?? [];
+    return second !== undefined && first === 'done' ? second : first;
+}
+
+// options.c:handler_autopickup_exception().
+async function editAutopickupExceptions(): Promise<void> {
+    for (;;) {
+        const exceptions = game.iflags.autopickupExceptions ?? [];
+        const action = await chooseAddListRemove('autopickup exception', exceptions.length);
+        if (action === 'done') return;
+        if (action === 'add') {
+            const answer = await getLine('What new autopickup exception pattern?',
+                (_character: string, key: number) => key >= 32 && key < 127);
+            if (answer === null) return;
+            const pattern = new TextDecoder().decode(mungSpaces(new TextEncoder().encode(answer)));
+            if (!pattern) continue;
+            // The handler wraps the answer in quotes (apebuf's bounds cap the
+            // whole mapping at 255 bytes) and reuses the config parser; its
+            // diagnostics pline immediately in-game.
+            const errors: string[] = [];
+            const rule = parseAutopickupException(`"${cutConfigBytes(pattern, 255)}"`,
+                message => errors.push(message));
+            for (const message of errors) await optionError(message);
+            if (rule) (game.iflags.autopickupExceptions ??= []).unshift(rule);
+            continue;
+        }
+        const rows = exceptions.map(rule => ({
+            value: rule, text: `"${rule.grab ? '<' : '>'}${rule.pattern}"`,
+        }));
+        if (action === 'remove') {
+            const picked = await showMultiSelectWindow<AutopickupExceptionRule>({
+                title: 'Remove which autopickup exceptions', pageLocalKeys: true,
+                signalEscape: true,
+                sections: [{ heading: "Always pickup '<'; never pickup '>'", items: rows }],
+            });
+            if (picked === null) return;
+            for (const rule of picked) {
+                const index = exceptions.indexOf(rule);
+                if (index >= 0) exceptions.splice(index, 1);
+            }
+        } else {
+            const answer = await showInventoryWindow(
+                [{ heading: "Always pickup '<'; never pickup '>'", items: rows.map(row => ({ text: row.text })) }],
+                { title: 'List of autopickup exceptions', pickMode: PICK_NONE });
+            if (answer.key === 27) return;
+        }
+    }
+}
+
+// options.c:handler_menu_colors() and coloratt.c:query_color()/query_attr().
+async function editMenuColors(): Promise<void> {
+    for (;;) {
+        const colorings = game.iflags.menuColorings ?? [];
+        const action = await chooseAddListRemove('menucolor', colorings.length);
+        if (action === 'done') return;
+        if (action === 'add') {
+            const pattern = await getLine('What new menucolor pattern?',
+                (_character: string, key: number) => key >= 32 && key < 127);
+            if (pattern === null) return;
+            if (pattern) {
+                let valid = true;
+                try {
+                    new PosixRegex(pattern);
+                } catch (error) {
+                    if (!(error instanceof SyntaxError)) throw error;
+                    valid = false;
+                    await optionError(`MENUCOLORS regex: ${error.message}`);
+                }
+                if (valid) {
+                    const color = await queryColorMenu('Pick a color', NO_COLOR);
+                    if (color !== null) {
+                        const attr = await queryAttributeMenu('Pick an attribute', 0);
+                        if (attr !== null) {
+                            (game.iflags.menuColorings ??= []).unshift({ origstr: pattern, color, attr });
+                            game.flags.menucolors = true;
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+        if (action === 'remove') {
+            const picked = await showMultiSelectWindow<MenuColoringRule>({
+                title: 'Remove which menu colors', omitHeadings: true,
+                pageLocalKeys: true, signalEscape: true,
+                sections: [{ items: colorings.map(rule => ({ value: rule, text: menuColoringRow(rule) })) }],
+            });
+            if (picked === null) return;
+            for (const rule of picked) {
+                const index = colorings.indexOf(rule);
+                if (index >= 0) colorings.splice(index, 1);
+            }
+        } else {
+            const answer = await showInventoryWindow(
+                [{ items: colorings.map(rule => ({ text: menuColoringRow(rule) })) }],
+                { title: 'List of menu colors', pickMode: PICK_NONE });
+            if (answer.key === 27) return;
+        }
+    }
+}
+
+// handler_menu_colors(): `"pattern"="=color&attr` minus one leading quote of
+// the C suffix buffer, i.e. the pattern's closing quote is kept; the color
+// name's blank becomes '-', there is no attribute half for ATR_NONE, and an
+// overflowing original string is elided with "...".
+function menuColoringRow(rule: MenuColoringRule): string {
+    const color = colorName(rule.color).replace(/ /g, '-');
+    const suffix = `"=${color}${rule.attr !== 0 ? `&${attributeName(rule.attr)}` : ''}`;
+    const limit = 255 - suffix.length;
+    const shown = rule.origstr.length > limit
+        ? `${cutConfigBytes(rule.origstr, limit - 3)}...` : rule.origstr;
+    return `"${shown}${suffix}`;
+}
+
+// coloratt.c:query_color(): PICK_ONE over the canonical color names; Escape
+// is -1, an accepted-but-empty pick keeps the current value, and a second
+// entry behind "no color" wins over it.
+async function queryColorMenu(title: string, current: number): Promise<number | null> {
+    const picks = await showMultiSelectWindow<number>({
+        title, omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
+        sections: [{ items: COLOR_NAMES.slice(0, 16).map(([name, color]) => ({
+            value: color, text: name,
+            itemFlags: color === current ? MENU_ITEMFLAGS_SELECTED : 0,
+        })) }],
+    });
+    if (picks === null) return null;
+    if (!picks.length) return current;
+    const [chosen = current, alternate] = picks;
+    return alternate !== undefined && chosen === NO_COLOR ? alternate : chosen;
+}
+
+// coloratt.c:query_attr(): PICK_ONE over the canonical attribute names; a
+// second entry behind the current default wins over it.
+async function queryAttributeMenu(title: string, current: number): Promise<number | null> {
+    const picks = await showMultiSelectWindow<number>({
+        title, omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
+        sections: [{ items: ATTRIBUTE_NAMES.slice(0, 7).map(([name, attr]) => ({
+            value: attr, text: name,
+            itemFlags: attr === current ? MENU_ITEMFLAGS_SELECTED : 0,
+        })) }],
+    });
+    if (picks === null) return null;
+    if (!picks.length) return current;
+    const [chosen = current, alternate] = picks;
+    return alternate !== undefined && chosen === current ? alternate : chosen;
+}
+
+// options.c:handler_menu_headings() via coloratt.c:query_color_attr(). The
+// style only changes when both menus are answered; a cancellation leaves it
+// untouched (the C handler assigns into iflags at the very end).
+async function editMenuHeadings(): Promise<void> {
+    const current = game.iflags.menu_headings ?? { attr: C_ATR_INVERSE, color: NO_COLOR };
+    const prompt = 'How to highlight menu headings:';
+    const color = await queryColorMenu(prompt, current.color);
+    if (color === null) return;
+    const attr = await queryAttributeMenu(prompt, current.attr);
+    if (attr === null) return;
+    game.iflags.menu_headings = { attr, color };
 }
 
 // C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only
@@ -1913,8 +2188,10 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'menustyle') await editMenuStyle();
     else if (name === 'fruit') await editFruitOption(fullMenu && game.iflags.optionMessages !== false);
     else if (name === 'pickup_types') await editPickupTypes(fullMenu);
+    else if (name === 'autopickup_exceptions') await editAutopickupExceptions();
+    else if (name === 'menu_colors') await editMenuColors();
+    else if (name === 'menu_headings') await editMenuHeadings();
     else if (name === 'sortloot') await editSortLoot();
-    else if (name === 'sortdiscoveries') await chooseDiscoverySort(0);
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {
