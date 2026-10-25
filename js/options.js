@@ -1484,6 +1484,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['showdamage', 'showdamage', false],
     ['showexp', 'showexp', false],
     ['showrace', 'showrace', false],
+    ['showscore', 'showscore', false],
     ['showvers', 'showvers', false],
     ['silent', 'silent', true],
     ['sortpack', 'sortpack', true],
@@ -1817,6 +1818,7 @@ function requestMenuSections() {
                 boolean('showdamage'),
                 boolean('showexp'),
                 boolean('showrace'),
+                boolean('showscore'),
                 boolean('showvers'),
                 boolean('silent'),
                 boolean('sortpack'),
@@ -2201,7 +2203,7 @@ async function editMenuHeadings() {
 function applyBooleanVisualChange(name) {
     if (name === 'terrainstatus')
         classifyStatusTerrain(game);
-    if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus', 'hitpointbar'].includes(name))
+    if (['showexp', 'showscore', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus', 'hitpointbar'].includes(name))
         reassessStatusFields();
     if (name === 'dark_room' || name === 'lit_corridor') {
         vision_recalc(2);

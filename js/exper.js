@@ -49,7 +49,11 @@ export function addExperience(experience, scoreBonus = 0, state = game) {
     state.u.uexp = (state.u.uexp || 0) + experience;
     if (experience && state.flags.showexp)
         state.context.botl = true;
-    state.u.urexp = (state.u.urexp || 0) + 4 * experience + scoreBonus;
+    const rexpIncrease = 4 * experience + scoreBonus;
+    state.u.urexp = (state.u.urexp || 0) + rexpIncrease;
+    // more_experienced() refreshes the status for the score award too.
+    if (rexpIncrease && state.flags.showscore)
+        state.context.botl = true;
     if (state.u.urexp >= (state.urole.key === 'wizard' ? 1000 : 2000))
         state.flags.beginner = false;
 }

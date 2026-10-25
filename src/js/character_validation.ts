@@ -132,6 +132,7 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
         showdamage: optional(boolean),
         showexp: optional(boolean),
         showrace: optional(boolean),
+        showscore: optional(boolean),
         showvers: optional(boolean),
         silent: optional(boolean),
         sortpack: optional(boolean),
