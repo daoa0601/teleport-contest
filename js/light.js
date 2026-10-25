@@ -20,7 +20,7 @@ import { makemonNear, mksobj } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterDigests, monsterIsWhirly, } from './monster_data.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
-import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
+import { OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
 import { makePlural } from './object_grammar.js';
@@ -144,9 +144,9 @@ function snuffOrdinaryLight(object) {
 // C light.c:snuff_light_source().  The native light_base list is
 // newest-first and the search returns once one source at the location has
 // been extinguished, so a square holding several burning objects keeps
-// every one of them lit except the most recently lit.  Objects carry the
-// creation order of their light source in _litSeq; entries restored from
-// saves that predate it fall back to object-id order.
+// every one of them lit except the one closest to the list head.  _litSeq
+// tracks that list position: raising on each lighting, and reversed by
+// restoreLightSourceBatch() below when C would reload a saved batch.
 export function snuffLightSource(x, y, state = game) {
     const candidates = [...(state.level?.objects?.[x]?.[y] || [])];
     const carrier = state.level?.monsters?.find(monster => monster.mx === x && monster.my === y);
@@ -160,7 +160,7 @@ export function snuffLightSource(x, y, state = game) {
     for (const object of candidates) {
         if (!objectShedsLight(object) || artifactEmitsLight(object))
             continue;
-        const order = object._litSeq ?? object.o_id;
+        const order = object._litSeq ?? 0;
         if (order > newest) {
             newest = order;
             target = object;
@@ -168,6 +168,55 @@ export function snuffLightSource(x, y, state = game) {
     }
     if (target)
         snuffOrdinaryLight(target);
+}
+// C mkobj.c:obj_is_local(): a light is global when its outermost owner is
+// the hero or a migrating carrier, and level-local otherwise.
+function lightObjectIsGlobal(object) {
+    let outermost = object;
+    while (outermost.where === 'contained' && outermost.container)
+        outermost = outermost.container;
+    switch (outermost.where) {
+        case 'inventory':
+        case 'migrating':
+            return true;
+        case 'minvent':
+            return !outermost.ocarry || outermost.ocarry.mx === 0;
+        case 'buried':
+        case 'contained':
+        case 'floor':
+        case 'free':
+        case 'gone':
+        case 'onbill':
+            return false;
+    }
+}
+// C light.c:save_light_sources() writes a batch (the global lights, or one
+// level's lights) newest-first, and restore_light_sources() pushes each
+// entry back onto the front of light_base, so a restored batch returns
+// reversed and ahead of the lights that never left the list.  Re-stamp the
+// batch the same way: previously-oldest first, above every other light.
+export function restoreLightSourceBatch(batch, state = game) {
+    const lights = (batch ?? [])
+        .filter(object => objectLightRadius(object, state) > 0)
+        .sort((left, right) => (left._litSeq ?? 0) - (right._litSeq ?? 0));
+    if (!lights.length)
+        return;
+    const base = state._lightSerial ?? 0;
+    lights.forEach((object, index) => {
+        object._litSeq = base + lights.length - index;
+    });
+    state._lightSerial = base + lights.length;
+}
+// C getlev() restores the entered level's light sources after the level
+// data (restore.c:1145); other levels keep waiting in their files.
+export function restoreLevelLightSources(state = game) {
+    restoreLightSourceBatch(objectsInTimerGraph(state).filter(object => !lightObjectIsGlobal(object)), state);
+}
+// C restore.c:655 reloads the global batch while reading the game state,
+// then getlev() pushes the current level's batch in front of it.
+export function restoreSavedLightSources(state = game) {
+    restoreLightSourceBatch(objectsInTimerGraph(state).filter(lightObjectIsGlobal), state);
+    restoreLevelLightSources(state);
 }
 async function affectCarriedLights(worsen) {
     let stillLit = 0;
