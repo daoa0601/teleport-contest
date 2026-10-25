@@ -1129,7 +1129,7 @@ async function ynQuestion(question, visible, defquery, { hiddenAll = false } = {
 // C end.c:disclose().  Shared by death, quitting, escape, and ascension.
 // Each category consults the end_disclose option first: it either fixes
 // the answer outright or asks with the option's default.
-async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null, possessionAnswer = null, taken = false, survived = false, } = {}) {
+async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null, possessionAnswer = null, taken = false, survived = false, deathType = null, } = {}) {
     // really_done() displays WIN_MESSAGE before disclosure or bones.
     await displayMessageWindow();
     // The final message window retains the status drawn by the fatal caller.
@@ -1220,9 +1220,15 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             ? await ynQuestion('Do you want to see the dungeon overview?', 'ynq', defquery)
             : defquery;
         if (overview === 'y') {
-            await showDisclosureOverlay(overviewLines(killer, deathVerb, deathCause, survived
-                && (deathVerb === 'quit' || deathVerb === 'escaped'
-                    || deathVerb === 'ascended') ? deathVerb : null), {
+            // C end.c passes show_overview((how >= PANICKED) ? 1 : 2, how):
+            // the non-death endings (TRICKED included) disclose as final 1,
+            // so only a genuine death lists the hero's resting place.
+            const overviewEnding = !(survived || (deathType ?? DIED) >= PANICKED)
+                ? null
+                : deathVerb === 'ascended' ? 'ascended'
+                    : deathVerb === 'escaped' ? 'escaped'
+                        : 'quit';
+            await showDisclosureOverlay(overviewLines(killer, deathVerb, deathCause, overviewEnding), {
                 marker: '(end)',
                 // C show_overview() builds the window with add_menu(),
                 // so its paged layout keeps the selector column and
@@ -1312,7 +1318,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
         showSummary = !game.program_state.stopprint;
     }
     else {
-        showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
+        showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken, deathType });
     }
     if (game._canMakeBones && taken)
         await finishShopkeeperRepossession();

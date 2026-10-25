@@ -119,6 +119,7 @@ interface DisclosureOptions extends DeathDescription {
     killer?: string;
     possessionAnswer?: string | null;
     taken?: boolean;
+    deathType?: number | null;
 }
 interface ScoreOptions extends DeathDescription {
     outcome?: ScoreOutcome;
@@ -1285,7 +1286,7 @@ async function ynQuestion(
 // the answer outright or asks with the option's default.
 async function discloseGame({
     killer = '', deathVerb = 'died', deathCause = null, possessionAnswer = null,
-    taken = false, survived = false,
+    taken = false, survived = false, deathType = null,
 }: DisclosureOptions = {}) {
     // really_done() displays WIN_MESSAGE before disclosure or bones.
     await displayMessageWindow();
@@ -1379,10 +1380,16 @@ async function discloseGame({
             )
             : defquery;
         if (overview === 'y') {
+            // C end.c passes show_overview((how >= PANICKED) ? 1 : 2, how):
+            // the non-death endings (TRICKED included) disclose as final 1,
+            // so only a genuine death lists the hero's resting place.
+            const overviewEnding = !(survived || (deathType ?? DIED) >= PANICKED)
+                ? null
+                : deathVerb === 'ascended' ? 'ascended'
+                : deathVerb === 'escaped' ? 'escaped'
+                : 'quit';
             await showDisclosureOverlay(
-                overviewLines(killer, deathVerb, deathCause, survived
-                    && (deathVerb === 'quit' || deathVerb === 'escaped'
-                        || deathVerb === 'ascended') ? deathVerb : null), {
+                overviewLines(killer, deathVerb, deathCause, overviewEnding), {
                     marker: '(end)',
                     // C show_overview() builds the window with add_menu(),
                     // so its paged layout keeps the selector column and
@@ -1469,7 +1476,7 @@ async function completeOrdinaryDeath({
         await displayMessageWindow();
         showSummary = !game.program_state.stopprint;
     } else {
-        showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
+        showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken, deathType });
     }
 
     if (game._canMakeBones && taken)

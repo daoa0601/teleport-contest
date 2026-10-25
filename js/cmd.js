@@ -4293,12 +4293,13 @@ function overviewBranchLine(branch) {
     return `      ${description} to ${target}${targetLevel}.`;
 }
 // C dungeon.c print_mapseen() rephrases the hero's own death reason so the
-// "Final resting place for you, ..." line reads in the second person.
+// "Final resting place for you, ..." line reads in the second person.  Each
+// strsubst() swaps only the first match (hacklib.c), not every occurrence.
 function overviewYouCause(cause) {
-    return cause.replaceAll(' himself', ' yourself')
-        .replaceAll(' herself', ' yourself')
-        .replaceAll(' his ', ' your ')
-        .replaceAll(' her ', ' your ');
+    return cause.replace(' himself', ' yourself')
+        .replace(' herself', ' yourself')
+        .replace(' his ', ' your ')
+        .replace(' her ', ' your ');
 }
 // C dungeon.c show_overview() with why > 0: the end-of-game disclosure
 // bypasses the interesting-level filter and prints every visited level in

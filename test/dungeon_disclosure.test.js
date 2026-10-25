@@ -5,6 +5,7 @@
 // resting place.  Interest filtering applies only to the live #overview.
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { TRICKED } from '../js/const.js';
 import { dungeonOverviewDisclosure } from '../js/cmd.js';
 import { initOverviewRecord } from '../js/dungeon.js';
 import { finishOrdinaryDeath } from '../js/end.js';
@@ -106,6 +107,40 @@ void test('the hero death cause reads in the second person', () => {
     game.u.uz = { dnum: 0, dlevel: 1 };
     const died = disclosureText(null, 'killed by his own fire');
     assert.match(died, / {9}you, killed by your own fire\.$/m);
+    // strsubst() replaces only the first match of each phrase.
+    const twice = disclosureText(null, 'killed by his cat and his dog');
+    assert.match(twice, / {9}you, killed by your cat and his dog\.$/m);
+});
+void test('a tricked ending discloses as a non-death without a resting place', async () => {
+    twoBranchDungeons();
+    game.u.uz = { dnum: 0, dlevel: 1 };
+    game.storage = memoryStorage();
+    game.flags.tombstone = false;
+    const input = resetInputState();
+    // C: how >= PANICKED passes final 1 to show_overview(), so a tricked
+    // "death" keeps the were-here marker but lists no resting place.
+    const ending = finishOrdinaryDeath({ killer: 'a nasty trap', deathType: TRICKED });
+    try {
+        for (let guard = 0; guard < 12; guard++) {
+            await input.waitUntilBlocked();
+            const row = game.nhDisplay?.grid[0]
+                ?.map(cell => cell.ch).join('').trimEnd() || '';
+            if (/dungeon overview/.test(row))
+                break;
+            input.feed(/Do you want/.test(row) ? 'n' : ' ');
+        }
+        input.feed('y');
+        await input.waitUntilBlocked();
+        const screen = (game.nhDisplay?.grid ?? [])
+            .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('\n');
+        assert.match(screen, / {3}Level 1: <- You were here\.$/m);
+        assert.doesNotMatch(screen, /Final resting place/);
+        input.feed('\x1b');
+        await input.waitUntilBlocked();
+    }
+    finally {
+        await settleEnding(input, ending);
+    }
 });
 void test('a tutorial death discloses the start level through the shared projection', () => {
     freshPlayableRoom();
