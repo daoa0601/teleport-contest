@@ -132,8 +132,7 @@ void test('runSegment resumes a saved game through the same Engine boundary',
         assert.ok(saved.lastRunResult !== undefined && saved.lastRunResult !== null, 'Expected saved.lastRunResult to be initialized');
         assert.equal(saved.lastRunResult.kind, 'stopped');
 
-        // Recovery announces the save, then welcomes the hero before play.
-        const restored = await runSegment({ ...input, moves: '  .' });
+        const restored = await runSegment({ ...input, moves: ' .' });
         requirePlayingGame(game);
         assert.ok(restored.lastRunResult !== undefined && restored.lastRunResult !== null, 'Expected restored.lastRunResult to be initialized');
         assert.equal(restored.lastRunResult.kind, 'input-needed');

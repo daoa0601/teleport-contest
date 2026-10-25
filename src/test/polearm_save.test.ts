@@ -54,7 +54,7 @@ void test('saving preserves the last sensed polearm target when several targets 
         assert.equal(await saveGame(storage), true);
         assert.equal(restoreGame('Reach', storage), true);
         installPagerInput(resetInputState(), {
-            expected: /Restoring save file|halberd|jackal|welcome back|moon|Friday/, limit: 5,
+            expected: /halberd|jackal|welcome back|moon|Friday/, limit: 5,
         });
         await restoregamePreamble();
         await rhack('f'.charCodeAt(0));
@@ -86,7 +86,7 @@ void test('saving cannot reset the once-per-turn distant strike from Snickersnee
         assert.equal(await saveGame(storage), true);
         assert.equal(restoreGame('Snickersnee', storage), true);
         installPagerInput(resetInputState(), {
-            expected: /Restoring save file|jackal|Shkinng|welcome back|moon|Friday/, limit: 5,
+            expected: /jackal|Shkinng|welcome back|moon|Friday/, limit: 5,
         });
         await restoregamePreamble();
         const hungerBeforeRepeat = game.u.uhunger;

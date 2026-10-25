@@ -21,7 +21,7 @@ function restoringWizard() {
     const messages: string[] = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
     installPagerInput(input, {
-        expected: /Restoring save file|welcome back|studio audience|inside|hot here|cold here|smoke|remember this level/,
+        expected: /welcome back|studio audience|inside|hot here|cold here|smoke|remember this level/,
         limit: 8,
     });
     return messages;

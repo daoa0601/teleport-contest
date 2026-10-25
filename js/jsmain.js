@@ -11,7 +11,6 @@ import { parseNethackOptions, parseNethackrc } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { parseCharacterName } from './character_name.js';
 import { GameDisplay } from './game_display.js';
-import { plineWithContinuation } from './display.js';
 import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
@@ -299,10 +298,8 @@ export class Engine {
         const restored = restoreGame(playerName, this.storage);
         // C dorecover() shows the refusal message and waits for its
         // dismissal key before the game falls through to a new character.
-        if (restoreRefusedAsUnhealthy()) {
-            await plineWithContinuation('Restoring save file...');
+        if (restoreRefusedAsUnhealthy())
             await dismissUnhealthyRestore(playerName, this.storage);
-        }
         if (restored) {
             await restoregamePreamble();
             return true;
