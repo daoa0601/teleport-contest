@@ -536,4 +536,10 @@ void test('a repainted long line prompt pages on its next first recall', async (
     input.feed('\x1b');
     await editor;
 });
+void test('^P in the extended-command editor drops the auto-completed suffix', async () => {
+    // getline.c hooked_tty_getlin(): `*bufp = 0` after ^P leaves only the
+    // typed prefix, and an inexact prefix is an unknown extended command.
+    await recallGame('single', ' $#pr\x10\r');
+    assert.match(rowText(0), /^#pr: unknown extended command\./);
+});
 //# sourceMappingURL=prevmsg.test.js.map

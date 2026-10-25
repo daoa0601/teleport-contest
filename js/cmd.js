@@ -3847,8 +3847,8 @@ async function readInventorySplitCount() {
             // GC_CONDHIST: "Count: N <key>" joins the recall history only
             // when the final count differs from its first digit; Escape
             // breaks with a count of zero.
-            const finalCount = key === 27 ? 0 : Number(count);
-            if (finalCount !== firstDigit)
+            const finalCount = key === 27 ? 0n : count;
+            if (finalCount !== BigInt(firstDigit))
                 putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
             return key === 32 || key === 10 || key === 13 ? Number(count) : null;
         }
@@ -4688,6 +4688,8 @@ async function editExtendedCommand() {
                 await doprevMessage(false);
                 doprev = false;
                 game._messageHistoryCursor = null;
+                // `*bufp = 0` drops the auto-completed suffix before repainting.
+                completion = null;
                 await redrawCommand();
             }
             continue;
@@ -4697,6 +4699,7 @@ async function editExtendedCommand() {
             // repaints the prompt; the key itself is still processed.
             game._messageHistoryCursor = null;
             doprev = false;
+            completion = null;
             await redrawCommand();
         }
         if (key === 27) {
