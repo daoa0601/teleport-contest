@@ -11,6 +11,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
+import { restoreLevelTimers } from './object_timers.js';
 import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
@@ -280,6 +281,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             restoreEngravings(cached.level);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
+            restoreLevelTimers(game);
             await restoreCachedMonsterState(cached);
             restoreLevelRegions(game, game.moves - cached.savedAt);
             // C getlev() reloads the level's saved light sources onto the

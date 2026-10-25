@@ -55,6 +55,11 @@ function allocateTimerId(state: GameState = game): number {
     return id;
 }
 
+function nextTimerOrder(state: GameState): number {
+    state._timerSerial = (state._timerSerial ?? 0) + 1;
+    return state._timerSerial;
+}
+
 export function scheduleObjectTimer(
     object: GameObject | null | undefined, kind: ObjectTimerKind,
     deadline: number, state: GameState = game,
@@ -63,7 +68,7 @@ export function scheduleObjectTimer(
         return null;
     const timers = timersFor(object);
     if (timers.some(timer => timer.kind === kind)) return null;
-    const timer = { kind, deadline, id: allocateTimerId(state) };
+    const timer = { kind, deadline, id: allocateTimerId(state), order: nextTimerOrder(state) };
     timers.push(timer);
     object.timed = timers.length;
     return timer;
@@ -79,7 +84,7 @@ export function scheduleLevelTimer(
     const timers = levelTimersFor(state);
     if (timers.some(timer => timer.x === x && timer.y === y && timer.kind === kind)) return null;
     const timer = {
-        kind, deadline, id: allocateTimerId(state), x, y,
+        kind, deadline, id: allocateTimerId(state), order: nextTimerOrder(state), x, y,
     };
     timers.push(timer);
     return timer;
@@ -155,7 +160,7 @@ function allowedKind(
 function precedes(left: DueObjectTimer, right: DueObjectTimer | null): boolean {
     return !right || left.timer.deadline < right.timer.deadline
         || (left.timer.deadline === right.timer.deadline
-            && left.timer.id > right.timer.id);
+            && left.timer.order > right.timer.order);
 }
 
 export function peekNextDueObjectTimer(
@@ -169,7 +174,8 @@ export function peekNextDueObjectTimer(
                 || !allowedKind(timer.kind, allowedKinds)) continue;
             // timeout.c:insert_timer() inserts a new timer before the first
             // existing timer with an equal deadline.  Equal-time callbacks
-            // therefore execute in descending timer-id/insertion order.
+            // therefore execute in descending insertion order. Restoring
+            // reinserts timers without changing their diagnostic IDs.
             const candidate = { object, timer };
             if (precedes(candidate, next)) next = candidate;
         }
@@ -217,7 +223,7 @@ export function copyObjectTimers(
     // C obj_split_timers() walks the queue in expiry order, including its
     // newest-first order for ties, before assigning the copied timer IDs.
     const timers = objectTimers(source).sort((left, right) =>
-        left.deadline - right.deadline || right.id - left.id);
+        left.deadline - right.deadline || right.order - left.order);
     for (const timer of timers) {
         scheduleObjectTimer(
             destination, timer.kind, timer.deadline, state,
@@ -244,7 +250,7 @@ export type QueuedTimer = QueuedObjectTimer | QueuedLevelTimer;
 
 // C timeout.c: the timer queue holds object and level timers in one
 // deadline-ordered list; insert_timer() places a new entry before existing
-// equal-deadline entries, so ties run newest (highest id) first.
+// equal-deadline entries, so ties run most recently inserted first.
 export function queuedTimers(state: GameState = game): QueuedTimer[] {
     const queued: QueuedTimer[] = [];
     for (const object of objectsInTimerGraph(state))
@@ -253,5 +259,38 @@ export function queuedTimers(state: GameState = game): QueuedTimer[] {
     for (const timer of levelTimersFor(state))
         queued.push({ position: { x: timer.x, y: timer.y }, timer: { ...timer } });
     return queued.sort((left, right) =>
-        left.timer.deadline - right.timer.deadline || right.timer.id - left.timer.id);
+        left.timer.deadline - right.timer.deadline || right.timer.order - left.timer.order);
+}
+
+// C timeout.c:obj_is_local(). Contents follow their outermost owner;
+// objects carried by migrating monsters belong to the global batch.
+function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
+    let outer = object;
+    while (outer.where === 'contained' && outer.container) outer = outer.container;
+    if (outer.where === 'inventory' || outer.where === 'migrating') return true;
+    return outer.where === 'minvent' && !!outer.ocarry
+        && !!state._migratingMonsters?.includes(outer.ocarry);
+}
+
+// save_timers() writes queue order; restore_timers() calls insert_timer()
+// for each saved entry. Equal-time entries reverse within each batch.
+function restoreTimerBatch(timers: readonly (ObjectTimer | LevelTimer)[], state: GameState): void {
+    const savedOrder = [...timers].sort((left, right) =>
+        left.deadline - right.deadline || right.order - left.order);
+    for (const timer of savedOrder) timer.order = nextTimerOrder(state);
+}
+
+export function restoreLevelTimers(state: GameState = game): void {
+    const local = objectsInTimerGraph(state).filter(object => !objectTimerIsGlobal(object, state));
+    restoreTimerBatch([
+        ...local.flatMap(object => timersFor(object)), ...levelTimersFor(state),
+    ], state);
+}
+
+export function restoreSavedTimers(state: GameState = game): void {
+    const global = objectsInTimerGraph(state).filter(object => objectTimerIsGlobal(object, state));
+    restoreTimerBatch(global.flatMap(object => timersFor(object)), state);
+    // dorecover() reloads the current level after the global state, placing
+    // its timers ahead of equal-time global timers.
+    restoreLevelTimers(state);
 }

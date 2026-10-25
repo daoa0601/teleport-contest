@@ -29,6 +29,7 @@ import { restoreLevelRegions } from './regions.js';
 import { oinit } from './mklev.js';
 import { restoreScheduledLevelChange } from './level_change.js';
 import { recorderRestoredTime } from './calendar.js';
+import { restoreSavedTimers } from './object_timers.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -275,6 +276,7 @@ export function restoreGame(name, storage = game.storage) {
         // (restore.c:1145); each batch returns reversed from its saved
         // newest-first order.
         restoreSavedLightSources(game);
+        restoreSavedTimers(game);
         // C restore.c:dorecover() rebuilds transient vision after loading the
         // level. No old sight bits may suppress its first terrain repaint.
         vision_reset_new_level();

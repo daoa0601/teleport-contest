@@ -27,12 +27,14 @@ export interface ObjectTimer {
     kind: ObjectTimerKind;
     deadline: number;
     id: number;
+    order: number;
 }
 
 export interface LevelTimer {
     kind: 'melt-ice-away';
     deadline: number;
     id: number;
+    order: number;
     x: number;
     y: number;
 }

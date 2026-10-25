@@ -18,6 +18,7 @@ function validTimer(value) {
         kind: timerKind,
         deadline: integer,
         id: integer,
+        order: integer,
     });
 }
 function validMigration(value) {

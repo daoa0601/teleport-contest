@@ -80,7 +80,7 @@ function validGasCloud(value) {
 function validTimer(value) {
     return fieldsMatch(value, {
         kind: (kind) => kind === 'melt-ice-away',
-        deadline: integer, id: integer, x: integer, y: integer,
+        deadline: integer, id: integer, order: integer, x: integer, y: integer,
     });
 }
 function validExclusion(value) {

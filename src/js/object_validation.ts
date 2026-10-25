@@ -82,6 +82,7 @@ function validTimer(value: unknown): value is ObjectTimer {
         kind: timerKind,
         deadline: integer,
         id: integer,
+        order: integer,
     });
 }
 
