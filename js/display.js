@@ -1143,6 +1143,19 @@ const ROGUE_DOUBLE_WALLS = new Map([
     [CmapSymbol.upstair, '\u00f0'], [CmapSymbol.dnstair, '\u00f0'],
     [CmapSymbol.brupstair, '\u00f0'], [CmapSymbol.brdnstair, '\u00f0'],
 ]);
+// The three IBMgraphics sets share these S_ entries; their doorway,
+// corridor and floor replacements differ in dat/symbols.
+const IBM_COMMON_SYMBOLS = new Map([
+    [CmapSymbol.vwall, '\xb3'], [CmapSymbol.hwall, '\xc4'],
+    [CmapSymbol.tlcorn, '\xda'], [CmapSymbol.trcorn, '\xbf'],
+    [CmapSymbol.blcorn, '\xc0'], [CmapSymbol.brcorn, '\xd9'],
+    [CmapSymbol.crwall, '\xc5'], [CmapSymbol.tuwall, '\xc1'],
+    [CmapSymbol.tdwall, '\xc2'], [CmapSymbol.tlwall, '\xb4'], [CmapSymbol.trwall, '\xc3'],
+    [CmapSymbol.engroom, '\xee'],
+    [CmapSymbol.vbeam, '\xb3'], [CmapSymbol.hbeam, '\xc4'],
+    [CmapSymbol.swallowTopLeft + 3, '\xb3'], [CmapSymbol.swallowTopLeft + 4, '\xb3'],
+    [CmapSymbol.explosionTopLeft + 3, '\xb3'], [CmapSymbol.explosionTopLeft + 5, '\xb3'],
+]);
 const ROGUE_SYMSETS = {
     plain: { cmap: new Map([
             [CmapSymbol.tlcorn, '+'], [CmapSymbol.trcorn, '+'],
@@ -1151,11 +1164,59 @@ const ROGUE_SYMSETS = {
             [CmapSymbol.tdwall, '+'], [CmapSymbol.tlwall, '+'], [CmapSymbol.trwall, '+'],
         ]) },
     blank: { blank: true },
+    ibmgraphics: {
+        ibm: true,
+        cmap: new Map([...IBM_COMMON_SYMBOLS,
+            [CmapSymbol.ndoor, '\xfa'], [CmapSymbol.vodoor, '\xfe'], [CmapSymbol.hodoor, '\xfe'],
+            [CmapSymbol.bars, '\xf0'], [CmapSymbol.tree, '\xf1'], [CmapSymbol.room, '\xfa'],
+            [CmapSymbol.corr, '\xb0'], [CmapSymbol.litcorr, '\xb1'], [CmapSymbol.engrcorr, '\xb0'],
+            [CmapSymbol.fountain, '\xf4'], [CmapSymbol.sink, '\xf4'],
+            [CmapSymbol.pool, '\xf7'], [CmapSymbol.ice, '\xfa'],
+            [CmapSymbol.lava, '\xf7'], [CmapSymbol.lavawall, '\xf7'],
+            [CmapSymbol.vodbridge, '\xfa'], [CmapSymbol.hodbridge, '\xfa'], [CmapSymbol.water, '\xf7'],
+        ]),
+    },
+    ibmgraphics_1: { ibm: true, cmap: IBM_COMMON_SYMBOLS },
+    ibmgraphics_2: {
+        ibm: true,
+        cmap: new Map([...IBM_COMMON_SYMBOLS,
+            [CmapSymbol.vodoor, '\xfe'], [CmapSymbol.hodoor, '\xfe'],
+            [CmapSymbol.corr, '\xb0'], [CmapSymbol.litcorr, '\xb1'], [CmapSymbol.engrcorr, '\xb0'],
+        ]),
+    },
+    amigafont: { cmap: new Map([
+            [CmapSymbol.stone, ' '], [CmapSymbol.vwall, '\xc0'], [CmapSymbol.hwall, '\xc1'],
+            [CmapSymbol.tlcorn, '\xc2'], [CmapSymbol.trcorn, '\xc3'],
+            [CmapSymbol.blcorn, '\xc4'], [CmapSymbol.brcorn, '\xc5'], [CmapSymbol.crwall, '\xc6'],
+            [CmapSymbol.tuwall, '\xd8'], [CmapSymbol.tdwall, '\xd6'],
+            [CmapSymbol.tlwall, '\xd7'], [CmapSymbol.trwall, '\xd5'],
+            [CmapSymbol.ndoor, '\xd9'], [CmapSymbol.vodoor, '\x91'], [CmapSymbol.hodoor, '\x92'],
+            [CmapSymbol.vcdoor, '\x93'], [CmapSymbol.hcdoor, '\x94'],
+            [CmapSymbol.bars, '#'], [CmapSymbol.tree, '#'], [CmapSymbol.room, '.'], [CmapSymbol.darkroom, ' '],
+            [CmapSymbol.corr, '\xe5'], [CmapSymbol.litcorr, '\xe5'],
+            [CmapSymbol.upstair, '<'], [CmapSymbol.dnstair, '>'],
+            [CmapSymbol.upladder, '<'], [CmapSymbol.dnladder, '>'], [CmapSymbol.altar, '_'],
+            [CmapSymbol.grave, '\\'], [CmapSymbol.throne, '#'], [CmapSymbol.sink, '{'], [CmapSymbol.fountain, '}'],
+            [CmapSymbol.pool, '*'], [CmapSymbol.ice, '}'], [CmapSymbol.lava, '*'],
+            [CmapSymbol.vodbridge, '*'], [CmapSymbol.hodbridge, '#'],
+            [CmapSymbol.vcdbridge, '#'], [CmapSymbol.hcdbridge, '.'], [CmapSymbol.air, '#'], [CmapSymbol.cloud, '}'],
+            [CmapSymbol.vbeam, '\xf1'], [CmapSymbol.hbeam, '\xf0'],
+            [CmapSymbol.lslant, '\xf2'], [CmapSymbol.rslant, '\xf3'],
+            [CmapSymbol.digbeam, '*'], [CmapSymbol.flashbeam, '!'],
+            [CmapSymbol.boomleft, '{'], [CmapSymbol.boomright, '}'],
+            ...['@', '&', '*', '#'].map((ch, index) => [CmapSymbol.shieldFirst + index, ch]),
+            ...['\xf4', '\xf5', '\xf6', '\xf7', '\xef', '\xf8', '\xf9', '\xfa']
+                .map((ch, index) => [CmapSymbol.swallowTopLeft + index, ch]),
+            ...['\xe6', '\xea', '\xe7', '\xec', '\xd4', '\xed', '\xe8', '\xeb', '\xe9']
+                .map((ch, index) => [CmapSymbol.explosionTopLeft + index, ch]),
+        ]) },
     rogueibm: {
+        ibm: true,
         cmap: ROGUE_DOUBLE_WALLS,
         objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
     },
     rogueepyx: {
+        ibm: true,
         cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
         objectClasses: { 2: '\x18', 3: '[', 4: '=', 5: '\x0c', 6: '(',
             7: '\x05', 8: '\u00ad', 9: '\x0e', 10: '+', 11: '\u00e7',
@@ -1165,6 +1226,7 @@ const ROGUE_SYMSETS = {
         color: true,
     },
     roguewindows: {
+        ibm: true,
         cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
         objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
     },
@@ -1203,16 +1265,21 @@ export function monsterClassSymbol(index) {
 }
 // pager.c:is_swallow_sym() and display.c:swallowed() read the same showsyms.
 export function swallowSymbolAppearance(index) {
-    const ascii = ['/', '-', '\\', '|', '|', '\\', '-', '/'][index];
-    if (ascii === undefined)
+    if (!Number.isInteger(index) || index < 0 || index > 7)
         throw new RangeError(`Unknown swallow border ${index}`);
-    if (activeRogueSymset()?.blank)
-        return { ch: BLANK_SYMBOL, dec: false };
-    const alternate = index === 1 ? 'o' : index === 3 || index === 4 ? 'x'
-        : index === 6 ? 's' : undefined;
-    const dec = alternate !== undefined && usesDecSymbols();
-    return { ch: dec ? alternate ?? ascii : ascii, dec };
+    return cmapSymbolAppearance(CmapSymbol.swallowTopLeft + index);
 }
+// defsym.h effect symbols follow terrain and traps in showsyms[].
+const DEFAULT_EFFECT_SYMBOLS = new Map([
+    [CmapSymbol.vbeam, '|'], [CmapSymbol.hbeam, '-'], [CmapSymbol.lslant, '\\'], [CmapSymbol.rslant, '/'],
+    [CmapSymbol.digbeam, '*'], [CmapSymbol.flashbeam, '!'],
+    [CmapSymbol.boomleft, ')'], [CmapSymbol.boomright, '('],
+    ...['0', '#', '@', '*'].map((ch, index) => [CmapSymbol.shieldFirst + index, ch]),
+    ...['/', '-', '\\', '|', '|', '\\', '-', '/']
+        .map((ch, index) => [CmapSymbol.swallowTopLeft + index, ch]),
+    ...['/', '-', '\\', '|', ' ', '|', '\\', '-', '/']
+        .map((ch, index) => [CmapSymbol.explosionTopLeft + index, ch]),
+]);
 // dat/symbols:DECgraphics overrides dungeon symbols independently of the
 // terrain type at the hero's location. Furniture mimicry uses these symbols.
 const decFurnitureSymbols = new Map([
@@ -1228,21 +1295,30 @@ const decFurnitureSymbols = new Map([
     [CmapSymbol.altar, '{'], [CmapSymbol.pool, '`'], [CmapSymbol.ice, '~'],
     [CmapSymbol.lava, '`'], [CmapSymbol.lavawall, '`'],
     [CmapSymbol.vodbridge, '~'], [CmapSymbol.hodbridge, '~'], [CmapSymbol.water, '`'],
+    [CmapSymbol.vbeam, 'x'], [CmapSymbol.hbeam, 'q'],
+    [CmapSymbol.swallowTopLeft + 1, 'o'], [CmapSymbol.swallowTopLeft + 3, 'x'],
+    [CmapSymbol.swallowTopLeft + 4, 'x'], [CmapSymbol.swallowTopLeft + 6, 's'],
+    [CmapSymbol.explosionTopLeft + 1, 'o'], [CmapSymbol.explosionTopLeft + 3, 'x'],
+    [CmapSymbol.explosionTopLeft + 5, 'x'], [CmapSymbol.explosionTopLeft + 7, 's'],
 ]);
 // symbols.c:assign_graphics() selects the active dungeon symbols. DEC
 // characters retain their alternate font so they do not match ASCII letters.
 export function cmapSymbolAppearance(symbol) {
-    const definition = MAP_SYMBOLS[symbol];
-    if (!definition)
+    const defaultSymbol = MAP_SYMBOLS[symbol]?.ch ?? DEFAULT_EFFECT_SYMBOLS.get(symbol);
+    if (defaultSymbol === undefined)
         throw new RangeError(`Unknown dungeon symbol ${symbol}`);
     if (shownSymbolSet().rogue) {
         const set = activeRogueSymset();
-        return { ch: rogueCmapSymbol(set, symbol)
-                ?? rogueFurnitureSymbols.get(symbol) ?? definition.ch, dec: false };
+        const ch = rogueCmapSymbol(set, symbol) ?? rogueFurnitureSymbols.get(symbol) ?? defaultSymbol;
+        // wintty.c:g_putch() uses the alternate font for high-bit bytes
+        // without IBM handling, unless eight_bit_tty requests raw bytes.
+        if (!set?.ibm && !game.iflags.wc_eight_bit_input && ch.charCodeAt(0) >= 128)
+            return { ch: String.fromCharCode(ch.charCodeAt(0) & 0x7f), dec: true };
+        return { ch, dec: false };
     }
     const decSymbol = usesDecSymbols()
         ? decFurnitureSymbols.get(symbol) : undefined;
-    return { ch: decSymbol ?? definition.ch, dec: decSymbol !== undefined };
+    return { ch: decSymbol ?? defaultSymbol, dec: decSymbol !== undefined };
 }
 // display.c:reset_glyphmap() and map_glyphinfo() retain the glyph's color.
 // dat/symbols assigns these colors to branch wall glyphs.
@@ -1383,17 +1459,13 @@ export function transientMonsterGlyph(monster, monsterState = 'normal') {
 export function zapdir_to_glyph(dx, dy, beamType) {
     const type = beamType >= 8 ? 0 : beamType;
     const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
-    const ascii = ['|', '-', '\\', '/'][direction];
-    if (ascii === undefined)
-        throw new Error('Beam direction has no display symbol');
-    const blankBeam = activeRogueSymset()?.blank === true;
-    const dec = !blankBeam && usesDecSymbols() && direction < 2;
+    const appearance = cmapSymbolAppearance(CmapSymbol.vbeam + direction);
     const color = [CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, CLR_BRIGHT_BLUE,
         CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][type];
     if (color === undefined)
         throw new RangeError(`Unknown beam type ${beamType}`);
-    return { ch: blankBeam ? BLANK_SYMBOL : dec ? direction === 0 ? 'x' : 'q' : ascii,
-        color, decgfx: dec, kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
+    return { ch: appearance.ch, color, decgfx: appearance.dec,
+        kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
 }
 // Native explosion_to_glyph(): rows run from top left to bottom right.
 export function explosionGlyph(style, dx, dy) {
@@ -1401,24 +1473,20 @@ export function explosionGlyph(style, dx, dy) {
     const type = [EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS]
         .includes(style) ? style : EXPL_FIERY;
     const index = (dy + 1) * 3 + dx + 1;
-    const ascii = ['/', '-', '\\', '|', ' ', '|', '\\', '-', '/'][index];
     const color = [CLR_GREEN, CLR_BROWN, CLR_BLUE,
         CLR_MAGENTA, CLR_ORANGE, CLR_WHITE][type - EXPL_NOXIOUS];
-    if (ascii === undefined || color === undefined)
+    if (index < 0 || index > 8 || color === undefined)
         throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
-    const alternate = index === 1 ? 'o' : index === 3 || index === 5 ? 'x'
-        : index === 7 ? 's' : null;
-    const blankExplosion = activeRogueSymset()?.blank === true;
-    const dec = !blankExplosion && alternate !== null && usesDecSymbols();
-    return { ch: blankExplosion ? BLANK_SYMBOL : dec && alternate ? alternate : ascii,
-        color, decgfx: dec,
+    const appearance = cmapSymbolAppearance(CmapSymbol.explosionTopLeft + index);
+    return { ch: appearance.ch, color, decgfx: appearance.dec,
         kind: 'effect', glyph: GlyphOffset.explodeDark + type * 9 + index };
 }
 export function shieldGlyph(character) {
     const index = ['0', '#', '@', '*'].indexOf(character);
     if (index < 0)
         throw new RangeError(`Unknown shield symbol ${character}`);
-    return { ch: character, color: CLR_BRIGHT_BLUE, decgfx: false, kind: 'effect',
+    const appearance = cmapSymbolAppearance(CmapSymbol.shieldFirst + index);
+    return { ch: appearance.ch, color: CLR_BRIGHT_BLUE, decgfx: appearance.dec, kind: 'effect',
         glyph: cmapToGlyph(82 + index) };
 }
 // C display.h:obj_to_glyph(), for tmp_at() callers.  A projectile has already

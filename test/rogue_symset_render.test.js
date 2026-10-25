@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP, EXPL_FIERY, FOUNTAIN, HWALL, STAIRS, TLCORNER, VIBRATING_SQUARE } from '../js/const.js';
-import { _statusLine2, displaySelf, flush_screen, newsym } from '../js/display.js';
+import { _statusLine2, displaySelf, flush_screen, newsym, show_glyph_cell, swallowed, zapdir_to_glyph } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, STATUE } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
@@ -11,6 +11,7 @@ import { requireScreenCell } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
 // dat/symbols `start:` sets that a Rogue level can display layer their
 // S_ entries over the base rogue set (symbols.c:load_symset() →
 // update_rogue_symset() over init_rogue_symbols()).
@@ -52,6 +53,33 @@ void test('RogueIBM draws double-line walls and Greek-Xi stairs', async () => {
     assert.equal(rogueCell(12, 10)?.ch, 'Í');
     assert.equal(rogueCell(13, 10)?.ch, 'ð');
     assert.equal(rogueCell(12, 10)?.color, NO_COLOR);
+});
+for (const name of ['IBMgraphics', 'IBMGraphics_1', 'IBMGraphics_2', 'AmigaFont']) {
+    void test(`${name} renders its terrain and effects when loaded as the rogue set`, async () => {
+        rogueLevel();
+        applyNethackrc(`OPTIONS=eight_bit_tty,roguesymset:${name}`);
+        newsym(12, 10);
+        newsym(13, 10);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(11, 11).ch, name === 'AmigaFont' ? '\xc1' : '\xc4');
+        assert.equal(requireScreenCell(12, 11).ch, name === 'AmigaFont' ? '<' : '%');
+        const beam = zapdir_to_glyph(1, 0, 0);
+        show_glyph_cell(11, 9, beam.ch, beam.color, beam.decgfx, 0, beam);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(10, 10).ch, name === 'AmigaFont' ? '\xf0' : '\xc4');
+        game.u.ustuck = await createMonsterAt('purple worm', 10, 10);
+        game.u.uswallow = 1;
+        swallowed(true);
+        await flush_screen(1);
+        assert.equal(requireScreenCell(8, 11).ch, name === 'AmigaFont' ? '\xf7' : '\xb3');
+    });
+}
+void test('AmigaFont uses the tty alternate font unless eight_bit_tty is enabled', async () => {
+    rogueLevel();
+    applyNethackrc('OPTIONS=roguesymset:AmigaFont');
+    newsym(12, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(11, 11).ch, 'A', 'g_putch() strips the high bit of the Amiga wall');
 });
 void test('plain as the rogue set redraws wall corners as plus', async () => {
     const level = rogueLevel();
