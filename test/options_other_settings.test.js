@@ -208,9 +208,12 @@ void test('menu heading values report unknown colors and attributes', () => {
     const fileErrors = (rc) => parseNethackrc(rc).configErrors[0]?.errors.map(error => error.message) ?? [];
     assert.deepEqual(fileErrors('OPTIONS=menu_headings:green&bogus'), ["Unknown text attribute 'bogus'"]);
     assert.deepEqual(fileErrors('OPTIONS=menu_headings:bogus'), ["Unknown color 'bogus'"]);
-    // A negated value keeps bad_negation()'s prose and changes nothing.
+    // A negated value draws the generic duplicate complaint first (the
+    // option repeats within the file) and bad_negation()'s prose from the
+    // option function second, changing nothing.
     const config = parseNethackrc('OPTIONS=menu_headings:green\nOPTIONS=!menu_headings:bold');
-    assert.deepEqual(config.configErrors[0]?.errors.map(error => error.message), ['The menu_headings option may not both have a value and be negated.']);
+    assert.deepEqual(config.configErrors[0]?.errors.map(error => error.message), ['compound option specified multiple times: menu_headings',
+        'The menu_headings option may not both have a value and be negated.']);
     assert.deepEqual(config.iflags.menu_headings, { attr: 0, color: 2 });
 });
 void test('statushilites reports and changes its highlight duration', async () => {

@@ -1152,15 +1152,14 @@ async function waitForCurrentMore() {
 // asking; 'k' and 'd' are legacy aliases for vanquished and overview.  The
 // special 'a' answers only survive on the vanquished and genocided
 // categories; elsewhere they degrade to plain yes.
-const DISCLOSURE_CATEGORIES = ['i', 'a', 'v', 'g', 'c', 'o'] as const;
+export const DISCLOSURE_CATEGORIES = ['i', 'a', 'v', 'g', 'c', 'o'] as const;
 type DisclosureCategory = (typeof DISCLOSURE_CATEGORIES)[number];
 type DisclosureDefault = 'y' | 'n' | 'a';
 
-function endDiscloseSettings(): Record<DisclosureCategory, string> {
-    const settings: Record<DisclosureCategory, string> = {
+export function parseDisclosureSettings(raw: unknown): Record<string, string> {
+    const settings: Record<string, string> = {
         i: '', a: '', v: '', g: '', c: '', o: '',
     };
-    const raw = game.flags?.disclose;
     // An unset option leaves the zero-initialized defaults: ask, answer no.
     if (raw === undefined || raw === null) return settings;
     const text = String(raw).trim();
@@ -1191,6 +1190,10 @@ function endDiscloseSettings(): Record<DisclosureCategory, string> {
         }
     }
     return settings;
+}
+
+function endDiscloseSettings(): Record<DisclosureCategory, string> {
+    return parseDisclosureSettings(game.flags?.disclose);
 }
 
 // C end.c:should_query_disclose_option().

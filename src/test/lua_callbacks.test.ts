@@ -173,7 +173,7 @@ void test('callbacks registered by a level script survive it and see the levels 
     core.execute(`
         function entering()
             created_depth = u.dlevel
-            nh.parse_config("OPTIONS=pickup")
+            nh.parse_config("OPTIONS=autopickup")
             return true
         end
         function leaving()
