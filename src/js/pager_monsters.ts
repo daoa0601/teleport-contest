@@ -49,7 +49,12 @@ export async function lookAtMonster(monster: Monster, x: number, y: number): Pro
     let description = prefix + (accurate && monster.mtame ? 'tame '
         : accurate && monster.mpeaceful ? 'peaceful ' : '') + name;
     if (game.u.ustuck === monster) {
-        description += game.u.uswallow ? monsterDigests(monster) ? ', swallowing you' : ', engulfing you'
+        // C pager.c:445: monster detection browses with u.uswallow cleared
+        // and iflags.save_uswallow set, so a detected engulfer still
+        // reports ", swallowing you" or ", engulfing you".
+        const swallowed = !!game.u.uswallow || !!game.iflags.save_uswallow;
+        description += swallowed
+            ? monsterDigests(monster) ? ', swallowing you' : ', engulfing you'
             : heroFormSticks() ? ', being held' : ', holding you';
     }
     if (monster.mfrozen) description += ", can't move (paralyzed or sleeping or busy)";
