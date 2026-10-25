@@ -1,7 +1,7 @@
 import type { EnlightenmentFinal } from './enlightenment_attributes.js';
 import { fromWhat, heroHasNoEyes, intrinsicPropertyMask } from './attribute_provenance.js';
 import { levitationAtWill, propertyTimeout } from './properties.js';
-import { isLavaAt, isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { formatFeltMessage } from './hero_speech.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
@@ -98,7 +98,7 @@ function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, 
         else message(youToo, 'are ', 'were ', 'levitating', fromWhat('levitation'));
     } else if (u.flying) message(youToo, 'are ', 'were ', 'flying', fromWhat('flying'));
     if (u.uinwater) are('underwater');
-    else if (u.waterWalking && !levelIsWaterLevel() && !u.levitating && !u.flying && (isPoolAt(u.ux, u.uy) || isLavaAt(u.ux, u.uy)))
+    else if (u.waterWalking && !u.levitating && !u.flying && (isPoolAt(u.ux, u.uy) || isLavaAt(u.ux, u.uy)))
         are(`walking on ${isPoolAt(u.ux, u.uy) ? 'water' : 'lava'}`, fromWhat('waterWalking'));
     if (Upolyd(u) && (u.uundetected || M_AP_TYPE(u) !== M_AP_NOTHING)) are(heroHidingStatus(game));
 
