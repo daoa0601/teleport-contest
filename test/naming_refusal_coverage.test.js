@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test, {} from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { MM_EPRI } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { ELVEN_DAGGER, SCR_IDENTIFY } from '../js/object_data.js';
 import { heroBeautyDescription } from '../js/mirror.js';
@@ -32,13 +33,21 @@ void test('a shopkeeper declines a nickname by introducing itself', async (t) =>
 });
 void test('a temple priest refuses a new personal name', async (t) => {
     freshObjectRoom({ flags: { tips: false, verbose: true } });
-    const priest = await createMonsterAt('aligned cleric', 11, 10, 0);
+    // priest.c:priest_init(): MM_EPRI prevents the roamer-minion conversion
+    // makemon gives an ordinary cleric, then the caller finishes the temple
+    // priest itself. Without ispriest this monster would be an isminion
+    // roamer, and the refusal below would not exercise the ispriest arm.
+    const priest = await createMonsterAt('aligned cleric', 11, 10, MM_EPRI);
     priest.female = false;
+    priest.ispriest = 1;
+    priest.mpeaceful = 1;
     priest.epri = {
         shroom: 0, shralign: 0, shrpos: { x: 12, y: 10 },
         shrlevel: { dnum: 0, dlevel: 8 }, parentmid: priest.m_id,
         intone_time: 0, enter_time: 0, peaceful_time: 0, hostile_time: 0,
     };
+    assert.ok(priest.ispriest && !priest.isminion && !priest.isshk
+        && !priest.mextra?.ebones, 'only the ispriest arm can refuse this name');
     await nameMonsterAt(t, 'Bob');
     assert.match(game._pending_message ?? '', /^The priest of \S+ will not accept the name Bob\.$/);
     assert.equal(priest.mgivenname, undefined);
