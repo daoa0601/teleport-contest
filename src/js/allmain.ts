@@ -544,6 +544,9 @@ export async function restoregamePreamble() {
     game.program_state.in_getlev = true;
     game.vision_full_recalc = 0;
     try {
+        // unixmain.c announces recovery before dorecover() can report a
+        // sensed change. The first redraw presents it before welcome.
+        await plineWithContinuation('Restoring save file...');
         for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
             await restoreMonsterCover(monster, game);
             await restoreMonsterShape(monster, game);
