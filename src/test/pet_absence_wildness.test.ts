@@ -30,7 +30,7 @@ void test('a pet whose absence matches its bond goes untame yet stays peaceful',
     assert.ok(!dog.mtame);
     assert.equal(dog.mpeaceful, 1);
 });
-    const dog = await separatedPet({ tame: 1, moves: 1500, seed: 1n });
+
 void test('a weakly bonded pet abandoned for long enough usually turns hostile', async () => {
     const dog = await separatedPet({ tame: 1, moves: 1500, seed: 1n });
 
