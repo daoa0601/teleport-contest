@@ -69,6 +69,7 @@ for (const [symbol, description] of [
     ['/', 'a wand'],
     ['\\', 'an opulent throne'],
     ['^', 'a trap'],
+    ['"', 'an amulet or a web'],
     [' ', 'a ghost or stone or air'],
     ['`', 'a boulder or an engraving'],
     ['~', 'a long worm tail'],
