@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { applyNethackrc } from '../js/options.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { game, requireGameDisplay, requireInitializedGame } from '../js/gstate.js';
 import { showEnlightenment, showFinalAttributes } from '../js/insight.js';
@@ -15,7 +16,7 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { A_INT, A_STR, ENL_GAMEOVERDEAD, W_TOOL } from '../js/const.js';
+import { A_INT, A_STR, ENL_GAMEOVERDEAD, POOL, W_TOOL } from '../js/const.js';
 import { races } from '../js/roles.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createSaddledSteed } from './support/monsters.js';
@@ -216,6 +217,14 @@ void test('unrestricted autopickup reports all types without thrown-item wording
     assert.ok((await enlightenmentText(true)).includes('Autopickup is on for all types.'));
 });
 
+void test('autopickup exceptions are named in the enlightenment autopickup line', async () => {
+    freshGameplayRoom({ flags: { pickup: true, pickup_types: '' } });
+    applyNethackrc('AUTOPICKUP_EXCEPTION="<arrow"');
+    const lines = await enlightenmentText(true);
+    assert.ok(lines.includes('Autopickup is on for all types, with exceptions.'));
+    assert.ok(!lines.some(line => line.includes('plus thrown')));
+});
+
 void test('the Eyes of the Overworld explain why intrinsic blindness is blocked', async () => {
     freshGameplayRoom({ flags: { debug: true }, hero: { permaBlind: true } });
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
@@ -266,12 +275,25 @@ void test('a flying mount supplies latent flight while the hero levitates', asyn
     assert.ok((await enlightenmentText()).includes("You would fly if you weren't levitating."));
 });
 
-void test('water walking is not a capability on the Plane of Water', async () => {
+void test('water walking in a Plane of Water bubble stays a listed capability', async () => {
     freshGameplayRoom({ flags: { debug: true } });
     grantIntrinsicProperty('waterWalking', 'outside');
-    assert.ok((await enlightenmentText()).includes('You can walk on water intrinsically.'));
     game.water_level = { dnum: 0, dlevel: 1, alignment: null, flags: { town: false } };
-    assert.ok(!(await enlightenmentText()).some(line => line.includes('walk on water')));
+    // insight.c:walking_on_water() is false on the bubble's floor, so
+    // attributes_enlightenment() still offers "You can walk on water".
+    assert.ok((await enlightenmentText()).includes('You can walk on water intrinsically.'));
+});
+
+void test('a water walker strides across the Plane of Water itself', async () => {
+    freshGameplayRoom({ flags: { debug: true } });
+    grantIntrinsicProperty('waterWalking', 'outside');
+    game.water_level = { dnum: 0, dlevel: 1, alignment: null, flags: { town: false } };
+    const level = game.level;
+    if (!level) throw new Error('The Plane of Water fixture needs a level');
+    level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+    const lines = await enlightenmentText();
+    assert.ok(lines.includes('You are walking on water intrinsically.'));
+    assert.ok(!lines.some(line => line.includes('can walk on water')));
 });
 
 void test('a wet towel reports reduced poison gas damage', async () => {

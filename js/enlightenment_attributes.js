@@ -11,7 +11,7 @@ import { hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked, pro
 import { blindnessBlocked, blindfolded, heroIsBlind, permanentBlind } from './senses.js';
 import { heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroPassesWalls } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { minimalObjectName } from './objnam.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { DWARVISH_CLOAK, LUCKSTONE, OBJECT_PROPERTY, RIN_PROTECTION, AMULET_OF_GUARDING, ROBE, TOWEL, } from './object_data.js';
@@ -172,7 +172,7 @@ export function attributeEnlightenmentLines(final = 0) {
             message('You ', 'could cling', 'could have clung', ` to the ceiling if ${ceiling ? '' : 'there was one'}${!ceiling && u.uinwater ? ' and ' : ''}${u.uinwater ? underwater ? "you weren't underwater" : "you weren't in the water" : ''}`);
     }
     const walkingOnWater = !u.uinwater && !u.levitating && !u.flying && (isPoolAt(u.ux, u.uy) || isLavaAt(u.ux, u.uy));
-    if (active('waterWalking') && !levelIsWaterLevel() && !walkingOnWater)
+    if (active('waterWalking') && !walkingOnWater)
         can('walk on water', 'waterWalking');
     if (active('swimming') && (underwater || !u.uinwater))
         can('swim', 'swimming');
