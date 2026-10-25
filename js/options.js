@@ -1047,7 +1047,9 @@ function parseConfiguration(rc, result, report, fromFile) {
     let paranoiaSeen = false;
     if (!rc && fromFile)
         return result;
-    const petOptionsSeen = new Set();
+    // options.c reset_duplicate_opt_detection(): one counter per option
+    // across the whole file; the environment parse does not track repeats.
+    const optionsSeen = new Map();
     const characterOptionsSeen = new Map();
     const lines = fromFile ? configurationLines(rc, report)
         : [{ bytes: new TextEncoder().encode(rc.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
@@ -1057,15 +1059,6 @@ function parseConfiguration(rc, result, report, fromFile) {
         };
         const addRawError = (message) => {
             report.errors.push({ sourceLine, lineNumber, message, raw: true });
-        };
-        const checkDuplicatePetOption = (name, usingAlias) => {
-            if (!fromFile)
-                return;
-            // Pet names have no alias; C formats that null pointer as "(null)".
-            const alias = usingAlias ? ` (via alias: ${name === 'pettype' ? 'pet' : '(null)'})` : '';
-            if (petOptionsSeen.has(name))
-                addError(`compound option specified multiple times: ${name}${alias}`);
-            petOptionsSeen.add(name);
         };
         // parse_config_line() condenses whitespace for every statement name
         // and value, but passes the original OPTIONS statement to
@@ -1125,6 +1118,24 @@ function parseConfiguration(rc, result, report, fromFile) {
             // across the elements of one OPTIONS statement.
             usingAlias ||= optionMatch.viaAlias;
             const canonical = optionMatch.name;
+            // parseoptions() rejects negation of a !negateok option before
+            // any handler runs (bad_negation() with its parameter form).
+            if (negated && !optionMatch.negateok) {
+                addError(`The ${canonical} option may not both have a value and be negated.`);
+                continue;
+            }
+            // duplicate_opt_detection(): a file-scope per-option counter;
+            // complain_about_duplicate() names the canonical option and
+            // C's printf renders a null alias field as "(null)".
+            const duplicateOption = fromFile && (optionsSeen.get(optionMatch.index) ?? 0) > 0;
+            if (fromFile) {
+                optionsSeen.set(optionMatch.index, (optionsSeen.get(optionMatch.index) ?? 0) + 1);
+            }
+            if (duplicateOption && !optionMatch.dupeok) {
+                const aliasSuffix = usingAlias
+                    ? ` (via alias: ${optionMatch.alias ?? '(null)'})` : '';
+                addError(`${optionMatch.isBool ? 'boolean' : 'compound'} option specified multiple times: ${canonical}${aliasSuffix}`);
+            }
             if (canonical === 'cond_') {
                 const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
                 if (mask !== null)
@@ -1217,7 +1228,6 @@ function parseConfiguration(rc, result, report, fromFile) {
             // optfn_pettype() and petname_optfn(); the alias "pet" and
             // abbreviations reach the same handler through the match above.
             if (canonical === 'pettype') {
-                checkDuplicatePetOption('pettype', usingAlias);
                 const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
                 const preference = configuredPetType(value, negated);
                 if (preference !== null) {
@@ -1234,7 +1244,6 @@ function parseConfiguration(rc, result, report, fromFile) {
             const petNameOption = ['dogname', 'catname', 'horsename']
                 .find(name => name === canonical);
             if (petNameOption) {
-                checkDuplicatePetOption(petNameOption, usingAlias);
                 if (negated) {
                     addError(`The ${petNameOption} option may not both have a value and be negated.`);
                     continue;
@@ -1327,9 +1336,12 @@ function parseConfiguration(rc, result, report, fromFile) {
                 const val = stripped.slice(colonIdx + 1).trim();
                 if (canonical === 'name')
                     result.name = val;
-                else if (canonical === 'playmode' && val === 'debug')
+                // optfn_playmode() refuses a duplicate outright after the
+                // generic complaint; its remaining value checks follow in a
+                // later commit.
+                else if (canonical === 'playmode' && !duplicateOption && val === 'debug')
                     result.flags.debug = true;
-                else if (canonical === 'playmode' && val === 'explore')
+                else if (canonical === 'playmode' && !duplicateOption && val === 'explore')
                     result.flags.explore = true;
                 else if (canonical === 'symset') {
                     // options.c:optfn_symset() loads the set from the
