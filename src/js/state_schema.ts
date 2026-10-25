@@ -185,6 +185,7 @@ const transientFields = {
     n_rects: true,
     nhDisplay: true,
     boulderSym: true,
+    rogueBoulderSym: true,
     nhrect: true,
     program_state: true,
     _autoAllHintShown: true,

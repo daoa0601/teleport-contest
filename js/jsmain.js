@@ -348,6 +348,8 @@ export class Engine {
         g.symset = opts.symset || null;
         if (opts.boulderSym !== undefined)
             g.boulderSym = opts.boulderSym;
+        if (opts.rogueBoulderSym !== undefined)
+            g.rogueBoulderSym = opts.rogueBoulderSym;
         if (opts.preferred_pet !== undefined)
             g.preferred_pet = opts.preferred_pet;
         if (opts.tutorial_set)

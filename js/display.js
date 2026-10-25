@@ -68,10 +68,13 @@ function activeObjectSymbols() {
         ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
 }
 // symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
-// else the default rock-class symbol.
+// else the default rock-class symbol.  optfn_boulder() fills both sets'
+// overrides, while the BOULDER= statement (cfgfiles.c) only fills the
+// primary one, so the Rogue level consults its own slot.
 export function currentBoulderSymbol(state = game) {
-    return !Is_rogue_level(state.u?.uz) && state.boulderSym
-        ? state.boulderSym : '`';
+    const override = Is_rogue_level(state.u?.uz)
+        ? state.rogueBoulderSym : state.boulderSym;
+    return override || '`';
 }
 const M3_INFRAVISIBLE = 0x0200;
 const M1_MINDLESS = 0x00010000;
@@ -1079,8 +1082,7 @@ function randomHallucinatedObjectGlyph() {
     return {
         // display.c routes any boulder object number, including one a
         // hallucinating hero invents, through showsyms[SYM_BOULDER].
-        ch: otyp === BOULDER && !Is_rogue_level(game.u?.uz) && game.boulderSym
-            ? game.boulderSym
+        ch: otyp === BOULDER ? currentBoulderSymbol()
             : activeObjectSymbols()[oclass] || '?',
         // glyphs.c resolves the randomly selected object number through the
         // runtime objects[] table.  o_init() shuffles oc_color together with
@@ -1120,10 +1122,8 @@ function objectGlyph(object) {
         }
         : {
             // display.c sends the boulder object to showsyms[SYM_BOULDER],
-            // which BOULDER= overrides outside the rogue symbol set.
-            ch: object.otyp === BOULDER && !Is_rogue_level(game.u?.uz)
-                && game.boulderSym
-                ? game.boulderSym
+            // whose override each symbol set carries separately.
+            ch: object.otyp === BOULDER ? currentBoulderSymbol()
                 : activeObjectSymbols()[objectClassForType(displayedType)] || '?',
             color: objectColor(object), decgfx: false,
             kind: 'object', otyp: displayedType, ...species, glyph,

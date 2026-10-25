@@ -17,7 +17,7 @@ import { classifyStatusTerrain } from './status_terrain.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2 } from './rng.js';
-import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
+import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion, parseBoulderSymbolValue } from './option_values.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
@@ -457,6 +457,8 @@ interface ConfigurationSettings {
     symset?: string | undefined;
     // gs.showsyms[SYM_BOULDER + SYM_OFF_X] override from BOULDER=.
     boulderSym?: string;
+    // optfn_boulder() also writes the rogue set's override.
+    rogueBoulderSym?: string;
     preferred_pet?: PetPreference;
     monTelecontrol?: boolean;
     tutorial_set?: boolean;
@@ -678,6 +680,7 @@ type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'comm
     fruitName?: string;
     preferred_pet?: string;
     boulderSym?: string;
+    rogueBoulderSym?: string;
 };
 
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
@@ -694,6 +697,7 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     if (result.preferred_pet !== undefined) state.preferred_pet = result.preferred_pet;
     // cnf_line_BOULDER() writes straight into the live symbol override.
     if (result.boulderSym !== undefined) state.boulderSym = result.boulderSym;
+    if (result.rogueBoulderSym !== undefined) state.rogueBoulderSym = result.rogueBoulderSym;
     return result;
 }
 
@@ -1731,6 +1735,22 @@ function parseConfiguration(
                         addError(`Unable to load symbol set "${val}" from "symbols"`);
                     }
                 }
+                else if (canonical === 'boulder') {
+                    // optfn_boulder() decodes the raw text after the
+                    // delimiter (spaces included) and writes the first byte
+                    // into both symbol sets; the BOULDER= statement above
+                    // only touches the primary set.
+                    const raw = stripped.slice(colonIdx + 1);
+                    if (!raw) addError(`Missing parameter for '${stripped}'`);
+                    else {
+                        const parsed = parseBoulderSymbolValue(raw);
+                        if ('error' in parsed) addError(parsed.error);
+                        else {
+                            result.boulderSym = parsed.symbol;
+                            result.rogueBoulderSym = parsed.symbol;
+                        }
+                    }
+                }
                 else if (canonical === 'menu_headings') {
                     if (negated)
                         addError('The menu_headings option may not both have a value and be negated.');
@@ -1801,6 +1821,8 @@ function parseConfiguration(
                     const option = requestBooleanByName.get(canonical.toLowerCase());
                     if (option) setConfigurationBoolean(result, option, value);
                     else if (canonical === 'bones') result.flags.bones = value;
+                    // optfn_boulder()'s string_for_opt(FALSE) demands a value.
+                    else if (canonical === 'boulder') addError(`Missing parameter for 'boulder'`);
                     else if (canonical === 'reroll') result.flags.reroll = value;
                     // optfn_menu_headings() without a value: inverse, or
                     // none when negated.
@@ -2517,7 +2539,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('pettype', preferredPetDescription()),
             readonly('soundlib', 'nosound'),
             choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
-            choice('boulder', 'boulder                 [`]'),
+            // optfn_boulder() get_val: the primary override, else the
+            // active rock-class symbol.
+            choice('boulder', `boulder                 [${game.boulderSym || '`'}]`),
             choice('crash_email', 'crash_email             [unknown]'),
             choice('crash_name', 'crash_name              [unknown]'),
             choice('crash_urlmax', 'crash_urlmax            [-1]'),
@@ -2935,6 +2959,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'menu_headings') await editMenuHeadings();
     else if (name === 'sortloot') await editSortLoot();
     else if (name === 'sortdiscoveries') await chooseDiscoverySort(0);
+    else if (name === 'boulder') return await editBoulderSymbol();
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
         return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {
@@ -2952,6 +2977,27 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
         } else await setTextOption(name, value);
     }
     return false;
+}
+
+// doset() gives boulder no handler, so the menu prompts and re-runs
+// optfn_boulder() through parseoptions(); mid-game the new symbol lands in
+// both symbol sets' overrides and go.opt_need_redraw triggers doredraw().
+async function editBoulderSymbol(): Promise<boolean> {
+    const value = await getLine('Set boulder to what?',
+        (_character: string, key: number) => key >= 32 && key < 127);
+    if (value === null) return false;
+    if (!value) {
+        await optionError("Missing parameter for 'boulder:'");
+        return false;
+    }
+    const parsed = parseBoulderSymbolValue(value);
+    if ('error' in parsed) {
+        await optionError(parsed.error);
+        return false;
+    }
+    game.boulderSym = parsed.symbol;
+    game.rogueBoulderSym = parsed.symbol;
+    return true;
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection

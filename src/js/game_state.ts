@@ -236,6 +236,10 @@ export interface GameState {
     // showsyms[SYM_BOULDER + SYM_OFF_X] override set by BOULDER=; the
     // primary set only, so rogue levels keep their own boulder symbol.
     boulderSym?: string;
+    // The same override in the rogue set: options.c:optfn_boulder() writes
+    // ov_rogue_syms[SYM_BOULDER] as well, so OPTIONS=boulder:X reaches the
+    // Rogue level while the BOULDER= statement (cfgfiles.c) does not.
+    rogueBoulderSym?: string;
     fruitName?: string;
     fruits?: Fruit[];
     castleTune?: string;

@@ -3,6 +3,9 @@ import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { planInventoryOrder } from './object_sort.js';
+import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
+import { WARNCOUNT } from './const.js';
+import { decodeOptionEscapes } from './option_escapes.js';
 export function textOptionValue(name) {
     switch (name) {
         case 'pile_limit': return String(game.flags.pile_limit ?? 5);
@@ -10,6 +13,23 @@ export function textOptionValue(name) {
         case 'suppress_alert': return game.flags.suppress_alert || '(none)';
         default: return null;
     }
+}
+// options.c:optfn_boulder(): escapes() decodes the value, then the first
+// byte replaces the boulder symbol in both symbol sets. A monster-class or
+// warning symbol is refused ("boulder symbol would conflict"); the warning
+// test covers '1'..'5' only, so '0' passes. A control byte is refused first.
+export function parseBoulderSymbolValue(value) {
+    const symbol = decodeOptionEscapes(value).charAt(0);
+    const code = symbol.charCodeAt(0);
+    const monsterClash = MONSTER_CLASS_SYMBOLS.indexOf(symbol) > 0;
+    const warningClash = code >= 49 && code < 48 + WARNCOUNT;
+    if (!(code >= 32))
+        return { error: 'boulder symbol cannot be a control character' };
+    if (monsterClash)
+        return { error: `Badoption - boulder symbol '${symbol}' would conflict with a monster symbol` };
+    if (warningClash)
+        return { error: `Badoption - boulder symbol '${symbol}' would conflict with a warning symbol` };
+    return { symbol };
 }
 export function isTextOption(name) {
     return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines',
