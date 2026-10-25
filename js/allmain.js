@@ -3606,8 +3606,17 @@ export async function newgame() {
     if (g.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
-// C ref: allmain.c moveloop_core()
+let playStep = null;
+export function bindPlayStep(step) {
+    playStep = step;
+}
 export async function moveloop_core() {
+    if (playStep && playStep.state === game)
+        return playStep.step();
+    return runMoveloopCore();
+}
+// C ref: allmain.c moveloop_core()
+export async function runMoveloopCore() {
     const g = requireInitializedGame();
     g.program_state.in_moveloop = true;
     if (g.program_state?.gameover) {
@@ -3806,7 +3815,7 @@ export async function moveloop(resuming) {
     await docrt();
     await flush_screen(1);
     for (;;) {
-        await moveloop_core();
+        await runMoveloopCore();
         if (game.program_state?.gameover)
             break;
     }

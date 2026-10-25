@@ -3885,8 +3885,26 @@ export async function newgame() {
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
 }
 
+// The contest play page calls moveloop_core() once per keystroke. While a
+// NethackGame drives the live game, that call hands its engine one key.
+export interface PlayStep {
+    readonly state: GameState;
+    step(): Promise<void>;
+}
+
+let playStep: PlayStep | null = null;
+
+export function bindPlayStep(step: PlayStep | null): void {
+    playStep = step;
+}
+
+export async function moveloop_core(): Promise<void> {
+    if (playStep && playStep.state === game) return playStep.step();
+    return runMoveloopCore();
+}
+
 // C ref: allmain.c moveloop_core()
-export async function moveloop_core() {
+export async function runMoveloopCore() {
     const g = requireInitializedGame();
     g.program_state.in_moveloop = true;
 
@@ -4080,7 +4098,7 @@ export async function moveloop(resuming?: boolean): Promise<void> {
     await flush_screen(1);
 
     for (;;) {
-        await moveloop_core();
+        await runMoveloopCore();
         if (game.program_state?.gameover) break;
     }
 }

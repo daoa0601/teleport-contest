@@ -147,6 +147,7 @@ export class GameDisplay {
         return this.terminal.readKey({
             keyMapper: this.keyMapper,
             onInterrupt: this.onInterrupt,
+            onEmptyQueue: this.onEmptyQueue,
             ...extraOptions,
         });
     }
@@ -154,6 +155,8 @@ export class GameDisplay {
     keyMapper = null;
     /** Ctrl-C handler. */
     onInterrupt = null;
+    /** Scripted-input hook for reads that find the queue empty. */
+    onEmptyQueue = null;
     // --- NetHack-specific methods ---
     putstr_message(msg) {
         this.clearRow(0);

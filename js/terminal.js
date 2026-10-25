@@ -282,6 +282,9 @@ span.terminal-cursor {
         const queuedCode = this._inputQueue.shift();
         if (queuedCode !== undefined)
             return Promise.resolve(queuedCode);
+        const fallback = options?.onEmptyQueue?.();
+        if (fallback !== undefined && fallback !== null)
+            return Promise.resolve(fallback);
         return new Promise((resolve) => {
             this._inputResolver = resolve;
         });
