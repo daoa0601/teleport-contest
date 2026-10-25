@@ -53,4 +53,18 @@ void test('a confused throne contribution goes to the royal coffers and locks th
     assert.equal(coffers.cknown, false);
     assert.equal(game.context.move, 1);
 });
+void test('the royal coffers verbalize their thanks even to a deaf hero', async () => {
+    const level = freshPlayableRoom({ hero: { deafTurns: 10 } });
+    level.requireAt(10, 10).typ = THRONE;
+    await floorObject(CHEST, 13, 10, {
+        initialize: false, olocked: false, obroken: true, cknown: true, spe: 2,
+    });
+    setHeroGoldAmount(game, 100);
+    game.u.confusionTurns = 10;
+    initRng(1n);
+    await runExtendedCommand('loot', ' '.repeat(10));
+    assert.match(game._pending_message, /"Thank you for your contribution to reduce the debt\."  Klunk!/);
+    assert.equal(game._lastPlineMessage, 'Klunk!');
+    assert.equal(heroGoldAmount(game), 80);
+});
 //# sourceMappingURL=confused_loot.test.js.map

@@ -3,6 +3,7 @@ import { GRAVE } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { flush_screen, plineWithContinuation as pline } from './display.js';
 import { heroHasNoHands, heroHasNoLimbs } from './polyself.js';
+import { ceilingName } from './terrain_name.js';
 import { exceedsActionCapacity } from './weight.js';
 import { ableToLoot } from './container_location.js';
 import { isContainer, useContainer } from './container.js';
@@ -63,7 +64,7 @@ export async function lootCommand(input: LootCommandInput): Promise<void> {
     const containers = (requireGameLevel().objects[target.x]?.[target.y] ?? []).some(isContainer);
     if (underfoot && containers) { await lootFloorContainers(x, y, input.unlockContainer); return; }
     if (target.dz < 0) {
-        await pline("You don't find anything to loot on the ceiling.");
+        await pline(`You don't find anything to loot on the ${ceilingName(target.x, target.y, game)}.`);
         game.context.move = 1;
         return;
     }

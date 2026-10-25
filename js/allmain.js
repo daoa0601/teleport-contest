@@ -141,6 +141,7 @@ import { applyHeroWereChange, presentWereChange } from './were.js';
 import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
 import { sinkHeroIntoLava } from './hack.js';
+import { deferredDecor } from './dungeon_feature.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { heroHasOlfaction, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { healHeroLegs } from './hero_legs.js';
@@ -760,12 +761,15 @@ async function finishFumblingExpiryAfterMessage(fumbled, publish) {
         }
     }
     game.u.fumblingFromIce = false;
-    if (game.u?.fumblingFromArmor || game.u?.fumblingIntrinsic || propertyIsActive('fumbling', game))
+    if (game.u?.fumblingFromArmor || game.u.fumblingIntrinsic || propertyIsActive('fumbling', game))
         game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
     game.u.fumbling = !!(game.u?.fumblingFromArmor
-        || game.u?.fumblingIntrinsic
+        || game.u.fumblingIntrinsic
         || propertyIsActive('fumbling', game)
         || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
+    // C timeout.c: a decor message deferred past the trip catches up here.
+    if (game.iflags.deferDecor)
+        await deferredDecor(false);
 }
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
     if (game.u.warning)

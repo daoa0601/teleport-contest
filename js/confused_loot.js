@@ -14,7 +14,6 @@ import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType, makemonAt } from './mklev.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
-import { heroIsDeaf } from './senses.js';
 import { objectWeight } from './weight.js';
 import { rn2, rnd } from './rng.js';
 export async function reverseLoot() {
@@ -48,8 +47,7 @@ export async function reverseLoot() {
     }
     const coffers = royalCoffers();
     if (coffers) {
-        if (!heroIsDeaf(game))
-            await pline('"Thank you for your contribution to reduce the debt."');
+        await pline('"Thank you for your contribution to reduce the debt."');
         await freeInventoryObject(gold);
         await addObjectToContainer(coffers, gold);
         coffers.owt = objectWeight(coffers);

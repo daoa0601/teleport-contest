@@ -52,7 +52,7 @@ export function heroTeetersAtPit(state: GameState, trap: Trap | null): boolean {
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
 
-function heroEscapedShaft(trap: Trap | null): boolean {
+export function heroEscapedShaft(trap: Trap | null): boolean {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
 

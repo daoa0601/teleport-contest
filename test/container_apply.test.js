@@ -8,7 +8,8 @@ import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { takeFromContainer } from '../js/container.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART, ICE_BOX, LEATHER_GLOVES, LOADSTONE, WAN_CANCELLATION, } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART, ICE_BOX, LEATHER_GLOVES, LOADSTONE, SACK, TWO_HANDED_SWORD, WAN_CANCELLATION, } from '../js/object_data.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -373,5 +374,16 @@ void test('opening a living cat box releases a peaceful cat beside the hero', as
     assert.equal(box.contents.length, 0);
     assert.equal(game.u.uexp, 10);
     assert.equal(game.u.urexp, 60);
+});
+void test('applying a container names the current form when no hand is free', async () => {
+    freshPlayableRoom();
+    installPolymorphedHero('owlbear');
+    const weapon = await addInventoryObject(TWO_HANDED_SWORD, { invlet: 'b', cursed: true });
+    game.uwep = game.u.uwep = weapon;
+    const sack = await unlockedContainer(SACK, 'a');
+    await applyInventoryObject('a');
+    assert.equal(game._lastPlineMessage, 'You have no free paw.');
+    assert.equal(game.inventory.includes(sack), true);
+    assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=container_apply.test.js.map

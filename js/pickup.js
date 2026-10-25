@@ -1,16 +1,15 @@
 // C pickup.c: command pickup, automatic pickup, and floor inspection.
 import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { makeSingular } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
-import { newsym, newsym_force, flush_screen, pline, plineWithContinuation, map_object, consumeHallucinatedMenuObjectGlyph, } from './display.js';
-import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
-import { surfaceName } from './terrain_name.js';
+import { newsym, newsym_force, flush_screen, pline, plineWithContinuation, consumeHallucinatedMenuObjectGlyph, } from './display.js';
+import { describeDecor } from './dungeon_feature.js';
 import { showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition } from './hero_inventory.js';
@@ -20,10 +19,10 @@ import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
 import { yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
+import { heroCanReachFloor, heroEscapedShaft, heroTeetersAtPit } from './floor_reach.js';
 import { hideHeroUnder } from './monster_hiding.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
-import { heroCanReachFloor } from './floor_reach.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
@@ -43,7 +42,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
-import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit, LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
+import { SHOPBASE, A_WIS, STONE, W_WEP, is_pit, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, } from './const.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
@@ -98,19 +97,23 @@ export async function autopickupAtHero() {
     const source = pickupSourceAtHero();
     const { x, y, monster } = source;
     const level = requireGameLevel();
-    const loc = level.at(x, y);
     const objects = pickupObjects(source);
     if (!monster) {
         const deepLiquid = (isPoolAt(x, y) && !(game.u.uinwater || game.underwater))
             || isLavaAt(x, y);
         if (game.context.nopick || !source.objects.length || deepLiquid) {
-            await describePickupDecor(loc);
+            if (game.flags.mention_decor)
+                await describeDecor();
             await readFloorEngraving(x, y);
             return;
         }
         const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
         if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
-            await describePickupDecor(loc);
+            await describeDecor();
+            if ((game.multi && !game._runState)
+                || !game.flags.pickup
+                || trap && (heroTeetersAtPit(game, trap) || heroEscapedShaft(trap)))
+                await readFloorEngraving(x, y);
             return;
         }
         const busy = !game._runState && (game.multi
@@ -500,7 +503,7 @@ function splitPickupStack(object, count) {
 // C pickup.c:check_here().
 async function checkHere(source, pickedSome) {
     const { x, y } = source;
-    const skipFeature = await describePickupDecor(requireGameLevel().at(x, y));
+    const skipFeature = game.flags.mention_decor ? await describeDecor() : false;
     const chain = game.uchain || game.u?.uchain;
     const count = pickupObjects(source).filter(object => object !== chain).length;
     if (!count) {
@@ -513,14 +516,6 @@ async function checkHere(source, pickedSome) {
     await flush_screen(1);
     const { died } = await lookHere(count, { pickedSome, skipFeature });
     return { died };
-}
-async function describePickupDecor(loc) {
-    const brokenDoor = !!game.flags.mention_decor && loc?.typ === DOOR
-        && loc.doormask === D_BROKEN && game._prevDecorType !== DOOR;
-    game._prevDecorType = loc?.typ ?? STONE;
-    if (brokenDoor)
-        await pline('There is a broken door here.');
-    return brokenDoor;
 }
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });

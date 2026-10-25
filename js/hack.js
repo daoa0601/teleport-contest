@@ -46,9 +46,9 @@ import { destroyWornArmor, findArmorClass, heroHasWaterWalking, heroKnowsLavaWal
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
 import { propertyIsActive, refreshMovementProperties, setPropertyTimeout } from './properties.js';
-import { surfaceName, waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
+import { backOnGroundMessage, iceDescriptionAt } from './dungeon_feature.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
 // struggling; release clears the grip directly, without unstuck's cooldown.
 export async function escapeFromStickyMonster(x, y) {
@@ -660,41 +660,6 @@ async function finishLiquidTeleport(movement, { state, repaint, resetVision, rec
     const to = { x: movement.x, y: movement.y };
     const landing = await applyLandingEffects({ from, to });
     return { entered: true, moved: true, died: !!landing?.died, from, to };
-}
-// C trap.c:back_on_ground(). Both ordinary pool exit and rescue name
-// the current surface, including ice beneath a raised drawbridge.
-function backOnGroundMessage(rescued, state) {
-    const { ux, uy } = state.u;
-    let surface = surfaceName(ux, uy, state);
-    let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
-    switch (surface) {
-        case 'floor':
-        case 'ground':
-            surface = 'solid ground';
-            break;
-        case 'ice':
-            surface = iceDescriptionAt(ux, uy, { state });
-            break;
-        case 'bridge':
-        case 'altar':
-        case 'headstone':
-            surface = withIndefiniteArticle(surface);
-            break;
-        case 'stairs':
-        case 'lava':
-        case 'bottom':
-            surface = `the ${surface}`;
-            break;
-        case 'air':
-            surface = 'the air';
-            preposition = 'in';
-            break;
-        default:
-            surface = withIndefiniteArticle(surface);
-            preposition = 'in';
-    }
-    const subject = rescued ? 'You find yourself' : state.flags.verbose ? 'You are back' : 'Back';
-    return `${subject} ${preposition} ${surface}.`;
 }
 async function leaveWater({ state, location, publish, }) {
     const u = state.u;
