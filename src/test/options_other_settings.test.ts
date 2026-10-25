@@ -168,6 +168,17 @@ void test('menu headings offer the native color and attribute pickers', async ()
     assert.match(await optionRow('menu_headings'), /\[yellow&bold\]/);
 });
 
+void test('boolean toggles from the options menu refresh the status fields', async () => {
+    freshObjectRoom();
+
+    await fullOptions(['showexp', 'time'], []);
+
+    const status = screen().split('\n').slice(21).join('\n');
+    assert.match(status, /Xp:\d+\/\d+/, 'the experience points join the level');
+    assert.match(status, /T:\d+/, 'the turn counter joins the status');
+    assert.equal(game.context.move, 0, 'changing options takes no turn');
+});
+
 void test('a configured menu heading style keeps its parsed value', async () => {
     freshObjectRoom();
     applyNethackrc('OPTIONS=menu_headings:green');
@@ -205,4 +216,19 @@ void test('statushilites reports and changes its highlight duration', async () =
     assert.ok(views[0]?.includes('Set statushilites to what?'));
     assert.equal(game.iflags.hiliteDelta, 0);
     assert.match(await optionRow('statushilites'), /\[0 \(off: don't highlight status fields\)\]/);
+});
+
+void test('sortloot offers the native sorting choices with the current one marked', async () => {
+    freshObjectRoom();
+
+    assert.match(await optionRow('sortloot'), /\[loot\]/);
+
+    const views = await fullOptions(['sortloot'], [
+        { match: 'Select loot sorting type:', keys: 'f' },
+    ]);
+
+    const menu = views[0] ?? '';
+    assert.ok(menu.includes('none') && menu.includes('full'), `The choices are listed:\n${menu}`);
+    assert.match(menu, /l \* loot/, 'The current sorting type is preselected');
+    assert.equal(game.flags.sortloot, 'f');
 });
