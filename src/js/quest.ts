@@ -75,8 +75,9 @@ export function ensureQuestStatus(g: GameState = game): QuestStatus {
 // C quest.c:quest_stat_check(), before dochug() returns for an inactive actor.
 export function checkQuestMonsterStatus(monster: Monster, state: GameState = game): void {
     if (questMonsterSound(monster.mnum, state) !== MS_NEMESIS) return;
+    // C's monnear(mtmp, u.ux, u.uy) is dist2() < 3: the hero's own square
+    // (an engulfed hero shares it with the captor) counts as close combat.
     ensureQuestStatus(state).in_battle = !monster.msleeping && !!monster.mcanmove
-        && (monster.mx !== state.u.ux || monster.my !== state.u.uy)
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1;
 }

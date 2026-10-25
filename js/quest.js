@@ -65,8 +65,9 @@ export function ensureQuestStatus(g = game) {
 export function checkQuestMonsterStatus(monster, state = game) {
     if (questMonsterSound(monster.mnum, state) !== MS_NEMESIS)
         return;
+    // C's monnear(mtmp, u.ux, u.uy) is dist2() < 3: the hero's own square
+    // (an engulfed hero shares it with the captor) counts as close combat.
     ensureQuestStatus(state).in_battle = !monster.msleeping && !!monster.mcanmove
-        && (monster.mx !== state.u.ux || monster.my !== state.u.uy)
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1;
 }
