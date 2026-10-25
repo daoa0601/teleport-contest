@@ -24,6 +24,7 @@ import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
+import { wizTimeoutQueue } from './timeout_queue.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
@@ -3450,6 +3451,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizmap', wizMap],
     ['wizmakemap', wizMakeMap],
     ['wizborn', doborn],
+    ['timeout', wizTimeoutQueue],
 ]);
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0

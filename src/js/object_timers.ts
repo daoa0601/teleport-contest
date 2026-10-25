@@ -229,3 +229,29 @@ export function copyObjectTimers(
 export function levelTimers(state: GameState = game): LevelTimer[] {
     return levelTimersFor(state).map(timer => ({ ...timer }));
 }
+
+export interface QueuedObjectTimer {
+    object: GameObject;
+    timer: ObjectTimer;
+}
+
+export interface QueuedLevelTimer {
+    position: { x: number; y: number };
+    timer: LevelTimer;
+}
+
+export type QueuedTimer = QueuedObjectTimer | QueuedLevelTimer;
+
+// C timeout.c: the timer queue holds object and level timers in one
+// deadline-ordered list; insert_timer() places a new entry before existing
+// equal-deadline entries, so ties run newest (highest id) first.
+export function queuedTimers(state: GameState = game): QueuedTimer[] {
+    const queued: QueuedTimer[] = [];
+    for (const object of objectsInTimerGraph(state))
+        for (const timer of timersFor(object))
+            queued.push({ object, timer: { ...timer } });
+    for (const timer of levelTimersFor(state))
+        queued.push({ position: { x: timer.x, y: timer.y }, timer: { ...timer } });
+    return queued.sort((left, right) =>
+        left.timer.deadline - right.timer.deadline || right.timer.id - left.timer.id);
+}
