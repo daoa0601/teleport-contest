@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MM_ANGRY, MM_NOGRP, NO_MINVENT, STONE, STRAT_WAITMASK } from '../js/const.js';
+import { MM_ANGRY, MM_NOGRP, MM_NOTAIL, NO_MINVENT, STONE, STRAT_WAITMASK } from '../js/const.js';
 import { canSeeMonster, flushPendingTopline, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
@@ -68,4 +68,22 @@ for (const obstacle of ['wall', 'cockatrice']) {
         assert.equal(sleeper.msleeping, 1, 'native death does not return to the wake call');
     });
 }
+void test('a hurtled hero bumps into a long worm tail and stops short of it', async () => {
+    freshObjectRoom();
+    const { ux, uy } = game.u;
+    const worm = await createMonsterAt('long worm', ux + 1, uy + 1, MM_NOGRP | MM_NOTAIL | NO_MINVENT);
+    worm.wormSegments = [{ x: ux + 1, y: uy }];
+    worm.msleeping = 1;
+    newsym(ux + 1, uy);
+    newsym(ux + 1, uy + 1);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /bump into|wakes up/, limit: 4 });
+    await hurtleHero(1, 0, 2);
+    await flushPendingTopline();
+    assert.match(messages.join('\n'), /You bump into a long worm\./);
+    assert.equal(worm.msleeping, 0);
+    assert.deepEqual([game.u.ux, game.u.uy], [ux, uy]);
+});
 //# sourceMappingURL=hurtle_wake.test.js.map
