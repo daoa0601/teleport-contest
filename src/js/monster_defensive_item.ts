@@ -355,7 +355,13 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
             return spent();
         }
         const trap = await maketrap(x, y, hole ? HOLE : PIT);
-        if (!trap) return spent();
+        if (!trap) {
+            // Native use_defensive() reports both an occupied square and a
+            // failed pit construction the same way; trap.c:maketrap()
+            // rejects air terrain and undestroyable floor traps.
+            if (!hole && seen) await publish(`The ${surfaceName(x, y, state)} here is too hard to dig in.`);
+            return spent();
+        }
         if (hole) vision_note_blocker_change(x, y);
         if (hole || cansee(x, y)) seeTrap(trap, state);
         if (cansee(x, y)) {
