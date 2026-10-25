@@ -187,7 +187,9 @@ async function causeHornTrouble(
     }
     if (trouble === 2) {
         const hero = state.u;
-        if (!(hero.confusionTurns ?? 0) && !heroIsUnaware(state)) {
+        // C apply.c:2279 guards this with !Confusion only; plain You()
+        // prints for an unconscious hero too, without a dream rephrase.
+        if (!(hero.confusionTurns ?? 0)) {
             await publish(`You suddenly feel ${
                 heroIsHallucinating(state) ? 'trippy' : 'confused'
             }.`);
