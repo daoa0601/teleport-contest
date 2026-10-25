@@ -82,3 +82,29 @@ void test('without cmdassist the showtrap direction prompt reports the strange d
     assert.equal(game._pending_message, 'What a strange direction!');
     assert.equal(game.context.move, 0);
 });
+
+void test('a rebound letter help key still explains its control command', async () => {
+    const input = freshTurnRoom();
+    assert.equal(
+        game.commandBindings.bindSpecialKey('x'.charCodeAt(0), 'getdir.help'),
+        true,
+    );
+    const command = rhack(0);
+    input.feed('^x');
+    await input.waitUntilBlocked();
+
+    const screen = screenText();
+    assert.match(screen, /Are you trying to use \^X as specified in the Guidebook\?/);
+    // Explicit help omits both the cmdassist heading and its closing note.
+    assert.doesNotMatch(screen, /cmdassist: Invalid direction key!/);
+    assert.doesNotMatch(screen, /Suppress this message/);
+    assert.match(screen, /Valid direction keys are:/);
+
+    // help_dir() with an explicit request returns to the direction prompt.
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('l');
+    await command;
+    assert.equal(game._pending_message, "I can't see a trap there.");
+    assert.equal(game.context.move, 0);
+});

@@ -104,7 +104,9 @@ export async function promptDirection(readKey = readDirectionKey, { ctrlCommandH
                 return null;
             const helpRequested = code === game.commandBindings.specialKey('getdir.help');
             if (helpRequested || game.flags?.cmdassist !== false) {
-                const assistPage = directionAssistPage(!helpRequested, ctrlCommandHint && !helpRequested ? code : null);
+                // cmd.c:4101 passes the typed key to help_dir() whenever the
+                // caller prompt starts with '^', explicit help included.
+                const assistPage = directionAssistPage(!helpRequested, ctrlCommandHint ? code : null);
                 await showTextPages([assistPage], {
                     validKeys: [27, 32, 10, 13],
                 });
