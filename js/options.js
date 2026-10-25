@@ -34,223 +34,223 @@ import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECT
 // "Unknown option".  Prefix entries (cond_, font) match the whole element
 // text like str_start_is() instead of the value-less name part.
 const OPTION_TABLE = [
-    ['windowtype', null, false, false, true, false, false],
-    ['playmode', null, false, false, true, false, false],
-    ['name', null, false, false, true, false, false],
-    ['role', "character", false, true, true, true, false],
-    ['race', null, false, true, true, true, false],
-    ['gender', null, false, true, true, true, false],
-    ['alignment', "align", false, true, true, true, false],
-    ['accessiblemsg', null, true, true, false, false, false],
-    ['acoustics', null, true, true, false, false, false],
-    ['align_message', null, false, true, true, false, false],
-    ['align_status', null, false, false, true, false, false],
-    ['altkeyhandling', "altkeyhandler", false, false, true, false, false],
-    ['altmeta', null, true, true, false, false, false],
-    ['armorstatus', null, true, true, false, false, false],
-    ['ascii_map', null, true, true, false, false, false],
-    ['"autocompletions"', null, false, false, true, false, false],
-    ['autodescribe', null, true, true, false, false, false],
-    ['autodig', null, true, true, false, false, false],
-    ['autoopen', null, true, true, false, false, false],
-    ['autopickup', null, true, true, false, false, false],
-    ['"autopickup exceptions"', null, false, false, true, false, false],
-    ['autoquiver', null, true, true, false, false, false],
-    ['autounlock', null, false, true, true, false, false],
-    ['bgcolors', null, true, true, false, false, false],
-    ['"bind keys"', null, false, false, true, false, false],
-    ['BIOS', null, true, false, false, false, false],
-    ['blind', "permablind", true, true, false, false, false],
-    ['bones', null, true, true, false, false, false],
-    ['boulder', null, false, false, true, false, false],
-    ['catname', null, false, false, true, false, false],
-    ['checkpoint', null, true, true, false, false, false],
-    ['cmdassist', null, true, true, false, false, false],
-    ['color', "colour", true, true, false, false, false],
-    ['confirm', null, true, true, false, false, false],
-    ['crash_email', null, false, false, true, false, false],
-    ['crash_name', null, false, false, true, false, false],
-    ['crash_urlmax', null, false, false, true, false, false],
-    ['customcolors', "customcolours", true, true, false, false, false],
-    ['customsymbols', "customsymbols", true, true, false, false, false],
-    ['dark_room', null, true, true, false, false, false],
-    ['deaf', "permadeaf", true, true, false, false, false],
-    ['DECgraphics', null, false, true, true, false, false],
-    ['debug_hunger', null, true, true, false, false, false],
-    ['debug_mongen', null, true, true, false, false, false],
-    ['debug_overwrite_stairs', null, true, true, false, false, false],
-    ['disclose', null, false, true, true, false, false],
-    ['dogname', null, false, false, true, false, false],
-    ['dropped_nopick', null, true, true, false, false, false],
-    ['dungeon', null, false, false, true, false, false],
-    ['effects', null, false, false, true, false, false],
-    ['eight_bit_tty', null, true, true, false, false, false],
-    ['extmenu', null, true, true, false, false, false],
-    ['female', "male", true, true, false, false, false],
-    ['fireassist', null, true, true, false, false, false],
-    ['fixinv', null, true, true, false, false, false],
-    ['font_map', null, false, true, true, true, false],
-    ['font_menu', null, false, true, true, true, false],
-    ['font_message', null, false, true, true, true, false],
-    ['font_size_map', null, false, true, true, true, false],
-    ['font_size_menu', null, false, true, true, true, false],
-    ['font_size_message', null, false, true, true, true, false],
-    ['font_size_status', null, false, true, true, true, false],
-    ['font_size_text', null, false, true, true, true, false],
-    ['font_status', null, false, true, true, true, false],
-    ['font_text', null, false, true, true, true, false],
-    ['force_invmenu', null, true, true, false, false, false],
-    ['fruit', null, false, false, true, false, false],
-    ['fullscreen', null, true, true, false, false, false],
-    ['glyph', null, false, false, true, true, false],
-    ['goldX', null, true, true, false, false, false],
-    ['guicolor', null, true, true, false, false, false],
-    ['help', null, true, true, false, false, false],
-    ['herecmd_menu', null, true, true, false, false, false],
-    ['hilite_pet', null, true, true, false, false, false],
-    ['hilite_pile', null, true, true, false, false, false],
-    ['hilite_status', null, false, true, true, true, false],
-    ['hitpointbar', null, true, true, false, false, false],
-    ['horsename', null, false, false, true, false, false],
-    ['IBMgraphics', null, false, true, true, false, false],
-    ['idlecheckpoint', null, true, true, false, false, false],
-    ['ignintr', null, true, true, false, false, false],
-    ['implicit_uncursed', null, true, true, false, false, false],
-    ['legacy', null, true, true, false, false, false],
-    ['lit_corridor', null, true, true, false, false, false],
-    ['lootabc', null, true, true, false, false, false],
-    ['mail', null, true, true, false, false, false],
-    ['map_mode', null, false, true, true, false, false],
-    ['mention_decor', null, true, true, false, false, false],
-    ['mention_map', null, true, true, false, false, false],
-    ['mention_walls', null, true, true, false, false, false],
-    ['menu_deselect_all', null, false, false, true, false, false],
-    ['menu_deselect_page', null, false, false, true, false, false],
-    ['menu_first_page', null, false, false, true, false, false],
-    ['menu_headings', null, false, true, true, false, false],
-    ['menu_invert_all', null, false, false, true, false, false],
-    ['menu_invert_page', null, false, false, true, false, false],
-    ['menu_last_page', null, false, false, true, false, false],
-    ['menu_next_page', null, false, false, true, false, false],
-    ['menu_objsyms', "use_menu_glyphs", false, true, true, false, false],
-    ['menu_overlay', null, true, true, false, false, false],
-    ['menu_previous_page', null, false, false, true, false, false],
-    ['menu_search', null, false, false, true, false, false],
-    ['menu_select_all', null, false, false, true, false, false],
-    ['menu_select_page', null, false, false, true, false, false],
-    ['menu_shift_left', null, false, false, true, false, false],
-    ['menu_shift_right', null, false, false, true, false, false],
-    ['menu_tab_sep', null, true, true, false, false, false],
-    ['menucolors', null, true, true, true, false, false],
-    ['"menu colors"', null, false, false, true, false, false],
-    ['menuinvertmode', null, false, false, true, false, false],
-    ['menustyle', null, false, true, true, false, false],
-    ['"message types"', null, false, false, true, false, false],
-    ['mon_movement', null, true, true, false, false, false],
-    ['monpolycontrol', null, true, true, false, false, false],
-    ['montelecontrol', null, true, true, false, false, false],
-    ['monsters', null, false, false, true, false, false],
-    ['mouse_support', null, false, false, true, false, false],
-    ['msg_window', null, false, true, true, false, false],
-    ['msghistory', null, false, true, true, false, false],
-    ['news', null, true, true, false, false, false],
-    ['nudist', null, true, true, false, false, false],
-    ['null', null, true, true, false, false, false],
-    ['number_pad', null, false, false, true, false, false],
-    ['objects', null, false, false, true, false, false],
-    ['packorder', null, false, false, true, false, false],
-    ['paranoid_confirmation', "prayconfirm", false, true, true, true, false],
-    ['pauper', null, true, true, false, false, false],
-    ['perm_invent', null, true, true, false, false, false],
-    ['perminv_mode', null, false, true, true, false, false],
-    ['petattr', null, false, false, true, false, false],
-    ['pettype', "pet", false, true, true, false, false],
-    ['pickup_burden', null, false, false, true, false, false],
-    ['pickup_stolen', null, true, true, false, false, false],
-    ['pickup_thrown', null, true, true, false, false, false],
-    ['pickup_types', null, false, false, true, false, false],
-    ['pile_limit', null, false, true, true, false, false],
-    ['player_selection', null, false, false, true, false, false],
-    ['popup_dialog', null, true, true, false, false, false],
-    ['preload_tiles', null, true, true, false, false, false],
-    ['price_quotes', null, true, true, false, false, false],
-    ['pushweapon', null, true, true, false, false, false],
-    ['query_menu', null, true, true, false, false, false],
-    ['quick_farsight', null, true, true, false, false, false],
-    ['rawio', null, true, false, false, false, false],
-    ['reroll', null, true, true, false, false, false],
-    ['rest_on_space', null, true, true, false, false, false],
-    ['roguesymset', null, false, false, true, false, false],
-    ['runmode', null, false, true, true, false, false],
-    ['safe_pet', null, true, true, false, false, false],
-    ['safe_wait', null, true, true, false, false, false],
-    ['sanity_check', null, true, true, false, false, false],
-    ['scores', null, false, false, true, false, false],
-    ['scroll_amount', null, false, true, true, false, false],
-    ['scroll_margin', null, false, true, true, false, false],
-    ['selectsaved', null, true, true, false, false, false],
-    ['showdamage', null, true, true, false, false, false],
-    ['showexp', null, true, true, false, false, false],
-    ['showrace', null, true, true, false, false, false],
-    ['showscore', null, true, true, false, false, false],
-    ['showvers', null, true, true, false, false, false],
-    ['silent', null, true, true, false, false, false],
-    ['softkeyboard', null, true, true, false, false, false],
-    ['sortdiscoveries', null, false, true, true, false, false],
-    ['sortloot', null, false, false, true, false, false],
-    ['sortpack', null, true, true, false, false, false],
-    ['sortvanquished', null, false, true, true, false, false],
-    ['soundlib', null, false, false, true, false, false],
-    ['sounds', null, true, true, false, false, false],
-    ['sparkle', null, true, true, false, false, false],
-    ['spot_monsters', null, true, true, false, false, false],
-    ['splash_screen', null, true, true, false, false, false],
-    ['standout', null, true, true, false, false, false],
-    ['status_updates', null, true, true, false, false, false],
-    ['"status condition fields"', null, false, false, true, false, false],
-    ['statushilites', null, false, true, true, true, false],
-    ['"status highlight rules"', null, false, false, true, false, false],
-    ['statuslines', null, false, false, true, false, false],
-    ['suppress_alert', null, false, false, true, true, false],
-    ['symset', null, false, false, true, false, false],
-    ['term_cols', "termcolumns", false, false, true, false, false],
-    ['term_rows', null, false, false, true, false, false],
-    ['terrainstatus', null, true, true, false, false, false],
-    ['tile_file', null, false, false, true, false, false],
-    ['tile_height', null, false, true, true, false, false],
-    ['tile_width', null, false, true, true, false, false],
-    ['tiled_map', null, true, true, false, false, false],
-    ['time', null, true, true, false, false, false],
-    ['timed_delay', null, true, false, false, false, false],
-    ['tips', null, true, true, false, false, false],
-    ['tombstone', null, true, true, false, false, false],
-    ['toptenwin', null, true, true, false, false, false],
-    ['traps', null, false, false, true, false, false],
-    ['travel', null, true, true, false, false, false],
-    ['travel_debug', null, true, true, false, false, false],
-    ['tutorial', null, true, true, false, false, false],
-    ['use_darkgray', null, true, true, false, false, false],
-    ['use_inverse', null, true, true, false, false, false],
-    ['use_truecolor', "use_truecolour", true, true, false, false, false],
-    ['vary_msgcount', null, false, false, true, false, false],
-    ['verbose', null, true, true, false, false, false],
-    ['versinfo', null, false, false, true, false, false],
-    ['voices', null, true, true, false, false, false],
-    ['vt_tiledata', null, true, true, false, false, false],
-    ['vt_sounddata', null, true, true, false, false, false],
-    ['warnings', null, false, false, true, false, false],
-    ['weaponstatus', null, true, true, false, false, false],
-    ['whatis_coord', null, false, true, true, false, false],
-    ['whatis_filter', null, false, true, true, false, false],
-    ['whatis_menu', null, true, true, false, false, false],
-    ['whatis_moveskip', null, true, true, false, false, false],
-    ['windowborders', null, false, true, true, false, false],
-    ['windowcolors', null, false, false, true, true, false],
-    ['wizmgender', null, true, true, false, false, false],
-    ['wizweight', null, true, true, false, false, false],
-    ['wraptext', null, true, true, false, false, false],
-    ['cond_', null, false, true, false, true, true],
-    ['font', null, false, true, true, true, true],
+    ['windowtype', null, false, false, true, false, false, false],
+    ['playmode', null, false, false, true, false, false, false],
+    ['name', null, false, false, true, false, false, false],
+    ['role', "character", false, true, true, true, false, false],
+    ['race', null, false, true, true, true, false, false],
+    ['gender', null, false, true, true, true, false, false],
+    ['alignment', "align", false, true, true, true, false, false],
+    ['accessiblemsg', null, true, true, false, false, false, false],
+    ['acoustics', null, true, true, false, false, false, false],
+    ['align_message', null, false, true, true, false, false, false],
+    ['align_status', null, false, false, true, false, false, false],
+    ['altkeyhandling', "altkeyhandler", false, false, true, false, false, false],
+    ['altmeta', null, true, true, false, false, false, false],
+    ['armorstatus', null, true, true, false, false, false, false],
+    ['ascii_map', null, true, true, false, false, false, false],
+    ['autocompletions', null, false, false, true, false, false, true],
+    ['autodescribe', null, true, true, false, false, false, false],
+    ['autodig', null, true, true, false, false, false, false],
+    ['autoopen', null, true, true, false, false, false, false],
+    ['autopickup', null, true, true, false, false, false, false],
+    ['autopickup exceptions', null, false, false, true, false, false, true],
+    ['autoquiver', null, true, true, false, false, false, false],
+    ['autounlock', null, false, true, true, false, false, false],
+    ['bgcolors', null, true, true, false, false, false, false],
+    ['bind keys', null, false, false, true, false, false, true],
+    ['BIOS', null, true, false, false, false, false, false],
+    ['blind', "permablind", true, true, false, false, false, false],
+    ['bones', null, true, true, false, false, false, false],
+    ['boulder', null, false, false, true, false, false, false],
+    ['catname', null, false, false, true, false, false, false],
+    ['checkpoint', null, true, true, false, false, false, false],
+    ['cmdassist', null, true, true, false, false, false, false],
+    ['color', "colour", true, true, false, false, false, false],
+    ['confirm', null, true, true, false, false, false, false],
+    ['crash_email', null, false, false, true, false, false, false],
+    ['crash_name', null, false, false, true, false, false, false],
+    ['crash_urlmax', null, false, false, true, false, false, false],
+    ['customcolors', "customcolours", true, true, false, false, false, false],
+    ['customsymbols', "customsymbols", true, true, false, false, false, false],
+    ['dark_room', null, true, true, false, false, false, false],
+    ['deaf', "permadeaf", true, true, false, false, false, false],
+    ['DECgraphics', null, false, true, true, false, false, false],
+    ['debug_hunger', null, true, true, false, false, false, false],
+    ['debug_mongen', null, true, true, false, false, false, false],
+    ['debug_overwrite_stairs', null, true, true, false, false, false, false],
+    ['disclose', null, false, true, true, false, false, false],
+    ['dogname', null, false, false, true, false, false, false],
+    ['dropped_nopick', null, true, true, false, false, false, false],
+    ['dungeon', null, false, false, true, false, false, false],
+    ['effects', null, false, false, true, false, false, false],
+    ['eight_bit_tty', null, true, true, false, false, false, false],
+    ['extmenu', null, true, true, false, false, false, false],
+    ['female', "male", true, true, false, false, false, false],
+    ['fireassist', null, true, true, false, false, false, false],
+    ['fixinv', null, true, true, false, false, false, false],
+    ['font_map', null, false, true, true, true, false, false],
+    ['font_menu', null, false, true, true, true, false, false],
+    ['font_message', null, false, true, true, true, false, false],
+    ['font_size_map', null, false, true, true, true, false, false],
+    ['font_size_menu', null, false, true, true, true, false, false],
+    ['font_size_message', null, false, true, true, true, false, false],
+    ['font_size_status', null, false, true, true, true, false, false],
+    ['font_size_text', null, false, true, true, true, false, false],
+    ['font_status', null, false, true, true, true, false, false],
+    ['font_text', null, false, true, true, true, false, false],
+    ['force_invmenu', null, true, true, false, false, false, false],
+    ['fruit', null, false, false, true, false, false, false],
+    ['fullscreen', null, true, true, false, false, false, false],
+    ['glyph', null, false, false, true, true, false, false],
+    ['goldX', null, true, true, false, false, false, false],
+    ['guicolor', null, true, true, false, false, false, false],
+    ['help', null, true, true, false, false, false, false],
+    ['herecmd_menu', null, true, true, false, false, false, false],
+    ['hilite_pet', null, true, true, false, false, false, false],
+    ['hilite_pile', null, true, true, false, false, false, false],
+    ['hilite_status', null, false, true, true, true, false, false],
+    ['hitpointbar', null, true, true, false, false, false, false],
+    ['horsename', null, false, false, true, false, false, false],
+    ['IBMgraphics', null, false, true, true, false, false, false],
+    ['idlecheckpoint', null, true, true, false, false, false, false],
+    ['ignintr', null, true, true, false, false, false, false],
+    ['implicit_uncursed', null, true, true, false, false, false, false],
+    ['legacy', null, true, true, false, false, false, false],
+    ['lit_corridor', null, true, true, false, false, false, false],
+    ['lootabc', null, true, true, false, false, false, false],
+    ['mail', null, true, true, false, false, false, false],
+    ['map_mode', null, false, true, true, false, false, false],
+    ['mention_decor', null, true, true, false, false, false, false],
+    ['mention_map', null, true, true, false, false, false, false],
+    ['mention_walls', null, true, true, false, false, false, false],
+    ['menu_deselect_all', null, false, false, true, false, false, false],
+    ['menu_deselect_page', null, false, false, true, false, false, false],
+    ['menu_first_page', null, false, false, true, false, false, false],
+    ['menu_headings', null, false, true, true, false, false, false],
+    ['menu_invert_all', null, false, false, true, false, false, false],
+    ['menu_invert_page', null, false, false, true, false, false, false],
+    ['menu_last_page', null, false, false, true, false, false, false],
+    ['menu_next_page', null, false, false, true, false, false, false],
+    ['menu_objsyms', "use_menu_glyphs", false, true, true, false, false, false],
+    ['menu_overlay', null, true, true, false, false, false, false],
+    ['menu_previous_page', null, false, false, true, false, false, false],
+    ['menu_search', null, false, false, true, false, false, false],
+    ['menu_select_all', null, false, false, true, false, false, false],
+    ['menu_select_page', null, false, false, true, false, false, false],
+    ['menu_shift_left', null, false, false, true, false, false, false],
+    ['menu_shift_right', null, false, false, true, false, false, false],
+    ['menu_tab_sep', null, true, true, false, false, false, false],
+    ['menucolors', null, true, true, true, false, false, false],
+    ['menu colors', null, false, false, true, false, false, true],
+    ['menuinvertmode', null, false, false, true, false, false, false],
+    ['menustyle', null, false, true, true, false, false, false],
+    ['message types', null, false, false, true, false, false, true],
+    ['mon_movement', null, true, true, false, false, false, false],
+    ['monpolycontrol', null, true, true, false, false, false, false],
+    ['montelecontrol', null, true, true, false, false, false, false],
+    ['monsters', null, false, false, true, false, false, false],
+    ['mouse_support', null, false, false, true, false, false, false],
+    ['msg_window', null, false, true, true, false, false, false],
+    ['msghistory', null, false, true, true, false, false, false],
+    ['news', null, true, true, false, false, false, false],
+    ['nudist', null, true, true, false, false, false, false],
+    ['null', null, true, true, false, false, false, false],
+    ['number_pad', null, false, false, true, false, false, false],
+    ['objects', null, false, false, true, false, false, false],
+    ['packorder', null, false, false, true, false, false, false],
+    ['paranoid_confirmation', "prayconfirm", false, true, true, true, false, false],
+    ['pauper', null, true, true, false, false, false, false],
+    ['perm_invent', null, true, true, false, false, false, false],
+    ['perminv_mode', null, false, true, true, false, false, false],
+    ['petattr', null, false, false, true, false, false, false],
+    ['pettype', "pet", false, true, true, false, false, false],
+    ['pickup_burden', null, false, false, true, false, false, false],
+    ['pickup_stolen', null, true, true, false, false, false, false],
+    ['pickup_thrown', null, true, true, false, false, false, false],
+    ['pickup_types', null, false, false, true, false, false, false],
+    ['pile_limit', null, false, true, true, false, false, false],
+    ['player_selection', null, false, false, true, false, false, false],
+    ['popup_dialog', null, true, true, false, false, false, false],
+    ['preload_tiles', null, true, true, false, false, false, false],
+    ['price_quotes', null, true, true, false, false, false, false],
+    ['pushweapon', null, true, true, false, false, false, false],
+    ['query_menu', null, true, true, false, false, false, false],
+    ['quick_farsight', null, true, true, false, false, false, false],
+    ['rawio', null, true, false, false, false, false, false],
+    ['reroll', null, true, true, false, false, false, false],
+    ['rest_on_space', null, true, true, false, false, false, false],
+    ['roguesymset', null, false, false, true, false, false, false],
+    ['runmode', null, false, true, true, false, false, false],
+    ['safe_pet', null, true, true, false, false, false, false],
+    ['safe_wait', null, true, true, false, false, false, false],
+    ['sanity_check', null, true, true, false, false, false, false],
+    ['scores', null, false, false, true, false, false, false],
+    ['scroll_amount', null, false, true, true, false, false, false],
+    ['scroll_margin', null, false, true, true, false, false, false],
+    ['selectsaved', null, true, true, false, false, false, false],
+    ['showdamage', null, true, true, false, false, false, false],
+    ['showexp', null, true, true, false, false, false, false],
+    ['showrace', null, true, true, false, false, false, false],
+    ['showscore', null, true, true, false, false, false, false],
+    ['showvers', null, true, true, false, false, false, false],
+    ['silent', null, true, true, false, false, false, false],
+    ['softkeyboard', null, true, true, false, false, false, false],
+    ['sortdiscoveries', null, false, true, true, false, false, false],
+    ['sortloot', null, false, false, true, false, false, false],
+    ['sortpack', null, true, true, false, false, false, false],
+    ['sortvanquished', null, false, true, true, false, false, false],
+    ['soundlib', null, false, false, true, false, false, false],
+    ['sounds', null, true, true, false, false, false, false],
+    ['sparkle', null, true, true, false, false, false, false],
+    ['spot_monsters', null, true, true, false, false, false, false],
+    ['splash_screen', null, true, true, false, false, false, false],
+    ['standout', null, true, true, false, false, false, false],
+    ['status_updates', null, true, true, false, false, false, false],
+    ['status condition fields', null, false, false, true, false, false, true],
+    ['statushilites', null, false, true, true, true, false, false],
+    ['status highlight rules', null, false, false, true, false, false, true],
+    ['statuslines', null, false, false, true, false, false, false],
+    ['suppress_alert', null, false, false, true, true, false, false],
+    ['symset', null, false, false, true, false, false, false],
+    ['term_cols', "termcolumns", false, false, true, false, false, false],
+    ['term_rows', null, false, false, true, false, false, false],
+    ['terrainstatus', null, true, true, false, false, false, false],
+    ['tile_file', null, false, false, true, false, false, false],
+    ['tile_height', null, false, true, true, false, false, false],
+    ['tile_width', null, false, true, true, false, false, false],
+    ['tiled_map', null, true, true, false, false, false, false],
+    ['time', null, true, true, false, false, false, false],
+    ['timed_delay', null, true, false, false, false, false, false],
+    ['tips', null, true, true, false, false, false, false],
+    ['tombstone', null, true, true, false, false, false, false],
+    ['toptenwin', null, true, true, false, false, false, false],
+    ['traps', null, false, false, true, false, false, false],
+    ['travel', null, true, true, false, false, false, false],
+    ['travel_debug', null, true, true, false, false, false, false],
+    ['tutorial', null, true, true, false, false, false, false],
+    ['use_darkgray', null, true, true, false, false, false, false],
+    ['use_inverse', null, true, true, false, false, false, false],
+    ['use_truecolor', "use_truecolour", true, true, false, false, false, false],
+    ['vary_msgcount', null, false, false, true, false, false, false],
+    ['verbose', null, true, true, false, false, false, false],
+    ['versinfo', null, false, false, true, false, false, false],
+    ['voices', null, true, true, false, false, false, false],
+    ['vt_tiledata', null, true, true, false, false, false, false],
+    ['vt_sounddata', null, true, true, false, false, false, false],
+    ['warnings', null, false, false, true, false, false, false],
+    ['weaponstatus', null, true, true, false, false, false, false],
+    ['whatis_coord', null, false, true, true, false, false, false],
+    ['whatis_filter', null, false, true, true, false, false, false],
+    ['whatis_menu', null, true, true, false, false, false, false],
+    ['whatis_moveskip', null, true, true, false, false, false, false],
+    ['windowborders', null, false, true, true, false, false, false],
+    ['windowcolors', null, false, false, true, true, false, false],
+    ['wizmgender', null, true, true, false, false, false, false],
+    ['wizweight', null, true, true, false, false, false, false],
+    ['wraptext', null, true, true, false, false, false, false],
+    ['cond_', null, false, true, false, true, true, false],
+    ['font', null, false, true, true, true, true, false],
 ];
 const asciiLower = (code) => code >= 65 && code <= 90 ? code + 32 : code;
 // C options.c:determine_ambiguities(): minmatch is one past the longest
@@ -280,6 +280,7 @@ const OPTION_ENTRIES = (() => {
         valok: entry[4],
         dupeok: entry[5],
         pfx: entry[6],
+        other: entry[7],
         minmatch: Math.min(Math.max(needed[index] ?? 0, 3), entry[0].length),
         index,
     }));
@@ -407,22 +408,24 @@ const PARANOIA_ARGUMENTS = [
 ];
 function updateParanoiaBits(current, rawValue, addError) {
     // optfn_paranoid_confirmation() condenses the value, treats a leading
-    // + or - as augmenting, and reports the first token that matches no
-    // paranoia argument while keeping the changes before it.
-    let fields = rawValue.trim().replace(/[ \t]+/g, ' ').toLowerCase();
+    // + or - as augmenting, matches arguments case-insensitively through
+    // match_optname(), and reports the first unmatched token verbatim
+    // while keeping the changes before it.
+    let fields = rawValue.trim().replace(/[ \t]+/g, ' ');
     const augmenting = fields.startsWith('+') || fields.startsWith('-');
     const removing = fields.startsWith('-');
     let bits = augmenting ? current : 0;
     if (augmenting)
-        fields = fields.slice(1).trimStart();
+        fields = fields.slice(1).replace(/^ /, '');
     fields = fields.replace(/! /g, '!');
-    for (let field of fields.split(' ')) {
-        const negated = field.startsWith('!') || /^no[^n]/.test(field);
-        if (negated)
-            field = field.slice(field.startsWith('!') ? 1 : 2);
+    for (const original of fields.split(' ')) {
+        const negated = original.startsWith('!') || /^no[^n]/i.test(original);
+        const token = negated
+            ? original.slice(original.startsWith('!') ? 1 : 2) : original;
+        const field = token.toLowerCase();
         const entry = PARANOIA_ARGUMENTS.find(([name, minimum]) => field.length >= minimum && name.startsWith(field));
         if (!entry) {
-            addError(`Unknown paranoid_confirmation parameter '${field}'`);
+            addError(`Unknown paranoid_confirmation parameter '${token}'`);
             break;
         }
         const bit = entry[2];
@@ -1192,7 +1195,7 @@ function parseConfiguration(rc, result, report, fromFile) {
             if (duplicateOption && !optionMatch.dupeok) {
                 const aliasSuffix = usingAlias
                     ? ` (via alias: ${optionMatch.alias ?? '(null)'})` : '';
-                addError(`${optionMatch.isBool ? 'boolean' : 'compound'} option specified multiple times: ${canonical}${aliasSuffix}`);
+                addError(`${optionMatch.isBool || optionMatch.other ? 'boolean' : 'compound'} option specified multiple times: ${canonical}${aliasSuffix}`);
             }
             if (canonical === 'cond_') {
                 const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
@@ -1240,16 +1243,20 @@ function parseConfiguration(rc, result, report, fromFile) {
             }
             // optfn_boolean()'s female/male special case: the male alias
             // inverts the resolved value, but only while strncmpi()'s
-            // max(value length, 3) run stays inside the four-letter name
-            // (a longer value compares the delimiter and falls through to
-            // the plain assignment).
+            // max(value length, 3) run stays inside the four-letter name.
+            // A longer male value compares the delimiter, misses both
+            // spellings, and falls through to the plain assignment, which
+            // writes only flags.female — not initgend.
             if (canonical === 'female' && booleanSetting !== null) {
                 const valueLength = colonIdx < 0 ? 0 : stripped.length - colonIdx - 1;
-                const maleSpelling = bindingOption === 'male' && Math.max(valueLength, 3) <= 4;
-                const female = maleSpelling ? !booleanSetting : booleanSetting;
+                const maleSpelling = bindingOption === 'male';
+                const withinMale = maleSpelling && Math.max(valueLength, 3) <= 4;
+                const female = withinMale ? !booleanSetting : booleanSetting;
                 result.flags.female = female;
-                result.flags.initgend = Number(female);
-                result.gender = female ? 'female' : 'male';
+                if (!maleSpelling || withinMale) {
+                    result.flags.initgend = Number(female);
+                    result.gender = female ? 'female' : 'male';
+                }
                 continue;
             }
             const characterFacet = canonical === 'role' || canonical === 'race'
@@ -1267,6 +1274,8 @@ function parseConfiguration(rc, result, report, fromFile) {
             // is mandatory, and illegal_menu_cmd_key() rejects control and
             // printable reserved keys and default object-class symbols.
             if (MENU_KEY_OPTIONS[canonical] === true) {
+                if (bindingOption !== canonical)
+                    continue;
                 const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
                 if (!raw)
                     addError(`Missing parameter for '${stripped}'`);
@@ -1298,16 +1307,19 @@ function parseConfiguration(rc, result, report, fromFile) {
                 continue;
             }
             if (canonical === 'pile_limit') {
-                // optfn_pile_limit(): negation clears the limit but may
-                // not carry a value.
-                if (negated && optionValue !== null) {
+                // optfn_pile_limit(): string_for_opt() takes a value
+                // unless negated, so a missing value draws the complaint
+                // and still lands on the default; negation may not carry
+                // a non-empty value.
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (negated && raw) {
                     addError(`The ${canonical} option may not both have a value and be negated.`);
                     continue;
                 }
-                if (!negated || !optionValue) {
-                    const limit = negated ? 0 : optionValue ? cInteger(optionValue) : 5;
-                    result.flags.pile_limit = limit < 0 ? 5 : limit;
-                }
+                if (!raw && !negated)
+                    addError(`Missing parameter for '${stripped}'`);
+                const limit = negated ? 0 : raw ? cInteger(raw) : 5;
+                result.flags.pile_limit = limit < 0 ? 5 : limit;
                 continue;
             }
             if (canonical === 'statushilites') {
@@ -1376,10 +1388,14 @@ function parseConfiguration(rc, result, report, fromFile) {
             if (canonical === 'versinfo') {
                 // optfn_versinfo(): 1, 2, 4, or their sums; this build
                 // carries no git branch, so the default is the number.
+                // A missing value draws string_for_opt()'s complaint and
+                // the handler's own line beneath it.
                 const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
                 const value = cInteger(raw);
-                if (!raw)
+                if (!raw) {
+                    addError(`Missing parameter for '${stripped}'`);
                     addError(`'${canonical}' requires a value; defaulting to 1`);
+                }
                 else if (!value || (value & ~7) !== 0) {
                     addError(`'${canonical}' must be one of 1, 2, 4, or the sum of two or all three of those`);
                 }
@@ -1536,7 +1552,11 @@ function parseConfiguration(rc, result, report, fromFile) {
             }
             // optfn_autounlock(): bare means apply-key, negation none, and
             // a value is a '+'- or space-separated list whose members
-            // prefix or fuzzymatch an unlock type; 'none' cannot mix.
+            // prefix or fuzzymatch an unlock type — matched
+            // case-insensitively but dispatched on the exact lowercase
+            // first letter — while 'none' cannot mix with them.  Like C,
+            // each pass trims the remainder before splitting off one
+            // separator, so separator runs collapse.
             if (canonical === 'autounlock') {
                 const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
                 if (!raw) {
@@ -1547,18 +1567,24 @@ function parseConfiguration(rc, result, report, fromFile) {
                     let bits = 0;
                     let none = negated;
                     let invalid = null;
-                    for (const piece of raw.split(sep)) {
-                        const op = piece.trim();
+                    let rest = raw.trim();
+                    for (;;) {
+                        const cut = rest.indexOf(sep);
+                        const op = (cut < 0 ? rest : rest.slice(0, cut)).trim();
                         if (ciPrefixOf('none', op)) {
                             none = true;
-                            continue;
                         }
-                        const type = AUTOUNLOCK_TYPES.find(([name]) => ciPrefixOf(name, op) || fuzzyMatch(op, name));
-                        if (!type) {
-                            invalid = op;
+                        else {
+                            const type = AUTOUNLOCK_TYPES.find(([name]) => ciPrefixOf(name, op) || fuzzyMatch(op, name));
+                            if (!type || type[0].charAt(0) !== op.charAt(0)) {
+                                invalid = op;
+                                break;
+                            }
+                            bits |= type[1];
+                        }
+                        if (cut < 0)
                             break;
-                        }
-                        bits |= type[1];
+                        rest = rest.slice(cut + 1).trim();
                     }
                     if (invalid !== null) {
                         addError(`Invalid value for "autounlock": "${invalid}"`);
@@ -1572,21 +1598,25 @@ function parseConfiguration(rc, result, report, fromFile) {
                 continue;
             }
             // optfn_disclose(): no value means prompt-yes everywhere,
-            // negation discloses nothing, and a value lists categories with
-            // optional y/n/?/+/-/# prefixes (k and d are legacy aliases).
+            // negation discloses nothing, "all" and "none" name the whole
+            // set, and a value lists categories with optional y/n/?/+/-/#
+            // prefixes (k and d are legacy aliases; every check runs
+            // through lowc() but the diagnostic keeps the original case).
             if (canonical === 'disclose') {
                 const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
                 if (raw && negated) {
                     addError(`The ${canonical} option may not both have a value and be negated.`);
                     continue;
                 }
-                if (!raw)
-                    result.flags.disclose = negated ? 'none' : '';
+                const lowered = raw.toLowerCase();
+                if (!raw || lowered === 'all' || lowered === 'none') {
+                    result.flags.disclose = !raw ? negated ? 'none' : '' : lowered;
+                }
                 else {
                     result.flags.disclose = raw;
                     for (const character of raw) {
-                        if ('iavgcokd'.includes(character.toLowerCase())
-                            || 'yn?+-# '.includes(character))
+                        const letter = character.toLowerCase();
+                        if ('iavgcokd'.includes(letter) || 'yn?+-# '.includes(letter))
                             continue;
                         addError(`Unknown ${canonical} parameter '${character}'`);
                         break;
@@ -1594,18 +1624,39 @@ function parseConfiguration(rc, result, report, fromFile) {
                 }
                 continue;
             }
+            // optfn_name(): the value is mandatory at startup
+            // (string_for_env_opt(FALSE)), with or without a delimiter.
+            if (canonical === 'name') {
+                const val = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1).trim();
+                if (val)
+                    result.name = val;
+                else
+                    addError(`Missing parameter for '${stripped}'`);
+                continue;
+            }
+            // optfn_pickup_burden(): a value is mandatory
+            // (string_for_env_opt(FALSE)), with or without a delimiter;
+            // its first letter picks the burden, with 'o' and 't' both
+            // selecting overtaxed.
+            if (canonical === 'pickup_burden') {
+                const raw = colonIdx < 0 ? '' : stripped.slice(colonIdx + 1);
+                if (!raw) {
+                    addError(`Missing parameter for '${stripped}'`);
+                    continue;
+                }
+                const initial = raw.charAt(0).toLowerCase();
+                const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
+                if (burden >= 0)
+                    result.flags.pickup_burden = burden;
+                else
+                    addError(`Unknown ${canonical} parameter '${raw}'`);
+                continue;
+            }
             if (colonIdx >= 0) {
                 const val = stripped.slice(colonIdx + 1).trim();
-                // optfn_name(): the value is mandatory at startup.
-                if (canonical === 'name') {
-                    if (val)
-                        result.name = val;
-                    else
-                        addError(`Missing parameter for '${stripped}'`);
-                }
                 // optfn_playmode(): duplicates refuse outright; the value
                 // prefixes normal/play, explore/discovery, debug/wizard.
-                else if (canonical === 'playmode') {
+                if (canonical === 'playmode') {
                     const raw = stripped.slice(colonIdx + 1);
                     const matches = (word, length) => raw.length >= length
                         && raw.slice(0, length).toLowerCase() === word.slice(0, length);
@@ -1616,7 +1667,7 @@ function parseConfiguration(rc, result, report, fromFile) {
                         result.flags.debug = false;
                         result.flags.explore = false;
                     }
-                    else if (matches('explore', 6) || matches('discovery', 9)) {
+                    else if (matches('explore', 6) || matches('discovery', 6)) {
                         result.flags.explore = true;
                         result.flags.debug = false;
                     }
@@ -1674,22 +1725,6 @@ function parseConfiguration(rc, result, report, fromFile) {
                     paranoiaBits = updateParanoiaBits(paranoiaBits, val, addError);
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
-                }
-                else if (canonical === 'pickup_burden') {
-                    // optfn_pickup_burden(): a value is mandatory
-                    // (string_for_env_opt(FALSE)); its first letter picks
-                    // the burden, with 'o' and 't' both selecting overtaxed.
-                    const raw = stripped.slice(colonIdx + 1);
-                    if (!raw) {
-                        addError(`Missing parameter for '${stripped}'`);
-                        continue;
-                    }
-                    const initial = raw.charAt(0).toLowerCase();
-                    const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
-                    if (burden >= 0)
-                        result.flags.pickup_burden = burden;
-                    else
-                        addError(`Unknown ${canonical} parameter '${raw}'`);
                 }
                 else {
                     const option = requestBooleanByName.get(canonical);

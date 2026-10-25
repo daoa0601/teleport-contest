@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { MENU_FULL, MENU_TRADITIONAL, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from '../js/const.js';
+import { PARANOID_PRAY, MENU_FULL, MENU_TRADITIONAL, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from '../js/const.js';
 import { parseNethackOptions, parseNethackrc } from '../js/options.js';
 
 const PLAY = 'OPTIONS=name:Traveler,!legacy,!tutorial,!autopickup';
@@ -209,8 +209,11 @@ void test('playmode accepts the documented prefixes and rejects others', () => {
 });
 
 void test('versinfo and pile_limit report bad values', () => {
+    // A missing value draws string_for_opt()'s complaint beneath the
+    // handler's own line.
     assert.deepEqual(errorMessages('OPTIONS=versinfo:'),
-        ["'versinfo' requires a value; defaulting to 1"]);
+        ["Missing parameter for 'versinfo:'",
+            "'versinfo' requires a value; defaulting to 1"]);
     assert.deepEqual(errorMessages('OPTIONS=versinfo:9'),
         ["'versinfo' must be one of 1, 2, 4, or the sum of two or all three of those"]);
     assert.deepEqual(errorMessages('OPTIONS=versinfo:0'),
@@ -218,6 +221,13 @@ void test('versinfo and pile_limit report bad values', () => {
     assert.equal(parseNethackrc('OPTIONS=versinfo:5').flags.versinfo, 5);
     assert.deepEqual(errorMessages('OPTIONS=!pile_limit:3'),
         ['The pile_limit option may not both have a value and be negated.']);
+    // Without a value, string_for_opt() is called with val_optional TRUE
+    // when negated, FALSE otherwise; the default limit still applies.
+    assert.deepEqual(errorMessages('OPTIONS=pile_limit'),
+        ["Missing parameter for 'pile_limit'"]);
+    assert.equal(parseNethackrc('OPTIONS=pile_limit').flags.pile_limit, 5);
+    assert.deepEqual(errorMessages('OPTIONS=!pile_limit:'), []);
+    assert.equal(parseNethackrc('OPTIONS=!pile_limit:').flags.pile_limit, 0);
 });
 
 void test('paranoid_confirmation validates its argument list', () => {
@@ -227,6 +237,11 @@ void test('paranoid_confirmation validates its argument list', () => {
         ['!paranoid_confirmation does not accept a value']);
     assert.deepEqual(errorMessages('OPTIONS=paranoid_confirm:pray wat'),
         ["Unknown paranoid_confirmation parameter 'wat'"]);
+    // match_optname() folds case; the diagnostic keeps the original.
+    assert.deepEqual(errorMessages('OPTIONS=paranoid_confirm:Wat'),
+        ["Unknown paranoid_confirmation parameter 'Wat'"]);
+    assert.equal((parseNethackrc('OPTIONS=paranoid_confirm:PRAY')
+        .flags.paranoia_bits ?? 0) & PARANOID_PRAY, PARANOID_PRAY);
     assert.deepEqual(errorMessages('OPTIONS=prayconfirm:x'),
         ["deprecated prayconfirm option takes no parameters (found 'x')"]);
     assert.deepEqual(errorMessages('OPTIONS=!prayconfirm:x'),
@@ -239,6 +254,13 @@ void test('disclose validates its category letters and defaults bare spellings',
         ['The disclose option may not both have a value and be negated.']);
     assert.equal(parseNethackrc('OPTIONS=disclose').flags.disclose, '');
     assert.equal(parseNethackrc('OPTIONS=!disclose').flags.disclose, 'none');
+    // "all" and "none" name the whole set (strcmpi, case-insensitive),
+    // and prefix letters fold case through lowc() while the diagnostic
+    // keeps the original.
+    assert.equal(parseNethackrc('OPTIONS=disclose:none').flags.disclose, 'none');
+    assert.equal(parseNethackrc('OPTIONS=disclose:ALL').flags.disclose, 'all');
+    assert.deepEqual(errorMessages('OPTIONS=disclose:none'), []);
+    assert.deepEqual(errorMessages('OPTIONS=disclose:Yi'), []);
     assert.equal(parseNethackrc('OPTIONS=disclose:-i -a -v -g -c -o').flags.disclose,
         '-i -a -v -g -c -o');
 });
@@ -250,6 +272,13 @@ void test('menu paging key options require a key and refuse negation', () => {
         ['The menu_next_page option may not both have a value and be negated.']);
     assert.deepEqual(errorMessages('OPTIONS=menu_search:F'),
         ["Reserved menu command key 'F'"]);
+    // check_misc_menu_command() needs the full name; an abbreviation is
+    // a silent no-op instead of a binding.
+    const abbreviated = parseNethackrc('OPTIONS=menu_next:>');
+    assert.deepEqual(errorMessages('OPTIONS=menu_next:>'), []);
+    assert.deepEqual(abbreviated.commandBindings.menuAliases, []);
+    assert.deepEqual(parseNethackrc('OPTIONS=menu_next_page:>')
+        .commandBindings.menuAliases, [{ key: '>'.charCodeAt(0), command: '>' }]);
 });
 
 void test('autounlock parses its action list into a bitmask', () => {
@@ -260,8 +289,18 @@ void test('autounlock parses its action list into a bitmask', () => {
         AUTOUNLOCK_UNTRAP | AUTOUNLOCK_KICK);
     assert.equal(parseNethackrc('OPTIONS=autounlock:untrap kick').flags.autounlock,
         AUTOUNLOCK_UNTRAP | AUTOUNLOCK_KICK);
+    // trimspaces() runs between pieces, so separator runs collapse and
+    // leading or doubled spaces stay harmless.
+    assert.equal(parseNethackrc('OPTIONS=autounlock: kick').flags.autounlock,
+        AUTOUNLOCK_KICK);
+    assert.equal(parseNethackrc('OPTIONS=autounlock:untrap  kick').flags.autounlock,
+        AUTOUNLOCK_UNTRAP | AUTOUNLOCK_KICK);
     assert.equal(parseNethackrc('OPTIONS=autounlock:apply_key').flags.autounlock,
         AUTOUNLOCK_APPLY_KEY);
+    // The type match is case-insensitive but the dispatch switch needs
+    // the exact lowercase first letter.
+    assert.deepEqual(errorMessages('OPTIONS=autounlock:Untrap'),
+        ['Invalid value for "autounlock": "Untrap"']);
     assert.deepEqual(errorMessages('OPTIONS=autounlock:bogus'),
         ['Invalid value for "autounlock": "bogus"']);
     assert.deepEqual(errorMessages('OPTIONS=autounlock:none+kick'),
@@ -288,6 +327,40 @@ void test('a menu command key binding carries both illegal-key diagnostics', () 
     assert.deepEqual(errorMessages('BINDINGS=@:menu_next_page'), []);
     assert.equal(parseNethackrc('BINDINGS=@:menu_next_page')
         .commandBindings.menuCommand('@'.charCodeAt(0)), '>'.charCodeAt(0));
+});
+
+void test('the menu-entry options carry their plain names', () => {
+    // NHOPTO() spells these without quotes; "autopickup exceptions"
+    // keeps autopickup ambiguous up to all ten letters.
+    assert.deepEqual(errorMessages('OPTIONS=autop'), ["Unknown option 'autop'"]);
+    assert.deepEqual(errorMessages('OPTIONS=autocompletions'), []);
+    assert.deepEqual(errorMessages('OPTIONS=autocompletions,autocompletions'),
+        ['boolean option specified multiple times: autocompletions']);
+});
+
+void test('playmode accepts six-letter explore and discovery prefixes', () => {
+    assert.equal(parseNethackrc('OPTIONS=playmode:discov').flags.explore, true);
+    assert.equal(parseNethackrc('OPTIONS=playmode:explor').flags.explore, true);
+    assert.equal(parseNethackrc('OPTIONS=playmode:disc').flags.explore, undefined);
+});
+
+void test('name and pickup_burden demand a value with or without a delimiter', () => {
+    assert.deepEqual(errorMessages('OPTIONS=name'), ["Missing parameter for 'name'"]);
+    assert.deepEqual(errorMessages('OPTIONS=pickup_burden'),
+        ["Missing parameter for 'pickup_burden'"]);
+});
+
+void test('a long male value falls through to the plain assignment', () => {
+    // strncmpi() runs past "male" onto the delimiter, so only
+    // flags.female is written; initgend keeps its prior setting.
+    const configuration = parseNethackrc('OPTIONS=male:false');
+    assert.equal(configuration.flags.female, false);
+    assert.equal(configuration.flags.initgend, undefined);
+    assert.equal(configuration.gender, null);
+    // The short male spelling still inverts through the alias branch.
+    const inverted = parseNethackrc('OPTIONS=male:off');
+    assert.equal(inverted.flags.female, true);
+    assert.equal(inverted.flags.initgend, 1);
 });
 
 void test('bind_key parameter complaints surface from BINDINGS lines', () => {
