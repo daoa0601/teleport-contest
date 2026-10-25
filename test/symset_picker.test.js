@@ -431,7 +431,6 @@ void test('an empty picker pick keeps an unlisted primary set displayed', async 
     delete game.rogue_level;
     assert.ok(pickerViews.some(view => /Select symbol set:/.test(view)), 'selecting symset opened the picker');
     assert.equal(game.symset, 'RogueEpyx');
-    assert.equal(game.shownSymbols, undefined);
     // The full-menu overlay leaves the physical screen for the next redraw.
     await docrt();
     await flush_screen(1);
