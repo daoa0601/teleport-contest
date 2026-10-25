@@ -807,6 +807,13 @@ function overcrowdingVictim(arriving: Monster, state: PlayingGameState) {
 // the chosen pet supplies exactly one candidate square, with no fallback.
 export async function teleportHeroToRandomPet(state = game) {
     requirePlayingGame(state);
+    if (heroTeleportRestricted(state)) {
+        // C tele_to_rnd_pet(): the magic-whistle caller screens this, so the
+        // diagnostic fires only for other entry points.
+        await impossible('attempt to teleport hero to be near a pet'
+            + ' on no-teleport level', { state });
+        return false;
+    }
     let selected = null;
     let count = 0;
     for (const pet of [...state.level.monsters].reverse()) {
