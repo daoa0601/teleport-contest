@@ -16,7 +16,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { monsterPossessive, shopkeeperName } from './monster_name.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { unplaceBallAndChain, placeBallAndChain, heroIsPunished } from './ball.js';
-import { pline, plineWithContinuation, canSpotMonster, canSeeMonster, canSenseMonster, newsym, } from './display.js';
+import { pline, plineWithContinuation, canSpotMonster, canSeeMonster, canSenseMonster, newsym, map_invisible, } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -31,7 +31,7 @@ import { impossible } from './diagnostics.js';
 import { currency } from './currency.js';
 import { flush_screen } from './display.js';
 import { promptYesNo } from './query.js';
-import { linkObjectToMonsterInventory } from './monster_inventory.js';
+import { addObjectToMonsterInventory, linkObjectToMonsterInventory } from './monster_inventory.js';
 import { publishMonsterGrowl, publishMonsterYelp } from './monster_anger.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, } from './monster_data.js';
 import { mksobj } from './mklev.js';
@@ -44,7 +44,8 @@ import { dealWithMonsterOvercrowding, moveMonsterNextToHero, relocateMonsterTo }
 import { BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK, } from './object_data.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { placeObject, remove_object } from './floor_object.js';
-import { afterShopkeeperMove, costlyAdjacent, costlySpot, currentShopResident, removeObjectAndContentsFromBill, shopkeeperInOwnShop, } from './shk.js';
+import { afterShopkeeperMove, costlyAdjacent, costlySpot, currentShopResident, removeObjectAndContentsFromBill, removeOneObjectFromBill, shopResident, shopkeeperInOwnShop, } from './shk.js';
+import { objectName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
@@ -404,6 +405,33 @@ export async function homeShopkeeper(monster, state) {
     if (state.level.flags)
         state.level.flags.has_shop = true;
     await afterShopkeeperMove(monster, state);
+}
+// C shk.c shkcatch(): an alert keeper intercepts a flying pick-axe that
+// crosses the shop floor, shoving aside whoever blocks the catch square.
+// zap.c bhit() offers every in-shop square of the flight to the keeper.
+export async function shopkeeperCatch(object, x, y, state) {
+    requireShopGame(state);
+    const roomno = insideShop(state, x, y);
+    const keeper = roomno !== null ? shopResident(roomno, state) : null;
+    if (!keeper || !shopkeeperInOwnShop(keeper, state))
+        return null;
+    if (monsterHelpless(keeper)
+        || (state.u.ushops?.[0] === keeper.eshk.shoproom
+            && insideShop(state, state.u.ux, state.u.uy) !== null)
+        || dist2(x, y, keeper.mx, keeper.my) >= 3
+        || (keeper.mx === x && keeper.my === y))
+        return null;
+    if (await mnearto(keeper, x, y, state, { moveOther: true }) === 2
+        && !heroIsDeaf(state) && !muteShopkeeper(keeper))
+        await verbalize('Out of my way, scum!');
+    if (cansee(x, y)) {
+        await pline(`${shopkeeperName(keeper, { state, capitalized: true })} nimbly${keeper.mx === x && keeper.my === y ? '' : ' reaches over and'} catches the ${objectName(object, state)}.`);
+        if (!canSpotMonster(keeper))
+            map_invisible(x, y);
+    }
+    removeOneObjectFromBill(object, state, keeper);
+    await addObjectToMonsterInventory(keeper, object, state);
+    return keeper;
 }
 // C shk.c check_credit(): consume shop credit before the hero's purse.
 async function checkCredit(amount, monster) {

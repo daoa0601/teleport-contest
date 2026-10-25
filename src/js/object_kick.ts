@@ -267,6 +267,9 @@ export async function kickFloorObject(x: number, y: number, {
             random,
         });
         if (flight.destroyed || flight.migrated) return true;
+        if (flight.contact?.isshk && moving.where === 'minvent'
+            && moving.ocarry === flight.contact)
+            return true; /* really_kick_object(): the alert shk caught it */
         if (flight.contact) {
             if (isGold) {
                 if (await resolveGoldMonsterContact({ state, monster: flight.contact, gold: moving,
