@@ -61,6 +61,10 @@ import { monsterAtPosition } from './monster_location.js';
 import { seeNearbyMonsters } from './monster_observation.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
+import { restoreMonsterCover } from './monster_hiding.js';
+import { runDueTimers } from './timer_effects.js';
+import { finishInUseInventory } from './object_cleanup.js';
+import { askKeepRestoredSave } from './save.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -528,10 +532,8 @@ export async function restoregamePreamble() {
     game._encumbranceLevel = 0;
 
     // C getlev() closes dorecover() with a fixup pass over every monster on
-    // the restored current level. Its other steps — steed and engulfer
-    // relinking, placement, hidden cover, and shopkeeper residency — are
-    // restored directly from the saved graph, and elapsed time is zero at a
-    // plain restore, so restore_cham() is the piece this pass still owes.
+    // the restored current level. Ownership links survive the saved graph,
+    // but hiding cover must be rechecked before restoring each shape.
     // Births append in the port, whereas C's fmon chain keeps the newest
     // monster first. The pass runs where C runs it, before vision_reset()
     // (restore.c:926) and with program_state.restoring still set, so plain
@@ -544,18 +546,24 @@ export async function restoregamePreamble() {
     game.vision_full_recalc = 0;
     try {
         for (const monster of [...(game.level?.monsters ?? [])].reverse()) {
+            await restoreMonsterCover(monster, game);
             await restoreMonsterShape(monster, game);
             if (game.program_state.gameover) return;
         }
+        game.program_state.in_getlev = false;
+        await finishInUseInventory(false);
+        // C dorecover() rebuilds vision, then expires timers while map and
+        // status output are still suppressed by program_state.restoring.
+        vision_reset_new_level();
+        game.vision_full_recalc = 1;
+        await runDueTimers();
+        if (game.program_state.gameover) return;
     } finally {
         game.program_state.in_getlev = false;
         game.program_state.restoring = false;
-        // C dorecover() rebuilds the unsaved vision state (restore.c:926-928)
-        // and clears program_state.restoring before docrt(); docrt() pages
-        // any pending line at cls()'s message flush, as tty does.
-        vision_reset_new_level();
-        game.vision_full_recalc = 1;
     }
+    // C clears program_state.restoring before docrt(), which pages any
+    // pending line at cls()'s message flush.
     await docrt();
 
     // The first flush paints the display state restored with the level.
@@ -567,6 +575,7 @@ export async function restoregamePreamble() {
     await checkSpecialRoom();
     if (game.flags?.explore)
         await plineWithContinuation('You are in non-scoring explore/discovery mode.');
+    await askKeepRestoredSave();
     await applyCalendarMessages();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     await fixShopDamage(game);
@@ -613,6 +622,7 @@ async function enterTutorial() {
     if (!game._levelCache) game._levelCache = new Map();
     game._levelCache.set(`${oldDepth.dnum ?? 0}:${oldDepth.dlevel ?? 1}`, {
         level: oldLevel, stairs: oldStairs, savedAt: game.moves,
+        billObjects: game.billObjects ?? [],
     });
 
     game.u.ucamefrom = { ...oldDepth };
@@ -634,6 +644,7 @@ async function enterTutorial() {
     // tutorial level's overview record; this hand-rolled transition must
     // match that mapseen creation.
     initOverviewRecord(game.u.uz, game);
+    game.billObjects = [];
     await mklev();
     // goto_level() arrives through u_on_rndspot(), even when Lua restricts
     // the region to a single square.

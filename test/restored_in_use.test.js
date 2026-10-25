@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { restoregamePreamble } from '../js/allmain.js';
+import { flushPendingTopline } from '../js/display.js';
+import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { FOOD_RATION } from '../js/object_data.js';
+import { decodeSavedGame } from '../js/persistent_state_validation.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { encodeSavedGraph } from '../js/saved_graph.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { memoryStorage } from './support/memory-storage.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+void test('restoring an interrupted in-use inventory stack announces and consumes one item', async () => {
+    freshObjectRoom();
+    game.plname = 'Interrupted';
+    const food = await addInventoryObject(FOOD_RATION, { quan: 3 });
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    const key = 'teleport-save:interrupted';
+    const snapshot = decodeSavedGame(storage.getItem(key) ?? '');
+    const savedFood = snapshot.state.inventory.find(object => object.o_id === food.o_id);
+    assert.ok(savedFood);
+    // Native checkpoint saves can retain an interrupted consumption mark;
+    // ordinary dosave0() clears it with done_object_cleanup() before writing.
+    savedFood.in_use = true;
+    storage.setItem(key, encodeSavedGraph(snapshot));
+    assert.equal(restoreGame(game.plname, storage), true);
+    const messages = [];
+    const input = resetInputState();
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /Finishing off|welcome back/, limit: 4 });
+    const moves = game.moves;
+    await restoregamePreamble();
+    await flushPendingTopline();
+    const remaining = game.inventory.find(object => object.o_id === food.o_id);
+    assert.equal(remaining?.quan, 2);
+    assert.equal(!!remaining?.in_use, false);
+    assert.match(messages.join('\n'), /Finishing off food rations\.\.\./);
+    assert.equal(game.moves, moves);
+});
+//# sourceMappingURL=restored_in_use.test.js.map

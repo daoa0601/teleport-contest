@@ -41,6 +41,8 @@ function answerRecoveryMessages(messages) {
             const topline = game.nhDisplay.grid[0]?.map(cell => cell.ch).join('').trimEnd();
             if (topline?.endsWith('Die? [yn] (n)'))
                 return 'n'.charCodeAt(0);
+            if (topline?.endsWith('Do you want to keep the save file? [yn] (n)'))
+                return 'n'.charCodeAt(0);
             if (nextCommand !== null) {
                 assert.equal(game.nhDisplay.cursorCol, game.u.ux - 1, `Expected the command cursor after recovery: ${screen}`);
                 assert.equal(game.nhDisplay.cursorRow, game.u.uy + 1, `Expected the command cursor after recovery: ${screen}`);

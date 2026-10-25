@@ -110,7 +110,7 @@ function validGasCloud(value: unknown): value is GasCloud {
 function validTimer(value: unknown): value is LevelTimer {
     return fieldsMatch<LevelTimer>(value, {
         kind: (kind): kind is 'melt-ice-away' => kind === 'melt-ice-away',
-        deadline: integer, id: integer, x: integer, y: integer,
+        deadline: integer, id: integer, order: integer, x: integer, y: integer,
     });
 }
 

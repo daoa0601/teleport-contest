@@ -11,6 +11,9 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timer_effects.js';
+import { restoreLevelTimers } from './object_timers.js';
+import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory, restoreObjectPetHistory } from './monster_restore.js';
 import { restoreLevelLightSources } from './light.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
@@ -24,7 +27,7 @@ import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
 import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, setShopResidency, sendMonsterToLimbo, } from './monster_migration.js';
 import { collectLevelFollowers } from './monster_followers.js';
-import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
+import { restoreMonsterCover, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
@@ -34,7 +37,7 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely, bringLeashedFollowers } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { switchHeroTerrain } from './terrain_movement.js';
-import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { killGenocidedMonsters } from './mon.js';
 import { dismountHero } from './steed.js';
@@ -277,9 +280,12 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
+            game.billObjects = cached.billObjects ?? [];
             restoreEngravings(cached.level);
+            cached.stairs = restoreLevelChains(cached.level, cached.stairs);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
+            restoreLevelTimers(game);
             await restoreCachedMonsterState(cached);
             restoreLevelRegions(game, game.moves - cached.savedAt);
             // C getlev() reloads the level's saved light sources onto the
@@ -296,6 +302,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         oinit();
     }
     else {
+        game.billObjects = [];
         // C mklev() starts with init_mapseen(): a freshly generated level
         // (bones included) joins the overview history before arrival.
         initOverviewRecord(destinationDepth, game);
@@ -676,6 +683,8 @@ function cachedLevelState(level, stairs) {
     return {
         level,
         stairs,
+        // C savelev()/getlev() keep the used-up bill chain with its floor.
+        billObjects: game.billObjects ?? [],
         heroTrack: cloneHeroTrack(),
         savedAt: game.moves ?? 0,
         // Is_special() is level data in C. JS keeps the parsed Lua identity
@@ -687,18 +696,16 @@ function cachedLevelState(level, stairs) {
 function restoreCachedHeroTrack(cached) {
     game._heroTrack = cloneHeroTrack(cached?.heroTrack || []);
 }
-const M1_CONCEAL = 0x00000080;
 // C getlev() restores each resident before separately arriving monsters.
 async function restoreCachedMonsterState(cached) {
     const elapsed = game.moves - cached.savedAt;
+    restoreLevelPetHistory(cached.level, elapsed);
+    restoreObjectPetHistory(cached.billObjects ?? [], elapsed);
     restoreMonsterWormHeads(cached.level);
     // Births append in the port, whereas C prepends to fmon.
     for (const monster of cached.level.monsters.slice().reverse()) {
         setShopResidency(monster, false, game);
-        if (monster !== game.u.usteed && monster.mundetected
-            && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL)) {
-            await hideMonsterUnder(monster, game);
-        }
+        await restoreMonsterCover(monster, game);
         if (elapsed > 0)
             catchUpMonster(monster, elapsed, game);
         await restoreMonsterShape(monster, game);
@@ -710,6 +717,10 @@ async function restoreCachedMonsterState(cached) {
 }
 function restoreCachedLevelMetadata(cached) {
     game._activeSpecialLevel = cached?.activeSpecialLevel || null;
+    // save_adjust_levelflags()/rest_adjust_levelflags() preserve the
+    // remaining stasis duration while its level is stored off-map.
+    if (cached.level.flags.stasis_until !== undefined)
+        cached.level.flags.stasis_until += game.moves - cached.savedAt;
 }
 // C dungeon.c:u_on_rndspot() delegates arrival to the shared lregion owner.
 export async function placeHeroAtRandomArrival(region = null, up = false) {

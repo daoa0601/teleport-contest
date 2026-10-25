@@ -46,6 +46,14 @@ interface HidingActor {
 
 interface HidingPlace { undetected: boolean; cover: GameObject | null; water: boolean }
 
+// C restore.c:getlev() rechecks existing cover before catch-up and shape
+// changes. A saved mundetected bit alone does not establish valid cover.
+export async function restoreMonsterCover(monster: Monster, state: GameState = game): Promise<void> {
+    if (monster !== state.u.usteed && monster.mundetected
+        && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
+        await hideMonsterUnder(monster, state);
+}
+
 // Restored hiders get their attempt before normal vision can expose their spot.
 // Only that square's vision bits are hidden, and hideunder sees restored vision.
 export async function hideMonsterOnRestore(monster: Monster, state: GameState = game): Promise<void> {

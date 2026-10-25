@@ -33,6 +33,8 @@ import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
+import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory } from './monster_restore.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
@@ -104,7 +106,7 @@ import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
 import { createGasCloudSelection, createPoisonGasCloud, restoreLevelRegions } from './regions.js';
 import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
-import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
+import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, restoreLevelTimers, scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
 import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
@@ -3512,7 +3514,7 @@ export function randomEngraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-const BONES_VERSION = 16;
+const BONES_VERSION = 17;
 function bonesStorageKey(level = game.u.uz) {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
 }
@@ -3838,6 +3840,7 @@ function restoreBonesFloorOrder(level) {
 // arrive immediately after the old hero's death, on the new hero's clock.
 function restoreBonesClock(level, savedAt) {
     const adjustment = game.moves - savedAt;
+    restoreLevelPetHistory(level, adjustment);
     const restoreObjectClock = (object, frozen = false) => {
         if (!frozen && !object.ageRelative && !ageStoresFuel(object))
             object.age += adjustment;
@@ -3918,13 +3921,14 @@ async function getbones() {
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
-    game.stairs = payload.stairs || null;
+    game.stairs = restoreLevelChains(game.level, payload.stairs || null);
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
     }));
     restoreBonesClock(game.level, payload.savedAt);
     await renewBonesIdentities(game.level, payload.fruits);
     restoreBonesFloorOrder(game.level);
+    restoreLevelTimers(game);
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
     repairBonesConnections(game.level, location);

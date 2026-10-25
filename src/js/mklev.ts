@@ -44,6 +44,8 @@ import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
+import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory } from './monster_restore.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
@@ -240,7 +242,7 @@ import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING,
 import { beginObjectBurn } from './light.js';
 import {
     LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
-    objectTimers, objectsInTimerGraph,
+    objectTimers, objectsInTimerGraph, restoreLevelTimers,
     scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers,
     stopObjectTimer, stopLevelTimer,
 } from './object_timers.js';
@@ -3567,7 +3569,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 16;
+const BONES_VERSION = 17;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -3885,6 +3887,7 @@ function restoreBonesFloorOrder(level: GameMap): void {
 // arrive immediately after the old hero's death, on the new hero's clock.
 function restoreBonesClock(level: GameMap, savedAt: number): void {
     const adjustment = game.moves - savedAt;
+    restoreLevelPetHistory(level, adjustment);
     const restoreObjectClock = (object: GameObject, frozen = false): void => {
         if (!frozen && !object.ageRelative && !ageStoresFuel(object))
             object.age += adjustment;
@@ -3953,13 +3956,14 @@ async function getbones(): Promise<boolean> {
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
-    game.stairs = payload.stairs || null;
+    game.stairs = restoreLevelChains(game.level, payload.stairs || null);
     game._heroTrack = (payload.heroTrack || []).map(point => ({
         x: point.x, y: point.y,
     }));
     restoreBonesClock(game.level, payload.savedAt);
     await renewBonesIdentities(game.level, payload.fruits);
     restoreBonesFloorOrder(game.level);
+    restoreLevelTimers(game);
     await restoreBonesMonsters(game.level, game);
     restoreLevelRegions(game, 0);
     repairBonesConnections(game.level, location);

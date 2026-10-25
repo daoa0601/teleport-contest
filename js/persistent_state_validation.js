@@ -28,6 +28,7 @@ function validPersistentState(value, entities) {
         return closedFieldsMatch(candidate, {
             level: map,
             stairs: validSavedStairways,
+            billObjects: optional(arrayOf(entities.object)),
             heroTrack: optional(arrayOf(validSavedPosition)),
             savedAt: integer,
             activeSpecialLevel: optional(nullable(activeSpecial)),
@@ -61,6 +62,7 @@ function validPersistentState(value, entities) {
         _nextAttribCheck: optional(integer),
         _nextIdent: optional(integer),
         _nextObjectTimerId: optional(integer),
+        _timerSerial: optional(integer),
         _objectCallNames: optional(numericRecordOf(string)),
         _objectDiscoveryOrder: optional(arrayOf(integer)),
         _objectPriceQuotes: optional(numericRecordOf(validPriceQuote)),

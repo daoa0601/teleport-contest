@@ -270,6 +270,7 @@ export interface ActiveSpecialLevel {
 export interface CachedLevelState {
     level: GameMap;
     stairs: Stairway | null;
+    billObjects?: GameObject[];
     heroTrack?: Position[];
     savedAt: number;
     activeSpecialLevel?: ActiveSpecialLevel | null;

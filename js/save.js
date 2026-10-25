@@ -29,6 +29,9 @@ import { restoreLevelRegions } from './regions.js';
 import { oinit } from './mklev.js';
 import { restoreScheduledLevelChange } from './level_change.js';
 import { recorderRestoredTime } from './calendar.js';
+import { restoreSavedTimers } from './object_timers.js';
+import { restoreLevelChains } from './level_restore.js';
+import { restoreLevelPetHistory, restoreMonsterPetHistory, restoreObjectPetHistory } from './monster_restore.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -41,6 +44,7 @@ function snapshotState() {
     };
 }
 function restoreLevelMonsters(level, moves) {
+    restoreLevelPetHistory(level, 0);
     restoreEngravings(level, moves);
     if (!validMonsterWormBodies(level))
         throw new Error('Invalid saved worm bodies');
@@ -51,12 +55,22 @@ function restoreLevelMonsters(level, moves) {
 function restoreSavedMonsters(state) {
     if (state.level)
         restoreLevelMonsters(state.level, state.moves);
-    for (const cached of state._levelCache?.values() ?? [])
+    for (const cached of state._levelCache?.values() ?? []) {
         restoreLevelMonsters(cached.level, state.moves);
-    for (const monster of state._migratingMonsters || [])
+        restoreObjectPetHistory(cached.billObjects ?? [], 0);
+    }
+    for (const monster of state._migratingMonsters || []) {
+        restoreMonsterPetHistory(monster, 0);
+        restoreObjectPetHistory(monster.minvent || monster.inventory || [], 0);
         restoreMonsterInventoryOwnership(monster);
-    if (state.u.usteed)
+    }
+    if (state.u.usteed) {
+        restoreMonsterPetHistory(state.u.usteed, 0);
         restoreMonsterInventoryOwnership(state.u.usteed);
+    }
+    restoreObjectPetHistory([
+        ...state.inventory, ...state.migratingObjects ?? [], ...state.billObjects ?? [],
+    ], 0);
 }
 export async function dosave() {
     // C save.c:dosave() clears WIN_MESSAGE before asking and after either
@@ -71,7 +85,7 @@ export async function dosave() {
         return;
     }
     await pline('Saving...');
-    if (!await saveGame()) {
+    if (!await writeSave(game.storage, saveKey(game.plname), true, 'ask')) {
         await docrt();
         game.context.move = 0;
         return;
@@ -90,10 +104,10 @@ export async function dosave() {
     game.context.move = 0;
 }
 export async function saveGame(storage = game.storage) {
-    return await writeSave(storage, saveKey(game.plname), true);
+    return await writeSave(storage, saveKey(game.plname), true, 'replace');
 }
 export async function saveErrorGame(storage = game.storage) {
-    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false);
+    return await writeSave(storage, saveKey(game.plname, ERROR_SAVE_PREFIX), false, 'replace');
 }
 export function hasErrorSave(name, storage = game.storage) {
     try {
@@ -113,9 +127,7 @@ export async function askAboutPanicSave() {
     const question = 'Start a new game instead?';
     return await promptChoice(question, ['y', 'n', 'q'], 'n', { visibleChoices: 'yn' }) === 'y';
 }
-async function prepareGameForSave() {
-    game.u.invulnerable = false;
-    await doneObjectCleanup();
+function prepareMonstersForSave() {
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
     for (const level of levels) {
         if (!level)
@@ -143,12 +155,16 @@ function undoDateLuck() {
     game.u.uluck = luck;
     return before;
 }
-async function writeSave(storage, key, reportFailure) {
+async function writeSave(storage, key, reportFailure, overwrite) {
     game.program_state.saving = (game.program_state.saving || 0) + 1;
     let saved = false;
     try {
-        await prepareGameForSave();
-        if (storage?.setItem) {
+        // C dosave0() finishes interrupted actions even if overwrite is refused.
+        game.u.invulnerable = false;
+        await doneObjectCleanup();
+        if (storage?.setItem && (overwrite === 'replace' || await confirmSaveOverwrite(storage, key))) {
+            // savemonchn() resets temple visits only when saving proceeds.
+            prepareMonstersForSave();
             currentLuaLifecycle().syncVariables(game);
             const luck = undoDateLuck();
             try {
@@ -177,11 +193,31 @@ async function writeSave(storage, key, reportFailure) {
     game.program_state.saving--;
     return saved;
 }
+// C dosave0() asks after interrupted-action cleanup, before saving level data.
+async function confirmSaveOverwrite(storage, key) {
+    const previous = storage.getItem?.(key);
+    if (previous === undefined || previous === null)
+        return true;
+    clearMessageWindow();
+    await plineWithContinuation('There seems to be an old save file.');
+    return await promptYesNo('Overwrite the old file?') === 'y';
+}
 // C restore.c:restgamestate() reports its refusal through You() and returns
 // FALSE; dorecover() then waits for the message to be dismissed and discards
 // the save file. The synchronous restoreGame() can only report the refusal,
 // so the caller completes that dialogue through dismissUnhealthyRestore().
 let restoreRefusal = null;
+let retainedSave = null;
+// C unixmain.c asks after dorecover()'s welcome; ordinary games consume
+// their file inside dorecover(), while wizard and explore games may keep it.
+export async function askKeepRestoredSave() {
+    const restored = retainedSave;
+    retainedSave = null;
+    if (!restored)
+        return;
+    if (await promptYesNo('Do you want to keep the save file?') === 'n')
+        restored.storage.removeItem?.(restored.key);
+}
 export function restoreRefusedAsUnhealthy() {
     return restoreRefusal === 'unhealthy';
 }
@@ -195,6 +231,7 @@ export async function dismissUnhealthyRestore(name, storage = game.storage) {
 }
 export function restoreGame(name, storage = game.storage) {
     restoreRefusal = null;
+    retainedSave = null;
     if (!storage?.getItem)
         return false;
     const key = saveKey(name);
@@ -268,6 +305,8 @@ export function restoreGame(name, storage = game.storage) {
         game._shopFollowMessageTurn = 0;
         game.program_state = { something_worth_saving: true };
         game.fmon = game.level?.monsters[0] ?? null;
+        game.fruits?.reverse(); // C loadfruitchn() prepends saved entries.
+        game.stairs = restoreLevelChains(snapshot.state.level, game.stairs);
         restoreLevelRegions(game, 0);
         // C restores the hero's carried and migrating lights while reading
         // the game state (restore.c:655) and then pushes the current
@@ -275,11 +314,15 @@ export function restoreGame(name, storage = game.storage) {
         // (restore.c:1145); each batch returns reversed from its saved
         // newest-first order.
         restoreSavedLightSources(game);
+        restoreSavedTimers(game);
         // C restore.c:dorecover() rebuilds transient vision after loading the
         // level. No old sight bits may suppress its first terrain repaint.
         vision_reset_new_level();
         game.vision_full_recalc = 1;
-        storage.removeItem?.(key);
+        if (game.flags.debug || game.flags.explore || game.discover)
+            retainedSave = { storage, key };
+        else
+            storage.removeItem?.(key);
         return true;
     }
     catch (error) {

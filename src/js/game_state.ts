@@ -311,6 +311,7 @@ export interface GameState {
     _lifeSavedCount?: number;
     _nextIdent?: number;
     _nextObjectTimerId?: number;
+    _timerSerial?: number;
     _initialGoldCount?: number;
     _initialPwBonus?: number;
     _startingEffectsApplied?: boolean;
