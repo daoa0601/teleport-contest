@@ -151,20 +151,20 @@ void test('a hallucinating hero gets a wall with personality', async () => {
     game.u.hallucinationTurns = 0;
 });
 void test('chatting to yourself is a bad habit', async () => {
-    const level = freshObjectRoom();
+    freshObjectRoom();
     await runExtendedCommand('chat', '.');
     assert.equal(game._pending_message, 'Talking to yourself is a bad habit for a dungeoneer.');
     assert.equal(game.context.move, 0);
 });
 void test('chatting while swallowed reaches no one outside', async () => {
-    const level = freshObjectRoom();
+    freshObjectRoom();
     game.u.uswallow = 1;
     await runExtendedCommand('chat', 'l');
     assert.equal(game._pending_message, "They won't hear you out there.");
     assert.equal(game.context.move, 0);
 });
 void test('a silent hero cannot speak', async () => {
-    const level = freshObjectRoom();
+    freshObjectRoom();
     game.u.umonnum = 0; // giant ant: MS_SILENT
     await runExtendedCommand('chat', 'l');
     assert.equal(game._pending_message, 'As a giant ant, you cannot speak.');

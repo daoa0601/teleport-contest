@@ -10,6 +10,7 @@ import { knownObject } from './support/game-objects.js';
 import { HELMET, SPE_NOVEL } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { initRng } from '../js/rng.js';
+import { roles } from '../js/roles.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -162,10 +163,10 @@ void test('a full moon night wererat lets out a shriek instead of a howl', async
     game.datetime = null;
     game.flags.moonphase = 0;
 });
-void test('a werewolf under a new moon only whispers about the moon', async () => {
+void test('a werewolf on a new moon only whispers about the moon', async () => {
     await chatSetup(263, {
         seed: 1, monster: { mpeaceful: 1 },
-        clock: () => { game.flags.moonphase = 1; game.datetime = '20020115230000'; },
+        clock: () => { game.flags.moonphase = 0; game.datetime = '20020115230000'; },
     });
     assert.equal(game._pending_message, 'The werewolf whispers inaudibly.  All you can make out is "moon".');
     game.datetime = null;
@@ -213,7 +214,7 @@ void test('a hostile vampire wants to suck blood', async () => {
     });
     assert.equal(game._pending_message, '"I vant to suck your blood!"');
 });
-void test('a vampire lord sneers at a silver dragon hero', async () => {
+void test('a vampire sneers at a silver dragon hero', async () => {
     await chatSetup('vampire', {
         hero: { protectionFromShapeChangers: true }, monster: { mpeaceful: 0 },
         clock: () => {
@@ -336,7 +337,7 @@ void test('a sober gnome grunts its orcish reply', async () => {
     await chatSetup('gnome', { monster: { mpeaceful: 1, female: false } });
     assert.equal(game._pending_message, 'The gnome grunts.');
 });
-void test('a wounded Death collector misquotes Snuff', async () => {
+void test('Death quotes Snuff without claiming a misquote', async () => {
     freshObjectRoom();
     const novel = await knownObject(SPE_NOVEL, {});
     novel.novelidx = 38; // Snuff: no Death, so no misquote suffix
@@ -366,25 +367,28 @@ void test('a helmeted hero is asked to undress by a nurse', async () => {
     await runExtendedCommand('chat', 'l');
     assert.equal(game._pending_message, '"Please undress so I can examine you."');
 });
-void test('an endgame player monster prefers talking to its own class', async () => {
+async function chatWithPlayerMonster(species, seed) {
     freshObjectRoom();
+    const wizardRole = roles.find(role => role.key === 'wizard');
+    assert.ok(wizardRole, 'the wizard role record is required');
+    game.urole = wizardRole;
     game.astral_level = { dnum: 5, dlevel: 1, flags: { town: false }, alignment: 0 };
     game.u.uz = { dnum: 5, dlevel: 1 };
-    const knight = await createMonsterAt('knight', 11, 10);
-    knight.mpeaceful = 0;
-    knight.msleeping = 0;
+    initRng(seed);
+    const player = await createMonsterAt(species, 11, 10);
+    player.mpeaceful = 0;
+    player.msleeping = 0;
     await runExtendedCommand('chat', 'l');
-    const other = game._pending_message;
-    freshObjectRoom();
-    game.astral_level = { dnum: 5, dlevel: 1, flags: { town: false }, alignment: 0 };
-    game.u.uz = { dnum: 5, dlevel: 1 };
-    const wizard = await createMonsterAt('wizard', 11, 10);
-    wizard.mpeaceful = 0;
-    wizard.msleeping = 0;
-    await runExtendedCommand('chat', 'l');
-    assert.ok(/^"Talk\? -- /.test(other ?? ''), `expected player-monster talk: ${other}`);
-    assert.notEqual(game._pending_message, other);
+    const message = game._pending_message;
     game.astral_level = undefined;
+    return message;
+}
+void test('an endgame player monster of the hero\'s own class despairs of winning', async () => {
+    // C mplayer_talk(): mons[urole.mnum] gets same_class_msg.
+    assert.equal(await chatWithPlayerMonster('wizard', 1), '"Talk? -- I can\'t win, and neither will you!"');
+});
+void test('an endgame player monster of another class talks trash', async () => {
+    assert.equal(await chatWithPlayerMonster('knight', 3), '"Talk? -- Here is what I have to say!"');
 });
 void test('a were-howl wakes sleepers within eleven squares', async () => {
     freshObjectRoom();

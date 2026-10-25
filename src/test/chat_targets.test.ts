@@ -197,7 +197,7 @@ void test('a hallucinating hero gets a wall with personality', async () => {
 });
 
 void test('chatting to yourself is a bad habit', async () => {
-    const level = freshObjectRoom();
+    freshObjectRoom();
 
     await runExtendedCommand('chat', '.');
 
@@ -206,7 +206,7 @@ void test('chatting to yourself is a bad habit', async () => {
 });
 
 void test('chatting while swallowed reaches no one outside', async () => {
-    const level = freshObjectRoom();
+    freshObjectRoom();
     game.u.uswallow = 1;
 
     await runExtendedCommand('chat', 'l');
@@ -216,7 +216,7 @@ void test('chatting while swallowed reaches no one outside', async () => {
 });
 
 void test('a silent hero cannot speak', async () => {
-    const level = freshObjectRoom();
+    freshObjectRoom();
     game.u.umonnum = 0; // giant ant: MS_SILENT
 
     await runExtendedCommand('chat', 'l');
