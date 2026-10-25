@@ -7,7 +7,7 @@ import { nomul, setMulti } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from './ball.js';
 import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
-import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
+import { canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { heroTestMove } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { endHeroVolley } from './hero_multishot.js';
@@ -31,6 +31,7 @@ import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
 import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
+import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
 import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 const M1_WALLWALK = 0x00000008;
@@ -196,11 +197,11 @@ function anchoredMessage() {
     if (type === TT_WEB)
         return 'You are anchored by the web.';
     if (type === TT_LAVA)
-        return 'You are anchored by the lava.';
+        return `You are anchored by the ${displayLiquidName('lava')}.`;
+    if (type === TT_INFLOOR)
+        return `You are anchored by the ${surfaceName(game.u.ux, game.u.uy)}.`;
     if (type === TT_BURIEDBALL)
         return 'You are anchored by the buried ball.';
-    if (type === TT_INFLOOR)
-        return 'You are anchored by the ground.';
     return 'You are anchored by the trap.';
 }
 function stopHurtle() {
