@@ -73,7 +73,7 @@ export interface StudyOccupation {
 export interface ForceLockOccupation {
     key: 'force-lock';
     text: string;
-    container: GameObject;
+    container: GameObject | undefined;
     picktyp: boolean;
     chance: number;
     usedtime: number;
@@ -85,7 +85,7 @@ export interface PickLockOccupation {
     text: string;
     remaining: number;
     usedtime: number;
-    container?: GameObject;
+    container?: GameObject | undefined;
     door?: MapLocation;
     x: number;
     y: number;

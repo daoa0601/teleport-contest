@@ -70,9 +70,11 @@ export async function doforce(state = game) {
     const x = state.u.ux;
     const y = state.u.uy;
     const boxes = (state.level?.objects?.[x]?.[y] || []).filter(object => object.otyp === LARGE_BOX || object.otyp === CHEST);
-    // Native clears the box target here, leaving interrupted door work intact.
-    if (previous?.key !== 'pick-lock' || !previous.door)
-        resetPick(state);
+    // C clears only the box target before the chest question; usedtime,
+    // chance, and picktyp survive so a later apply of the same tool can
+    // resume the now target-less attempt (which picklock() then abandons).
+    if (previous)
+        previous.container = undefined;
     let reportedOpenBox = false;
     for (const box of boxes) {
         observeObjectForNaming(box, { state });
@@ -120,6 +122,12 @@ export async function doforce(state = game) {
 }
 export async function continueForceLock(occupation, state = game) {
     const box = occupation.container;
+    if (!box) {
+        // The force occupation only runs while its chest target exists.
+        occupation.usedtime = 0;
+        state._occupation = null;
+        return false;
+    }
     if (box.ox !== state.u.ux || box.oy !== state.u.uy) {
         occupation.usedtime = 0;
         state._occupation = null;
