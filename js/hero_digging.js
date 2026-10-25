@@ -10,7 +10,7 @@ import { altarWrath } from './pray.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { angerTemplePriest } from './priest.js';
 import { heroFootName } from './body_parts.js';
-import { feel_location, flush_screen, newsym, pline, plineWithContinuation, } from './display.js';
+import { displayMessageWindow, feel_location, flush_screen, newsym, pline, plineWithContinuation, } from './display.js';
 import { monsterName } from './monster_name.js';
 import { trapName } from './trap_name.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -272,6 +272,9 @@ async function mkcavearea(rockit, state) {
     else
         await plineWithContinuation(`A mysterious force ${heroLocation.typ === CORR
             ? 'creates a' : 'extends the'} cave around you!`);
+    // C mkcavearea(): display_nhwindow(WIN_MESSAGE, TRUE) acknowledges the
+    // cave message before the ceiling visibly collapses.
+    await displayMessageWindow();
     for (let dist = 1; dist <= 2; dist++) {
         xmin--;
         xmax++;

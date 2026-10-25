@@ -11,7 +11,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_LAWFUL, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
 import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig, } from './shop_damage.js';
-import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, displayLiquidName, newsym, plineWithContinuation, } from './display.js';
 import { explode } from './explosion.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { levelAtDepth } from './dungeon.js';
@@ -96,8 +96,10 @@ function alignmentWord(alignment) {
         return 'chaotic';
     return 'neutral';
 }
-function liquidName(typ) {
-    return typ === LAVAPOOL ? 'lava' : 'water';
+// C do_name.c hliquid(): dig.c names flowing or refusing liquids through
+// it, so hallucinating heroes see a randomly displayed substitute.
+function liquidName(typ, state = game) {
+    return displayLiquidName(typ === LAVAPOOL ? 'lava' : 'water', state);
 }
 function monsterSubject(monster, state = game) {
     return monsterName(monster, { state, capitalized: true });
@@ -184,7 +186,7 @@ export async function digCheckFailMessage(result, madeBy, x, y, { state = game }
             await plineWithContinuation(`The ${surface} here is too hard to ${verb}.`);
             break;
         case DIGCHECK_FAIL_WATERLEVEL:
-            await plineWithContinuation(`The ${liquidName(POOL)} splashes and subsides.`);
+            await plineWithContinuation(`The ${liquidName(POOL, state)} splashes and subsides.`);
             break;
         default:
             break;
@@ -257,9 +259,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
         newsym(digX, digY);
     }
     else if (isPoolOrLava(digX, digY, state)) {
-        const liquid = isLavaAt(digX, digY, state) ? 'lava' : 'water';
-        await plineWithContinuation(`The ${liquid} `
-            + 'sloshes furiously for a moment, then subsides.');
+        await plineWithContinuation(`The ${liquidName(isLavaAt(digX, digY, state) ? LAVAPOOL : POOL, state)} sloshes furiously for a moment, then subsides.`);
         await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
     }
     else if (oldTyp === DRAWBRIDGE_DOWN || bridge) {
@@ -589,7 +589,7 @@ export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } 
     updateIceObjectTimersAt(x, y, state);
     const unearthed = await unearthFloorObjectsAt(x, y, state);
     if (fillMessage) {
-        await plineWithContinuation(fillMessage.replace('%s', liquidName(typ)));
+        await plineWithContinuation(fillMessage.replace('%s', liquidName(typ, state)));
     }
     // handle object damage before hero damage; affects potential bones
     const pile = pileAt(x, y, state);
