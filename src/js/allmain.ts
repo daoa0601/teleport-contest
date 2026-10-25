@@ -2056,8 +2056,11 @@ async function resolveDeferredHeroItemTheft(
         releaseObjectLeash(object, game);
     }
     const previousDelay = pendingArmorAction(game);
-    const wasDoffing = (previousDelay?.kind === 'remove' && previousDelay.object === object)
-        || isBeingTakenOff(object, game);
+    const removingThisArmor = previousDelay?.kind === 'remove' && previousDelay.object === object;
+    const wasDoffing = removingThisArmor || isBeingTakenOff(object, game);
+    // stop_donning() reports the remaining turns only when it silently stops
+    // doffing the stolen armor itself; bulk 'A' doffing carries no multi.
+    const oldDelay = removingThisArmor ? game._helplessTurns ?? 0 : 0;
     await stopDonning(object, game);
     await stopHeroOccupation(game);
     // stop_donning() makes interrupted dressing armor unworn before steal()
@@ -2068,15 +2071,15 @@ async function resolveDeferredHeroItemTheft(
     let removalMessage = null;
     let charmed = false;
     if (equipmentSlots.some(slot => slot.startsWith('uarm') && game[slot] === object)) {
-        // Pinned stop_donning() clears multi before returning olddelay, so
-        // interrupted removal keeps the full armor delay and refusal chance.
-        const delay = OBJECT_DELAY[object.otyp] ?? 0;
+        const delay = oldDelay > 0 && oldDelay < (OBJECT_DELAY[object.otyp] ?? 0)
+            ? oldDelay : OBJECT_DELAY[object.otyp] ?? 0;
         const helplessReason = game._helplessReason;
         const reason = typeof helplessReason === 'string' ? helplessReason : helplessReason?.text;
         const unresponsive = heroIsUnaware(game) || (heroHasInvoluntaryDelay(game)
             && !!reason && /^(?:frozen|paralyzed)/.test(reason));
         if (animal || unresponsive) {
-            if (delay >= 1 && draw(10)) return refuse();
+            // A doff already under way disarms the patience refusal and its roll.
+            if (delay >= 1 && !oldDelay && draw(10)) return refuse();
         } else {
             charmed = true;
             const cursed = object.cursed;

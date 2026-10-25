@@ -285,26 +285,6 @@ void test('a nymph steals interrupted donning armor immediately after it becomes
     assert.equal(game.multi, 0);
     assert.doesNotMatch(messages.join('\n'), /charms|seduces|takes off/);
 });
-void test('a monkey can give up stealing boots even after removal has started', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
-    requirePlayingGame(game);
-    const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(boots);
-    pushKey(boots.invlet);
-    await rhack('T'.charCodeAt(0));
-    const thief = await nearbyThief('monkey');
-    const input = resetInputState();
-    installPagerInput(input, { expected: /boots|monkey/, limit: 12 });
-    const messages = [];
-    input.beforeRead = () => { messages.push(game._pending_message); };
-    await performMonsterHeroAttack(thief, game, { random: limit => limit - 1, rollOne: () => 1 });
-    await flushPendingTopline();
-    assert.ok(game.uarmf === boots, 'Interrupted removal leaves the refused boots worn');
-    assert.ok(game.inventory.includes(boots));
-    assert.equal(thief.minvent.includes(boots), false);
-    assert.equal(game.multi, 0, 'The theft attempt still cancels armor removal');
-    assert.match(messages.join('\n'), /The monkey tries to take your shoes but gives up\./);
-});
 for (const female of [true, false]) {
     void test(`a nymph continues ${female ? 'removing' : 'taking off'} the suit already being removed with A`, async () => {
         freshObjectRoom({ flags: { female, menu_style: MENU_PARTIAL }, hero: { uhp: 100, uhpmax: 100 } });
