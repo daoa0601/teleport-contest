@@ -8,7 +8,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginMonsterHeroAttack } from '../js/monmove.js';
 import { OIL_LAMP, POT_HEALING } from '../js/object_data.js';
-import { artifactObject, addInventoryObject } from './support/game-objects.js';
+import { artifactObject, addInventoryObject, untimedCorpse } from './support/game-objects.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -291,5 +292,27 @@ void test('an artifact message does not make the next ordinary weapon hit say ag
     const prose = [...messages, game._pending_message].join('\n');
     assert.match(prose, /The ettin cuts deeply into you!/);
     assert.match(prose, /The ettin hits!/);
+    assert.doesNotMatch(prose, /hits again/);
+});
+
+void test('a corpse hit that starts petrification does not make the next hit say again', async () => {
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    requirePlayingGame(game);
+    const captain = await createMonsterAt('captain', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    captain.mux = game.u.ux;
+    captain.muy = game.u.uy;
+    await equipMonsterObject(captain, await untimedCorpse(MONSTER_NAME.indexOf('cockatrice')), W_WEP);
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /captain|slow/, limit: 8 });
+
+    await performMonsterHeroAttack(captain, game, {
+        random: range => range - 1, rollOne: () => 1, rollDice: count => count,
+    });
+
+    const prose = [...messages, game._pending_message].join('\n');
+    assert.equal(prose.match(/hits you with the cockatrice corpse/g)?.length, 2);
+    assert.match(prose, /The captain hits!/);
     assert.doesNotMatch(prose, /hits again/);
 });
