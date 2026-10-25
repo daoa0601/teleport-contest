@@ -386,4 +386,39 @@ void test('an endgame player monster prefers talking to its own class', async ()
     assert.notEqual(game._pending_message, other);
     game.astral_level = undefined;
 });
+void test('a were-howl wakes sleepers within eleven squares', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    game.flags.moonphase = 4;
+    game.datetime = '20020115230000';
+    initRng(0);
+    const wolf = await createMonsterAt(263, 11, 10);
+    wolf.mpeaceful = 1;
+    wolf.msleeping = 0;
+    const near = await createMonsterAt('gnome', 16, 10);
+    const far = await createMonsterAt('gnome', 25, 10);
+    near.msleeping = far.msleeping = 1;
+    await runExtendedCommand('chat', 'l');
+    assert.equal(near.msleeping, 0);
+    assert.equal(far.msleeping, 1);
+    game.datetime = null;
+    game.flags.moonphase = 0;
+});
+void test('a giant guffaw wakes only sleepers within seven squares', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    initRng(0);
+    const giant = await createMonsterAt('giant', 11, 10);
+    giant.mpeaceful = 0;
+    giant.msleeping = 0;
+    const near = await createMonsterAt('gnome', 15, 10);
+    const far = await createMonsterAt('gnome', 20, 10);
+    near.msleeping = far.msleeping = 1;
+    await runExtendedCommand('chat', 'l');
+    assert.equal(game._pending_message, 'The gnome wakes up.  The giant shouts "Fee Fie Foe Foo!" and guffaws.');
+    assert.equal(near.msleeping, 0);
+    assert.equal(far.msleeping, 1);
+});
 //# sourceMappingURL=monster_chat.test.js.map
