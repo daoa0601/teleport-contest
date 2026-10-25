@@ -3,7 +3,7 @@
 
 import { monsterAtPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
-import { observeObjectForNaming } from './objnam.js';
+import { observeObjectForNaming, singularObjectName } from './objnam.js';
 import {
     heroFootName, heroHandName, monsterHandName,
 } from './body_parts.js';
@@ -36,11 +36,13 @@ import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BOULDER, CORPSE, OBJECT_BIMANUAL,
 } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { monsterName as describeMonsterName } from './monster_name.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
+import { heroIsBlind } from './senses.js';
 import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { resetHeroTrap } from './terrain_movement.js';
@@ -156,8 +158,10 @@ async function snagFloorObject(proficiency: number, state: GameState) {
     if (!object || !proficiency) return false;
 
     observeObjectForNaming(object, { state });
+    // C apply.c:3050 wraps an(singular(otmp, xname)): one item from a
+    // stack, "a +0 dagger", never the stack count.
     await pline(
-        `You wrap your bullwhip around ${await objectWithArticle(object)} on the ${
+        `You wrap your bullwhip around ${withIndefiniteArticle(singularObjectName(object, state))} on the ${
             surfaceName(state.u.ux, state.u.uy, state)}.`,
     );
     if (rnl(6) !== 0) {
@@ -340,9 +344,13 @@ async function revealWhipTarget(monster: Monster, x: number, y: number, state: G
     const alreadyMarked = state.level?.at?.(x, y)?.remembered_glyph?.kind
         === 'invisible';
     if (!spotted && alreadyMarked) return;
-    const blind = !!(game.blind || (game.u?.blindTurns ?? 0) > 0);
-    await pline(`${spotted ? `A ${monsterName(monster)}` : 'A monster'} is there that you ${
-        blind ? "hadn't noticed" : "couldn't see"}.`);
+    // C apply.c:3139 names a now-spotted target with Amonnam(): the
+    // capitalized form of a_monnam(), so "An acid blob", "A newt".
+    const name = spotted
+        ? describeMonsterName(monster, { article: 'a', capitalized: true, state })
+        : 'A monster';
+    await pline(`${name} is there that you ${
+        heroIsBlind(state) ? "hadn't noticed" : "couldn't see"}.`);
     if (spotted) newsym(x, y);
     else map_invisible(x, y);
 }
