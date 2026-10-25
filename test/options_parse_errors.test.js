@@ -299,8 +299,18 @@ void test('a bare cond element reports the condition diagnostic', () => {
     // parse_cond_option() returns 2 when the element holds nothing past
     // the prefix and 1 when the condition name matches nothing.
     assert.deepEqual(errorMessages('OPTIONS=cond'), ['Unknown condition option cond (2)']);
-    assert.deepEqual(errorMessages('OPTIONS=cond_bogus'), ['Unknown condition option cond_bogus (1)']);
     assert.deepEqual(errorMessages('OPTIONS=cond_blind'), []);
+});
+void test('an unknown condition suffix reports both option errors', () => {
+    for (const { element, suffix } of [
+        { element: 'cond_bogus', suffix: 'cond_bogus' },
+        { element: 'COND_bogus', suffix: 'COND_bogus' },
+        { element: '!cond_bogus:yes', suffix: 'cond_bogus' },
+        { element: 'cond_bogus=yes', suffix: 'cond_bogus=yes' },
+    ]) {
+        assert.deepEqual(errorMessages(`OPTIONS=${element}`), [`Unknown condition option ${element.replace(/^!/, '')} (1)`,
+            `bad option suffix variation '${suffix}'`], element);
+    }
 });
 void test('bind_key parameter complaints surface from BINDINGS lines', () => {
     assert.deepEqual(errorMessages('BINDINGS=h:toggle'), ["'toggle' requires a parameter"]);

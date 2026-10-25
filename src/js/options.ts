@@ -1267,7 +1267,16 @@ function parseConfiguration(
                 // condition name matches nothing.
                 const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
                 if (mask !== null) result.flags.statusConditionMask = mask;
-                else addError(`Unknown condition option ${stripped} (${stripped.length <= 4 ? 2 : 1})`);
+                else {
+                    addError(`Unknown condition option ${stripped} (${stripped.length <= 4 ? 2 : 1})`);
+                    // parseoptions() adds this only for a full prefix
+                    // match; the abbreviation "cond" gets one error.
+                    if (asciiNameEqual(canonical, stripped, canonical.length)) {
+                        const colon = stripped.indexOf(':');
+                        const suffix = colon < 0 ? stripped : stripped.slice(0, colon);
+                        addError(`bad option suffix variation '${suffix}'`);
+                    }
+                }
                 continue;
             }
 
