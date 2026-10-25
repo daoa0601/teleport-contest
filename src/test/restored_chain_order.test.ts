@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DOOR, D_NODOOR, HWALL, PIT, SHOP_WALL_COST, STAIRS } from '../js/const.js';
+import { addFruit } from '../js/fruit.js';
+import { readObjectName } from '../js/objnam.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addShopDamage, shopkeeperRepairsDamage } from '../js/shop_damage.js';
@@ -103,3 +105,17 @@ void test('hallucinating trap detection visits the older restored trap before ne
     assert.equal(older.otyp, single.otyp, 'The older restored trap gets the first imaginary object');
 });
 
+void test('restoring rebuilds the fruit registry before resolving ambiguous fruit wishes', async () => {
+    freshObjectRoom();
+    const pluralFruit = addFruit('guavas');
+    addFruit('guava');
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame(game.plname, storage), true);
+
+    const wished = await readObjectName('guavas', { wizardWish: true });
+
+    assert.ok(wished && !wished.noWish);
+    assert.equal(wished.object.spe, pluralFruit, 'The restored older exact fruit name precedes the newer plural match');
+    assert.equal(wished.object.quan, 1);
+});
