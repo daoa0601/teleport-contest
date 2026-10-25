@@ -725,7 +725,8 @@ export function objectHasPersonalName(object, state = game) {
     if (state.program_state?.gameover || state.iflags?.override_ID
         || object.overrideIdentified)
         return true;
-    if (!object.known || !object.dknown || !object.bknown
+    if (!object.known || !object.dknown
+        || (!object.bknown && object.otyp !== SCROLL_OF_MAIL)
         || !objectTypeKnown(object, state)
         || !state._artifactDiscoveries?.includes(object.oartifact))
         return false;
@@ -867,33 +868,6 @@ function objectAcceptsSecondaryErosion(object) {
     const rottable = (material > 1 && material <= 8) || material === 10;
     const corrodeable = material === 11 || material === 13;
     return rottable || corrodeable;
-}
-function erosionDegree(level) {
-    return level >= 3 ? 'thoroughly ' : level === 2 ? 'very ' : '';
-}
-// C objnam.c:add_erosion_words().  Primary and secondary damage are visible
-// independently of type knowledge, so wish receipt and later inventory prose
-// must retain the per-identity adjectives even when +N remains unknown.
-export function objectStatePrefix(object) {
-    if (!object)
-        return '';
-    const primaryErosion = object.oeroded ?? 0;
-    const secondaryErosion = object.oeroded2 ?? 0;
-    let prefix = object?.greased ? 'greased ' : '';
-    if (primaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = objectMaterial(object.otyp);
-        const adjective = material === 11 ? 'rusty '
-            : material === 19 && object.oclass === ARMOR_CLASS
-                ? 'cracked ' : 'burnt ';
-        prefix += `${erosionDegree(primaryErosion)}${adjective}`;
-    }
-    if (secondaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = objectMaterial(object.otyp);
-        const adjective = material === 11 || material === 13
-            ? 'corroded ' : 'rotted ';
-        prefix += `${erosionDegree(secondaryErosion)}${adjective}`;
-    }
-    return prefix;
 }
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
 // wishable.  The draw is over total probability, not candidate count.

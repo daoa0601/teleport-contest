@@ -118,7 +118,8 @@ export async function checkInventoryGold(why: string, state: GameState = game): 
 export function objectNeedsFullIdentification(object: GameObject | null | undefined) {
     if (!object || object.oclass === COIN_CLASS) return false;
     const typeKnown = objectTypeKnown(object);
-    if (!object.known || !object.bknown || !object.dknown || !typeKnown) return true;
+    if (!object.known || (!object.bknown && object.otyp !== SCR_MAIL)
+        || !object.dknown || !typeKnown) return true;
     if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
         || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp))) return true;
     if (object.oartifact && !game._artifactDiscoveries?.includes(object.oartifact)) return true;
