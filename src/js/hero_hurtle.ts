@@ -18,8 +18,8 @@ import {
     is_hole, is_pit, isok,
 } from './const.js';
 import {
-    canSpotMonster, flush_screen, glyphAt, map_invisible, newsym,
-    plineWithContinuation,
+    canSpotMonster, displayLiquidName, flush_screen, glyphAt, map_invisible,
+    newsym, plineWithContinuation,
 } from './display.js';
 import { heroTestMove } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -58,6 +58,7 @@ import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
 import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
+import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
 import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 
@@ -267,11 +268,11 @@ async function collideWithMonster(monster: Monster, x: number, y: number, option
 function anchoredMessage() {
     const type = game.u?.utraptype;
     if (type === TT_WEB) return 'You are anchored by the web.';
-    if (type === TT_LAVA) return 'You are anchored by the lava.';
+    if (type === TT_LAVA) return `You are anchored by the ${displayLiquidName('lava')}.`;
+    if (type === TT_INFLOOR)
+        return `You are anchored by the ${surfaceName(game.u.ux, game.u.uy)}.`;
     if (type === TT_BURIEDBALL)
         return 'You are anchored by the buried ball.';
-    if (type === TT_INFLOOR)
-        return 'You are anchored by the ground.';
     return 'You are anchored by the trap.';
 }
 
