@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { D_CLOSED, DOOR, STAIRS } from '../js/const.js';
-import { displaySelf, flush_screen, newsym } from '../js/display.js';
+import { displaySelf, flush_screen, newsym, _statusLine2 } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
@@ -76,3 +76,15 @@ for (const showrace of [false, true]) {
         assert.equal(heroCell?.color, showrace ? CLR_WHITE : NO_COLOR);
     });
 }
+
+// botl.c builds the gold field header from the active symset's coin-class
+// symbol, and symbols.c init_rogue_symbols() maps coins to GEM_SYM, so the
+// Rogue level's status line counts gold under '*' instead of '$'.
+void test('the Rogue level status line labels gold with the rogue coin symbol', () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    assert.match(_statusLine2(), /^[^ ]+ \$:/);
+
+    game.rogue_level = { ...game.u.uz };
+    assert.match(_statusLine2(), /^[^ ]+ \*:/);
+});

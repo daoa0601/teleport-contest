@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     ALTAR, CORR, DOOR, FOUNTAIN, GRAVE, Is_rogue_level, OROOM, ROOM,
-    SCORR, SDOOR, SINK, FILL_NONE, FILL_NORMAL,
+    SCORR, SDOOR, SINK, STAIRS, FILL_NONE, FILL_NORMAL, D_NODOOR,
 } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { init_dungeons } from '../js/dungeon.js';
@@ -26,7 +26,9 @@ import { floorObjects, levelStairs } from './support/level-state.js';
 const ROGUE_PLAYER_NAMES = ['Michael Toy', 'Kenneth Arnold', 'Glenn Wichman'];
 const PM_GHOST = 287;
 const PLATE_MAIL = OBJECT_NAMES.indexOf('plate mail');
-const PASSABLE_TERRAIN = [ROOM, CORR, SCORR, DOOR, SDOOR];
+// Stairs are walkable terrain: generate_stairs() can drop one on a room
+// cell that a flood fill would otherwise need to enter through.
+const PASSABLE_TERRAIN = [ROOM, CORR, SCORR, DOOR, SDOOR, STAIRS];
 
 // Drive the level-generation entry point the way a level arrival does: the
 // dungeon descriptor carries the named "rogue" level, and its prototype
@@ -221,5 +223,119 @@ void test('Rogue rooms stay unfilled even after a level that filled its rooms', 
     for (const object of floorObjects(rogue)) {
         assert.ok(object.ox === ghost.mx && object.oy === ghost.my,
             'the only floor objects are the ghost tribute items');
+    }
+});
+
+// extralev.c roguecorr()/dodoor(): every corridor endpoint punches a hole
+// through the room's wall ring, and dosdoor() forces D_NODOOR on the Rogue
+// level, so no doorway there is ever an openable, locked, or trapped door.
+// maybe_sdoor(8) still supplies the hole type, so SDOOR holes occur too.
+void test('Rogue doorways are wall holes, never openable doors', async () => {
+    for (const seed of [2n, 11n, 19n]) {
+        const level = await generateRogueLevel(seed);
+        const rooms = roomsOfLevel();
+        assert.ok(rooms.length > 0, 'the Rogue level has rooms');
+        let doorways = 0;
+        for (let x = 1; x < 80; x++) {
+            for (let y = 0; y < 22; y++) {
+                const loc = level.at(x, y);
+                if (!loc || (loc.typ !== DOOR && loc.typ !== SDOOR)) continue;
+                doorways++;
+                assert.equal(loc.doormask, D_NODOOR,
+                    `doorway at ${x},${y} is not a plain opening`);
+                const besideRoom = rooms.some(room =>
+                    (x === room.lx - 1 || x === room.hx + 1)
+                        && y >= room.ly - 1 && y <= room.hy + 1
+                    || (y === room.ly - 1 || y === room.hy + 1)
+                        && x >= room.lx - 1 && x <= room.hx + 1);
+                assert.ok(besideRoom, `doorway at ${x},${y} sits on no room wall`);
+            }
+        }
+        assert.ok(doorways > 0, 'corridor carving punched room-wall holes');
+        for (const room of rooms) {
+            let hole = false;
+            for (let x = room.lx - 1; x <= room.hx + 1 && !hole; x++)
+                for (const y of [room.ly - 1, room.hy + 1]) {
+                    const typ = level.at(x, y)?.typ;
+                    if (typ === DOOR || typ === SDOOR) { hole = true; break; }
+                }
+            for (let y = room.ly; y <= room.hy && !hole; y++)
+                for (const x of [room.lx - 1, room.hx + 1]) {
+                    const typ = level.at(x, y)?.typ;
+                    if (typ === DOOR || typ === SDOOR) { hole = true; break; }
+                }
+            assert.ok(hole,
+                `room ${room.lx},${room.ly}-${room.hx},${room.hy} has no doorway`);
+        }
+    }
+});
+
+// extralev.c roguejoin() draws each corridor as three axis-aligned runs
+// whose endpoints stop one step short of the room floors, and corr() makes
+// each carved cell a secret corridor one time in fifty.
+void test('Rogue corridors never cross a room and sometimes run secret', async () => {
+    let secretCorridorSeen = false;
+    for (const seed of [3n, 13n, 23n, 31n, 37n]) {
+        const level = await generateRogueLevel(seed);
+        const rooms = roomsOfLevel();
+        for (let x = 1; x < 80; x++) {
+            for (let y = 0; y < 22; y++) {
+                const typ = level.at(x, y)?.typ;
+                if (typ !== CORR && typ !== SCORR) continue;
+                if (typ === SCORR) secretCorridorSeen = true;
+                const insideRoom = rooms.some(room =>
+                    x >= room.lx && x <= room.hx && y >= room.ly && y <= room.hy);
+                assert.ok(!insideRoom,
+                    `corridor cell ${x},${y} cuts room floor`);
+            }
+        }
+    }
+    assert.ok(secretCorridorSeen, 'corr() carved at least one SCORR');
+});
+
+// extralev.c makeroguerooms() turns a grid cell into a dummy one fifth of
+// the time (never cell 2,2 unless a room already exists). Dummy cells hold
+// no room, yet miniwalk still routes corridors across their anchor points.
+void test('dummy grid cells carry corridors without rooms', async () => {
+    let dummyCellSeen = false, corridorThroughDummy = false;
+    for (let seed = 1n; seed <= 12n; seed++) {
+        const level = await generateRogueLevel(seed);
+        const rooms = roomsOfLevel();
+        assert.ok(rooms.length >= 1 && rooms.length <= 9);
+        for (let bx = 0; bx < 3; bx++) {
+            for (let by = 0; by < 3; by++) {
+                const x0 = 26 * bx + 2, x1 = 26 * bx + 24;
+                const y0 = 7 * by + 1, y1 = 7 * by + 5;
+                const holdsRoom = rooms.some(room =>
+                    room.lx >= x0 && room.hx <= x1 && room.ly >= y0 && room.hy <= y1);
+                if (holdsRoom) continue;
+                dummyCellSeen = true;
+                for (let x = x0; x <= x1 && !corridorThroughDummy; x++)
+                    for (let y = y0; y <= y1; y++) {
+                        const typ = level.at(x, y)?.typ;
+                        if (typ === CORR || typ === SCORR) {
+                            corridorThroughDummy = true;
+                            break;
+                        }
+                    }
+            }
+        }
+    }
+    assert.ok(dummyCellSeen, 'some seed picked a dummy cell over a room');
+    assert.ok(corridorThroughDummy,
+        'miniwalk routed a corridor across a dummy cell');
+});
+
+// extralev.c makerogueghost() places the tribute ghost at somex()/somey()
+// of a random real room, so it always stands on that room's floor.
+void test('the Rogue ghost stands on a room floor', async () => {
+    for (const seed of [5n, 17n, 29n]) {
+        const level = await generateRogueLevel(seed);
+        const ghost = level.monsters.find(monster => monster.mnum === PM_GHOST);
+        assert.ok(ghost, 'the tribute ghost exists');
+        const inside = roomsOfLevel().some(room =>
+            ghost.mx >= room.lx && ghost.mx <= room.hx
+            && ghost.my >= room.ly && ghost.my <= room.hy);
+        assert.ok(inside, `ghost at ${ghost.mx},${ghost.my} left every room`);
     }
 });
