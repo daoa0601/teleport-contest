@@ -4,6 +4,7 @@
 import { objectTypeKnown } from './shk.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
+import { createHeroState } from './hero_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
@@ -542,6 +543,10 @@ export function initializeHeroSpecies(state: GameState = game): void {
 // The caller supplies the handedness roll from pre-level initialization.
 export function uInitMisc(handednessRoll: number): void {
     const g = game;
+    const roleplay = g.u.uroleplay;
+    // C clears all of u, including old timeouts, before restoring conduct
+    // options. A partially restored hero must not affect the new character.
+    g.u = createHeroState();
     const u = g.u;
     g.flags.beginner = true;
     u._propertySources = {};
@@ -554,6 +559,10 @@ export function uInitMisc(handednessRoll: number): void {
         + initialRoll(g.urace?.enadv);
 
     u.uz = { dnum: 0, dlevel: 1 };
+    u.uz0 = { dnum: 0, dlevel: 0 };
+    u.utolev = { ...u.uz };
+    u.umortality = 0;
+    u.ugrave_arise = -1;
     u.ulevel = u.ulevelmax = 1;
     u.ulevelpeak = 0;
     u.uhp = u.uhpmax = u.uhppeak = hp;
@@ -567,6 +576,8 @@ export function uInitMisc(handednessRoll: number): void {
     u.ueninc[0] = pw;
     u.uexp = 0;
     u.urexp = 0;
+    u.uhunger = 900;
+    u.uhs = NOT_HUNGRY;
     // C u_init_misc(): prayer starts on its own 300-turn cooldown.  Wishes,
     // prayer outcomes, and once-per-turn decay all compose with this value;
     // it is not a disclosure-only default.
@@ -582,8 +593,7 @@ export function uInitMisc(handednessRoll: number): void {
     const configuredNudist = Object.prototype.hasOwnProperty.call(
         g.flags || {}, 'nudist',
     );
-    u.uroleplay = {
-        ...(u.uroleplay || {}),
+    u.uroleplay = roleplay ?? {
         pauper: !!g.flags?.pauper,
         nudist: configuredNudist
             ? !!g.flags.nudist : !!g.flags?.pauper,
@@ -612,6 +622,7 @@ export function uInitMisc(handednessRoll: number): void {
     }
     u.nv_range = 1;
     u.xray_range = -1;
+    u.unblind_telepat_range = -1;
     // OPTIONS:blind installs a permanent intrinsic source.  Keep that source
     // distinct from the conduct bit so the Eyes of the Overworld can void
     // the conduct without curing the underlying blindness.
@@ -1466,8 +1477,6 @@ export async function uInitInventoryAttrs(): Promise<boolean> {
     game.spells = [];
     delete game._startingEffectsApplied;
     game.moves = 1;
-    game.u.uhunger = 900;
-    game.u.uhs = NOT_HUNGRY;
     // C resets u.umoney0 before the role switch so repeated character
     // initialization cannot inherit another role's purse.
     game._initialGoldCount = 0;
