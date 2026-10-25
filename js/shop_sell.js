@@ -7,7 +7,7 @@ import { nameShopTransaction } from './shop_speech.js';
 import { objectDescription } from './object_description.js';
 import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { QBUFSZ, SHOPBASE } from './const.js';
-import { shopkeeperName } from './monster_name.js';
+import { monsterPossessive, shopkeeperName } from './monster_name.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { requireShopGame } from './shop_types.js';
@@ -303,7 +303,7 @@ async function specialStock(resident, object, { publish, state }) {
         await publish('"I won\'t stock that.  Take it out of here!"');
     }
     else {
-        await publish(`${shopkeeperName(resident)} shakes their head in refusal.`);
+        await publish(`${shopkeeperName(resident)} shakes ${monsterPossessive(resident, { noIt: true })} head in refusal.`);
     }
     return true;
 }
