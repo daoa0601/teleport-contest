@@ -126,8 +126,9 @@ function matchingGetposSymbols(key, state) {
     }
     return matching;
 }
-// C glyphs.c:glyph_to_cmap(), restricted to the eligible getpos features.
-function getposGlyphSymbol(glyph) {
+// C glyphs.c:glyph_to_cmap(): the displayed glyph number to its defsyms[]
+// index, mapping each branch wall range back onto the base symbols.
+export function glyphToCmapSymbol(glyph) {
     if (glyph === undefined)
         return null;
     if (glyph === GlyphOffset.cmapStone)
@@ -146,7 +147,9 @@ function getposGlyphSymbol(glyph) {
         return glyph - GlyphOffset.cmapC + CmapSymbol.digbeam;
     return null;
 }
-function knownVibratingSquareAt(x, y, state) {
+// C getpos.c:known_vibrating_square_at(): only the genuine invocation
+// position counts, and only once the trap itself is known.
+export function knownVibratingSquareAt(x, y, state) {
     const invocation = state.level?.invocationPosition;
     return Invocation_lev(state.u.uz, state) && invocation?.x === x && invocation.y === y
         && !!state.level?.traps.some(trap => trap.tx === x && trap.ty === y
@@ -156,18 +159,18 @@ function getposFeatureMatches(x, y, key, matching, state) {
     const loc = state.level?.at?.(x, y);
     if (!loc)
         return false;
-    const current = getposGlyphSymbol(glyphAt(x, y, state)?.glyph);
+    const current = glyphToCmapSymbol(glyphAt(x, y, state)?.glyph);
     if (current !== null && matching.has(current))
         return true;
     if (state.level?.flags.hero_memory !== false && !state.iflags.terrainmode) {
-        const remembered = getposGlyphSymbol(loc.remembered_glyph?.glyph);
+        const remembered = glyphToCmapSymbol(loc.remembered_glyph?.glyph);
         if (remembered !== null && matching.has(remembered))
             return true;
     }
     if (key === '~' && knownVibratingSquareAt(x, y, state))
         return true;
     if (loc.seenv) {
-        const background = getposGlyphSymbol(terrain_glyph(loc, x, y).glyph);
+        const background = glyphToCmapSymbol(terrain_glyph(loc, x, y).glyph);
         if (background !== null && matching.has(background))
             return true;
     }
@@ -398,7 +401,7 @@ function getposArea(state) {
         const location = state.level?.at(tx, ty);
         if (!location || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
             return null;
-        const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
+        const symbol = glyphToCmapSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null)
             return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom

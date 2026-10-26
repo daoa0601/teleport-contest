@@ -152,6 +152,7 @@ import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { tipCommand } from './container_tip.js';
 import { lootCommand } from './container_loot.js';
+import { dolookaround } from './lookaround.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions, option_help } from './options.js';
 import {
@@ -3489,6 +3490,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['invoke', doinvoke],
     ['ride', doride],
     ['rub', dorub],
+    ['lookaround', dolookaround],
     ['loot', doloot],
     ['tip', tipCommand],
     ['force', doforce],
