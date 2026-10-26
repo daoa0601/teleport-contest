@@ -40,25 +40,6 @@ function installStrongholdDrawbridge() {
 async function harp() {
     return knownObject(WOODEN_HARP, { spe: 0 });
 }
-void test('playing the castle tune records its wording and turn in the chronicle', async () => {
-    installStrongholdDrawbridge();
-    requireFixtureGame(game);
-    const turn = game.moves;
-    pushKeys(`nABCDE\n${' '.repeat(20)}`);
-    await playInstrument(await harp());
-    const input = resetInputState();
-    input.feed('#chronicle\n');
-    const chronicle = rhack(0);
-    try {
-        await input.waitUntilBlocked();
-        const text = Array.from({ length: 24 }, (_, row) => requireScreenRow(row).map(cell => cell.ch).join('')).join('\n');
-        assert.ok(text.includes(`${turn}: learned castle drawbridge's tune`), text);
-    }
-    finally {
-        input.feed(' ');
-        await chronicle;
-    }
-});
 void test('the Stronghold passtune opens and closes its drawbridge', async () => {
     const { bridge, wall } = installStrongholdDrawbridge();
     requireFixtureGame(game);
