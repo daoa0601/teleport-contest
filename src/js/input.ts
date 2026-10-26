@@ -16,7 +16,12 @@ export interface CommandDirection {
 }
 export type CommandResponse = number | 'user-input' | CommandDirection;
 export interface MapClick extends Position { button: 1 | 2 }
-export const MAP_CLICK_KEY = 256;
+const MAP_CLICK_KEY = 256;
+
+interface CharacterInput {
+    readonly key: number;
+    readonly click: MapClick | null;
+}
 
 export type KeyInput = string | number;
 type InputState = 'other' | 'command' | 'direction' | 'position';
@@ -256,11 +261,22 @@ export async function nhgetch(inputState: InputState = 'other') {
     return key === 0 ? 27 : key;
 }
 
+export async function readchar(inputState: InputState = 'other'): Promise<number> {
+    return (await readcharCore(inputState)).key;
+}
+
+// C readchar_poskey(): only position selection receives the click coordinates.
+// All readchar callers receive the same NUL character for a click.
+export function readcharPoskey(): Promise<CharacterInput> {
+    return readcharCore('position');
+}
+
 // C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
 // direction, and position input. Ordinary prompts keep a literal Escape.
-export async function readchar(inputState: InputState = 'other') {
+async function readcharCore(inputState: InputState): Promise<CharacterInput> {
     // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
-    if (game.iflags.debug_fuzzer) return activeInputGate.readKey(inputState);
+    if (game.iflags.debug_fuzzer)
+        return { key: await activeInputGate.readKey(inputState), click: null };
     let key = await nhgetch(inputState);
     if (key === MAP_CLICK_KEY) {
         // C readchar_core(): clicks record their location even when getpos
@@ -272,7 +288,7 @@ export async function readchar(inputState: InputState = 'other') {
             game._cannedCommands ??= [];
             game._cannedCommands.push({ kind: 'command', name: command.name });
         }
-        return key;
+        return { key: 0, click };
     }
     if (key === -1) {
         key = 27;
@@ -281,7 +297,7 @@ export async function readchar(inputState: InputState = 'other') {
         const next = nativeChar(await nhgetch(inputState));
         key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
     }
-    return nativeChar(key);
+    return { key: nativeChar(key), click: null };
 }
 
 function nativeChar(key: number): number {

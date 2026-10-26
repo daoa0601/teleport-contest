@@ -67,8 +67,8 @@ void test('a literal Ctrl-C retries object selection instead of cancelling it', 
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 5 });
     game.iflags.debug_fuzzer = true;
-    // The space acknowledges the unknown-object message before the retry.
-    bindInputGate(new QueuedFuzzerInput(`\x03 ${dagger.invlet}X`));
+    // C more() skips acknowledgments in fuzzer mode; the letter answers the retry.
+    bindInputGate(new QueuedFuzzerInput(`\x03${dagger.invlet}X`));
     const selected = await chooseInventoryObject('drop', () => GETOBJ_SUGGEST, { allowCount: true });
     assert.equal(selected, dagger);
     assert.equal(dagger.quan, 5);

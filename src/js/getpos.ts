@@ -12,7 +12,7 @@ import {
     terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
-import { MAP_CLICK_KEY, readchar, takeCommandPosition } from './input.js';
+import { readcharPoskey, takeCommandPosition } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
@@ -660,8 +660,8 @@ export async function selectMapPosition({
 
             const queued = takeRepeatCommand();
             if (queued && queued.kind !== 'key') return null;
-            let read = queued ? queued.key : await readchar('position');
-            let key = read === MAP_CLICK_KEY ? 0 : read & 255;
+            let read = queued ? { key: queued.key, click: null } : await readcharPoskey();
+            let key = read.key & 255;
             if (!queued && game.iflags.remember_getpos) rememberCommandKey(key);
             if (autoDescription()) clearMessageOnExit = false;
             if (key === 27) {
@@ -671,17 +671,15 @@ export async function selectMapPosition({
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
-                read = await readchar('position');
-                key = read === MAP_CLICK_KEY ? 0 : read & 255;
+                read = await readcharPoskey();
+                key = read.key & 255;
                 fast = true;
             }
             if (key === 0) {
                 // Native repeat stores the click's NUL key without its
                 // coordinates; getpos initializes those to the hero square.
-                const target = read === MAP_CLICK_KEY ? game._clicklookTarget
-                    : { x: game.u.ux, y: game.u.uy };
-                if (target) return { ...target, pickType: LOOK_TRADITIONAL };
-                continue;
+                const target = read.click ?? { x: game.u.ux, y: game.u.uy };
+                return { x: target.x, y: target.y, pickType: LOOK_TRADITIONAL };
             }
             const ch = String.fromCharCode(key);
             const pickType = mapPositionPickType(key);

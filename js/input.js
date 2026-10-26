@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { isok } from './const.js';
-export const MAP_CLICK_KEY = 256;
+const MAP_CLICK_KEY = 256;
 function keyCode(key) {
     if (typeof key === 'number')
         return key;
@@ -241,12 +241,20 @@ export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() treats NUL as Escape, including a typed Ctrl-@.
     return key === 0 ? 27 : key;
 }
+export async function readchar(inputState = 'other') {
+    return (await readcharCore(inputState)).key;
+}
+// C readchar_poskey(): only position selection receives the click coordinates.
+// All readchar callers receive the same NUL character for a click.
+export function readcharPoskey() {
+    return readcharCore('position');
+}
 // C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
 // direction, and position input. Ordinary prompts keep a literal Escape.
-export async function readchar(inputState = 'other') {
+async function readcharCore(inputState) {
     // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
     if (game.iflags.debug_fuzzer)
-        return activeInputGate.readKey(inputState);
+        return { key: await activeInputGate.readKey(inputState), click: null };
     let key = await nhgetch(inputState);
     if (key === MAP_CLICK_KEY) {
         // C readchar_core(): clicks record their location even when getpos
@@ -258,7 +266,7 @@ export async function readchar(inputState = 'other') {
             game._cannedCommands ??= [];
             game._cannedCommands.push({ kind: 'command', name: command.name });
         }
-        return key;
+        return { key: 0, click };
     }
     if (key === -1) {
         key = 27;
@@ -268,7 +276,7 @@ export async function readchar(inputState = 'other') {
         const next = nativeChar(await nhgetch(inputState));
         key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
     }
-    return nativeChar(key);
+    return { key: nativeChar(key), click: null };
 }
 function nativeChar(key) {
     return NATIVE_COMMAND_PROFILE.signedChar ? (key << 24) >> 24 : key & 255;

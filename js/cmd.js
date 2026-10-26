@@ -1,6 +1,6 @@
 import { selectContextMenu } from './context_menu.js';
 import { CLICK_1, CLICK_2 } from './const.js';
-import { MAP_CLICK_KEY, queueCommandResponses } from './input.js';
+import { queueCommandResponses } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
@@ -1124,13 +1124,9 @@ export async function rhack(key) {
         if (key === 0 && !cannedCommand && !repeated && response === undefined) {
             key = (await readCommandInput()).key;
             delete game._cursorOverride;
-        }
-        if (key === MAP_CLICK_KEY) {
-            cannedCommand = game._cannedCommands?.shift() ?? null;
-            if (!cannedCommand) {
-                resetCommandVariables(true);
-                return;
-            }
+            // C parse() returns NUL after a click queues its mouse command.
+            if (key === 0)
+                cannedCommand = game._cannedCommands?.shift() ?? null;
         }
         delete game._statusGoldOverride;
         if (!cannedCommand && !repeated && [0, -1, 255, 27].includes(key)) {

@@ -5,7 +5,7 @@ import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plin
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
 import { selectMapPosition } from './getpos.js';
-import { clearCommandKeys, readchar, takeCommandKey, takeCommandResponse } from './input.js';
+import { readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import type { CommandDirection } from './input.js';
 import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -16,6 +16,8 @@ import type { Hero } from './hero_types.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
 import { controlKeyHintLines } from './command_help.js';
+import { clearCannedCommands } from './command_state.js';
+import { impossible } from './diagnostics.js';
 
 export interface DirectionSelection {
     key: string;
@@ -74,7 +76,8 @@ export async function readDirectionKey(message = 'In what direction? ') {
         if (typeof queued === 'number') return queued;
         if (typeof queued === 'object') return queuedDirectionKey(queued);
         if (queued !== undefined) {
-            clearCommandKeys();
+            clearCannedCommands();
+            await impossible('getdir: command queue had no dir?');
             return 0;
         }
     }
