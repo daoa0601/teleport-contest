@@ -7,7 +7,8 @@ import { plineWithContinuation as pline } from './display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
-import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
+import { consumeInventoryItem } from './invent.js';
+import { objectDescription } from './object_description.js';
 import { objectQuantity } from './object_stack.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName, objectQuestion, definiteName } from './objnam.js';
 import { floatingAbove } from './levitation_commands.js';
@@ -169,7 +170,9 @@ async function dipTargetDescription(object) {
     observeObjectForNaming(object);
     return await objectQuestion(object, {
         prefix: '', suffix: '', reserve: DIP_PROMPT_RESERVE,
-        format: async (item) => await inventoryItemDescription(item),
+        // objectQuestion() retries with the call name truncated to
+        // "abcdefgh..." through this state; doname must format from it.
+        format: async (item, state) => await objectDescription(item, { state }),
         shortFormat: (item, state) => definiteName(simpleObjectName(item, state), state),
     });
 }

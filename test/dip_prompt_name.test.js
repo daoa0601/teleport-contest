@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { W_ARMC, W_ARMG } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLOAK_OF_MAGIC_RESISTANCE, LEATHER_GLOVES, POT_EXTRA_HEALING, POT_OIL } from '../js/object_data.js';
+import { CLOAK_OF_MAGIC_RESISTANCE, LEATHER_GLOVES, POT_EXTRA_HEALING, POT_GAIN_LEVEL, POT_OIL } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
@@ -96,6 +96,30 @@ void test('a long-named diluted potion loses its diluted adjective when shortene
     await input.waitUntilBlocked();
     assert.equal(screenRow(0), 'What do you want to dip 2 potions of extra healing named abcdefghijklmnop into?');
     assert.equal(screenRow(1), ` [${diluted.invlet}${dippee.invlet} or ?*]`);
+    input.feed('\x1b');
+    await dipping;
+});
+// C short_oname() first retries doname with the type's called name cut to
+// "abcdefgh..." (objnam.c:2023-2032). With a call name present, xname()
+// drops the color description ("potion called X", not "milky potion called
+// X"), and the 43-character result fits the 50-character dip limit, so the
+// beatitude adjective survives.
+void test('a long type call name is truncated before the dip question', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    const potion = await addInventoryObject(POT_GAIN_LEVEL, {
+        typeKnown: false, dknown: true,
+    });
+    assert.ok(game._objectCallNames);
+    game._objectCallNames[POT_GAIN_LEVEL] = 'abcdefghijklmnopqrstuvwxyz';
+    const dippee = await addInventoryObject(POT_OIL);
+    const input = resetInputState();
+    input.feed('dip\n');
+    const dipping = rhack('#'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed(potion.invlet);
+    await input.waitUntilBlocked();
+    assert.equal(screenRow(0), `What do you want to dip an uncursed potion called abcdefgh... into? `
+        + `[${potion.invlet}${dippee.invlet} or ?*]`);
     input.feed('\x1b');
     await dipping;
 });
