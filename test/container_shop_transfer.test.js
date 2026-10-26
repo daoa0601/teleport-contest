@@ -21,7 +21,8 @@ void test('a floor bag explosion names the returned trigger before quoting the b
     const input = resetInputState();
     const looting = runExtendedCommand('loot', 'sa');
     await input.waitUntilBlocked();
-    const explosionMessage = game._pending_message;
+    // update_topl() stores a wrapped message with '\n' at the wrap point.
+    const explosionMessage = game._pending_message.replaceAll('\n', ' ');
     input.feed(' '.repeat(10));
     await looting;
     assert.match(explosionMessage, /^As you put .*wand.*magical explosion!$/);
