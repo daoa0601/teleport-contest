@@ -3320,7 +3320,7 @@ export async function showMessageMenu(letter, pickMode, message) {
 }
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
-export async function pageTopline(message, { urgent = false, dismissKey } = {}) {
+export async function pageTopline(message, { urgent = false, dismissKey, rawGlyphs = false } = {}) {
     // C tty more() returns before painting or reading during fuzzer mode.
     if (game.iflags.debug_fuzzer)
         return 0;
@@ -3344,7 +3344,7 @@ export async function pageTopline(message, { urgent = false, dismissKey } = {}) 
         for (const [row, line] of lines.entries()) {
             display.clearRow(row);
             for (const [col, cell] of line.entries())
-                display.setCell(col, row, cell.ch, NO_COLOR, 0);
+                display.setCell(col, row, rawGlyphs && cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
         }
         display.setCursor(finalLine.length, lines.length - 1);
     }

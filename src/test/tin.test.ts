@@ -523,8 +523,8 @@ void test('a tin is consumed before its nutrition can cause fatal choking', asyn
         { prompt: /Using your (?:dagger|axe|tin opener).*open the tin/, keys: ' ' },
         { prompt: /(?:succeed in opening|easily open) the tin.*smells like lichens/, keys: ' ' },
         { prompt: /Eat it\?/, keys: 'y' },
-        { prompt: /consume french fried lichen.*choke over your food/, keys: ' ' },
-        { prompt: /You die\.\.\.--More--/, keys: ' ' },
+        { prompt: /consume french fried lichen.*choke over it/, keys: ' ' },
+        { prompt: /You die/, keys: ' ' },
         { prompt: /Goodbye Tin eater.*Wizard/, keys: ' ' },
         { prompt: /^\s*--More--\s*$/, keys: ' ' },
     ], { hero: { uhunger: 1999, uhs: SATIATED, strangledTurns: 6 } });

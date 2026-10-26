@@ -2,7 +2,6 @@
 import { exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { heroHandName } from './body_parts.js';
-import { farlookLocationDescription } from './cmd.js';
 import {
     ACCESSIBLE, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, In_endgame, In_quest,
     IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE,
@@ -213,7 +212,7 @@ async function chooseCenter(question: string, state: PlayingGameState): Promise<
     const selected = await selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
         prompt: state._pending_message,
-        goal: 'the desired position', describe: farlookLocationDescription,
+        goal: 'the desired position',
         isValidLocation: valid,
         highlightHero: false,
     });

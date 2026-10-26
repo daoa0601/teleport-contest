@@ -7,7 +7,6 @@ import {
 } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
-import { farlookLocationDescription } from './cmd.js';
 import { nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
 import { bot, newsym, redrawMap, plineWithContinuation } from './display.js';
@@ -213,7 +212,6 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
         prompt: state._pending_message,
         isValidLocation: valid,
         highlightHero: false,
-        describe: farlookLocationDescription,
     });
     if (!target) return jumpResult(false, state);
     const refusal = jumpRestriction(target.x, target.y, magic, state);

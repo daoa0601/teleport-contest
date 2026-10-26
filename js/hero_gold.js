@@ -88,6 +88,8 @@ export function setHeroGoldAmount(state, amount) {
                 .filter(candidate => candidate !== object);
             if (state.uquiver === object)
                 state.uquiver = null;
+            if (state.u?.uquiver === object)
+                state.u.uquiver = null;
             object.ready = false;
             object.owornmask = 0;
             object.where = 'gone';
@@ -128,6 +130,8 @@ export function detachHeroGold(state, requested = null) {
     state.context.botl = true;
     if (state.uquiver === detached)
         state.uquiver = null;
+    if (state.u?.uquiver === detached)
+        state.u.uquiver = null;
     detached.ready = false;
     detached.owornmask = 0;
     return detached;

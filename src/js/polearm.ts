@@ -38,7 +38,6 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GlyphMetadata } from './display.js';
 import type { Position } from './map_types.js';
-import type { PositionDescription } from './getpos.js';
 
 export type PolearmResult =
     | { heroDied: true }
@@ -52,7 +51,6 @@ export type PolearmResult =
 interface PolearmOptions {
     state?: GameState;
     ensureWielded?: () => Promise<{ ready: boolean; newlyWielded?: boolean }>;
-    describeTarget?: PositionDescription;
     autohit?: boolean;
 }
 
@@ -201,7 +199,6 @@ function obstacleDescription(glyph: GlyphMetadata | null, x: number, y: number, 
 
 async function chooseTarget(
     start: Position,
-    describeTarget: PositionDescription | undefined,
     state: GameState,
     min: number,
     max: number,
@@ -218,14 +215,13 @@ async function chooseTarget(
         start,
         prompt: state._pending_message,
         goal: 'the spot to hit',
-        ...(describeTarget ? { describe: describeTarget } : {}),
         isValidLocation: valid,
     });
 }
 
 export async function usePolearm(
     object: GameObject,
-    { state = game, ensureWielded, describeTarget, autohit = false }: PolearmOptions = {},
+    { state = game, ensureWielded, autohit = false }: PolearmOptions = {},
 ): Promise<PolearmResult> {
     if (state.u?.uswallow || state.uswallow) {
         await pline("There's not enough room here to use that.");
@@ -256,7 +252,7 @@ export async function usePolearm(
     }
 
     if (!autohit) {
-        const target = await chooseTarget(cc, describeTarget, state, min, max);
+        const target = await chooseTarget(cc, state, min, max);
         if (!target) return { spentTime: false, cancelled: true };
         cc = target;
     }

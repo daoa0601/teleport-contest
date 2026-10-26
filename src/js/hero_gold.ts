@@ -15,7 +15,7 @@ import { delobj } from './object_delete.js';
 import { markJustPicked } from './just_picked.js';
 import { GOLD_PIECE } from './object_data.js';
 
-type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'moves' | 'context'>;
+type GoldInventoryState = Pick<GameState, 'inventory' | 'uquiver' | 'u' | 'moves' | 'context'>;
 
 interface GoldAddition {
     object: GameObject | null;
@@ -103,6 +103,7 @@ export function setHeroGoldAmount(state: GoldInventoryState, amount: number): Ga
             state.inventory = (state.inventory || [])
                 .filter(candidate => candidate !== object);
             if (state.uquiver === object) state.uquiver = null;
+            if (state.u?.uquiver === object) state.u.uquiver = null;
             object.ready = false;
             object.owornmask = 0;
             object.where = 'gone';
@@ -141,6 +142,7 @@ export function detachHeroGold(state: GameState, requested: number | null = null
     unlinkObject(detached, state);
     state.context.botl = true;
     if (state.uquiver === detached) state.uquiver = null;
+    if (state.u?.uquiver === detached) state.u.uquiver = null;
     detached.ready = false;
     detached.owornmask = 0;
     return detached;

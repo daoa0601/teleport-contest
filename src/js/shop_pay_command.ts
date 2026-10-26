@@ -8,7 +8,7 @@ import { cansee } from './vision.js';
 import { heroIsBlind } from './senses.js';
 import { distmin } from './hacklib.js';
 import { shopkeeperName, monsterName, monsterSubjectPronoun, monsterObjectPronoun, monsterPossessive } from './monster_name.js';
-import { describeGetposLocation, selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
+import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 import { payShopDebt, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';
@@ -261,7 +261,7 @@ async function choosePaymentShopkeeper(): Promise<PaymentTarget | null> {
     if (tip) await plineWithContinuation(`Move cursor to ${goal}:`);
     const position = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
-        prompt: game._pending_message, goal, describe: describeGetposLocation,
+        prompt: game._pending_message, goal,
     });
     game._pending_message = '';
     if (!position) return null;

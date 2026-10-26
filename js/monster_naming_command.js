@@ -4,7 +4,7 @@ import { visibleCommandKey } from './command_keys.js';
 import { canSenseMonster, canSpotMonster, glyphAt, monsterVisible, plineWithContinuation as pline, seeMonsterWithInfrared } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
-import { describeGetposLocation, selectMapPosition, showGetposTip } from './getpos.js';
+import { selectMapPosition, showGetposTip } from './getpos.js';
 import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './mirror.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsRider } from './monster_data.js';
@@ -33,7 +33,6 @@ export async function nameChosenMonster() {
         await pline(`Move cursor to ${goal}:`);
     const selected = queued === undefined ? await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
-        describe: describeGetposLocation,
         prompt: game._pending_message,
     }) : queued;
     if (!selected)

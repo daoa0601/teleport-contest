@@ -3,7 +3,6 @@ import { setHeroGrip } from './hero_grip.js';
 import { ACCESSIBLE, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, IS_STWALL, Is_airlevel, Is_waterlevel, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
-import { farlookLocationDescription } from './cmd.js';
 import { nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
 import { bot, newsym, redrawMap, plineWithContinuation } from './display.js';
@@ -204,7 +203,6 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
         prompt: state._pending_message,
         isValidLocation: valid,
         highlightHero: false,
-        describe: farlookLocationDescription,
     });
     if (!target)
         return jumpResult(false, state);

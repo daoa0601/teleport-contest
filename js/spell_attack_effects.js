@@ -1,7 +1,6 @@
 import { requirePlayingGame } from './gstate.js';
 // C spell.c:throwspell(), skilled elemental spells, cast_chain_lightning().
 import { exerciseAttribute } from './attrib.js';
-import { farlookLocationDescription } from './cmd.js';
 import { A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel, LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir, } from './const.js';
 import { canSeeMonster, canSpotMonster, clearMessageWindow, flush_screen, map_invisible, plineWithContinuation, } from './display.js';
 import { explode } from './explosion.js';
@@ -84,7 +83,6 @@ async function chooseSpellCenter(state) {
         start: { x: state.u.ux, y: state.u.uy },
         prompt: state._pending_message,
         goal: 'the desired position',
-        describe: farlookLocationDescription,
         isValidLocation: valid,
         highlightHero: false,
     });

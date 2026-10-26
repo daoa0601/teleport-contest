@@ -29,7 +29,6 @@ import { surfaceName } from './terrain_name.js';
 import { isPoolAt } from './terrain_properties.js';
 import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
-import type { PositionDescription } from './getpos.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -39,7 +38,6 @@ import type { WieldToolResult } from './wield_tool.js';
 export interface GrapplingHookOptions {
     state?: GameState;
     ensureWielded: () => WieldToolResult | Promise<WieldToolResult>;
-    describeTarget: PositionDescription;
     attackMonster?: typeof hitMonsterWithAppliedWeapon;
     hurtle: (dx: number, dy: number) => unknown;
 }
@@ -78,7 +76,7 @@ function monsterObject(monster: Monster) {
     )}`;
 }
 
-async function chooseTarget(hook: GameObject, describeTarget: PositionDescription, state: GameState) {
+async function chooseTarget(hook: GameObject, state: GameState) {
     await pline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
     const valid = (x: number, y: number) => isok(x, y) && cansee(x, y)
@@ -93,7 +91,6 @@ async function chooseTarget(hook: GameObject, describeTarget: PositionDescriptio
         start: { x: state.u.ux, y: state.u.uy },
         prompt: state._pending_message,
         goal: 'the spot to hit',
-        describe: describeTarget,
         isValidLocation: valid,
         highlightHero: false,
     });
@@ -154,7 +151,6 @@ async function damageHero(state: GameState) {
 export async function useGrapplingHook(hook: GameObject, {
     state = game,
     ensureWielded,
-    describeTarget,
     attackMonster = hitMonsterWithAppliedWeapon,
     hurtle,
 }: GrapplingHookOptions): Promise<GrapplingHookResult> {
@@ -168,7 +164,7 @@ export async function useGrapplingHook(hook: GameObject, {
     if (wielded.newlyWielded)
         return { spentTime: true, resume: true };
 
-    const target = await chooseTarget(hook, describeTarget, state);
+    const target = await chooseTarget(hook, state);
     if (!target) return { spentTime: false };
 
     const range = hookRange(hookSkill(hook, state));

@@ -43,11 +43,15 @@ export interface MapPositionSelection extends Position {
 }
 export interface MapPositionOptions {
     start: Position;
-    prompt: string;
+    // Queued positions bypass cursor prompts as well as keyboard input.
+    prompt: string | (() => Promise<string>);
     goal: string;
-    describe?: PositionDescription | null;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
+    // Detection browsing (the detection potion/spell map browse) still
+    // supplies its own description; every other caller shares
+    // auto_describe()'s do_screen_description() model below.
+    describe?: PositionDescription | null;
     // Jump, spell, and cloud targeting admit the hero but omit its '$' overlay.
     highlightHero?: boolean;
     force?: boolean;
@@ -358,8 +362,13 @@ export async function getposHelpUntilDismissed(
     return await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
 
+// C getpos.c:auto_describe(): the cursor is described with pager.c
+// do_screen_description() — unreconnoitered pre-checks, symbol matching,
+// and look_at() detail — regardless of which command asked for the spot.
+// Detection browsing is the one caller that still overrides the text.
 async function describeSelectedPosition(
-    describe: PositionDescription | null | undefined, cursor: Position,
+    describe: PositionDescription | null | undefined,
+    cursor: Position,
     isValidLocation: ValidLocation | null,
 ): Promise<string | null> {
     const description = describe ? await describe(cursor.x, cursor.y)
@@ -587,6 +596,7 @@ export async function selectMapPosition({
 }: MapPositionOptions): Promise<MapPositionSelection | null> {
     const queued = game._inDoAgain ? undefined : takeCommandPosition();
     if (queued !== undefined) return queued ? { ...queued, pickType: LOOK_TRADITIONAL } : null;
+    const initialPrompt = typeof prompt === 'string' ? prompt : await prompt();
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
@@ -645,7 +655,7 @@ export async function selectMapPosition({
         for (;;) {
             // pline() owns notices and goals, including their pager cleanup.
             // Cursor redraws only supply new text for the initial prompt or autodescribe.
-            let message: string | null = firstPaint ? prompt : null;
+            let message: string | null = firstPaint ? initialPrompt : null;
             // auto_describe() reports through a suppressed-history putstr,
             // which first moves the pending top line into ^P recall.
             let messageFlushesPending = false;

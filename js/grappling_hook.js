@@ -45,7 +45,7 @@ function monsterAt(x, y, state) {
 function monsterObject(monster) {
     return monster.name || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
-async function chooseTarget(hook, describeTarget, state) {
+async function chooseTarget(hook, state) {
     await pline('Where do you want to hit?');
     const range = hookRange(hookSkill(hook, state));
     const valid = (x, y) => isok(x, y) && cansee(x, y)
@@ -61,7 +61,6 @@ async function chooseTarget(hook, describeTarget, state) {
         start: { x: state.u.ux, y: state.u.uy },
         prompt: state._pending_message,
         goal: 'the spot to hit',
-        describe: describeTarget,
         isValidLocation: valid,
         highlightHero: false,
     });
@@ -116,7 +115,7 @@ async function damageHero(state) {
         damage = Math.trunc((damage + 1) / 2);
     return loseHeroHp(damage, 'a grappling hook', { state, publish: pline, killerFormat: KILLED_BY });
 }
-export async function useGrapplingHook(hook, { state = game, ensureWielded, describeTarget, attackMonster = hitMonsterWithAppliedWeapon, hurtle, }) {
+export async function useGrapplingHook(hook, { state = game, ensureWielded, attackMonster = hitMonsterWithAppliedWeapon, hurtle, }) {
     if (state.u?.uswallow) {
         await pline("There's not enough room here to use that.");
         return { spentTime: false };
@@ -126,7 +125,7 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, desc
         return { spentTime: false };
     if (wielded.newlyWielded)
         return { spentTime: true, resume: true };
-    const target = await chooseTarget(hook, describeTarget, state);
+    const target = await chooseTarget(hook, state);
     if (!target)
         return { spentTime: false };
     const range = hookRange(hookSkill(hook, state));

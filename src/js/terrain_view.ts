@@ -13,7 +13,6 @@ import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
-import type { PositionDescription } from './getpos.js';
 import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';
@@ -27,7 +26,7 @@ import {
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 
-export async function terrainCommand(describe: PositionDescription): Promise<void> {
+export async function terrainCommand(): Promise<void> {
     recordMappedOverviewState();
     const window = tty_create_nhwindow<number>(NHW_MENU);
     await tty_start_menu(window);
@@ -51,13 +50,13 @@ export async function terrainCommand(describe: PositionDescription): Promise<voi
         else {
             const subset = which === 4 ? TER_MAP | TER_FULL
                 : TER_MAP | (which >= 2 ? TER_TRP : 0) | (which >= 3 ? TER_OBJ : 0);
-            await revealTerrain(subset, describe);
+            await revealTerrain(subset);
         }
     }
     game.context.move = 0;
 }
 
-async function revealTerrain(subset: number, describe: PositionDescription): Promise<void> {
+async function revealTerrain(subset: number): Promise<void> {
     const hero = game.u;
     const full = !!(subset & TER_FULL);
     if (!full && (heroIsHallucinating(game) || hero.stunned || hero.stunnedTurns
@@ -95,7 +94,7 @@ async function revealTerrain(subset: number, describe: PositionDescription): Pro
         if (hadTip) await plineWithContinuation('Move cursor to anything of interest:');
         await selectMapPosition({
             start: { x: hero.ux, y: hero.uy }, goal: 'anything of interest',
-            prompt: game._pending_message, describe, force: false,
+            prompt: game._pending_message, force: false,
         });
     } finally {
         if (saved.water === undefined) delete hero.uinwater;

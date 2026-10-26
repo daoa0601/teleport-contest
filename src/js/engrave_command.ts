@@ -4,7 +4,7 @@
 // engrave(), rloc_engr(), disturb_grave(), blengr(); hacklib.c xcrypt();
 // invent.c getobj()'s "write with" flow.
 
-import { setMulti } from './command_state.js';
+import { resetCommandVariables, setMulti } from './command_state.js';
 import { plineWithContinuation as pline, newsym } from './display.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
@@ -390,8 +390,13 @@ export async function doengrave(state: GameState = game): Promise<void> {
     setMulti(0, state); /* moves consumed */
 
     // C's single doengr_exit label: refresh, then report the time result.
+    // rhack() clears both command queues when the command reports
+    // ECMD_CANCEL (getobj() escape) or ECMD_FAIL, so ^A cannot repeat a
+    // cancelled engraving.
     const exit = (): void => {
         if (setup.disprefresh) newsym(hero.ux, hero.uy);
+        if (setup.ret === 'cancel' || setup.ret === 'fail')
+            resetCommandVariables(true);
         state.context.move = setup.ret === 'time' ? 1 : 0;
     };
 
