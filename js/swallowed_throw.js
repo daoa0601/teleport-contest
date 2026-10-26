@@ -15,7 +15,7 @@ import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { delobj } from './object_delete.js';
-import { AKLYS, BOULDER, BRASS_LANTERN, CORPSE, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
+import { AKLYS, BOULDER, BRASS_LANTERN, CORPSE, HEAVY_IRON_BALL, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
 import { MONSTER_SYMBOL, monsterCanEngulf, monsterDigests, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
@@ -60,9 +60,13 @@ function swallowedWeaponTarget(state, item, objectClass) {
     if (!engulfer)
         return null;
     const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
-    const weaponOrTool = objectClass === 2
-        || (objectClass === 6 && subtype !== 0);
-    if (!weaponOrTool || engulfer.wormno) {
+    // thitmonst() groups weapons, weptools, and gems into its weapon
+    // branch, and gives heavy iron balls and boulders the same hmon()
+    // contact with Strength exercised around the guaranteed hit.
+    const weaponLike = objectClass === 2 || objectClass === 13
+        || (objectClass === 6 && subtype !== 0)
+        || item.otyp === HEAVY_IRON_BALL || item.otyp === BOULDER;
+    if (!weaponLike || engulfer.wormno) {
         return null;
     }
     return engulfer;
@@ -113,6 +117,18 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
     const twoWeapons = !!state.u.twoweap;
     const oldSlot = state.inventory[state.inventory.indexOf(item) + 1] ?? null;
     const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    const attachedBall = thrown === state.uball || thrown === state.u?.uball;
+    if (attachedBall) {
+        // throwit() parks the chained ball and chain on the hero before the
+        // engulfed contact (dothrow.c:1569-1573).
+        const chain = state.uchain || state.u?.uchain;
+        thrown.ox = state.u.ux;
+        thrown.oy = state.u.uy;
+        if (chain) {
+            chain.ox = state.u.ux;
+            chain.oy = state.u.uy;
+        }
+    }
     let tetherDisplay = null;
     try {
         if (state.program_state?.gameover)
@@ -134,9 +150,10 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
             state,
             guaranteedHit: true,
             ...(volley ? { volley } : {}),
-            // xkilled() leaves a returning missile free during expulsion;
-            // other projectiles join the engulfer's inventory before death.
-            ...(returns ? {} : { finishKillWithObject: finishKill }),
+            // xkilled() leaves a killing engulfer's inventory alone for the
+            // chained ball (mon.c:3526-3538): expulsion's placebc() keeps it.
+            // Other returning or attached missiles manage their own disposal.
+            ...(returns || attachedBall ? {} : { finishKillWithObject: finishKill }),
         });
         if (contact.heroDied)
             return true;
@@ -153,7 +170,11 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
                 const currentEngulfer = state.u.ustuck;
                 if (!currentEngulfer)
                     throw new Error('A swallowed hero must have an engulfing monster.');
-                await addObjectToMonsterInventory(currentEngulfer, thrown, state, { atFront: true });
+                // swallowit() never hands the chained ball to the engulfer;
+                // it just ends the throw (dothrow.c:1466-1474).
+                if (!attachedBall) {
+                    await addObjectToMonsterInventory(currentEngulfer, thrown, state, { atFront: true });
+                }
             }
             else {
                 await finishHeroThrownObjectLanding({

@@ -50,7 +50,8 @@ void test('throwing a treat tames a domestic dog and consumes the projectile wit
 });
 
 void test('unsuitable food pacifies a cat and lands without provoking a hostile wakeup', async () => {
-    const level = freshObjectRoom();
+    // Verbose is the option default (optlist.h): tmiss names the visible cat.
+    const level = freshObjectRoom({ flags: { verbose: true } });
     const cat = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     cat.mpeaceful = 0;
     cat.msleeping = 1;

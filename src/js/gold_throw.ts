@@ -59,7 +59,8 @@ import { settleThrownShopObject } from './shk.js';
 import { rn2, rnd } from './rng.js';
 
 import {
-    flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowRange,
+    announceThrownObjectLiquidImpact, flyHeroThrownObject,
+    heroDirectGoldThrowRange, heroThrowRange,
     prepareHeroThrownTarget,
 } from './thrown_object.js';
 import { cansee } from './vision.js';
@@ -368,6 +369,8 @@ export async function resolveQuiveredGoldThrow({
     }
     const endpoint = state.level?.at?.(x, y);
     if (endpoint && !IS_SOFT(endpoint.typ)) rn2(100);
+    // Quivered coins land through throwit(), which announces the splash.
+    await announceThrownObjectLiquidImpact(gold, x, y, { state });
     await settleGoldOnFloor(state, gold, x, y, 0, 'checkShopObj');
     return true;
 }

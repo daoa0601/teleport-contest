@@ -134,7 +134,7 @@ export function pickupLocationProblem({
         if (!(state.underwater || state.u?.uinwater)) {
             return {
                 messages: [
-                    "You can't even see the bottom, let alone pick up anything.",
+                    "You can't even see the bottom, let alone pick up something.",
                 ],
                 spendsTurn: false,
             };

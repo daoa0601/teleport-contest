@@ -69,6 +69,9 @@ async function freshMapPotionState(distance = 2, monsterOptions: PotionMonsterOp
             ustuck: null,
         },
         context: { move: 0 },
+        // A real game starts with the verbose option on (optlist.h); the
+        // exact miss texts below name their visible targets.
+        flags: { verbose: true },
         moves: 60,
         objectInitializationSeed: 1n,
     });
@@ -1006,7 +1009,10 @@ void test('controlled lycanthrope decline completes an adjacent map throw',
         const input = resetInputState();
         const throwing = throwEast(potion);
         await input.waitUntilBlocked();
-        assert.equal(game._pending_message, 'The potion of unholy water misses it.');
+        // zap.c miss() names the target under flags.verbose, which defaults
+        // ON (optlist.h); an unset flag is an unconfigured game, so the
+        // visible purple worm is named.
+        assert.equal(game._pending_message, 'The potion of unholy water misses the purple worm.');
         assert.equal(game.u.umonnum, 331);
         input.feed(' ');
         await input.waitUntilBlocked();

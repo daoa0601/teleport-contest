@@ -10,7 +10,7 @@ import { CLR_WHITE } from './terminal.js';
 import { monsterHasArtifactDefense } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import {
-    canSeeMonster, canSpotMonster, flushPendingTopline, flush_screen, glyphAt,
+    canSeeMonster, canSpotMonster, displayMessageWindow, flush_screen, glyphAt,
     map_invisible, newsym, plineWithContinuation as pline, shieldeff,
     show_glyph_cell, unmap_invisible,
 } from './display.js';
@@ -84,6 +84,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
     requireLiveGame(state);
     requirePlayingGame(state);
     const result = { observed: false, heroDied: false };
+    let notified = false;
     if (!onHead) return result;
     const visible = canSeeMonster(monster);
     const name = () => monsterName(monster, { state, capitalized: true });
@@ -97,6 +98,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
                 state, article: monster.mtame ? 'your' : 'a',
             })}${monster.mtame ? '.' : '!'}`);
             result.observed = true;
+            notified = true;
         }
     }
     if (monster.msleeping && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)) {
@@ -104,6 +106,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
         if (visible) {
             await pline(`The flash awakens ${monsterName(monster, { state })}.`);
             result.observed = true;
+            notified = true;
         }
     } else if (MONSTER_SYMBOL[monster.mnum] !== S_LIGHT) {
         if (!monsterResistsBlindingLight(monster, state)) {
@@ -111,6 +114,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
             if (visible) {
                 await pline(`${name()} is blinded by the flash!`);
                 result.observed = true;
+                notified = true;
             }
             if (monster.mnum === GREMLIN) {
                 const damage = object.otyp === WAN_LIGHT ? d(1 + object.spe, 4)
@@ -136,12 +140,14 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
                 await pline(state.level.requireAt(monster.mx, monster.my).lit
                     ? `The flash of light shines on ${monsterName(monster, { state })}.`
                     : `${name()} is illuminated.`);
-                if (!state.level.requireAt(monster.mx, monster.my).lit) await flushPendingTopline();
+                notified = true;
             }
         }
     }
-    if (result.observed && !state.level.requireAt(monster.mx, monster.my).lit)
-        await flushPendingTopline();
+    // flash_hits_mon() ends by displaying the message window when the flash
+    // was noticed on an unlit spot; the dismissal clears the topline.
+    if (notified && !state.level.requireAt(monster.mx, monster.my).lit)
+        await displayMessageWindow();
     return result;
 }
 
