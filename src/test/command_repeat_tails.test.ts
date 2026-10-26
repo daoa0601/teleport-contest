@@ -4,6 +4,8 @@ import test from 'node:test';
 import { flush_screen } from '../js/display.js';
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { readCommandInput } from '../js/command_input.js';
+import { readchar } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -53,4 +55,18 @@ void test('adjust repeats a declined destination without asking for another lett
 
     const top = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd();
     assert.equal(top, 'Never mind.');
+});
+
+void test('reading a command with no message leaves the cursor on the hero for a silent read', async () => {
+    const input = freshTurnRoom();
+    input.feed('w');
+    await readCommandInput();
+    const nextChoice = readchar();
+    await input.waitUntilBlocked();
+    const display = requireGameDisplay();
+    const cursor = [display.cursorCol, display.cursorRow];
+    input.feed('-');
+    await nextChoice;
+
+    assert.deepEqual(cursor, [game.u.ux - 1, game.u.uy + 1]);
 });
