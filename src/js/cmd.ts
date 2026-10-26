@@ -5349,15 +5349,6 @@ async function offerFarlookInformation(description: string, withoutAsking: boole
     }
 }
 
-async function restoreHelpMap(): Promise<void> {
-    game._pending_message = '';
-    game._retained_message = '';
-    game.nhDisplay?.clearScreen();
-    await docrt();
-    await bot();
-    await flush_screen(1);
-}
-
 // C pager.c:do_look(0).  The initial menu is a true PICK_ONE overlay; choosing
 // the map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction above.
@@ -5394,7 +5385,6 @@ async function dowhatis(): Promise<void> {
             sections: [{ items }],
         });
         choice = result[0] ?? '';
-        await restoreHelpMap();
     }
     if (choice === 'y') choice = '/';
     const listKind = 'mM'.includes(choice) && choice ? 'monsters'
@@ -5481,7 +5471,6 @@ async function dohelp(): Promise<void> {
         title: 'Select one item:',
         entries,
     });
-    await restoreHelpMap();
     const choice = String.fromCharCode(key);
     if (choice === 'a') await doextversion();
     else if (choice === 'e') await dowhatis();
