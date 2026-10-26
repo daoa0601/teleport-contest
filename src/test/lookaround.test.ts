@@ -86,15 +86,17 @@ void test('#lookaround from a doorway describes the adjacent room with its direc
     const input = resetInputState();
     input.feed('#lookaround\r');
     const action = rhack(0);
+    // The room line always pages behind --More-- before the corridor line
+    // (C update_topl(): 55 + 21 + 3 >= CO - 8), so a run that finished
+    // without reaching the pager skipped the room description.
     const state = await Promise.race([
-        action.then(() => 'done' as const),
-        input.waitUntilBlocked().then(() => 'blocked' as const),
+        action.then(() => 'finished' as const),
+        input.waitUntilBlocked().then(() => 'pager' as const),
     ]);
-    if (state === 'blocked') {
-        assert.equal(drawnTopline(),
-            '(west): You remember that as a rectangular 5 by 9 room.--More--');
-        input.feed(' ');
-    }
+    assert.equal(state, 'pager', 'room description never paged behind --More--');
+    assert.equal(drawnTopline(),
+        '(west): You remember that as a rectangular 5 by 9 room.--More--');
+    input.feed(' ');
     await action;
 
     assert.equal(committedTopline(), '(east): lit corridor.');
@@ -122,13 +124,8 @@ void test('#lookaround in a corridor lists remembered corridors beyond sight', a
 
     const input = resetInputState();
     input.feed('#lookaround\r');
-    const action = rhack(0);
-    const state = await Promise.race([
-        action.then(() => 'done' as const),
-        input.waitUntilBlocked().then(() => 'blocked' as const),
-    ]);
-    if (state === 'blocked') input.feed('\x1b');
-    await action;
+    // A single listed square produces one line and never pages.
+    await rhack(0);
 
     assert.equal(committedTopline(), '(5north,28east): corridor.');
     assert.ok(!committedTopline().includes('floor of a room'),
