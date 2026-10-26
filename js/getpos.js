@@ -586,6 +586,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         }
         return validity.cycle;
     };
+    const commandBindings = game.commandBindings;
+    commandBindings.lockMouseButtons(true);
     try {
         if (isValidLocation)
             setMapPositionHighlights(isValidLocation, hilite.state === 'background');
@@ -821,6 +823,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         }
     }
     finally {
+        commandBindings.lockMouseButtons(false);
         if (clearMessageOnExit)
             clearMessageWindow();
         const hero = game.u;

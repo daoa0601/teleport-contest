@@ -115,7 +115,7 @@ void test('the keyboard here menu keeps the map-look target when mounted', async
     }
 });
 void test('remembered position clicks let repeat select the current hero square', async () => {
-    const engine = await startMenuGame('BINDINGS=mouse1:nothing');
+    const engine = await startMenuGame();
     try {
         game.iflags.remember_getpos = true;
         await type(engine, '_');
@@ -130,4 +130,59 @@ void test('remembered position clicks let repeat select the current hero square'
         await finish(engine);
     }
 });
+for (const button of [1, 2]) {
+    void test(`mouse button ${button} selects a travel position without queuing a command, then regains its binding`, async () => {
+        const engine = await startMenuGame(button === 2 ? 'BINDINGS=mouse2:therecmdmenu' : '');
+        try {
+            await type(engine, '_');
+            engine.inputGate.feedMapClick(13, 10, button);
+            await engine.runUntilInputNeeded();
+            assert.equal(game.u.ux, 13);
+            assert.equal(game.u.uy, 10);
+            assert.doesNotMatch(screen(), /What do you want to do/);
+            engine.inputGate.feedMapClick(13, 10, button);
+            await engine.runUntilInputNeeded();
+            assert.match(screen(), /What do you want to do/);
+            assert.match(screen(), /Rest one turn/);
+        }
+        finally {
+            await finish(engine);
+        }
+    });
+}
+void test('clicking a glance position does not run its mouse-button command afterward', async () => {
+    const engine = await startMenuGame();
+    try {
+        const moves = game.moves;
+        await type(engine, ';');
+        engine.inputGate.feedMapClick(13, 10, 1);
+        await engine.runUntilInputNeeded();
+        for (let page = 0; page < 2 && screen().includes('--More--'); page++)
+            await type(engine, ' ');
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
+        assert.equal(game.moves, moves);
+        assert.doesNotMatch(screen(), /What do you want to do/);
+        await type(engine, 'i');
+        assert.match(screen(), /Weapons|Armor/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
+for (const ending of ['\x1b', '.']) {
+    void test(`mouse bindings return after ${ending === '.' ? 'accepting' : 'cancelling'} a position with the keyboard`, async () => {
+        const engine = await startMenuGame('BINDINGS=mouse2:therecmdmenu');
+        try {
+            await type(engine, '_' + ending);
+            engine.inputGate.feedMapClick(10, 10, 2);
+            await engine.runUntilInputNeeded();
+            assert.match(screen(), /What do you want to do/);
+            assert.match(screen(), /Rest one turn/);
+        }
+        finally {
+            await finish(engine);
+        }
+    });
+}
 //# sourceMappingURL=command_context_mouse.test.js.map

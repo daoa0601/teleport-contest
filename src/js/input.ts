@@ -263,8 +263,8 @@ export async function readchar(inputState: InputState = 'other') {
     if (game.iflags.debug_fuzzer) return activeInputGate.readKey(inputState);
     let key = await nhgetch(inputState);
     if (key === MAP_CLICK_KEY) {
-        // C readchar_core(): every nh_poskey click records its location
-        // and queues the command bound to that button, including getpos.
+        // C readchar_core(): clicks record their location even when getpos
+        // has temporarily cleared the mouse-button command bindings.
         const click = activeInputGate.takeMapClick();
         game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
         const command = click ? game.commandBindings.mouseCommand(click.button) : null;

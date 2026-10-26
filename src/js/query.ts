@@ -8,6 +8,9 @@ import { nhgetch, readchar, takeCommandKey } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
+import { visibleCommandKey } from './command_keys.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
+import { truncateRawMessage } from './pline_text.js';
 
 interface LineInputOptions {
     suppressStatus?: boolean;
@@ -200,17 +203,49 @@ export async function yn_function(
     visibleChoices = responses?.split('\x1b')[0] ?? '',
 ): Promise<TtyPromptAnswer> {
     const queued = addCommandQueue ? takeRepeatCommand() : undefined;
+    let result: TtyPromptAnswer;
     if (queued) {
         const answer = queued.kind === 'key' ? String.fromCharCode(queued.key) : '\x1b';
-        const valid = !responses || answer === '\0' || responses.includes(answer);
-        return { answer: valid ? answer : defaultAnswer || '\x1b', count: game._ynNumber ?? 0n };
+        result = { answer, count: game._ynNumber ?? 0n };
+    } else {
+        const canned = addCommandQueue ? takeCommandKey() : undefined;
+        if (canned !== undefined) {
+            result = { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
+        } else {
+            result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
+            if (addCommandQueue) rememberCommandKey(result.answer ? result.answer.charCodeAt(0) : 0);
+        }
     }
-    const canned = addCommandQueue ? takeCommandKey() : undefined;
-    if (canned !== undefined)
-        return { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
-    const result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
-    if (addCommandQueue) rememberCommandKey(result.answer ? result.answer.charCodeAt(0) : 0);
-    return result;
+    if (!responses || !result.answer || result.answer === '\0' || responses.includes(result.answer))
+        return result;
+    const alternative = defaultAnswer || '\x1b';
+    if (!game._inDoAgain || game.flags.debug)
+        await reportInvalidYnAnswer(query, responses, defaultAnswer, result.answer, alternative);
+    return { ...result, answer: alternative };
+}
+
+async function reportInvalidYnAnswer(
+    query: string, responses: string, defaultAnswer: string, answer: string, alternative: string,
+): Promise<void> {
+    const shownDefault = defaultAnswer ? visibleCommandKey(defaultAnswer.charCodeAt(0)) : '';
+    const question = query.length >= QBUFSZ ? `${query.slice(0, QBUFSZ - 4)}...` : query;
+    paniclog('yn debug', truncateRawMessage(`${question} [${responses}] (${shownDefault})`));
+    // C uses fuzzer continue mode for this known diagnostic, preventing
+    // both a panic and message-pager input while impossible() reports it.
+    const previousMode = game.flags.debug_fuzzer;
+    const previousInputFuzzer = game.iflags.debug_fuzzer;
+    game.flags.debug_fuzzer = FUZZER_IMPOSSIBLE_CONTINUE;
+    game.iflags.debug_fuzzer = true;
+    try {
+        const originalKey = visibleCommandKey(answer.charCodeAt(0));
+        const alternativeKey = visibleCommandKey(alternative.charCodeAt(0));
+        await impossible(`yn_function() returned '${originalKey}'; using '${alternativeKey}' instead`);
+    } finally {
+        if (previousMode === undefined) delete game.flags.debug_fuzzer;
+        else game.flags.debug_fuzzer = previousMode;
+        if (previousInputFuzzer === undefined) delete game.iflags.debug_fuzzer;
+        else game.iflags.debug_fuzzer = previousInputFuzzer;
+    }
 }
 
 // Native tty_yn_function returns the answer and sets yn_number. Keep the

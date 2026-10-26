@@ -34,6 +34,7 @@ export class CommandBindings {
     restOnSpace;
     menuAliases;
     mouseButtons = new Map();
+    savedMouseButtons = [null, null];
     constructor() {
         this.bindings = [];
         this.specialKeys = new Map();
@@ -64,6 +65,19 @@ export class CommandBindings {
     }
     mouseCommand(button) {
         return this.mouseButtons.get(button) ?? null;
+    }
+    // C lock_mouse_buttons(): getpos saves both bindings and clears them
+    // until selection ends, including while its help and menus are open.
+    lockMouseButtons(saveButtons) {
+        if (saveButtons) {
+            this.savedMouseButtons = [this.mouseCommand(1), this.mouseCommand(2)];
+            this.mouseButtons.set(1, null);
+            this.mouseButtons.set(2, null);
+        }
+        else {
+            this.mouseButtons.set(1, this.savedMouseButtons[0]);
+            this.mouseButtons.set(2, this.savedMouseButtons[1]);
+        }
     }
     bindMouseButton(button, name) {
         if (name.toLowerCase() === 'nothing') {

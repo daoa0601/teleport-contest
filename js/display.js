@@ -3317,6 +3317,9 @@ export async function showMessageMenu(letter, pickMode, message) {
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
 export async function pageTopline(message, { urgent = false, dismissKey } = {}) {
+    // C tty more() returns before painting or reading during fuzzer mode.
+    if (game.iflags.debug_fuzzer)
+        return 0;
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
     const lines = toplineRows(message, columns);

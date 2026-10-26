@@ -630,6 +630,8 @@ export async function selectMapPosition({
         return validity.cycle;
     };
 
+    const commandBindings = game.commandBindings;
+    commandBindings.lockMouseButtons(true);
     try {
         if (isValidLocation) setMapPositionHighlights(isValidLocation, hilite.state === 'background');
         const initialMapCursor = isValidLocation && !game.flags.verbose
@@ -849,6 +851,7 @@ export async function selectMapPosition({
             await pline(message);
         }
     } finally {
+        commandBindings.lockMouseButtons(false);
         if (clearMessageOnExit) clearMessageWindow();
         const hero = game.u;
         if (savedDirection.dx === undefined) delete hero.dx;

@@ -61,6 +61,7 @@ export class CommandBindings {
     restOnSpace: boolean;
     menuAliases: { key: number; command: string }[];
     private readonly mouseButtons = new Map<number, NativeCommand | null>();
+    private savedMouseButtons: readonly [NativeCommand | null, NativeCommand | null] = [null, null];
 
     constructor() {
         this.bindings = [];
@@ -92,6 +93,19 @@ export class CommandBindings {
 
     mouseCommand(button: 1 | 2): NativeCommand | null {
         return this.mouseButtons.get(button) ?? null;
+    }
+
+    // C lock_mouse_buttons(): getpos saves both bindings and clears them
+    // until selection ends, including while its help and menus are open.
+    lockMouseButtons(saveButtons: boolean): void {
+        if (saveButtons) {
+            this.savedMouseButtons = [this.mouseCommand(1), this.mouseCommand(2)];
+            this.mouseButtons.set(1, null);
+            this.mouseButtons.set(2, null);
+        } else {
+            this.mouseButtons.set(1, this.savedMouseButtons[0]);
+            this.mouseButtons.set(2, this.savedMouseButtons[1]);
+        }
     }
 
     bindMouseButton(button: 1 | 2, name: string): boolean {
