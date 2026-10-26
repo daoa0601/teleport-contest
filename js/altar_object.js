@@ -9,6 +9,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 const COIN_CLASS = 12;
 async function objectDescription(object, state) {
+    observeObjectForNaming(object, { state });
     return state === game
         ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
@@ -37,7 +38,6 @@ export async function landObjectOnAltar(object, { state = game, monsterMoving = 
         conduct.gnostic = (conduct.gnostic ?? 0) + 1;
     }
     const quantity = object.quan ?? object.quantity ?? 1;
-    observeObjectForNaming(object, { state });
     const description = await objectDescription(object, state);
     const plural = quantity > 1;
     const hallucinating = heroIsHallucinating(state);

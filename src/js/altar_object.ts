@@ -24,6 +24,7 @@ interface AltarLandingOptions {
 const COIN_CLASS = 12;
 
 async function objectDescription(object: GameObject, state: GameState): Promise<string> {
+    observeObjectForNaming(object, { state });
     return state === game
         ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
@@ -63,7 +64,6 @@ export async function landObjectOnAltar(
     }
 
     const quantity = object.quan ?? object.quantity ?? 1;
-    observeObjectForNaming(object, { state });
     const description = await objectDescription(object, state);
     const plural = quantity > 1;
     const hallucinating = heroIsHallucinating(state);
