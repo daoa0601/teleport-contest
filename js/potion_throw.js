@@ -9,11 +9,12 @@ import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { hitFloorWithObject } from './object_drop.js';
 import { tossObjectUp } from './toss_up.js';
-import { monsterName } from './monster_name.js';
-import { hitMonsterWithSupportedPotion, potionImpactObjectName, SUPPORTED_MONSTER_POTION_TYPES, } from './potion_hit.js';
+import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
-import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, } from './thrown_object.js';
+import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
+import { offerThrownFood } from './thrown_food.js';
 import { cansee } from './vision.js';
 const POTION_CLASS = 8;
 function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {
@@ -103,6 +104,7 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
             return true;
         }
         if (flight.contact) {
+            prepareHeroThrownTarget(flight.contact);
             rnd(20); // thitmonst() computes this before the potion class test
             if (currentAttribute(A_DEX, state) > rnd(25)) {
                 const impact = await hitMonsterWithThrownPotion({
@@ -119,12 +121,14 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
                 state.context.move = 1;
                 return true;
             }
-            const visible = cansee(flight.contact.mx, flight.contact.my);
-            await publish(visible
-                ? `The ${potionImpactObjectName(thrown, state)} misses ${monsterName(flight.contact, { state })}.`
-                : `The ${potionImpactObjectName(thrown, state)} misses.`);
-            if (rn2(3) === 0 && (await wakeMonster?.(flight.contact))?.heroDied)
+            const food = await offerThrownFood(flight.contact, thrown, state);
+            if (food?.heroDied || food?.handled)
                 return true;
+            if (!food) {
+                await reportHeroThrownMiss(flight.contact, thrown, { state, publish });
+                if (rn2(3) === 0 && (await wakeMonster?.(flight.contact))?.heroDied)
+                    return true;
+            }
         }
         await finishHeroThrownObjectLanding({
             state,

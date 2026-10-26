@@ -583,7 +583,6 @@ export async function detachThrownUnit(
         if (!split)
             throw new Error('A selected projectile stack could not release one object.');
         thrown = split;
-        thrown.invlet = null;
     } else {
         await removeWornHeroItem(item, state, { unchainBall: false });
         if (state.program_state?.gameover) return thrown;
