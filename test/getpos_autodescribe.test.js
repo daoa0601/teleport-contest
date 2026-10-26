@@ -1,11 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { newsym, terrain_glyph } from '../js/display.js';
-import { selectMapPosition } from '../js/getpos.js';
+import { flush_screen, newsym, pline, terrain_glyph } from '../js/display.js';
+import { paintGetposCursor, selectMapPosition } from '../js/getpos.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenRow } from './support/screen.js';
+void test('a missing feature appends its notice to the automatic description', async () => {
+    freshObjectRoom();
+    resetInputState();
+    await paintGetposCursor({ x: 11, y: 10 }, 'floor of a room', null, { flushPending: true });
+    await pline("Can't find dungeon feature '_'.");
+    await flush_screen(1);
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd(), "floor of a room  Can't find dungeon feature '_'.");
+});
 void test('cursor movement describes the displayed location and configured coordinates', async () => {
     freshObjectRoom({ iflags: { getpos_coords: 'm' } });
     const input = resetInputState();

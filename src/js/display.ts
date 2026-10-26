@@ -3567,7 +3567,9 @@ async function updateTopline(
     } else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
         game._toplines = stored(`${game._toplines}  ${msg}`);
-        replaceTopline(game._toplines);
+        // addtopl() appends to the visible line, which can include
+        // SUPPRESS_HISTORY text absent from gt.toplines.
+        replaceTopline(`${pending}  ${msg}`);
         dismissal = null;
     } else {
         dismissal = await pageTopline(pending, paging);
