@@ -1,16 +1,21 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MM_NOGRP, NO_MINVENT, STONE, W_WEP } from '../js/const.js';
+import { A_STR, HUNGRY, MM_NOGRP, NO_MINVENT, STONE, WEAK, W_WEP } from '../js/const.js';
+import { currentAttribute } from '../js/attrib.js';
 import { canSeeMonster, flush_screen, objectColor, redrawMap } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { getHungry } from '../js/hunger.js';
+import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { heroIsBlind } from '../js/senses.js';
 import { monsterProjectileDisplay } from '../js/monster_projectile_display.js';
 import { throwMonsterProjectile } from '../js/monster_throw.js';
-import { AKLYS, POT_WATER } from '../js/object_data.js';
+import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/object_data.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
-import { knownObject } from './support/game-objects.js';
+import { nearCapacity } from '../js/weight.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -258,4 +263,63 @@ void test('a snapping aklys tether is erased before the snap is heard', async ()
     });
 
     assert.deepEqual(cellsAtSnap, ['.', '.', '.']);
+});
+
+// C display.c:tmp_at() stops before show_glyph() and flush_screen(0) once a
+// flash cell cannot be seen, so the trailing frame of a blinding potion
+// throw never publishes the impact's pending status change; eat.c:newuhs()
+// then lowers temporary Strength before its hunger message, and that
+// message's flush shows the weakened Strength while the hunger word itself
+// still describes the pre-transition state.
+void test('a blinding potion impact defers its status update to the hunger message that follows', async () => {
+    freshObjectRoom({
+        heroX: 10, heroY: 12,
+        hero: {
+            uhunger: 51, uhs: HUNGRY,
+            acurr: { a: [16, 12, 12, 12, 12, 12] }, amax: { a: [16, 12, 12, 12, 12, 12] },
+        },
+    });
+    requirePlayingGame(game);
+    game.context.mon_moving = true;
+    // Load the hero so full Strength 16 is Stressed while the hunger-weakened
+    // Strength 15 crosses into Strained (C pickup.c calc_capacity()).
+    for (let i = 0; i < 3; i++) await addInventoryObject(HEAVY_IRON_BALL);
+    for (let i = 0; i < 7; i++) await addInventoryObject(APPLE);
+    assert.equal(nearCapacity(game), 2);
+    const source = await createMonsterAt('orc', 8, 12, NO_MINVENT | MM_NOGRP);
+    const potion = await knownObject(POT_BLINDNESS);
+    await addObjectToMonsterInventory(source, potion);
+    assert.equal(cansee(9, 12), true);
+    // The message pager displays the line the new message is about to
+    // replace, so identify the hunger message's pager by when it waits.
+    const impactPagers: string[][] = [];
+    const hungerPagers: string[][] = [];
+    let awaitingHungerMessage = false;
+    const input = resetInputState();
+    input.display = {
+        async readKey() {
+            const rows = requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join(''));
+            (awaitingHungerMessage ? hungerPagers : impactPagers).push(rows);
+            return ' '.charCodeAt(0);
+        },
+    };
+
+    await throwMonsterProjectile(source, potion, {
+        state: game, dx: 1, dy: 0, range: 3, random: limit => Math.min(1, limit - 1),
+    });
+    assert.equal(heroIsBlind(game), true);
+    awaitingHungerMessage = true;
+    await getHungry();
+    awaitingHungerMessage = false;
+
+    const weakPager = hungerPagers[0];
+    assert.ok(weakPager, 'The hunger message must page for acknowledgment');
+    const [strengthRow, conditionRow] = [weakPager[22], weakPager[23]];
+    assert.ok(strengthRow && conditionRow, 'The paged screen must hold both status rows');
+    assert.match(strengthRow, /St:15/, 'Strength loss is published with the hunger message');
+    assert.doesNotMatch(strengthRow, /St:16/);
+    assert.match(conditionRow, /Hungry Strained Blind/,
+        'The encumbrance of the weakened Strength shows while the hunger word still lags');
+    assert.equal(game.u.uhs, WEAK);
+    assert.equal(currentAttribute(A_STR), 15);
 });
