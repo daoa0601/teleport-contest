@@ -182,6 +182,18 @@ export async function resolveSwallowedWeaponThrow({
     const thrown = await detachThrownUnit(
         state, item, selectedQuantity, splitObjectId,
     );
+    const attachedBall = thrown === state.uball || thrown === state.u?.uball;
+    if (attachedBall) {
+        // throwit() parks the chained ball and chain on the hero before the
+        // engulfed contact (dothrow.c:1569-1573).
+        const chain = state.uchain || state.u?.uchain;
+        thrown.ox = state.u.ux;
+        thrown.oy = state.u.uy;
+        if (chain) {
+            chain.ox = state.u.ux;
+            chain.oy = state.u.uy;
+        }
+    }
     let tetherDisplay: ReturnType<typeof monsterProjectileDisplay> | null = null;
     try {
         if (state.program_state?.gameover) return true;
@@ -222,9 +234,13 @@ export async function resolveSwallowedWeaponThrow({
                 const currentEngulfer = state.u.ustuck;
                 if (!currentEngulfer)
                     throw new Error('A swallowed hero must have an engulfing monster.');
-                await addObjectToMonsterInventory(
-                    currentEngulfer, thrown, state, { atFront: true },
-                );
+                // swallowit() never hands the chained ball to the engulfer;
+                // it just ends the throw (dothrow.c:1466-1474).
+                if (!attachedBall) {
+                    await addObjectToMonsterInventory(
+                        currentEngulfer, thrown, state, { atFront: true },
+                    );
+                }
             } else {
                 await finishHeroThrownObjectLanding({
                     state, object: thrown, x: impactX, y: impactY,
