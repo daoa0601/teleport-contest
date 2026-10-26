@@ -60,7 +60,7 @@ void test('travel stops for an ordinary hostile in darkness', async () => {
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /blocks your path\./);
 });
 
-for (const concealment of ['invisible', 'undetected'] as const) {
+for (const concealment of ['invisible', 'undetected']) {
     void test(`travel continues beside an ${concealment} hostile`, async () => {
         const input = freshTurnRoom({ flags: { tips: false, mention_walls: true } });
         input.feed('_llllll.');

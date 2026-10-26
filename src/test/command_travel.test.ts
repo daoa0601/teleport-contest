@@ -266,5 +266,7 @@ void test('travel continuation stops at a lava edge before the next step', async
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game.context.move, 0);
     assert.equal(game.context.run, 0);
-    assert.equal(game._pending_message, 'You stop at the edge of the lava.');
+    await flush_screen(1);
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd(),
+        'You stop at the edge of the lava.');
 });
