@@ -71,12 +71,12 @@ async function redotoplin(text) {
     const columns = display?.cols ?? 80;
     const lines = toplineRows(text, columns, { splitWords: false });
     if (lines.length > 1 && !fromPrompt)
-        return await pageTopline(text, { dismissKey: CTRL_P });
+        return await pageTopline(text, { dismissKey: CTRL_P, rawGlyphs: true });
     if (display) {
         for (const [row, line] of lines.entries()) {
             display.clearRow(row);
             for (const [column, cell] of line.entries())
-                display.setCell(column, row, cell.ch, NO_COLOR, 0);
+                display.setCell(column, row, cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
         }
         const last = lines.at(-1) ?? lines[0];
         display.setCursor(last.length, lines.length - 1);

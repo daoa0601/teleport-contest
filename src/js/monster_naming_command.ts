@@ -33,7 +33,6 @@ export async function nameChosenMonster(): Promise<void> {
     if (tip) await pline(`Move cursor to ${goal}:`);
     const selected = queued === undefined ? await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
-        describe: describeGetposLocation,
         prompt: game._pending_message,
     }) : queued;
     if (!selected) return;

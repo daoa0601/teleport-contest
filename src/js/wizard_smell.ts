@@ -12,7 +12,7 @@ import { smellUnseenMonster } from './monster_smell.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHasOlfaction } from './polyself.js';
 
-export async function wizSmell(describe: PositionDescription): Promise<void> {
+export async function wizSmell(): Promise<void> {
     requirePlayingGame(game);
     game.context.move = 0;
     if (!heroHasOlfaction(game)) {
@@ -31,7 +31,7 @@ export async function wizSmell(describe: PositionDescription): Promise<void> {
         }
         if (tipShown) await plineWithContinuation('Move cursor to a monster:');
         const target = await selectMapPosition({
-            start: cursor, goal: 'a monster', describe,
+            start: cursor, goal: 'a monster',
             prompt: game._pending_message,
         });
         if (!target) return;

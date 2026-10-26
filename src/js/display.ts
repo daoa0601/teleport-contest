@@ -144,7 +144,7 @@ export interface ToplineOptions {
     overrideMessageType?: boolean;
     position?: Position;
 }
-interface ToplinePagingOptions { urgent?: boolean; dismissKey?: number }
+interface ToplinePagingOptions { urgent?: boolean; dismissKey?: number; rawGlyphs?: boolean }
 
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
@@ -3368,7 +3368,7 @@ export async function showMessageMenu(
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
 export async function pageTopline(
-    message: string, { urgent = false, dismissKey }: ToplinePagingOptions = {},
+    message: string, { urgent = false, dismissKey, rawGlyphs = false }: ToplinePagingOptions = {},
 ): Promise<number> {
     // C tty more() returns before painting or reading during fuzzer mode.
     if (game.iflags.debug_fuzzer) return 0;
@@ -3393,7 +3393,7 @@ export async function pageTopline(
         for (const [row, line] of lines.entries()) {
             display.clearRow(row);
             for (const [col, cell] of line.entries())
-                display.setCell(col, row, cell.ch, NO_COLOR, 0);
+                display.setCell(col, row, rawGlyphs && cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
         }
         display.setCursor(finalLine.length, lines.length - 1);
     }

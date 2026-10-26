@@ -204,7 +204,6 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
         prompt: state._pending_message,
         isValidLocation: valid,
         highlightHero: false,
-        describe: farlookLocationDescription,
     });
     if (!target)
         return jumpResult(false, state);

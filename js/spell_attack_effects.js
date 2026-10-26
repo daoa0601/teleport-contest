@@ -84,7 +84,6 @@ async function chooseSpellCenter(state) {
         start: { x: state.u.ux, y: state.u.uy },
         prompt: state._pending_message,
         goal: 'the desired position',
-        describe: farlookLocationDescription,
         isValidLocation: valid,
         highlightHero: false,
     });

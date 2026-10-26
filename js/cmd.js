@@ -307,7 +307,7 @@ import { disturbGrave } from './grave.js';
 import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
-import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
+import { shouldShowGetposTip, showGetposTip, showGetposInstructions, selectMapPosition, } from './getpos.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { finishImmediateMonsterTrap, performPetRangedAttack, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
@@ -2182,7 +2182,7 @@ export async function travelStairs(up) {
     return changed !== false;
 }
 async function doTerrainOverview() {
-    await terrainCommand(farlookLocationDescription);
+    await terrainCommand();
 }
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
@@ -3282,7 +3282,7 @@ async function wizKill() {
             const tipShown = await showGetposTip();
             target = await selectMapPosition({
                 start: cursor, prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
-                goal: 'a monster', describe: farlookLocationDescription,
+                goal: 'a monster',
             });
         }
         finally {
@@ -3378,7 +3378,7 @@ async function wizTelekinesis() {
         if (tipShown)
             await plineWithContinuation('Move cursor to a monster:');
         const target = await selectMapPosition({
-            start: cursor, goal: 'a monster', describe: farlookLocationDescription,
+            start: cursor, goal: 'a monster',
             prompt: game._pending_message,
         });
         if (!target)
@@ -3776,7 +3776,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizcast', dowizcast],
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
-    ['wizsmell', () => wizSmell(farlookLocationDescription)],
+    ['wizsmell', () => wizSmell()],
     ['wizbury', wizBury],
     ['wiztelekinesis', wizTelekinesis],
     ['migratemons', wizMigrateMonsters],
@@ -5143,7 +5143,6 @@ export async function askMonsterTeleportDestination(monster, start) {
         await plineWithContinuation(`Move cursor to ${goal}:`);
     const destination = await selectMapPosition({
         start, prompt: game._pending_message, goal,
-        describe: wizardPositionDescription,
     });
     game._pending_message = '';
     return destination;
@@ -5166,7 +5165,6 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
             ? { ...target } : { x: game.u.ux, y: game.u.uy },
         prompt: game._pending_message,
         goal: 'the desired position',
-        describe: wizardPositionDescription,
     });
     game._pending_message = '';
     return destination;
@@ -5251,24 +5249,27 @@ async function dojump() {
 // its cursor and accepts terrain-symbol cycling before one of the pick keys.
 async function dotravel() {
     game.iflags.getloc_travelmode = true;
-    const firstUse = !game.iflags.menu_requested && shouldShowGetposTip();
-    if (firstUse) {
+    // C cmd.c dotravel(): the travel pline precedes getpos() and joins the
+    // instructions pline in the tty topline transaction; only the menu path
+    // skips both.
+    if (!game.iflags.menu_requested)
         await pline('Where do you want to travel to?');
+    const firstUse = !game.iflags.menu_requested && shouldShowGetposTip();
+    if (firstUse)
         await showGetposTip();
-    }
+    await showGetposInstructions();
+    // handle_tip() sets show_goal_msg, so only the tip-covered first pass
+    // pline()s the goal; later passes keep the caller's prompt up.
+    if (firstUse)
+        await pline('Move cursor to the desired destination:');
     // getpos_menu() omits auto_describe()'s travel-path warning.
     const cursor = game.iflags.menu_requested
         ? await selectTravelMenuPosition(wizardPositionDescription)
         : await selectMapPosition({
             start: game._travelTarget
                 ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-            prompt: firstUse
-                ? "(For instructions type a '?')  Move cursor to the desired destination:"
-                : game.flags?.verbose
-                    ? "Where do you want to travel to?  (For instructions type a '?')"
-                    : 'Where do you want to travel to?',
+            prompt: game._pending_message,
             goal: 'the desired destination',
-            describe: wizardPositionDescription,
         });
     if (!cursor) {
         game.iflags.getloc_travelmode = false;
@@ -5364,10 +5365,6 @@ async function doFarlook(quick = true) {
                 start: position, force: quick,
                 prompt: game._pending_message || game._retained_message,
                 goal: 'a monster, object or location',
-                describe: async (x, y) => {
-                    const screen = screenDescription(x, y, '');
-                    return screen.needsDetail ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
-                },
             });
             if (!cursor)
                 break;
@@ -6330,7 +6327,6 @@ async function applyPolearm(item, autohit = false) {
         state: game,
         autohit,
         ensureWielded: () => wieldTool(item, 'swing', { swapWeapons: doswapweapon }, game),
-        describeTarget: wizardPositionDescription,
     });
     if ('heroDied' in result && result.heroDied)
         return;
@@ -6529,7 +6525,6 @@ async function applyTool(item, underlay) {
         const result = await useGrapplingHook(item, {
             state: game,
             ensureWielded: () => wieldTool(item, 'cast', { swapWeapons: doswapweapon }, game),
-            describeTarget: wizardPositionDescription,
             hurtle: (dx, dy) => hurtleHero(dx, dy, 1, {
                 finishTeleport: finishTeleportArrival,
                 gotoLevel,
@@ -7600,6 +7595,11 @@ async function domoveCore(dx, dy) {
         u.uy0 = u.uy;
         u.ux = monster.mx;
         u.uy = monster.my;
+        // hack.c:domove_core() applies the shared destination-monster block
+        // to u.ustuck too: nomul(0) for a non-safe monster cancels a count
+        // or run before do_attack(), while requesting a full status update.
+        if (!heroMayDisplaceMonster(monster))
+            nomul(0, game);
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
     if (await airTurbulenceStopsHero())

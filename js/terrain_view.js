@@ -13,7 +13,7 @@ import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { showTerrainCodeLegend, showTerrainCodes } from './wizard_terrain.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
-export async function terrainCommand(describe) {
+export async function terrainCommand() {
     recordMappedOverviewState();
     const window = tty_create_nhwindow(NHW_MENU);
     await tty_start_menu(window);
@@ -40,12 +40,12 @@ export async function terrainCommand(describe) {
         else {
             const subset = which === 4 ? TER_MAP | TER_FULL
                 : TER_MAP | (which >= 2 ? TER_TRP : 0) | (which >= 3 ? TER_OBJ : 0);
-            await revealTerrain(subset, describe);
+            await revealTerrain(subset);
         }
     }
     game.context.move = 0;
 }
-async function revealTerrain(subset, describe) {
+async function revealTerrain(subset) {
     const hero = game.u;
     const full = !!(subset & TER_FULL);
     if (!full && (heroIsHallucinating(game) || hero.stunned || hero.stunnedTurns
@@ -86,7 +86,7 @@ async function revealTerrain(subset, describe) {
             await plineWithContinuation('Move cursor to anything of interest:');
         await selectMapPosition({
             start: { x: hero.ux, y: hero.uy }, goal: 'anything of interest',
-            prompt: game._pending_message, describe, force: false,
+            prompt: game._pending_message, force: false,
         });
     }
     finally {

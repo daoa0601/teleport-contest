@@ -148,7 +148,7 @@ function obstacleDescription(glyph, x, y, state) {
         return `the ${glyph.terrainName}`;
     return 'an unknown obstacle';
 }
-async function chooseTarget(start, describeTarget, state, min, max) {
+async function chooseTarget(start, state, min, max) {
     await pline('Where do you want to hit?');
     const valid = (x, y) => validPolearmPosition(x, y, min, max, state);
     prepareMapPositionHighlights(valid);
@@ -162,11 +162,10 @@ async function chooseTarget(start, describeTarget, state, min, max) {
         start,
         prompt: state._pending_message,
         goal: 'the spot to hit',
-        ...(describeTarget ? { describe: describeTarget } : {}),
         isValidLocation: valid,
     });
 }
-export async function usePolearm(object, { state = game, ensureWielded, describeTarget, autohit = false } = {}) {
+export async function usePolearm(object, { state = game, ensureWielded, autohit = false } = {}) {
     if (state.u?.uswallow || state.uswallow) {
         await pline("There's not enough room here to use that.");
         return { spentTime: false };
@@ -196,7 +195,7 @@ export async function usePolearm(object, { state = game, ensureWielded, describe
         }
     }
     if (!autohit) {
-        const target = await chooseTarget(cc, describeTarget, state, min, max);
+        const target = await chooseTarget(cc, state, min, max);
         if (!target)
             return { spentTime: false, cancelled: true };
         cc = target;

@@ -45,9 +45,12 @@ export interface MapPositionOptions {
     start: Position;
     prompt: string;
     goal: string;
-    describe?: PositionDescription | null;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
+    // Detection browsing (#terrain's detect modes) still supplies its own
+    // description; every other caller shares auto_describe()'s
+    // do_screen_description() model below.
+    describe?: PositionDescription | null;
     // Jump, spell, and cloud targeting admit the hero but omit its '$' overlay.
     highlightHero?: boolean;
     force?: boolean;
@@ -358,8 +361,13 @@ export async function getposHelpUntilDismissed(
     return await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
 
+// C getpos.c:auto_describe(): the cursor is described with pager.c
+// do_screen_description() — unreconnoitered pre-checks, symbol matching,
+// and look_at() detail — regardless of which command asked for the spot.
+// Detection browsing is the one caller that still overrides the text.
 async function describeSelectedPosition(
-    describe: PositionDescription | null | undefined, cursor: Position,
+    describe: PositionDescription | null | undefined,
+    cursor: Position,
     isValidLocation: ValidLocation | null,
 ): Promise<string | null> {
     const description = describe ? await describe(cursor.x, cursor.y)

@@ -261,7 +261,7 @@ async function choosePaymentShopkeeper(): Promise<PaymentTarget | null> {
     if (tip) await plineWithContinuation(`Move cursor to ${goal}:`);
     const position = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
-        prompt: game._pending_message, goal, describe: describeGetposLocation,
+        prompt: game._pending_message, goal,
     });
     game._pending_message = '';
     if (!position) return null;

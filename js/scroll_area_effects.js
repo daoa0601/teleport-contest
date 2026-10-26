@@ -208,7 +208,7 @@ async function chooseCenter(question, state) {
     const selected = await selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
         prompt: state._pending_message,
-        goal: 'the desired position', describe: farlookLocationDescription,
+        goal: 'the desired position',
         isValidLocation: valid,
         highlightHero: false,
     });
