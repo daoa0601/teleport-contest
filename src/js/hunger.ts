@@ -78,7 +78,7 @@ export async function gainHeroNutrition(amount: number, { state = game }: Hunger
     if (hero.uhunger >= 2000) {
         if (!eating || victual?.canchoke) {
             await chokeHeroOnFood(eating ? victual?.piece
-                : state._occupation?.key === 'open-tin' ? state._occupation.object : null, { state });
+                : state._occupation?.key === 'open-tin' ? state.context.tin?.tin ?? null : null, { state });
             if (state.program_state.gameover) return;
             if (eating && victual?.eating) victual.doreset = true;
         }

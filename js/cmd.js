@@ -1351,7 +1351,7 @@ async function repeatLastCommand() {
         return;
     const saved = [...(game._repeatCommands ?? [])];
     if (!saved.length) {
-        await pline('There is no command available to repeat.');
+        await plineWithContinuation('There is no command available to repeat.', { noRepeat: true });
         resetCommandVariables(true);
         return;
     }
@@ -6961,12 +6961,13 @@ async function dofire(cannedShotLimit = null) {
             }
         }
         const throwResult = await throwCommand(fireObject, true, shotLimit);
-        // dofire() returns the time spent unwielding even if throw_obj()
-        // cancels. Only a cancellation without that elapsed turn clears recall.
+        // dofire() can report ECMD_TIME together with ECMD_CANCEL when a
+        // quiver refill spent the turn; rhack() still clears both command
+        // queues for the cancellation while restoring context.move.
+        if (throwResult === 'cancelled')
+            resetCommandVariables(true);
         if (quiverSelectionSpentTime)
             game.context.move = 1;
-        else if (throwResult === 'cancelled')
-            resetCommandVariables(true);
         return;
     }
 }
