@@ -48,4 +48,21 @@ void test('tty text output compresses spaces in long lines before wrapping', asy
         await window;
     }
 });
+void test('tty text output undoes an earlier wrap before compressing and wrapping again', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    const window = showTextWindow([
+        'The stone door opens slowly.  You hear footsteps approaching from the\ndistant hallway.',
+    ]);
+    try {
+        await input.waitUntilBlocked();
+        const display = requireGameDisplay();
+        assert.equal(display.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'The stone door opens slowly. You hear footsteps approaching from the distant');
+        assert.equal(display.grid[1]?.map(cell => cell.ch).join('').trimEnd(), 'hallway.');
+    }
+    finally {
+        input.feed(' ');
+        await window;
+    }
+});
 //# sourceMappingURL=tty_text.test.js.map

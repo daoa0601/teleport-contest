@@ -198,7 +198,7 @@ import { chooseNamingCategory } from './naming_categories.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     setTopline, putMessageHistory, rememberToplines,
-    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
+    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, monsterVisible,
     unblindTelepathyRange,
     monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
@@ -934,13 +934,60 @@ function canSeeRunMonster(monster: Monster, x: number, y: number, g: GameState =
         && !monster.mundetected;
 }
 
-function travelInterruptedByMonster(g: GameState = game): boolean {
-    return !!g.level?.monsters?.some(monster =>
-        monsterHasMapPosition(monster, g)
-        && Math.abs(monster.mx - g.u.ux) <= 1
-        && Math.abs(monster.my - g.u.uy) <= 1
-        && (monster.mx !== g.u.ux || monster.my !== g.u.uy)
-        && !monster.pet && !monster.mpeaceful && cansee(monster.mx, monster.my));
+// C hack.c:lookaround() for travel (context.run == 8): moveloop runs it
+// before every automatic travel step.  Travel stops for a grid-bug
+// diagonal, a visible monster that is not peaceful-safe, a known trap
+// directly ahead of the previous step's direction, or liquid ahead that
+// the hero cannot safely cross.  Doors, objects, stairs, and the corridor
+// turning of run modes do not stop travel.
+async function travelLookaroundStops(g: GameState = game): Promise<boolean> {
+    const u = g.u;
+    const noDiagonal = MONSTER_NAME[u.umonnum ?? -1] === 'grid bug';
+    if (noDiagonal && u.dx && u.dy) {
+        await plineWithContinuation('You cannot move diagonally.');
+        return true;
+    }
+    const level = g.level;
+    if (heroIsBlind(g) || !g.context.run || !level) return false;
+    const confused = (u.confusionTurns ?? 0) > 0;
+    const stunned = !!(u.stunned || (u.stunnedTurns ?? 0) > 0);
+    const hallucinating = heroIsHallucinating(g);
+    const frontX = u.ux + (u.dx ?? 0), frontY = u.uy + (u.dy ?? 0);
+    // lookaround() checks each square's monster and terrain before moving
+    // to the next square, with columns outside rows.
+    for (let x = u.ux - 1; x <= u.ux + 1; x++) {
+        for (let y = u.uy - 1; y <= u.uy + 1; y++) {
+            if (!isok(x, y) || (x === u.ux && y === u.uy)) continue;
+            if (noDiagonal && x !== u.ux && y !== u.uy) continue;
+            const monster = monsterAtPosition(level, x, y, g);
+            // display.h:_is_safemon(): safe_dog protects a peaceful monster
+            // the hero can spot, only while unconfused, unstunned, and sane.
+            const safeMonster = monster && (g.flags.safe_dog ?? true)
+                && monster.mpeaceful && canSpotMonster(monster)
+                && !confused && !hallucinating && !stunned;
+            if (monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
+                && M_AP_TYPE(monster) !== M_AP_OBJECT
+                && monsterVisible(monster, g) && !safeMonster) {
+                if (g.flags.mention_walls)
+                    await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
+                return true;
+            }
+            const location = level.at(x, y);
+            if (!location || location.typ === STONE) continue;
+            if (x === u.ux - (u.dx ?? 0) && y === u.uy - (u.dy ?? 0)) continue;
+            if (x !== frontX || y !== frontY) continue;
+            const trap = knownRunTrap(x, y, g);
+            if (trap) {
+                await announceRunTrap(trap, g);
+                return true;
+            }
+            if (runLiquidIsDangerous(x, y, g)) {
+                await announceRunLiquid(x, y, g);
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 function startTravel(targetX: number, targetY: number, g: GameState = game): TravelRunState {
@@ -1127,7 +1174,7 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
 export async function continueRun(g: GameState = game): Promise<boolean> {
     const state = g._runState;
     if (state?.mode === 8) {
-        if (travelInterruptedByMonster(g)) {
+        if (await travelLookaroundStops(g)) {
             stopRun(g);
             g.context.move = 0;
             return false;
@@ -4821,14 +4868,13 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
     let completion: string | null = null;
     const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
     // custompline(SUPPRESS_HISTORY) files the line before the prompt, then
-    // the loop head makes the "# " line the current topline (getline.c:81),
-    // and hooked_tty_getlin() marks it TOPLINE_SPECIAL_PROMPT (getline.c:56).
+    // the loop head makes the "# " line the current topline. show_topl()'s
+    // addtopl() ends TOPLINE_SPECIAL_PROMPT as soon as it draws the prompt.
     await setTopline(`${initiator} `);
     game._toplines = `${initiator} `;
     game._pending_message = initiator;
     await flush_screen(1);
     game.nhDisplay?.setCursor(initiator.length + 1, 0);
-    game._promptOwnsTopline = true;
 
     const redrawCommand = async () => {
         const displayedCommand = completion || command;
@@ -4862,8 +4908,8 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
         if (key === 16) {
             // C win/tty/getline.c hooked_tty_getlin(): the "#" editor
             // browses history with ^P like any getlin, with inread clear
-            // so full/combination modes page their windows. A prompt owns
-            // the line, so a wrapped recall never pages.
+            // so full/combination modes page their windows. A wrapped
+            // editor line pages on its first recall too.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
                 if (!doprev) await doprevMessage(false);

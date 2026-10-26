@@ -363,9 +363,10 @@ function isGold(object) {
 function hasContents(object) {
     return !!(object.contents?.length);
 }
-// C sellobj() uses the shared ynaq confirmation with default yes.
-function askSell(question, { query }) {
-    return query(question);
+// shk.c asks the credit offer with ynaq() (default yes) and the cash offer
+// with nyaq() (default no); hack.h's two macros differ in that default.
+function askSell(question, { query, defaultAnswer = 'n' }) {
+    return query(question, defaultAnswer);
 }
 // C safe_qbuf() reserves the offer and question before short_oname()
 // abbreviates user names. Cash offers use xname/simpleonames; credit offers
@@ -543,7 +544,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
             const prefix = `Will you accept ${moneyAmount(tmpcr, state)} in credit for `;
-            answer = await askSell(await saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query });
+            answer = await askSell(await saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query, defaultAnswer: 'y' });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;

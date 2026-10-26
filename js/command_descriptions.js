@@ -163,6 +163,6 @@ export const COMMAND_DESCRIPTIONS = new Map([
     ["runsoutheast", "run southeast (screen lower right)"],
     ["runsouth", "run south (screen down)"],
     ["runsouthwest", "run southwest (screen lower left)"],
-    ["migratemons", "show migrating monsters"],
+    ["migratemons", "show migrating monsters and migrate N random ones"],
 ]);
 //# sourceMappingURL=command_descriptions.js.map

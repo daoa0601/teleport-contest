@@ -91,8 +91,8 @@ for (const { label, callName, personalName, expected } of [
                 const prompt = game._pending_message;
                 assert.match(prompt, /^Ada offers \d+ gold pieces for your potions? /);
                 assert.match(prompt, expected);
-                assert.match(prompt, quantity === 1 ? /\.  Sell it\? \[ynaq\] \(y\)/
-                    : /\.  Sell them\? \[ynaq\] \(y\)/);
+                assert.match(prompt, quantity === 1 ? /\.  Sell it\? \[ynaq\] \(n\)/
+                    : /\.  Sell them\? \[ynaq\] \(n\)/);
             } finally {
                 input.feed('n');
                 await dropping;
@@ -136,7 +136,7 @@ for (const { label, keeperName, callName, personalName, expected } of [
         try {
             await input.waitUntilBlocked();
             assert.match(game._pending_message, expected);
-            assert.match(game._pending_message, /Sell them\? \[ynaq\] \(y\)/);
+            assert.match(game._pending_message, /Sell them\? \[ynaq\] \(n\)/);
         } finally {
             input.feed('n');
             await dropping;

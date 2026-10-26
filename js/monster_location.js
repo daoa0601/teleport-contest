@@ -9,8 +9,8 @@ export function placeMonsterAt(monster, x, y) {
     monster.headOnMap = true;
 }
 // Occupancy ends at unlink/off-map placement, not at zero hit points.
-export function monsterAtPosition(level, x, y) {
-    return level.monsters.find(monster => monsterHasMapPosition(monster)
+export function monsterAtPosition(level, x, y, state = game) {
+    return level.monsters.find(monster => monsterHasMapPosition(monster, state)
         && monsterOccupiesPosition(monster, x, y)) || null;
 }
 // remove_monster() clears the mounted actor's map slot, without unlinking

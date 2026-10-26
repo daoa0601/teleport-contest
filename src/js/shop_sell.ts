@@ -77,7 +77,7 @@ export const SELL_DELIBERATE = 1;
 export const SELL_DONTSELL = 2;
 export type SellDisposition = typeof SELL_NORMAL | typeof SELL_DELIBERATE | typeof SELL_DONTSELL;
 type SellAnswer = 'y' | 'n' | 'a' | 'q';
-type SaleQuery = (question: string) => SellAnswer | Promise<SellAnswer>;
+type SaleQuery = (question: string, defaultAnswer: 'y' | 'n') => SellAnswer | Promise<SellAnswer>;
 export type ShopSaleResult = { sold: false }
     | { sold: true; credit: number }
     | { sold: true; offer: number };
@@ -408,9 +408,11 @@ function hasContents(object: GameObject): boolean {
     return !!(object.contents?.length);
 }
 
-// C sellobj() uses the shared ynaq confirmation with default yes.
-function askSell(question: string, { query }: { query: SaleQuery }): SellAnswer | Promise<SellAnswer> {
-    return query(question);
+// shk.c asks the credit offer with ynaq() (default yes) and the cash offer
+// with nyaq() (default no); hack.h's two macros differ in that default.
+function askSell(question: string, { query, defaultAnswer = 'n' }:
+    { query: SaleQuery; defaultAnswer?: 'y' | 'n' }): SellAnswer | Promise<SellAnswer> {
+    return query(question, defaultAnswer);
 }
 
 // C safe_qbuf() reserves the offer and question before short_oname()
@@ -595,7 +597,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
                 Math.trunc(tmpcr / objectQuan(object)), 'sell');
             const prefix = `Will you accept ${moneyAmount(tmpcr, state)} in credit for `;
             answer = await askSell(await saleQuestion(object, prefix, '?',
-                object.quan === 1, state, 'credit'), { query });
+                object.quan === 1, state, 'credit'), { query, defaultAnswer: 'y' });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;

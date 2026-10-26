@@ -67,8 +67,9 @@ for (const blind of [false, true]) {
         game.uarmc = game.u.uarmc = cloak;
         let refusal = '';
         resetInputState().beforeRead = () => {
+            // update_topl() stores a wrapped message with '\n' at the wrap point.
             if (game._pending_message.includes('need to take off'))
-                refusal = game._pending_message;
+                refusal = game._pending_message.replaceAll('\n', ' ');
         };
         await runExtendedCommand('apply', `${grease.invlet}${shirt.invlet}    `);
         for (const object of [cloak, suit, shirt]) {

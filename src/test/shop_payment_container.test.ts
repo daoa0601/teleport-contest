@@ -36,7 +36,8 @@ for (const unpaidContainer of [false, true]) {
         const buying = buyShopBillItem(shopkeeper, purchase);
         await input.waitUntilBlocked();
         try {
-            assert.match(game._pending_message, /You bought .*sack.*gold pieces\./);
+            // update_topl() stores a wrapped message with '\n' at the wrap point.
+            assert.match(game._pending_message.replaceAll('\n', ' '), /You bought .*sack.*gold pieces\./);
             assert.equal(shopkeeper.eshk.billct, 0, 'Contained purchases finish before their summary');
             assert.equal(dagger.unpaid, false);
             assert.equal(sack.unpaid, unpaidContainer, 'Feedback retains the container\'s prior ownership');

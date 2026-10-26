@@ -244,9 +244,9 @@ export function senseWithTelepathy(monster: Monster | null | undefined) {
 }
 
 // C mon_visible(): this does not check the square or sensory detection.
-export function monsterVisible(monster: Monster) {
-    const seesInvisible = !!(game.u?.seeInvisible
-        || (game.u?.seeInvisibleTurns ?? 0) > 0);
+export function monsterVisible(monster: Monster, state: GameState = game) {
+    const seesInvisible = !!(state.u.seeInvisible
+        || (state.u.seeInvisibleTurns ?? 0) > 0);
     return (!monster.minvis || seesInvisible) && !monster.mundetected;
 }
 
@@ -3374,7 +3374,9 @@ export async function pageTopline(
     if (game.iflags.debug_fuzzer) return 0;
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
-    const lines = toplineRows(message, columns);
+    // The stored toplines already carry update_topl()'s word wrap; more()
+    // only adds topl_putsym()'s hard column wrap.
+    const lines = toplineRows(message, columns, { splitWords: false });
     const moreCells = [...'--More--'].map(ch => ({ ch, dec: false }));
     const finalMessageLine = lines.at(-1) ?? lines[0];
     let finalLine = finalMessageLine;
@@ -3526,7 +3528,11 @@ async function updateTopline(
     const visibleLength = (message: string) => /[\x0e\x0f]|\x1b\[[0-9;]*C/.test(message)
         ? decodeMixedTopline(message).length : message.length;
     const columns = game.nhDisplay?.cols ?? 80;
-    const wraps = toplineRows(msg, columns).length > 1;
+    // update_topl() stores gt.toplines with its word wrap already applied
+    // (a space replaced by a newline), so recall and paging never re-split.
+    const stored = (message: string) => wrapStoredToplines(message, columns);
+    const msgToplines = stored(msg);
+    const wraps = toplineRows(msgToplines, columns, { splitWords: false }).length > 1;
     if (!urgent && game._suppressMessagesUntilInput) {
         const stopped = game.nhDisplay?.stoppedTopline ?? pending;
         // Escape's more() resets the message cursor to row zero. Hidden
@@ -3538,29 +3544,31 @@ async function updateTopline(
         // compares "You die" after the length check, so a long stopped line
         // keeps WIN_STOP set through the following survival question.
         if (game.nhDisplay)
-            game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
-        if (fits && !restarts) game._toplines = `${game._toplines}  ${msg}`;
+            game.nhDisplay.stoppedTopline = fits && !restarts ? stored(`${stopped}  ${msg}`) : msgToplines;
+        if (fits && !restarts) game._toplines = stored(`${game._toplines}  ${msg}`);
         else {
             // update_topl() remembers the replaced line even while WIN_STOP
             // hides this one (topl.c:272-281).
             rememberToplines();
-            game._toplines = msg;
+            game._toplines = msgToplines;
         }
         if (!restarts) return null;
         game._suppressMessagesUntilInput = false;
-        replaceTopline(msg);
-        return wraps ? await pageTopline(msg, paging) : null;
+        replaceTopline(msgToplines);
+        return wraps ? await pageTopline(msgToplines, paging) : null;
     }
     let dismissal;
     if (!pending) {
         rememberToplines();
-        game._toplines = msg;
-        replaceTopline(msg);
+        game._toplines = msgToplines;
+        replaceTopline(msgToplines);
         dismissal = wraps
-            ? await pageTopline(msg, paging) : null;
+            ? await pageTopline(msgToplines, paging) : null;
     } else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
-        game._toplines = `${game._toplines}  ${msg}`;
+        game._toplines = stored(`${game._toplines}  ${msg}`);
+        // addtopl() appends to the visible line, which can include
+        // SUPPRESS_HISTORY text absent from gt.toplines.
         replaceTopline(`${pending}  ${msg}`);
         dismissal = null;
     } else {
@@ -3569,12 +3577,67 @@ async function updateTopline(
         if (dismissal === 27) paging.dismissKey = 1;
         // Escape suppresses later lines, not the line which forced this pager.
         rememberToplines();
-        game._toplines = msg;
-        replaceTopline(msg);
+        game._toplines = msgToplines;
+        replaceTopline(msgToplines);
         if (wraps)
-            dismissal = await pageTopline(msg, paging);
+            dismissal = await pageTopline(msgToplines, paging);
     }
     return dismissal;
+}
+
+// C update_topl()'s storage wrap: from each CO-1 boundary search back to the
+// nearest space and replace it with a newline; a huge token is split after
+// its end, and text with no space at all is left to topl_putsym()'s hard
+// column wrap at render time.  tty_putmixed() folds each DEC-graphics pair
+// and each cursor-right escape into plain columns before update_topl() sees
+// the line (wintty.c decode_mixed()), so the wrap measures screen columns,
+// not raw marker bytes.
+function wrapStoredToplines(message: string, columns: number): string {
+    const cells: { text: string; splittable: boolean; raw: number }[] = [];
+    let dec = false;
+    for (let raw = 0; raw < message.length; raw++) {
+        const ch = message.charAt(raw);
+        if (ch === '\x0e') { dec = true; continue; }
+        if (ch === '\x0f') { dec = false; continue; }
+        if (ch === '\x1b' && message.charAt(raw + 1) === '[') {
+            let end = raw + 2;
+            while (end < message.length && /[0-9;]/.test(message.charAt(end))) end++;
+            if (message.charAt(end) === 'C') {
+                const count = Number(message.slice(raw + 2, end)) || 1;
+                // The editor emits cursor-right escapes; the columns they
+                // advance are spaces on screen but cannot be replaced by a
+                // newline inside the sequence.
+                for (let offset = 0; offset < count; offset++)
+                    cells.push({ text: ' ', splittable: false, raw });
+                raw = end;
+                continue;
+            }
+        }
+        cells.push({
+            text: dec ? DEC_TO_UNICODE[ch] ?? ch : ch,
+            splittable: !dec && ch === ' ',
+            raw,
+        });
+    }
+    let start = 0;
+    const breaks = new Set<number>();
+    while (cells.length - start >= columns) {
+        let split = start + columns - 1;
+        while (split > start && !cells[split]?.splittable) split--;
+        if (split === start) {
+            const next = cells.findIndex((cell, index) =>
+                index >= start && cell.splittable);
+            if (next < 0) break;
+            split = next;
+        }
+        breaks.add(cells[split]?.raw ?? split);
+        start = split + 1;
+    }
+    if (!breaks.size) return message;
+    let wrapped = '';
+    for (let raw = 0; raw < message.length; raw++)
+        wrapped += breaks.has(raw) ? '\n' : message.charAt(raw);
+    return wrapped;
 }
 
 function writeRawText(text: string) {

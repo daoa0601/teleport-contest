@@ -4,9 +4,11 @@
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 
+// livelog_printf() appends to the in-game chronicle (gamelog_add()) with
+// the current turn; only the chronicle fields are needed from the state.
 export function recordGameLogEvent(text: string, {
     state = game, turn = state.moves || 1,
-}: { state?: GameState; turn?: number } = {}) {
+}: { state?: Pick<GameState, 'gamelog' | 'moves'>; turn?: number } = {}) {
     if (!text) return null;
     if (!Array.isArray(state.gamelog)) state.gamelog = [];
     const entry = { turn: Math.max(1, Math.trunc(turn)), text: String(text) };

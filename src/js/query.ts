@@ -69,6 +69,9 @@ async function editLine(
             );
         }
         game.nhDisplay?.setCursor(cursorColumn, cursorRow);
+        // show_topl() draws the prompt through addtopl(), ending
+        // TOPLINE_SPECIAL_PROMPT before any answer is typed.
+        game._promptOwnsTopline = false;
     };
     const finish = (result: string | null): string | null => {
         clearMessageWindow(renderedRows);
@@ -95,10 +98,8 @@ async function editLine(
     }
     clearSuppressedStatus();
     renderEditor();
-    // hooked_tty_getlin() marks the line TOPLINE_SPECIAL_PROMPT
-    // (getline.c:56), and the loop head keeps gt.toplines equal to the
-    // query and typed text.
-    game._promptOwnsTopline = true;
+    // hooked_tty_getlin()'s loop head keeps gt.toplines equal to the
+    // query and typed text; typing uses putsyms(), without word wrapping.
     game._toplines = `${prompt} ${value}`;
     let doprev = false;
     for (;;) {
@@ -163,8 +164,7 @@ async function editLine(
             }
         }
         game._pending_message = `${prompt} ${value}`;
-        // The loop head rebuilds gt.toplines from the query and the text
-        // typed so far before every key (getline.c:81).
+        // The loop head rebuilds gt.toplines from the query and typed text.
         game._toplines = game._pending_message;
         clearSuppressedStatus();
         renderEditor();

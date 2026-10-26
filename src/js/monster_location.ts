@@ -15,10 +15,10 @@ export function placeMonsterAt(monster: MonsterPosition, x: number, y: number): 
 
 // Occupancy ends at unlink/off-map placement, not at zero hit points.
 export function monsterAtPosition<T extends MonsterPosition>(
-    level: { monsters: readonly T[] }, x: number, y: number,
+    level: { monsters: readonly T[] }, x: number, y: number, state: GameState = game,
 ): T | null {
     return level.monsters.find(monster =>
-        monsterHasMapPosition(monster)
+        monsterHasMapPosition(monster, state)
         && monsterOccupiesPosition(monster, x, y)) || null;
 }
 

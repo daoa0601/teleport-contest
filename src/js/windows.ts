@@ -454,18 +454,21 @@ export async function showTextWindow(lines: Iterable<TextMenuEntry> | AsyncItera
 }
 
 function textWindowRows(text: string, columns: number): string[] {
-    text = compressTextWindowLine(text, columns);
+    // tty_putstr() undoes topline wrapping and compresses spaces before
+    // splitting the whole string again for the text window's width.
     const rows: string[] = [];
-    while (text.length >= columns) {
+    let line = compressTextWindowLine(text, columns);
+    while (line.length >= columns) {
         let split = columns - 1;
-        while (split > 0 && text.charAt(split) !== ' ' && text.charAt(split) !== '\n') split--;
+        while (split > 0 && line.charAt(split) !== ' ') split--;
         if (!split) break;
-        rows.push(text.slice(0, split));
-        text = text.slice(split + 1);
+        rows.push(line.slice(0, split));
+        line = line.slice(split + 1);
     }
-    // tty text rendering truncates an indivisible oversized word; unlike topline
-    // messages, its text-window renderer does not wrap at the final column.
-    rows.push(text.slice(0, columns - 1));
+    // tty text rendering truncates an indivisible oversized word; unlike
+    // topline messages, its text-window renderer does not wrap at the
+    // final column.
+    rows.push(line.slice(0, columns - 1));
     return rows;
 }
 

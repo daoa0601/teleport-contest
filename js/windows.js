@@ -337,20 +337,23 @@ export async function showTextWindow(lines) {
     return key;
 }
 function textWindowRows(text, columns) {
-    text = compressTextWindowLine(text, columns);
+    // tty_putstr() undoes topline wrapping and compresses spaces before
+    // splitting the whole string again for the text window's width.
     const rows = [];
-    while (text.length >= columns) {
+    let line = compressTextWindowLine(text, columns);
+    while (line.length >= columns) {
         let split = columns - 1;
-        while (split > 0 && text.charAt(split) !== ' ' && text.charAt(split) !== '\n')
+        while (split > 0 && line.charAt(split) !== ' ')
             split--;
         if (!split)
             break;
-        rows.push(text.slice(0, split));
-        text = text.slice(split + 1);
+        rows.push(line.slice(0, split));
+        line = line.slice(split + 1);
     }
-    // tty text rendering truncates an indivisible oversized word; unlike topline
-    // messages, its text-window renderer does not wrap at the final column.
-    rows.push(text.slice(0, columns - 1));
+    // tty text rendering truncates an indivisible oversized word; unlike
+    // topline messages, its text-window renderer does not wrap at the
+    // final column.
+    rows.push(line.slice(0, columns - 1));
     return rows;
 }
 // tty_putstr() compresses long lines before buffering them. It leaves

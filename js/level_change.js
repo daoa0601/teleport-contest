@@ -341,7 +341,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         && destinationDepth.dnum === tutorialDnum;
     const oldDungeon = game.dungeons?.[oldDepth.dnum ?? 0];
     const newDungeon = game.dungeons?.[newDepth.dnum ?? 0];
-    recordDungeonEntryAchievements(game, oldDepth, newDepth);
+    recordDungeonEntryAchievements(game, oldDepth, newDepth, { newLevel: !cached });
     const enteredValley = !oldDungeon?.flags?.hellish
         && !!newDungeon?.flags?.hellish
         && game.valley_level

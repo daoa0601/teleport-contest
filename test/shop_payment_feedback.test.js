@@ -33,7 +33,7 @@ for (const portion of ['partly used', 'intact', 'fully used']) {
         const buying = buyShopBillItem(shopkeeper, purchase);
         await input.waitUntilBlocked();
         try {
-            assert.match(game._pending_message, /You (?:paid for|bought).*gold pieces\./);
+            assert.match(game._pending_message, /You (?:paid for|bought).*gold pieces\./s);
             assert.equal(daggers.quan, purchase.quantity, 'Feedback refers to the quantity being paid for');
             assert.equal(heroGoldAmount(game), 20 - purchase.price, 'Gold transfers before purchase feedback');
             assert.equal(bill.bquan, billedQuantity, 'The bill retains its prior quantity during feedback');

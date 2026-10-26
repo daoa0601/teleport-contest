@@ -88,6 +88,18 @@ void test('declining the offer marks the item no charge and pays nothing', async
     assert.equal(dagger.no_charge, true);
 });
 
+// C shk.c:sellobj() asks with nyaq(): hack.h's nyaq macro passes default
+// 'n', so the offer prompt shows (n) and Enter declines the sale.
+void test('the sell offer defaults to declining', async t => {
+    const { shopkeeper } = await sellShop(t, [{ prompt: /\[ynaq\] \(n\)/, keys: '\r' }]);
+    requirePlayingGame(game);
+    const dagger = await floorObject(DAGGER, 10, 10);
+    const outcome = await sellHeroDroppedObject(dagger, 10, 10);
+    assert.deepEqual(outcome, { sold: false });
+    assert.equal(heroGoldAmount(game), 0);
+    assert.equal(monsterGoldAmount(shopkeeper), 1000);
+});
+
 void test('a SELL_NORMAL disposition sells automatically without a query', async t => {
     const { shopkeeper } = await sellShop(t, [{ prompt: /relinquish .*dagger and receive.*gold pieces/, keys: ' ' }]);
     requirePlayingGame(game);
