@@ -64,7 +64,7 @@ void test('declining the offer marks the item no charge and pays nothing', async
     assert.equal(monsterGoldAmount(shopkeeper), 1000);
     assert.equal(dagger.no_charge, true);
 });
-// C shk.c:sellobj() asks with nyaq(): hack.h's ynaq macro passes default
+// C shk.c:sellobj() asks with nyaq(): hack.h's nyaq macro passes default
 // 'n', so the offer prompt shows (n) and Enter declines the sale.
 void test('the sell offer defaults to declining', async (t) => {
     const { shopkeeper } = await sellShop(t, [{ prompt: /\[ynaq\] \(n\)/, keys: '\r' }]);
