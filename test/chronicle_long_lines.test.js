@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { game, requireGameDisplay } from '../js/gstate.js';
+import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { recordAchievement } from '../js/achievements.js';
 import { ACH_SHOP, ACH_TUNE } from '../js/const.js';
@@ -22,10 +22,12 @@ void test('a long chronicle line drops its padding instead of truncating', async
     ];
     recordAchievement(game, ACH_SHOP);
     assert.ok(game.gamelog.some(entry => entry.text === 'entered a shop'));
-    installPagerInput(resetInputState(), { expected: /.*/, limit: 8 });
+    // show_gamelog() destroys its text window when it returns, so the map
+    // is back on screen afterwards; the captured pages keep the window text.
+    const pages = [];
+    installPagerInput(resetInputState(), { expected: /.*/, limit: 8, pages });
     await rhack('v'.charCodeAt(0));
-    const rows = (game.nhDisplay?.grid ?? [])
-        .map(row => row.map(cell => cell.ch).join('').trimEnd());
+    const rows = pages.join('\n').split('\n').map(row => row.trimEnd());
     const longRow = rows.find(row => row.startsWith('32: ' + LONG_EVENT.slice(0, 20)));
     assert.ok(longRow, `chronicle kept the long line:\n${rows.slice(0, 8).join('\n')}`);
     assert.ok(longRow.endsWith('little dog corpse'));
@@ -35,10 +37,9 @@ void test('a long chronicle line drops its padding instead of truncating', async
 void test('the chronicle describes learning the castle tune', async () => {
     freshTurnRoom({ hero: { uachieved: [] } });
     recordAchievement(game, ACH_TUNE);
-    installPagerInput(resetInputState(), { expected: /Logged events:/, limit: 1 });
+    const pages = [];
+    installPagerInput(resetInputState(), { expected: /Logged events:/, limit: 1, pages });
     await rhack('v'.charCodeAt(0));
-    const screen = requireGameDisplay().grid
-        .map(row => row.map(cell => cell.ch).join('')).join('\n');
-    assert.match(screen, /learned castle drawbridge's tune/);
+    assert.match(pages.join('\n'), /learned castle drawbridge's tune/);
 });
 //# sourceMappingURL=chronicle_long_lines.test.js.map
