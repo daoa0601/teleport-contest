@@ -189,7 +189,7 @@ import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import { continueWipingFace, donull, dowipe, threateningMonsterNearby, } from './do.js';
-import { ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextPages, showTextWindow, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
+import { ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextWindow, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';

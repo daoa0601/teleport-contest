@@ -8,7 +8,6 @@ import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { setCarriedArtifactProperties } from './artifact_properties.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { HeroPossessions } from './hero_types.js';
@@ -26,7 +25,7 @@ import { makePlural } from './object_grammar.js';
 import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER,
+    FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, SCR_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { curseObjectState } from './object_state.js';

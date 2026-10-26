@@ -46,7 +46,7 @@ import type { GameObject } from './object_types.js';
 import type { MapLocation, Position, Room, Trap } from './map_types.js';
 import { isRoom } from './map_types.js';
 import type { Hero } from './hero_types.js';
-import type { TextMenuLine, TextPage, TextMenuEntry } from './windows.js';
+import type { TextMenuLine, TextMenuEntry } from './windows.js';
 import type { MessagePublisher } from './display.js';
 import type { LiquidEffectResult } from './hack.js';
 import type { SpotEffectResult } from './location_effects.js';
@@ -268,7 +268,7 @@ import {
 import {
     ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu,
-    showTextMenuOverlay, showTextPages, showTextWindow,
+    showTextMenuOverlay, showTextWindow,
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import {
