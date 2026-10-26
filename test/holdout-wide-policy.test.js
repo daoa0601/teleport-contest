@@ -262,7 +262,7 @@ void test('deepwide drivers refuse choices that leave the game or print recorder
     assert.ok(!answers.has('g'), 'save-like entries must not be selected');
     assert.ok(answers.has('a') || answers.has('e'), 'harmless help entries remain selectable');
 });
-void test('deepwide drivers never send the wizard-only ^E, ^F and ^T keys', () => {
+void test('deepwide drivers never send the wizard-only ^E, ^F, ^T and ^A keys', () => {
     const driver = deepwide(47, 6000);
     const keys = new Set();
     let extended = '';
@@ -283,8 +283,10 @@ void test('deepwide drivers never send the wizard-only ^E, ^F and ^T keys', () =
             // ^E (wizdetect) and ^F (wizmap) are wizard commands; ^T
             // (dotelecmd) teleports at will and unrestricted when wizard
             // mode is on (teleport.c ignores the restrictions for a wizard
-            // without the 'm' prefix).
-            assert.ok(key !== '\x05' && key !== '\x06' && key !== '\x14', `wizard-only key ${JSON.stringify(key)}`);
+            // without the 'm' prefix); ^A (do_repeat) would re-run the
+            // setup's last queued command, ^V (wizlevelport), because
+            // cmd.c records every bound-key command in CQ_REPEAT.
+            assert.ok(key !== '\x05' && key !== '\x06' && key !== '\x14' && key !== '\x01', `wizard-only key ${JSON.stringify(key)}`);
             keys.add(key);
         }
     }

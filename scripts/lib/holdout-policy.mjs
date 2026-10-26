@@ -1209,10 +1209,14 @@ const ENV_SPECIFIC_CHOICE = /^List of game options\.$/;
 // ^F (#wizmap) are unbound for normal characters but wizard commands in
 // debug mode, and ^T (dotelecmd) teleports at will without the normal
 // restrictions when wizard mode is on (teleport.c:dotelecmd sets
-// ignore_restrictions for a wizard without the 'm' prefix). A debug driver
-// (deepwide) keeps its wizard actions confined to the setup keys, so those
-// three must never be sent as info keys.
-const WIDE_INFO_KEYS_DEBUG_SAFE = WIDE_INFO_KEYS.replaceAll(/[\x05\x06\x14]/g, '');
+// ignore_restrictions for a wizard without the 'm' prefix). ^A (do_repeat)
+// would re-run the setup's last queued command — cmd.c records every
+// bound-key command in CQ_REPEAT, so after the setup's ^V the queue holds
+// wizlevelport, and a pending 'm' prefix leaves it queued while the screen
+// still looks like a plain command prompt. A debug driver (deepwide) keeps
+// its wizard actions confined to the setup keys, so those four must never
+// be sent as info keys.
+const WIDE_INFO_KEYS_DEBUG_SAFE = WIDE_INFO_KEYS.replaceAll(/[\x05\x06\x14\x01]/g, '');
 /** A separate policy keeps legacy fuzz/explore choices and random draws intact. */
 function createWidePolicy(config) {
     const { seed, maxSteps } = config;
