@@ -110,7 +110,7 @@ export async function getobj(
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
     const buf = handsSuggested ? letters ? `- ${letters}` : '-' : letters;
-    const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}] `;
+    const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}]`;
     const selection = await chooseGetobjLetter(word, prompt, classify, {
         allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed,
     });

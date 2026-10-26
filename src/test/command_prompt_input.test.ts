@@ -52,3 +52,18 @@ void test('a map click cancels a crystal-ball symbol prompt as NUL', async () =>
         assert.match(screen(), /crystal ball/);
     } finally { await finish(engine); }
 });
+
+void test('recalling a cancelled object question separates its prompt and answer with one space', async () => {
+    const engine = await startMenuGame('OPTIONS=msg_window:single');
+    try {
+        await type(engine, 'd');
+        assert.match(screen(), /What do you want to drop\?/);
+
+        await type(engine, '\x1b');
+        assert.match(screen(), /Never mind\./);
+        await type(engine, '\x10\x10');
+
+        const recalled = screen().split('\n')[0]?.trimEnd() ?? '';
+        assert.match(recalled, /^What do you want to drop\? \[[^\]]+\] <esc>$/);
+    } finally { await finish(engine); }
+});
