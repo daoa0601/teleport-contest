@@ -1208,6 +1208,11 @@ const EXIT_CHOICE = /\b(quit|save|shell|suspend|exploremode)\b|no return|leave t
 // whose first screen prints the recorder's own configuration file path.
 // That path is environment-specific, so the wide policy must never select it.
 const ENV_SPECIFIC_CHOICE = /^List of game options\.$/;
+// cmd.c:wiz_only_list("EFGIVW"): ^E (#wizdetect) and ^F (#wizmap) are
+// unbound for normal characters but wizard commands in debug mode. A
+// debug driver (deepwide) keeps its wizard actions confined to the setup
+// keys, so those two must never be sent as info keys.
+const WIDE_INFO_KEYS_DEBUG_SAFE = WIDE_INFO_KEYS.replaceAll(/[\x05\x06]/g, '');
 
 /** A separate policy keeps legacy fuzz/explore choices and random draws intact. */
 function createWidePolicy(config: PolicyConfig): SessionDriver & { acceptsGameExit: true; summary: DriverSummary } {
@@ -1409,7 +1414,7 @@ function createWidePolicy(config: PolicyConfig): SessionDriver & { acceptsGameEx
             if (key === 'o') summary.doorsOpened++;
             return send(key);
         }
-        if (action === 'info') return send(choose(WIDE_INFO_KEYS.split('')));
+        if (action === 'info') return send(choose((config.debug ? WIDE_INFO_KEYS_DEBUG_SAFE : WIDE_INFO_KEYS).split('')));
         if (action === 'extended') { extended = choose(WIDE_EXTENDED); return send('#'); }
         if (action === 'travel') {
             const key = choose(['_', '<', '>']);

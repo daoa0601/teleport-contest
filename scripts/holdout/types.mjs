@@ -1,8 +1,9 @@
 import { arrayValue, booleanValue, numberValue, objectValue, stringValue } from '../lib/session-types.mjs';
 export function decodeGeneratorKind(value) {
-    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide')
+    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide'
+        || value === 'deepwide')
         return value;
-    throw new Error('generator kind must be recipe, fuzz, explore, deep, or wide');
+    throw new Error('generator kind must be recipe, fuzz, explore, deep, wide, or deepwide');
 }
 function decodeDateCategory(value) {
     if (value === 'ordinary' || value === 'fullMoon' || value === 'newMoon' || value === 'friday13' || value === 'night')
@@ -28,8 +29,9 @@ function decodeCandidate(value) {
         spec.options = stringValue(data.options, 'options');
     if (spec.kind === 'recipe' && !spec.recipe)
         throw new Error('recipe candidate needs a recipe name');
-    if (spec.kind === 'deep' && spec.targetDepth === undefined)
-        throw new Error('deep candidate needs a target depth');
+    if ((spec.kind === 'deep' || spec.kind === 'deepwide') && spec.targetDepth === undefined) {
+        throw new Error('deep or deepwide candidate needs a target depth');
+    }
     return spec;
 }
 function strings(value, label) { return arrayValue(value, label).map(item => stringValue(item, label)); }

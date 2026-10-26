@@ -94,7 +94,7 @@ jobs:
 
       - name: Record fresh sessions
         run: |
-          KINDS=(deep,explore deep,explore,fuzz recipe,fuzz deep,explore,recipe wide wide,explore)
+          KINDS=(deep,explore deep,explore,fuzz recipe,fuzz deep,explore,recipe wide wide,deepwide)
           K=${KINDS[$((N % 6))]}
           echo "$K" > kinds.txt
           mkdir -p out

@@ -1,7 +1,7 @@
 import { arrayValue, booleanValue, numberValue, objectValue, stringValue } from '../lib/session-types.mjs';
 import type { Character } from './recipes.mjs';
 import type { CalendarDate, DateCategory } from './calendar.mjs';
-export type GeneratorKind = 'recipe' | 'fuzz' | 'explore' | 'deep' | 'wide';
+export type GeneratorKind = 'recipe' | 'fuzz' | 'explore' | 'deep' | 'wide' | 'deepwide';
 export interface CandidateSpec {
     id: string;
     kind: GeneratorKind;
@@ -49,8 +49,9 @@ export interface HoldoutManifest {
     configuration: { kinds: GeneratorKind[]; recipes?: string[] };
 }
 export function decodeGeneratorKind(value: unknown): GeneratorKind {
-    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide') return value;
-    throw new Error('generator kind must be recipe, fuzz, explore, deep, or wide');
+    if (value === 'recipe' || value === 'fuzz' || value === 'explore' || value === 'deep' || value === 'wide'
+        || value === 'deepwide') return value;
+    throw new Error('generator kind must be recipe, fuzz, explore, deep, wide, or deepwide');
 }
 function decodeDateCategory(value: unknown): DateCategory {
     if (value === 'ordinary' || value === 'fullMoon' || value === 'newMoon' || value === 'friday13' || value === 'night') return value;
@@ -70,7 +71,9 @@ function decodeCandidate(value: unknown): CandidateSpec {
     if (data.targetDepth !== undefined) spec.targetDepth = numberValue(data.targetDepth, 'targetDepth');
     if (data.options !== undefined) spec.options = stringValue(data.options, 'options');
     if (spec.kind === 'recipe' && !spec.recipe) throw new Error('recipe candidate needs a recipe name');
-    if (spec.kind === 'deep' && spec.targetDepth === undefined) throw new Error('deep candidate needs a target depth');
+    if ((spec.kind === 'deep' || spec.kind === 'deepwide') && spec.targetDepth === undefined) {
+        throw new Error('deep or deepwide candidate needs a target depth');
+    }
     return spec;
 }
 function strings(value: unknown, label: string): string[] { return arrayValue(value, label).map(item => stringValue(item, label)); }

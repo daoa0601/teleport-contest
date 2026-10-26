@@ -28,6 +28,9 @@ export interface PolicyConfig {
     maxSteps: number;
     name?: string;
     setup?: SessionAction[];
+    /** The character plays in debug (wizard) mode; the driver must not
+     *  fire debug-only commands beyond its setup keys. */
+    debug?: boolean;
 }
 export type DriverConfig = SessionAction[] | PolicyConfig;
 export interface DriverSummary {
@@ -155,7 +158,8 @@ export function decodePolicyConfig(value: unknown): PolicyConfig {
     if (driver.kind !== 'fuzz' && driver.kind !== 'explore' && driver.kind !== 'wide') throw new Error('driver kind must be fuzz, explore, or wide');
     return { kind: driver.kind, seed: numberValue(driver.seed, 'driver seed'), maxSteps: numberValue(driver.maxSteps, 'driver maxSteps'),
         ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
-        ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }) };
+        ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }),
+        ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }) };
 }
 function decodeSummary(value: unknown): DriverSummary {
     const data = objectValue(value, 'driver summary');

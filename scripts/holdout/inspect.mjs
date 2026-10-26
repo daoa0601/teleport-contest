@@ -72,7 +72,8 @@ export function inspectRecording(session) {
 }
 export function inspectCandidate(spec, recorded) {
     const metrics = inspectRecording(recorded);
-    if (spec.kind === 'deep' && (spec.targetDepth === undefined || metrics.maxDepth < spec.targetDepth
+    if ((spec.kind === 'deep' || spec.kind === 'deepwide') && (spec.targetDepth === undefined
+        || metrics.maxDepth < spec.targetDepth
         || metrics.maxExperienceLevel < 20)) {
         throw new Error(`native setup requested depth ${spec.targetDepth}/Xp20, reached depth ${metrics.maxDepth}/Xp${metrics.maxExperienceLevel}`);
     }

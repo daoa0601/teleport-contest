@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { createHoldoutPolicy } from '../scripts/lib/holdout-policy.mjs';
 import { decodePolicyConfig, decodeSession, type Cursor } from '../scripts/lib/session-types.mjs';
 import { decodeGeneratorKind } from '../scripts/holdout/types.mjs';
+import { makeCandidate } from '../scripts/holdout/candidates.mjs';
+import { RECIPE_NAMES } from '../scripts/holdout/recipes.mjs';
 
 function screen(message = ''): string[] {
     const rows = new Array<string>(24).fill('');
@@ -17,6 +19,8 @@ function screen(message = ''): string[] {
 
 const hero: Cursor = [5, 5, 1];
 const policy = (seed = 1, maxSteps = 100) => createHoldoutPolicy({ kind: 'wide', seed, maxSteps });
+// A deepwide candidate's driver: the wide policy over a debug-mode character.
+const deepwide = (seed = 1, maxSteps = 100) => createHoldoutPolicy({ kind: 'wide', seed, maxSteps, debug: true });
 
 void test('wide configs and recorded driver summaries survive the JSON boundary', () => {
     assert.equal(decodeGeneratorKind('wide'), 'wide');
@@ -185,4 +189,100 @@ void test('wide never opens the option help page that prints the recorder config
     for (let seed = 1; seed <= 120; seed++) answers.add(policy(seed).nextKey(rows, { cursor: [5, 7, 1] }));
     assert.ok(!answers.has('g'), 'the option help entry must not be selected');
     assert.ok(answers.has('h'), 'neighbouring help entries remain selectable');
+});
+
+void test('deepwide kind and debug driver configs survive the JSON boundary', () => {
+    assert.equal(decodeGeneratorKind('deepwide'), 'deepwide');
+    const driver = { kind: 'wide', seed: 1, maxSteps: 80, debug: true,
+        setup: [{ type: 'keys', dismissMore: true, value: '#levelchange\r20\r\x163\r' }] };
+    const config = decodePolicyConfig(driver);
+    assert.equal(config.kind, 'wide');
+    assert.equal(config.debug, true);
+    assert.deepEqual(config.setup, [{ type: 'keys', dismissMore: true, value: '#levelchange\r20\r\x163\r' }]);
+    assert.equal(decodePolicyConfig({ kind: 'wide', seed: 1, maxSteps: 10 }).debug, undefined);
+    const session = decodeSession({ version: 5, segments: [{ seed: 1, datetime: '20260101000000',
+        nethackrc: '', driver }] });
+    const decoded = session.segments[0]?.driver;
+    assert.ok(decoded !== undefined && !Array.isArray(decoded));
+    assert.equal(decoded.kind, 'wide');
+    assert.equal(decoded.debug, true);
+    assert.deepEqual(decoded.setup, [{ type: 'keys', dismissMore: true, value: '#levelchange\r20\r\x163\r' }]);
+});
+
+void test('deepwide candidates run the deep setup behind the wide driver', () => {
+    const seeds = new Set<number>();
+    const { spec, session } = makeCandidate(0, seeds, ['deepwide'], RECIPE_NAMES);
+    assert.equal(spec.kind, 'deepwide');
+    assert.equal(spec.debug, true);
+    assert.equal(spec.targetDepth, 3);
+    assert.equal(spec.targetKeys, 80);
+    const segment = session.segments[0];
+    assert.ok(segment);
+    assert.match(segment.nethackrc, /playmode:debug,disclose:-i -a -v -g -c -o/);
+    const driver = segment.driver;
+    assert.ok(driver !== undefined && !Array.isArray(driver));
+    assert.equal(driver.kind, 'wide');
+    assert.equal(driver.debug, true);
+    assert.equal(driver.maxSteps, 80);
+    assert.deepEqual(driver.setup, [{ type: 'keys', dismissMore: true, value: '#levelchange\r20\r\x163\r' }]);
+    // Depths from Gehennom on need the second teleport request: the first
+    // cross-dungeon request lands in the Valley.
+    const gehennom = makeCandidate(10, seeds, ['deepwide'], RECIPE_NAMES);
+    assert.equal(gehennom.spec.targetDepth, 35);
+    const gehennomDriver = gehennom.session.segments[0]?.driver;
+    assert.ok(gehennomDriver !== undefined && !Array.isArray(gehennomDriver));
+    assert.deepEqual(gehennomDriver.setup,
+        [{ type: 'keys', dismissMore: true, value: '#levelchange\r20\r\x1635\r\x1635\r' }]);
+});
+
+void test('deepwide candidates appear only when requested in --kinds', () => {
+    const seeds = new Set<number>();
+    for (let index = 0; index < 25; index++) {
+        assert.equal(makeCandidate(index, seeds, ['wide'], RECIPE_NAMES).spec.kind, 'wide');
+        assert.equal(makeCandidate(index, seeds, ['deepwide'], RECIPE_NAMES).spec.kind, 'deepwide');
+    }
+    const mixed = new Set<string>();
+    for (let index = 0; index < 8; index++) {
+        mixed.add(makeCandidate(index, new Set<number>(), ['wide', 'deepwide'], RECIPE_NAMES).spec.kind);
+    }
+    assert.deepEqual([...mixed].sort(), ['deepwide', 'wide']);
+});
+
+void test('deepwide drivers refuse choices that leave the game or print recorder paths', () => {
+    for (const question of ['Really save? [yn] (n)', 'Really quit? [yn] (n)',
+        'Beware, there will be no return! Still climb? [yn] (n)']) {
+        assert.equal(deepwide().nextKey(screen(question), { cursor: [question.length + 1, 0, 1] }), 'n');
+    }
+    const rows = new Array<string>(24).fill('');
+    rows[0] = 'Select one item:';
+    const entries = ['About NetHack (version information).', 'List of game options.',
+        'List of wizard-mode commands.', 'Save the game and exit.'];
+    entries.forEach((text, index) => { rows[2 + index] = `${'aceg'.charAt(index)} - ${text}`; });
+    rows[7] = '(end)';
+    const answers = new Set<string | null>();
+    for (let seed = 1; seed <= 160; seed++) answers.add(deepwide(seed).nextKey(rows, { cursor: [5, 7, 1] }));
+    assert.ok(!answers.has('c'), 'the option help entry must not be selected');
+    assert.ok(!answers.has('g'), 'save-like entries must not be selected');
+    assert.ok(answers.has('a') || answers.has('e'), 'harmless help entries remain selectable');
+});
+
+void test('deepwide drivers never send the wizard-only ^E and ^F keys', () => {
+    const driver = deepwide(47, 6000);
+    const keys = new Set<string>();
+    let extended = '';
+    for (let step = 0; step < 6200; step++) {
+        const key = driver.nextKey(screen(extended ? `# ${extended.slice(1)}` : ''),
+            { cursor: extended ? [extended.length + 1, 0, 1] : hero });
+        if (key === null) break;
+        assert.equal(key.length, 1);
+        if (extended) {
+            if (key === '\r' || key === '\x1b') extended = '';
+            else extended += key;
+        } else if (key === '#') extended = '#';
+        else {
+            assert.ok(key !== '\x05' && key !== '\x06', `wizard-only key ${JSON.stringify(key)}`);
+            keys.add(key);
+        }
+    }
+    assert.ok(keys.has('\x18') && keys.has('\x0f'), 'other control info keys remain reachable');
 });
