@@ -1383,7 +1383,9 @@ function createWidePolicy(config) {
     function menuKey(rows, draining) {
         const entries = rows.flatMap((row, index) => {
             const match = row.match(/(?:^|\s)([a-zA-Z$]) ([-+*#]) (\S.*)/);
-            return match ? [{ key: itemAt(match, 1), selected: match[2] !== '-', text: itemAt(match, 3), row: index }] : [];
+            // decodeScreen() pads rows to the screen width; drop that padding
+            // so anchored entry patterns see only the entry's own text.
+            return match ? [{ key: itemAt(match, 1), selected: match[2] !== '-', text: itemAt(match, 3).trimEnd(), row: index }] : [];
         });
         const heading = rows.slice(0, entries[0]?.row ?? 1).join('\n');
         if (menuHeading !== heading) {
