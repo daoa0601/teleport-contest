@@ -91,7 +91,9 @@ export async function startTin(tin, { state = game } = {}) {
         }
         else
             duration = openingKnives.has(weapon.otyp) ? 3 : 6;
-        await plineWithContinuation(`Using ${ownedObjectName(weapon, state, { capitalized: false })} you try to open the tin.`);
+        // eat.c:start_tin() uses yobjnam(uwep), which includes the stack
+        // count ("Using your 11 orcish daggers ...").
+        await plineWithContinuation(`Using ${ownedObjectName(weapon, state, { capitalized: false, includeQuantity: true })} you try to open the tin.`);
     }
     else {
         await plineWithContinuation('It is not so easy to open this tin.');

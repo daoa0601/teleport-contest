@@ -165,14 +165,7 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
     const newRank = experienceRankIndex(hero.ulevel);
     const newAchievement = newRank > experienceRankIndex(oldLevel)
         && recordAchievement(state, rankAchievement(newRank, !!state.flags.female));
-    if (newAchievement) {
-        const title = state.urole.rank;
-        if (!title)
-            throw new Error('Experience level advancement did not install the hero rank');
-        const rankName = (state.flags.female && title.f) || title.m;
-        recordGameLogEvent(`attained the rank of ${rankName} (level ${hero.ulevel})`, { state });
-    }
-    else {
+    if (!newAchievement) {
         recordGameLogEvent(`${hero.ulevel <= hero.ulevelpeak ? 're' : ''}gained experience level ${hero.ulevel}`, { state });
     }
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);

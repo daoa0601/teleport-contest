@@ -51,7 +51,9 @@ export async function flipThroughBook(book, { state = game } = {}) {
         await plineWithContinuation('This looks like it might be interesting to read.');
     }
     else {
-        const studies = Math.min(book.spestudied ?? 0, 4);
+        // apply.c clamps to MAX_SPELL_STUDY (3), so the final fadeness
+        // string is unreachable from this flip.
+        const studies = Math.min(book.spestudied ?? 0, 3);
         const fading = FADED_INK[studies];
         if (fading === undefined)
             throw new Error(`Spellbook ${book.o_id} has invalid study count ${studies}`);

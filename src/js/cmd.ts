@@ -2827,16 +2827,16 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
 }
 
 async function doname() {
-    // docallcmd() pops the command queue before creating its menu, and
-    // cmdq_pop() serves CQ_REPEAT during #repeat: the saved getobj letter
-    // becomes the category choice ('c' falls to the switch default and the
-    // repeat quietly does nothing).  A non-key repeat entry clears the
-    // canned queue, as in do_name.c.
+    // do_name.c:docallcmd() uses a queued key as the naming category.
+    // Any other queued entry selects nothing and clears the canned queue.
     let queuedChoice: number | undefined;
     if (game._inDoAgain) {
         const queued = takeRepeatCommand();
         if (queued && queued.kind === 'key') queuedChoice = queued.key;
-        else if (queued) clearCommandKeys();
+        else if (queued) {
+            queuedChoice = 0;
+            clearCannedCommands();
+        }
     } else {
         queuedChoice = takeCommandKey();
     }

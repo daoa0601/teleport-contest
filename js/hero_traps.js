@@ -458,10 +458,10 @@ function upstart(text) {
 }
 // C Norep() compares pline.c's previous individual message.
 async function repeatableTrapMessage(message) {
+    // Norep() suppression has no side effects: vpline() returns before
+    // touching the tty line, so any pending topline prose stays pending.
     if (game._lastPlineMessage !== message)
         await pline(message);
-    else
-        game._pending_message = '';
 }
 function objectAtHero(type) {
     const hero = game.u;

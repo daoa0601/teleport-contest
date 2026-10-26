@@ -49,14 +49,18 @@ export function pickupClassOrder() {
 export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)) {
     setMulti(0);
     const source = pickupSourceAtHero();
-    const objects = pickupObjects(source);
-    const problem = pickupLocationProblem({ state: game, objects, monster: source.monster });
+    // hack.c:pickup_checks() tests OBJ_AT, which counts the punishment
+    // chain; the empty-floor complaints only fire when the square has no
+    // object at all.  A chain-only square falls through to the pickup menu
+    // path, where all_but_uchain() filters it into an empty selection.
+    const problem = pickupLocationProblem({ state: game, objects: source.objects, monster: source.monster });
     if (problem) {
         for (const message of problem.messages)
             await plineWithContinuation(message);
         game.context.move = problem.spendsTurn ? 1 : 0;
         return;
     }
+    const objects = pickupObjects(source);
     game._pickupEncumbrance = 0;
     if (!source.monster && heroCannotTake(game)) {
         await pline('You are physically incapable of picking anything up.');

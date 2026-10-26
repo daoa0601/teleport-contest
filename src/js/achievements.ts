@@ -42,7 +42,7 @@ const ACHIEVEMENT_JOURNAL_TEXT: ReadonlyMap<number, string> = new Map([
     [20, 'read a Discworld novel'],
     [21, 'entered Sokoban'],
     [22, 'entered the Bigroom'],
-    [31, "learned Castle drawbridge's tune"],
+    [31, "learned castle drawbridge's tune"],
 ]);
 
 function achievementJournalText(achievement: number, state: GameState): string | null {
