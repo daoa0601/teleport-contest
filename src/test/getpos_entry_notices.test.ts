@@ -74,7 +74,7 @@ async function startTravelEngine(): Promise<{ type: (keys: string) => Promise<vo
     const engine = await runSegment({
         seed: 73, datetime: '20260830120000', moves: ' ', storage: memoryStorage(),
         nethackrc: 'OPTIONS=name:Traveler,role:valkyrie,race:human,gender:female,'
-            + 'align:lawful,!legacy,!tutorial,!tips,!autopickup,pettype:none,time',
+            + 'align:lawful,!legacy,!tutorial,!tips,!autopickup,pettype:none,time,runmode:walk',
     });
     game.level = createRoomLevel({ left: 5, right: 20, top: 5, bottom: 15 });
     game.stairs = null;
@@ -104,8 +104,10 @@ function statusTime(): number {
 
 // C hack.c:findtravelpath() stops a run that reaches its destination with
 // nomul(0) and then restores context.run to 8, so the world turn that pays
-// for the final travel step cannot mark the 'time' status field dirty on
-// its own; the visible count only catches up when something else repaints.
+// for the final travel step cannot mark the 'time' status field dirty.
+// runmode:walk makes runmode_delay_output() repaint after every step, which
+// consumes nomul's botl request before that final allocation; the count
+// stays one turn behind until some later event repaints the status.
 void test('a two-step travel keeps the visible turn count one behind', async () => {
     const engine = await startTravelEngine();
     const start = statusTime();
@@ -115,9 +117,10 @@ void test('a two-step travel keeps the visible turn count one behind', async () 
     assert.equal(game.u.ux, 10);
     assert.equal(game.u.uy, 12, 'The hero traveled two squares down');
     assert.equal(game.moves, start + 2, 'Both travel steps spent real turns');
-    const shown = statusTime();
+    assert.equal(statusTime(), game.moves - 1,
+        'The turn paying for the final step leaves the displayed count stale');
     await engine.type('\x1b');
-    assert.equal(statusTime(), shown,
+    assert.equal(statusTime(), game.moves - 1,
         'A cancelled command does not refresh the turn count on its own');
 });
 
