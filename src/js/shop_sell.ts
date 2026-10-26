@@ -408,9 +408,11 @@ function hasContents(object: GameObject): boolean {
     return !!(object.contents?.length);
 }
 
-// C sellobj() asks with nyaq(): the shared ynaq confirmation, default no.
-function askSell(question: string, { query }: { query: SaleQuery }): SellAnswer | Promise<SellAnswer> {
-    return query(question, 'n');
+// shk.c asks the credit offer with ynaq() (default yes) and the cash offer
+// with nyaq() (default no); hack.h's two macros differ in that default.
+function askSell(question: string, { query, defaultAnswer = 'n' }:
+    { query: SaleQuery; defaultAnswer?: 'y' | 'n' }): SellAnswer | Promise<SellAnswer> {
+    return query(question, defaultAnswer);
 }
 
 // C safe_qbuf() reserves the offer and question before short_oname()
@@ -595,7 +597,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
                 Math.trunc(tmpcr / objectQuan(object)), 'sell');
             const prefix = `Will you accept ${moneyAmount(tmpcr, state)} in credit for `;
             answer = await askSell(await saleQuestion(object, prefix, '?',
-                object.quan === 1, state, 'credit'), { query });
+                object.quan === 1, state, 'credit'), { query, defaultAnswer: 'y' });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
