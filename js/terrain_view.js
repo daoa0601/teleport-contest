@@ -1,10 +1,10 @@
 // C cmd.c:doterrain(), detect.c:reveal_terrain()/reveal_terrain_getglyph().
 import { COLNO, ROWNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE, M_AP_FURNITURE, M_AP_TYPE, } from './const.js';
-import { cmapSymbolAppearance, displayMessageWindow, docrt, flush_screen, pline, show_glyph_cell, terrain_glyph, transientTrapGlyph, } from './display.js';
+import { cmapSymbolAppearance, docrt, flush_screen, pline, plineWithContinuation, show_glyph_cell, terrain_glyph, transientTrapGlyph, } from './display.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
@@ -74,18 +74,20 @@ async function revealTerrain(subset, describe) {
             ? 'known terrain, traps, and objects' : subset & TER_TRP
             ? 'known terrain and traps' : 'known terrain';
         await pline(`Showing ${kind} only...`);
-        const firstUse = shouldShowGetposTip();
-        if (firstUse)
-            await showGetposTip();
+        // C browse_map() -> getpos(): the one-time tip overwrites the prompt,
+        // then the verbose instructions line pages the announcement above
+        // when the two cannot share the topl.  browse_map() also forces
+        // autodescribe on and installs the terrain mode before getpos().
+        const hadTip = await showGetposTip();
         game.iflags.autodescribe = true;
         game.iflags.terrainmode = subset;
+        await showGetposInstructions();
+        if (hadTip)
+            await plineWithContinuation('Move cursor to anything of interest:');
         await selectMapPosition({
             start: { x: hero.ux, y: hero.uy }, goal: 'anything of interest',
-            prompt: firstUse ? "(For instructions type a '?')  Move cursor to anything of interest:"
-                : `Showing ${kind} only...${game.flags.verbose ? "  (For instructions type a '?')" : ''}`,
-            describe, force: false,
+            prompt: game._pending_message, describe, force: false,
         });
-        await displayMessageWindow();
     }
     finally {
         if (saved.water === undefined)

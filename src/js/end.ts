@@ -527,6 +527,8 @@ export async function listVanquished(defquery: 'y' | 'A' = 'y'): Promise<void> {
     await showDisclosureOverlay(vanquishedLines(), {
         restoreUnderlay: true,
     });
+    // Only the window path replaces the topl; the empty-list pline stays up.
+    game._pending_message = '';
 }
 
 // C insight.c:doborn() (#wizborn): per-species born/died counters plus the

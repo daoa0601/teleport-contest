@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { flush_screen } from '../js/display.js';
 import { listVanquished } from '../js/end.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
+import { requireScreenRow } from './support/screen.js';
 // C insight.c:dovanquished() -> list_vanquished('A'): the 'm' command prefix
 // offers the sort-order menu even when only one species (or none) was
 // vanquished; a plain #vanquished with one species shows no such menu.
@@ -34,5 +36,19 @@ void test("'m #vanquished' still picks a sort order with nothing vanquished", as
     ]);
     await listVanquished('A');
     assert.equal(game._pending_message, 'No creatures have been vanquished.');
+});
+// C list_vanquished(): a plain #vanquished with nothing killed pline()s the
+// present-tense notice and leaves it on the topl; the disclosure window path
+// replaces the topl, but this branch never opens one.
+void test('plain #vanquished with nothing vanquished announces it on the topl', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.feed('vanquished\n');
+    await rhack('#'.charCodeAt(0));
+    await flush_screen(1);
+    assert.equal(game._pending_message, 'No creatures have been vanquished.');
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), 'No creatures have been vanquished.');
+    assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=vanquished_sort_menu.test.js.map

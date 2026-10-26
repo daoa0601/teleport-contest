@@ -7,9 +7,9 @@ import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/hero_mental_status.js';
 import { maketrap } from '../js/mklev.js';
 import { freshTurnRoom } from './support/playable-room.js';
-import { requireScreenCell } from './support/screen.js';
-import { DAGGER } from '../js/object_data.js';
+import { requireScreenCell, requireScreenRow } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';
+import { DAGGER } from '../js/object_data.js';
 void test('the terrain view can retain a discovered trap', async () => {
     const input = freshTurnRoom({ flags: { tips: false } });
     const trap = await maketrap(14, 10, PIT);
@@ -26,6 +26,33 @@ void test('the terrain view can retain a discovered trap', async () => {
         input.feed('\x1b ');
         await action;
     }
+    assert.equal(game.context.move, 0);
+});
+// C reveal_terrain(): the announcement pline stays behind a --More-- pager
+// until getpos()'s verbose instructions line takes the topl; autodescribe
+// then replaces that line while the cursor browses, and picking a spot
+// leaves a cleared topl with the map restored.
+void test('terrain browsing pages the announcement before the getpos prompt', async () => {
+    const input = freshTurnRoom({ flags: { tips: false } });
+    newsym(10, 9);
+    input.feed('\x7fc');
+    const action = rhack(0);
+    const topl = () => requireScreenRow(0).map(cell => cell.ch).join('').trim();
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(topl(), 'Showing known terrain, traps, and objects only...--More--');
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        assert.equal(topl(), "(For instructions type a '?')");
+        input.feed('k');
+        await input.waitUntilBlocked();
+        assert.equal(topl(), 'floor of a room');
+    }
+    finally {
+        input.feed(',');
+        await action;
+    }
+    assert.equal(topl(), '');
     assert.equal(game.context.move, 0);
 });
 void test('terrain inspection refuses an impaired hero without entering the browser', async () => {

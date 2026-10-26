@@ -2819,7 +2819,10 @@ async function doswapweapon() {
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
     await setSecondaryWeapon(null, game);
     const result = await readyHeroWeapon(oldSecondary);
-    if (game.uwep === oldPrimary) {
+    // C compares the uwep pointer, so read the slot the same way on both
+    // sides: an all-along-empty hand is an unchanged hand even though the
+    // optional fields stay undefined rather than null.
+    if ((game.uwep || game.u?.uwep || null) === oldPrimary) {
         await setSecondaryWeapon(oldSecondary, game);
     }
     else if (oldPrimary) {
@@ -4465,7 +4468,6 @@ async function doChronicle() {
 }
 async function doVanquished() {
     await listVanquished(game.iflags.menu_requested ? 'A' : 'y');
-    game._pending_message = '';
     game.context.move = 0;
 }
 async function doGenocided() {
