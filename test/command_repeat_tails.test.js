@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { flush_screen } from '../js/display.js';
+import { DAGGER } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -16,5 +19,28 @@ void test('repeating an empty-hands wield reads a new choice without showing a p
     await repeat;
     assert.equal(message, '');
     assert.equal(game.context.move, 0);
+});
+for (const verb of ['invoke', 'tip']) {
+    void test(`cancelling ${verb} leaves no command available to repeat`, async () => {
+        const input = freshTurnRoom();
+        input.feed(`#${verb}\n\x1b`);
+        await rhack(0);
+        input.feed('\x01\x1b');
+        await rhack(0);
+        await flush_screen(1);
+        const top = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd();
+        assert.equal(top, 'There is no command available to repeat.');
+    });
+}
+void test('adjust repeats a declined destination without asking for another letter', async () => {
+    const input = freshTurnRoom();
+    const dagger = await addInventoryObject(DAGGER);
+    input.feed(`#adjust\n${dagger.invlet}\x1b`);
+    await rhack(0);
+    input.feed('\x01q');
+    await rhack(0);
+    await flush_screen(1);
+    const top = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd();
+    assert.equal(top, 'Never mind.');
 });
 //# sourceMappingURL=command_repeat_tails.test.js.map

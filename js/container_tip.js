@@ -2,6 +2,7 @@
 // tipcontainer_gettarget(), and tipcontainer_checks().
 import { nomul } from './command_state.js';
 import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL, PLNMSG_OBJNAM_ONLY } from './const.js';
+import { resetCommandVariables } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { plineWithContinuation as pline } from './display.js';
 import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject } from './container.js';
@@ -96,8 +97,10 @@ export async function tipCommand() {
         return isContainer(object) || object.otyp === HORN_OF_PLENTY
             && object.dknown && objectTypeKnown(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
     }, { forcePrompt: true });
-    if (!object)
+    if (!object) {
+        resetCommandVariables(true);
         return;
+    }
     if (isContainer(object) || object.otyp === HORN_OF_PLENTY) {
         await tipContainer(object);
         game.context.move = 1;

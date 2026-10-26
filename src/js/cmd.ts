@@ -185,6 +185,7 @@ import {
 } from './tty_prompts.js';
 import {
     getLine, paranoidQuery, promptYesNo, promptYesNoQuit,
+    yn_function,
 } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
@@ -3676,7 +3677,7 @@ async function doinvoke() {
             || candidate.otyp === FAKE_AMULET_OF_YENDOR && !candidate.known
             ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });
     if (!object) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
 
@@ -4125,7 +4126,7 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
     await flushPendingTopline();
     let destination = '';
     for (let attempt = 1; ; attempt++) {
-        let key = await promptKey(`${destinationPrompt} `);
+        let key = (await yn_function(destinationPrompt, null, '', true)).answer.charCodeAt(0);
         if (key === 63 || key === 42) {
             key = await selectUsedInventoryLetter(splitting ? source : null);
             if (!key) continue;

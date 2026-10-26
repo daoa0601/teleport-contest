@@ -144,7 +144,7 @@ import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, getobj, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import { confusePromptDirection, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
-import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
+import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, yn_function, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { callObjectType, objectTypeIsCallable, } from './object_call.js';
 import { nameIndividualObject } from './individual_naming.js';
@@ -3725,7 +3725,7 @@ async function doinvoke() {
         || candidate.otyp === FAKE_AMULET_OF_YENDOR && !candidate.known
         ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });
     if (!object) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     game._pending_message = '';
@@ -4163,7 +4163,7 @@ async function doadjust(selected = null, splitting = null) {
     await flushPendingTopline();
     let destination = '';
     for (let attempt = 1;; attempt++) {
-        let key = await promptKey(`${destinationPrompt} `);
+        let key = (await yn_function(destinationPrompt, null, '', true)).answer.charCodeAt(0);
         if (key === 63 || key === 42) {
             key = await selectUsedInventoryLetter(splitting ? source : null);
             if (!key)
