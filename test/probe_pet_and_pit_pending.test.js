@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { climbOutOfPit } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
@@ -34,13 +35,17 @@ void test('probing an empty-handed pet names it as yours', async () => {
 // escape message joins the still-pending line instead of replacing it.
 void test('a repeated pit struggle keeps the pending topline', async () => {
     freshTurnRoom();
-    game.u.utrap = 2;
+    game.u.utrap = 3;
     game.u.utraptype = TT_PIT;
     await climbOutOfPit();
     assert.equal(game._pending_message, 'You are still in a pit.');
     await climbOutOfPit();
+    assert.equal(game.u.utrap, 1);
+    assert.equal(game._pending_message, 'You are still in a pit.');
+    await climbOutOfPit();
     assert.equal(game.u.utrap, 0);
-    assert.equal(game._pending_message, 'You are still in a pit.  You crawl to the edge of the pit.');
+    await flush_screen(1);
+    assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'You are still in a pit.  You crawl to the edge of the pit.');
 });
 // C hack.c:pickup_checks() tests OBJ_AT, which counts the punishment
 // chain.  A chain-only square never reaches the "nothing here to pick up"
