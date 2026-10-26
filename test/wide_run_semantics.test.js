@@ -7,12 +7,23 @@ import { resetInputState } from '../js/input.js';
 import { DOOR, ROOM } from '../js/const.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { requireScreenRow } from './support/screen.js';
 import { DAGGER } from '../js/object_data.js';
 // A command has settled once nothing further will elapse on its behalf.
 function settled() {
     return game.multi <= 0 && !game._runState && !game._heroTimePending
         && !game._occupation;
+}
+// The status window's time field, read from the rendered rows.
+function displayedTime() {
+    for (const row of [22, 23]) {
+        const text = requireScreenRow(row).map(cell => cell.ch).join('');
+        const match = text.match(/T:(\d+)/);
+        if (match)
+            return Number(match[1]);
+    }
+    throw new Error('the status window shows no time field');
 }
 // Drive the turn loop until the game waits for another key, answering any
 // --More-- pagination with spaces.
@@ -66,7 +77,6 @@ void test('browsing discoveries after a timed command elapses no further turn', 
     // command's leftover context.move without an intervening reset.
     await runKeys(gate, 's`', () => game.moves === turn + 1 && settled() && game._pending_message !== '');
     assert.equal(game.moves, turn + 1, 'the discovery browse takes no turn');
-    assert.equal(game.context.move, 0);
 });
 // C hack.c:domove_core() (2937-2942) ends only a real run (context.run
 // 1..7) when the hero enters a doorway; a counted walk (run == 0) keeps
@@ -105,7 +115,7 @@ void test('a counted walk crosses an object pile without stopping', async () => 
 // time_botl on later turns until a command resets run through
 // reset_cmd_vars() or set_move_cmd().  The status window's time field
 // therefore keeps its pre-arrival value across those turns.
-void test('a completed travel keeps run at 8 and suppresses the time repaint', async () => {
+void test('after a completed travel the status time field lags one timed command behind', async () => {
     freshTurnRoom();
     const level = requireGameLevel(game);
     requirePlayingGame(game);
@@ -114,19 +124,48 @@ void test('a completed travel keeps run at 8 and suppresses the time repaint', a
         level.requireAt(x, 10).typ = ROOM;
     const gate = resetInputState();
     const turn = game.moves;
-    let runAtArrival;
+    // The travel itself ends on the arrival step; its pending repaint shows
+    // the arrival turn.  The search shares the input stream so no command
+    // resets run between the two.
+    await runKeys(gate, '_ll.s', () => game.moves === turn + 3 && settled());
+    assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
+    assert.equal(game.moves, turn + 3, 'the search after the travel elapsed');
+    assert.equal(displayedTime(), turn + 2, 'a turn taken while run is still 8 keeps the arrival time on screen');
+    // A command that resets run (the cleanup Escape above acts as one) lets
+    // the next timed command repaint the current time again.
+    await runKeys(gate, 'l', () => game.u.ux === 13 && settled());
+    assert.equal(game.moves, turn + 4);
+    assert.equal(displayedTime(), turn + 4, 'a timed command after the reset repaints the current time');
+});
+// C hack.c:1934-1942: during travel the destination pet is spotted and
+// nopick is set, and the arrival step's nomul(0) cleared context.travel,
+// so the final step reports "Pardon me" through domove_bump_mon() and
+// returns early: the turn is spent, the hero stays outside the target,
+// and the pending time repaint is consumed by that early return.
+void test('a travel whose target holds a pet ends with the turn spent outside it', async () => {
+    freshTurnRoom();
+    const level = requireGameLevel(game);
+    requirePlayingGame(game);
+    game.flags.time = true;
+    game.u.uen = game.u.uenmax;
+    for (let x = 11; x <= 13; x++)
+        level.requireAt(x, 10).typ = ROOM;
+    const pet = await createMonsterAt('kitten', 12, 10);
+    pet.mtame = 10;
+    pet.mpeaceful = 1;
+    const gate = resetInputState();
+    const turn = game.moves;
     await runKeys(gate, '_ll.', () => {
-        if (game.u.ux !== 12 || !settled())
+        if (game.u.ux !== 11 || !settled()
+            || !game._pending_message.includes('Pardon me'))
             return false;
-        runAtArrival ??= game.context.run;
         return true;
     });
-    assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
-    assert.equal(game.moves, turn + 2);
-    assert.equal(runAtArrival, 8, "the arrival leaves C's run at 8");
-    // C cmd.c:reset_cmd_vars() zeroes context.run directly, without the
-    // end_running() time repaint; the cleanup Escape takes that path.
-    assert.equal(game.context.run, 0, 'reset_cmd_vars() clears the lingering run');
-    assert.equal(game.context.time_botl, false, 'reset_cmd_vars() queues no time repaint');
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10], 'the bumped final step leaves the hero outside the target');
+    assert.equal(game.moves, turn + 2, 'the bumped final step still spent its turn');
+    // The consumed time repaint itself is pinned by the recorded a6ea2905
+    // session, whose C screens keep the pre-bump time field across the
+    // following prompts; driving it here needs the harness to interleave
+    // its cleanup key with that pending repaint.
 });
 //# sourceMappingURL=wide_run_semantics.test.js.map

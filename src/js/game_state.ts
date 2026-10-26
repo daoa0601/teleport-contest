@@ -403,6 +403,7 @@ export interface GameState {
     _heroBubble?: ElementalBubble | null;
     _ballChainRestriction?: number;
     _domoveSucceeded?: boolean;
+    _domoveReachedTail?: boolean;
     _emptyShops?: number[];
     _shopFollowMessageTurn?: number;
     _monsterNoiseTime?: number;

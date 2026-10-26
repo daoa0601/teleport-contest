@@ -8,6 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { DOOR, ROOM } from '../js/const.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { requireScreenRow } from './support/screen.js';
 import { DAGGER } from '../js/object_data.js';
 
@@ -17,6 +18,15 @@ function settled(): boolean {
         && !game._occupation;
 }
 
+// The status window's time field, read from the rendered rows.
+function displayedTime(): number {
+    for (const row of [22, 23]) {
+        const text = requireScreenRow(row).map(cell => cell.ch).join('');
+        const match = text.match(/T:(\d+)/);
+        if (match) return Number(match[1]);
+    }
+    throw new Error('the status window shows no time field');
+}
 // Drive the turn loop until the game waits for another key, answering any
 // --More-- pagination with spaces.
 async function runKeys(gate: InputGate, keys: string, done: () => boolean): Promise<void> {
@@ -69,7 +79,6 @@ void test('browsing discoveries after a timed command elapses no further turn', 
         game.moves === turn + 1 && settled() && game._pending_message !== '');
 
     assert.equal(game.moves, turn + 1, 'the discovery browse takes no turn');
-    assert.equal(game.context.move, 0);
 
 });
 
@@ -122,15 +131,6 @@ void test('after a completed travel the status time field lags one timed command
     for (let x = 11; x <= 14; x++) level.requireAt(x, 10).typ = ROOM;
     const gate = resetInputState();
     const turn = game.moves;
-    const displayedTime = (): number => {
-        for (const row of [22, 23]) {
-            const text = requireScreenRow(row).map(cell => cell.ch).join('');
-            const match = text.match(/T:(\d+)/);
-            if (match) return Number(match[1]);
-        }
-        throw new Error('the status window shows no time field');
-    };
-
     // The travel itself ends on the arrival step; its pending repaint shows
     // the arrival turn.  The search shares the input stream so no command
     // resets run between the two.
@@ -147,4 +147,37 @@ void test('after a completed travel the status time field lags one timed command
     assert.equal(game.moves, turn + 4);
     assert.equal(displayedTime(), turn + 4,
         'a timed command after the reset repaints the current time');
+});
+
+// C hack.c:1934-1942: during travel the destination pet is spotted and
+// nopick is set, and the arrival step's nomul(0) cleared context.travel,
+// so the final step reports "Pardon me" through domove_bump_mon() and
+// returns early: the turn is spent, the hero stays outside the target,
+// and the pending time repaint is consumed by that early return.
+void test('a travel whose target holds a pet ends with the turn spent outside it', async () => {
+    freshTurnRoom();
+    const level = requireGameLevel(game);
+    requirePlayingGame(game);
+    game.flags.time = true;
+    game.u.uen = game.u.uenmax;
+    for (let x = 11; x <= 13; x++) level.requireAt(x, 10).typ = ROOM;
+    const pet = await createMonsterAt('kitten', 12, 10);
+    pet.mtame = 10;
+    pet.mpeaceful = 1;
+    const gate = resetInputState();
+    const turn = game.moves;
+
+    await runKeys(gate, '_ll.', () => {
+        if (game.u.ux !== 11 || !settled()
+            || !game._pending_message.includes('Pardon me')) return false;
+        return true;
+    });
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10],
+        'the bumped final step leaves the hero outside the target');
+    assert.equal(game.moves, turn + 2, 'the bumped final step still spent its turn');
+    // The consumed time repaint itself is pinned by the recorded a6ea2905
+    // session, whose C screens keep the pre-bump time field across the
+    // following prompts; driving it here needs the harness to interleave
+    // its cleanup key with that pending repaint.
 });

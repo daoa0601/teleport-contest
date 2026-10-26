@@ -1133,24 +1133,26 @@ export async function continueRun(g: GameState = game): Promise<boolean> {
         }
         await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         if (g.multi < COLNO && --g.multi === 0) stopRun(g);
-        const originX = g.u.ux, originY = g.u.uy;
         const moved = await domove(g.u.dx ?? 0, g.u.dy ?? 0, false);
         if (g.program_state.gameover) return false;
         // C domove_core() returns early -- before its tail effects and
-        // runmode_delay_output() (hack.c:2990) -- whenever the step does
-        // not relocate the hero: a pet bump, an attack, a refusal.
-        const stepped = g.u.ux !== originX || g.u.uy !== originY;
-        if (moved && stepped) await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
+        // runmode_delay_output() (hack.c:2990) -- for a pet bump on the
+        // final step (after nomul(0) cleared context.travel), an attack,
+        // a blocked step.  A refused pet swap still reaches the tail
+        // with the hero restored (hack.c:2922-2923), keeping the delay
+        // and the pending time repaint.
+        const reachedTail = !!g._domoveReachedTail;
+        if (moved && reachedTail) await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         g.context.move = moved ? 1 : 0;
         const arrived = g.u.ux === state.targetX && g.u.uy === state.targetY;
         if (arrived) g._travelTarget = null;
         if (!moved) stopRun(g);
-        else if (arrived) arriveTravel(g, true);
+        else if (arrived) arriveTravel(g, reachedTail);
         // A final step that completed domove_core() without entering the
         // target ("You stop, unsure which way to go.") still leaves C's
         // context.run at 8 (hack.c:1409) with the pending time repaint;
-        // an early-returned bump consumed that repaint with its message.
-        else if (!g._runState && g.context.run === 8) arriveTravel(g, stepped);
+        // an early return consumed that repaint with its own output.
+        else if (!g._runState && g.context.run === 8) arriveTravel(g, reachedTail);
         return moved;
     }
     if (!state || !await lookaroundRun(state, g)) {
@@ -5179,26 +5181,28 @@ async function dotravelTarget(): Promise<void> {
     }
     game.iflags.getloc_travelmode = false;
     const state = startTravel(target.x, target.y);
-    const originX = game.u.ux, originY = game.u.uy;
     const moved = await domove(game.u.dx ?? 0, game.u.dy ?? 0);
     if (game.program_state.gameover) return;
     // C domove_core() returns early -- before its tail effects and
-    // runmode_delay_output() (hack.c:2990) -- whenever the step does
-    // not relocate the hero: a pet bump, an attack, a refusal.
-    const stepped = game.u.ux !== originX || game.u.uy !== originY;
-    if (moved && stepped) await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
+    // runmode_delay_output() (hack.c:2990) -- for a pet bump on the
+    // final step (after nomul(0) cleared context.travel), an attack,
+    // a blocked step.  A refused pet swap still reaches the tail
+    // with the hero restored (hack.c:2922-2923), keeping the delay
+    // and the pending time repaint.
+    const reachedTail = !!game._domoveReachedTail;
+    if (moved && reachedTail) await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     // The target-selection command itself is time-consuming.  A blocked
     // first step stops travel but still reaches the monster/global turn.
     game.context.move = 1;
     const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
     if (arrived) game._travelTarget = null;
     if (!moved) stopRun();
-    else if (arrived) arriveTravel(game, true);
+    else if (arrived) arriveTravel(game, reachedTail);
     // A final step that completed domove_core() without entering the
     // target ("You stop, unsure which way to go.") still leaves C's
     // context.run at 8 (hack.c:1409) with the pending time repaint;
-    // an early-returned bump consumed that repaint with its message.
-    else if (!game._runState && game.context.run === 8) arriveTravel(game, stepped);
+    // an early return consumed that repaint with its own output.
+    else if (!game._runState && game.context.run === 8) arriveTravel(game, reachedTail);
 }
 
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
@@ -7269,6 +7273,10 @@ async function finishHeroMovement({
     ballChainMove?: Awaited<ReturnType<typeof beginBallAndChainMove>>;
 }): Promise<boolean> {
     const u = game.u;
+    // This tail is domove_core()'s epilogue; reaching it (rather than one
+    // of the early returns) keeps runmode_delay_output() and the pending
+    // time repaint, even when a refused pet swap restored the hero.
+    game._domoveReachedTail = true;
     await placeHeroOnLevel(u.ux, u.uy);
     resetOccupations();
     // hack.c:domove_core() ends only a real run (context.run != 0) upon
@@ -7329,6 +7337,7 @@ async function delayAfterDraggingBall(): Promise<void> {
 async function domove(dx: number, dy: number, explicitAttempt = true): Promise<boolean> {
     const oldx = game.u.ux, oldy = game.u.uy;
     game._domoveSucceeded = false;
+    game._domoveReachedTail = false;
     const moved = await domoveCore(dx, dy);
     if (!game.program_state.gameover) {
         if (explicitAttempt && game._domoveSucceeded) {

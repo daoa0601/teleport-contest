@@ -56,9 +56,11 @@ export function arriveTravel(g: GameState = game, completedStep: boolean): void 
     g.context.travel1 = false;
     if (g.multi > 0) g.multi = 0;
     // A final step that ran to domove_core()'s tail keeps the pending time
-    // repaint, which paints the arrival turn.  A step that returned early
-    // (domove_bump_mon's "Pardon me", an attack) consumed that repaint with
-    // its own message output, so no repaint is pending any more.
+    // repaint, which paints that turn -- even a refused pet swap, which
+    // restores the hero but still reaches the tail (hack.c:2922-2923).
+    // A step that returned early (an attack, or the 'm'-prefix pet bump
+    // that nomul(0) let through on the final step) consumed that repaint
+    // with its own message output, so no repaint is pending any more.
     if (!completedStep) g.context.time_botl = false;
 }
 
