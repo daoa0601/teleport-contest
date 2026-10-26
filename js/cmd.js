@@ -4867,7 +4867,7 @@ async function editExtendedCommand() {
     // custompline(SUPPRESS_HISTORY) files the line before the prompt, then
     // the loop head makes the "# " line the current topline (getline.c:81),
     // and hooked_tty_getlin() marks it TOPLINE_SPECIAL_PROMPT (getline.c:56).
-    rememberToplines();
+    await setTopline(`${initiator} `);
     game._toplines = `${initiator} `;
     game._pending_message = initiator;
     await flush_screen(1);
