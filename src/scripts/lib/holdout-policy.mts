@@ -1204,6 +1204,10 @@ const WIDE_EXTENDED = ['pray', 'chat', 'offer', 'turn', 'monster', 'ride', 'sit'
 const WIDE_ITEM_KEYS = 'qrztfZpPRWTAxXdDaiIewCE';
 const WIDE_INFO_KEYS = 'OvV:;/?\\`$+="[()*^@&|\x18\x10\x0f\x06\x14\x05\x12\x01';
 const EXIT_CHOICE = /\b(quit|save|shell|suspend|exploremode)\b|no return|leave the dungeon|escape the dungeon/i;
+// The '?' help menu's "List of game options." entry runs option_help(),
+// whose first screen prints the recorder's own configuration file path.
+// That path is environment-specific, so the wide policy must never select it.
+const ENV_SPECIFIC_CHOICE = /^List of game options\.$/;
 
 /** A separate policy keeps legacy fuzz/explore choices and random draws intact. */
 function createWidePolicy(config: PolicyConfig): SessionDriver & { acceptsGameExit: true; summary: DriverSummary } {
@@ -1372,7 +1376,8 @@ function createWidePolicy(config: PolicyConfig): SessionDriver & { acceptsGameEx
             menuLimit = rand() < 0.5 ? 1 : 2;
             if (!draining && rand() < 0.12) return send(ESC);
         }
-        const available = entries.filter(entry => !entry.selected && !menuPicks.has(entry.key) && !EXIT_CHOICE.test(entry.text));
+        const available = entries.filter(entry => !entry.selected && !menuPicks.has(entry.key)
+            && !EXIT_CHOICE.test(entry.text) && !ENV_SPECIFIC_CHOICE.test(entry.text));
         if (draining || menuPicks.size >= menuLimit) return send('\r');
         if (!available.length) {
             const page = rows.join('\n').match(/\((\d+) of (\d+)\)/);

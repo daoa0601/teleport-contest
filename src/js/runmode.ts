@@ -42,6 +42,25 @@ export function stopRun(g: GameState = game, andTravel = true): void {
     if (g.multi > 0) g.multi = 0;
 }
 
+// C hack.c:findtravelpath() arrival (1404-1414): nomul(0) ends the run
+// machinery and context.run is then restored to 8 "so domove run checks
+// work".  The restored 8 lingers after travel ends: allmain.c:262 then
+// suppresses time_botl on every later turn until a command resets run
+// through reset_cmd_vars() or set_move_cmd(), so the status window's
+// time field keeps its pre-arrival value across those turns.
+export function arriveTravel(g: GameState = game, entered: boolean): void {
+    if (g._runState?.mode === 8) delete g._runState.visited;
+    g._runState = null;
+    g.context.mv = false;
+    g.context.travel = false;
+    g.context.travel1 = false;
+    if (g.multi > 0) g.multi = 0;
+    // An arrival whose final step consumed the move without entering the
+    // target (domove_bump_mon's "Pardon me") also consumed the pending
+    // time repaint without a visible paint; an entered arrival keeps it.
+    if (!entered) g.context.time_botl = false;
+}
+
 export function runmodeDelayFrameCount(
     g: GameState = game, enabled = false, sourceTurn = g.moves || 0,
 ) {

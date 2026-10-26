@@ -234,7 +234,7 @@ import { heroCanOoze } from './monster_perception.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
-import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
+import { arriveTravel, captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import { armorSlotFor, armorSimpleName, armorOffMessage, findArmorClass, heroIsDisplaced, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, wearHeroArmor, } from './armor.js';
 import { findMonsterArmorClass, } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -948,15 +948,17 @@ export async function continueRun(g = game) {
         if (moved)
             await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         g.context.move = moved ? 1 : 0;
-        if (g.u.ux === state.targetX && g.u.uy === state.targetY)
+        const arrived = g.u.ux === state.targetX && g.u.uy === state.targetY;
+        if (arrived)
             g._travelTarget = null;
-        // Reaching the destination ends the run inside selectTravelStep()
-        // with nomul(0), after which C's findtravelpath() leaves
-        // context.run at 8; the time field only refreshes once the run
-        // flag is gone, so the turn that pays for the final step must not
-        // mark it dirty either.
         if (!moved)
             stopRun(g);
+        else if (arrived)
+            arriveTravel(g, true);
+        // A pathfind arrival that bumped without entering leaves C's
+        // context.run at 8 (hack.c:1409) with the travel state gone.
+        else if (!g._runState && g.context.run === 8)
+            arriveTravel(g, false);
         return moved;
     }
     if (!state || !await lookaroundRun(state, g)) {
@@ -5225,10 +5227,17 @@ async function dotravelTarget() {
     // The target-selection command itself is time-consuming.  A blocked
     // first step stops travel but still reaches the monster/global turn.
     game.context.move = 1;
-    if (game.u.ux === state.targetX && game.u.uy === state.targetY)
+    const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
+    if (arrived)
         game._travelTarget = null;
-    if (!moved || (game.u.ux === state.targetX && game.u.uy === state.targetY))
+    if (!moved)
         stopRun();
+    else if (arrived)
+        arriveTravel(game, true);
+    // A pathfind arrival that bumped without entering leaves C's
+    // context.run at 8 (hack.c:1409) with the travel state gone.
+    else if (!game._runState && game.context.run === 8)
+        arriveTravel(game, false);
 }
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
 // Farlook spends no game time. Ordinary look retains its cursor between
