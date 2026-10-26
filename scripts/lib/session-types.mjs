@@ -84,7 +84,8 @@ export function decodePolicyConfig(value) {
         throw new Error('driver kind must be fuzz, explore, or wide');
     return { kind: driver.kind, seed: numberValue(driver.seed, 'driver seed'), maxSteps: numberValue(driver.maxSteps, 'driver maxSteps'),
         ...(driver.name === undefined ? {} : { name: stringValue(driver.name, 'driver name') }),
-        ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }) };
+        ...(driver.setup === undefined ? {} : { setup: decodeActions(driver.setup) }),
+        ...(driver.debug === undefined ? {} : { debug: booleanValue(driver.debug, 'driver debug') }) };
 }
 function decodeSummary(value) {
     const data = objectValue(value, 'driver summary');
