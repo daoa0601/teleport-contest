@@ -262,7 +262,7 @@ void test('deepwide drivers refuse choices that leave the game or print recorder
     assert.ok(!answers.has('g'), 'save-like entries must not be selected');
     assert.ok(answers.has('a') || answers.has('e'), 'harmless help entries remain selectable');
 });
-void test('deepwide drivers never send the wizard-only ^E and ^F keys', () => {
+void test('deepwide drivers never send the wizard-only ^E, ^F and ^T keys', () => {
     const driver = deepwide(47, 6000);
     const keys = new Set();
     let extended = '';
@@ -280,7 +280,11 @@ void test('deepwide drivers never send the wizard-only ^E and ^F keys', () => {
         else if (key === '#')
             extended = '#';
         else {
-            assert.ok(key !== '\x05' && key !== '\x06', `wizard-only key ${JSON.stringify(key)}`);
+            // ^E (wizdetect) and ^F (wizmap) are wizard commands; ^T
+            // (dotelecmd) teleports at will and unrestricted when wizard
+            // mode is on (teleport.c ignores the restrictions for a wizard
+            // without the 'm' prefix).
+            assert.ok(key !== '\x05' && key !== '\x06' && key !== '\x14', `wizard-only key ${JSON.stringify(key)}`);
             keys.add(key);
         }
     }
