@@ -15,9 +15,11 @@ void test('repeating an empty-hands wield reads a new choice without showing a p
     await input.waitUntilBlocked();
     const display = requireGameDisplay();
     const message = display.grid[0]?.map(cell => cell.ch).join('').trimEnd();
+    const cursor = [display.cursorCol, display.cursorRow];
     input.feed('\x1b');
     await repeat;
     assert.equal(message, '');
+    assert.deepEqual(cursor, [0, 0]);
     assert.equal(game.context.move, 0);
 });
 for (const verb of ['invoke', 'tip']) {

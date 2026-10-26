@@ -4,7 +4,7 @@ import { setMulti } from './command_state.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { game } from './gstate.js';
 import { readchar } from './input.js';
-import { flush_screen, setTopline } from './display.js';
+import { clearMessageWindow, flush_screen, setTopline } from './display.js';
 export async function readCommandInput() {
     game._commandCount = 0;
     setMulti(0);
@@ -21,7 +21,7 @@ export async function readCommandInput() {
     game._commandCount = result.count;
     setMulti(Math.max(0, result.count - 1));
     game._commandKey = result.key;
-    clearCommandMessage();
+    clearMessageWindow();
     return result;
 }
 async function readCommandCount() {
@@ -48,16 +48,11 @@ async function readCommandCount() {
                 ? 'Count: ' : `Count: ${count}`;
             if (count || showZero)
                 backspaced = false;
-            clearCommandMessage();
+            clearMessageWindow();
             await setTopline(text);
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }
     }
-}
-function clearCommandMessage() {
-    game._pending_message = '';
-    game._retained_message = '';
-    game.nhDisplay?.clearRow(0);
 }
 //# sourceMappingURL=command_input.js.map
