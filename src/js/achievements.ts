@@ -9,8 +9,8 @@
 
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
-
-type AchievementState = Pick<GameState, 'u'>;
+import { recordGameLogEvent } from './gamelog.js';
+import { OBJECT_NAMES } from './object_data.js';
 
 export const ACH_HELL = 2;
 export const ACH_INVK = 5;
@@ -21,13 +21,62 @@ export const ACH_NOVL = 20;
 export const ACH_RNK1 = 23;
 export const ACH_RNK8 = 30;
 
-export function recordAchievement(state: AchievementState | null | undefined, achievement: number): boolean {
+// insight.c achieve_msg[]: the livelog text of each newly recorded
+// achievement.  Blind-from-birth and nudist carry no entry, and the win
+// itself only reaches #chronicle through really_done()'s own log line.
+const ACHIEVEMENT_JOURNAL_TEXT: ReadonlyMap<number, string> = new Map([
+    [1, 'acquired the Bell of Opening'],
+    [2, 'entered Gehennom'],
+    [3, 'acquired the Candelabrum of Invocation'],
+    [4, 'acquired the Book of the Dead'],
+    [5, 'performed the invocation'],
+    [6, 'acquired The Amulet of Yendor'],
+    [7, 'entered the Elemental Planes'],
+    [8, 'entered the Astral Plane'],
+    [12, 'killed Medusa'],
+    [15, 'entered the Gnomish Mines'],
+    [16, 'reached Mine Town'],
+    [17, 'entered a shop'],
+    [18, 'entered a temple'],
+    [19, 'consulted the Oracle'],
+    [20, 'read a Discworld novel'],
+    [21, 'entered Sokoban'],
+    [22, 'entered the Bigroom'],
+    [31, "learned Castle drawbridge's tune"],
+]);
+
+function achievementJournalText(achievement: number, state: GameState): string | null {
+    const identity = Math.abs(achievement);
+    if (identity >= ACH_RNK1 && identity <= ACH_RNK8) {
+        const rank = state.urole?.title?.[identity - ACH_RNK1 + 1];
+        const title = (achievement < 0 ? rank?.f : rank?.m) || rank?.m || 'Adventurer';
+        return `attained the rank of ${title} (level ${state.u.ulevel})`;
+    }
+    if (identity === 10 || identity === 11) {
+        // The Mines' End and Sokoban prize messages append the discovered
+        // item; achieveo still holds its type at recording time.
+        const prizes = state.context?.achieveo;
+        const type = identity === 10 ? prizes?.mines_prize_otyp : prizes?.soko_prize_otyp;
+        const name = type === undefined ? null : OBJECT_NAMES[type];
+        if (!name) return null;
+        return `acquired the ${identity === 10 ? "Mines' End" : 'Sokoban'} ${name}`;
+    }
+    return ACHIEVEMENT_JOURNAL_TEXT.get(identity) ?? null;
+}
+
+export function recordAchievement(state: GameState | null | undefined, achievement: number): boolean {
     if (!state?.u || !Number.isInteger(achievement) || !achievement) return false;
     if (!Array.isArray(state.u.uachieved)) state.u.uachieved = [];
     const identity = Math.abs(achievement);
     if (state.u.uachieved.some(entry => Math.abs(entry) === identity))
         return false;
     state.u.uachieved.push(achievement);
+    // record_achievement() livelogs every new entry unless the game is over,
+    // when disclosure-time entries have nowhere left to be logged.
+    if (!state.program_state?.gameover) {
+        const text = achievementJournalText(achievement, state);
+        if (text) recordGameLogEvent(text, { state });
+    }
     return true;
 }
 
@@ -37,13 +86,13 @@ export function rankAchievement(rank: number, female = false): number {
     return female ? -achievement : achievement;
 }
 
-export function achievementEntries(state: AchievementState | null | undefined): number[] {
+export function achievementEntries(state: Pick<GameState, 'u'> | null | undefined): number[] {
     return Array.isArray(state?.u?.uachieved)
         ? state.u.uachieved.filter(Number.isInteger) : [];
 }
 
 export function recordDungeonEntryAchievements(
-    state: Pick<GameState, 'u' | 'dungeons'>,
+    state: GameState,
     oldDepth: DungeonLocation | null | undefined,
     newDepth: DungeonLocation | null | undefined,
 ): void {

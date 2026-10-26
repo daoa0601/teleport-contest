@@ -268,7 +268,7 @@ import {
 import {
     ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu,
-    showTextMenuOverlay, showTextPages,
+    showTextMenuOverlay, showTextPages, showTextWindow,
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import {
@@ -3661,6 +3661,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['mouseaction', domouseaction],
     ['adjust', doadjust],
     ['altadjust', adjustSplit],
+    // cmd.c:2064 internal entry; #repeat reaches it after the item-actions
+    // 'T' remembers ia_dotakeoff.
+    ['alttakeoff', () => removeWornItem('take off', true)],
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
@@ -4652,21 +4655,13 @@ async function doChronicle() {
         game.context.move = 0;
         return;
     }
-    const stream = [
+    // show_gamelog() putstr()s one formatted line at a time, so the tty
+    // text window's compress_str() and wrap apply per event line.
+    await showTextWindow([
         'Logged events:',
         ' Turn',
         ...events.map(event => `${String(event.turn).padStart(5)}: ${event.text}`),
-    ];
-    const pageSize = 23;
-    const pages: TextPage[] = [];
-    for (let offset = 0; offset < stream.length; offset += pageSize) {
-        const lines = Array<string>(24).fill('');
-        const chunk = stream.slice(offset, offset + pageSize);
-        for (const [row, line] of chunk.entries()) lines[row] = line;
-        lines[23] = '--More--';
-        pages.push({ lines, cursor: [8, 23] });
-    }
-    await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
+    ]);
     game._pending_message = '';
     game.context.move = 0;
 }

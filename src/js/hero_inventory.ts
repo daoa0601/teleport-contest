@@ -109,12 +109,7 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
     const kind = levelPrizeKind(object, state);
     if (!prizes || !kind) return;
     const achievement = kind === 'mines' ? ACH_MINE_PRIZE : ACH_SOKO_PRIZE;
-    if (recordAchievement(state, achievement) && !state.program_state.gameover) {
-        const type = kind === 'mines' ? prizes.mines_prize_otyp : prizes.soko_prize_otyp;
-        const name = type === undefined ? null : OBJECT_NAMES[type];
-        if (!name) throw new Error('A level prize needs its original object type');
-        recordGameLogEvent(`acquired the ${kind === 'mines' ? "Mines' End" : 'Sokoban'} ${name}`, { state });
-    }
+    recordAchievement(state, achievement);
     if (kind === 'mines') prizes.mines_prize_oid = 0;
     else prizes.soko_prize_oid = 0;
     object.nomerge = false;
