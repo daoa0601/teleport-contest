@@ -2889,7 +2889,9 @@ async function doname() {
     }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);
-    if (queuedChoice === undefined) await restoreCommandMap();
+    // C docallcmd() erases the category menu via its own dismissal
+    // (erase_menu_or_text() -> docorner for a corner menu, docrt() for a
+    // full-width one); no extra full redraw runs afterwards.
 
     // C refs: do_name.c:docallcmd()/do_oname() and
     // dungeon.c:donamelevel()/query_annotation().  The menu owns only the
@@ -2902,9 +2904,10 @@ async function doname() {
     } else if (choice === 'd') {
         await renameDiscoveredType();
     } else if (choice === 'a') {
+        // donamelevel() is a getlin() prompt on the message row; it redraws
+        // nothing, so no full-screen refresh follows it either.
         await queryLevelAnnotation();
         game._pending_message = '';
-        await restoreCommandMap();
     } else if (choice === 'i') {
         // C do_name.c:name_ok() marks unseen, artifact and novel objects as
         // GETOBJ_DOWNPLAY.  getobj() omits those letters from the suggested
