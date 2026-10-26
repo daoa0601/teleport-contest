@@ -947,37 +947,45 @@ async function travelLookaroundStops(g: GameState = game): Promise<boolean> {
         await plineWithContinuation('You cannot move diagonally.');
         return true;
     }
-    if (heroIsBlind(g)) return false;
+    const level = g.level;
+    if (heroIsBlind(g) || !g.context.run || !level) return false;
     const confused = (u.confusionTurns ?? 0) > 0;
     const stunned = !!(u.stunned || (u.stunnedTurns ?? 0) > 0);
     const hallucinating = heroIsHallucinating(g);
-    for (const monster of g.level?.monsters ?? []) {
-        const { mx, my } = monster;
-        if (!monsterHasMapPosition(monster, g)
-            || mx < u.ux - 1 || mx > u.ux + 1
-            || my < u.uy - 1 || my > u.uy + 1
-            || (mx === u.ux && my === u.uy)) continue;
-        if (noDiagonal && mx !== u.ux && my !== u.uy) continue;
-        if (M_AP_TYPE(monster) === M_AP_FURNITURE
-            || M_AP_TYPE(monster) === M_AP_OBJECT) continue;
-        if (!canSeeRunMonster(monster, mx, my, g)) continue;
-        // display.h:_is_safemon(): a spotted peaceful monster while
-        // unconfused, unhallucinating, unstunned, and safe_dog is enabled
-        if ((g.flags.safe_dog ?? true) && monster.mpeaceful
-            && !confused && !hallucinating && !stunned) continue;
-        if (g.flags.mention_walls)
-            await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
-        return true;
-    }
     const frontX = u.ux + (u.dx ?? 0), frontY = u.uy + (u.dy ?? 0);
-    const trap = knownRunTrap(frontX, frontY, g);
-    if (trap) {
-        await announceRunTrap(trap, g);
-        return true;
-    }
-    if (runLiquidIsDangerous(frontX, frontY, g)) {
-        await announceRunLiquid(frontX, frontY, g);
-        return true;
+    // lookaround() checks each square's monster and terrain before moving
+    // to the next square, with columns outside rows.
+    for (let x = u.ux - 1; x <= u.ux + 1; x++) {
+        for (let y = u.uy - 1; y <= u.uy + 1; y++) {
+            if (!isok(x, y) || (x === u.ux && y === u.uy)) continue;
+            if (noDiagonal && x !== u.ux && y !== u.uy) continue;
+            const monster = level.monsters.find(mon => monsterHasMapPosition(mon, g)
+                && mon.mx === x && mon.my === y);
+            // display.h:_is_safemon(): safe_dog protects a peaceful monster
+            // only while the hero is unconfused, unstunned, and sane.
+            const safeMonster = monster && (g.flags.safe_dog ?? true)
+                && monster.mpeaceful && !confused && !hallucinating && !stunned;
+            if (monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
+                && M_AP_TYPE(monster) !== M_AP_OBJECT
+                && canSeeRunMonster(monster, x, y, g) && !safeMonster) {
+                if (g.flags.mention_walls)
+                    await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
+                return true;
+            }
+            const location = level.at(x, y);
+            if (!location || location.typ === STONE) continue;
+            if (x === u.ux - (u.dx ?? 0) && y === u.uy - (u.dy ?? 0)) continue;
+            if (x !== frontX || y !== frontY) continue;
+            const trap = knownRunTrap(x, y, g);
+            if (trap) {
+                await announceRunTrap(trap, g);
+                return true;
+            }
+            if (runLiquidIsDangerous(x, y, g)) {
+                await announceRunLiquid(x, y, g);
+                return true;
+            }
+        }
     }
     return false;
 }
