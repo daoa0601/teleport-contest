@@ -17,7 +17,7 @@ import { finishHeroDeath, finishLivingGame } from './end.js';
 import { landFloorObject } from './floor_effects.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
@@ -129,7 +129,7 @@ async function offerCorpse(corpse, highAltar, alignment) {
     const hero = game.u;
     const conduct = hero.uconduct ||= {};
     if (!conduct.gnostic)
-        recordGameLogEvent(`rejected atheism by offering ${await inventoryItemDescription(corpse)} on an altar of ${deityName(alignment)}`);
+        recordGameLogEvent(`rejected atheism by offering ${await inventoryItemDescription(corpse)} on an altar of ${deityName(alignment)}`, { flags: LL_CONDUCT });
     conduct.gnostic = (conduct.gnostic || 0) + 1;
     await feelPetrifyingCorpse(corpse, { forceTouch: true });
     if (game.program_state.gameover)
@@ -482,7 +482,7 @@ async function bestowArtifact(value) {
     hero.ugifts = (hero.ugifts || 0) + 1;
     hero.ublesscnt = rnz(300 + 50 * count);
     await exerciseAttribute(A_WIS, true);
-    recordGameLogEvent(`was bestowed with ${artifact.name} by ${deityName(hero.ualign.type)}`);
+    recordGameLogEvent(`was bestowed with ${artifact.name} by ${deityName(hero.ualign.type)}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT });
     const skillType = [2, 6, 13].includes(object.oclass ?? 0)
         ? Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) : 0;
     unrestrictHeroSkill(skillType);

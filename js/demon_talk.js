@@ -7,7 +7,7 @@ import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.
 import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
 import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
 import { resetHeroFaint } from './hunger.js';
@@ -109,7 +109,7 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
         angerDemon(monster, state);
         return false;
     }
-    recordGameLogEvent(`bribed ${monsterName(monster, { state, article: 'a', exact: true })} with ${offer} ${offer === 1 ? 'zorkmid' : 'zorkmids'} for safe passage`, { state });
+    recordGameLogEvent(`bribed ${monsterName(monster, { state, article: 'a', exact: true })} with ${offer} ${offer === 1 ? 'zorkmid' : 'zorkmids'} for safe passage`, { state, flags: LL_UMONST });
     await removeMonsterFromGame(monster);
     return true;
 }

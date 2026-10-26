@@ -6,7 +6,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { feel_location, newsym, plineWithContinuation as pline } from './display.js';
 import { watchDigging } from './digging_watch.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { clearDiggingContext, ensureDiggingContext, mayDig } from './hero_digging.js';
 import { spendHeroNutrition } from './hunger.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
@@ -97,7 +97,7 @@ export async function continueChewingTerrain(x, y, state) {
     const conduct = state.u.uconduct;
     const food = boulder ? 'a boulder' : tree ? 'a tree' : rock ? 'rock' : bars ? 'iron bars' : 'a door';
     if (!conduct.food)
-        recordGameLogEvent(`ate for the first time, by chewing through ${food}`, { state });
+        recordGameLogEvent(`ate for the first time, by chewing through ${food}`, { state, flags: LL_CONDUCT });
     conduct.food = (conduct.food || 0) + 1;
     state.u.uhunger += rnd(20);
     if (boulder) {

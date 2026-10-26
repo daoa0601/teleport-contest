@@ -13,7 +13,7 @@ import {
 } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_KILLEDPET, recordGameLogEvent } from './gamelog.js';
 import { MONSTER_GENO, monsterTypeName } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { heroIsAmphibious } from './hero_species.js';
@@ -410,7 +410,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
             const given = MGIVENNAME(monster);
             recordGameLogEvent(`murdered ${given ? `${given}, ` : ''}${
                 game.flags.female ? 'her' : 'his'} faithful ${
-                monsterTypeName(monster.mnum, monster.female)}`);
+                monsterTypeName(monster.mnum, monster.female)}`, { flags: LL_KILLEDPET });
         }
     } else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);

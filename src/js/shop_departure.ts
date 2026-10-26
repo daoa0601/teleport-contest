@@ -7,7 +7,7 @@ import { G_GONE, MM_NOMSG, SHOPBASE, isok } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { roomsAt } from './room.js';
 import { dungeonBuildsUp } from './dungeon.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Position, Stairway } from './map_types.js';
@@ -92,7 +92,10 @@ async function robShop(keeper: Shopkeeper, state: ShopGameState): Promise<boolea
     const shopType = SHOP_TYPES[shop.shoptype - SHOPBASE];
     if (!shopType) throw new Error(`Shopkeeper ${keeper.m_id} has invalid shop type ${shop.shoptype}`);
     recordGameLogEvent(`stole ${total} ${currency(total, { state })} worth of merchandise from ${
-        possessiveName(shopkeeperName(keeper, { state }))} ${shopType.name}`, { state });
+        possessiveName(shopkeeperName(keeper, { state }))} ${shopType.name}`, {
+        state,
+        flags: LL_ACHIEVE,
+    });
     if (!state.urole || !state.u.ualign) throw new Error('Shop robbery requires hero role and alignment');
     if (state.urole.key !== 'rogue') adjustHeroAlignment(-Math.sign(state.u.ualign.type), state);
     hotPursuitShopkeeper(keeper, state);

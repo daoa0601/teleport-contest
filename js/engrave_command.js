@@ -37,7 +37,7 @@ import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectActi
 import { artifactByName } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
 import { addExperience } from './exper.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { goodPosition } from './teleport_rules.js';
 import { altarWrath } from './pray.js';
 import { randomEngraving } from './mklev.js';
@@ -718,7 +718,7 @@ export async function doengrave(state = game) {
     // A single `x' is the traditional signature of an illiterate person.
     if (length !== 1 || !text.includes('x') && !text.includes('X')) {
         if (!(state.u.uconduct?.literate ?? 0))
-            recordGameLogEvent(`became literate by engraving "${text}"`, { state });
+            recordGameLogEvent(`became literate by engraving "${text}"`, { state, flags: LL_CONDUCT });
         state.u.uconduct.literate = (state.u.uconduct?.literate ?? 0) + 1;
     }
     // Mix up the engraving if the surface or state of mind is unsound.

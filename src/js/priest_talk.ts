@@ -5,7 +5,7 @@ import { A_WIS } from './const.js';
 import { currency } from './currency.js';
 import { plineWithContinuation as pline } from './display.js';
 import type { PlayingGameState } from './game_state.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { offerGoldToMonster } from './monster_bribe.js';
 import { monsterAlignmentType } from './monster_alignment.js';
@@ -25,7 +25,7 @@ export async function talkToPriest(priest: Monster, state: PlayingGameState): Pr
     const previousConsultations = conduct.gnostic ?? 0;
     conduct.gnostic = previousConsultations + 1;
     if (!previousConsultations)
-        recordGameLogEvent(`rejected atheism by consulting with ${monsterName(priest, { state })}`, { state });
+        recordGameLogEvent(`rejected atheism by consulting with ${monsterName(priest, { state })}`, { state, flags: LL_CONDUCT });
 
     if (priest.mflee || !priest.ispriest && coaligned && strayed) {
         await pline(`${monsterName(priest, { capitalized: true, state })} doesn't want anything to do with you!`);

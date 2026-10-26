@@ -12,7 +12,7 @@ import { gainExperienceLevel } from './exper.js';
 import { placeCreatedObject } from './floor_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ARTIFACT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
@@ -310,16 +310,16 @@ async function crownHero() {
     const deity = deityName(hero.ualign.type);
     if (hero.ualign.type > 0) {
         await pline('"I crown thee...  The Hand of Elbereth!"');
-        recordGameLogEvent(`was crowned "The Hand of Elbereth" by ${deity}`);
+        recordGameLogEvent(`was crowned "The Hand of Elbereth" by ${deity}`, { flags: LL_DIVINEGIFT });
     }
     else if (hero.ualign.type === 0) {
         await pline('"Thou shalt be my Envoy of Balance!"');
-        recordGameLogEvent(`became ${deity}${deity.endsWith('s') ? "'" : "'s"} Envoy of Balance`);
+        recordGameLogEvent(`became ${deity}${deity.endsWith('s') ? "'" : "'s"} Envoy of Balance`, { flags: LL_DIVINEGIFT });
     }
     else {
         const action = (existing && !held) || classGift ? 'take lives' : 'steal souls';
         await pline(`"Thou art chosen to ${action} for My Glory!"`);
-        recordGameLogEvent(`was chosen to ${action} for the Glory of ${deity}`);
+        recordGameLogEvent(`was chosen to ${action} for the Glory of ${deity}`, { flags: LL_DIVINEGIFT });
     }
     if (classGift) {
         object = await mksobj(classGift, true, false);
@@ -329,7 +329,7 @@ async function crownHero() {
         const name = simpleObjectNameWithArticle(object);
         await dropGift(object, name.charAt(0).toUpperCase() + name.slice(1));
         hero.ugifts = (hero.ugifts || 0) + 1;
-        recordGameLogEvent(`was bestowed with spellbook of ${OBJECT_NAMES[classGift]}`);
+        recordGameLogEvent(`was bestowed with spellbook of ${OBJECT_NAMES[classGift]}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT | LL_SPOILER });
         if (knownSpell(classGift) !== 'unknown' && isWeapon(game.uwep))
             object = game.uwep;
     }
@@ -340,7 +340,7 @@ async function crownHero() {
             const before = objectName(object);
             if (nameArtifact(object, artifact, { origin: 'gift', knownOrigin: true })) {
                 hero.ugifts = (hero.ugifts || 0) + 1;
-                recordGameLogEvent(`had ${game.flags.female ? 'her' : 'his'} wielded ${before} transformed into ${artifact.name}`);
+                recordGameLogEvent(`had ${game.flags.female ? 'her' : 'his'} wielded ${before} transformed into ${artifact.name}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT });
             }
         }
     }
@@ -364,7 +364,7 @@ async function crownHero() {
             object.spe = 1;
             await dropGift(object, blackSword ? withIndefiniteArticle(blackSword) : 'A sword');
             hero.ugifts = (hero.ugifts || 0) + 1;
-            recordGameLogEvent(`was bestowed with ${artifact.name}`);
+            recordGameLogEvent(`was bestowed with ${artifact.name}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT });
         }
     }
     unrestrictHeroSkill(hero.ualign.type < 0 ? P_BROAD_SWORD : P_LONG_SWORD);

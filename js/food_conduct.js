@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { plineWithContinuation as pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { veganCorpse, vegetarianCorpse } from './food_traits.js';
 import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { CANDY_BAR, CREAM_PIE, EGG, FORTUNE_COOKIE, LUMP_OF_ROYAL_JELLY, PANCAKE, } from './object_data.js';
@@ -27,18 +27,18 @@ export async function recordOrdinaryFoodDiet(food, { state = game, firstFoodLogg
     const name = foodObjectName(food, { state });
     if (objectMaterial(food, state) === FLESH) {
         if (incrementConduct('unvegan', state) && !logged) {
-            recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state });
+            recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
             logged = true;
         }
         if (food.otyp !== EGG) {
             if (!state.u.uconduct.unvegetarian && !logged)
-                recordGameLogEvent(`tasted meat for the first time, by eating ${withIndefiniteArticle(name)}`, { state });
+                recordGameLogEvent(`tasted meat for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
             await violateVegetarian(state);
         }
     }
     else if (ANIMAL_INGREDIENTS.has(food.otyp)) {
         if (incrementConduct('unvegan', state) && !logged)
-            recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state });
+            recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state, flags: LL_CONDUCT });
     }
 }
 export async function recordCorpseDiet(food, { state = game } = {}) {
@@ -50,12 +50,12 @@ export async function recordCorpseDiet(food, { state = game } = {}) {
     const name = withIndefiniteArticle(foodObjectName(food, { state }));
     let logged = false;
     if (!veganCorpse(species) && incrementConduct('unvegan', state)) {
-        recordGameLogEvent(`consumed animal products for the first time, by eating ${name}`, { state });
+        recordGameLogEvent(`consumed animal products for the first time, by eating ${name}`, { state, flags: LL_CONDUCT });
         logged = true;
     }
     if (!vegetarianCorpse(species)) {
         if (!state.u.uconduct.unvegetarian && !logged)
-            recordGameLogEvent(`tasted meat for the first time, by eating ${name}`, { state });
+            recordGameLogEvent(`tasted meat for the first time, by eating ${name}`, { state, flags: LL_CONDUCT });
         await violateVegetarian(state);
     }
 }
@@ -66,12 +66,12 @@ export async function eatingConducts(species, { state = game } = {}) {
     const name = requireMonsterData(MONSTER_NAME, species);
     let logged = incrementFood(`ate for the first time - ${name}`, state);
     if (!veganCorpse(species) && incrementConduct('unvegan', state) && !logged) {
-        recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state });
+        recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state, flags: LL_CONDUCT });
         logged = true;
     }
     if (!vegetarianCorpse(species)) {
         if (!state.u.uconduct.unvegetarian && !logged)
-            recordGameLogEvent(`tasted meat (${name}) for the first time`, { state });
+            recordGameLogEvent(`tasted meat (${name}) for the first time`, { state, flags: LL_CONDUCT });
         await violateVegetarian(state);
     }
 }
@@ -89,19 +89,19 @@ export async function recordNonfoodConduct(food, { state = game } = {}) {
     if (![LEATHER, BONE, DRAGON_HIDE, WAX].includes(material))
         return;
     if (incrementConduct('unvegan', state) && !logged) {
-        recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state });
+        recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
         logged = true;
     }
     if (material !== WAX) {
         if (!state.u.uconduct.unvegetarian && !logged)
-            recordGameLogEvent(`tasted meat by-products for the first time, by eating ${withIndefiniteArticle(name)}`, { state });
+            recordGameLogEvent(`tasted meat by-products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
         await violateVegetarian(state);
     }
 }
 function incrementFood(message, state) {
     const first = incrementConduct('food', state);
     if (first)
-        recordGameLogEvent(message, { state });
+        recordGameLogEvent(message, { state, flags: LL_CONDUCT });
     return first;
 }
 function incrementConduct(key, state) {

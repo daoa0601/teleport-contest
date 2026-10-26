@@ -99,7 +99,12 @@ function validPersistentState(value, entities) {
         flying: optional(boolean),
         fruitName: optional(string),
         fruits: optional(arrayOf(validFruit)),
-        gamelog: optional(arrayOf((entry) => closedFieldsMatch(entry, { turn: integer, text: string }))),
+        gamelog: optional(arrayOf((entry) => closedFieldsMatch(entry, {
+            turn: integer,
+            text: string,
+            // saves written before flags were tracked carry no flag field
+            flags: optional(integer),
+        }))),
         initAlignment: nullable(validSavedAlignment),
         inventory: arrayOf(entities.object),
         invisible: optional(boolean),

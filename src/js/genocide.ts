@@ -5,7 +5,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOMSG, NO_MINVENT, POLY_REVERT, Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { listGenocided, finishHeroDeath as finishNativeHeroDeath } from './end.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';
 import {
     feelingAfterSelfGenocide, genocideDeathOptions, rememberPolymorphGenocide,
@@ -57,7 +57,10 @@ export async function doGenocide(how: number, {
     const realName = makePlural(requireMonsterData(MONSTER_NAME, species));
     recordGameLogEvent(firstGenocide
         ? `performed ${state.flags.female ? 'her' : 'his'} first genocide (${realName})`
-        : `genocided ${realName}`, { state });
+        : `genocided ${realName}`, {
+        state,
+        flags: firstGenocide ? LL_CONDUCT | LL_GENOCIDE : LL_GENOCIDE,
+    });
     recordGenocide(species);
     await plineWithContinuation(`Wiped out ${presentation.prefix}${
         presentation.prefix === 'all ' ? makePlural(presentation.name) : presentation.name}.`);
@@ -103,7 +106,10 @@ export async function doClassGenocide({
                 const firstGenocide = !MONSTER_NAME.some((_, index) => speciesWasGenocided(index));
                 recordGameLogEvent(firstGenocide
                     ? `performed ${state.flags.female ? 'her' : 'his'} first genocide (class ${symbol})`
-                    : `genocided class ${symbol}`, { state });
+                    : `genocided class ${symbol}`, {
+                    state,
+                    flags: firstGenocide ? LL_CONDUCT | LL_GENOCIDE : LL_GENOCIDE,
+                });
                 loggedClass = true;
             }
             recordGenocide(species);
@@ -232,7 +238,7 @@ async function requestGenocideSpecies(really: boolean): Promise<number | null> {
         if (declinedGenocide(response)) {
             const species = really ? null : rndmonstAdj();
             if (species !== null) return species;
-            recordGameLogEvent('declined to perform genocide', { state });
+            recordGameLogEvent('declined to perform genocide', { state, flags: LL_GENOCIDE });
             return null;
         }
         if (response === '?' || response === "'?'") {
@@ -279,7 +285,7 @@ async function requestGenocideClass(): Promise<number | null> {
             continue;
         }
         if (declinedGenocide(response)) {
-            recordGameLogEvent('declined to perform class genocide', { state });
+            recordGameLogEvent('declined to perform class genocide', { state, flags: LL_GENOCIDE });
             return null;
         }
         if (response === '?' || response === "'?'") {

@@ -8,7 +8,7 @@ import { plineWithContinuation as pline } from './display.js';
 import { level_difficulty } from './dungeon.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { makeInvocationArea } from './invocation_area.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
 import { findMonsterNearPosition, makemonAt, morgueMonsterType } from './mklev.js';
@@ -164,7 +164,7 @@ export async function readNovel(book, { state = game } = {}) {
     const title = novelTitle(book);
     if (await readNovelTribute(book, title, state)) {
         if (!state.u.uconduct.literate)
-            recordGameLogEvent(`became literate by reading ${title}`, { state });
+            recordGameLogEvent(`became literate by reading ${title}`, { state, flags: LL_CONDUCT });
         state.u.uconduct.literate = (state.u.uconduct.literate ?? 0) + 1;
         await chargeUnpaidUsage(book, { state });
         learnObjectType(book.otyp, state);

@@ -8,7 +8,7 @@ import { A_WIS, BOLT_LIM, MAXULEV, } from './const.js';
 import { plineWithContinuation as pline, shieldeff, } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './monster_name.js';
 import { cansee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
@@ -79,7 +79,7 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
     const priorCalls = state.u.uconduct.gnostic ?? 0;
     state.u.uconduct.gnostic = priorCalls + 1;
     if (!priorCalls)
-        recordGameLogEvent('rejected atheism by turning undead', { state });
+        recordGameLogEvent('rejected atheism by turning undead', { state, flags: LL_CONDUCT });
     const deity = hallucinatedDeityName(state.u.ualign.type, state);
     if (!heroCanChant(state)) {
         const strangled = state.u?.strangled

@@ -15,7 +15,7 @@ import { observeObject } from './object_knowledge.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BELL_OF_OPENING } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './monster_name.js';
 import { angerMonster, angerWatchGuards } from './monster_anger.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -434,7 +434,7 @@ export async function chatWithQuestLeader(monster, g = game) {
             status.pissed_off = true;
             await scheduleQuestExpulsion(false, g);
             const leaderName = monsterName(monster, { state: g, article: 'your', suppressIt: true });
-            recordGameLogEvent(`${leaderName} has expelled you from the quest`, { state: g });
+            recordGameLogEvent(`${leaderName} has expelled you from the quest`, { state: g, flags: LL_ACHIEVE });
         }
         else if (purity === 0) {
             await qtPager('badalign', g);
@@ -447,7 +447,7 @@ export async function chatWithQuestLeader(monster, g = game) {
             exerciseQuestWisdom(true, g);
             status.got_quest = true;
             const leaderName = monsterName(monster, { state: g, article: 'your', suppressIt: true });
-            recordGameLogEvent(`${leaderName} has granted access to proceed deeper into the quest`, { state: g });
+            recordGameLogEvent(`${leaderName} has granted access to proceed deeper into the quest`, { state: g, flags: LL_ACHIEVE });
         }
     }
     return true;

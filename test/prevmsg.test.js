@@ -577,6 +577,32 @@ void test('a long extended-command line pages on its first recall', async () => 
         await editor;
     }
 });
+void test('the first recall from an unanswered question pages a wrapped entry', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const long = 'You hear the distant tone of a bell being struck over and over without any pause.';
+    input.feed(' ');
+    await pline(long);
+    await markSeen(input);
+    const question = promptChoice('Really try?', ['y', 'n'], 'n');
+    await input.waitUntilBlocked();
+    input.feed(16);
+    await input.waitUntilBlocked();
+    // The question replaced the wrapped entry, so this first ^P recalls it.
+    // addtopl() had already ended TOPLINE_SPECIAL_PROMPT (topl.c:428), so
+    // redotoplin() pages the wrapped line instead of drawing it bare.
+    assert.match(rowText(0), /^You hear the distant tone/);
+    assert.match(rowText(1), /--More--/, 'the question is not a special prompt for recall purposes');
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    // The first key after single-mode browsing only resets the walk.
+    input.feed('y');
+    await input.waitUntilBlocked();
+    input.feed('y');
+    assert.equal(await question, 'y');
+});
 void test('^P in the extended-command editor drops the auto-completed suffix', async () => {
     // getline.c hooked_tty_getlin(): `*bufp = 0` after ^P leaves only the
     // typed prefix, and an inexact prefix is an unknown extended command.

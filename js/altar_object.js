@@ -1,7 +1,7 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
 import { displayColorName, plineWithContinuation } from './display.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { simpleObjectNameWithArticle, observeObjectForNaming, } from './objnam.js';
@@ -34,7 +34,7 @@ export async function landObjectOnAltar(object, { state = game, monsterMoving = 
     else if (!monsterMoving) {
         const conduct = state.u.uconduct || (state.u.uconduct = {});
         if (!conduct.gnostic)
-            recordGameLogEvent(`eschewed atheism, by dropping ${await objectDescription(object, state)} on an altar`, { state });
+            recordGameLogEvent(`eschewed atheism, by dropping ${await objectDescription(object, state)} on an altar`, { state, flags: LL_CONDUCT });
         conduct.gnostic = (conduct.gnostic ?? 0) + 1;
     }
     const quantity = object.quan ?? object.quantity ?? 1;

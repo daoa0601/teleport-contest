@@ -10,7 +10,7 @@ import { feel_location, newsym, plineWithContinuation as pline } from './display
 import { watchDigging } from './digging_watch.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { clearDiggingContext, ensureDiggingContext, mayDig } from './hero_digging.js';
 import { spendHeroNutrition } from './hunger.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
@@ -96,7 +96,7 @@ export async function continueChewingTerrain(x: number, y: number, state: Playin
     }
     const conduct = state.u.uconduct;
     const food = boulder ? 'a boulder' : tree ? 'a tree' : rock ? 'rock' : bars ? 'iron bars' : 'a door';
-    if (!conduct.food) recordGameLogEvent(`ate for the first time, by chewing through ${food}`, { state });
+    if (!conduct.food) recordGameLogEvent(`ate for the first time, by chewing through ${food}`, { state, flags: LL_CONDUCT });
     conduct.food = (conduct.food || 0) + 1;
     state.u.uhunger += rnd(20);
     if (boulder) {

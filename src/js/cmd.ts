@@ -472,7 +472,7 @@ import {
     shopkeeperForHero,
     tendedShop,
 } from './shk.js';
-import { gameLogEvents } from './gamelog.js';
+import { gameLogEvents, isSpoilerGameLogEvent } from './gamelog.js';
 import { corpseName, killerObjectName } from './objnam.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { GRAVE } from './const.js';
@@ -4695,6 +4695,8 @@ async function doDungeonOverview() {
 // C ref: insight.c:do_gamelog()/show_gamelog(ENL_GAMEINPROGRESS).  Chronicle
 // is a projection of events recorded by their owning mechanics; it does not
 // infer history from the command transcript or current aggregate counters.
+// Spoiler-flagged lines (insight.c:spoilerevent) stay hidden outside wizard
+// mode; if every entry is one, the window still shows " none".
 async function doChronicle() {
     const events = gameLogEvents(game);
     if (!events.length) {
@@ -4702,13 +4704,18 @@ async function doChronicle() {
         game.context.move = 0;
         return;
     }
+    const visible = game.flags.debug
+        ? events : events.filter(event => !isSpoilerGameLogEvent(event));
+    const lines = ['Logged events:'];
+    if (visible.length) {
+        lines.push(' Turn');
+        lines.push(...visible.map(event => `${String(event.turn).padStart(5)}: ${event.text}`));
+    } else {
+        lines.push(' none');
+    }
     // show_gamelog() putstr()s one formatted line at a time, so the tty
     // text window's compress_str() and wrap apply per event line.
-    await showTextWindow([
-        'Logged events:',
-        ' Turn',
-        ...events.map(event => `${String(event.turn).padStart(5)}: ${event.text}`),
-    ]);
+    await showTextWindow(lines);
     game._pending_message = '';
     game.context.move = 0;
 }

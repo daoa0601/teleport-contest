@@ -2,7 +2,7 @@
 // C ref: do.c doaltarobj().
 
 import { displayColorName, plineWithContinuation } from './display.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import {
@@ -58,7 +58,7 @@ export async function landObjectOnAltar(
         const conduct = state.u.uconduct || (state.u.uconduct = {});
         if (!conduct.gnostic) recordGameLogEvent(
             `eschewed atheism, by dropping ${await objectDescription(object, state)} on an altar`,
-            { state },
+            { state, flags: LL_CONDUCT },
         );
         conduct.gnostic = (conduct.gnostic ?? 0) + 1;
     }

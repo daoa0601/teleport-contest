@@ -9,7 +9,7 @@
 // disappeared.  A newly recorded achievement also appends its achieve_msg[]
 // line to the chronicle (livelog_printf() -> gamelog_add()) unless the game
 // is already over.
-import { ACH_BGRM, ACH_MINE_PRIZE, ACH_SOKO, ACH_SOKO_PRIZE } from './const.js';
+import { ACH_BGRM, ACH_MINE_PRIZE, ACH_SOKO, ACH_SOKO_PRIZE, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, } from './const.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { OBJECT_NAMES } from './object_data.js';
 export const ACH_HELL = 2;
@@ -51,6 +51,27 @@ const ACHIEVEMENT_LOG_TEXT = [
     '', '', '', '', '', '', '', '', // ranks: text created on the fly
     "learned castle drawbridge's tune",
 ];
+// insight.c achieve_msg[].llflag: how each achievement classifies for
+// livelog and dumplog.  Unlisted indexes (13, 14) are never logged.
+const ACHIEVEMENT_LOG_FLAGS = new Map([
+    ...Array.from({ length: 9 }, (_, index) => [index + 1, LL_ACHIEVE]),
+    [10, LL_ACHIEVE | LL_SPOILER],
+    [11, LL_ACHIEVE | LL_SPOILER],
+    [12, LL_ACHIEVE | LL_UMONST],
+    [15, LL_MINORAC | LL_DUMP],
+    [16, LL_ACHIEVE],
+    [17, LL_MINORAC],
+    [18, LL_MINORAC],
+    [19, LL_ACHIEVE],
+    [20, LL_MINORAC | LL_DUMP],
+    [21, LL_ACHIEVE],
+    [22, LL_ACHIEVE],
+    [23, LL_MINORAC | LL_DUMP],
+    [24, LL_MINORAC | LL_DUMP],
+    [25, LL_MINORAC | LL_DUMP],
+    ...Array.from({ length: 5 }, (_, index) => [index + 26, LL_ACHIEVE]),
+    [31, LL_MINORAC],
+]);
 // insight.c:record_achievement() message selection.
 function achievementLogText(achievement, state) {
     const index = Math.abs(achievement);
@@ -87,7 +108,10 @@ export function recordAchievement(state, achievement) {
     if (!state.program_state?.gameover) {
         const text = achievementLogText(achievement, state);
         if (text)
-            recordGameLogEvent(text, { state });
+            recordGameLogEvent(text, {
+                state,
+                flags: ACHIEVEMENT_LOG_FLAGS.get(identity) ?? 0,
+            });
     }
     return true;
 }

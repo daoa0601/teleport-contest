@@ -22,7 +22,7 @@ import { displayLiquidName, newsym, plineWithContinuation, see_monsters } from '
 import { consumeInventoryItem } from './invent.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { tryCallObjectType } from './object_call.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { experienceRankIndex } from './exper.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
@@ -205,7 +205,7 @@ async function changeSexFromAmulet(object, state) {
         const title = role.name[before] !== role.name[after] ? role.name[after]
             : rank[before] !== rank[after] ? rank[after]
                 : `${state.flags.female ? 'female' : 'male'} ${rank[after]}`;
-        recordGameLogEvent(`transformed into ${withIndefiniteArticle(title)}`, { state });
+        recordGameLogEvent(`transformed into ${withIndefiniteArticle(title)}`, { state, flags: LL_MINORAC });
     }
     await plineWithContinuation('The amulet disintegrates!');
     if (!changed && object.dknown)

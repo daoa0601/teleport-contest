@@ -103,8 +103,13 @@ export function restoreMenuUnderlay(snapshot) {
     for (const [row, cells] of snapshot.entries()) {
         if (row >= d.rows)
             break;
-        for (const [col, cell] of cells.entries()) {
+        for (let [col, cell] of cells.entries()) {
             if (col >= d.cols)
+                break;
+            // docorner() clears the final terminal column and row_refresh()
+            // never repaints it (the map ends at column COLNO-2), so a
+            // restored snapshot must not repaint old content there either.
+            if (col === d.cols - 1)
                 break;
             d.setCell(col, row, cell.ch, cell.color, cell.attr);
         }
@@ -297,7 +302,10 @@ async function eraseMenuCorner(window, roleSelection = false) {
     const underlay = window.underlay;
     if (underlay) {
         for (let row = 1; row <= mapBottom; row++) {
-            for (let col = left; col < d.cols; col++) {
+            // row_refresh() repaints through NH x = COLNO-1, which the map
+            // draws in terminal column COLNO-2; docorner()'s cl_end() clears
+            // the final column, and nothing ever redraws it there.
+            for (let col = left; col < d.cols - 1; col++) {
                 const cell = underlay[row]?.[col];
                 if (cell)
                     d.setCell(col, row, cell.ch, cell.color, cell.attr);

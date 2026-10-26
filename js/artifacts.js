@@ -7,7 +7,7 @@ import { ARTIFACT_DATA } from './artifact_data.js';
 import { P_BASIC, P_SKILLED, Upolyd, W_ARM } from './const.js';
 import { dragonFormForArmor, heroHasDrainResistance } from './armor.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt } from './shk.js';
 import { mksobj } from './mklev.js';
 import { ensureHeroSkills } from './skills.js';
@@ -229,7 +229,7 @@ export function findArtifact(object, { source = object, state = game, } = {}) {
     if (!artifact)
         throw new Error(`Unknown found artifact ${id}`);
     const name = artifact.name.replace(/^The /, 'the ');
-    recordGameLogEvent(`found ${name}${where}`, { state });
+    recordGameLogEvent(`found ${name}${where}`, { state, flags: LL_ARTIFACT });
     return true;
 }
 export function discoverArtifact(id, state = game) {

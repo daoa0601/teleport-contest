@@ -4,7 +4,7 @@ import { heroHandName } from './body_parts.js';
 import { QBUFSZ } from './const.js';
 import { displayMessageWindow, plineWithContinuation as pline } from './display.js';
 import { wipeoutText } from './engrave.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ARTIFACT, LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS, SPE_NOVEL, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
@@ -72,7 +72,9 @@ export async function nameIndividualObject(object) {
     conduct.literate = (conduct.literate ?? 0) + 1;
     const bareName = artifact.name.replace(/^the /i, '');
     recordGameLogEvent(first ? `became literate by naming ${bareName}`
-        : `chose ${simpleObjectNameWithArticle(object)} to be named "${bareName}"`);
+        : `chose ${simpleObjectNameWithArticle(object)} to be named "${bareName}"`, {
+        flags: first ? LL_CONDUCT | LL_ARTIFACT : LL_ARTIFACT,
+    });
 }
 // C safe_qbuf()/short_oname(xname, simpleonames): keep as much of each
 // existing name as fits, without changing the names the player can edit.

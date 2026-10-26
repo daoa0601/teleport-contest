@@ -32,7 +32,7 @@ import { d, rnd, rn1, rn2 } from './rng.js';
 import {
     adjustLevelAbilities, experienceRankIndex, randomExperience,
 } from './exper.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { currentAttribute, maximumAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
@@ -468,7 +468,7 @@ async function beginMonsterForm(mnum: number, {
     u.uconduct.polyselfs = (u.uconduct.polyselfs || 0) + 1;
     if (firstPolymorph) {
         const form = monsterTypeName(mnum, game.flags.female);
-        recordGameLogEvent(`changed form for the first time, becoming ${withIndefiniteArticle(form)}`);
+        recordGameLogEvent(`changed form for the first time, becoming ${withIndefiniteArticle(form)}`, { flags: LL_CONDUCT });
     }
 
     // polymon() exercises the human attributes before installing the
@@ -1139,7 +1139,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
     if (restored.died)
         return { transformed: true, newman: true, oldLevel, newLevel, died: true };
     if (newLevel !== oldLevel)
-        recordGameLogEvent(`became experience level ${newLevel} as a new ${formName}`);
+        recordGameLogEvent(`became experience level ${newLevel} as a new ${formName}`, { flags: LL_MINORAC });
     else recordRenewedHumanGender(oldGender);
     if (heroIsSliming(game)) {
         await plineWithContinuation('Your body transforms, but there is still slime on you.');
@@ -1190,7 +1190,7 @@ function recordRenewedHumanGender(oldGender: number): void {
     const description = oldRole !== newRole ? newRole
         : oldRank !== newRank ? newRank
             : `${game.flags.female ? 'female' : 'male'} ${newRank}`;
-    recordGameLogEvent(`polymorphed into ${withIndefiniteArticle(description)}`);
+    recordGameLogEvent(`polymorphed into ${withIndefiniteArticle(description)}`, { flags: LL_MINORAC });
 }
 
 // C polyself(): select a form, then use the same body-change operations
