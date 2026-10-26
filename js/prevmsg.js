@@ -58,17 +58,18 @@ function stepHistoryBack() {
         && history.length === messageHistoryCapacity()
         ? null : cursor - 1;
 }
-// C tty topl.c:redotoplin(): repaint a recalled line at the top. Wrapped
-// lines page with --More-- accepting ^P so one press can keep walking,
-// except when the previous topline state was TOPLINE_SPECIAL_PROMPT
-// (topl.c:139) — redotoplin() sets NEED_MORE itself, so only the first
-// recall after a prompt draws without that pager.
+// C tty topl.c:redotoplin(): repaint a recalled line at the top. A line
+// covering several rows pages with --More-- accepting ^P so one press can
+// keep walking, except when the previous topline state was
+// TOPLINE_SPECIAL_PROMPT (topl.c:139) — the prompt's own repaint owns that
+// boundary. Ring entries carry update_topl()'s word wrap; raw
+// putmsghistory entries only get topl_putsym()'s hard column wrap.
 async function redotoplin(text) {
     const fromPrompt = !!game._promptOwnsTopline;
     game._promptOwnsTopline = false;
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
-    const lines = toplineRows(text, columns);
+    const lines = toplineRows(text, columns, { splitWords: false });
     if (lines.length > 1 && !fromPrompt)
         return await pageTopline(text, { dismissKey: CTRL_P });
     if (display) {

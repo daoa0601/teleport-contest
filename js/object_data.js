@@ -400,7 +400,12 @@ export function getObjectClassBounds(oclass) {
 }
 export function getObjectDefinition(otyp) {
     requireObjectData(OBJECT_NAMES, otyp);
-    let oclass = 1;
+    // objects.h GENERIC() fills slots [1..MAXOCLASSES-1], indexed by class;
+    // each placeholder carries its own oc_class (GENERIC("spellbook",
+    // SPBOOK_CLASS, GENERIC_SPBOOK) and friends), so a generic slot's
+    // class is its own number, not the illegal class.
+    const firstRealObject = OBJECT_BASES[2] ?? Number.POSITIVE_INFINITY;
+    let oclass = otyp >= 1 && otyp < firstRealObject ? otyp : 1;
     for (let candidate = 2; candidate < OBJECT_BASES.length - 1; candidate++) {
         const { first, last } = getObjectClassBounds(candidate);
         if (otyp >= first && otyp <= last) {

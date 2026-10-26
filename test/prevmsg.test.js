@@ -184,6 +184,29 @@ void test('a wrapped recall pages with --More-- and ^P keeps the walk going', as
     await recall;
     assert.equal(rowText(0), 'Short now.', 'the pager accepts ^P and continues the walk to the pending line');
 });
+// getline.c writes the query and typed text to gt.toplines directly, never
+// through update_topl()'s word wrap, so recalling the editor line mid-edit
+// renders it with topl_putsym()'s hard column wrap (topl.c:136-138).
+void test('a long getlin answer recalls with the hard column wrap', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    const answer = 'Z*.gyygyyWdyo`FkoD&k#.si##ykn4k_k###ygye(mkk#y,z.#yn2yyk';
+    input.feed(`#annotate\r${answer}\x10`);
+    const recall = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        const first = rowText(0);
+        assert.ok(first.startsWith('What do you want to call this dungeon level? Z*.'), `the recall fills the first row: "${first}"`);
+        assert.equal(first.length, 79, 'the raw editor line breaks at the final column, not at a word');
+        assert.match(rowText(1), /--More--/);
+    }
+    finally {
+        input.feed('\x1b'.repeat(6));
+        await recall;
+    }
+});
 void test('single-mode ^P in a question discards the first following key and records the answer', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
