@@ -15,7 +15,7 @@ import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { delobj } from './object_delete.js';
-import { AKLYS, BOULDER, BRASS_LANTERN, CORPSE, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
+import { AKLYS, BOULDER, BRASS_LANTERN, CORPSE, HEAVY_IRON_BALL, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
 import { MONSTER_SYMBOL, monsterCanEngulf, monsterDigests, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
@@ -60,9 +60,13 @@ function swallowedWeaponTarget(state, item, objectClass) {
     if (!engulfer)
         return null;
     const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
-    const weaponOrTool = objectClass === 2
-        || (objectClass === 6 && subtype !== 0);
-    if (!weaponOrTool || engulfer.wormno) {
+    // thitmonst() groups weapons, weptools, and gems into its weapon
+    // branch, and gives heavy iron balls and boulders the same hmon()
+    // contact with Strength exercised around the guaranteed hit.
+    const weaponLike = objectClass === 2 || objectClass === 13
+        || (objectClass === 6 && subtype !== 0)
+        || item.otyp === HEAVY_IRON_BALL || item.otyp === BOULDER;
+    if (!weaponLike || engulfer.wormno) {
         return null;
     }
     return engulfer;

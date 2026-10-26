@@ -25,7 +25,7 @@ import { requireInitializedGame } from './gstate.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { settleThrownShopObject } from './shk.js';
 import { rn2, rnd } from './rng.js';
-import { flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowRange, prepareHeroThrownTarget, } from './thrown_object.js';
+import { announceThrownObjectLiquidImpact, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowRange, prepareHeroThrownTarget, } from './thrown_object.js';
 import { cansee } from './vision.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { offerThrownFood } from './thrown_food.js';
@@ -297,6 +297,8 @@ export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz
     const endpoint = state.level?.at?.(x, y);
     if (endpoint && !IS_SOFT(endpoint.typ))
         rn2(100);
+    // Quivered coins land through throwit(), which announces the splash.
+    await announceThrownObjectLiquidImpact(gold, x, y, { state });
     await settleGoldOnFloor(state, gold, x, y, 0, 'checkShopObj');
     return true;
 }

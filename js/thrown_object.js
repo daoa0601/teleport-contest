@@ -164,6 +164,15 @@ export async function snuffThrownCandle(object, state = game, publish = plineWit
         endObjectBurn(object, state);
     }
 }
+// dothrow.c throwit(): the landing sound, before flooreffects() can
+// consume the object. Shared by thrown and fired objects.
+export async function announceThrownObjectLiquidImpact(object, x, y, { state = game, publish = plineWithContinuation, } = {}) {
+    if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
+        && (isPoolAt(x, y, state)
+            || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
+        await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
+    }
+}
 export async function finishHeroThrownObjectLanding({ state = game, object, x, y, contactedMonster = null, publish = plineWithContinuation, random = rn2, }) {
     requireLiveGame(state);
     const attachedBall = state.uball || state.u?.uball;
@@ -189,11 +198,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
             return null;
     }
     // throwit() announces liquid impact before floor effects can consume the object.
-    if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
-        && (isPoolAt(x, y, state)
-            || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
-        await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
-    }
+    await announceThrownObjectLiquidImpact(object, x, y, { state, publish });
     const floorEffect = await applyFloorEffects(object, x, y, {
         state,
         publish,
