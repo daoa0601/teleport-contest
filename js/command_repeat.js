@@ -35,6 +35,14 @@ export function rememberObjectChoice(key, count) {
         game._repeatCommands.push({ kind: 'count', count });
     rememberCommandKey(key);
 }
+// C cmd.c:yn_function() pushes a real-input answer into CQ_REPEAT without
+// checking in_doagain, so an answer typed while a do-again replay is still
+// unwinding (a death during ^A reaching end-of-game disclosure) becomes
+// the queued answer for the following question.
+export function rememberYnAnswerKey(key) {
+    game._repeatCommands ??= [];
+    game._repeatCommands.push({ kind: 'key', key });
+}
 export function takeRepeatCommand() {
     return game._inDoAgain ? game._repeatCommands?.shift() : undefined;
 }
