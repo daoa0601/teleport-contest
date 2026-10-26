@@ -53,7 +53,8 @@ import { killGenocidedMonsters } from './mon.js';
 import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { resetTrapSetting } from './trap_setting.js';
-import { dungeonDepth } from './hacklib.js';
+import { depth, dungeonDepth, endgameLevelName } from './hacklib.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { nearCapacity } from './weight.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import {
@@ -72,7 +73,7 @@ import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
     CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG,
-    MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR,
+    MAGIC_PORTAL, In_endgame, In_quest, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR,
     Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS,
     UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL,
 } from './const.js';
@@ -544,6 +545,28 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         } else if (previousTemperature < 0) {
             await plineWithContinuation('You are out of the cold.');
         }
+    }
+    if (!cached) {
+        // do.c:goto_level() logs the livelog "entered <level>" line after
+        // any temperature message and before the Tourist level bonus.
+        // describe_level(dloc, 2): "level N, the <branch>", Knox and the
+        // endgame planes keep their own full names.
+        let location: string;
+        let withBranch = true;
+        if (Is_knox_level(newDepth)) {
+            location = newDungeon?.dname ?? '';
+            withBranch = false;
+        } else if (In_quest(newDepth)) {
+            location = `Home ${newDepth.dlevel}`;
+        } else if (In_endgame(newDepth)) {
+            location = endgameLevelName(newDepth);
+            withBranch = false;
+        } else {
+            location = `level ${depth(newDepth)}`;
+        }
+        if (withBranch && newDungeon)
+            location += `, ${newDungeon.dname.replace(/^The /, 'the ')}`;
+        recordGameLogEvent(`entered ${location}`);
     }
     if (!cached) await creditTouristNewLevel();
     if (game.flags.checkpoint ?? true) rewindEngravingsForSave(game.level);

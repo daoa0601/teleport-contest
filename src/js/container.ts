@@ -131,11 +131,9 @@ export function isContainer(object: Pick<GameObject, 'otyp'> | null | undefined)
 
 const quantity = objectQuantity;
 
-async function objectDescription(object: GameObject, primaryHandDetail: ReturnType<typeof inventoryPrimaryHandDetail> = null): Promise<string> {
-    if (object.otyp === GOLD_PIECE) {
-        const amount = quantity(object);
-        return `${amount} gold piece${amount === 1 ? '' : 's'}`;
-    }
+async function objectDescription(object: GameObject, primaryHandDetail: string | null = null): Promise<string> {
+    // objnam.c:doname() names one gold piece "a gold piece" and appends
+    // the wield/quiver suffixes, so no local coin formatting is allowed.
     return await inventoryItemDescription(object, { primaryHandDetail });
 }
 

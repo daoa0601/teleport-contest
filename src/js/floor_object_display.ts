@@ -32,7 +32,9 @@ import {
 
 export async function readFloorEngraving(x: number, y: number): Promise<void> {
     const read = await readEngravingAt(x, y, plineWithContinuation);
-    if (read && game._runState) stopRun();
+    // engrave.c:read_engr_at() only calls nomul(0) for a real run
+    // (context.run > 0); a counted walk keeps moving past the engraving.
+    if (read && (game.context.run ?? 0) > 0) stopRun();
 }
 
 // C invent.c:look_here() outside an engulfer. A positive objectCount is

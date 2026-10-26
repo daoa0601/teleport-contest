@@ -3765,7 +3765,9 @@ async function dorub(cannedInvlet = null) {
         : game.inventory.find(candidate => candidate.invlet === cannedInvlet
             && rubEligibleObject(candidate));
     if (!object) {
-        game.context.move = 0;
+        // apply.c:dorub() returns ECMD_CANCEL without an object; rhack()
+        // clears the repeat queue so ^A cannot replay the abandoned rub.
+        resetCommandVariables(true);
         return;
     }
     // Interactive entry owns a getobj prompt which selection replaces.
@@ -5465,7 +5467,9 @@ async function doputon() {
     }
     const object = await chooseInventoryObject('put on', candidate => equipmentClassification(candidate, 'put on'));
     if (!object) {
-        game.context.move = 0;
+        // do_wear.c:doputon() returns ECMD_CANCEL when getobj() is
+        // declined; rhack() clears the repeat queue after the command.
+        resetCommandVariables(true);
         return;
     }
     if (object.oclass === 3) {
@@ -5615,7 +5619,9 @@ async function removeWornItem(action, itemAction = false) {
         object = await chooseInventoryObject(action, candidate => equipmentClassification(candidate, action, itemAction));
     }
     if (!object) {
-        game.context.move = 0;
+        // do_wear.c:dotakeoff()/doremring() return ECMD_CANCEL when
+        // getobj() is declined; rhack() clears the repeat queue.
+        resetCommandVariables(true);
         return;
     }
     if (!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))) {
@@ -5909,7 +5915,9 @@ async function dowear() {
     }
     const object = await chooseInventoryObject('wear', candidate => classifyWearChoice(candidate, 'wear'));
     if (!object) {
-        game.context.move = 0;
+        // do_wear.c:dowear() returns ECMD_CANCEL when getobj() is
+        // declined; rhack() clears the repeat queue after the command.
+        resetCommandVariables(true);
         return;
     }
     if (object.oclass === 3)
@@ -7243,10 +7251,11 @@ async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     const u = game.u;
     await placeHeroOnLevel(u.ux, u.uy);
     resetOccupations();
-    // An active non-travel run ends upon entering a doorway, obstruction, or
-    // furniture square even when actor displacement, rather than the plain
-    // terrain branch, performed the coordinate move.
-    if (game._runState && game._runState.mode !== 8 && (loc?.typ === DOOR
+    // hack.c:domove_core() ends only a real run (context.run != 0) upon
+    // entering a doorway, obstruction, or furniture square; a counted walk
+    // keeps going. Applies even when actor displacement, rather than the
+    // plain terrain branch, performed the coordinate move.
+    if ((game.context.run ?? 0) > 0 && game._runState?.mode !== 8 && (loc?.typ === DOOR
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
         || IS_FURNITURE(loc?.typ ?? STONE)))
         stopRun();

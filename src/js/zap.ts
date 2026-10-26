@@ -32,6 +32,7 @@ import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { loseHeroHp } from './hero_damage.js';
+import { resetCommandVariables } from './command_state.js';
 import { removeHeroAccessory } from './accessory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
@@ -162,7 +163,9 @@ export async function dozap(): Promise<void> {
     let wand = await chooseInventoryObject('zap', object =>
         object?.oclass === WAND_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE);
     if (!wand) {
-        game.context.move = 0;
+        // zap.c:dozap() returns ECMD_CANCEL when getobj() yields nothing;
+        // rhack() clears the repeat queue so a later ^A has nothing to redo.
+        resetCommandVariables(true);
         return;
     }
     await chargeUnpaidUsage(wand);

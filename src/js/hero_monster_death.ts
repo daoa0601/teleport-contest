@@ -13,6 +13,8 @@ import {
 } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
+import { recordGameLogEvent } from './gamelog.js';
+import { MONSTER_GENO, monsterTypeName } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { heroIsAmphibious } from './hero_species.js';
 import { landFloorObject } from './floor_effects.js';
@@ -57,6 +59,10 @@ import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
+
+// include/mondata.h:unique_corpstat() — G_UNIQ species never leave a
+// pet-murder chronicle entry behind (mon.c:xkilled()).
+const G_UNIQ = 0x1000;
 
 export type HeroMonsterDeathContext =
     | { kind: 'swallowed-projectile'; projectile: GameObject }
@@ -398,6 +404,14 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     } else if (monster.mtame) {
         adjustHeroAlignment(-15);
         await publishHeardMessage(hallucinating ? 'the studio audience applaud!' : 'the rumble of distant thunder...', plineWithContinuation);
+        // mon.c:xkilled() records the pet murder in the chronicle unless
+        // the species never leaves a corpse behind as a unique statue.
+        if (!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)) {
+            const given = MGIVENNAME(monster);
+            recordGameLogEvent(`murdered ${given ? `${given}, ` : ''}${
+                game.flags.female ? 'her' : 'his'} faithful ${
+                monsterTypeName(monster.mnum, monster.female)}`);
+        }
     } else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);
     }
