@@ -194,7 +194,7 @@ for (const { blind, oilskin } of [
         assert.equal(game.u.uhp, 98);
         assert.equal(armor.dknown, !blind);
         if (blind) assert.doesNotMatch(messages.join('\n'), /Escape coat/);
-        else assert.match(messages.join('\n'), /cannot hold onto your .+ named Escape coat!/);
+        else assert.match(messages.join('\n'), /cannot hold onto your .+\s+named Escape coat!/);
     });
 }
 

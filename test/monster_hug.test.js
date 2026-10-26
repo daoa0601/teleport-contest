@@ -170,7 +170,7 @@ for (const { blind, oilskin } of [
         if (blind)
             assert.doesNotMatch(messages.join('\n'), /Escape coat/);
         else
-            assert.match(messages.join('\n'), /cannot hold onto your .+ named Escape coat!/);
+            assert.match(messages.join('\n'), /cannot hold onto your .+\s+named Escape coat!/);
     });
 }
 void test('an undiscovered oilskin cloak prevents a hug without revealing its type', async () => {
