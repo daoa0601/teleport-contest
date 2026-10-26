@@ -103,7 +103,9 @@ export async function makeWish() {
         setArtifactOrigin(object, 'wish', { knownOrigin: true });
     const previousWishes = game.u.uconduct.wishes ?? 0;
     game.u.uconduct.wishes = previousWishes + 1;
-    // zap.c:makewish() livelogs the granted wish before dropping the object.
+    // zap.c:makewish() livelogs the granted wish before dropping the object;
+    // its doname() -> xname() observes the object first.
+    observeObjectForNaming(object);
     const wish = `"${value ?? ''}", got "${await objectDescription(object)}"`;
     const his = game.flags.female ? 'her' : 'his';
     const artifactFlags = oldWishArti < (game.u.uconduct.wisharti ?? 0) ? LL_ARTIFACT : 0;

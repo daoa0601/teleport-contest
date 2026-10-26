@@ -40,4 +40,17 @@ void test('declining a wish with nothing records the refusal', async () => {
     assert.ok(entries.includes('declined to make a wish'), `chronicle lacks the refusal: ${JSON.stringify(entries)}`);
     assert.equal(entries.some(line => line.includes('wish - ')), false, 'a declined wish is not a granted wish');
 });
+// doname() -> xname() sets dknown for a sighted hero before formatting, so a
+// wished-for unidentified potion is logged by its appearance.
+void test('a sighted wish chronicles the granted potion by its appearance', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    requirePlayingGame(game);
+    pushKeys('potion of healing\r');
+    await makeWish();
+    const wishEntry = gameLogEvents(game).map(entry => entry.text)
+        .find(line => line.includes('first wish'));
+    assert.ok(wishEntry);
+    assert.match(wishEntry, /got "an? (?:uncursed )?[a-z-]+ potion"$/);
+    assert.doesNotMatch(wishEntry, /got "an? (?:uncursed )?potion"$/);
+});
 //# sourceMappingURL=wish_chronicle.test.js.map
