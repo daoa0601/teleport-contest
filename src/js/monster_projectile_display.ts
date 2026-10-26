@@ -37,8 +37,13 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
             if (!isok(position.x, position.y)) return;
             if (first) await effect.start();
             first = false;
-            effect.draw(position.x, position.y);
-            await flushFrame();
+            // Native tmp_at() stops before show_glyph() and its
+            // flush_screen(0) when the flash cell cannot be seen, so an
+            // impact that just blinded the hero hides its trailing frame
+            // and any pending status update stays unpublished; the
+            // caller's nh_delay_output() still runs.
+            if (effect.draw(position.x, position.y)) await flushFrame();
+            else await state.animationFrame?.();
         },
         async backtrack(): Promise<void> {
             // DISP_END/BACKTRACK moves inward before the first return frame.
