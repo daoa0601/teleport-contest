@@ -9,12 +9,13 @@ import { ICE, STONE } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, CLUB } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { kickFloorObject } from '../js/object_kick.js';
 import { initRng } from '../js/rng.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { kickDirection } from './support/commands.js';
-import { floorObject, knownObject } from './support/game-objects.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -111,6 +112,26 @@ void test('a kicked club can hit a monster before it lands', async () => {
     assert.ok(jackal.mhp < 20);
     assert.deepEqual([club.ox, club.oy], [13, 10]);
     assert.equal(floorObjects(level).includes(club), true);
+});
+
+void test('a kicked corpse refused by a pet is named without its species', async () => {
+    const level = freshGameplayRoom({ role: 'tourist' });
+    requirePlayingGame(game);
+    const corpse = placeCreatedObject(
+        await corpseObject(MONSTER_NAME.indexOf('newt')), 11, 10);
+    const dog = await createMonsterAt('little dog', 13, 10);
+    dog.mtame = 10;
+    dog.mpeaceful = 1;
+    dog.mcanmove = 0;
+    const messages: string[] = [];
+
+    await kickFloorObject(11, 10, { dx: 1, dy: 0, rollOne: () => 3,
+        publish: message => { messages.push(message); } });
+
+    assert.ok(messages.includes('You kick a newt corpse.'));
+    assert.equal(game._pending_message, 'The corpse misses the little dog.');
+    assert.ok(!game._pending_message.includes('newt corpse misses'));
+    assert.equal(floorObjects(level).includes(corpse), true);
 });
 
 
