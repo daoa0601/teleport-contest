@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectQuantity } from './object_stack.js';
-import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
+import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectName, objectQuestion, definiteName } from './objnam.js';
 import { floatingAbove } from './levitation_commands.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNo } from './query.js';
@@ -160,15 +160,17 @@ function dipTargetPronoun(object) {
     return objectNameIsPlural(object) || object.otyp === LENSES
         || slot === 'uarmg' || slot === 'uarmf' ? 'them' : 'it';
 }
+// C potion.c:dodip() formats the item once with short_oname(doname,
+// thesimpleoname), reserving its fixed worst-case prompt. The reserved text
+// is "What do you want to dip into? [abdeghjkmnpqstvwyzBCEFHIKLNOQRTUWXZ#-#
+// or ?*] " whose trailing blank and NUL leave 50 characters for the item.
+const DIP_PROMPT_RESERVE = 77;
 async function dipTargetDescription(object) {
     observeObjectForNaming(object);
-    const full = await inventoryItemDescription(object);
-    if (full.length <= 49)
-        return full;
-    const shortened = { ...object, bknown: false, rknown: false,
-        greased: false, oeroded: 0, oeroded2: 0 };
-    delete shortened.buc;
-    const name = await inventoryItemDescription(shortened);
-    return name.length <= 49 ? name : `the ${simpleObjectName(object)}`;
+    return await objectQuestion(object, {
+        prefix: '', suffix: '', reserve: DIP_PROMPT_RESERVE,
+        format: async (item) => await inventoryItemDescription(item),
+        shortFormat: (item, state) => definiteName(simpleObjectName(item, state), state),
+    });
 }
 //# sourceMappingURL=potion_dip.js.map

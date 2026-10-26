@@ -640,20 +640,23 @@ export async function ownedObjectQuestion(
 }
 
 // C safe_qbuf()/short_oname(): reserve the question before shortening names.
+// `reserve` models a standalone short_oname() call whose length limit comes
+// from a fixed worst-case prompt rather than this question's own text.
 export async function objectQuestion(
     object: GameObject,
-    { prefix, suffix, fallback, format, shortFormat }: {
+    { prefix, suffix, fallback, format, shortFormat, reserve = 0 }: {
         prefix: string;
         suffix: string;
-        fallback: string;
+        fallback?: string;
         format: (object: GameObject, state: GameState) => string | Promise<string>;
         shortFormat: (object: GameObject, state: GameState) => string;
+        reserve?: number;
     },
     state: GameState = game,
 ): Promise<string> {
-    const limit = QBUFSZ - 1 - prefix.length - suffix.length;
+    const limit = QBUFSZ - 1 - prefix.length - suffix.length - reserve;
     const question = (name: string): string => `${prefix}${name}${suffix}`;
-    if (fallback.length > limit) return question(fallback).slice(0, QBUFSZ - 1);
+    if (fallback !== undefined && fallback.length > limit) return question(fallback).slice(0, QBUFSZ - 1);
     let name = await format(object, state);
     if (name.length <= limit) return question(name);
 
@@ -732,7 +735,7 @@ export async function objectQuestion(
         nameState: shortenBoth ? shortCallState : state,
         shortenName: shortenBoth, stripAttributes: true,
     });
-    return question(name.length <= limit ? name : fallback);
+    return question(name.length <= limit ? name : fallback ?? name);
 }
 
 // Native fruit labels imported from bones can already be plural. xname
