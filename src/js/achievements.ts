@@ -58,7 +58,7 @@ const ACHIEVEMENT_LOG_TEXT: readonly string[] = [
     'entered Sokoban',
     'entered the Bigroom',
     '', '', '', '', '', '', '', '', // ranks: text created on the fly
-    "learned Castle drawbridge's tune",
+    "learned castle drawbridge's tune",
 ];
 
 // insight.c:record_achievement() message selection.
