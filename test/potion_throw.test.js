@@ -819,7 +819,7 @@ void test('controlled lycanthrope decline completes an adjacent map throw', asyn
     const input = resetInputState();
     const throwing = throwEast(potion);
     await input.waitUntilBlocked();
-    assert.equal(game._pending_message, 'The potion of unholy water misses the purple worm.');
+    assert.equal(game._pending_message, 'The potion of unholy water misses it.');
     assert.equal(game.u.umonnum, 331);
     input.feed(' ');
     await input.waitUntilBlocked();

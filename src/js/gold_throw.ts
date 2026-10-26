@@ -63,6 +63,8 @@ import {
     prepareHeroThrownTarget,
 } from './thrown_object.js';
 import { cansee } from './vision.js';
+import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { offerThrownFood } from './thrown_food.js';
 
 const M2_MERC = 0x00000200;
 const M2_GREEDY = 0x10000000;
@@ -232,11 +234,13 @@ async function resolveQuiveredGoldMonsterContact({
     state, monster, gold, swallowed = false, wakeMonster = null,
 }: GoldContactOptions & { swallowed?: boolean }): Promise<boolean> {
     // dothrow.c:omon_adj() can thaw a mobile species before thitmonst()
-    // consumes its ordinary d20 targeting roll.  Coins do not enter any of
-    // thitmonst()'s damaging classes, so a non-swallowed coin always reaches
-    // tmiss() regardless of that targeting result or the monster's greed.
+    // consumes its ordinary d20 targeting roll. Coins skip the damaging
+    // classes, but a metal-eating pet can still catch one as food.
     prepareHeroThrownTarget(monster);
     rnd(20);
+    const food = await offerThrownFood(monster, gold, state);
+    if (food?.heroDied) return true;
+    if (food) return food.handled;
 
     if (swallowed) {
         await wakeMonster?.(monster);
@@ -246,7 +250,7 @@ async function resolveQuiveredGoldMonsterContact({
         return true;
     }
 
-    await missGold(monster, gold, state);
+    await reportHeroThrownMiss(monster, gold, { state });
     if (rn2(3) === 0) await wakeMonster?.(monster);
     return false;
 }
@@ -357,9 +361,10 @@ export async function resolveQuiveredGoldThrow({
         state, object: gold, dx, dy, range, captureFlight,
     });
     if (contact) {
-        await resolveQuiveredGoldMonsterContact({
+        const handled = await resolveQuiveredGoldMonsterContact({
             state, monster: contact, gold, wakeMonster,
         });
+        if (handled) return true;
     }
     const endpoint = state.level?.at?.(x, y);
     if (endpoint && !IS_SOFT(endpoint.typ)) rn2(100);

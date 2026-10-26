@@ -3757,9 +3757,9 @@ export async function runMoveloopCore() {
     }
     // C runs bot() or timebot() here and then curs_on_u(), whose
     // flush_screen() draws the buffered map, only when the status changed.
-    // A helpless hero gets no rhack() input flush, so without a status
-    // change a --More-- in the next monster phase still shows the older map.
-    if (currentMulti(g) >= 0 || g.context.botl || g.context.time_botl)
+    // parse() flushes before physical command input. Queued commands bypass
+    // parse, so their message pagers retain the map until an explicit flush.
+    if (g.context.botl || g.context.time_botl)
         await flush_screen(1);
     else
         updateStatusLines();
