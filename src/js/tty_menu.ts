@@ -292,6 +292,19 @@ export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPick
     }
 }
 
+// C display_nhwindow() followed by destroy_nhwindow(): windows the core
+// shows this way (the quest pager, the unpaid-items list, the shop bill,
+// novel passages) are never wrapped in select_menu(), so bot_disabled
+// stays clear and their dismissal's docorner()/docrt() runs bot()
+// immediately, redrawing a wrecked status window at once.
+export async function tty_display_and_dismiss<T>(
+    window: TtyMenuWindow<T>, how: MenuPickMode = PICK_NONE,
+): Promise<TtyMenuResult<T>> {
+    const result = await tty_display_nhwindow(window, how);
+    await tty_dismiss_nhwindow(window);
+    return result;
+}
+
 export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
     window.cancelled = false;
     if (!window.active) return;

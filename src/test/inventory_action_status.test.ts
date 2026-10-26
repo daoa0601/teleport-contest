@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { game } from '../js/gstate.js';
 import { bot } from '../js/display.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
@@ -9,6 +10,7 @@ import {
     POT_EXTRA_HEALING, POT_OIL, RIN_PROTECTION, RIN_REGENERATION, SCR_IDENTIFY,
     SCR_LIGHT, SPE_FORCE_BOLT, SPE_KNOCK, WAN_FIRE, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
+import { createStaffedShop } from './support/shop.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
@@ -107,4 +109,41 @@ void test('a full-screen drop-category menu leaves the status blank for the pick
     await bot();
     assert.ok(screenRow(22).includes('St:'),
         `status row 0 is redrawn afterwards: ${JSON.stringify(screenRow(22))}`);
+});
+
+// C shows the unpaid-items window with display_nhwindow() and
+// destroy_nhwindow() (invent.c:3786), outside select_menu(): bot_disabled
+// stays clear, so the dismissal's docrt()/docorner() redraws the wrecked
+// status window immediately rather than deferring to the next moveloop.
+void test('an unpaid-items overlay redraws the status window at dismissal', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    const { shopkeeper, roomno } = await createStaffedShop();
+    game.u.ushops = [roomno];
+    const types = [DAGGER, CLOAK_OF_MAGIC_RESISTANCE, SCR_IDENTIFY, SCR_LIGHT,
+        SPE_FORCE_BOLT, SPE_KNOCK, POT_OIL, POT_EXTRA_HEALING, RIN_PROTECTION,
+        RIN_REGENERATION, WAN_MAGIC_MISSILE, WAN_FIRE, MAGIC_MARKER, LEATHER_GLOVES];
+    for (const otyp of types) {
+        const item = await addInventoryObject(otyp, { unpaid: true });
+        shopkeeper.eshk.bill.push({ bo_id: item.o_id, bquan: 1, price: 10, useup: false });
+        shopkeeper.eshk.billct++;
+    }
+    await bot();
+
+    const input = resetInputState();
+    const listing = rhack('I'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    assert.match(screenRow(0), /What type of object do you want an inventory of\?/);
+
+    input.feed('u');
+    await input.waitUntilBlocked();
+    assert.match(screenRow(0), /Unpaid Weapons/);
+    assert.ok(!screenRow(22).includes('St:'),
+        `the tall overlay covers the status: ${JSON.stringify(screenRow(22))}`);
+
+    input.feed('\x1b');
+    await listing;
+    assert.ok(screenRow(22).includes('St:'),
+        `dismissal redraws the status at once: ${JSON.stringify(screenRow(22))}`);
+    assert.ok(screenRow(23).includes('Satiated'),
+        `dismissal redraws status row 1: ${JSON.stringify(screenRow(23))}`);
 });
