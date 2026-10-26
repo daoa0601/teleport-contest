@@ -12,10 +12,12 @@ function toplineText(): string {
     return (game.nhDisplay?.grid[0] ?? []).map(cell => cell.ch).join('').trimEnd();
 }
 
-// C cmd.c:dotravel(): the m-prefix menu path calls getpos_menu() only; the
-// "(For instructions type a '?')" pline belongs to getpos(), which that
-// path never enters, so verbose travel must not print it.
-void test('travel through the menu prints no instructions line', async () => {
+// C cmd.c:dotravel(): the m-prefix menu path calls getpos_menu() only;
+// neither the "Where do you want to travel to?" question nor the
+// "(For instructions type a '?')" pline belongs to it, so verbose travel
+// through the menu must print neither.  This also guards the branch's own
+// menu-path prompt plumbing against regressing toward the getpos flow.
+void test('travel through the menu prints neither travel prompt', async () => {
     const input = freshTurnRoom({ flags: { tips: false, verbose: true } });
     const pages: string[] = [];
     input.display = { async readKey() {
@@ -25,11 +27,11 @@ void test('travel through the menu prints no instructions line', async () => {
     input.feed('m_');
     await moveloop_core();
 
-    // The instructions pline would survive in the recallable transaction;
-    // the menu path must leave it out entirely.
+    // Either pline would survive in the recallable transaction; the menu
+    // path must leave both out entirely.
     const recall = `${game._toplines} ${game._messageHistory.join(' ')}`;
-    assert.doesNotMatch(recall, /\(For instructions type a '\?'\)/,
-        `The menu path prints no instructions line, saw: ${pages.join(' | ')}`);
+    assert.doesNotMatch(recall, /Where do you want to travel to\?|\(For instructions type a '\?'\)/,
+        `The menu path prints no travel prompt, saw: ${pages.join(' | ')}`);
 });
 
 // C hack.c:domove_core(): the shared destination-monster block runs

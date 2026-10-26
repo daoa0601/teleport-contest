@@ -6962,13 +6962,14 @@ async function dofire(cannedShotLimit = null) {
             }
         }
         const throwResult = await throwCommand(fireObject, true, shotLimit);
-        // dofire() can report ECMD_TIME together with ECMD_CANCEL when a
-        // quiver refill spent the turn; rhack() still clears both command
-        // queues for the cancellation while restoring context.move.
-        if (throwResult === 'cancelled')
-            resetCommandVariables(true);
+        // dofire() returns the quiver refill's ECMD_TIME in place of the
+        // cancelled throw's ECMD_CANCEL (dothrow.c:585); rhack() clears the
+        // queues only for CANCEL|FAIL, so a refill that spent the turn
+        // keeps them.
         if (quiverSelectionSpentTime)
             game.context.move = 1;
+        else if (throwResult === 'cancelled')
+            resetCommandVariables(true);
         return;
     }
 }

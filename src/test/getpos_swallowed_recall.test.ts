@@ -25,7 +25,9 @@ function toplineText(): string {
 void test('travel autodescribe beyond arm reach while swallowed reports unreconnoitered terrain', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false } });
     game._moveloopStarted = true;
+    const engulfer = await createMonsterAt('trapper', game.u.ux, game.u.uy);
     game.u.uswallow = 1;
+    game.u.ustuck = engulfer;
     const input = resetInputState();
     const pages: string[] = [];
     input.display = { async readKey() {
