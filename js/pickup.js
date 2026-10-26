@@ -46,14 +46,18 @@ import { SHOPBASE, A_WIS, STONE, W_WEP, is_pit, LOST_THROWN, LOST_STOLEN, LOST_D
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
-export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)) {
+export async function pickupAtHero(count = Math.max(0, game._commandCount || 0), { runLocationChecks = true } = {}) {
     setMulti(0);
     const source = pickupSourceAtHero();
     // hack.c:pickup_checks() tests OBJ_AT, which counts the punishment
     // chain; the empty-floor complaints only fire when the square has no
     // object at all.  A chain-only square falls through to the pickup menu
     // path, where all_but_uchain() filters it into an empty selection.
-    const problem = pickupLocationProblem({ state: game, objects: source.objects, monster: source.monster });
+    // Only dopickup() runs those checks; pickup.c:loot_mon() calls pickup()
+    // directly, so a swallowed #loot never reports the engulfer's tongue.
+    const problem = runLocationChecks
+        ? pickupLocationProblem({ state: game, objects: source.objects, monster: source.monster })
+        : null;
     if (problem) {
         for (const message of problem.messages)
             await plineWithContinuation(message);
