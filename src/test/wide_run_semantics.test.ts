@@ -114,7 +114,7 @@ void test('a counted walk crosses an object pile without stopping', async () => 
 // time_botl on later turns until a command resets run through
 // reset_cmd_vars() or set_move_cmd().  The status window's time field
 // therefore keeps its pre-arrival value across those turns.
-void test('a completed travel keeps run at 8 and suppresses the time repaint', async () => {
+void test('after a completed travel the status time field lags one timed command behind', async () => {
     freshTurnRoom();
     const level = requireGameLevel(game);
     requirePlayingGame(game);
@@ -122,21 +122,29 @@ void test('a completed travel keeps run at 8 and suppresses the time repaint', a
     for (let x = 11; x <= 14; x++) level.requireAt(x, 10).typ = ROOM;
     const gate = resetInputState();
     const turn = game.moves;
+    const displayedTime = (): number => {
+        for (const row of [22, 23]) {
+            const text = requireScreenRow(row).map(cell => cell.ch).join('');
+            const match = text.match(/T:(\d+)/);
+            if (match) return Number(match[1]);
+        }
+        throw new Error('the status window shows no time field');
+    };
 
-    let runAtArrival: number | undefined;
-    await runKeys(gate, '_ll.', () => {
-        if (game.u.ux !== 12 || !settled()) return false;
-        runAtArrival ??= game.context.run;
-        return true;
-    });
+    // The travel itself ends on the arrival step; its pending repaint shows
+    // the arrival turn.  The search shares the input stream so no command
+    // resets run between the two.
+    await runKeys(gate, '_ll.s', () => game.moves === turn + 3 && settled());
 
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
-    assert.equal(game.moves, turn + 2);
-    assert.equal(runAtArrival, 8, "the arrival leaves C's run at 8");
+    assert.equal(game.moves, turn + 3, 'the search after the travel elapsed');
+    assert.equal(displayedTime(), turn + 2,
+        'a turn taken while run is still 8 keeps the arrival time on screen');
 
-    // C cmd.c:reset_cmd_vars() zeroes context.run directly, without the
-    // end_running() time repaint; the cleanup Escape takes that path.
-    assert.equal(game.context.run, 0, 'reset_cmd_vars() clears the lingering run');
-    assert.equal(game.context.time_botl, false,
-        'reset_cmd_vars() queues no time repaint');
+    // A command that resets run (the cleanup Escape above acts as one) lets
+    // the next timed command repaint the current time again.
+    await runKeys(gate, 'l', () => game.u.ux === 13 && settled());
+    assert.equal(game.moves, turn + 4);
+    assert.equal(displayedTime(), turn + 4,
+        'a timed command after the reset repaints the current time');
 });

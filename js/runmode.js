@@ -45,7 +45,7 @@ export function stopRun(g = game, andTravel = true) {
 // suppresses time_botl on every later turn until a command resets run
 // through reset_cmd_vars() or set_move_cmd(), so the status window's
 // time field keeps its pre-arrival value across those turns.
-export function arriveTravel(g = game, entered) {
+export function arriveTravel(g = game, completedStep) {
     if (g._runState?.mode === 8)
         delete g._runState.visited;
     g._runState = null;
@@ -54,10 +54,11 @@ export function arriveTravel(g = game, entered) {
     g.context.travel1 = false;
     if (g.multi > 0)
         g.multi = 0;
-    // An arrival whose final step consumed the move without entering the
-    // target (domove_bump_mon's "Pardon me") also consumed the pending
-    // time repaint without a visible paint; an entered arrival keeps it.
-    if (!entered)
+    // A final step that ran to domove_core()'s tail keeps the pending time
+    // repaint, which paints the arrival turn.  A step that returned early
+    // (domove_bump_mon's "Pardon me", an attack) consumed that repaint with
+    // its own message output, so no repaint is pending any more.
+    if (!completedStep)
         g.context.time_botl = false;
 }
 export function runmodeDelayFrameCount(g = game, enabled = false, sourceTurn = g.moves || 0) {
