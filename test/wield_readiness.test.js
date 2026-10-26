@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flush_screen, flushPendingTopline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -13,6 +13,7 @@ import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { requireScreenRow } from './support/screen.js';
 import { createStaffedShop } from './support/shop.js';
 function readinessRoom() {
     freshObjectRoom({ role: 'rogue' });
@@ -106,6 +107,25 @@ void test('empty hands use the gloved description', async () => {
     pushKeys('-');
     await rhack('w'.charCodeAt(0));
     assert.equal(game._pending_message, 'You are already empty handed.');
+    assert.equal(game.context.move, 0);
+});
+// C doswapweapon(): with neither slot set, ready_weapon(Null) reports the
+// unchanged empty hand and uwep == oldwep still holds, so the failed-wield
+// branch restores the (empty) secondary and never announces a missing one.
+void test('swapping with no weapons reports the unchanged hand once', async () => {
+    readinessRoom();
+    // A hero whose slots were never populated (fresh u_init without a
+    // starting weapon) keeps the optional fields unset rather than null.
+    delete game.uwep;
+    delete game.uswapwep;
+    delete game.u.uwep;
+    delete game.u.uswapwep;
+    await rhack('x'.charCodeAt(0));
+    await flush_screen(1);
+    assert.equal(game._pending_message, 'You are already bare handed.');
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), 'You are already bare handed.');
+    assert.equal(game.uwep ?? null, null);
+    assert.equal(game.uswapwep ?? null, null);
     assert.equal(game.context.move, 0);
 });
 void test('wielding an uncursed aklys secures its tether', async () => {
