@@ -8,7 +8,6 @@ import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { setCarriedArtifactProperties } from './artifact_properties.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { HeroPossessions } from './hero_types.js';
@@ -26,7 +25,7 @@ import { makePlural } from './object_grammar.js';
 import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER,
+    FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, SCR_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { curseObjectState } from './object_state.js';
@@ -109,12 +108,7 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
     const kind = levelPrizeKind(object, state);
     if (!prizes || !kind) return;
     const achievement = kind === 'mines' ? ACH_MINE_PRIZE : ACH_SOKO_PRIZE;
-    if (recordAchievement(state, achievement) && !state.program_state.gameover) {
-        const type = kind === 'mines' ? prizes.mines_prize_otyp : prizes.soko_prize_otyp;
-        const name = type === undefined ? null : OBJECT_NAMES[type];
-        if (!name) throw new Error('A level prize needs its original object type');
-        recordGameLogEvent(`acquired the ${kind === 'mines' ? "Mines' End" : 'Sokoban'} ${name}`, { state });
-    }
+    recordAchievement(state, achievement);
     if (kind === 'mines') prizes.mines_prize_oid = 0;
     else prizes.soko_prize_oid = 0;
     object.nomerge = false;

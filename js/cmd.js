@@ -189,7 +189,7 @@ import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import { continueWipingFace, donull, dowipe, threateningMonsterNearby, } from './do.js';
-import { ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextPages, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
+import { ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextWindow, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
@@ -2793,9 +2793,21 @@ function contextMenuResponses(selection) {
     }
 }
 async function doname() {
-    // docallcmd() consumes a canned category before creating its menu.
-    // Unread callback prose then belongs to the later naming prompt.
-    const queuedChoice = takeCommandKey();
+    // do_name.c:docallcmd() uses a queued key as the naming category.
+    // Any other queued entry selects nothing and clears the canned queue.
+    let queuedChoice;
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued && queued.kind === 'key')
+            queuedChoice = queued.key;
+        else if (queued) {
+            queuedChoice = 0;
+            clearCannedCommands();
+        }
+    }
+    else {
+        queuedChoice = takeCommandKey();
+    }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);
     if (queuedChoice === undefined)
@@ -3701,6 +3713,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['mouseaction', domouseaction],
     ['adjust', doadjust],
     ['altadjust', adjustSplit],
+    // cmd.c:2064 internal entry; #repeat reaches it after the item-actions
+    // 'T' remembers ia_dotakeoff.
+    ['alttakeoff', () => removeWornItem('take off', true)],
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
@@ -4103,7 +4118,10 @@ async function doadjust(selected = null, splitting = null) {
     const repairGold = !selected && await checkInventoryGold('adjust');
     let object = selected || await chooseInventoryObject('adjust', candidate => candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
     if (!object) {
+        // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
+        // dismissed; rhack() then clears the repeat queue.
         game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     if (!splitting) {
@@ -4701,22 +4719,13 @@ async function doChronicle() {
         game.context.move = 0;
         return;
     }
-    const stream = [
+    // show_gamelog() putstr()s one formatted line at a time, so the tty
+    // text window's compress_str() and wrap apply per event line.
+    await showTextWindow([
         'Logged events:',
         ' Turn',
         ...events.map(event => `${String(event.turn).padStart(5)}: ${event.text}`),
-    ];
-    const pageSize = 23;
-    const pages = [];
-    for (let offset = 0; offset < stream.length; offset += pageSize) {
-        const lines = Array(24).fill('');
-        const chunk = stream.slice(offset, offset + pageSize);
-        for (const [row, line] of chunk.entries())
-            lines[row] = line;
-        lines[23] = '--More--';
-        pages.push({ lines, cursor: [8, 23] });
-    }
-    await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
+    ]);
     game._pending_message = '';
     game.context.move = 0;
 }
@@ -6544,7 +6553,10 @@ async function applyTool(item, underlay) {
         return item;
     }
     await pline("Sorry, I don't know how to use that.");
+    // apply.c's default case returns ECMD_FAIL; rhack() clears the repeat
+    // queue so a later ^A reports nothing to repeat.
     game.context.move = 0;
+    resetCommandVariables(true);
     return null;
 }
 // C refs: dowieldquiver(), doquiver_core().  Q and empty-quiver fire share
@@ -7296,13 +7308,17 @@ async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     game._domoveReachedTail = true;
     await placeHeroOnLevel(u.ux, u.uy);
     resetOccupations();
-    // hack.c:domove_core() ends only a real run (context.run != 0) upon
-    // entering a doorway, obstruction, or furniture square; a counted walk
-    // keeps going. Applies even when actor displacement, rather than the
-    // plain terrain branch, performed the coordinate move.
-    if ((game.context.run ?? 0) > 0 && game._runState?.mode !== 8 && (loc?.typ === DOOR
-        || IS_OBSTRUCTED(loc?.typ ?? STONE)
-        || IS_FURNITURE(loc?.typ ?? STONE)))
+    // hack.c:domove_core() ends only a real run upon entering a doorway,
+    // obstruction, or furniture square, and never a travel run
+    // (context.run == 8).  findtravelpath() restores run to 8 for the
+    // arrival step after nomul(0) cleared _runState, so the lingering
+    // value — not _runState — is what the native check reads.
+    // Applies even when actor displacement, rather than the plain terrain
+    // branch, performed the coordinate move.
+    const runMode = game.context.run ?? 0;
+    if (runMode > 0 && runMode < 8
+        && (loc?.typ === DOOR || IS_OBSTRUCTED(loc?.typ ?? STONE)
+            || IS_FURNITURE(loc?.typ ?? STONE)))
         stopRun();
     if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)

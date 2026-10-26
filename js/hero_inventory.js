@@ -7,7 +7,6 @@ import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { setCarriedArtifactProperties } from './artifact_properties.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
 import { panic } from './diagnostics.js';
 import { recordLiteracy } from './literacy.js';
 import { levelPrizeKind } from './level_prize.js';
@@ -20,7 +19,7 @@ import { deleteObject } from './object_delete.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
-import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, SCR_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 import { isWeldedPrimary } from './weapon_slots.js';
@@ -99,13 +98,7 @@ export function recordHeroPrizeAcquisition(object, state = game) {
     if (!prizes || !kind)
         return;
     const achievement = kind === 'mines' ? ACH_MINE_PRIZE : ACH_SOKO_PRIZE;
-    if (recordAchievement(state, achievement) && !state.program_state.gameover) {
-        const type = kind === 'mines' ? prizes.mines_prize_otyp : prizes.soko_prize_otyp;
-        const name = type === undefined ? null : OBJECT_NAMES[type];
-        if (!name)
-            throw new Error('A level prize needs its original object type');
-        recordGameLogEvent(`acquired the ${kind === 'mines' ? "Mines' End" : 'Sokoban'} ${name}`, { state });
-    }
+    recordAchievement(state, achievement);
     if (kind === 'mines')
         prizes.mines_prize_oid = 0;
     else

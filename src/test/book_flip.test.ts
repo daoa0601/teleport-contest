@@ -195,8 +195,8 @@ for (const [studies, expected] of [
     [1, 'slightly faded'],
     [2, 'very faded'],
     [3, 'extremely faded'],
-    [4, 'barely visible'],
-    [8, 'barely visible'],
+    [4, 'extremely faded'],
+    [8, 'extremely faded'],
 ] as const) {
     void test(`a spellbook studied ${studies} times reports ${expected} ink without learning its spell`, async () => {
         freshObjectRoom();

@@ -46,7 +46,7 @@ import type { GameObject } from './object_types.js';
 import type { MapLocation, Position, Room, Trap } from './map_types.js';
 import { isRoom } from './map_types.js';
 import type { Hero } from './hero_types.js';
-import type { TextMenuLine, TextPage, TextMenuEntry } from './windows.js';
+import type { TextMenuLine, TextMenuEntry } from './windows.js';
 import type { MessagePublisher } from './display.js';
 import type { LiquidEffectResult } from './hack.js';
 import type { SpotEffectResult } from './location_effects.js';
@@ -268,7 +268,7 @@ import {
 import {
     ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu,
-    showTextMenuOverlay, showTextPages,
+    showTextMenuOverlay, showTextWindow,
     restoreMenuUnderlay, snapshotMenuUnderlay,
 } from './windows.js';
 import {
@@ -2827,9 +2827,19 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
 }
 
 async function doname() {
-    // docallcmd() consumes a canned category before creating its menu.
-    // Unread callback prose then belongs to the later naming prompt.
-    const queuedChoice = takeCommandKey();
+    // do_name.c:docallcmd() uses a queued key as the naming category.
+    // Any other queued entry selects nothing and clears the canned queue.
+    let queuedChoice: number | undefined;
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued && queued.kind === 'key') queuedChoice = queued.key;
+        else if (queued) {
+            queuedChoice = 0;
+            clearCannedCommands();
+        }
+    } else {
+        queuedChoice = takeCommandKey();
+    }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);
     if (queuedChoice === undefined) await restoreCommandMap();
@@ -3651,6 +3661,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['mouseaction', domouseaction],
     ['adjust', doadjust],
     ['altadjust', adjustSplit],
+    // cmd.c:2064 internal entry; #repeat reaches it after the item-actions
+    // 'T' remembers ia_dotakeoff.
+    ['alttakeoff', () => removeWornItem('take off', true)],
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
@@ -4071,7 +4084,10 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
         candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
         { forcePrompt: true, allowCount: true });
     if (!object) {
+        // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
+        // dismissed; rhack() then clears the repeat queue.
         game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     if (!splitting) {
@@ -4639,21 +4655,13 @@ async function doChronicle() {
         game.context.move = 0;
         return;
     }
-    const stream = [
+    // show_gamelog() putstr()s one formatted line at a time, so the tty
+    // text window's compress_str() and wrap apply per event line.
+    await showTextWindow([
         'Logged events:',
         ' Turn',
         ...events.map(event => `${String(event.turn).padStart(5)}: ${event.text}`),
-    ];
-    const pageSize = 23;
-    const pages: TextPage[] = [];
-    for (let offset = 0; offset < stream.length; offset += pageSize) {
-        const lines = Array<string>(24).fill('');
-        const chunk = stream.slice(offset, offset + pageSize);
-        for (const [row, line] of chunk.entries()) lines[row] = line;
-        lines[23] = '--More--';
-        pages.push({ lines, cursor: [8, 23] });
-    }
-    await showTextPages(pages, { validKeys: [27, 32, 10, 13] });
+    ]);
     game._pending_message = '';
     game.context.move = 0;
 }
@@ -6509,7 +6517,10 @@ async function applyTool(
         return item;
     }
     await pline("Sorry, I don't know how to use that.");
+    // apply.c's default case returns ECMD_FAIL; rhack() clears the repeat
+    // queue so a later ^A reports nothing to repeat.
     game.context.move = 0;
+    resetCommandVariables(true);
     return null;
 }
 
@@ -7287,13 +7298,17 @@ async function finishHeroMovement({
     game._domoveReachedTail = true;
     await placeHeroOnLevel(u.ux, u.uy);
     resetOccupations();
-    // hack.c:domove_core() ends only a real run (context.run != 0) upon
-    // entering a doorway, obstruction, or furniture square; a counted walk
-    // keeps going. Applies even when actor displacement, rather than the
-    // plain terrain branch, performed the coordinate move.
-    if ((game.context.run ?? 0) > 0 && game._runState?.mode !== 8 && (loc?.typ === DOOR
-        || IS_OBSTRUCTED(loc?.typ ?? STONE)
-        || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
+    // hack.c:domove_core() ends only a real run upon entering a doorway,
+    // obstruction, or furniture square, and never a travel run
+    // (context.run == 8).  findtravelpath() restores run to 8 for the
+    // arrival step after nomul(0) cleared _runState, so the lingering
+    // value — not _runState — is what the native check reads.
+    // Applies even when actor displacement, rather than the plain terrain
+    // branch, performed the coordinate move.
+    const runMode = game.context.run ?? 0;
+    if (runMode > 0 && runMode < 8
+        && (loc?.typ === DOOR || IS_OBSTRUCTED(loc?.typ ?? STONE)
+            || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
 
     if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)

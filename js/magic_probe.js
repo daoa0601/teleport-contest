@@ -23,7 +23,10 @@ export async function probeMonster(monster, { state = game, onHead = true, x = m
     const inventory = monster.minvent || monster.inventory || [];
     if (!inventory.length) {
         const carryingHero = state.u.uswallow && state.u.ustuck === monster;
-        await publish(`${monsterName(monster, { state, capitalized: true, suppressIt: true })} is not carrying anything${carryingHero ? ' besides you' : ''}.`);
+        // zap.c:probe_monster() formats the name with noit_Monnam():
+        // ARTICLE_YOUR plus SUPPRESS_IT, so a tame carrier reads "Your
+        // kitten" and hostiles fall back to "The".
+        await publish(`${monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true })} is not carrying anything${carryingHero ? ' besides you' : ''}.`);
         return;
     }
     probeObjectChain(inventory, { state });
