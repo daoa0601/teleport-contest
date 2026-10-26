@@ -58,7 +58,7 @@ jobs:
           cat score-stderr.txt >&2
 
       - name: Extract score summary
-        run: node scripts/summarize-score.mjs
+        run: node scripts/summarize-score.mjs docs/ledger/public-passing.txt
 
       - name: Upload results
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
