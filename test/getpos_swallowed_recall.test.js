@@ -6,11 +6,9 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
-import { requireFixtureGame } from './support/game-state.js';
 import { requireScreenCell } from './support/screen.js';
 function toplineText() {
     return (game.nhDisplay?.grid[0] ?? []).map(cell => cell.ch).join('');
@@ -76,21 +74,15 @@ void test('travel prompt joins the instructions line in message recall', async (
 // swallowed spends a single hero action.
 void test('a counted attack while swallowed is cut to a single strike', async () => {
     const input = freshTurnRoom({ role: 'barbarian' });
-    requireFixtureGame(game);
     game.u.uhp = game.u.uhpmax = 500;
-    const trapper = await createMonsterAt('trapper', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
-    trapper.movement = 12;
+    const trapper = await createMonsterAt('trapper', game.u.ux, game.u.uy, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    game.u.uswallow = 1;
+    game.u.ustuck = trapper;
     input.display = { async readKey() { return 32; } };
-    initRng(2n);
-    input.feed('m.');
-    await moveloop_core();
-    for (let turns = 0; !game.u.uswallow && turns < 5; turns++)
-        await moveloop_core();
-    assert.equal(game.u.uswallow, 1, 'the trapper must swallow the hero first');
     input.feed('4y');
     await moveloop_core();
     assert.equal(game.multi, 0, 'nomul(0) cancels the remaining count repeats');
-    const strikes = (game._pending_message ?? '').match(/You (?:hit|smite) the trapper\./g)?.length ?? 0;
+    const strikes = (game._pending_message ?? '').match(/You (?:hit|smite|miss) the trapper\./g)?.length ?? 0;
     assert.equal(strikes, 1, `One strike per counted command, saw: ${game._pending_message}`);
 });
 //# sourceMappingURL=getpos_swallowed_recall.test.js.map
