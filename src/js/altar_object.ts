@@ -2,6 +2,7 @@
 // C ref: do.c doaltarobj().
 
 import { displayColorName, plineWithContinuation } from './display.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import {
@@ -54,6 +55,10 @@ export async function landObjectOnAltar(
         object.buc = undefined;
     } else if (!monsterMoving) {
         const conduct = state.u.uconduct || (state.u.uconduct = {});
+        if (!conduct.gnostic) recordGameLogEvent(
+            `eschewed atheism, by dropping ${await objectDescription(object, state)} on an altar`,
+            { state },
+        );
         conduct.gnostic = (conduct.gnostic ?? 0) + 1;
     }
 
