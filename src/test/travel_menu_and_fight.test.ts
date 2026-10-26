@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
+import { rhack } from '../js/cmd.js';
+import { doprevMessage } from '../js/prevmsg.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
@@ -12,26 +14,17 @@ function toplineText(): string {
     return (game.nhDisplay?.grid[0] ?? []).map(cell => cell.ch).join('').trimEnd();
 }
 
-// C cmd.c:dotravel(): the m-prefix menu path calls getpos_menu() only;
-// neither the "Where do you want to travel to?" question nor the
-// "(For instructions type a '?')" pline belongs to it, so verbose travel
-// through the menu must print neither.  This also guards the branch's own
-// menu-path prompt plumbing against regressing toward the getpos flow.
-void test('travel through the menu prints neither travel prompt', async () => {
+// C getpos.c:getpos() accepts a queued direction before printing cursor help.
+void test('travel to a queued position shows only the travel question', async () => {
     const input = freshTurnRoom({ flags: { tips: false, verbose: true } });
-    const pages: string[] = [];
-    input.display = { async readKey() {
-        pages.push(toplineText());
-        return 27;
-    } };
-    input.feed('m_');
-    await moveloop_core();
+    input.queueCommandKeys('_');
+    input.queueCommandResponses([{ dx: 0, dy: 0, dz: 0 }]);
 
-    // Either pline would survive in the recallable transaction; the menu
-    // path must leave both out entirely.
-    const recall = `${game._toplines} ${game._messageHistory.join(' ')}`;
-    assert.doesNotMatch(recall, /Where do you want to travel to\?|\(For instructions type a '\?'\)/,
-        `The menu path prints no travel prompt, saw: ${pages.join(' | ')}`);
+    await rhack(0);
+    await doprevMessage();
+    await doprevMessage();
+
+    assert.equal(toplineText(), 'Where do you want to travel to?');
 });
 
 // C hack.c:domove_core(): the shared destination-monster block runs

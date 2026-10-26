@@ -5254,22 +5254,21 @@ async function dotravel() {
     // skips both.
     if (!game.iflags.menu_requested)
         await pline('Where do you want to travel to?');
-    const firstUse = !game.iflags.menu_requested && shouldShowGetposTip();
-    if (firstUse)
-        await showGetposTip();
-    if (!game.iflags.menu_requested)
-        await showGetposInstructions();
-    // handle_tip() sets show_goal_msg, so only the tip-covered first pass
-    // pline()s the goal; later passes keep the caller's prompt up.
-    if (firstUse)
-        await pline('Move cursor to the desired destination:');
     // getpos_menu() omits auto_describe()'s travel-path warning.
     const cursor = game.iflags.menu_requested
         ? await selectTravelMenuPosition(wizardPositionDescription)
         : await selectMapPosition({
             start: game._travelTarget
                 ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-            prompt: game._pending_message,
+            prompt: async () => {
+                // getpos() consumes a queued direction before handle_tip() and
+                // the instructions line; only keyboard selection needs these.
+                const firstUse = await showGetposTip();
+                await showGetposInstructions();
+                if (firstUse)
+                    await pline('Move cursor to the desired destination:');
+                return game._pending_message;
+            },
             goal: 'the desired destination',
         });
     if (!cursor) {

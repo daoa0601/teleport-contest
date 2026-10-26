@@ -43,7 +43,8 @@ export interface MapPositionSelection extends Position {
 }
 export interface MapPositionOptions {
     start: Position;
-    prompt: string;
+    // Queued positions bypass cursor prompts as well as keyboard input.
+    prompt: string | (() => Promise<string>);
     goal: string;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
@@ -595,6 +596,7 @@ export async function selectMapPosition({
 }: MapPositionOptions): Promise<MapPositionSelection | null> {
     const queued = game._inDoAgain ? undefined : takeCommandPosition();
     if (queued !== undefined) return queued ? { ...queued, pickType: LOOK_TRADITIONAL } : null;
+    const initialPrompt = typeof prompt === 'string' ? prompt : await prompt();
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
@@ -653,7 +655,7 @@ export async function selectMapPosition({
         for (;;) {
             // pline() owns notices and goals, including their pager cleanup.
             // Cursor redraws only supply new text for the initial prompt or autodescribe.
-            let message: string | null = firstPaint ? prompt : null;
+            let message: string | null = firstPaint ? initialPrompt : null;
             // auto_describe() reports through a suppressed-history putstr,
             // which first moves the pending top line into ^P recall.
             let messageFlushesPending = false;
