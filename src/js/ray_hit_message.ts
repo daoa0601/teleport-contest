@@ -12,7 +12,10 @@ import { cansee } from './vision.js';
 
 export function rayHitMessage(effect: string, monster: Monster, { x, y, damage = 0, ending, state = game }: RayMessageOptions) {
     const inside = state.u.uswallow && state.u.ustuck === monster;
-    const named = state.flags.verbose
+    // zap.c hit()/miss() name the target under flags.verbose, which the
+    // option tables default ON (optlist.h NHOPTB(verbose, ..., opt_out,
+    // On)). An unset flag is an unconfigured game, not a noverbose player.
+    const named = state.flags.verbose !== false
         && (cansee(x, y) || canSpotMonster(monster) || inside);
     const target = named ? monsterName(monster, { state }) : 'it';
     const punctuation = ending ?? (damage < 0 ? '?' : damage <= 4 ? '.' : '!');
@@ -20,7 +23,7 @@ export function rayHitMessage(effect: string, monster: Monster, { x, y, damage =
 }
 
 export function rayMissMessage(effect: string, monster: Monster, { x, y, state = game }: RayMessageOptions) {
-    const named = state.flags.verbose && (cansee(x, y) || canSpotMonster(monster));
+    const named = state.flags.verbose !== false && (cansee(x, y) || canSpotMonster(monster));
     const target = named ? monsterName(monster, { state }) : 'it';
     return `${capitalizedDefiniteName(effect, state)} ${verbForSubject(effect, 'miss')} ${target}.`;
 }
