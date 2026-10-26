@@ -3,6 +3,8 @@ import {
     COLNO, ROWNO, STONE, Invocation_lev, In_endgame, In_mines, In_quest,
     In_sokoban, In_V_tower, Is_knox_level, Is_rogue_level,
 } from './const.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { CmapSymbol } from './glyph_numbers.js';
 import { levelIsWizardTower, sameDungeonLevel, specialDisplayName } from './dungeon.js';
 import { displayMessageWindow, docrt, flush_screen } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -75,8 +77,8 @@ function terrainLevelDescription(): string {
         if (special[1].flags.town) parts.push('town');
         if (Is_rogue_level(here)) parts.push('roguelike');
     }
-    if (flags.nfountains) parts.push(`{:${flags.nfountains}`);
-    if (flags.nsinks) parts.push(`#:${flags.nsinks}`);
+    if (flags.nfountains) parts.push(`${MAP_SYMBOLS[CmapSymbol.fountain]?.ch}:${flags.nfountains}`);
+    if (flags.nsinks) parts.push(`${MAP_SYMBOLS[CmapSymbol.sink]?.ch}:${flags.nsinks}`);
     const features: ReadonlyArray<readonly [boolean | undefined, string]> = [
         [flags.has_vault, 'vault'], [flags.has_shop, 'shop'],
         [flags.has_temple, 'temple'], [flags.has_court, 'throne'],
