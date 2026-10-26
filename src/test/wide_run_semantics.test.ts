@@ -123,8 +123,10 @@ void test('a counted walk crosses an object pile without stopping', async () => 
 // time_botl on later turns until a command resets run through
 // reset_cmd_vars() or set_move_cmd().  The status window's time field
 // therefore keeps its pre-arrival value across those turns.
+// getpos.c:getpos() calls hack.c:handle_tip(TIP_GETPOS) before cursor input.
+// Disable tips here so the help and pager do not consume destination keys.
 void test('after a completed travel the status time field lags one timed command behind', async () => {
-    freshTurnRoom();
+    freshTurnRoom({ flags: { tips: false } });
     const level = requireGameLevel(game);
     requirePlayingGame(game);
     game.flags.time = true;
@@ -155,7 +157,7 @@ void test('after a completed travel the status time field lags one timed command
 // returns early: the turn is spent, the hero stays outside the target,
 // and its message flushes the pending time repaint before the turn elapses.
 void test('a travel whose target holds a pet ends with the turn spent outside it', async () => {
-    freshTurnRoom();
+    freshTurnRoom({ flags: { tips: false } });
     const level = requireGameLevel(game);
     requirePlayingGame(game);
     game.flags.time = true;
@@ -181,7 +183,7 @@ void test('a travel whose target holds a pet ends with the turn spent outside it
 });
 
 void test('a hidden travel bump keeps the time repaint pending until its turn elapses', async () => {
-    freshTurnRoom();
+    freshTurnRoom({ flags: { tips: false } });
     requirePlayingGame(game);
     game.flags.time = true;
     game.u.uen = game.u.uenmax;
