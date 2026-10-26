@@ -6,8 +6,7 @@ import { canSpotHeroSelf, cls, docrt, flush_screen, glyphAt, plineWithContinuati
 import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { objectName } from './objnam.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectAtMapDescription } from './map_object_description.js';
 import { NO_COLOR } from './terminal.js';
 import { requireGameLevel } from './gstate.js';
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -66,7 +65,7 @@ export function mapDetectedMonster(monster, showTail, state = game) {
         show_glyph_cell(segment.x, segment.y, tail.ch, tail.color, false, attribute, tail);
     }
 }
-async function detectionDescription(x, y, terrainMode, objects, state) {
+async function detectionDescription(x, y, terrainMode, state) {
     const glyph = glyphAt(x, y, state);
     if (state.iflags.save_uswallow && x === state.u.ux && y === state.u.uy
         && canSpotHeroSelf() && (glyph?.kind === 'monster'
@@ -75,10 +74,12 @@ async function detectionDescription(x, y, terrainMode, objects, state) {
     if (glyph?.kind === 'invisible')
         return 'unseen creature';
     if (glyph?.kind === 'object' && (terrainMode & TER_OBJ)) {
-        const detected = objects?.get(`${x},${y}`);
-        const object = detected?.otyp === glyph.otyp ? detected : null;
-        return objectName(object || { otyp: glyph.otyp,
-            oclass: objectClassForType(glyph.otyp), quan: 1, quantity: 1 });
+        // C getpos autodescribe runs do_screen_description() -> look_at()
+        // even in a detection browse: an object glyph with no matching
+        // floor or buried object (detected items carried by a monster,
+        // remembered objects) is described through a temporary mksobj()
+        // whose corpse species and timer setup consume the same RNG calls.
+        return objectAtMapDescription(x, y, glyph, state);
     }
     if (glyph?.kind === 'monster' && (terrainMode & TER_MON)) {
         return farlookLocationDescription(x, y);
@@ -91,7 +92,7 @@ async function detectionDescription(x, y, terrainMode, objects, state) {
         return 'unexplored area';
     return farlookLocationDescription(x, y);
 }
-export async function browseDetectionMap(terrainMode, goal, { objects = null, state = game, } = {}) {
+export async function browseDetectionMap(terrainMode, goal, { state = game, } = {}) {
     const hadTip = await showGetposTip(state);
     const savedAutoDescribe = state.iflags.autodescribe;
     const savedTerrainMode = state.iflags.terrainmode;
@@ -105,7 +106,7 @@ export async function browseDetectionMap(terrainMode, goal, { objects = null, st
             start: { x: state.u.ux, y: state.u.uy },
             prompt: state._pending_message,
             goal, force: false,
-            describe: (x, y) => detectionDescription(x, y, terrainMode, objects, state),
+            describe: (x, y) => detectionDescription(x, y, terrainMode, state),
         });
     }
     finally {

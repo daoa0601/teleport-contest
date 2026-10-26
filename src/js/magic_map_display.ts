@@ -10,14 +10,12 @@ import {
 import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { objectName } from './objnam.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectAtMapDescription } from './map_object_description.js';
 import { NO_COLOR } from './terminal.js';
 
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
-import type { DetectionObject } from './magic_detection.js';
 import { requireGameLevel } from './gstate.js';
 
 interface DetectionConstraints {
@@ -30,7 +28,6 @@ interface DetectionConstraints {
     changed: boolean;
 }
 interface BrowseDetectionOptions {
-    objects?: ReadonlyMap<string, DetectionObject> | null;
     state?: GameState;
 }
 
@@ -89,7 +86,7 @@ export function mapDetectedMonster(monster: Monster, showTail: boolean, state: G
     }
 }
 
-async function detectionDescription(x: number, y: number, terrainMode: number, objects: ReadonlyMap<string, DetectionObject> | null, state: GameState): Promise<string> {
+async function detectionDescription(x: number, y: number, terrainMode: number, state: GameState): Promise<string> {
     const glyph = glyphAt(x, y, state);
     if (state.iflags.save_uswallow && x === state.u.ux && y === state.u.uy
         && canSpotHeroSelf() && (glyph?.kind === 'monster'
@@ -97,10 +94,12 @@ async function detectionDescription(x: number, y: number, terrainMode: number, o
         return farlookLocationDescription(x, y);
     if (glyph?.kind === 'invisible') return 'unseen creature';
     if (glyph?.kind === 'object' && (terrainMode & TER_OBJ)) {
-        const detected = objects?.get(`${x},${y}`);
-        const object = detected?.otyp === glyph.otyp ? detected : null;
-        return objectName(object || { otyp: glyph.otyp,
-            oclass: objectClassForType(glyph.otyp), quan: 1, quantity: 1 });
+        // C getpos autodescribe runs do_screen_description() -> look_at()
+        // even in a detection browse: an object glyph with no matching
+        // floor or buried object (detected items carried by a monster,
+        // remembered objects) is described through a temporary mksobj()
+        // whose corpse species and timer setup consume the same RNG calls.
+        return objectAtMapDescription(x, y, glyph, state);
     }
     if (glyph?.kind === 'monster' && (terrainMode & TER_MON)) {
         return farlookLocationDescription(x, y);
@@ -116,7 +115,7 @@ async function detectionDescription(x: number, y: number, terrainMode: number, o
 }
 
 export async function browseDetectionMap(terrainMode: number, goal: string, {
-    objects = null, state = game,
+    state = game,
 }: BrowseDetectionOptions = {}) {
     const hadTip = await showGetposTip(state);
     const savedAutoDescribe = state.iflags.autodescribe;
@@ -130,7 +129,7 @@ export async function browseDetectionMap(terrainMode: number, goal: string, {
             start: { x: state.u.ux, y: state.u.uy },
             prompt: state._pending_message,
             goal, force: false,
-            describe: (x: number, y: number) => detectionDescription(x, y, terrainMode, objects, state),
+            describe: (x: number, y: number) => detectionDescription(x, y, terrainMode, state),
         });
     } finally {
         if (savedAutoDescribe === undefined) delete state.iflags.autodescribe;

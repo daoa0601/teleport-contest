@@ -183,7 +183,9 @@ async function lootMonster(monster) {
     }
     if (game.u.uswallow) {
         // C loot_mon() passes the saddle inquiry flag, not the command count.
-        await pickupAtHero(asked ? 1 : 0);
+        // pickup.c:loot_mon() calls pickup() directly; only dopickup()
+        // runs pickup_checks(), so an empty stomach costs no turn here.
+        await pickupAtHero(asked ? 1 : 0, { runLocationChecks: false });
         spentTime = !!game.context.move;
     }
     return { asked, spentTime };

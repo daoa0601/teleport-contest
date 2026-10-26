@@ -88,7 +88,7 @@ async function displayTrapMap(cursed: boolean, state: PlayingGameState): Promise
             mode |= TER_MON;
         }
         await pline(formatFeltMessage(`${cursed ? 'very greedy' : 'entrapped'}.`, state));
-        await browseDetectionMap(mode, cursed ? 'gold' : 'trap of interest', { objects, state });
+        await browseDetectionMap(mode, cursed ? 'gold' : 'trap of interest', { state });
     } finally { await redisplayDetectionMap(constraints, state); }
     return { result: 0, known: false, strangeFeeling: false };
 }

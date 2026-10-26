@@ -119,7 +119,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
         const mode = showHeroUnlessCovered(shown, state);
         await pline(formatFeltMessage('very greedy, and sense gold!', state));
         exerciseWisdom(true, state);
-        await browseDetectionMap(mode, 'gold', { objects: shown, state });
+        await browseDetectionMap(mode, 'gold', { state });
     } finally { await redisplayDetectionMap(constraints, state); }
     return effectResult(0, known);
 }
@@ -172,7 +172,7 @@ export async function detectFood(source: GameObject | null, { state = game }: De
             state.u.uedibility = 1;
         } else await pline(`Your ${heroNoseName(state)} tingles and you smell ${what}.`);
         exerciseWisdom(true, state);
-        await browseDetectionMap(mode, 'food', { objects: shown, state });
+        await browseDetectionMap(mode, 'food', { state });
     } finally { await redisplayDetectionMap(constraints, state); }
     return effectResult(0, true);
 }
@@ -306,7 +306,7 @@ export async function detectObjects(source: GameObject | null, { state = game, o
         }
         const mode = showHeroUnlessCovered(shown, state);
         await pline(`You detect the ${elsewhere ? 'presence' : 'absence'} of ${what}.`);
-        if (elsewhere) await browseDetectionMap(mode, 'object', { objects: shown, state });
+        if (elsewhere) await browseDetectionMap(mode, 'object', { state });
         else await flushPendingTopline();
     } finally { await redisplayDetectionMap(constraints, state); }
     return effectResult(0, false);

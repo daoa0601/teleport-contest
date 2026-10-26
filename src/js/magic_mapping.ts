@@ -59,7 +59,6 @@ export async function mapVicinity(source: GameObject | null, { state = game }: {
     if (hero.uswallow) visionRow[hero.ux] = savedVision | IN_SIGHT;
     hero.detectMonsters = true;
     const constraints = unconstrainMap(state);
-    const shownObjects = new Map<string, GameObject>();
     let detectedMonster = false, detectedObject = false, refresh = false;
     try {
         for (let x = bounds.left; x <= bounds.right; x++) {
@@ -70,7 +69,6 @@ export async function mapVicinity(source: GameObject | null, { state = game }: {
                 if (object) {
                     if (extended) observeObject(object, state);
                     map_object(object, true);
-                    shownObjects.set(`${x},${y}`, object);
                     if (glyphChanged(oldGlyph, glyphAt(x, y, state))
                         && terrainCoversObjectsAt(x, y, state)) detectedObject = true;
                 }
@@ -94,7 +92,7 @@ export async function mapVicinity(source: GameObject | null, { state = game }: {
             await pline('You sense your surroundings.');
             const mode = MAP_MODE | (extended || glyphAt(hero.ux, hero.uy)?.kind === 'monster'
                 ? TER_MON : 0);
-            await browseDetectionMap(mode, 'anything of interest', { objects: shownObjects, state });
+            await browseDetectionMap(mode, 'anything of interest', { state });
             refresh = true;
         }
     } finally {

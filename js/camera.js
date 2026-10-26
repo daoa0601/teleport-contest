@@ -54,8 +54,8 @@ export async function useCamera(object, { state = game } = {}) {
     result.heroDied ||= !!state.program_state.gameover;
     return result;
 }
-const PM_HOMUNCULUS = 52;
-const PM_IMP = 53;
+const PM_HOMUNCULUS = 51;
+const PM_IMP = 52;
 export async function releaseCameraDemon(object, x, y, { state = game, publish = pline, random = rn2, summonMonster = makemonAt, } = {}) {
     if (random(3) !== 0)
         return null;

@@ -67,8 +67,8 @@ export async function useCamera(
     return result;
 }
 
-const PM_HOMUNCULUS = 52;
-const PM_IMP = 53;
+const PM_HOMUNCULUS = 51;
+const PM_IMP = 52;
 
 export async function releaseCameraDemon(
     object: GameObject,
