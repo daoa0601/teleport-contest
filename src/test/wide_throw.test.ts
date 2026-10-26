@@ -48,24 +48,42 @@ void test('a hungry metal-eating pet catches a quivered coin as food', async () 
     assert.equal(floorObjects(level).some(object => object.otyp === GOLD_PIECE), false);
 });
 
-void test('a potion can thaw an immobilized target even when it misses', async () => {
-    freshObjectRoom();
-    requirePlayingGame(game);
-    game.u.acurr.a[A_DEX] = 3;
-    const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
-    dog.mcanmove = 0;
-    dog.mfrozen = 6;
-    const potion = await addInventoryObject(POT_HEALING);
-    initRng(11n);
-    const input = resetInputState();
-    installPagerInput(input, { expected: /potion of healing|peculiar odor/, limit: 3 });
+void test('missed potions can thaw an immobilized target or leave it frozen across seeds', async () => {
+    let thawedMisses = 0;
+    let frozenMisses = 0;
+    for (let seed = 1n; seed <= 100n; seed++) {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        game.u.acurr.a[A_DEX] = 3;
+        const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
+        dog.mpeaceful = 0;
+        dog.mcanmove = 0;
+        dog.mfrozen = 6;
+        const potion = await addInventoryObject(POT_HEALING);
+        initRng(seed);
+        const input = resetInputState();
+        let missed = false;
+        input.beforeRead = () => {
+            missed ||= /potion of healing misses/.test(topline());
+        };
+        installPagerInput(input, {
+            expected: /potion of healing|peculiar odor|breaks into shards/, limit: 3,
+        });
 
-    await throwInventoryObject(potion, 'l');
-    await flush_screen();
+        await throwInventoryObject(potion, 'l');
 
-    assert.match(topline(), /potion of healing shatters!/);
-    assert.equal(dog.mcanmove, 1);
-    assert.equal(dog.mfrozen, 0);
+        if (!missed) continue;
+        if (dog.mcanmove) {
+            thawedMisses++;
+            assert.equal(dog.mfrozen, 0, `A thawed target retained its paralysis at seed ${seed}`);
+        } else {
+            frozenMisses++;
+            assert.equal(dog.mfrozen, 6, `A still-frozen target changed paralysis at seed ${seed}`);
+        }
+    }
+
+    assert.ok(thawedMisses > 0, `No target thawed among ${frozenMisses} visibly missed throws`);
+    assert.ok(frozenMisses > 0, `Every target thawed among ${thawedMisses} visibly missed throws`);
 });
 
 void test('potion misses respect nonverbose target descriptions', async () => {
