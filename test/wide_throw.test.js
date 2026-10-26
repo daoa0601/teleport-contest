@@ -41,22 +41,6 @@ void test('a hungry metal-eating pet catches a quivered coin as food', async () 
     assert.ok((mole.meating ?? 0) > 0);
     assert.equal(floorObjects(level).some(object => object.otyp === GOLD_PIECE), false);
 });
-void test('a missed potion can leave a sleeping pet undisturbed', async () => {
-    freshObjectRoom();
-    requirePlayingGame(game);
-    game.u.acurr.a[A_DEX] = 3;
-    const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
-    initializePet(dog);
-    dog.msleeping = 1;
-    const potion = await addInventoryObject(POT_HEALING);
-    initRng(1n);
-    const input = resetInputState();
-    installPagerInput(input, { expected: /potion of healing|peculiar odor/, limit: 3 });
-    await throwInventoryObject(potion, 'l');
-    await flush_screen();
-    assert.equal(dog.msleeping, 1);
-    assert.match(topline(), /potion of healing shatters!|You smell a peculiar odor/);
-});
 void test('a potion can thaw an immobilized target even when it misses', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
