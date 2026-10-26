@@ -942,7 +942,8 @@ export async function continueRun(g = game) {
         await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         if (g.multi < COLNO && --g.multi === 0)
             stopRun(g);
-        const moved = await domove(g.u.dx ?? 0, g.u.dy ?? 0, false);
+        const outcome = await domove(g.u.dx ?? 0, g.u.dy ?? 0, false);
+        const moved = outcome === 'time';
         if (g.program_state.gameover)
             return false;
         // C domove_core() skips runmode_delay_output() on early returns,
@@ -955,7 +956,7 @@ export async function continueRun(g = game) {
         const arrived = g.u.ux === state.targetX && g.u.uy === state.targetY;
         if (arrived)
             g._travelTarget = null;
-        if (!moved)
+        if (!moved && outcome !== 'opened-door')
             stopRun(g);
         // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the
         // adjacent shortcut and the backward-search arrival) keep C's
@@ -982,13 +983,14 @@ export async function continueRun(g = game) {
     await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
     if (g.multi < COLNO && --g.multi === 0)
         stopRun(g);
-    const moved = await domove(state.dx, state.dy, false);
+    const outcome = await domove(state.dx, state.dy, false);
+    const moved = outcome === 'time';
     if (g.program_state.gameover)
         return false;
     if (moved)
         await captureRunmodeDelay(g, !!g._runState);
     g.context.move = moved ? 1 : 0;
-    if (!moved)
+    if (!moved && outcome !== 'opened-door')
         stopRun(g);
     return moved;
 }
@@ -1363,13 +1365,14 @@ async function dispatchMovement(binding, prefixes) {
         game.context.nopick = true;
     if (game.multi > 0 || (mode && !prefixes.walk))
         startRun(hero.dx, hero.dy, game, mode);
-    const moved = await domove(hero.dx, hero.dy);
+    const outcome = await domove(hero.dx, hero.dy);
+    const moved = outcome === 'time';
     if (game.program_state.gameover)
         return;
     if (mode && !prefixes.walk && moved)
         await captureRunmodeDelay(game, !!game._runState);
     game.context.move = moved ? 1 : 0;
-    if (!moved)
+    if (!moved && outcome !== 'opened-door')
         stopRun();
     if (!mode || prefixes.walk)
         game.context.forcefight = false;
@@ -5232,7 +5235,8 @@ async function dotravelTarget() {
     }
     game.iflags.getloc_travelmode = false;
     const state = startTravel(target.x, target.y);
-    const moved = await domove(game.u.dx ?? 0, game.u.dy ?? 0);
+    const outcome = await domove(game.u.dx ?? 0, game.u.dy ?? 0);
+    const moved = outcome === 'time';
     if (game.program_state.gameover)
         return;
     // C domove_core() skips runmode_delay_output() on early returns,
@@ -5247,7 +5251,7 @@ async function dotravelTarget() {
     const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
     if (arrived)
         game._travelTarget = null;
-    if (!moved)
+    if (!moved && outcome !== 'opened-door')
         stopRun();
     // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the adjacent
     // shortcut and the backward-search arrival) keep C's lingering run at
@@ -7342,8 +7346,6 @@ async function delayAfterDraggingBall() {
     game._helplessDoneMessage = '';
     await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });
 }
-// C hack.c:domove() evaluates a successful step after all destination effects.
-// Automatic run steps have no DOMOVE_WALK/RUSH flags after the first command.
 async function domove(dx, dy, explicitAttempt = true) {
     const oldx = game.u.ux, oldy = game.u.uy;
     game._domoveSucceeded = false;
@@ -7357,7 +7359,7 @@ async function domove(dx, dy, explicitAttempt = true) {
         game._kickedLoc = null;
         game._movementAttempt = null;
     }
-    return moved;
+    return moved === 'opened-door' ? moved : moved ? 'time' : 'stopped';
 }
 // C hack.c:move_out_of_bounds(). A failed step takes no time; a forced
 // attack still spends the action against an unknown obstacle.
@@ -7771,8 +7773,15 @@ async function domoveCore(dx, dy) {
             return rejectHeroMove();
         }
         await doopen(newx, newy);
+        // test_move() preserves a counted walk after opening, or when an
+        // untimed open has queued dokick as the next canned command.
+        const queuedKick = game.context.move === 0
+            && game._cannedCommands?.[0]?.kind === 'kick';
+        const opened = !(loc.doormask & (D_CLOSED | D_LOCKED));
+        if (!opened && !queuedKick)
+            return rejectHeroMove();
         game.context.move = 0;
-        return false;
+        return 'opened-door';
     }
     // C test_move() rejects an obstructed destination before it evaluates
     // tight-diagonal shoulders.  A boulder on ordinary floor is not terrain
