@@ -6,11 +6,17 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { detectedTrapDisguise } from './pager_features.js';
 import { trapName } from './trap_name.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { resetCommandVariables } from './command_state.js';
 
 export async function identifyTrap(): Promise<void> {
     game.context.move = 0;
     const direction = await promptDirection(readDirectionKey, { ctrlCommandHint: true });
-    if (!direction) return;
+    if (!direction) {
+        // pager.c:doidtrap() returns ECMD_CANCEL when getdir() is declined;
+        // rhack() clears the repeat queue after the command.
+        resetCommandVariables(true);
+        return;
+    }
     const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'trap' && [BEAR_TRAP, TRAPPED_CHEST, TRAPPED_DOOR].includes(glyph.trapType)) {

@@ -146,14 +146,18 @@ export async function autopickupAtHero(): Promise<void> {
         const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
         if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
             await describeDecor();
-            if ((game.multi && !game._runState)
+            // pickup.c gates this on (multi && !context.run): a counted
+            // walk reads the engraving, a real run does not.
+            if ((game.multi && !(game.context.run ?? 0))
                 || !game.flags.pickup
                 || trap && (heroTeetersAtPit(game, trap) || heroEscapedShaft(trap)))
                 await readFloorEngraving(x, y);
             return;
         }
-        const busy = !game._runState && (game.multi
-            || (game._helplessTurns ?? 0) > 0 || game._occupation?.key === 'study-book');
+        // pickup.c treats any multi without a real run (counted walks,
+        // helplessness) as busy: describe the floor instead of autopicking.
+        const busy = (game.multi && !(game.context.run ?? 0))
+            || (game._helplessTurns ?? 0) > 0 || game._occupation?.key === 'study-book';
         if (busy || !game.flags.pickup || heroCannotTake(game)) {
             const look = await checkHere(source, false);
             if (look.died) return;
@@ -162,7 +166,10 @@ export async function autopickupAtHero(): Promise<void> {
                 await plineWithContinuation('You are physically incapable of picking anything up.');
             return;
         }
-        if (objects.length && game._runState?.mode !== 8) stopRun();
+        // pickup.c: pickup() stops only a real run (context.run != 8) when
+        // stepping onto objects, and not at all for a no-pickup move.
+        if (objects.length && (game.context.run ?? 0) > 0
+            && game._runState?.mode !== 8 && !game.context.nopick) stopRun();
     }
     const eligible: GameObject[] = [];
     for (const object of objects) {
@@ -524,7 +531,8 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
         await readFloorEngraving(x, y);
         return { died: false };
     }
-    stopRun();
+    // pickup.c:check_here() only interrupts a real run (context.run).
+    if ((game.context.run ?? 0) > 0) stopRun();
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);

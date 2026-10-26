@@ -135,9 +135,14 @@ async function reportSubset(items, inuse = true, accessoryLabel = 'Accessories')
     }
     else {
         const ordered = sortObjects(candidates, { mode: SORTLOOT_INUSE });
+        // invent.c:display_pickinv() classifies entries only when sortloot()
+        // actually runs its comparison, so a lone in-use entry keeps
+        // orderclass 0 and is listed without any class heading.  The bare
+        // hands entry makes the sorted list big enough to classify.
+        const headed = ordered.length >= 2 || (!items && !game.uwep);
         const sections = [{ heading: null, items: [{ text: 'Inventory in use', attr: 1 }] }];
         const rows = ordered.map(object => ({
-            object, heading: inUseHeading(object, accessoryLabel),
+            object, heading: headed ? inUseHeading(object, accessoryLabel) : null,
         }));
         if (!items && !game.uwep) {
             const position = rows.findIndex(row => row.heading === 'Wielded/Readied Weapons'

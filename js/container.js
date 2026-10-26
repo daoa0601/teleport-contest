@@ -65,10 +65,8 @@ export function isContainer(object) {
 }
 const quantity = objectQuantity;
 async function objectDescription(object, primaryHandDetail = null) {
-    if (object.otyp === GOLD_PIECE) {
-        const amount = quantity(object);
-        return `${amount} gold piece${amount === 1 ? '' : 's'}`;
-    }
+    // objnam.c:doname() names one gold piece "a gold piece" and appends
+    // the wield/quiver suffixes, so no local coin formatting is allowed.
     return await inventoryItemDescription(object, { primaryHandDetail });
 }
 function className(object) {
