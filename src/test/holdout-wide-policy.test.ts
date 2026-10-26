@@ -173,3 +173,16 @@ void test('wide reaches item, extended, control and movement commands without sa
     assert.ok(words.has('pray') && words.has('loot') && words.has('adjust'), 'extended actions are reachable');
     assert.ok(!words.has('quit') && !words.has('save'));
 });
+
+void test('wide never opens the option help page that prints the recorder configuration path', () => {
+    const rows = new Array<string>(24).fill('');
+    rows[0] = 'Select one item:';
+    const entries = ['About NetHack (version information).', 'List of game commands.',
+        'List of game options.', 'Longer explanation of game options.'];
+    entries.forEach((text, index) => { rows[2 + index] = `${'acgh'.charAt(index)} - ${text}`; });
+    rows[7] = '(end)';
+    const answers = new Set<string | null>();
+    for (let seed = 1; seed <= 120; seed++) answers.add(policy(seed).nextKey(rows, { cursor: [5, 7, 1] }));
+    assert.ok(!answers.has('g'), 'the option help entry must not be selected');
+    assert.ok(answers.has('h'), 'neighbouring help entries remain selectable');
+});
