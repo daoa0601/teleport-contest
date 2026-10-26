@@ -3539,23 +3539,65 @@ async function updateTopline(msg, options = {}) {
 // C update_topl()'s storage wrap: from each CO-1 boundary search back to the
 // nearest space and replace it with a newline; a huge token is split after
 // its end, and text with no space at all is left to topl_putsym()'s hard
-// column wrap at render time.
+// column wrap at render time.  tty_putmixed() folds each DEC-graphics pair
+// and each cursor-right escape into plain columns before update_topl() sees
+// the line (wintty.c decode_mixed()), so the wrap measures screen columns,
+// not raw marker bytes.
 function wrapStoredToplines(message, columns) {
+    const cells = [];
+    let dec = false;
+    for (let raw = 0; raw < message.length; raw++) {
+        const ch = message.charAt(raw);
+        if (ch === '\x0e') {
+            dec = true;
+            continue;
+        }
+        if (ch === '\x0f') {
+            dec = false;
+            continue;
+        }
+        if (ch === '\x1b' && message.charAt(raw + 1) === '[') {
+            let end = raw + 2;
+            while (end < message.length && /[0-9;]/.test(message.charAt(end)))
+                end++;
+            if (message.charAt(end) === 'C') {
+                const count = Number(message.slice(raw + 2, end)) || 1;
+                // The editor emits cursor-right escapes; the columns they
+                // advance are spaces on screen but cannot be replaced by a
+                // newline inside the sequence.
+                for (let offset = 0; offset < count; offset++)
+                    cells.push({ text: ' ', splittable: false, raw });
+                raw = end;
+                continue;
+            }
+        }
+        cells.push({
+            text: dec ? DEC_TO_UNICODE[ch] ?? ch : ch,
+            splittable: !dec && ch === ' ',
+            raw,
+        });
+    }
     let start = 0;
-    while (message.length - start >= columns) {
+    const breaks = new Set();
+    while (cells.length - start >= columns) {
         let split = start + columns - 1;
-        while (split > start && message.charAt(split) !== ' ')
+        while (split > start && !cells[split]?.splittable)
             split--;
         if (split === start) {
-            const next = message.indexOf(' ', start);
+            const next = cells.findIndex((cell, index) => index >= start && cell.splittable);
             if (next < 0)
                 break;
             split = next;
         }
-        message = `${message.slice(0, split)}\n${message.slice(split + 1)}`;
+        breaks.add(cells[split]?.raw ?? split);
         start = split + 1;
     }
-    return message;
+    if (!breaks.size)
+        return message;
+    let wrapped = '';
+    for (let raw = 0; raw < message.length; raw++)
+        wrapped += breaks.has(raw) ? '\n' : message.charAt(raw);
+    return wrapped;
 }
 function writeRawText(text) {
     const display = game.nhDisplay;
