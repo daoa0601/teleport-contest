@@ -77,7 +77,7 @@ export const SELL_DELIBERATE = 1;
 export const SELL_DONTSELL = 2;
 export type SellDisposition = typeof SELL_NORMAL | typeof SELL_DELIBERATE | typeof SELL_DONTSELL;
 type SellAnswer = 'y' | 'n' | 'a' | 'q';
-type SaleQuery = (question: string) => SellAnswer | Promise<SellAnswer>;
+type SaleQuery = (question: string, defaultAnswer: 'y' | 'n') => SellAnswer | Promise<SellAnswer>;
 export type ShopSaleResult = { sold: false }
     | { sold: true; credit: number }
     | { sold: true; offer: number };
@@ -408,9 +408,9 @@ function hasContents(object: GameObject): boolean {
     return !!(object.contents?.length);
 }
 
-// C sellobj() uses the shared ynaq confirmation with default yes.
+// C sellobj() asks with nyaq(): the shared ynaq confirmation, default no.
 function askSell(question: string, { query }: { query: SaleQuery }): SellAnswer | Promise<SellAnswer> {
-    return query(question);
+    return query(question, 'n');
 }
 
 // C safe_qbuf() reserves the offer and question before short_oname()
