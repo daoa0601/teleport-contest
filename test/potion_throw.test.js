@@ -42,6 +42,9 @@ async function freshMapPotionState(distance = 2, monsterOptions = {}) {
             ustuck: null,
         },
         context: { move: 0 },
+        // A real game starts with the verbose option on (optlist.h); the
+        // exact miss texts below name their visible targets.
+        flags: { verbose: true },
         moves: 60,
         objectInitializationSeed: 1n,
     });
