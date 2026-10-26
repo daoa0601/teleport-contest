@@ -220,22 +220,31 @@ export async function tty_select_menu(window, how, roleSelection = false) {
         else
             game._statusUpdatesDisabled = previousStatusDisabled;
     };
+    // C select_menu() keeps bot_disabled set through the whole windowport
+    // call, so the dismissal's docorner() leaves a covered status window
+    // damaged until the next moveloop bot() renders it in full.
     game._statusUpdatesDisabled = true;
     try {
-        return await tty_display_nhwindow(window, how);
-    }
-    finally {
         try {
-            // C select_menu() restores bot_disabled before the window is
-            // destroyed, so a corner menu's docorner() can run bot().
-            if (window.offx !== 0)
-                restoreStatusUpdates();
-            await tty_dismiss_nhwindow(window, roleSelection);
+            return await tty_display_nhwindow(window, how);
         }
         finally {
-            restoreStatusUpdates();
+            await tty_dismiss_nhwindow(window, roleSelection);
         }
     }
+    finally {
+        restoreStatusUpdates();
+    }
+}
+// C display_nhwindow() followed by destroy_nhwindow(): windows the core
+// shows this way (the quest pager, the unpaid-items list, the shop bill,
+// novel passages) are never wrapped in select_menu(), so bot_disabled
+// stays clear and their dismissal's docorner()/docrt() runs bot()
+// immediately, redrawing a wrecked status window at once.
+export async function tty_display_and_dismiss(window, how = PICK_NONE) {
+    const result = await tty_display_nhwindow(window, how);
+    await tty_dismiss_nhwindow(window);
+    return result;
 }
 export async function tty_dismiss_nhwindow(window, roleSelection = false) {
     window.cancelled = false;
@@ -248,6 +257,14 @@ export async function tty_dismiss_nhwindow(window, roleSelection = false) {
         else {
             await docrt();
             await flush_screen(1);
+            // docrt()'s cls wiped the status window and bot_disabled
+            // suppresses its redraw through the rest of the windowport
+            // call: the status stays blank until the next real bot().
+            if (game._statusUpdatesDisabled) {
+                const d = display();
+                if (d)
+                    d.statusVisible = false;
+            }
         }
     }
     else
@@ -268,19 +285,35 @@ async function eraseMenuCorner(window, roleSelection = false) {
         clearRect(left, 0, d.cols, bottom);
         return;
     }
-    if (!window.underlay)
-        return;
+    // docorner() cl_end()s every covered row from the menu's left edge and
+    // then repaints only the map rows from the glyph buffer. The message
+    // and status rows stay blank past that edge; nothing else redraws them.
+    const mapBottom = Math.min(bottom - 1, ROWNO);
     for (let row = 0; row < bottom; row++) {
-        for (let col = left; col < d.cols; col++) {
-            const cell = window.underlay[row]?.[col];
-            if (cell)
-                d.setCell(col, row, cell.ch, cell.color, cell.attr);
+        if (row >= 1 && row <= mapBottom)
+            continue;
+        clearRect(left, row, d.cols, row + 1);
+    }
+    const underlay = window.underlay;
+    if (underlay) {
+        for (let row = 1; row <= mapBottom; row++) {
+            for (let col = left; col < d.cols; col++) {
+                const cell = underlay[row]?.[col];
+                if (cell)
+                    d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            }
         }
     }
-    d.clearRow(0);
-    // docorner() redraws both status lines when the erased area reaches them.
-    if (bottom >= Math.min(d.rows - 2, ROWNO + 1))
+    if (bottom >= Math.min(d.rows - 2, ROWNO + 1)) {
+        // The erasure wrecked the status window: botlx forces the next
+        // bot() to redraw it in full. bot() itself is a no-op while status
+        // updates are disabled (select_menu() keeps them disabled through
+        // the dismissal), so the damaged rows stay visible until then.
+        game.context.botl = true;
+        if (game._statusUpdatesDisabled)
+            d.statusVisible = false;
         await bot();
+    }
 }
 export async function tty_destroy_nhwindow(window) {
     requireWindow(window);

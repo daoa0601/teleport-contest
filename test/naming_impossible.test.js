@@ -135,7 +135,9 @@ void test('dip reports a missing leash once before shortening its long name', as
     input.feed(`dip\n${leash.invlet}`);
     await rhack('#'.charCodeAt(0));
     const diagnostic = firstScreenIndex(screens, /leashed monster #4242 not found/);
-    const question = firstScreenIndex(screens, /Dip the leash into the fountain\?/);
+    // short_oname() truncates the 52-character object name to "a keepsa..."
+    // (8 characters plus "..."), which fits the 50-character dip limit.
+    const question = firstScreenIndex(screens, /Dip an uncursed leash named a keepsa\.\.\. into the fountain\?/);
     assert.ok(diagnostic < question, 'the repair finishes before the shortened dip question');
     assert.equal(leash.leashmon, 0);
     assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);

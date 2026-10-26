@@ -15,7 +15,7 @@ import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_st
 import { getLine, tty_yn_function } from './query.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { isWeldedPrimary } from './weapon_slots.js';
-import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import { showMultiSelectWindow } from './windows.js';
 export async function dropMultipleObjects() {
     if (!game.inventory.length) {
         await pline('You have nothing to drop.');
@@ -90,13 +90,11 @@ export async function dropMultipleObjects() {
     }
 }
 async function dropCategories() {
-    const underlay = snapshotMenuUnderlay();
-    try {
-        return await chooseObjectCategories('Drop what type of items?', game.inventory);
-    }
-    finally {
-        restoreMenuUnderlay(underlay);
-    }
+    // The multi-select window's own dismissal restores the screen: C's
+    // select_menu() runs the whole windowport call with bot_disabled, so
+    // docrt() leaves the status window blank until the next real bot().
+    // Restoring a pre-menu snapshot here would paint the old status back.
+    return await chooseObjectCategories('Drop what type of items?', game.inventory);
 }
 async function chooseDroppedObjects(objects) {
     if (!objects.length)
@@ -118,15 +116,11 @@ async function chooseDroppedObjects(objects) {
         }
         sections.push({ heading: objectClassHeading(oclass), items });
     }
-    const underlay = snapshotMenuUnderlay();
-    try {
-        return await showMultiSelectWindow({
-            title: 'What would you like to drop?', sections, returnCounts: true,
-        });
-    }
-    finally {
-        restoreMenuUnderlay(underlay);
-    }
+    // As in dropCategories(), the window's dismissal owns the screen state;
+    // a pre-menu snapshot would repaint rows C leaves cleared.
+    return await showMultiSelectWindow({
+        title: 'What would you like to drop?', sections, returnCounts: true,
+    });
 }
 async function dropAllMatching(matches) {
     let dropped = false;

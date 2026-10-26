@@ -11,7 +11,8 @@ import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED
     MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
 import type { GameDisplay } from './game_display.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu,
-    tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
+    tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss,
+    tty_destroy_nhwindow } from './tty_menu.js';
 import type { TextMenuLine, TtyMenuWindow } from './tty_menu.js';
 export type { TextMenuLine, MenuUnderlay } from './tty_menu.js';
 export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
@@ -308,7 +309,9 @@ async function pageDisclosureWindow(
  * `viaPutstr` marks windows C fills with putstr() instead of add_menu_str()
  * (the shop bill, the unpaid-items list, novel passages, the quest pager);
  * putstr() never passes through add_menu()'s menucoloring, so their lines
- * carry MENU_ITEMFLAGS_SKIPMENUCOLORS.
+ * carry MENU_ITEMFLAGS_SKIPMENUCOLORS. C shows these with display_nhwindow(),
+ * so dismissal can redraw the status immediately. The other callers use
+ * select_menu(), which disables status updates through dismissal.
  */
 export async function showTextMenuOverlay(lines: readonly TextMenuEntry[], {
     viaPutstr = false,
@@ -321,7 +324,10 @@ export async function showTextMenuOverlay(lines: readonly TextMenuEntry[], {
             ...(viaPutstr ? { itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS } : {}),
             ...(typeof line === 'string' ? { text: line } : line) });
         tty_end_menu(window);
-        return (await tty_select_menu(window, PICK_NONE)).key;
+        const result = viaPutstr
+            ? await tty_display_and_dismiss(window)
+            : await tty_select_menu(window, PICK_NONE);
+        return result.key;
     } finally {
         await tty_destroy_nhwindow(window);
     }
