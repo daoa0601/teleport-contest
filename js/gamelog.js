@@ -1,6 +1,8 @@
 // gamelog.js — Chronicle of source-owned in-game events.
 // C refs: livelog.c:livelog_printf(), insight.c:do_gamelog().
 import { game } from './gstate.js';
+// livelog_printf() appends to the in-game chronicle (gamelog_add()) with
+// the current turn; only the chronicle fields are needed from the state.
 export function recordGameLogEvent(text, { state = game, turn = state.moves || 1, } = {}) {
     if (!text)
         return null;

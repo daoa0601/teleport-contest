@@ -165,9 +165,10 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
     const newRank = experienceRankIndex(hero.ulevel);
     const newAchievement = newRank > experienceRankIndex(oldLevel)
         && recordAchievement(state, rankAchievement(newRank, !!state.flags.female));
-    if (!newAchievement) {
+    // a new rank achievement logs its own chronicle line (recordAchievement);
+    // log the simpler message when no achievement was just recorded
+    if (!newAchievement)
         recordGameLogEvent(`${hero.ulevel <= hero.ulevelpeak ? 're' : ''}gained experience level ${hero.ulevel}`, { state });
-    }
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);
     state.context.botl = true;
 }

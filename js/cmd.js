@@ -727,12 +727,58 @@ function canSeeRunMonster(monster, x, y, g = game) {
         && (!monster.minvis || !!g.u.seeInvisible)
         && !monster.mundetected;
 }
-function travelInterruptedByMonster(g = game) {
-    return !!g.level?.monsters?.some(monster => monsterHasMapPosition(monster, g)
-        && Math.abs(monster.mx - g.u.ux) <= 1
-        && Math.abs(monster.my - g.u.uy) <= 1
-        && (monster.mx !== g.u.ux || monster.my !== g.u.uy)
-        && !monster.pet && !monster.mpeaceful && cansee(monster.mx, monster.my));
+// C hack.c:lookaround() for travel (context.run == 8): moveloop runs it
+// before every automatic travel step.  Travel stops for a grid-bug
+// diagonal, a visible monster that is not peaceful-safe, a known trap
+// directly ahead of the previous step's direction, or liquid ahead that
+// the hero cannot safely cross.  Doors, objects, stairs, and the corridor
+// turning of run modes do not stop travel.
+async function travelLookaroundStops(g = game) {
+    const u = g.u;
+    const noDiagonal = MONSTER_NAME[u.umonnum ?? -1] === 'grid bug';
+    if (noDiagonal && u.dx && u.dy) {
+        await plineWithContinuation('You cannot move diagonally.');
+        return true;
+    }
+    if (heroIsBlind(g))
+        return false;
+    const confused = (u.confusionTurns ?? 0) > 0;
+    const stunned = !!(u.stunned || (u.stunnedTurns ?? 0) > 0);
+    const hallucinating = heroIsHallucinating(g);
+    for (const monster of g.level?.monsters ?? []) {
+        const { mx, my } = monster;
+        if (!monsterHasMapPosition(monster, g)
+            || mx < u.ux - 1 || mx > u.ux + 1
+            || my < u.uy - 1 || my > u.uy + 1
+            || (mx === u.ux && my === u.uy))
+            continue;
+        if (noDiagonal && mx !== u.ux && my !== u.uy)
+            continue;
+        if (M_AP_TYPE(monster) === M_AP_FURNITURE
+            || M_AP_TYPE(monster) === M_AP_OBJECT)
+            continue;
+        if (!canSeeRunMonster(monster, mx, my, g))
+            continue;
+        // display.h:_is_safemon(): a spotted peaceful monster while
+        // unconfused, unhallucinating, unstunned, and safe_dog is enabled
+        if ((g.flags.safe_dog ?? true) && monster.mpeaceful
+            && !confused && !hallucinating && !stunned)
+            continue;
+        if (g.flags.mention_walls)
+            await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
+        return true;
+    }
+    const frontX = u.ux + (u.dx ?? 0), frontY = u.uy + (u.dy ?? 0);
+    const trap = knownRunTrap(frontX, frontY, g);
+    if (trap) {
+        await announceRunTrap(trap, g);
+        return true;
+    }
+    if (runLiquidIsDangerous(frontX, frontY, g)) {
+        await announceRunLiquid(frontX, frontY, g);
+        return true;
+    }
+    return false;
 }
 function startTravel(targetX, targetY, g = game) {
     g._runState = {
@@ -934,7 +980,7 @@ export async function lookaroundRun(state = game._runState, g = game) {
 export async function continueRun(g = game) {
     const state = g._runState;
     if (state?.mode === 8) {
-        if (travelInterruptedByMonster(g)) {
+        if (await travelLookaroundStops(g)) {
             stopRun(g);
             g.context.move = 0;
             return false;

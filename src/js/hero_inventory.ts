@@ -108,6 +108,7 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
     const kind = levelPrizeKind(object, state);
     if (!prizes || !kind) return;
     const achievement = kind === 'mines' ? ACH_MINE_PRIZE : ACH_SOKO_PRIZE;
+    // the prize chronicle line is logged by recordAchievement()
     recordAchievement(state, achievement);
     if (kind === 'mines') prizes.mines_prize_oid = 0;
     else prizes.soko_prize_oid = 0;

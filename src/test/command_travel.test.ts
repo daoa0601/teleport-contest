@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { rhack } from '../js/cmd.js';
+import { continueRun, rhack } from '../js/cmd.js';
+import { LAVAPOOL } from '../js/const.js';
 import { CORR, GFILTER_AREA, LA_DOWN, PIT, STAIRS } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
@@ -193,4 +194,26 @@ void test('the travel menu prefix lists visible interesting destinations', async
         input.feed('\x1b');
         await action;
     }
+});
+
+// C hack.c:lookaround() with context.run==8: an automatic travel step stops
+// at the edge of liquid the hero cannot safely cross.
+void test('travel continuation stops at a lava edge before the next step', async () => {
+    const input = freshTurnRoom({ flags: { tips: false, mention_walls: true } });
+    const level = game.level;
+    assert.ok(level);
+    const lava = level.requireAt(12, 10);
+    lava.typ = LAVAPOOL;
+    lava.seenv = 1;
+
+    input.feed('_ll.');
+    await rhack(0);
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10], 'first travel step moves once');
+    await continueRun();
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.context.move, 0);
+    assert.equal(game.context.run, 0);
+    assert.equal(game._pending_message, 'You stop at the edge of the lava.');
 });

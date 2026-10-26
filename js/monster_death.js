@@ -34,8 +34,10 @@ import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { d, rnd, rnl, rn2 } from './rng.js';
 import { cansee, monsterEmitsLight } from './vision.js';
 import { objectWeight } from './weight.js';
+import { ACH_MEDU, recordAchievement } from './achievements.js';
 import { dismountHero } from './steed.js';
 import { wizardDeadOrGone } from './wizard.js';
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const PM_PAPER_GOLEM = 250;
 const PM_STRAW_GOLEM = MONSTER_NAME.indexOf('straw golem');
 const PM_ROPE_GOLEM = 251;
@@ -319,9 +321,13 @@ export async function detachDeadMonster(monster, state, random, publish, rollOne
         return false;
     const emittedLight = monsterEmitsLight(monster.mnum);
     restoreMonsterTrueSpecies(monster);
-    recordMonsterDeath(monster, state);
+    const diedCount = recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
     await returnDeadKop(monster, state, rollOne);
+    // mon.c:logdeadmon(): Medusa's first death is an achievement and logs
+    // its own chronicle line.
+    if (monster.mnum === PM_MEDUSA && diedCount === 1)
+        recordAchievement(state, ACH_MEDU);
     if (state === game)
         unmap_invisible(x, y, false);
     if (monster.mleashed)

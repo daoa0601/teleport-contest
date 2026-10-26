@@ -56,12 +56,15 @@ import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { d, rnd, rnl, rn2 } from './rng.js';
 import { cansee, monsterEmitsLight } from './vision.js';
 import { objectWeight } from './weight.js';
+import { ACH_MEDU, recordAchievement } from './achievements.js';
 import { dismountHero } from './steed.js';
 import { wizardDeadOrGone } from './wizard.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
+
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 
 export interface MonsterDeathOptions {
     deathMessage?: string | null;
@@ -443,9 +446,13 @@ export async function detachDeadMonster(
     if (monster.isgd && !await prepareVaultGuardDeath(monster, state)) return false;
     const emittedLight = monsterEmitsLight(monster.mnum);
     restoreMonsterTrueSpecies(monster);
-    recordMonsterDeath(monster, state);
+    const diedCount = recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
     await returnDeadKop(monster, state, rollOne);
+    // mon.c:logdeadmon(): Medusa's first death is an achievement and logs
+    // its own chronicle line.
+    if (monster.mnum === PM_MEDUSA && diedCount === 1)
+        recordAchievement(state, ACH_MEDU);
     if (state === game) unmap_invisible(x, y, false);
     if (monster.mleashed) releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true

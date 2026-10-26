@@ -1,62 +1,78 @@
 // achievements.js — Ordered, event-time achievement state.
 // C refs: include/you.h enum achievements; insight.c record_achievement(),
-// achieve_rank().
+// achieve_rank(), achieve_msg[]; do.c:goto_level() branch achievements;
+// botl.c:rank_to_xlev().
 //
 // Achievements are history, not a projection of the current dungeon cache.
 // Store their source identifiers in attainment order so disclosure remains
 // correct after a level has been left, a rank has been lost, or an actor has
-// disappeared.
+// disappeared.  A newly recorded achievement also appends its achieve_msg[]
+// line to the chronicle (livelog_printf() -> gamelog_add()) unless the game
+// is already over.
+import { ACH_BGRM, ACH_MINE_PRIZE, ACH_SOKO, ACH_SOKO_PRIZE } from './const.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { OBJECT_NAMES } from './object_data.js';
 export const ACH_HELL = 2;
 export const ACH_INVK = 5;
+export const ACH_MEDU = 12;
 export const ACH_MINE = 15;
 export const ACH_TOWN = 16;
 export const ACH_SHOP = 17;
 export const ACH_NOVL = 20;
 export const ACH_RNK1 = 23;
 export const ACH_RNK8 = 30;
-// insight.c achieve_msg[]: the livelog text of each newly recorded
-// achievement.  Blind-from-birth and nudist carry no entry, and the win
-// itself only reaches #chronicle through really_done()'s own log line.
-const ACHIEVEMENT_JOURNAL_TEXT = new Map([
-    [1, 'acquired the Bell of Opening'],
-    [2, 'entered Gehennom'],
-    [3, 'acquired the Candelabrum of Invocation'],
-    [4, 'acquired the Book of the Dead'],
-    [5, 'performed the invocation'],
-    [6, 'acquired The Amulet of Yendor'],
-    [7, 'entered the Elemental Planes'],
-    [8, 'entered the Astral Plane'],
-    [12, 'killed Medusa'],
-    [15, 'entered the Gnomish Mines'],
-    [16, 'reached Mine Town'],
-    [17, 'entered a shop'],
-    [18, 'entered a temple'],
-    [19, 'consulted the Oracle'],
-    [20, 'read a Discworld novel'],
-    [21, 'entered Sokoban'],
-    [22, 'entered the Bigroom'],
-    [31, "learned castle drawbridge's tune"],
-]);
-function achievementJournalText(achievement, state) {
-    const identity = Math.abs(achievement);
-    if (identity >= ACH_RNK1 && identity <= ACH_RNK8) {
-        const rank = state.urole?.title?.[identity - ACH_RNK1 + 1];
-        const title = (achievement < 0 ? rank?.f : rank?.m) || rank?.m || 'Adventurer';
-        return `attained the rank of ${title} (level ${state.u.ulevel})`;
-    }
-    if (identity === 10 || identity === 11) {
-        // The Mines' End and Sokoban prize messages append the discovered
-        // item; achieveo still holds its type at recording time.
-        const prizes = state.context?.achieveo;
-        const type = identity === 10 ? prizes?.mines_prize_otyp : prizes?.soko_prize_otyp;
-        const name = type === undefined ? null : OBJECT_NAMES[type];
-        if (!name)
+// insight.c:achieve_msg[] — one chronicle line per achievement.  The rank
+// entries are empty because their text is created on the fly, and the two
+// prize entries get their object name appended by recordAchievement().
+const ACHIEVEMENT_LOG_TEXT = [
+    '', // achievements are numbered from 1
+    'acquired the Bell of Opening',
+    'entered Gehennom',
+    'acquired the Candelabrum of Invocation',
+    'acquired the Book of the Dead',
+    'performed the invocation',
+    'acquired The Amulet of Yendor',
+    'entered the Elemental Planes',
+    'entered the Astral Plane',
+    'ascended',
+    "acquired the Mines' End", // + prize object name
+    'acquired the Sokoban', // + prize object name
+    'killed Medusa',
+    'hero was always blond, no, blind', // game is over when recorded
+    'hero never wore armor', // game is over when recorded
+    'entered the Gnomish Mines',
+    'reached Mine Town',
+    'entered a shop',
+    'entered a temple',
+    'consulted the Oracle',
+    'read a Discworld novel',
+    'entered Sokoban',
+    'entered the Bigroom',
+    '', '', '', '', '', '', '', '', // ranks: text created on the fly
+    "learned Castle drawbridge's tune",
+];
+// insight.c:record_achievement() message selection.
+function achievementLogText(achievement, state) {
+    const index = Math.abs(achievement);
+    if (index >= ACH_RNK1 && index <= ACH_RNK8) {
+        // rank_of(rank_to_xlev(...)): the title for the rank's lowest level;
+        // a negated achievement records that the hero was female.
+        const title = state.urole?.title?.[index - ACH_RNK1 + 1];
+        if (!title)
             return null;
-        return `acquired the ${identity === 10 ? "Mines' End" : 'Sokoban'} ${name}`;
+        const name = (achievement < 0 && title.f) || title.m;
+        return `attained the rank of ${name} (level ${state.u.ulevel})`;
     }
-    return ACHIEVEMENT_JOURNAL_TEXT.get(identity) ?? null;
+    if (index === ACH_SOKO_PRIZE || index === ACH_MINE_PRIZE) {
+        const prizes = state.context?.achieveo;
+        const otyp = index === ACH_SOKO_PRIZE
+            ? prizes?.soko_prize_otyp : prizes?.mines_prize_otyp;
+        const name = otyp === undefined ? null : OBJECT_NAMES[otyp];
+        if (!name)
+            throw new Error('A level prize needs its original object type');
+        return `${ACHIEVEMENT_LOG_TEXT[index]} ${name}`;
+    }
+    return ACHIEVEMENT_LOG_TEXT[index] || null;
 }
 export function recordAchievement(state, achievement) {
     if (!state?.u || !Number.isInteger(achievement) || !achievement)
@@ -67,10 +83,9 @@ export function recordAchievement(state, achievement) {
     if (state.u.uachieved.some(entry => Math.abs(entry) === identity))
         return false;
     state.u.uachieved.push(achievement);
-    // record_achievement() livelogs every new entry unless the game is over,
-    // when disclosure-time entries have nowhere left to be logged.
+    // livelog during final disclosure is suppressed by record_achievement()
     if (!state.program_state?.gameover) {
-        const text = achievementJournalText(achievement, state);
+        const text = achievementLogText(achievement, state);
         if (text)
             recordGameLogEvent(text, { state });
     }
@@ -86,14 +101,26 @@ export function achievementEntries(state) {
     return Array.isArray(state?.u?.uachieved)
         ? state.u.uachieved.filter(Number.isInteger) : [];
 }
-export function recordDungeonEntryAchievements(state, oldDepth, newDepth) {
+// do.c:goto_level(): Gehennom is logged before the branch chain; the branch
+// achievement (mines or sokoban) and the bigroom follow before the livelog
+// "entered <level>" line.  Callers own the endgame, quest, and Knox cases.
+export function recordDungeonEntryAchievements(state, oldDepth, newDepth, { newLevel = true } = {}) {
     const oldDungeon = state?.dungeons?.[oldDepth?.dnum ?? 0];
     const newDungeon = state?.dungeons?.[newDepth?.dnum ?? 0];
     if (!oldDungeon?.flags?.hellish && newDungeon?.flags?.hellish)
         recordAchievement(state, ACH_HELL);
-    if ((oldDepth?.dnum ?? 0) !== (newDepth?.dnum ?? 0)
-        && newDungeon?.dname === 'The Gnomish Mines') {
+    const newDungeonBranch = (oldDepth?.dnum ?? 0) !== (newDepth?.dnum ?? 0);
+    if (newDungeonBranch && newDungeon?.dname === 'The Gnomish Mines') {
         recordAchievement(state, ACH_MINE);
+    }
+    else if (newDungeonBranch && state?.sokoban_dnum === newDepth?.dnum) {
+        recordAchievement(state, ACH_SOKO);
+    }
+    else if (newLevel) {
+        const bigroom = state.specialLevels?.get('bigrm');
+        if (bigroom && bigroom.dnum === newDepth?.dnum
+            && bigroom.dlevel === newDepth?.dlevel)
+            recordAchievement(state, ACH_BGRM);
     }
 }
 //# sourceMappingURL=achievements.js.map
