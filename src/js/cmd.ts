@@ -6429,6 +6429,9 @@ async function applyTool(
         }
         const direction = await promptDirection();
         if (!direction) {
+            // use_whip() reports ECMD_CANCEL when getdir() is refused;
+            // rhack() clears both command queues for that cancellation.
+            resetCommandVariables(true);
             game.context.move = 0;
             return item;
         }
