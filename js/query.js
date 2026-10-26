@@ -52,6 +52,9 @@ async function editLine(prompt, accepts, { suppressStatus = false, inMenu = fals
             game.nhDisplay?.putstr(0, row, line.slice(row * width, (row + 1) * width), NO_COLOR);
         }
         game.nhDisplay?.setCursor(cursorColumn, cursorRow);
+        // show_topl() draws the prompt through addtopl(), ending
+        // TOPLINE_SPECIAL_PROMPT before any answer is typed.
+        game._promptOwnsTopline = false;
     };
     const finish = (result) => {
         clearMessageWindow(renderedRows);
@@ -81,10 +84,8 @@ async function editLine(prompt, accepts, { suppressStatus = false, inMenu = fals
     }
     clearSuppressedStatus();
     renderEditor();
-    // hooked_tty_getlin() marks the line TOPLINE_SPECIAL_PROMPT
-    // (getline.c:56), and the loop head keeps gt.toplines equal to the
-    // query and typed text.
-    game._promptOwnsTopline = true;
+    // hooked_tty_getlin()'s loop head keeps gt.toplines equal to the
+    // query and typed text; typing uses putsyms(), without word wrapping.
     game._toplines = `${prompt} ${value}`;
     let doprev = false;
     for (;;) {
@@ -163,10 +164,7 @@ async function editLine(prompt, accepts, { suppressStatus = false, inMenu = fals
             }
         }
         game._pending_message = `${prompt} ${value}`;
-        // The loop head rebuilds gt.toplines from the query and the text
-        // getline.c addtopl() clears TOPLINE_SPECIAL_PROMPT with each typed
-        // character, so a recall from a mid-edit prompt pages like any other.
-        game._promptOwnsTopline = false;
+        // The loop head rebuilds gt.toplines from the query and typed text.
         game._toplines = game._pending_message;
         clearSuppressedStatus();
         renderEditor();

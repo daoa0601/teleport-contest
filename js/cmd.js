@@ -4920,14 +4920,13 @@ async function editExtendedCommand() {
     let completion = null;
     const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
     // custompline(SUPPRESS_HISTORY) files the line before the prompt, then
-    // the loop head makes the "# " line the current topline (getline.c:81),
-    // and hooked_tty_getlin() marks it TOPLINE_SPECIAL_PROMPT (getline.c:56).
+    // the loop head makes the "# " line the current topline. show_topl()'s
+    // addtopl() ends TOPLINE_SPECIAL_PROMPT as soon as it draws the prompt.
     await setTopline(`${initiator} `);
     game._toplines = `${initiator} `;
     game._pending_message = initiator;
     await flush_screen(1);
     game.nhDisplay?.setCursor(initiator.length + 1, 0);
-    game._promptOwnsTopline = true;
     const redrawCommand = async () => {
         const displayedCommand = completion || command;
         game._toplines = command ? `${initiator} ${displayedCommand}` : `${initiator} `;
@@ -4959,8 +4958,8 @@ async function editExtendedCommand() {
         if (key === 16) {
             // C win/tty/getline.c hooked_tty_getlin(): the "#" editor
             // browses history with ^P like any getlin, with inread clear
-            // so full/combination modes page their windows. A prompt owns
-            // the line, so a wrapped recall never pages.
+            // so full/combination modes page their windows. A wrapped
+            // editor line pages on its first recall too.
             const mode = messageWindowMode();
             if (mode === 's' || (mode === 'c' && !doprev)) {
                 if (!doprev)

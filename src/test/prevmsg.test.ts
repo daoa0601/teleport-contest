@@ -19,7 +19,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
-import { promptChoice } from '../js/query.js';
+import { getLine, promptChoice } from '../js/query.js';
 import { readDirectionKey } from '../js/tty_prompts.js';
 
 function rowText(row: number): string {
@@ -107,6 +107,27 @@ void test('msg_window:full lists the ring oldest-first with the pending line las
     await recall;
     assert.doesNotMatch(rowText(0), /Message History/,
         'destroy_nhwindow() erases the recall window');
+});
+
+void test('the first recall from an untouched long line prompt pages its text', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    await pline('Before the question.');
+    await markSeen(input);
+    const editor = getLine('What do you want to call the distant chamber beyond the old stone door at the end of this passage?', () => true);
+    try {
+        await input.waitUntilBlocked();
+        input.feed(16);
+        await input.waitUntilBlocked();
+        assert.match(rowText(0), /^What do you want to call the distant chamber/);
+        assert.match(rowText(1), /--More--/,
+            'show_topl() leaves the prompt ready for normal recall paging');
+    } finally {
+        input.feed(' \x1b\x1b');
+        await editor;
+    }
 });
 
 void test('msg_window:reversed leads with the pending line and runs newest-first', async () => {
@@ -629,7 +650,7 @@ void test('the adjust destination records the answer after the prompt space', as
         'yn_function() builds its prompt as "%s " before the answer');
 });
 
-void test('a repainted long line prompt pages on its next first recall', async () => {
+void test('a long extended-command line pages on its first recall', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
     game.flags.extmenu = false;
@@ -642,22 +663,15 @@ void test('a repainted long line prompt pages on its next first recall', async (
     await input.waitUntilBlocked();
     input.feed('w'.repeat(90));
     await input.waitUntilBlocked();
-    input.feed(16); // browse: the prompt-owned line draws without a pager
-    await input.waitUntilBlocked();
-    assert.doesNotMatch(rowText(1), /--More--/,
-        'the first recall after the prompt itself never pages');
-    input.feed('w'); // an ordinary key repaints the longer line
-    await input.waitUntilBlocked();
     input.feed(16);
-    await input.waitUntilBlocked();
-    assert.ok([rowText(1), rowText(2)].some(text => text.includes('--More--')),
-        'addtopl() left TOPLINE_NEED_MORE, so this recall pages (topl.c:139)');
-    input.feed(' ');
-    await input.waitUntilBlocked();
-    input.feed('\x1b');
-    await input.waitUntilBlocked();
-    input.feed('\x1b');
-    await editor;
+    try {
+        await input.waitUntilBlocked();
+        assert.ok([rowText(1), rowText(2)].some(text => text.includes('--More--')),
+            'the prompt redraw already ended TOPLINE_SPECIAL_PROMPT');
+    } finally {
+        input.feed(' \x1b\x1b');
+        await editor;
+    }
 });
 
 void test('^P in the extended-command editor drops the auto-completed suffix', async () => {
