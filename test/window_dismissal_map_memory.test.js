@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { M_AP_FURNITURE, M_AP_TYPE, MM_ANGRY, NO_MINVENT, DOOR, D_NODOOR } from '../js/const.js';
-import { flush_screen, newsym } from '../js/display.js';
+import { flush_screen, map_background, newsym } from '../js/display.js';
 import { deleteEngraving, makeEngravingAt } from '../js/engrave.js';
 import { recordGameLogEvent } from '../js/gamelog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { prepareMapPositionHighlights } from '../js/getpos.js';
 import { resetInputState } from '../js/input.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -59,6 +60,50 @@ void test('a corner-menu dismissal rests the cursor on its last cleared row', as
     assert.equal(display.cursorCol, 30);
     assert.equal(display.cursorRow, 7);
 });
+void test('a corner-menu dismissal rests the cursor past the glyphs it reprints', async () => {
+    // row_refresh() reprints the mapped floor right of the menu edge on its
+    // final row, so print_glyph() leaves the cursor just past that floor.
+    freshObjectRoom({ right: 50 });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    input.feed('name\r');
+    input.beforeRead = () => input.feed('\u001b');
+    await rhack('#'.charCodeAt(0));
+    const display = game.nhDisplay;
+    assert.ok(display);
+    assert.equal(display.cursorCol, 50);
+    assert.equal(display.cursorRow, 7);
+});
+void test('a corner-menu dismissal advances past mapped stone drawn as a blank', async () => {
+    freshObjectRoom({ right: 50 });
+    requirePlayingGame(game);
+    map_background(51, 6);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(50, 7).ch, ' ');
+    const input = resetInputState();
+    input.feed('name\r');
+    input.beforeRead = () => input.feed('\u001b');
+    await rhack('#'.charCodeAt(0));
+    const display = game.nhDisplay;
+    assert.ok(display);
+    assert.equal(display.cursorCol, 51, 'reprinting explored stone advances the cursor too');
+    assert.equal(display.cursorRow, 7);
+});
+for (const color of [true, false]) {
+    void test(`a corner-menu dismissal advances past a framed unexplored square with color ${color ? 'on' : 'off'}`, async () => {
+        freshObjectRoom({ flags: { color } });
+        requirePlayingGame(game);
+        prepareMapPositionHighlights((x, y) => x === 60 && y === 6);
+        const input = resetInputState();
+        input.feed('name\r');
+        input.beforeRead = () => input.feed('\u001b');
+        await rhack('#'.charCodeAt(0));
+        const display = game.nhDisplay;
+        assert.ok(display);
+        assert.equal(display.cursorCol, 60, 'row_refresh reprints framed squares even if unexplored');
+        assert.equal(display.cursorRow, 7);
+    });
+}
 void test('running into a disguised door mimic reveals it and takes the turn', async () => {
     const level = freshObjectRoom();
     const doorway = level.requireAt(9, 9);
