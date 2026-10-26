@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameDisplay } from '../../js/gstate.js';
 // InputGate uses this reader only after consuming the caller's queued keys.
 // The observer in beforeRead remains responsible for recording every read.
-export function installPagerInput(input, { expected, limit }) {
+export function installPagerInput(input, { expected, limit, pages }) {
     let acknowledgements = 0;
     let followsDeathSummary = false;
     input.display = {
@@ -10,6 +10,7 @@ export function installPagerInput(input, { expected, limit }) {
             const display = requireGameDisplay(game);
             const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
             const topRow = display.grid[0];
+            pages?.push(screen);
             assert.ok(topRow, 'The message pager needs its display row.');
             // tty retains answered questions in toplines even after a text
             // window replaces them. Validate the currently visible page.

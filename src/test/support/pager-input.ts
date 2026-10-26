@@ -5,11 +5,13 @@ import type { InputGate } from '../../js/input.js';
 interface PagerInputOptions {
     expected: RegExp;
     limit: number;
+    /** Collects every pager page as it waits for input. */
+    pages?: string[];
 }
 
 // InputGate uses this reader only after consuming the caller's queued keys.
 // The observer in beforeRead remains responsible for recording every read.
-export function installPagerInput(input: InputGate, { expected, limit }: PagerInputOptions): void {
+export function installPagerInput(input: InputGate, { expected, limit, pages }: PagerInputOptions): void {
     let acknowledgements = 0;
     let followsDeathSummary = false;
     input.display = {
@@ -17,6 +19,7 @@ export function installPagerInput(input: InputGate, { expected, limit }: PagerIn
             const display = requireGameDisplay(game);
             const screen = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
             const topRow = display.grid[0];
+            pages?.push(screen);
             assert.ok(topRow, 'The message pager needs its display row.');
             // tty retains answered questions in toplines even after a text
             // window replaces them. Validate the currently visible page.

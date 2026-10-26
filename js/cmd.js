@@ -276,7 +276,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, } fr
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { doborn, doquit, finishHeroDeath, listGenocided, listVanquished, } from './end.js';
 import { applyHeroContactPassive, } from './monster_passive.js';
-import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
+import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
 import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
@@ -2864,8 +2864,9 @@ async function doname() {
     }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);
-    if (queuedChoice === undefined)
-        await restoreCommandMap();
+    // C docallcmd() erases the category menu via its own dismissal
+    // (erase_menu_or_text() -> docorner for a corner menu, docrt() for a
+    // full-width one); no extra full redraw runs afterwards.
     // C refs: do_name.c:docallcmd()/do_oname() and
     // dungeon.c:donamelevel()/query_annotation().  The menu owns only the
     // category choice; level annotations live with mapseen, while an
@@ -2880,9 +2881,10 @@ async function doname() {
         await renameDiscoveredType();
     }
     else if (choice === 'a') {
+        // donamelevel() is a getlin() prompt on the message row; it redraws
+        // nothing, so no full-screen refresh follows it either.
         await queryLevelAnnotation();
         game._pending_message = '';
-        await restoreCommandMap();
     }
     else if (choice === 'i') {
         // C do_name.c:name_ok() marks unseen, artifact and novel objects as
@@ -4788,6 +4790,11 @@ async function doChronicle() {
     // show_gamelog() putstr()s one formatted line at a time, so the tty
     // text window's compress_str() and wrap apply per event line.
     await showTextWindow(lines);
+    // show_gamelog() destroys a full-screen NHW_TEXT window; its tty
+    // dismissal runs erase_menu_or_text()'s docrt() and re-draws status.
+    await docrt();
+    await bot();
+    await flush_screen(1);
     game._pending_message = '';
     game.context.move = 0;
 }
@@ -5411,14 +5418,6 @@ async function offerFarlookInformation(description, withoutAsking) {
             await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });
     }
 }
-async function restoreHelpMap() {
-    game._pending_message = '';
-    game._retained_message = '';
-    game.nhDisplay?.clearScreen();
-    await docrt();
-    await bot();
-    await flush_screen(1);
-}
 // C pager.c:do_look(0).  The initial menu is a true PICK_ONE overlay; choosing
 // the map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction above.
@@ -5448,7 +5447,6 @@ async function dowhatis() {
             sections: [{ items }],
         });
         choice = result[0] ?? '';
-        await restoreHelpMap();
     }
     if (choice === 'y')
         choice = '/';
@@ -5539,7 +5537,6 @@ async function dohelp() {
         title: 'Select one item:',
         entries,
     });
-    await restoreHelpMap();
     const choice = String.fromCharCode(key);
     if (choice === 'a')
         await doextversion();
@@ -7738,7 +7735,11 @@ async function domoveCore(dx, dy) {
         // that case must reach attack_checks() and install the invisible
         // marker instead.
         if (game.context.run && !safeMonster
-            && canSpotMonster(monster)) {
+            && ((!heroIsBlind(game) && monsterVisible(monster, game)
+                && ((M_AP_TYPE(monster) !== M_AP_FURNITURE
+                    && M_AP_TYPE(monster) !== M_AP_OBJECT)
+                    || heroHasProtectionFromShapeChangers(game)))
+                || canSenseMonster(monster))) {
             stopRun(game);
             return false;
         }
