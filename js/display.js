@@ -3261,7 +3261,11 @@ export function toplineRows(message, columns, { splitWords = true } = {}) {
 // C tty topl.c:show_topl(), used for SUPPRESS_HISTORY prose such as getpos
 // autodescribe: addtopl() wraps at the last column without update_topl()'s
 // word splitting, and its extra rows never ask for --More--.
-export function showUnrememberedTopline(message) {
+export function showUnrememberedTopline(message, { flushPending = false } = {}) {
+    // C tty_putstr(ATR_NOHISTORY) first moves whatever is pending on the
+    // top line into the recall history, then shows the unremembered text.
+    if (flushPending)
+        rememberToplines();
     const display = game.nhDisplay;
     if (!display?.grid)
         return;

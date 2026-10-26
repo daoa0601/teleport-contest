@@ -18,7 +18,7 @@ import {
     map_invisible, plineWithContinuation,
 } from './display.js';
 import { explode } from './explosion.js';
-import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { game, requireLiveGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -90,11 +90,11 @@ async function chooseSpellCenter(state: PlayingGameState) {
     prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
+    await showGetposInstructions(state);
     if (firstUse) await plineWithContinuation('Move cursor to the desired position:');
     const selected = await selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
-        prompt: firstUse ? 'Move cursor to the desired position:'
-            : state.flags.verbose ? `${question}  (For instructions type a '?')` : question,
+        prompt: state._pending_message,
         goal: 'the desired position',
         describe: farlookLocationDescription,
         isValidLocation: valid,

@@ -215,7 +215,7 @@ export function isGetposPickCharacter(ch) {
 }
 // getpos() flushes the existing glyph buffer. Recalculating sight here would
 // discover warnings or erase unseen-monster memory in the middle of a turn.
-export async function paintGetposCursor(cursor, message, markedSpots = null) {
+export async function paintGetposCursor(cursor, message, markedSpots = null, { flushPending = false } = {}) {
     if (message !== null)
         game._pending_message = message;
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the
@@ -234,7 +234,7 @@ export async function paintGetposCursor(cursor, message, markedSpots = null) {
     // redisplay stays unpainted.
     await flush_screen(1);
     if (message)
-        showUnrememberedTopline(message);
+        showUnrememberedTopline(message, { flushPending });
     game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
     return markers;
 }
@@ -359,7 +359,7 @@ export async function autoDescribePosition(x, y) {
     game._retained_message = description;
     game._cursorOverride = [x - 1, y + 1];
     await flush_screen(0);
-    showUnrememberedTopline(description);
+    showUnrememberedTopline(description, { flushPending: true });
     game.nhDisplay?.setCursor(x - 1, y + 1);
 }
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
@@ -600,12 +600,16 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             // pline() owns notices and goals, including their pager cleanup.
             // Cursor redraws only supply new text for the initial prompt or autodescribe.
             let message = firstPaint ? prompt : null;
+            // auto_describe() reports through a suppressed-history putstr,
+            // which first moves the pending top line into ^P recall.
+            let messageFlushesPending = false;
             if (showGoal) {
                 await pline(movePrompt);
                 showGoal = false;
             }
             else if (!firstPaint && autoDescription() && !clearMessageOnExit) {
                 message = await describeSelectedPosition(describe, cursor, isValidLocation);
+                messageFlushesPending = message !== null;
             }
             // The symbol callback runs only when entering that state. Cursor
             // movement keeps its temporary glyphs until a toggle or refresh.
@@ -613,7 +617,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 ? validMapSquares(isValidLocation).filter(({ x, y }) => cansee(x, y)
                     && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
-            const painted = await paintGetposCursor(cursor, message, paintedSpots);
+            const painted = await paintGetposCursor(cursor, message, paintedSpots, { flushPending: messageFlushesPending });
             if (painted)
                 marking = painted;
             if (firstPaint && initialMapCursor)

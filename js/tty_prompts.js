@@ -1,9 +1,9 @@
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
+import { selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
-import { selectMapPosition } from './getpos.js';
 import { readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -155,9 +155,15 @@ export async function promptDirection(readKey = readDirectionKey, { ctrlCommandH
 async function promptClickDirection() {
     const bindings = game.commandBindings;
     const goal = `desired location, then type '${visibleCommandKey(bindings.specialKey('getpos.pick.quick') ?? 0)}' for left click, '${visibleCommandKey(bindings.specialKey('getpos.pick') ?? 0)}' for right`;
+    const firstUse = shouldShowGetposTip();
+    if (firstUse)
+        await showGetposTip();
+    await showGetposInstructions();
+    if (firstUse)
+        await pline(`Move cursor to ${goal}:`);
     const selected = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
-        prompt: `Move cursor to ${goal}:`, goal,
+        prompt: game._pending_message || game._retained_message, goal,
     });
     const hero = game.u;
     if (!selected) {

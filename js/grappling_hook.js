@@ -6,7 +6,7 @@ import { wipeHeroEngraving } from './engrave.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import { prepareMapPositionHighlights, shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
+import { prepareMapPositionHighlights, shouldShowGetposTip, showGetposInstructions, showGetposTip, selectMapPosition, } from './getpos.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
@@ -52,17 +52,14 @@ async function chooseTarget(hook, describeTarget, state) {
         && squaredDistanceFromHero(x, y, state) <= range;
     prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
-    if (firstUse) {
+    if (firstUse)
         await showGetposTip(state);
-        await pline('Move cursor to the desired position:');
-    }
+    await showGetposInstructions(state);
+    if (firstUse)
+        await pline('Move cursor to the spot to hit:');
     return selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
-        prompt: firstUse
-            ? 'Move cursor to the desired position:'
-            : state.flags?.verbose === false
-                ? 'Where do you want to hit?'
-                : "Where do you want to hit?  (For instructions type a '?')",
+        prompt: state._pending_message,
         goal: 'the spot to hit',
         describe: describeTarget,
         isValidLocation: valid,
