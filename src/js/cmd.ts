@@ -7620,14 +7620,26 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             return true;
         }
     }
+    const confused = (u?.confusionTurns || 0) > 0;
+    const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
+    let newx: number;
+    let newy: number;
+    if (swallowerYielded) {
+        // C's swallowed branch owns its own prologue (hack.c:2733-2760):
+        // air_turbulence(), slippery_ice_fumbling(), impaired_movement(),
+        // water_turbulence(), the bounds/trap checks and
+        // escape_from_sticky_mon() all live in the non-swallowed else
+        // branch, so the yielded hero goes straight to the shared
+        // fight/test_move tail on the swallower's square.
+        newx = u.ux;
+        newy = u.uy;
+    } else {
     if (await airTurbulenceStopsHero()) return true;
     checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
     // impairment, confdir(TRUE) chooses cardinals first and retries only an
     // out-of-bounds square or rock this body cannot traverse.
-    const confused = (u?.confusionTurns || 0) > 0;
-    const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
     if (stunned || (confused && rn2(5) === 0)) {
         let found = false;
         for (let tries = 0; tries <= 50; tries++) {
@@ -7660,8 +7672,8 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         game._runState.dx = dx;
         game._runState.dy = dy;
     }
-    const newx = u.ux + dx;
-    const newy = u.uy + dy;
+    newx = u.ux + dx;
+    newy = u.uy + dy;
 
     if (!isok(newx, newy)) return moveOutOfBounds(newx, newy);
     if (game.context.run) {
@@ -7678,6 +7690,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         }
     }
     if (await escapeFromStickyMonster(newx, newy)) return true;
+    }
     const loc = game.level?.at(newx, newy);
 
     // C domove_core() resolves a destination monster before test_move()

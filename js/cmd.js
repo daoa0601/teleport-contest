@@ -7634,70 +7634,84 @@ async function domoveCore(dx, dy) {
             return true;
         }
     }
-    if (await airTurbulenceStopsHero())
-        return true;
-    checkSlipperyIce();
-    // C hack.c:impaired_movement() always checks Confusion before deriving
-    // the destination.  A nonzero rn2(5) keeps the requested direction; on
-    // impairment, confdir(TRUE) chooses cardinals first and retries only an
-    // out-of-bounds square or rock this body cannot traverse.
     const confused = (u?.confusionTurns || 0) > 0;
     const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
-    if (stunned || (confused && rn2(5) === 0)) {
-        let found = false;
-        for (let tries = 0; tries <= 50; tries++) {
-            confusePromptDirection(u, true);
-            dx = u.dx ?? 0;
-            dy = u.dy ?? 0;
-            const x = u.ux + dx, y = u.uy + dy;
-            if (!isok(x, y) || heroBadRock(game, x, y))
-                continue;
-            found = true;
-            break;
-        }
-        if (!found) {
-            endVoluntaryMultiTurn(game);
-            // Native nomul(0) ends repetition without clearing context.move.
+    let newx;
+    let newy;
+    if (swallowerYielded) {
+        // C's swallowed branch owns its own prologue (hack.c:2733-2760):
+        // air_turbulence(), slippery_ice_fumbling(), impaired_movement(),
+        // water_turbulence(), the bounds/trap checks and
+        // escape_from_sticky_mon() all live in the non-swallowed else
+        // branch, so the yielded hero goes straight to the shared
+        // fight/test_move tail on the swallower's square.
+        newx = u.ux;
+        newy = u.uy;
+    }
+    else {
+        if (await airTurbulenceStopsHero())
             return true;
-        }
-    }
-    // confdir() updates the same persistent vector selected by set_move_cmd().
-    u.dx = dx;
-    u.dy = dy;
-    if (await waterTurbulenceStopsHero())
-        return true;
-    dx = u.dx;
-    dy = u.dy;
-    // C stores direction in u.dx/u.dy, so confdir() permanently changes the
-    // pending Shift-direction run as well as this one destination.  The next
-    // automatic step must retain that impaired direction; it may immediately
-    // terminate against terrain which the originally requested line avoided.
-    if (game._runState && game._runState.mode !== 8) {
-        game._runState.dx = dx;
-        game._runState.dy = dy;
-    }
-    const newx = u.ux + dx;
-    const newy = u.uy + dy;
-    if (!isok(newx, newy))
-        return moveOutOfBounds(newx, newy);
-    if (game.context.run) {
-        const trap = knownRunTrap(newx, newy, game);
-        const liquid = heroIsBlind(game) && runLiquidIsDangerous(newx, newy, game);
-        if (trap || liquid) {
-            const stopBeforeStep = game.context.run >= 2;
-            if (stopBeforeStep) {
-                if (trap)
-                    await announceRunTrap(trap, game);
-                else
-                    await announceRunLiquid(newx, newy, game);
+        checkSlipperyIce();
+        // C hack.c:impaired_movement() always checks Confusion before deriving
+        // the destination.  A nonzero rn2(5) keeps the requested direction; on
+        // impairment, confdir(TRUE) chooses cardinals first and retries only an
+        // out-of-bounds square or rock this body cannot traverse.
+        if (stunned || (confused && rn2(5) === 0)) {
+            let found = false;
+            for (let tries = 0; tries <= 50; tries++) {
+                confusePromptDirection(u, true);
+                dx = u.dx ?? 0;
+                dy = u.dy ?? 0;
+                const x = u.ux + dx, y = u.uy + dy;
+                if (!isok(x, y) || heroBadRock(game, x, y))
+                    continue;
+                found = true;
+                break;
             }
-            endVoluntaryMultiTurn(game);
-            if (stopBeforeStep)
-                return false;
+            if (!found) {
+                endVoluntaryMultiTurn(game);
+                // Native nomul(0) ends repetition without clearing context.move.
+                return true;
+            }
         }
+        // confdir() updates the same persistent vector selected by set_move_cmd().
+        u.dx = dx;
+        u.dy = dy;
+        if (await waterTurbulenceStopsHero())
+            return true;
+        dx = u.dx;
+        dy = u.dy;
+        // C stores direction in u.dx/u.dy, so confdir() permanently changes the
+        // pending Shift-direction run as well as this one destination.  The next
+        // automatic step must retain that impaired direction; it may immediately
+        // terminate against terrain which the originally requested line avoided.
+        if (game._runState && game._runState.mode !== 8) {
+            game._runState.dx = dx;
+            game._runState.dy = dy;
+        }
+        newx = u.ux + dx;
+        newy = u.uy + dy;
+        if (!isok(newx, newy))
+            return moveOutOfBounds(newx, newy);
+        if (game.context.run) {
+            const trap = knownRunTrap(newx, newy, game);
+            const liquid = heroIsBlind(game) && runLiquidIsDangerous(newx, newy, game);
+            if (trap || liquid) {
+                const stopBeforeStep = game.context.run >= 2;
+                if (stopBeforeStep) {
+                    if (trap)
+                        await announceRunTrap(trap, game);
+                    else
+                        await announceRunLiquid(newx, newy, game);
+                }
+                endVoluntaryMultiTurn(game);
+                if (stopBeforeStep)
+                    return false;
+            }
+        }
+        if (await escapeFromStickyMonster(newx, newy))
+            return true;
     }
-    if (await escapeFromStickyMonster(newx, newy))
-        return true;
     const loc = game.level?.at(newx, newy);
     // C domove_core() resolves a destination monster before test_move()
     // applies terrain restrictions.  In particular, the hero can attack
