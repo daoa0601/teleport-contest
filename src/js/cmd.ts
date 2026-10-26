@@ -1139,8 +1139,12 @@ export async function continueRun(g: GameState = game): Promise<boolean> {
         g.context.move = moved ? 1 : 0;
         if (g.u.ux === state.targetX && g.u.uy === state.targetY)
             g._travelTarget = null;
-        if (!moved || (g.u.ux === state.targetX && g.u.uy === state.targetY))
-            stopRun(g);
+        // Reaching the destination ends the run inside selectTravelStep()
+        // with nomul(0), after which C's findtravelpath() leaves
+        // context.run at 8; the time field only refreshes once the run
+        // flag is gone, so the turn that pays for the final step must not
+        // mark it dirty either.
+        if (!moved) stopRun(g);
         return moved;
     }
     if (!state || !await lookaroundRun(state, g)) {

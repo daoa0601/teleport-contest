@@ -11,7 +11,7 @@ import { farlookLocationDescription } from './cmd.js';
 import { nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
 import { bot, newsym, redrawMap, plineWithContinuation } from './display.js';
-import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, MapLocation } from './map_types.js';
@@ -206,12 +206,11 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
     prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip();
     if (firstUse) await showGetposTip();
+    await showGetposInstructions(state);
     if (firstUse) await plineWithContinuation('Move cursor to the desired position:');
     const target = await selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy }, goal: 'the desired position',
-        prompt: firstUse ? 'Move cursor to the desired position:'
-            : state.flags.verbose ? "Where do you want to jump?  (For instructions type a '?')"
-                : 'Where do you want to jump?',
+        prompt: state._pending_message,
         isValidLocation: valid,
         highlightHero: false,
         describe: farlookLocationDescription,

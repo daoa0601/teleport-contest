@@ -11,7 +11,7 @@ import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
-import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
+import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { ensureHeroSkills } from './skills.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -155,15 +155,12 @@ async function chooseTarget(start, describeTarget, state, min, max) {
     const firstUse = shouldShowGetposTip(state);
     if (firstUse)
         await showGetposTip(state);
+    await showGetposInstructions(state);
     if (firstUse)
-        await pline('Move cursor to the desired position:');
+        await pline('Move cursor to the spot to hit:');
     return selectMapPosition({
         start,
-        prompt: firstUse
-            ? 'Move cursor to the desired position:'
-            : state.flags?.verbose === false
-                ? 'Where do you want to hit?'
-                : "Where do you want to hit?  (For instructions type a '?')",
+        prompt: state._pending_message,
         goal: 'the spot to hit',
         ...(describeTarget ? { describe: describeTarget } : {}),
         isValidLocation: valid,
