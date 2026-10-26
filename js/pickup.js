@@ -29,7 +29,7 @@ import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { LOADSTONE, GOLD_PIECE, CORPSE, SCR_SCARE_MONSTER, } from './object_data.js';
-import { stopRun } from './runmode.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { exerciseAttribute } from './attrib.js';
@@ -133,9 +133,10 @@ export async function autopickupAtHero() {
         }
         // pickup.c: pickup() stops only a real run (context.run != 8) when
         // stepping onto objects, and not at all for a no-pickup move.
+        // nomul(0) also requests the status refresh for the lifting message.
         if (objects.length && (game.context.run ?? 0) > 0
-            && game._runState?.mode !== 8 && !game.context.nopick)
-            stopRun();
+            && game.context.run !== 8 && !game.context.nopick)
+            endVoluntaryMultiTurn();
     }
     const eligible = [];
     for (const object of objects) {
@@ -517,9 +518,9 @@ async function checkHere(source, pickedSome) {
         await readFloorEngraving(x, y);
         return { died: false };
     }
-    // pickup.c:check_here() only interrupts a real run (context.run).
+    // check_here() uses nomul(0), including its pending status refresh.
     if ((game.context.run ?? 0) > 0)
-        stopRun();
+        endVoluntaryMultiTurn();
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);
