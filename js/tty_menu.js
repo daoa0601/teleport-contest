@@ -312,6 +312,9 @@ async function eraseMenuCorner(window, roleSelection = false) {
             }
         }
     }
+    // docorner() runs tty_curs(BASE, xmin, y) for each cleared row; once the
+    // loop finishes, the terminal cursor rests at that final row's start.
+    d.setCursor(left, bottom - 1);
     if (bottom >= Math.min(d.rows - 2, ROWNO + 1)) {
         // The erasure wrecked the status window: botlx forces the next
         // bot() to redraw it in full. bot() itself is a no-op while status
