@@ -1144,7 +1144,15 @@ export async function continueRun(g: GameState = game): Promise<boolean> {
         const arrived = g.u.ux === state.targetX && g.u.uy === state.targetY;
         if (arrived) g._travelTarget = null;
         if (!moved) stopRun(g);
-        else if (arrived) arriveTravel(g);
+        // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the
+        // adjacent shortcut and the backward-search arrival) keep C's
+        // lingering run at 8.  A step that entered the target without
+        // one of those -- the general-direction fallback, whose C twin
+        // (hack.c:1481-1488) skips nomul(0) -- ends on the next pass at
+        // found: (hack.c:1518-1522), where nomul(0) leaves run 0 with
+        // the time repaint pending.
+        else if (arrived && !g._runState) arriveTravel(g);
+        else if (arrived) stopRun(g);
         // Pathfinding can end travel without entering the target. Keep
         // C's restored run value and let screen flushes own time updates.
         else if (!g._runState && g.context.run === 8) arriveTravel(g);
@@ -5189,7 +5197,12 @@ async function dotravelTarget(): Promise<void> {
     const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
     if (arrived) game._travelTarget = null;
     if (!moved) stopRun();
-    else if (arrived) arriveTravel(game);
+    // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the adjacent
+    // shortcut and the backward-search arrival) keep C's lingering run at
+    // 8.  A step that entered the target without one of those ends at C's
+    // found: label instead: nomul(0) leaves run 0 with the repaint pending.
+    else if (arrived && !game._runState) arriveTravel(game);
+    else if (arrived) stopRun();
     // Pathfinding can end travel without entering the target. Keep
     // C's restored run value and let screen flushes own time updates.
     else if (!game._runState && game.context.run === 8) arriveTravel(game);

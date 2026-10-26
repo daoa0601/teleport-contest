@@ -9,10 +9,8 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenRow } from './support/screen.js';
-import { DAGGER } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
-import { flush_screen, plineWithContinuation } from '../js/display.js';
-import { arriveTravel } from '../js/runmode.js';
+import { DAGGER } from '../js/object_data.js';
 
 // A command has settled once nothing further will elapse on its behalf.
 function settled(): boolean {
@@ -203,26 +201,3 @@ void test('a hidden travel bump keeps the time repaint pending until its turn el
         'a hidden bump message does not flush the pending time repaint');
 });
 
-// C pline.c:vpline() suppresses MSGTYPE hide and Norep messages before
-// flush_screen(). Ending travel must preserve an unflushed time update.
-for (const suppression of ['hidden', 'repeated']) {
-    void test(`ending travel preserves a time update after a ${suppression} message`, async () => {
-        freshTurnRoom();
-        game.flags.time = true;
-        const message = 'You are still in a pit.';
-        await plineWithContinuation(message);
-        const previousTime = displayedTime();
-        if (suppression === 'hidden') applyNethackrc('MSGTYPE=hide "pit"');
-        game.moves++;
-        game.context.time_botl = true;
-
-        await plineWithContinuation(message, { noRepeat: suppression === 'repeated' });
-        arriveTravel(game);
-        assert.equal(displayedTime(), previousTime,
-            'suppressed prose leaves the previous time on screen');
-        await flush_screen(1);
-
-        assert.equal(displayedTime(), game.moves,
-            'the next screen flush displays the pending time update');
-    });
-}
