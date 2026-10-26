@@ -276,7 +276,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, } fr
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { doborn, doquit, finishHeroDeath, listGenocided, listVanquished, } from './end.js';
 import { applyHeroContactPassive, } from './monster_passive.js';
-import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
+import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
 import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
 import { useFigurine } from './figurine_apply.js';
@@ -7735,7 +7735,11 @@ async function domoveCore(dx, dy) {
         // that case must reach attack_checks() and install the invisible
         // marker instead.
         if (game.context.run && !safeMonster
-            && canSpotMonster(monster)) {
+            && ((!heroIsBlind(game) && monsterVisible(monster, game)
+                && ((M_AP_TYPE(monster) !== M_AP_FURNITURE
+                    && M_AP_TYPE(monster) !== M_AP_OBJECT)
+                    || heroHasProtectionFromShapeChangers(game)))
+                || canSenseMonster(monster))) {
             stopRun(game);
             return false;
         }

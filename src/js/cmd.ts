@@ -437,7 +437,8 @@ import {
     applyHeroContactPassive,
 } from './monster_passive.js';
 import {
-    heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall,
+    heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroHasProtectionFromShapeChangers,
+    heroIsPolymorphed, heroIsVerySmall,
     heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm,
 } from './polyself.js';
 import {
@@ -7715,7 +7716,11 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         // that case must reach attack_checks() and install the invisible
         // marker instead.
         if (game.context.run && !safeMonster
-            && canSpotMonster(monster)) {
+            && ((!heroIsBlind(game) && monsterVisible(monster, game)
+                && ((M_AP_TYPE(monster) !== M_AP_FURNITURE
+                    && M_AP_TYPE(monster) !== M_AP_OBJECT)
+                    || heroHasProtectionFromShapeChangers(game)))
+                || canSenseMonster(monster))) {
             stopRun(game);
             return false;
         }
