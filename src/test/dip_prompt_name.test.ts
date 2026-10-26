@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { W_ARMC, W_ARMG } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLOAK_OF_MAGIC_RESISTANCE, LEATHER_GLOVES, POT_OIL } from '../js/object_data.js';
+import { CLOAK_OF_MAGIC_RESISTANCE, LEATHER_GLOVES, POT_EXTRA_HEALING, POT_OIL } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
@@ -88,4 +88,29 @@ void test('the dip-into prompt spells out the worn target with its enchantment',
     input.feed('\x1b');
     await dipping;
     assert.equal(game.context.move, 0);
+});
+
+// C shares odiluted with oeroded (obj.h "#define odiluted oeroded"), so
+// short_oname()'s attribute strip clears it: a recorder run that names two
+// mixed (diluted) extra healings "abcdefghijklmnop" asks to dip "2 potions
+// of extra healing named abcdefghijklmnop", never "diluted" ones.
+void test('a long-named diluted potion loses its diluted adjective when shortened', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    const diluted = await addInventoryObject(POT_EXTRA_HEALING, {
+        quan: 2, odiluted: true, bknown: false,
+        oextra: { oname: 'abcdefghijklmnop' },
+    });
+    const dippee = await addInventoryObject(POT_OIL);
+    const input = resetInputState();
+    input.feed('dip\n');
+    const dipping = rhack('#'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed(diluted.invlet);
+    await input.waitUntilBlocked();
+    assert.equal(screenRow(0),
+        'What do you want to dip 2 potions of extra healing named abcdefghijklmnop into?');
+    assert.equal(screenRow(1), ` [${diluted.invlet}${dippee.invlet} or ?*]`);
+
+    input.feed('\x1b');
+    await dipping;
 });
