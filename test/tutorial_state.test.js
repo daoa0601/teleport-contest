@@ -76,6 +76,50 @@ void test('tutorial entry acknowledges the starting engraving before accepting a
     }
     assert.fail('Tutorial entry did not read its starting engraving');
 });
+void test('the tutorial entry pager leaves the displayed map unchanged', async () => {
+    const engine = await runSegment({
+        seed: 719,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Learner,role:Ranger,race:elf,gender:female,align:chaotic,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    const snapshot = () => {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        return display.grid.map(row => row.map(cell => ({ ch: cell.ch, color: cell.color })));
+    };
+    let beforeMenu = null;
+    let previous = snapshot();
+    let entry = null;
+    for (let phase = 0; phase < 10 && !entry; phase++) {
+        const current = snapshot();
+        const screen = current.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (screen.includes('Entering the tutorial.')) {
+            entry = current;
+            break;
+        }
+        if (screen.includes('Do you want a tutorial?'))
+            beforeMenu = previous;
+        previous = current;
+        engine.inputGate.feed(screen.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.ok(entry, 'startup must reach the tutorial entry message');
+    assert.ok(beforeMenu, 'startup must show the pre-menu welcome screen');
+    const welcomeRows = beforeMenu.map(row => row.map(cell => cell.ch).join(''));
+    assert.ok(welcomeRows.slice(2).some(row => row.includes('@')), 'the start room with the hero must be on screen before the tutorial menu');
+    // Rows 2..23 hold the map and status lines in both snapshots.
+    for (const [row, entryRow] of entry.entries()) {
+        if (row < 2)
+            continue;
+        const beforeRow = beforeMenu[row];
+        if (!beforeRow)
+            continue;
+        for (const [col, cell] of entryRow.entries()) {
+            assert.deepEqual(cell, beforeRow[col], `screen row ${row} col ${col} changed across the tutorial entry pager`);
+        }
+    }
+});
 void test('entering the tutorial stores equipment and returning restores the same items', async (t) => {
     freshObjectRoom();
     requirePlayingGame(game);

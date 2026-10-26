@@ -647,6 +647,16 @@ async function enterTutorial() {
     initOverviewRecord(game.u.uz, game);
     game.billObjects = [];
     await mklev();
+    // C goto_level() neutralizes the transition's vision state right after
+    // mklev(): the vision_reset() there is followed by
+    // gv.vision_full_recalc = 0, "don't let that reenable vision yet"
+    // (do.c:1718-1719), so no message flush during the arrival can run a
+    // vision recalc before docrt() rebuilds sight on the destination.  The
+    // hand-rolled transition needs the same hold: the entry pager below
+    // reprojects the source level, and a pending recalc would repaint it
+    // through the tutorial level's freshly reset blocker table, exposing
+    // source cells the hero cannot see.
+    game.vision_full_recalc = 0;
     // goto_level() arrives through u_on_rndspot(), even when Lua restricts
     // the region to a single square.
     await placeHeroAtRandomArrival(game.level.downTeleportRegion);

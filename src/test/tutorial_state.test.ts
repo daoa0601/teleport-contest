@@ -25,6 +25,8 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
 
+import type { TerminalCell } from '../js/terminal.js';
+
 void test('tutorial entry retains the old armor class until its entry message is acknowledged', async () => {
     const engine = await runSegment({
         seed: 719,
@@ -81,6 +83,56 @@ void test('tutorial entry acknowledges the starting engraving before accepting a
         await engine.runUntilInputNeeded();
     }
     assert.fail('Tutorial entry did not read its starting engraving');
+});
+
+void test('the tutorial entry pager leaves the displayed map unchanged', async () => {
+    const engine = await runSegment({
+        seed: 719,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Learner,role:Ranger,race:elf,gender:female,align:chaotic,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    // C goto_level() holds the source level's display across the whole
+    // arrival: map flushes are postponed from just after mklev() until the
+    // destination's docrt() (do.c:1718-1720, 1845-1846), so between the
+    // welcome pager and the "Entering the tutorial." pager only the
+    // message rows may change.
+    type ScreenSnapshot = { ch: string; color: TerminalCell['color'] }[][];
+    const snapshot = (): ScreenSnapshot => {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        return display.grid.map(row => row.map(cell => ({ ch: cell.ch, color: cell.color })));
+    };
+    let beforeMenu: ScreenSnapshot | null = null;
+    let previous = snapshot();
+    let entry: ScreenSnapshot | null = null;
+    for (let phase = 0; phase < 10 && !entry; phase++) {
+        const current = snapshot();
+        const screen = current.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (screen.includes('Entering the tutorial.')) {
+            entry = current;
+            break;
+        }
+        if (screen.includes('Do you want a tutorial?')) beforeMenu = previous;
+        previous = current;
+        engine.inputGate.feed(screen.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.ok(entry, 'startup must reach the tutorial entry message');
+    assert.ok(beforeMenu, 'startup must show the pre-menu welcome screen');
+    const welcomeRows = beforeMenu.map(row => row.map(cell => cell.ch).join(''));
+    assert.ok(welcomeRows.slice(2).some(row => row.includes('@')),
+        'the start room with the hero must be on screen before the tutorial menu');
+    // Rows 2..23 hold the map and status lines in both snapshots.
+    for (const [row, entryRow] of entry.entries()) {
+        if (row < 2) continue;
+        const beforeRow: ScreenSnapshot[number] | undefined = beforeMenu[row];
+        if (!beforeRow) continue;
+        for (const [col, cell] of entryRow.entries()) {
+            assert.deepEqual(cell, beforeRow[col],
+                `screen row ${row} col ${col} changed across the tutorial entry pager`);
+        }
+    }
 });
 
 void test('entering the tutorial stores equipment and returning restores the same items', async t => {
