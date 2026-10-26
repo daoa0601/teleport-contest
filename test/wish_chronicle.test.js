@@ -19,6 +19,18 @@ void test('a first wish records a chronicle entry with the wish and its grant', 
     assert.ok(wishEntry, `chronicle lacks a first-wish entry: ${JSON.stringify(entries)}`);
     assert.match(wishEntry, /^made (his|her) first wish - "food ration", got "a food ration"$/);
 });
+// zap.c:makewish() mungspaces() the typed line before livelogging it, so
+// stray and repeated spaces never reach the chronicle text.
+void test('the chronicle wish text collapses stray spaces', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    requirePlayingGame(game);
+    pushKeys('  food \t ration  \r');
+    await makeWish();
+    const entries = gameLogEvents(game).map(entry => entry.text);
+    const wishEntry = entries.find(line => line.includes('first wish'));
+    assert.ok(wishEntry, `chronicle lacks a first-wish entry: ${JSON.stringify(entries)}`);
+    assert.match(wishEntry, /^made (his|her) first wish - "food ration", got "a food ration"$/);
+});
 void test('declining a wish with nothing records the refusal', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);

@@ -365,7 +365,8 @@ export async function getposHelpUntilDismissed(
 // C getpos.c:auto_describe(): the cursor is described with pager.c
 // do_screen_description() — unreconnoitered pre-checks, symbol matching,
 // and look_at() detail — regardless of which command asked for the spot.
-// Detection browsing is the one caller that still overrides the text.
+// Every caller shares this description; detection browsing only sets
+// iflags.terrainmode beforehand, like detect.c:browse_map().
 async function describeSelectedPosition(
     describe: PositionDescription | null | undefined,
     cursor: Position,

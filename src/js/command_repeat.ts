@@ -46,6 +46,6 @@ export function rememberYnAnswerKey(key: number): void {
     game._repeatCommands.push({ kind: 'key', key });
 }
 
- export function takeRepeatCommand(): RepeatCommandEntry | undefined {
+export function takeRepeatCommand(): RepeatCommandEntry | undefined {
     return game._inDoAgain ? game._repeatCommands?.shift() : undefined;
 }

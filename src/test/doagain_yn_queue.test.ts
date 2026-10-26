@@ -24,8 +24,15 @@ void test('a question answered during do-again feeds the next question', async (
         assert.equal(await first, 'n');
 
         const second = promptChoice('Second question?', ['y', 'n'] as const, 'n');
-        // The queued answer must satisfy this question without new input; if
-        // the record was dropped the prompt blocks and this test times out.
+        // If the record was dropped, the prompt blocks for input; the input
+        // layer's block signal is the deterministic witness for that state.
+        const outcome = await Promise.race([
+            second.then(() => 'answered' as const),
+            input.waitUntilBlocked().then(() => 'blocked' as const),
+        ]);
+        if (outcome === 'blocked') input.feed('n');
+        assert.equal(outcome, 'answered',
+            'The recorded answer must satisfy the next question without new input');
         assert.equal(await second, 'n');
     } finally {
         game._inDoAgain = false;

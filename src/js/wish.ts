@@ -89,6 +89,9 @@ export async function makeWish(): Promise<void> {
             `For what do you wish${assistance}?`,
             (_ch, key) => key >= 32 && key < 127,
         );
+        // zap.c:makewish() mungspaces() the typed line before comparing it,
+        // parsing it, recording it in the history, and livelogging it.
+        value = mungWishSpaces(value ?? '');
         if ((value ?? '').trim().toLowerCase() === 'help') {
             await showWishHelp(5 - failedAttempts);
             continue;
@@ -140,6 +143,12 @@ export async function makeWish(): Promise<void> {
     if (held.heroDied) return;
     game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
     game.context.move = 0;
+}
+
+// C hacklib.c:mungspaces() over one getlin line: tabs become spaces, runs
+// collapse, and leading/trailing spaces vanish.
+function mungWishSpaces(text: string): string {
+    return text.replace(/\t/g, ' ').replace(/ +/g, ' ').trim();
 }
 
 // C zap.c:wish_history_add()/wish_history_menu(). History belongs to the
