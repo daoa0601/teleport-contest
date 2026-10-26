@@ -25,7 +25,7 @@ function diagnosticDateTime(state) {
 }
 // Web Storage retains semantic records. Native's Unix uid and paniclog header
 // are not available in a browser; do not fabricate a native header.
-function paniclog(type, reason, state) {
+export function paniclog(type, reason, state = game) {
     if (state.program_state.in_paniclog)
         return;
     state.program_state.in_paniclog = true;

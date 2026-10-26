@@ -31,10 +31,10 @@ import { treatDippedObject } from './potion_item_dip.js';
 
 export async function dip({
     fountain,
-}: { fountain: (object: DipTarget, location: MapLocation) => Promise<void> }): Promise<void> {
+}: { fountain: (object: DipTarget, location: MapLocation) => Promise<void> }): Promise<'cancelled' | void> {
     requirePlayingGame(game);
     const object = await chooseDipTarget('dip');
-    if (!object) { game.context.move = 0; return; }
+    if (!object) { game.context.move = 0; return 'cancelled'; }
     if (object !== 'hands' && await reportCoveredEquipment(object)) { game.context.move = 0; return; }
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     let declinedSource = false;
@@ -75,7 +75,7 @@ export async function dip({
     const potion = await chooseInventoryObject(`dip ${target} into`, potionClassification, {
         hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE,
     });
-    if (!potion) { game.context.move = 0; return; }
+    if (!potion) { game.context.move = 0; return 'cancelled'; }
     game.context.move = Number(await finishDip(object, potion));
 }
 

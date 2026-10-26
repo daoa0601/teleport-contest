@@ -15,7 +15,7 @@ void test('calling known holy water names its type without its blessing', async 
     await addInventoryObject(POT_WATER, { invlet: 'a', blessed: true });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('oa');
+    queueCommandKeys('#oa');
     planInput(input, t, [{ prompt: /Call a potion of water:/, keys: '  Clear   Drink  \r' }]);
 
     await rhack('#'.charCodeAt(0));
@@ -29,7 +29,7 @@ void test('an empty type-name answer keeps the existing call name', async () => 
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();
     input.feed('name\r\r');
-    queueCommandKeys('oa');
+    queueCommandKeys('#oa');
 
     await rhack('#'.charCodeAt(0));
 
@@ -41,7 +41,7 @@ void test('type calling keeps printable high bytes and limits the normalized nam
     await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });
     const input = resetInputState();
     input.feed(`name\r  \u00a0Café   ${'r'.repeat(68)}\r`);
-    queueCommandKeys('oa');
+    queueCommandKeys('#oa');
 
     await rhack('#'.charCodeAt(0));
 
@@ -55,7 +55,7 @@ void test('erasing a call name keeps the unidentified ring in encountered discov
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('oa');
+    queueCommandKeys('#oa');
     planInput(input, t, [
         { prompt: /Call a ring called Defense:/, keys: '   \r' },
         { prompt: /\n  ring \([a-z ]+\) *\n[\s\S]*--More--/, keys: ' ' },

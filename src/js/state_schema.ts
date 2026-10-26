@@ -113,6 +113,7 @@ const transientFields = {
     _cannedCommands: true,
     _cleaveClockwise: true,
     _cursorOverride: true,
+    _clicklookTarget: true,
     _commandCount: true,
     _commandKey: true,
     _repeatCommands: true,

@@ -60,6 +60,8 @@ export class CommandBindings {
     phoneLayout: boolean;
     restOnSpace: boolean;
     menuAliases: { key: number; command: string }[];
+    private readonly mouseButtons = new Map<number, NativeCommand | null>();
+    private savedMouseButtons: readonly [NativeCommand | null, NativeCommand | null] = [null, null];
 
     constructor() {
         this.bindings = [];
@@ -75,6 +77,8 @@ export class CommandBindings {
         this.phoneLayout = false;
         this.restOnSpace = false;
         this.menuAliases = [];
+        this.bindMouseButton(1, 'therecmdmenu');
+        this.bindMouseButton(2, 'clicklook');
         for (const command of NATIVE_COMMANDS) {
             if (command.name !== null && command.key) this.add(command.key, command);
         }
@@ -85,6 +89,35 @@ export class CommandBindings {
 
     lookup(key: number): KeyBinding | null {
         return this.bindings.find(binding => binding.key === key) ?? null;
+    }
+
+    mouseCommand(button: 1 | 2): NativeCommand | null {
+        return this.mouseButtons.get(button) ?? null;
+    }
+
+    // C lock_mouse_buttons(): getpos saves both bindings and clears them
+    // until selection ends, including while its help and menus are open.
+    lockMouseButtons(saveButtons: boolean): void {
+        if (saveButtons) {
+            this.savedMouseButtons = [this.mouseCommand(1), this.mouseCommand(2)];
+            this.mouseButtons.set(1, null);
+            this.mouseButtons.set(2, null);
+        } else {
+            this.mouseButtons.set(1, this.savedMouseButtons[0]);
+            this.mouseButtons.set(2, this.savedMouseButtons[1]);
+        }
+    }
+
+    bindMouseButton(button: 1 | 2, name: string): boolean {
+        if (name.toLowerCase() === 'nothing') {
+            this.mouseButtons.set(button, null);
+            return true;
+        }
+        const command = NATIVE_COMMANDS.find(entry => entry.name?.toLowerCase() === name.toLowerCase()
+            && entry.flags & NATIVE_COMMAND_FLAGS.MOUSECMD);
+        if (!command) return false;
+        this.mouseButtons.set(button, command);
+        return true;
     }
 
     bindSpecialKey(key: number, name: string): boolean {

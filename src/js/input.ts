@@ -6,6 +6,22 @@ import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import type { TerminalReadKeyOptions } from './terminal.js';
+import type { Position } from './map_types.js';
+import { isok } from './const.js';
+
+export interface CommandDirection {
+    readonly dx: number;
+    readonly dy: number;
+    readonly dz: number;
+}
+export type CommandResponse = number | 'user-input' | CommandDirection;
+export interface MapClick extends Position { button: 1 | 2 }
+const MAP_CLICK_KEY = 256;
+
+interface CharacterInput {
+    readonly key: number;
+    readonly click: MapClick | null;
+}
 
 export type KeyInput = string | number;
 type InputState = 'other' | 'command' | 'direction' | 'position';
@@ -26,9 +42,10 @@ function keyCode(key: KeyInput): number {
 export class InputGate {
     beforeRead: (() => void | Promise<void>) | null;
     display: KeyReader | null;
-    private readonly queue: number[];
-    private readonly commandKeys: number[];
-    private pendingRead: ((code: number) => void) | null;
+    private readonly queue: (number | MapClick)[];
+    private readonly commandKeys: CommandResponse[];
+    private pendingRead: ((input: number | MapClick) => void) | null;
+    private mapClick: MapClick | null = null;
     private blockedWaiters: (() => void)[];
     private fuzzerCommandIndex = 0;
     private lastFuzzerCommand = 0;
@@ -52,44 +69,90 @@ export class InputGate {
         // The pinned Unix tty retains ICRNL for external keyboard input.
         // Generated fuzzer bytes bypass this source conversion.
         if (code === 13) code = 10;
+        this.feedInput(code);
+    }
+
+    feedMapClick(x: number, y: number, button: 1 | 2): void {
+        if (!Number.isInteger(x) || !Number.isInteger(y) || !isok(x, y) || button !== 1 && button !== 2)
+            throw new RangeError('A map click must be within the dungeon map');
+        this.feedInput({ x, y, button });
+    }
+
+    takeMapClick(): MapClick | null {
+        const click = this.mapClick;
+        this.mapClick = null;
+        return click;
+    }
+
+    private feedInput(input: number | MapClick): void {
         if (!this.pendingRead) {
-            this.queue.push(code);
+            this.queue.push(input);
             return;
         }
         const resolve = this.pendingRead;
         this.pendingRead = null;
-        resolve(code);
+        resolve(input);
     }
 
     queueCommandKeys(keys: string): void {
         this.commandKeys.push(...[...keys].map(keyCode));
     }
 
+    queueCommandResponses(responses: readonly CommandResponse[]): void {
+        this.commandKeys.push(...responses);
+    }
+
     clearCommandKeys(): void {
         this.commandKeys.length = 0;
     }
 
-    takeCommandKey(): number | undefined {
+    takeCommandResponse(): CommandResponse | undefined {
         return this.commandKeys.shift();
+    }
+
+    takeCommandKey(): number | undefined {
+        const response = this.takeCommandResponse();
+        if (response === undefined || response === 'user-input') return undefined;
+        if (typeof response === 'number') return response;
+        this.clearCommandKeys();
+        return 27;
+    }
+
+    takeCommandPosition(): Position | null | undefined {
+        const response = this.takeCommandResponse();
+        if (response === undefined) return undefined;
+        // C getpos() accepts only a horizontal CMDQ_DIR, relative to the
+        // hero's position when the target is requested.
+        if (typeof response === 'object' && response.dz === 0)
+            return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
+        this.clearCommandKeys();
+        return null;
     }
 
     async readKey(inputState: InputState = 'other'): Promise<number> {
         // tty input belongs to the player. Command owners consume canned
         // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
+        this.mapClick = null;
         if (game.iflags.debug_fuzzer) return this.randomKey(inputState);
         const queued = this.queue.shift();
-        if (queued !== undefined) return queued;
+        if (queued !== undefined) return this.inputKey(queued);
         if (this.display) {
             const code = await this.display.readKey({ bindings: KEY_BINDINGS.VI_KEYS });
             return code === 13 ? 10 : code;
         }
 
-        const key = new Promise<number>(resolve => {
+        const key = new Promise<number | MapClick>(resolve => {
             this.pendingRead = resolve;
         });
         this.notifyBlocked();
-        return key;
+        return this.inputKey(await key);
+    }
+
+    private inputKey(input: number | MapClick): number {
+        if (typeof input === 'number') return input;
+        this.mapClick = input;
+        return MAP_CLICK_KEY;
     }
 
     // C cmd.c:randomkey(). The table index and repeat key survive prompts.
@@ -134,6 +197,7 @@ export class InputGate {
     clear() {
         this.queue.length = 0;
         this.commandKeys.length = 0;
+        this.mapClick = null;
     }
 
     get isBlocked() {
@@ -161,6 +225,18 @@ export function queueCommandKeys(keys: string): void {
     activeInputGate.queueCommandKeys(keys);
 }
 
+export function queueCommandResponses(responses: readonly CommandResponse[]): void {
+    activeInputGate.queueCommandResponses(responses);
+}
+
+export function takeCommandPosition(): Position | null | undefined {
+    return activeInputGate.takeCommandPosition();
+}
+
+export function takeCommandResponse(): CommandResponse | undefined {
+    return activeInputGate.takeCommandResponse();
+}
+
 export function clearCommandKeys(): void {
     activeInputGate.clearCommandKeys();
 }
@@ -185,12 +261,35 @@ export async function nhgetch(inputState: InputState = 'other') {
     return key === 0 ? 27 : key;
 }
 
+export async function readchar(inputState: InputState = 'other'): Promise<number> {
+    return (await readcharCore(inputState)).key;
+}
+
+// C readchar_poskey(): only position selection receives the click coordinates.
+// All readchar callers receive the same NUL character for a click.
+export function readcharPoskey(): Promise<CharacterInput> {
+    return readcharCore('position');
+}
+
 // C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
 // direction, and position input. Ordinary prompts keep a literal Escape.
-export async function readchar(inputState: InputState = 'other') {
+async function readcharCore(inputState: InputState): Promise<CharacterInput> {
     // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
-    if (game.iflags.debug_fuzzer) return activeInputGate.readKey(inputState);
+    if (game.iflags.debug_fuzzer)
+        return { key: await activeInputGate.readKey(inputState), click: null };
     let key = await nhgetch(inputState);
+    if (key === MAP_CLICK_KEY) {
+        // C readchar_core(): clicks record their location even when getpos
+        // has temporarily cleared the mouse-button command bindings.
+        const click = activeInputGate.takeMapClick();
+        game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
+        const command = click ? game.commandBindings.mouseCommand(click.button) : null;
+        if (command?.name) {
+            game._cannedCommands ??= [];
+            game._cannedCommands.push({ kind: 'command', name: command.name });
+        }
+        return { key: 0, click };
+    }
     if (key === -1) {
         key = 27;
     } else if (key === 27 && game.iflags?.altmeta && inputState !== 'other') {
@@ -198,7 +297,7 @@ export async function readchar(inputState: InputState = 'other') {
         const next = nativeChar(await nhgetch(inputState));
         key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
     }
-    return nativeChar(key);
+    return { key: nativeChar(key), click: null };
 }
 
 function nativeChar(key: number): number {

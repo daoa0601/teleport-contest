@@ -13,15 +13,17 @@ import { monsterAtPosition } from './monster_location.js';
 import { distantMonsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
+import { takeCommandPosition } from './input.js';
 export async function nameChosenMonster() {
     requirePlayingGame(game);
     if (heroIsHallucinating(game)) {
         await pline('You would never recognize it anyway.');
         return;
     }
+    const queued = game._inDoAgain ? undefined : takeCommandPosition();
     const goal = 'the monster you want to name';
-    const tip = await showGetposTip();
-    if (game.flags.verbose) {
+    const tip = queued === undefined && await showGetposTip();
+    if (queued === undefined && game.flags.verbose) {
         const helpKey = game.commandBindings.specialKey('getpos.help');
         if (helpKey === undefined)
             throw new Error('Monster naming requires a getpos.help binding');
@@ -29,11 +31,11 @@ export async function nameChosenMonster() {
     }
     if (tip)
         await pline(`Move cursor to ${goal}:`);
-    const selected = await selectMapPosition({
+    const selected = queued === undefined ? await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
         describe: describeGetposLocation,
         prompt: game._pending_message,
-    });
+    }) : queued;
     if (!selected)
         return;
     let monster;

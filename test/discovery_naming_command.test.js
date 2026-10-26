@@ -17,7 +17,7 @@ void test('discovery naming can replace a previously assigned type name', async 
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('d');
+    queueCommandKeys('#d');
     planInput(input, t, [
         { prompt: /Pick an object type to name/, keys: 'a' },
         { prompt: /Call a ring called Defense:/, keys: 'Ward\r' },
@@ -36,7 +36,7 @@ for (const { outcome, blindTurns, discovery } of [
         recordObjectKnowledge(RIN_PROTECTION);
         const input = resetInputState();
         input.feed('name\r');
-        queueCommandKeys('d');
+        queueCommandKeys('#d');
         planInput(input, t, [
             { prompt: /Pick an object type to name/, keys: 'a' },
             { prompt: /Call a ring of protection:/, keys: '\x1b' },

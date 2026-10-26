@@ -30,7 +30,7 @@ import { clearSplitObjects } from './object_stack.js';
 import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
+import { clearCannedCommands, endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
 import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
@@ -899,7 +899,7 @@ async function rollHeroTeleportitis() {
         return;
     if (!heroNextToLeashedFollowers())
         await checkHeroLeashes(from.x, from.y);
-    game._cannedCommands = [];
+    clearCannedCommands();
     clearRepeatCommand();
 }
 // C apply.c:next_to_u().

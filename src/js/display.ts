@@ -3367,6 +3367,8 @@ export async function showMessageMenu(
 export async function pageTopline(
     message: string, { urgent = false, dismissKey }: ToplinePagingOptions = {},
 ): Promise<number> {
+    // C tty more() returns before painting or reading during fuzzer mode.
+    if (game.iflags.debug_fuzzer) return 0;
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
     const lines = toplineRows(message, columns);

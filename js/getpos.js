@@ -3,7 +3,7 @@
 import { COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
 import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, showUnrememberedTopline, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
-import { readchar } from './input.js';
+import { readcharPoskey, takeCommandPosition } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
@@ -350,6 +350,18 @@ export async function describeGetposLocation(x, y) {
     return screen.needsDetail
         ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
 }
+// C getpos.c:auto_describe(), also used by cmd.c:doclicklook().
+export async function autoDescribePosition(x, y) {
+    const description = await describeSelectedPosition(null, { x, y }, null);
+    if (!description)
+        return;
+    game._pending_message = '';
+    game._retained_message = description;
+    game._cursorOverride = [x - 1, y + 1];
+    await flush_screen(0);
+    showUnrememberedTopline(description);
+    game.nhDisplay?.setCursor(x - 1, y + 1);
+}
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
 function validMapSquares(isValidLocation) {
@@ -525,6 +537,9 @@ export async function selectTravelMenuPosition(describe) {
     }
 }
 export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, highlightHero = true, force = true, }) {
+    const queued = game._inDoAgain ? undefined : takeCommandPosition();
+    if (queued !== undefined)
+        return queued ? { ...queued, pickType: LOOK_TRADITIONAL } : null;
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
@@ -574,6 +589,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         }
         return validity.cycle;
     };
+    const commandBindings = game.commandBindings;
+    commandBindings.lockMouseButtons(true);
     try {
         if (isValidLocation)
             setMapPositionHighlights(isValidLocation, hilite.state === 'background');
@@ -607,7 +624,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             const queued = takeRepeatCommand();
             if (queued && queued.kind !== 'key')
                 return null;
-            let key = queued ? queued.key : (await readchar('position')) & 255;
+            let read = queued ? { key: queued.key, click: null } : await readcharPoskey();
+            let key = read.key & 255;
             if (!queued && game.iflags.remember_getpos)
                 rememberCommandKey(key);
             if (autoDescription())
@@ -619,8 +637,15 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
-                key = (await readchar('position')) & 255;
+                read = await readcharPoskey();
+                key = read.key & 255;
                 fast = true;
+            }
+            if (key === 0) {
+                // Native repeat stores the click's NUL key without its
+                // coordinates; getpos initializes those to the hero square.
+                const target = read.click ?? { x: game.u.ux, y: game.u.uy };
+                return { x: target.x, y: target.y, pickType: LOOK_TRADITIONAL };
             }
             const ch = String.fromCharCode(key);
             const pickType = mapPositionPickType(key);
@@ -798,6 +823,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         }
     }
     finally {
+        commandBindings.lockMouseButtons(false);
         if (clearMessageOnExit)
             clearMessageWindow();
         const hero = game.u;

@@ -6,7 +6,7 @@ import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
 import { clearCommandKeys, readchar, takeCommandKey } from './input.js';
-import { promptKey } from './tty_prompts.js';
+import { yn_function } from './query.js';
 import { rn2 } from './rng.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, } from './const.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
@@ -72,7 +72,7 @@ export async function getobj(word, classify, { forcePrompt = false, allowCount =
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
     const buf = handsSuggested ? letters ? `- ${letters}` : '-' : letters;
-    const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}] `;
+    const prompt = `What do you want to ${word}? [${buf ? `${buf} or ?*` : '*'}]`;
     const selection = await chooseGetobjLetter(word, prompt, classify, {
         allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed,
     });
@@ -233,7 +233,7 @@ async function chooseGetobjLetter(word, prompt, classify, { allowCount, allowNon
         }
         // C tty_yn_function() marks an answered prompt as already read.
         // A one-line query stays painted through a silent action. Wrapped
-        // queries have already been erased by promptKey()'s tty cleanup.
+        // queries have already been erased by tty_yn_function()'s cleanup.
         if (answered)
             game._pending_message = '';
         const letter = String.fromCharCode(key);
@@ -396,10 +396,11 @@ async function readInventoryCount(firstKey) {
         key = await readchar();
     }
 }
-// C getobj() uses tty_yn_function(), which acknowledges unread prose before
-// replacing the topline with its object question, including on a retry.
+// C getobj() has already consumed its queued selection or user-input marker.
+// Its interactive query must leave later canned answers for the caller.
 async function askInventoryPrompt(prompt) {
     await flushPendingTopline();
-    return promptKey(prompt);
+    const { answer } = await yn_function(prompt, null, '', false);
+    return answer.charCodeAt(0);
 }
 //# sourceMappingURL=inventory_prompt.js.map

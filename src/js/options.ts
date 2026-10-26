@@ -1060,6 +1060,10 @@ function handleConfigStatement(
             if (separator < 0) continue;
             const keyText = field.slice(0, separator);
             const command = field.slice(separator + 1).trim();
+            if (keyText === 'mouse1' || keyText === 'mouse2') {
+                if (result.commandBindings.bindMouseButton(keyText === 'mouse1' ? 1 : 2, command)) continue;
+                addError(`Error binding mouse button ${keyText === 'mouse1' ? 1 : 2}`);
+            }
             const code = bindingKeyCode(keyText);
             if (!code) {
                 addError(`Unknown key binding key '${keyText}'`);

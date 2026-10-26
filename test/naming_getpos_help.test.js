@@ -24,7 +24,7 @@ for (const target of ['monster', 'floor object']) {
                 await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
             const input = resetInputState();
             input.feed('name\r');
-            queueCommandKeys(soldier ? 'm' : 'f');
+            queueCommandKeys(soldier ? '#m' : '#f');
             planInput(input, t, [
                 { prompt: instructions, keys: key },
                 { prompt: /Use 'h', 'j', 'k', 'l' to move the cursor/, keys: ' ' },

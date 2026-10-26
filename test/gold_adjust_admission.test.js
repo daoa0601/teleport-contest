@@ -58,7 +58,7 @@ void test('#adjust repairs a second gold stack without requesting a destination'
     game.inventory.push(misplaced);
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys('z');
+    queueCommandKeys('#z');
     planInput(input, t, []);
     await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
     assert.equal(game.inventory.filter(object => object.oclass === 12).length, 1);
@@ -78,7 +78,7 @@ void test('gold repair keeps lowercase items first when inventory letters later 
     game.inventory.push(misplaced);
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys('z');
+    queueCommandKeys('#z');
     planInput(input, t, [{ prompt: /Coins/, keys: '\x1b' }]);
     await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
     game.flags.fixinv = false;
@@ -93,7 +93,7 @@ void test('moving a weapon keeps lowercase items first when inventory letters la
     const club = await addInventoryObject(CLUB, { invlet: 'A' });
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCommandKeys('b');
+    queueCommandKeys('#b');
     planInput(input, t, [
         { prompt: /Adjust letter to what/, keys: 'c' },
         { prompt: /Weapons/, keys: '\x1b' },

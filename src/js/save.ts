@@ -14,7 +14,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { encodeSavedGraph } from './saved_graph.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import type { SavedGame } from './persistent_state_validation.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { clearCannedCommands, endVoluntaryMultiTurn } from './command_state.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
 import { rollQuestFigureGenders } from './startup.js';
 import type { PersistentState } from './state_schema.js';
@@ -350,7 +350,7 @@ export function restoreGame(
         game._runState = null;
         game._heroTimePending = false;
         game._kickedLoc = null;
-        game._cannedCommands = [];
+        clearCannedCommands();
         game._afterMove = null;
         game._armorTheft = null;
         delete game._helplessRunmodeDelayPending;

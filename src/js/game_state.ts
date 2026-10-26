@@ -455,6 +455,7 @@ export interface GameState {
     _undergroundView?: { fullRedrawPending: boolean };
     _statusUpdatesDisabled?: boolean;
     _cursorOverride?: [number, number] | null;
+    _clicklookTarget?: Position | null;
     _statusGoldOverride?: number;
     _armorClassDirty?: boolean;
     _preserveLeadingStyledBlanks?: boolean;

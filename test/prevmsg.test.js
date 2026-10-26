@@ -300,7 +300,9 @@ void test('a line prompt records the answer typed into it', async (t) => {
     const input = resetInputState();
     await addInventoryObject(ARROW, { invlet: 'a', quan: 4, oextra: { oname: 'First Flight' } });
     input.feed('name\r');
-    queueCommandKeys('ia');
+    // C rhack() pops CQ_CANNED before using its command argument; queue
+    // the command as well as docallcmd()'s category and getobj()'s letter.
+    queueCommandKeys('#ia');
     planInput(input, t, [{
             prompt: /What do you want to name these arrows named First Flight\?/,
             keys: 'Fletching\r',
