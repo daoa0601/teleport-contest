@@ -29,7 +29,6 @@ import { surfaceName } from './terrain_name.js';
 import { isPoolAt } from './terrain_properties.js';
 import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
-import type { PositionDescription } from './getpos.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

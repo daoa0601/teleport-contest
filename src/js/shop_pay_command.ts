@@ -8,7 +8,7 @@ import { cansee } from './vision.js';
 import { heroIsBlind } from './senses.js';
 import { distmin } from './hacklib.js';
 import { shopkeeperName, monsterName, monsterSubjectPronoun, monsterObjectPronoun, monsterPossessive } from './monster_name.js';
-import { describeGetposLocation, selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
+import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 import { payShopDebt, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';

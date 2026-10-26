@@ -1,67 +1,65 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { doprevMessage } from '../js/prevmsg.js';
-import { flushPendingTopline, newsym, pline } from '../js/display.js';
+import { newsym, pline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
-import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireFixtureGame } from './support/game-state.js';
-import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { requireScreenCell } from './support/screen.js';
-import { requireGameDisplay } from '../js/gstate.js';
+
 function toplineText(): string {
     return (game.nhDisplay?.grid[0] ?? []).map(cell => cell.ch).join('');
 }
 
-// Drives ';' farlook through rhack with a pager that acknowledges every
-// --More--, capturing the message rows before each dismissal.
-async function farlookRows(positionKeys: string): Promise<string> {
-    const display = requireGameDisplay(game);
-    const gridText = () => (display.grid ?? [])
-        .map(row => row.map(cell => cell.ch).join('')).join(' ');
-    const pages: string[] = [];
-    const input = resetInputState();
-    input.feed(positionKeys);
-    input.display = { async readKey() {
-        pages.push(gridText());
-        return ' '.charCodeAt(0);
-    } };
 
-    await rhack(';'.charCodeAt(0));
-    await flushPendingTopline();
-    pages.push(gridText());
-    return pages.join(' ');
-}
-
-// C pager.c:do_screen_description(): while swallowed (or submerged) every
-// spot beyond arm's reach is "unreconnoitered", before any glyph lookup.
-void test('farlook beyond arm reach while swallowed reports unreconnoitered terrain', async () => {
+// C getpos.c:auto_describe() -> pager.c:do_screen_description(): while
+// swallowed (or submerged) every spot beyond arm's reach is
+// "unreconnoitered", before any glyph lookup.  Travel's cursor shares
+// this describe path, so its automatic descriptions must match farlook's.
+void test('travel autodescribe beyond arm reach while swallowed reports unreconnoitered terrain', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false } });
+    game._moveloopStarted = true;
     game.u.uswallow = 1;
+    const input = resetInputState();
+    const pages: string[] = [];
+    input.display = { async readKey() {
+        pages.push(toplineText());
+        return 27;
+    } };
+    input.feed('_ll');
+    await moveloop_core();
 
-    const rows = await farlookRows('ll,');
-
-    assert.match(rows, /unreconnoitered/);
-    assert.doesNotMatch(rows, /interior of/);
+    assert.ok(pages.some(page => /unreconnoitered/.test(page)),
+        `Expected the swallowed travel description, saw: ${pages.join(' | ')}`);
+    assert.ok(pages.every(page => !/interior of/.test(page)),
+        `The swallower is not described beyond arm reach: ${pages.join(' | ')}`);
 });
 
-// C pager.c:lookat() describes the hero only when canspotself() holds;
-// invisibility without telepathy or monster detection leaves the terrain.
-void test('farlook at an invisible unsensed hero describes the floor beneath', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+// C pager.c:do_screen_description() -> lookat() describes the hero only
+// when canspotself() holds; invisibility without telepathy or monster
+// detection leaves the terrain under the travel cursor.
+void test('travel autodescribe at an invisible unsensed hero shows the floor', async () => {
+    const input = freshTurnRoom({ flags: { tips: false, verbose: false } });
     game.u.invis = true;
     newsym(game.u.ux, game.u.uy);
+    const pages: string[] = [];
+    input.display = { async readKey() {
+        pages.push(toplineText());
+        return 27;
+    } };
+    input.feed('_lh');
+    await moveloop_core();
 
-    const rows = await farlookRows(',');
-
-    assert.match(rows, /floor of a room/);
-    assert.doesNotMatch(rows, /invisible .* called/);
+    assert.ok(pages.some(page => /floor of a room/.test(page)),
+        `Expected terrain under the invisible hero, saw: ${pages.join(' | ')}`);
+    assert.ok(pages.every(page => !/invisible .* called/.test(page)),
+        `An unsensed invisible hero is not described: ${pages.join(' | ')}`);
 });
 
 // C tty topl.c:redotoplin(): recall re-prints the stored bytes through

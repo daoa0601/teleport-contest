@@ -5,7 +5,6 @@ import { visibleCommandKey } from './command_keys.js';
 import { glyphAt, map_invisible, plineWithContinuation, unmap_invisible } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
-import type { PositionDescription } from './getpos.js';
 import type { Position } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
 import { smellUnseenMonster } from './monster_smell.js';

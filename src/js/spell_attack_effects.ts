@@ -7,7 +7,6 @@ interface LightningStep extends Position { direction: number; strength: number; 
 
 // C spell.c:throwspell(), skilled elemental spells, cast_chain_lightning().
 import { exerciseAttribute } from './attrib.js';
-import { farlookLocationDescription } from './cmd.js';
 import {
     A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP,
     EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel,

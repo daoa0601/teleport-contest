@@ -2,7 +2,6 @@
 import { exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { heroHandName } from './body_parts.js';
-import { farlookLocationDescription } from './cmd.js';
 import {
     ACCESSIBLE, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, In_endgame, In_quest,
     IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE,

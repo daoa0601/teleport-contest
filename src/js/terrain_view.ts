@@ -13,7 +13,6 @@ import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
-import type { PositionDescription } from './getpos.js';
 import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';

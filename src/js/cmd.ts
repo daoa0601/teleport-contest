@@ -5198,7 +5198,7 @@ async function dotravel(): Promise<void> {
     if (!game.iflags.menu_requested) await pline('Where do you want to travel to?');
     const firstUse = !game.iflags.menu_requested && shouldShowGetposTip();
     if (firstUse) await showGetposTip();
-    await showGetposInstructions();
+    if (!game.iflags.menu_requested) await showGetposInstructions();
     // handle_tip() sets show_goal_msg, so only the tip-covered first pass
     // pline()s the goal; later passes keep the caller's prompt up.
     if (firstUse) await pline('Move cursor to the desired destination:');
@@ -7589,9 +7589,11 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         u.ux = monster.mx;
         u.uy = monster.my;
         // hack.c:domove_core() applies the shared destination-monster block
-        // to u.ustuck too: nomul(0) for a non-safe monster cancels a count
-        // or run before do_attack(), while requesting a full status update.
-        if (!heroMayDisplaceMonster(monster)) nomul(0, game);
+        // to u.ustuck too: nomul(0) for a non-safe monster or an explicit
+        // fight prefix cancels a count or run before do_attack(), while
+        // requesting a full status update.
+        if (!heroMayDisplaceMonster(monster) || game.context.forcefight)
+            nomul(0, game);
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
     if (await airTurbulenceStopsHero()) return true;

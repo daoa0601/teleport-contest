@@ -47,9 +47,9 @@ export interface MapPositionOptions {
     goal: string;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
-    // Detection browsing (#terrain's detect modes) still supplies its own
-    // description; every other caller shares auto_describe()'s
-    // do_screen_description() model below.
+    // Detection browsing (the detection potion/spell map browse) still
+    // supplies its own description; every other caller shares
+    // auto_describe()'s do_screen_description() model below.
     describe?: PositionDescription | null;
     // Jump, spell, and cloud targeting admit the hero but omit its '$' overlay.
     highlightHero?: boolean;

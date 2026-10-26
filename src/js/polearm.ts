@@ -38,7 +38,6 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GlyphMetadata } from './display.js';
 import type { Position } from './map_types.js';
-import type { PositionDescription } from './getpos.js';
 
 export type PolearmResult =
     | { heroDied: true }
