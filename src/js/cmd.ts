@@ -2827,9 +2827,19 @@ function contextMenuResponses(selection: ContextMenuSelection): void {
 }
 
 async function doname() {
-    // docallcmd() consumes a canned category before creating its menu.
-    // Unread callback prose then belongs to the later naming prompt.
-    const queuedChoice = takeCommandKey();
+    // docallcmd() pops the command queue before creating its menu, and
+    // cmdq_pop() serves CQ_REPEAT during #repeat: the saved getobj letter
+    // becomes the category choice ('c' falls to the switch default and the
+    // repeat quietly does nothing).  A non-key repeat entry clears the
+    // canned queue, as in do_name.c.
+    let queuedChoice: number | undefined;
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued && queued.kind === 'key') queuedChoice = queued.key;
+        else if (queued) clearCommandKeys();
+    } else {
+        queuedChoice = takeCommandKey();
+    }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);
     if (queuedChoice === undefined) await restoreCommandMap();
@@ -4071,7 +4081,10 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
         candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
         { forcePrompt: true, allowCount: true });
     if (!object) {
+        // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
+        // dismissed; rhack() then clears the repeat queue.
         game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     if (!splitting) {
@@ -6509,7 +6522,10 @@ async function applyTool(
         return item;
     }
     await pline("Sorry, I don't know how to use that.");
+    // apply.c's default case returns ECMD_FAIL; rhack() clears the repeat
+    // queue so a later ^A reports nothing to repeat.
     game.context.move = 0;
+    resetCommandVariables(true);
     return null;
 }
 
@@ -7287,13 +7303,17 @@ async function finishHeroMovement({
     game._domoveReachedTail = true;
     await placeHeroOnLevel(u.ux, u.uy);
     resetOccupations();
-    // hack.c:domove_core() ends only a real run (context.run != 0) upon
-    // entering a doorway, obstruction, or furniture square; a counted walk
-    // keeps going. Applies even when actor displacement, rather than the
-    // plain terrain branch, performed the coordinate move.
-    if ((game.context.run ?? 0) > 0 && game._runState?.mode !== 8 && (loc?.typ === DOOR
-        || IS_OBSTRUCTED(loc?.typ ?? STONE)
-        || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
+    // hack.c:domove_core() ends only a real run upon entering a doorway,
+    // obstruction, or furniture square, and never a travel run
+    // (context.run == 8).  findtravelpath() restores run to 8 for the
+    // arrival step after nomul(0) cleared _runState, so the lingering
+    // value — not _runState — is what the native check reads.
+    // Applies even when actor displacement, rather than the plain terrain
+    // branch, performed the coordinate move.
+    const runMode = game.context.run ?? 0;
+    if (runMode > 0 && runMode < 8
+        && (loc?.typ === DOOR || IS_OBSTRUCTED(loc?.typ ?? STONE)
+            || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
 
     if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)
