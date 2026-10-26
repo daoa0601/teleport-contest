@@ -31,7 +31,7 @@ import { fractureRock, sokobanGuilt } from './rock_breakage.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { animateStatue } from './statue_trap.js';
 import { placeObject } from './floor_object.js';
 import { consumeInventoryItem } from './invent.js';
@@ -63,7 +63,7 @@ export async function polymorphFloorObject(object, { state = game } = {}) {
         return { affected: false, learned: false };
     const conduct = state.u.uconduct ??= {};
     if (!conduct.polypiles)
-        recordGameLogEvent(`polymorphed ${state.flags.female ? 'her' : 'his'} first object`, { state });
+        recordGameLogEvent(`polymorphed ${state.flags.female ? 'her' : 'his'} first object`, { state, flags: LL_CONDUCT });
     conduct.polypiles = (conduct.polypiles || 0) + 1;
     if (isBox(object))
         await changeBoxLockByMagic(object, { otyp: WAN_POLYMORPH }, { state });

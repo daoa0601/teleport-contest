@@ -674,7 +674,7 @@ export async function objectQuestion(
     async function formatName({ nameState = state, shortenName = false, stripAttributes = false } = {}): Promise<string> {
         const saved = {
             oextra: object.oextra,
-            bknown: object.bknown, rknown: object.rknown, greased: object.greased,
+            bknown: object.bknown, buc: object.buc, rknown: object.rknown, greased: object.greased,
             oeroded: object.oeroded, oeroded2: object.oeroded2,
             orotten: object.orotten, odiluted: object.odiluted, norevive: object.norevive,
         };
@@ -684,6 +684,10 @@ export async function objectQuestion(
             object.bknown = object.rknown = object.greased = false;
             object.oeroded = object.oeroded2 = 0;
             object.orotten = object.norevive = object.odiluted = false;
+            // objnam.c:xname() re-sets bknown for priests (objnam.c:629-630)
+            // while formatting, so short_oname()'s strip step cannot remove
+            // the beatitude adjective from a cleric's shortened question.
+            observeBucForNaming(object, nameState);
         }
         try {
             const formatted = await format(object, nameState);
@@ -697,6 +701,8 @@ export async function objectQuestion(
             if (stripAttributes) {
                 if (saved.bknown === undefined) delete object.bknown;
                 else object.bknown = saved.bknown;
+                if (saved.buc === undefined) delete object.buc;
+                else object.buc = saved.buc;
                 if (saved.rknown === undefined) delete object.rknown;
                 else object.rknown = saved.rknown;
                 if (saved.greased === undefined) delete object.greased;
@@ -1230,4 +1236,3 @@ function requiredArtifact(name: string, state: GameState): Artifact {
     if (!artifact) throw new RangeError(`No native artifact named ${name}`);
     return artifact;
 }
-

@@ -54,7 +54,7 @@ import { dismountHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { resetTrapSetting } from './trap_setting.js';
 import { depth, dungeonDepth, endgameLevelName } from './hacklib.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ACHIEVE, LL_DEBUG, recordGameLogEvent } from './gamelog.js';
 import { nearCapacity } from './weight.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import {
@@ -566,7 +566,10 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         }
         if (withBranch && newDungeon)
             location += `, ${newDungeon.dname.replace(/^The /, 'the ')}`;
-        recordGameLogEvent(`entered ${location}`);
+        recordGameLogEvent(`entered ${location}`, {
+            flags: (In_endgame(newDepth) && !Is_astralevel(newDepth)) || In_quest(newDepth)
+                ? LL_ACHIEVE : LL_DEBUG,
+        });
     }
     if (!cached) await creditTouristNewLevel();
     if (game.flags.checkpoint ?? true) rewindEngravingsForSave(game.level);

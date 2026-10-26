@@ -7,9 +7,12 @@ import { isAccessibleAt, isPoolAt } from './terrain_properties.js';
 import { prepareVaultGuardDeath } from './vault_guard.js';
 import { armorThiefGone } from './command_state.js';
 import {
-    CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
-    DISMOUNT_GENERIC, G_NOCORPSE, Is_rogue_level,
+    ACH_MEDU, CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
+    DISMOUNT_GENERIC, G_NOCORPSE, Is_rogue_level, SHOPBASE,
 } from './const.js';
+import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
+import { SHOP_TYPES } from './shop_data.js';
+import { recordAchievement } from './achievements.js';
 import { buryObject } from './buried_object.js';
 import {
     canSeeMonster, monsterKillLineVisible, newsym, plineWithContinuation, unmap_invisible,
@@ -56,15 +59,12 @@ import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { d, rnd, rnl, rn2 } from './rng.js';
 import { cansee, monsterEmitsLight } from './vision.js';
 import { objectWeight } from './weight.js';
-import { ACH_MEDU, recordAchievement } from './achievements.js';
 import { dismountHero } from './steed.js';
 import { wizardDeadOrGone } from './wizard.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
-
-const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 
 export interface MonsterDeathOptions {
     deathMessage?: string | null;
@@ -140,12 +140,16 @@ const PM_GRAY_OOZE = 206;
 const PM_BLACK_PUDDING = 209;
 const PM_VLAD_THE_IMPALER = 228;
 const PM_DEATH = 311;
+const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_LIZARD = 326;
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
+const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const S_GOLEM = 55;
 const S_LICH = 38;
 const M2_UNDEAD = 0x00000002;
 const M2_NEUTER = 0x00040000;
+const G_UNIQ = 0x1000;
 
 const SPECIAL_GOLEM_REMAINS = new Set([
     PM_PAPER_GOLEM, PM_ROPE_GOLEM, PM_GOLD_GOLEM, PM_LEATHER_GOLEM,
@@ -446,13 +450,10 @@ export async function detachDeadMonster(
     if (monster.isgd && !await prepareVaultGuardDeath(monster, state)) return false;
     const emittedLight = monsterEmitsLight(monster.mnum);
     restoreMonsterTrueSpecies(monster);
-    const diedCount = recordMonsterDeath(monster, state);
+    recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
     await returnDeadKop(monster, state, rollOne);
-    // mon.c:logdeadmon(): Medusa's first death is an achievement and logs
-    // its own chronicle line.
-    if (monster.mnum === PM_MEDUSA && diedCount === 1)
-        recordAchievement(state, ACH_MEDU);
+    logDeadMonster(monster, state);
     if (state === game) unmap_invisible(x, y, false);
     if (monster.mleashed) releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true
@@ -479,6 +480,65 @@ export async function detachDeadMonster(
         return !!result.died;
     }
     return false;
+}
+
+// mon.c:logdeadmon().  Chronicle line for the death of a unique monster
+// (first death of a High Cleric, first death of each shopkeeper), plus the
+// Medusa achievement.  Called after mvitals.died was incremented.
+function logDeadMonster(monster: Monster, state: GameState): void {
+    const species = monster.mnum;
+    let howmany = state.mvitals?.[species]?.died ?? 0;
+    if (species === PM_MEDUSA && howmany === 1) {
+        recordAchievement(state, ACH_MEDU); /* also generates a livelog event */
+        return;
+    }
+    const uniqueCorpstat = ((MONSTER_GENO[species] ?? 0) & G_UNIQ) !== 0;
+    if (!((uniqueCorpstat && (species !== PM_HIGH_CLERIC || !monster.mrevived))
+            || (monster.isshk && !monster.mrevived)))
+        return;
+    const herodidit = !state.context.mon_moving;
+    let shkdetail = '';
+    if (monster.isshk) {
+        // only the first death per shopkeeper: their shared kill counter
+        // would not work for this (nor account for polymorphed shopkeepers)
+        howmany = 1;
+        // ", the <shoptype> proprietor" needs a trailing comma for the
+        // alternate "<shk>, <details>, has been killed" phrasing when the
+        // hero isn't directly responsible
+        // C reads ESHK(mtmp)->shoptype directly; an isshk monster without
+        // shop data is an invalid state, not a general store.
+        if (!hasShopkeeperData(monster))
+            throw new Error(`Shopkeeper ${monster.m_id} lacks shop history`);
+        const shop = SHOP_TYPES[monster.eshk.shoptype - SHOPBASE];
+        if (!shop) throw new Error(`Shopkeeper ${monster.m_id} has invalid shop type`);
+        shkdetail = `, the ${shop.name} ${
+            monster.female ? 'proprietrix' : 'proprietor'}${herodidit ? '' : ','}`;
+    } else if (species === PM_HIGH_CLERIC) {
+        howmany = 1;
+    }
+    // killing a unique more than once isn't logged every time
+    if (!(howmany <= 3 || howmany === 5 || howmany === 10 || howmany === 25
+            || howmany % 50 === 0))
+        return;
+    const rider = species === PM_DEATH || species === PM_PESTILENCE
+        || species === PM_FAMINE;
+    const flags = LL_UMONST
+        | (howmany === 1 || monster.iswiz || rider ? LL_ACHIEVE : 0);
+    const xtra = howmany > 1 ? ` (${howmany}${ordinalSuffix(howmany)} time)` : '';
+    const mkilled = monsterIsNonliving(species) ? 'destroyed' : 'killed';
+    const name = monsterName(monster, { state, article: 'the', exact: true });
+    recordGameLogEvent(
+        herodidit ? `${mkilled} ${name}${shkdetail}${xtra}`
+            : `${name}${shkdetail} has been ${mkilled}${xtra}`,
+        { state, flags },
+    );
+}
+
+// C hacklib.c:ordin().
+function ordinalSuffix(number: number): string {
+    const digit = number % 10;
+    if (digit === 0 || digit > 3 || Math.trunc((number % 100) / 10) === 1) return 'th';
+    return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
 }
 
 export async function finishMonsterLiquidDeath(
@@ -648,4 +708,3 @@ async function resolveMonsterDeath(
         ) : recovery.completedDeath?.corpse ?? null;
     return { monster, survived: false, corpse };
 }
-

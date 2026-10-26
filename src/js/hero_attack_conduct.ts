@@ -7,7 +7,7 @@ import type { Monster } from './monster_types.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { minimalObjectName, objectHasPersonalName, pluralizeObjectNoun } from './objnam.js';
 import type { GameObject } from './object_types.js';
 
@@ -27,7 +27,7 @@ export function recordFirstHeroWeaponHit(weapon: GameObject, state: GameState = 
             name += ` named ${artifact.name.replace(/^The /, '')}`;
     }
     if (weapon.cursed && weapon.bknown) name = `cursed ${name}`;
-    recordGameLogEvent(`hit with a wielded weapon (${name}) for the first time`, { state });
+    recordGameLogEvent(`hit with a wielded weapon (${name}) for the first time`, { state, flags: LL_CONDUCT });
 }
 
 export async function applyCaitiffPenalty(monster: Monster, state: GameState = game): Promise<boolean> {

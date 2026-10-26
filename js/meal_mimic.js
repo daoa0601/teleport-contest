@@ -4,7 +4,7 @@ import { nomul } from './command_state.js';
 import { DISMOUNT_FELL, M_AP_NOTHING, M_AP_OBJECT, Upolyd } from './const.js';
 import { canSeeMonster, canSpotMonster, flushPendingTopline, flush_screen, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -23,7 +23,7 @@ export async function beginMealMimicry(turns, { state = game } = {}) {
     const shape = hallucinating ? 'an orange' : 'a pile of gold';
     const conduct = hero.uconduct;
     if (!conduct.polyselfs)
-        recordGameLogEvent(`changed form for the first time by mimicking ${shape}`, { state });
+        recordGameLogEvent(`changed form for the first time by mimicking ${shape}`, { state, flags: LL_CONDUCT });
     conduct.polyselfs = (conduct.polyselfs || 0) + 1;
     await plineWithContinuation(`You can't resist the temptation to mimic ${shape}.`);
     if (hero.usteed) {

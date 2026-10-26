@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { minimalObjectName, objectHasPersonalName, pluralizeObjectNoun } from './objnam.js';
 const M2_UNDEAD = 0x00000002;
 // C uhitm.c:first_weapon_hit(). Player-given names are omitted from the
@@ -24,7 +24,7 @@ export function recordFirstHeroWeaponHit(weapon, state = game) {
     }
     if (weapon.cursed && weapon.bknown)
         name = `cursed ${name}`;
-    recordGameLogEvent(`hit with a wielded weapon (${name}) for the first time`, { state });
+    recordGameLogEvent(`hit with a wielded weapon (${name}) for the first time`, { state, flags: LL_CONDUCT });
 }
 export async function applyCaitiffPenalty(monster, state = game) {
     const alignment = state.u.ualign;

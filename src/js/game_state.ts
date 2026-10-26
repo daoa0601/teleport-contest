@@ -309,7 +309,7 @@ export interface GameState {
     _artifactFound?: Set<number>;
     _artifactOrigins?: Map<number, ArtifactOrigin>;
     _artifactDiscoveries?: number[];
-    gamelog?: Array<{ turn: number; text: string }>;
+    gamelog?: Array<{ turn: number; text: string; flags?: number }>;
     _bonesSaved?: boolean;
     _canMakeBones?: boolean;
     // C iflags.at_night/at_midnight: captured when the game ends so the

@@ -67,6 +67,33 @@ void test('an over-long dip target loses its uncursed adjective first', async ()
     await dipping;
 });
 
+// C objnam.c:xname() re-sets bknown for priests while formatting
+// (objnam.c:629-630), so short_oname()'s attribute strip cannot remove a
+// cleric's beatitude adjective: the stripped doname "a cursed +0 cloak of
+// magic resistance (being worn)" is exactly the 50-character limit, so it
+// fits and keeps the curse while dropping "greased".  (Priests drop the
+// redundant "uncursed" for armor, so the curse is the visible adjective.)
+void test('a priest dip target keeps its curse through the strip', async () => {
+    freshObjectRoom({ role: 'priest', flags: { verbose: true } });
+    const cloak = await addInventoryObject(CLOAK_OF_MAGIC_RESISTANCE, {
+        spe: 0, owornmask: W_ARMC, cursed: true, greased: true,
+    });
+    game.uarmc = cloak;
+    const input = resetInputState();
+    input.feed('dip\n');
+    const dipping = rhack('#'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed(cloak.invlet);
+    await input.waitUntilBlocked();
+    assert.match(screenRow(0), /dip a cursed \+0 cloak of magic resistance/,
+        'the priest keeps the curse adjective through the strip');
+    assert.doesNotMatch(screenRow(0), /greased/,
+        'the strip still drops the other lengthening attributes');
+
+    input.feed(' ');
+    await dipping;
+});
+
 // With a potion carried, the same formatted name becomes the second getobj
 // prompt asking what to dip the item into.
 void test('the dip-into prompt spells out the worn target with its enchantment', async () => {

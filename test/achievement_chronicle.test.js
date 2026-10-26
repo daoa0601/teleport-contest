@@ -11,7 +11,7 @@ import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { createMonsterAt } from './support/monsters.js';
-import { ACH_BGRM, ACH_MEDU, ACH_SOKO } from '../js/const.js';
+import { ACH_BGRM, ACH_MEDU, ACH_SOKO, LL_ACHIEVE } from '../js/const.js';
 // do.c:1908-1916: entering the Sokoban branch for the first time records
 // ACH_SOKO, whose achieve_msg[] line is "entered Sokoban".
 void test('arriving in the Sokoban branch chronicles the branch entry', () => {
@@ -26,7 +26,7 @@ void test('arriving in the Sokoban branch chronicles the branch entry', () => {
     const turn = game.moves;
     recordDungeonEntryAchievements(game, { dnum: 0, dlevel: 1 }, { dnum: 1, dlevel: 1 });
     assert.ok(achievementEntries(game).includes(ACH_SOKO));
-    assert.deepEqual(gameLogEvents().at(-1), { turn, text: 'entered Sokoban' });
+    assert.deepEqual(gameLogEvents().at(-1), { turn, text: 'entered Sokoban', flags: LL_ACHIEVE });
 });
 // do.c:1693-1700, 1915: the Bigroom achievement needs a newly made level
 // (`new`), not just a branch change; a cached revisit records nothing.
@@ -40,7 +40,7 @@ void test('arriving on a new Bigroom level chronicles it, a revisit does not', (
     game.gamelog = [];
     const turn = game.moves;
     recordDungeonEntryAchievements(game, { dnum: 0, dlevel: 1 }, { dnum: 0, dlevel: 5 }, { newLevel: true });
-    assert.deepEqual(gameLogEvents().at(-1), { turn, text: 'entered the Bigroom' });
+    assert.deepEqual(gameLogEvents().at(-1), { turn, text: 'entered the Bigroom', flags: LL_ACHIEVE });
     game.u.uachieved = [];
     game.gamelog = [];
     recordDungeonEntryAchievements(game, { dnum: 0, dlevel: 1 }, { dnum: 0, dlevel: 5 }, { newLevel: false });

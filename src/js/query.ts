@@ -182,6 +182,9 @@ function renderChoicePrompt(message: string): void {
     const length = message.length;
     display.setCursor(length ? (length - 1) % width + 1 : 0,
         length ? Math.floor((length - 1) / width) : 0);
+    // show_topl() draws the prompt through addtopl(), ending
+    // TOPLINE_SPECIAL_PROMPT before any answer is typed (topl.c:428).
+    game._promptOwnsTopline = false;
 }
 
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
@@ -271,8 +274,9 @@ export async function tty_yn_function(
     await setTopline(message);
     await flush_screen(1);
     renderChoicePrompt(message);
-    // tty_yn_function() marks the line TOPLINE_SPECIAL_PROMPT (topl.c:402).
-    game._promptOwnsTopline = true;
+    // custompline(SUPPRESS_HISTORY) drew the question through
+    // show_topl()'s addtopl(), which already ended TOPLINE_SPECIAL_PROMPT;
+    // an unread wrapped question pages on recall like any other line.
     let displayed = message;
     let coveredRows = (game.nhDisplay?.cursorRow ?? 0) + 1;
     const paint = (text: string) => {

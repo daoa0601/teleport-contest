@@ -3,7 +3,7 @@ import { exerciseAttribute } from './attrib.js';
 import { A_WIS, ROOM } from './const.js';
 import { displayLiquidName, newsym, plineWithContinuation as pline } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { countLevelFeatures } from './mklev.js';
 import { angerWatchGuards } from './monster_anger.js';
 import { LONG_SWORD } from './object_data.js';
@@ -35,7 +35,7 @@ export async function dipFountainSword(object, location) {
         }
         object.oerodeproof = false;
         await exerciseAttribute(A_WIS, false);
-        recordGameLogEvent(`was denied Excalibur!  The Lady of the Lake has deemed ${game.flags.female ? 'her' : 'him'} unworthy`);
+        recordGameLogEvent(`was denied Excalibur!  The Lady of the Lake has deemed ${game.flags.female ? 'her' : 'him'} unworthy`, { flags: LL_ARTIFACT });
     }
     else {
         await pline('From the murky depths, a hand reaches up to bless the sword.');
@@ -54,7 +54,7 @@ export async function dipFountainSword(object, location) {
         object.oeroded2 = 0;
         object.oerodeproof = true;
         await exerciseAttribute(A_WIS, true);
-        recordGameLogEvent('was given Excalibur by the Lady of the Lake');
+        recordGameLogEvent('was given Excalibur by the Lady of the Lake', { flags: LL_ARTIFACT });
     }
     location.typ = ROOM;
     location.flags = 0;

@@ -6,7 +6,7 @@ import { nativeRoleAt, roles } from './roles.js';
 import { heroIsHallucinating } from './senses.js';
 import { A_NONE, G_GONE, Is_astralevel, MM_ADJACENTOK, MM_NOWAIT } from './const.js';
 import { plineWithContinuation } from './display.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makemonAt } from './mklev.js';
@@ -63,7 +63,7 @@ export async function convertHeroAlignment(alignment, state = game) {
     state.context.botl = true;
     hero.ualignbase = [alignment, original];
     const name = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-    recordGameLogEvent(`permanently converted to ${name}`, { state });
+    recordGameLogEvent(`permanently converted to ${name}`, { state, flags: LL_ALIGNMENT });
     const helmet = state.uarmh || hero.uarmh;
     if (helmet?.otyp !== HELM_OF_OPPOSITE_ALIGNMENT)
         current.type = alignment;
@@ -91,7 +91,7 @@ export async function changeHeroAlignmentFromHelmet(alignment, puttingOn, state 
         const astral = Is_astralevel(state.u.uz);
         if (astral || rn2(50) < (current.abuse ?? 0))
             await summonFuries(astral ? 0 : 1, state);
-        recordGameLogEvent(`used a helm to turn ${alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral'}`, { state });
+        recordGameLogEvent(`used a helm to turn ${alignment > 0 ? 'lawful' : 'chaotic'}`, { state, flags: LL_ALIGNMENT });
     }
     else {
         await plineWithContinuation(`Your mind is ${heroIsHallucinating(state)

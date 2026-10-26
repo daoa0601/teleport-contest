@@ -4,7 +4,7 @@ import { HOLE, PIT } from './const.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { clearPitConnections } from './pit_connections.js';
 
 export function deleteTrap(trap: Trap, state: GameState = game): void {
@@ -27,7 +27,10 @@ export function finishSokobanIfSolved(state: GameState = game): void {
     const dungeon = state.dungeons[state.u.uz.dnum];
     if (!dungeon) throw new Error('A solved Sokoban level requires its dungeon.');
     const number = dungeon.entry_lev - state.u.uz.dlevel + 1;
-    recordGameLogEvent(`completed ${number}${ordinalSuffix(number)} Sokoban level`, { state });
+    recordGameLogEvent(`completed ${number}${ordinalSuffix(number)} Sokoban level`, {
+        state,
+        flags: LL_MINORAC | LL_DUMP,
+    });
 }
 
 // C hacklib.c:ordin().

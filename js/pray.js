@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { nomul } from './command_state.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { displayColorName, flushPendingTopline, plineWithContinuation as pline } from './display.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { paranoidQuery, promptYesNo } from './query.js';
 import { rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { adjustHeroAlignment, deityName } from './alignment.js';
@@ -62,7 +62,7 @@ export async function dopray() {
     const hero = game.u;
     const conduct = hero.uconduct;
     if (!conduct.gnostic)
-        recordGameLogEvent('rejected atheism with a prayer');
+        recordGameLogEvent('rejected atheism with a prayer', { flags: LL_CONDUCT });
     conduct.gnostic = (conduct.gnostic || 0) + 1;
     const altar = currentAltar();
     const alignment = altar ? Amask2align(altar.flags) : hero.ualign.type;

@@ -7,7 +7,7 @@ import { finishHeroDeath } from './end.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { currentAttribute } from './attrib.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS, MAXULEV, Upolyd } from './const.js';
 import { plineWithContinuation, see_monsters } from './display.js';
@@ -167,8 +167,9 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
         && recordAchievement(state, rankAchievement(newRank, !!state.flags.female));
     // a new rank achievement logs its own chronicle line (recordAchievement);
     // log the simpler message when no achievement was just recorded
-    if (!newAchievement)
-        recordGameLogEvent(`${hero.ulevel <= hero.ulevelpeak ? 're' : ''}gained experience level ${hero.ulevel}`, { state });
+    if (!newAchievement) {
+        recordGameLogEvent(`${hero.ulevel <= hero.ulevelpeak ? 're' : ''}gained experience level ${hero.ulevel}`, { state, flags: LL_MINORAC });
+    }
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);
     state.context.botl = true;
 }
@@ -223,7 +224,7 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
     if (oldLevel > 1) {
         hero.ulevel--;
         await adjustLevelAbilities(oldLevel, hero.ulevel, publish);
-        recordGameLogEvent(`lost experience level ${oldLevel}`, { state });
+        recordGameLogEvent(`lost experience level ${oldLevel}`, { state, flags: LL_MINORAC });
     }
     else {
         if (drainer && await die({
@@ -233,7 +234,7 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
         if (hero.ulevel > 1)
             return false;
         hero.uexp = 0;
-        recordGameLogEvent('lost all experience', { state });
+        recordGameLogEvent('lost all experience', { state, flags: LL_MINORAC });
     }
     const level = hero.ulevel;
     const hpLoss = hero.uhpinc?.[level] || 0;

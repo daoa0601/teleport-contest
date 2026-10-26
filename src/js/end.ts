@@ -45,7 +45,7 @@ import { objectName } from './objnam.js';
 import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
@@ -323,7 +323,7 @@ export function recordHeroKillConduct(state: GameState = game) {
     const firstKill = !(conduct.killer || 0);
     conduct.killer = (conduct.killer || 0) + 1;
     if (firstKill)
-        recordGameLogEvent('killed for the first time', { state });
+        recordGameLogEvent('killed for the first time', { state, flags: LL_CONDUCT });
 }
 
 // C insight.c:list_vanquished()/vanqsort_cmp().  The order comes from

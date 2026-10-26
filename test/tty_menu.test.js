@@ -88,6 +88,31 @@ void test('redisplaying an active corner menu restores the map after dismissal',
     assert.doesNotMatch(d.grid[2]?.map(cell => cell.ch).join('') ?? '', /map 2/);
     await tty_destroy_nhwindow(window);
 });
+void test('dismissing a corner menu leaves the last terminal column blank', async () => {
+    freshPlayableRoom({ left: 40, right: 60, heroX: 50 });
+    await docrt();
+    await flush_screen(1);
+    const d = requireGameDisplay();
+    // The map ends at terminal column COLNO-2; nothing in ordinary play
+    // repaints the final column, so seed it through the terminal writer
+    // the windowport itself uses (C term output can leave text there).
+    d.putstr(79, 1, 'X');
+    assert.equal(d.getChar(80, 2), 'X');
+    const input = resetInputState();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (let index = 0; index < 12; index++)
+        tty_add_menu(window, { identifier: index, text: `map ${index}` });
+    tty_end_menu(window);
+    input.feed('\n');
+    await tty_display_nhwindow(window, PICK_ANY);
+    await tty_dismiss_nhwindow(window);
+    // docorner() clears the final terminal column with cl_end(), and
+    // row_refresh() only repaints through NH x = COLNO-1, which the map
+    // draws in terminal column COLNO-2.
+    assert.equal(d.getChar(80, 2), ' ', 'the last terminal column must stay blank after corner dismissal');
+    await tty_destroy_nhwindow(window);
+});
 void test('dismissing a corner rebuilt from a cleared full-screen menu redraws only the corner', async () => {
     freshPlayableRoom({ left: 8, right: 60, bottom: 16, flags: { menu_overlay: false } });
     await docrt();

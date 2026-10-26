@@ -5,7 +5,7 @@ import { fingersOrGloves } from './dip_water.js';
 import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { tryCallObjectType } from './object_call.js';
@@ -173,7 +173,7 @@ async function dipInPolymorph(object, potion) {
     }
     const conduct = game.u.uconduct ??= {};
     if (!conduct.polypiles)
-        recordGameLogEvent(`polymorphed ${game.flags.female ? 'her' : 'his'} first item`);
+        recordGameLogEvent(`polymorphed ${game.flags.female ? 'her' : 'his'} first item`, { flags: LL_CONDUCT });
     conduct.polypiles = (conduct.polypiles ?? 0) + 1;
     const oldType = object.otyp;
     const replacement = await poly_obj(object);

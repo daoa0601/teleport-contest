@@ -10,7 +10,7 @@ import { heroIsHallucinating } from './senses.js';
 import { canSpotMonster, newsym, plineWithContinuation, see_monsters, } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_KILLEDPET, recordGameLogEvent } from './gamelog.js';
 import { MONSTER_GENO, monsterTypeName } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { heroIsAmphibious } from './hero_species.js';
@@ -305,7 +305,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
         // the species never leaves a corpse behind as a unique statue.
         if (!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)) {
             const given = MGIVENNAME(monster);
-            recordGameLogEvent(`murdered ${given ? `${given}, ` : ''}${game.flags.female ? 'her' : 'his'} faithful ${monsterTypeName(monster.mnum, monster.female)}`);
+            recordGameLogEvent(`murdered ${given ? `${given}, ` : ''}${game.flags.female ? 'her' : 'his'} faithful ${monsterTypeName(monster.mnum, monster.female)}`, { flags: LL_KILLEDPET });
         }
     }
     else if (monster.mpeaceful) {

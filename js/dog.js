@@ -5,7 +5,7 @@ import { A_CHA, DISMOUNT_THROWN, W_ARMS } from './const.js';
 import { heroEyeName, heroHasEyes } from './body_parts.js';
 import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, } from './monster_anger.js';
@@ -171,7 +171,7 @@ export function initializePet(monster, { state = game, everything = true } = {})
         state.u.uconduct = {};
     if (!state.u.uconduct.pets && state._moveloopStarted) {
         const pet = withIndefiniteArticle(monsterTypeName(monster.mnum, monster.female));
-        recordGameLogEvent(`obtained ${state.flags.female ? 'her' : 'his'} first pet (${pet})`, { state });
+        recordGameLogEvent(`obtained ${state.flags.female ? 'her' : 'his'} first pet (${pet})`, { state, flags: LL_CONDUCT });
     }
     state.u.uconduct.pets = (state.u.uconduct.pets || 0) + 1;
     return true;
