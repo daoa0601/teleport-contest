@@ -4,6 +4,7 @@ seed0002-healer-reflection-drummer.session.json
 seed0004-feeding-pony.session.json
 seed0006-wizard-water-demon.session.json
 seed0007-rogue-snake-swamp.session.json
+seed0009-swimmer-mforce.session.json
 seed0012-monk-vault-escort.session.json
 seed0013-friday13-save-then-fullmoon-restore.session.json
 seed0013-rogue-friday13-combat.session.json
