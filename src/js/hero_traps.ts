@@ -525,8 +525,9 @@ function upstart(text: string): string {
 
 // C Norep() compares pline.c's previous individual message.
 async function repeatableTrapMessage(message: string): Promise<void> {
+    // Norep() suppression has no side effects: vpline() returns before
+    // touching the tty line, so any pending topline prose stays pending.
     if (game._lastPlineMessage !== message) await pline(message);
-    else game._pending_message = '';
 }
 
 function objectAtHero(type: number): GameObject | null {
@@ -550,7 +551,6 @@ function heroEscapesPitEasily() {
     const form = heroMonsterForm();
     return form === PM_PIT_FIEND || (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE;
 }
-
 export async function climbOutOfPit() {
     requirePlayingGame(game);
     const hero = game.u;
