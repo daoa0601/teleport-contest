@@ -757,9 +757,10 @@ async function travelLookaroundStops(g = game) {
                 continue;
             const monster = monsterAtPosition(level, x, y, g);
             // display.h:_is_safemon(): safe_dog protects a peaceful monster
-            // only while the hero is unconfused, unstunned, and sane.
+            // the hero can spot, only while unconfused, unstunned, and sane.
             const safeMonster = monster && (g.flags.safe_dog ?? true)
-                && monster.mpeaceful && !confused && !hallucinating && !stunned;
+                && monster.mpeaceful && canSpotMonster(monster)
+                && !confused && !hallucinating && !stunned;
             if (monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
                 && M_AP_TYPE(monster) !== M_AP_OBJECT
                 && monsterVisible(monster, g) && !safeMonster) {

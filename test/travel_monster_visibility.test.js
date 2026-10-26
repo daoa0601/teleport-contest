@@ -67,4 +67,25 @@ for (const concealment of ['invisible', 'undetected']) {
         assert.doesNotMatch(requireScreenRow(0).map(cell => cell.ch).join(''), /blocks your path/);
     });
 }
+// display.h:_is_safemon() protects a peaceful monster only when the hero can
+// spot it; an unseen peaceful neighbor stops travel like a hostile one.
+void test('travel stops for a peaceful monster the hero cannot spot in darkness', async () => {
+    const input = freshTurnRoom({
+        flags: { tips: false, mention_walls: true }, hero: { nv_range: 0 },
+    });
+    input.feed('_llllll.');
+    await rhack(0);
+    const monster = await createMonsterAt('goblin', 12, 11, NO_MINVENT);
+    monster.mpeaceful = true;
+    assert.ok(game.level);
+    const location = game.level.requireAt(12, 11);
+    location.lit = false;
+    location.waslit = false;
+    vision_recalc(0);
+    assert.equal(cansee(12, 11), false);
+    assert.equal(await continueRun(), false);
+    assert.equal(game.u.ux, 11);
+    await flush_screen(1);
+    assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /blocks your path\./);
+});
 //# sourceMappingURL=travel_monster_visibility.test.js.map
