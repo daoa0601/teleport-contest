@@ -303,6 +303,10 @@ export async function renameDiscoveredType(): Promise<void> {
 
 // C ref: o_init.c dodiscovered() — show discoveries grouped by object class.
 export async function dodiscovered(): Promise<void> {
+    // C dodiscovered() returns plain ECMD_OK on every path, so rhack()'s
+    // reset_cmd_vars() keeps context.move FALSE: browsing discoveries never
+    // elapses a turn, including a cancelled sort prompt.
+    game.context.move = 0;
     game.flags.discosort ??= 'o';
     if (game.iflags.menu_requested && !await chooseDiscoverySort(1)) return;
     const relics = discoveredRelics();
@@ -348,6 +352,10 @@ function* discoveryRows(
 // o_init.c:doclassdisco(). Even traditional prompts accept empty classes;
 // those choices stay hidden so the prompt advertises only useful answers.
 export async function doclassdisco(): Promise<void> {
+    // C doclassdisco() returns plain ECMD_OK on every path, so rhack()'s
+    // reset_cmd_vars() keeps context.move FALSE: no path, not even a
+    // cancelled class prompt, elapses a turn.
+    game.context.move = 0;
     game.flags.discosort ??= 'o';
     if (game.iflags.menu_requested && !await chooseDiscoverySort(2)) return;
     const relics = discoveredRelics();

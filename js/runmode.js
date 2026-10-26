@@ -39,6 +39,20 @@ export function stopRun(g = game, andTravel = true) {
     if (g.multi > 0)
         g.multi = 0;
 }
+// C hack.c:findtravelpath() restores run to 8 after nomul(0) on arrival.
+// Keep that value: allmain.c suppresses new time updates until a command
+// resets run. Only a screen flush consumes an already pending update;
+// suppressed movement messages do not flush the screen (pline.c:vpline()).
+export function arriveTravel(g = game) {
+    if (g._runState?.mode === 8)
+        delete g._runState.visited;
+    g._runState = null;
+    g.context.mv = false;
+    g.context.travel = false;
+    g.context.travel1 = false;
+    if (g.multi > 0)
+        g.multi = 0;
+}
 export function runmodeDelayFrameCount(g = game, enabled = false, sourceTurn = g.moves || 0) {
     const runmode = String(g.flags?.runmode || 'run').toLowerCase();
     return !enabled

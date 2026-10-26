@@ -83,6 +83,7 @@ const transientFields = {
     _ballChainRestriction: true,
     _heroBubble: true,
     _domoveSucceeded: true,
+    _domoveReachedTail: true,
     _wishHistory: true,
     _pickWarningMove: true,
     _pickupEncumbrance: true,

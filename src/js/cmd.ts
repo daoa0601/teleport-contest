@@ -361,7 +361,7 @@ import { heroCanOoze } from './monster_perception.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
-import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
+import { arriveTravel, captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
     armorSlotFor,
     armorSimpleName, armorOffMessage,
@@ -1135,16 +1135,27 @@ export async function continueRun(g: GameState = game): Promise<boolean> {
         if (g.multi < COLNO && --g.multi === 0) stopRun(g);
         const moved = await domove(g.u.dx ?? 0, g.u.dy ?? 0, false);
         if (g.program_state.gameover) return false;
-        if (moved) await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
+        // C domove_core() skips runmode_delay_output() on early returns,
+        // including attacks, blocked steps and the final travel pet bump.
+        // A refused pet swap reaches the tail after restoring the hero.
+        const reachedTail = !!g._domoveReachedTail;
+        if (moved && reachedTail) await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         g.context.move = moved ? 1 : 0;
-        if (g.u.ux === state.targetX && g.u.uy === state.targetY)
-            g._travelTarget = null;
-        // Reaching the destination ends the run inside selectTravelStep()
-        // with nomul(0), after which C's findtravelpath() leaves
-        // context.run at 8; the time field only refreshes once the run
-        // flag is gone, so the turn that pays for the final step must not
-        // mark it dirty either.
+        const arrived = g.u.ux === state.targetX && g.u.uy === state.targetY;
+        if (arrived) g._travelTarget = null;
         if (!moved) stopRun(g);
+        // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the
+        // adjacent shortcut and the backward-search arrival) keep C's
+        // lingering run at 8.  A step that entered the target without
+        // one of those -- the general-direction fallback, whose C twin
+        // (hack.c:1481-1488) skips nomul(0) -- ends on the next pass at
+        // found: (hack.c:1518-1522), where nomul(0) leaves run 0 with
+        // the time repaint pending.
+        else if (arrived && !g._runState) arriveTravel(g);
+        else if (arrived) stopRun(g);
+        // Pathfinding can end travel without entering the target. Keep
+        // C's restored run value and let screen flushes own time updates.
+        else if (!g._runState && g.context.run === 8) arriveTravel(g);
         return moved;
     }
     if (!state || !await lookaroundRun(state, g)) {
@@ -5175,14 +5186,26 @@ async function dotravelTarget(): Promise<void> {
     const state = startTravel(target.x, target.y);
     const moved = await domove(game.u.dx ?? 0, game.u.dy ?? 0);
     if (game.program_state.gameover) return;
-    if (moved) await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
+    // C domove_core() skips runmode_delay_output() on early returns,
+    // including attacks, blocked steps and the final travel pet bump.
+    // A refused pet swap reaches the tail after restoring the hero.
+    const reachedTail = !!game._domoveReachedTail;
+    if (moved && reachedTail) await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     // The target-selection command itself is time-consuming.  A blocked
     // first step stops travel but still reaches the monster/global turn.
     game.context.move = 1;
-    if (game.u.ux === state.targetX && game.u.uy === state.targetY)
-        game._travelTarget = null;
-    if (!moved || (game.u.ux === state.targetX && game.u.uy === state.targetY))
-        stopRun();
+    const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
+    if (arrived) game._travelTarget = null;
+    if (!moved) stopRun();
+    // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the adjacent
+    // shortcut and the backward-search arrival) keep C's lingering run at
+    // 8.  A step that entered the target without one of those ends at C's
+    // found: label instead: nomul(0) leaves run 0 with the repaint pending.
+    else if (arrived && !game._runState) arriveTravel(game);
+    else if (arrived) stopRun();
+    // Pathfinding can end travel without entering the target. Keep
+    // C's restored run value and let screen flushes own time updates.
+    else if (!game._runState && game.context.run === 8) arriveTravel(game);
 }
 
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
@@ -7253,6 +7276,10 @@ async function finishHeroMovement({
     ballChainMove?: Awaited<ReturnType<typeof beginBallAndChainMove>>;
 }): Promise<boolean> {
     const u = game.u;
+    // This tail is domove_core()'s epilogue; reaching it (rather than one
+    // of the early returns) keeps runmode_delay_output() and the pending
+    // time repaint, even when a refused pet swap restored the hero.
+    game._domoveReachedTail = true;
     await placeHeroOnLevel(u.ux, u.uy);
     resetOccupations();
     // hack.c:domove_core() ends only a real run (context.run != 0) upon
@@ -7313,6 +7340,7 @@ async function delayAfterDraggingBall(): Promise<void> {
 async function domove(dx: number, dy: number, explicitAttempt = true): Promise<boolean> {
     const oldx = game.u.ux, oldy = game.u.uy;
     game._domoveSucceeded = false;
+    game._domoveReachedTail = false;
     const moved = await domoveCore(dx, dy);
     if (!game.program_state.gameover) {
         if (explicitAttempt && game._domoveSucceeded) {
