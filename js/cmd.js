@@ -7600,13 +7600,32 @@ async function domoveCore(dx, dy) {
         u.uy0 = u.uy;
         u.ux = monster.mx;
         u.uy = monster.my;
-        // hack.c:domove_core() applies the shared destination-monster block
-        // to u.ustuck too: nomul(0) for a non-safe monster or an explicit
-        // fight prefix cancels a count or run before do_attack(), while
-        // requesting a full status update.
-        if (!heroMayDisplaceMonster(monster) || game.context.forcefight)
+        // hack.c:domove_core() runs its shared target-monster block for the
+        // swallower as well: a target that is not safe to displace cancels
+        // running and count-prefixed repeats with nomul(0) before the
+        // m-prefix bump or do_attack(), so a swallowed attack never becomes
+        // an automatic multi-step sequence.
+        if (game.context.forcefight || !heroMayDisplaceMonster(monster))
             nomul(0, game);
-        return attackHostileMonster(monster, monster.mx, monster.my);
+        if (await bumpIntoMonster(monster, monster.mx, monster.my))
+            return true;
+        const safeMonster = !game.context.forcefight && heroMayDisplaceMonster(monster);
+        if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
+            // A yielding swallower cannot be entered; the spent step ends
+            // here like every other non-evading displacement outcome.
+            if ((await runSafepetDisplacement(monster)) !== 'evaded')
+                return true;
+            return true;
+        }
+        // domove_attackmon_at(): do_attack() runs the attack_checks()
+        // reveal sequence for the swallower exactly as for any target.
+        const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: monster.mx, y: monster.my } });
+        if (!verdict.proceed)
+            return verdict.spentTime;
+        await attackHostileMonster(monster, monster.mx, monster.my, {
+            confirmationOverridden: verdict.confirmationOverridden ?? false,
+        });
+        return true;
     }
     if (await airTurbulenceStopsHero())
         return true;
