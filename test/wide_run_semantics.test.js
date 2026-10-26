@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { rhack } from '../js/cmd.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DOOR, ROOM } from '../js/const.js';
@@ -10,6 +9,9 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenRow } from './support/screen.js';
 import { DAGGER } from '../js/object_data.js';
+import { applyNethackrc } from '../js/options.js';
+import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { arriveTravel } from '../js/runmode.js';
 // A command has settled once nothing further will elapse on its behalf.
 function settled() {
     return game.multi <= 0 && !game._runState && !game._heroTimePending
@@ -141,7 +143,7 @@ void test('after a completed travel the status time field lags one timed command
 // nopick is set, and the arrival step's nomul(0) cleared context.travel,
 // so the final step reports "Pardon me" through domove_bump_mon() and
 // returns early: the turn is spent, the hero stays outside the target,
-// and the pending time repaint is consumed by that early return.
+// and its message flushes the pending time repaint before the turn elapses.
 void test('a travel whose target holds a pet ends with the turn spent outside it', async () => {
     freshTurnRoom();
     const level = requireGameLevel(game);
@@ -163,9 +165,42 @@ void test('a travel whose target holds a pet ends with the turn spent outside it
     });
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10], 'the bumped final step leaves the hero outside the target');
     assert.equal(game.moves, turn + 2, 'the bumped final step still spent its turn');
-    // The consumed time repaint itself is pinned by the recorded a6ea2905
-    // session, whose C screens keep the pre-bump time field across the
-    // following prompts; driving it here needs the harness to interleave
-    // its cleanup key with that pending repaint.
+    assert.equal(displayedTime(), turn + 1, 'the visible bump message flushes the time before its turn elapses');
 });
+void test('a hidden travel bump keeps the time repaint pending until its turn elapses', async () => {
+    freshTurnRoom();
+    requirePlayingGame(game);
+    game.flags.time = true;
+    game.u.uen = game.u.uenmax;
+    const pet = await createMonsterAt('kitten', 12, 10);
+    pet.mtame = 10;
+    pet.mpeaceful = 1;
+    applyNethackrc('MSGTYPE=hide "^Pardon me,"');
+    const gate = resetInputState();
+    const turn = game.moves;
+    await runKeys(gate, '_ll.', () => game.moves === turn + 2 && settled());
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.moves, turn + 2);
+    assert.equal(displayedTime(), turn + 2, 'a hidden bump message does not flush the pending time repaint');
+});
+// C pline.c:vpline() suppresses MSGTYPE hide and Norep messages before
+// flush_screen(). Ending travel must preserve an unflushed time update.
+for (const suppression of ['hidden', 'repeated']) {
+    void test(`ending travel preserves a time update after a ${suppression} message`, async () => {
+        freshTurnRoom();
+        game.flags.time = true;
+        const message = 'You are still in a pit.';
+        await plineWithContinuation(message);
+        const previousTime = displayedTime();
+        if (suppression === 'hidden')
+            applyNethackrc('MSGTYPE=hide "pit"');
+        game.moves++;
+        game.context.time_botl = true;
+        await plineWithContinuation(message, { noRepeat: suppression === 'repeated' });
+        arriveTravel(game);
+        assert.equal(displayedTime(), previousTime, 'suppressed prose leaves the previous time on screen');
+        await flush_screen(1);
+        assert.equal(displayedTime(), game.moves, 'the next screen flush displays the pending time update');
+    });
+}
 //# sourceMappingURL=wide_run_semantics.test.js.map

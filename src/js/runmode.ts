@@ -42,26 +42,17 @@ export function stopRun(g: GameState = game, andTravel = true): void {
     if (g.multi > 0) g.multi = 0;
 }
 
-// C hack.c:findtravelpath() arrival (1404-1414): nomul(0) ends the run
-// machinery and context.run is then restored to 8 "so domove run checks
-// work".  The restored 8 lingers after travel ends: allmain.c:262 then
-// suppresses time_botl on every later turn until a command resets run
-// through reset_cmd_vars() or set_move_cmd(), so the status window's
-// time field keeps its pre-arrival value across those turns.
-export function arriveTravel(g: GameState = game, completedStep: boolean): void {
+// C hack.c:findtravelpath() restores run to 8 after nomul(0) on arrival.
+// Keep that value: allmain.c suppresses new time updates until a command
+// resets run. Only a screen flush consumes an already pending update;
+// suppressed movement messages do not flush the screen (pline.c:vpline()).
+export function arriveTravel(g: GameState = game): void {
     if (g._runState?.mode === 8) delete g._runState.visited;
     g._runState = null;
     g.context.mv = false;
     g.context.travel = false;
     g.context.travel1 = false;
     if (g.multi > 0) g.multi = 0;
-    // A final step that ran to domove_core()'s tail keeps the pending time
-    // repaint, which paints that turn -- even a refused pet swap, which
-    // restores the hero but still reaches the tail (hack.c:2922-2923).
-    // A step that returned early (an attack, or the 'm'-prefix pet bump
-    // that nomul(0) let through on the final step) consumed that repaint
-    // with its own message output, so no repaint is pending any more.
-    if (!completedStep) g.context.time_botl = false;
 }
 
 export function runmodeDelayFrameCount(

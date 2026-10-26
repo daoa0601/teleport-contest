@@ -1135,24 +1135,19 @@ export async function continueRun(g: GameState = game): Promise<boolean> {
         if (g.multi < COLNO && --g.multi === 0) stopRun(g);
         const moved = await domove(g.u.dx ?? 0, g.u.dy ?? 0, false);
         if (g.program_state.gameover) return false;
-        // C domove_core() returns early -- before its tail effects and
-        // runmode_delay_output() (hack.c:2990) -- for a pet bump on the
-        // final step (after nomul(0) cleared context.travel), an attack,
-        // a blocked step.  A refused pet swap still reaches the tail
-        // with the hero restored (hack.c:2922-2923), keeping the delay
-        // and the pending time repaint.
+        // C domove_core() skips runmode_delay_output() on early returns,
+        // including attacks, blocked steps and the final travel pet bump.
+        // A refused pet swap reaches the tail after restoring the hero.
         const reachedTail = !!g._domoveReachedTail;
         if (moved && reachedTail) await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         g.context.move = moved ? 1 : 0;
         const arrived = g.u.ux === state.targetX && g.u.uy === state.targetY;
         if (arrived) g._travelTarget = null;
         if (!moved) stopRun(g);
-        else if (arrived) arriveTravel(g, reachedTail);
-        // A final step that completed domove_core() without entering the
-        // target ("You stop, unsure which way to go.") still leaves C's
-        // context.run at 8 (hack.c:1409) with the pending time repaint;
-        // an early return consumed that repaint with its own output.
-        else if (!g._runState && g.context.run === 8) arriveTravel(g, reachedTail);
+        else if (arrived) arriveTravel(g);
+        // Pathfinding can end travel without entering the target. Keep
+        // C's restored run value and let screen flushes own time updates.
+        else if (!g._runState && g.context.run === 8) arriveTravel(g);
         return moved;
     }
     if (!state || !await lookaroundRun(state, g)) {
@@ -5183,12 +5178,9 @@ async function dotravelTarget(): Promise<void> {
     const state = startTravel(target.x, target.y);
     const moved = await domove(game.u.dx ?? 0, game.u.dy ?? 0);
     if (game.program_state.gameover) return;
-    // C domove_core() returns early -- before its tail effects and
-    // runmode_delay_output() (hack.c:2990) -- for a pet bump on the
-    // final step (after nomul(0) cleared context.travel), an attack,
-    // a blocked step.  A refused pet swap still reaches the tail
-    // with the hero restored (hack.c:2922-2923), keeping the delay
-    // and the pending time repaint.
+    // C domove_core() skips runmode_delay_output() on early returns,
+    // including attacks, blocked steps and the final travel pet bump.
+    // A refused pet swap reaches the tail after restoring the hero.
     const reachedTail = !!game._domoveReachedTail;
     if (moved && reachedTail) await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     // The target-selection command itself is time-consuming.  A blocked
@@ -5197,12 +5189,10 @@ async function dotravelTarget(): Promise<void> {
     const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
     if (arrived) game._travelTarget = null;
     if (!moved) stopRun();
-    else if (arrived) arriveTravel(game, reachedTail);
-    // A final step that completed domove_core() without entering the
-    // target ("You stop, unsure which way to go.") still leaves C's
-    // context.run at 8 (hack.c:1409) with the pending time repaint;
-    // an early return consumed that repaint with its own output.
-    else if (!game._runState && game.context.run === 8) arriveTravel(game, reachedTail);
+    else if (arrived) arriveTravel(game);
+    // Pathfinding can end travel without entering the target. Keep
+    // C's restored run value and let screen flushes own time updates.
+    else if (!game._runState && game.context.run === 8) arriveTravel(game);
 }
 
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
