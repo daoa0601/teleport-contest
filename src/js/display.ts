@@ -3374,7 +3374,9 @@ export async function pageTopline(
     if (game.iflags.debug_fuzzer) return 0;
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
-    const lines = toplineRows(message, columns);
+    // The stored toplines already carry update_topl()'s word wrap; more()
+    // only adds topl_putsym()'s hard column wrap.
+    const lines = toplineRows(message, columns, { splitWords: false });
     const moreCells = [...'--More--'].map(ch => ({ ch, dec: false }));
     const finalMessageLine = lines.at(-1) ?? lines[0];
     let finalLine = finalMessageLine;
@@ -3526,7 +3528,11 @@ async function updateTopline(
     const visibleLength = (message: string) => /[\x0e\x0f]|\x1b\[[0-9;]*C/.test(message)
         ? decodeMixedTopline(message).length : message.length;
     const columns = game.nhDisplay?.cols ?? 80;
-    const wraps = toplineRows(msg, columns).length > 1;
+    // update_topl() stores gt.toplines with its word wrap already applied
+    // (a space replaced by a newline), so recall and paging never re-split.
+    const stored = (message: string) => wrapStoredToplines(message, columns);
+    const msgToplines = stored(msg);
+    const wraps = toplineRows(msgToplines, columns, { splitWords: false }).length > 1;
     if (!urgent && game._suppressMessagesUntilInput) {
         const stopped = game.nhDisplay?.stoppedTopline ?? pending;
         // Escape's more() resets the message cursor to row zero. Hidden
@@ -3538,30 +3544,30 @@ async function updateTopline(
         // compares "You die" after the length check, so a long stopped line
         // keeps WIN_STOP set through the following survival question.
         if (game.nhDisplay)
-            game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
-        if (fits && !restarts) game._toplines = `${game._toplines}  ${msg}`;
+            game.nhDisplay.stoppedTopline = fits && !restarts ? stored(`${stopped}  ${msg}`) : msgToplines;
+        if (fits && !restarts) game._toplines = stored(`${game._toplines}  ${msg}`);
         else {
             // update_topl() remembers the replaced line even while WIN_STOP
             // hides this one (topl.c:272-281).
             rememberToplines();
-            game._toplines = msg;
+            game._toplines = msgToplines;
         }
         if (!restarts) return null;
         game._suppressMessagesUntilInput = false;
-        replaceTopline(msg);
-        return wraps ? await pageTopline(msg, paging) : null;
+        replaceTopline(msgToplines);
+        return wraps ? await pageTopline(msgToplines, paging) : null;
     }
     let dismissal;
     if (!pending) {
         rememberToplines();
-        game._toplines = msg;
-        replaceTopline(msg);
+        game._toplines = msgToplines;
+        replaceTopline(msgToplines);
         dismissal = wraps
-            ? await pageTopline(msg, paging) : null;
+            ? await pageTopline(msgToplines, paging) : null;
     } else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
-        game._toplines = `${game._toplines}  ${msg}`;
-        replaceTopline(`${pending}  ${msg}`);
+        game._toplines = stored(`${game._toplines}  ${msg}`);
+        replaceTopline(game._toplines);
         dismissal = null;
     } else {
         dismissal = await pageTopline(pending, paging);
@@ -3569,12 +3575,32 @@ async function updateTopline(
         if (dismissal === 27) paging.dismissKey = 1;
         // Escape suppresses later lines, not the line which forced this pager.
         rememberToplines();
-        game._toplines = msg;
-        replaceTopline(msg);
+        game._toplines = msgToplines;
+        replaceTopline(msgToplines);
         if (wraps)
-            dismissal = await pageTopline(msg, paging);
+            dismissal = await pageTopline(msgToplines, paging);
     }
     return dismissal;
+}
+
+// C update_topl()'s storage wrap: from each CO-1 boundary search back to the
+// nearest space and replace it with a newline; a huge token is split after
+// its end, and text with no space at all is left to topl_putsym()'s hard
+// column wrap at render time.
+function wrapStoredToplines(message: string, columns: number): string {
+    let start = 0;
+    while (message.length - start >= columns) {
+        let split = start + columns - 1;
+        while (split > start && message.charAt(split) !== ' ') split--;
+        if (split === start) {
+            const next = message.indexOf(' ', start);
+            if (next < 0) break;
+            split = next;
+        }
+        message = `${message.slice(0, split)}\n${message.slice(split + 1)}`;
+        start = split + 1;
+    }
+    return message;
 }
 
 function writeRawText(text: string) {

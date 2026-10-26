@@ -164,7 +164,9 @@ async function editLine(
         }
         game._pending_message = `${prompt} ${value}`;
         // The loop head rebuilds gt.toplines from the query and the text
-        // typed so far before every key (getline.c:81).
+        // getline.c addtopl() clears TOPLINE_SPECIAL_PROMPT with each typed
+        // character, so a recall from a mid-edit prompt pages like any other.
+        game._promptOwnsTopline = false;
         game._toplines = game._pending_message;
         clearSuppressedStatus();
         renderEditor();
