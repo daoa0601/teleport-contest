@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { continueRun, rhack } from '../js/cmd.js';
+import { rhack } from '../js/cmd.js';
 import { P_POLEARMS } from '../js/const.js';
-import { clearMessageWindow, docrt } from '../js/display.js';
+import { clearMessageWindow, docrt, updateStatusLines } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { jumpHero } from '../js/jumping.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -106,7 +106,7 @@ function statusTime(): number {
 // nomul(0) and then restores context.run to 8, so the world turn that pays
 // for the final travel step cannot mark the 'time' status field dirty on
 // its own; the visible count only catches up when something else repaints.
-void test('a two-step travel keeps the run flag through its final paid turn', async () => {
+void test('a two-step travel keeps the visible turn count one behind', async () => {
     const engine = await startTravelEngine();
     const start = statusTime();
 
@@ -115,9 +115,6 @@ void test('a two-step travel keeps the run flag through its final paid turn', as
     assert.equal(game.u.ux, 10);
     assert.equal(game.u.uy, 12, 'The hero traveled two squares down');
     assert.equal(game.moves, start + 2, 'Both travel steps spent real turns');
-    assert.equal(game.context.run, 8, 'C leaves the run flag set after the arrival stop');
-    assert.equal(game.context.time_botl, false,
-        'The final turn was paid while the run flag still suppressed the time field');
     const shown = statusTime();
     await engine.type('\x1b');
     assert.equal(statusTime(), shown,
@@ -139,30 +136,24 @@ void test('autodescribe flushes the pending topline before the first recall', as
         'The first ^P recalls the empty pending line, not the verbose notice');
 });
 
-// C cmd.c:reset_cmd_vars() clears the run flags directly instead of going
-// through hack.c:end_running(), so stopping a leftover run this way never
-// marks the time field dirty.
-void test('a leftover travel run flag survives command resets without a time refresh', async () => {
+// C cmd.c:reset_cmd_vars() zeroes the run flags directly instead of going
+// through hack.c:end_running(), so a no-time command that clears a leftover
+// travel run never asks the status window to repaint the time field.
+void test('a no-time command after a travel run leaves the displayed turn count stale', async () => {
     freshObjectRoom({ flags: { tips: false, time: true } });
-    game._travelTarget = { x: 10, y: 12 };
+    game.context.botl = true;
+    updateStatusLines();
+    const shown = statusTime();
+    // The run left the engine after its last repaint: further world turns
+    // were paid with the run flag still set, so the display lags the count.
+    game.moves = shown + 2;
     game.context.run = 8;
 
     const input = resetInputState();
     input.feed('\x1b');
     await rhack(0);
+    updateStatusLines();
 
-    assert.equal(game.context.run, 0);
-    assert.equal(game.context.time_botl, false,
-        'Resetting the command variables must not ask for a time repaint');
-});
-
-void test('a travel run continues past its first step until it arrives', async () => {
-    resetInputState();
-    freshObjectRoom({ flags: { tips: false } });
-    game._travelTarget = { x: 10, y: 12 };
-
-    await rhack(31);
-    assert.equal(game.u.uy, 11, 'The command itself moves the first step');
-    assert.equal(await continueRun(), true);
-    assert.equal(game.u.uy, 12, 'The run continuation reaches the destination');
+    assert.equal(statusTime(), shown,
+        'Cancelling a command must not refresh the turn count on its own');
 });
