@@ -151,7 +151,7 @@ import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
 import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, setTopline, putMessageHistory, rememberToplines, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, setTopline, putMessageHistory, rememberToplines, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, monsterVisible, unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { transformMagicLampToOilLamp } from './light.js';
@@ -755,15 +755,14 @@ async function travelLookaroundStops(g = game) {
                 continue;
             if (noDiagonal && x !== u.ux && y !== u.uy)
                 continue;
-            const monster = level.monsters.find(mon => monsterHasMapPosition(mon, g)
-                && mon.mx === x && mon.my === y);
+            const monster = monsterAtPosition(level, x, y, g);
             // display.h:_is_safemon(): safe_dog protects a peaceful monster
             // only while the hero is unconfused, unstunned, and sane.
             const safeMonster = monster && (g.flags.safe_dog ?? true)
                 && monster.mpeaceful && !confused && !hallucinating && !stunned;
             if (monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
                 && M_AP_TYPE(monster) !== M_AP_OBJECT
-                && canSeeRunMonster(monster, x, y, g) && !safeMonster) {
+                && monsterVisible(monster, g) && !safeMonster) {
                 if (g.flags.mention_walls)
                     await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
                 return true;

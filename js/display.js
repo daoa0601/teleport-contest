@@ -132,9 +132,9 @@ export function senseWithTelepathy(monster) {
     return dx * dx + dy * dy <= range;
 }
 // C mon_visible(): this does not check the square or sensory detection.
-export function monsterVisible(monster) {
-    const seesInvisible = !!(game.u?.seeInvisible
-        || (game.u?.seeInvisibleTurns ?? 0) > 0);
+export function monsterVisible(monster, state = game) {
+    const seesInvisible = !!(state.u.seeInvisible
+        || (state.u.seeInvisibleTurns ?? 0) > 0);
     return (!monster.minvis || seesInvisible) && !monster.mundetected;
 }
 export function seeMonsterWithInfrared(monster) {
