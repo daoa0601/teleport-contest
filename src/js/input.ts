@@ -9,7 +9,12 @@ import type { TerminalReadKeyOptions } from './terminal.js';
 import type { Position } from './map_types.js';
 import { isok } from './const.js';
 
-export type CommandResponse = number | 'user-input' | Position;
+export interface CommandDirection {
+    readonly dx: number;
+    readonly dy: number;
+    readonly dz: number;
+}
+export type CommandResponse = number | 'user-input' | CommandDirection;
 export interface MapClick extends Position { button: 1 | 2 }
 export const MAP_CLICK_KEY = 256;
 
@@ -109,9 +114,12 @@ export class InputGate {
     }
 
     takeCommandPosition(): Position | null | undefined {
-        const response = this.commandKeys.shift();
+        const response = this.takeCommandResponse();
         if (response === undefined) return undefined;
-        if (typeof response === 'object') return response;
+        // C getpos() accepts only a horizontal CMDQ_DIR, relative to the
+        // hero's position when the target is requested.
+        if (typeof response === 'object' && response.dz === 0)
+            return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
         this.clearCommandKeys();
         return null;
     }

@@ -13,6 +13,7 @@ import { setSlipperyHands } from '../js/towel.js';
 import { addTrap } from './support/level-state.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { choose, finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 
 for (const up of [true, false]) {
@@ -391,6 +392,66 @@ void test('peaceful monsters offer talking, swapping and naming', async () => {
         await choose(engine, 'Name the goblin');
         assert.match(screen(), /What do you want to call the goblin/);
         assert.doesNotMatch(screen(), /Move cursor/);
+    } finally { await finish(engine); }
+});
+
+void test('refusing to chat while strangled discards the target without moving or attacking', async () => {
+    const engine = await startMenuGame();
+    try {
+        const goblin = await createMonsterAt('goblin', 11, 10);
+        goblin.mpeaceful = true;
+        const hitPoints = goblin.mhp;
+        game.u.strangledTurns = 6;
+        const moves = game.moves;
+        await type(engine, '#therecmdmenu\nl');
+
+        await choose(engine, 'Talk to the goblin');
+
+        assert.match(screen(), /You can't speak\.  You're choking!/);
+        assert.equal(game.moves, moves);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
+        assert.equal(goblin.mhp, hitPoints);
+        assert.equal(goblin.mx, 11);
+        assert.equal(goblin.my, 10);
+    } finally { await finish(engine); }
+});
+
+void test('refusing to close a door without hands discards the direction without stepping through', async () => {
+    const engine = await startMenuGame();
+    try {
+        installPolymorphedHero('snake');
+        const door = requireGameLevel().requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_ISOPEN;
+        const moves = game.moves;
+        await type(engine, '#therecmdmenu\n_l.');
+
+        await choose(engine, 'Close the door');
+
+        assert.match(screen(), /You can't close anything -- you have no hands!/);
+        assert.equal(game.moves, moves);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
+        assert.equal(door.doormask, D_ISOPEN);
+    } finally { await finish(engine); }
+});
+
+void test('refusing to disarm a trap here discards the downward direction without descending', async () => {
+    const engine = await startMenuGame();
+    try {
+        installPolymorphedHero('snake');
+        addTrap(requireGameLevel(), ARROW_TRAP, 10, 10, { tseen: true });
+        const moves = game.moves;
+        await type(engine, '#herecmdmenu\n');
+
+        await choose(engine, 'Attempt to disarm trap');
+
+        assert.match(screen(), /And just how do you expect to do that\?/);
+        assert.doesNotMatch(screen(), /You can't go down here/);
+        assert.equal(game.moves, moves);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.u.uy, 10);
     } finally { await finish(engine); }
 });
 

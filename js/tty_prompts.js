@@ -1,10 +1,10 @@
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
-import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK } from './const.js';
+import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
 import { selectMapPosition } from './getpos.js';
-import { readchar, takeCommandKey } from './input.js';
+import { clearCommandKeys, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
@@ -58,9 +58,15 @@ export async function readDirectionKey(message = 'In what direction? ') {
             return queued.kind === 'key' ? queued.key : 27;
     }
     else {
-        const queuedKey = takeCommandKey();
-        if (queuedKey !== undefined)
-            return queuedKey;
+        const queued = takeCommandResponse();
+        if (typeof queued === 'number')
+            return queued;
+        if (typeof queued === 'object')
+            return queuedDirectionKey(queued);
+        if (queued !== undefined) {
+            clearCommandKeys();
+            return 0;
+        }
     }
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
@@ -78,6 +84,15 @@ export async function readDirectionKey(message = 'In what direction? ') {
     game._toplines = `${message}${keyText(key)}`;
     clearMessageWindow();
     return key;
+}
+// C getdir() converts CMDQ_DIR through xytodir() and Cmd.dirchars only
+// when it needs the direction; other prompts must keep its entry type.
+function queuedDirectionKey({ dx, dy, dz }) {
+    const direction = dz ? zdir.findIndex(z => z === Math.sign(dz))
+        : xdir.findIndex((x, index) => index < N_DIRS && x === dx && ydir[index] === dy);
+    // A distant vector yields DIR_ERR. The pinned recorder reads NUL at
+    // dirchars[-1] and cancels silently; avoid that out-of-bounds read.
+    return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
 }
 export async function promptDirection(readKey = readDirectionKey, { ctrlCommandHint = false } = {}) {
     for (;;) {

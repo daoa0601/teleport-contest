@@ -1593,10 +1593,7 @@ async function runCommandHandler(binding: CommandBinding, {
         return;
     }
     if (cannedCommand?.kind === 'kick') {
-        // C queues dokick() with cmdq_add_dir(); getdir() pops that canned
-        // direction instead of reading a key, so feed the bound movement key.
-        const key = kickDirectionKey(cannedCommand.dx, cannedCommand.dy);
-        if (key) queueCommandKeys(String.fromCharCode(key));
+        queueCommandResponses([{ dx: cannedCommand.dx, dy: cannedCommand.dy, dz: 0 }]);
         try {
             await dokick();
         } finally {
@@ -2445,20 +2442,6 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
     return true;
 }
 
-// C getdir() converts a cmdq_add_dir() entry through xytodir() into the
-// currently bound movement key for that delta; mirror that lookup so the
-// queued kick never prompts for a direction.
-function kickDirectionKey(dx: number, dy: number): number | null {
-    for (let direction = 0; direction < 8; direction++) {
-        const key = game.commandBindings.keyForDirection(direction);
-        if (!key) continue;
-        const movement = game.commandBindings.movementForKey(key, 0);
-        if (movement && !movement.dz && movement.dx === dx && movement.dy === dy)
-            return key;
-    }
-    return null;
-}
-
 async function dokick() {
     if (!await admitHeroKick()) return;
     const direction = await promptDirection();
@@ -2793,37 +2776,34 @@ function contextMenuCommand(selection: ContextMenuSelection): string {
 
 function contextMenuResponses(selection: ContextMenuSelection): void {
     const dx = Math.sign(selection.x - game.u.ux), dy = Math.sign(selection.y - game.u.uy);
-    const direction = kickDirectionKey(dx, dy);
-    const key = direction ?? 0;
+    const direction = { dx, dy, dz: 0 };
     const yes = 'y'.charCodeAt(0);
     switch (selection.action) {
     case 'open': case 'untrap-door': case 'kick': case 'close': case 'showtrap':
-    case 'untrap': case 'ride': case 'chat': queueCommandResponses([key]); return;
+    case 'untrap': case 'ride': case 'chat': queueCommandResponses([direction]); return;
     case 'lock': {
         const tool = [SKELETON_KEY, LOCK_PICK, CREDIT_CARD]
             .map(type => game.inventory.find(object => object.otyp === type)).find(object => object);
-        if (tool?.invlet) queueCommandResponses([tool.invlet.charCodeAt(0), key, yes]);
+        if (tool?.invlet) queueCommandResponses([tool.invlet.charCodeAt(0), direction, yes]);
         return;
     }
-    case 'remove-saddle': queueCommandResponses([key, yes]); return;
+    case 'remove-saddle': queueCommandResponses([direction, yes]); return;
     case 'saddle': {
         const saddle = game.inventory.find(object => object.otyp === SADDLE);
-        if (saddle?.invlet) queueCommandResponses([saddle.invlet.charCodeAt(0), key]);
+        if (saddle?.invlet) queueCommandResponses([saddle.invlet.charCodeAt(0), direction]);
         return;
     }
-    case 'name': queueCommandResponses(['m'.charCodeAt(0), { x: selection.x, y: selection.y }]); return;
+    case 'name': queueCommandResponses(['m'.charCodeAt(0), direction]); return;
     case 'quaff': case 'tip': case 'eat': queueCommandResponses([yes]); return;
     case 'dip': queueCommandResponses(['user-input', yes]); return;
-    case 'throw': {
-        // act_on_act() keeps the raw offset for throwing. For a distant
-        // vector, getdir() reads dirchars[DIR_ERR]; the pinned recorder
-        // reads NUL and cancels silently. Avoid that out-of-bounds read.
-        const throwDirection = kickDirectionKey(selection.x - game.u.ux, selection.y - game.u.uy);
-        queueCommandResponses(['user-input', throwDirection ?? 0]);
+    case 'throw':
+        // act_on_act() retains the raw offset for throwing.
+        queueCommandResponses(['user-input', {
+            dx: selection.x - game.u.ux, dy: selection.y - game.u.uy, dz: 0,
+        }]);
         return;
-    }
     case 'offer': queueCommandResponses(['user-input']); return;
-    case 'untrap-here': queueCommandKeys(String.fromCharCode(game.commandBindings.keyForDirection(8))); return;
+    case 'untrap-here': queueCommandResponses([{ dx: 0, dy: 0, dz: 1 }]); return;
     case 'travel': game._travelTarget = { x: selection.x, y: selection.y }; return;
     case 'attack': case 'cast': case 'dismount': case 'down': case 'drop':
     case 'inventory': case 'look': case 'look-at': case 'loot': case 'move':

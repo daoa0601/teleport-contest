@@ -85,11 +85,13 @@ export class InputGate {
         return 27;
     }
     takeCommandPosition() {
-        const response = this.commandKeys.shift();
+        const response = this.takeCommandResponse();
         if (response === undefined)
             return undefined;
-        if (typeof response === 'object')
-            return response;
+        // C getpos() accepts only a horizontal CMDQ_DIR, relative to the
+        // hero's position when the target is requested.
+        if (typeof response === 'object' && response.dz === 0)
+            return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
         this.clearCommandKeys();
         return null;
     }
