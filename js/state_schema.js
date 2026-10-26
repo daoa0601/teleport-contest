@@ -1,15 +1,15 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
-export const SAVE_VERSION = 43;
+export const SAVE_VERSION = 44;
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
     '_artifactExists', '_artifactFound', '_artifactOrigins', '_artifactRuntime',
     '_deathKiller', '_encounteredObjectTypes', '_fobjSerial', '_heroTrack',
     '_initialGoldCount', '_knownObjectTypes', '_last_message', '_levelAnnotations',
     '_levelCache', '_lifeSavedCount', '_migratingMonsters', '_nextAttribCheck', '_nextIdent',
-    '_lightSerial', '_nextObjectTimerId', '_timerSerial', '_objectCallNames', '_objectDiscoveryOrder',
-    '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause', '_priestPantheonIndex',
-    '_questExpulsionPending', '_stethoscopeSeq', '_travelTipShown',
+    '_lightSerial', '_messageHistory', '_nextObjectTimerId', '_timerSerial', '_objectCallNames',
+    '_objectDiscoveryOrder', '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause',
+    '_priestPantheonIndex', '_questExpulsionPending', '_stethoscopeSeq', '_travelTipShown',
     '_tributeBookstock', '_tutorialActive', 'aggravateMonster', 'aggravate_monster',
     'air_level', 'antimagic', 'astral_level', 'billObjects', 'blind', 'branches',
     'castleTune', 'context', 'deaf', 'detectMonsters', 'discover', 'displaced', 'displayName',
@@ -102,6 +102,10 @@ const transientFields = {
     _commandKey: true,
     _repeatCommands: true,
     _inDoAgain: true,
+    _toplines: true,
+    _messageHistoryWriteIndex: true,
+    _messageHistoryCursor: true,
+    _promptOwnsTopline: true,
     _ynNumber: true,
     _movementAttempt: true,
     _whatdoesShown: true,
@@ -212,6 +216,7 @@ export function copyPersistentState(state) {
         stairs: state.stairs,
         plname: state.plname, displayName: state.displayName,
         _last_message: state._last_message,
+        _messageHistory: state._messageHistory,
     };
     const unknown = [];
     for (const key of Object.keys(state)) {

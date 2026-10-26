@@ -100,11 +100,16 @@ export async function showInventoryWindow(sections, { pickMode = PICK_NONE, head
  * `--More--`; menu-built overviews retain their rows and use the native
  * menu layout and page controls.
  */
-export async function showDisclosureOverlay(lines, { marker = '--More--', restoreUnderlay = false, pagerStyle = 'text', } = {}) {
+export async function showDisclosureOverlay(lines, { marker = '--More--', restoreUnderlay = false, pagerStyle = 'text', extraDismissKey = null, skipPendingPager = false, } = {}) {
     const d = display();
     if (!d)
         return 27;
-    await displayMessageWindow();
+    // tty_display_nhwindow() pages a NEED_MORE topline before the window,
+    // but a TOPLINE_SPECIAL_PROMPT line is only erased, never paged.
+    if (skipPendingPager)
+        clearMessageWindow();
+    else
+        await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);
@@ -121,7 +126,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     // offset zero but still overlays just its own rows.
     const cornerOffset = windowOrigin(d.cols, d.rows, dataWidth + 1, content.length, game.flags.menu_overlay !== false);
     if (content.length >= d.rows || game.flags.menu_overlay === false) {
-        return await pageDisclosureWindow(d, content, marker);
+        return await pageDisclosureWindow(d, content, marker, extraDismissKey);
     }
     // process_text_window() pads a corner row with one space; dmore()
     // starts the marker one column past the window offset.
@@ -144,7 +149,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     let key;
     do
         key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
+    while (![27, 32, 10, 13].includes(key) && key !== extraDismissKey);
     // erase_menu_or_text() redraws the whole screen for a zero offset.
     if (cornerOffset === 0) {
         await docrt();
@@ -162,7 +167,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     return key;
 }
 // Text-backed menu windows page prose without accepting menu commands.
-async function pageDisclosureWindow(d, lines, marker) {
+async function pageDisclosureWindow(d, lines, marker, extraDismissKey = null) {
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
     try {
@@ -176,7 +181,7 @@ async function pageDisclosureWindow(d, lines, marker) {
             let key;
             do
                 key = await nhgetch();
-            while (![27, 32, 10, 13].includes(key));
+            while (![27, 32, 10, 13].includes(key) && key !== extraDismissKey);
             if (key === 27 || page === pageCount - 1)
                 return key;
         }

@@ -10,6 +10,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { keyText } from './prevmsg.js';
 import { controlKeyHintLines } from './command_help.js';
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
@@ -22,11 +23,14 @@ async function paintKeyPrompt(message, cursorOffset = 0) {
     return renderKeyPrompt(message, cursorOffset);
 }
 export async function promptKey(message, cursorOffset = 0) {
+    // C cmd.c:yn_function() answers from the command queue without ever
+    // reaching tty_yn_function(); gt.toplines is untouched then.
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined)
         return queuedKey;
-    // tty_yn_function() clears WIN_STOP before painting its question,
-    // including when fuzzer input will bypass nhgetch().
+    // tty_yn_function() with a null response list goes straight from its
+    // custompline(SUPPRESS_HISTORY) prompt to readchar() and clean_up:
+    // ^P has no special meaning and comes back as the answer.
     game._suppressMessagesUntilInput = false;
     const coveredRows = await paintKeyPrompt(message, cursorOffset);
     // tty_yn_function() uses readchar(), including its EOF and fuzzer rules.
@@ -37,6 +41,8 @@ export async function promptKey(message, cursorOffset = 0) {
         game._retained_message = game._pending_message;
         game._pending_message = '';
     }
+    // clean_up rewrites gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
     // C tty_yn_function() retains a one-line query, but clears wrapped ones.
     if (coveredRows > 1)
         clearMessageWindow(coveredRows);
@@ -67,6 +73,9 @@ export async function readDirectionKey(message = 'In what direction? ') {
     const key = (await readchar('direction')) & 255;
     if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
         rememberCommandKey(key);
+    // getdir() asks through yn_function(), whose clean_up rewrites
+    // gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
     clearMessageWindow();
     return key;
 }

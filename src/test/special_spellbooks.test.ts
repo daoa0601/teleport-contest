@@ -245,12 +245,12 @@ void test('repeated reading exhausts each passage once before restarting the sam
     for (let read = 0; read < 14; read++) {
         resetInputState().feed('\x1b');
         await readNovel(book);
-        passages.add(requireGameDisplay().messages.at(-1));
+        passages.add(game._toplines);
     }
     assert.equal(passages.size, 14);
     resetInputState().feed('\x1b');
     await readNovel(book);
-    assert.ok(passages.has(requireGameDisplay().messages.at(-1)));
+    assert.ok(passages.has(game._toplines));
 });
 
 void test('a different copy of the same novel gets its own unread passage pool', async () => {
@@ -267,7 +267,7 @@ void test('a different copy of the same novel gets its own unread passage pool',
     for (let read = 0; read < 14; read++) {
         resetInputState().feed('\x1b');
         await readNovel(second);
-        passages.add(requireGameDisplay().messages.at(-1));
+        passages.add(game._toplines);
     }
     assert.equal(passages.size, 14);
 });

@@ -204,14 +204,18 @@ export async function showInventoryWindow<T = never>(sections: readonly Inventor
  */
 export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     marker = '--More--', restoreUnderlay = false,
-    pagerStyle = 'text',
+    pagerStyle = 'text', extraDismissKey = null, skipPendingPager = false,
 }: {
     marker?: string; restoreUnderlay?: boolean;
-    pagerStyle?: 'text' | 'menu';
+    pagerStyle?: 'text' | 'menu'; extraDismissKey?: number | null;
+    skipPendingPager?: boolean;
 } = {}): Promise<number> {
     const d = display();
     if (!d) return 27;
-    await displayMessageWindow();
+    // tty_display_nhwindow() pages a NEED_MORE topline before the window,
+    // but a TOPLINE_SPECIAL_PROMPT line is only erased, never paged.
+    if (skipPendingPager) clearMessageWindow();
+    else await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);
@@ -230,7 +234,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     const cornerOffset = windowOrigin(d.cols, d.rows, dataWidth + 1, content.length,
         game.flags.menu_overlay !== false);
     if (content.length >= d.rows || game.flags.menu_overlay === false) {
-        return await pageDisclosureWindow(d, content, marker);
+        return await pageDisclosureWindow(d, content, marker, extraDismissKey);
     }
 
     // process_text_window() pads a corner row with one space; dmore()
@@ -253,7 +257,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     d.setCursor(left + cursorOffset, content.length);
     let key: number;
     do key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
+    while (![27, 32, 10, 13].includes(key) && key !== extraDismissKey);
     // erase_menu_or_text() redraws the whole screen for a zero offset.
     if (cornerOffset === 0) {
         await docrt();
@@ -273,6 +277,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
 // Text-backed menu windows page prose without accepting menu commands.
 async function pageDisclosureWindow(
     d: GameDisplay, lines: readonly TextMenuLine[], marker: string,
+    extraDismissKey: number | null = null,
 ): Promise<number> {
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
@@ -285,7 +290,7 @@ async function pageDisclosureWindow(
             d.setCursor(1 + marker.length, content.length);
             let key: number;
             do key = await nhgetch();
-            while (![27, 32, 10, 13].includes(key));
+            while (![27, 32, 10, 13].includes(key) && key !== extraDismissKey);
             if (key === 27 || page === pageCount - 1) return key;
         }
         return 27;

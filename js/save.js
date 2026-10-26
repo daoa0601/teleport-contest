@@ -3,7 +3,7 @@
 import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
-import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint, reglyphSymbolSet } from './display.js';
+import { clearMessageWindow, displayMessageWindow, docrt, pline, plineWithContinuation, rawPrint, reglyphSymbolSet, rememberToplines } from './display.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreSavedLightSources } from './light.js';
 import { promptChoice, promptYesNo } from './query.js';
@@ -38,10 +38,37 @@ function saveKey(name, prefix = SAVE_PREFIX) {
     return `${prefix}${String(name || 'player').toLowerCase()}`;
 }
 function snapshotState() {
+    // C save_msghistory() -> getmsghistory() flushes the pending topline
+    // into the ring before the messages are written out.
+    rememberToplines();
     return {
         version: SAVE_VERSION,
         state: copyPersistentState(game),
     };
+}
+/**
+ * C restore.c:restore_msghistory(): the first restored message purges the
+ * session's own ring (keeping its entries), each restored message becomes
+ * the current topline in turn, and the final empty call puts the session's
+ * messages back on top of the restored ones.
+ */
+function restoreMessageHistory(saved) {
+    if (!saved.length)
+        return;
+    rememberToplines();
+    const session = game._messageHistory.splice(0);
+    game._messageHistoryWriteIndex = 0;
+    game._messageHistoryCursor = null;
+    for (const message of saved) {
+        if (!message)
+            continue;
+        rememberToplines();
+        game._toplines = message;
+    }
+    for (const message of session) {
+        rememberToplines();
+        game._toplines = message;
+    }
 }
 function restoreLevelMonsters(level, moves) {
     restoreLevelPetHistory(level, 0);
@@ -259,6 +286,10 @@ export function restoreGame(name, storage = game.storage) {
             return false;
         }
         restoreSavedMonsters(snapshot.state);
+        // C dorecover() refills the tty recall ring after the game state;
+        // capture this session's messages before the snapshot replaces them.
+        const sessionHistory = game._messageHistory;
+        const sessionToplines = game._toplines;
         // C restgamestate() reads ubirthday back from its local-time text.
         const birthday = snapshot.state.ubirthday === undefined
             ? undefined : recorderRestoredTime(snapshot.state.ubirthday);
@@ -271,6 +302,9 @@ export function restoreGame(name, storage = game.storage) {
         // C restnames() reloads objects[].oc_prob as saved; those gem
         // probabilities are always oinit()'s values for the saved u.uz.
         oinit();
+        game._messageHistory = sessionHistory;
+        game._toplines = sessionToplines;
+        restoreMessageHistory(snapshot.state._messageHistory ?? []);
         restoreScheduledLevelChange();
         restoreElementalBubbles();
         // restgamestate() rebuilds the first-use reminder from the restored

@@ -17,6 +17,7 @@ import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
 import { initializeFruitRegistry } from './fruit.js';
 import { selectCharacter } from './character_selection.js';
+import { MAX_MSG_HISTORY } from './const.js';
 const UNICODE_TO_DEC = new Map(Object.entries(DEC_TO_UNICODE).map(([dec, unicode]) => [unicode, dec]));
 // Serialize semantic terminal cells back into the tty wire form recorded by
 // the C harness. The frozen grid intentionally stores rendered Unicode and
@@ -344,6 +345,11 @@ export class Engine {
         };
         g.iflags = { ...opts.iflags };
         g._monTelecontrol = !!opts.monTelecontrol;
+        // tty_create_nhwindow(NHW_MESSAGE) clamps the recall depth in place
+        // once the window exists; msg_history is unsigned in C, so a
+        // negative atoi() wraps before the 20..MAX_MSG_HISTORY clamp.
+        if (g.iflags.msg_history !== undefined)
+            g.iflags.msg_history = Math.max(20, Math.min(MAX_MSG_HISTORY, g.iflags.msg_history >>> 0));
         g.commandBindings = opts.commandBindings;
         g.symset = opts.symset || null;
         g.rogueSymset = opts.rogueSymset || null;

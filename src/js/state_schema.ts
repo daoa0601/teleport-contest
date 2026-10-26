@@ -3,7 +3,7 @@
 
 import type { GameContext, GameState } from './game_state.js';
 
-export const SAVE_VERSION = 43;
+export const SAVE_VERSION = 44;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
@@ -11,9 +11,9 @@ const persistentNames = [
     '_deathKiller', '_encounteredObjectTypes', '_fobjSerial', '_heroTrack',
     '_initialGoldCount', '_knownObjectTypes', '_last_message', '_levelAnnotations',
     '_levelCache', '_lifeSavedCount', '_migratingMonsters', '_nextAttribCheck', '_nextIdent',
-    '_lightSerial', '_nextObjectTimerId', '_timerSerial', '_objectCallNames', '_objectDiscoveryOrder',
-    '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause', '_priestPantheonIndex',
-    '_questExpulsionPending', '_stethoscopeSeq', '_travelTipShown',
+    '_lightSerial', '_messageHistory', '_nextObjectTimerId', '_timerSerial', '_objectCallNames',
+    '_objectDiscoveryOrder', '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause',
+    '_priestPantheonIndex', '_questExpulsionPending', '_stethoscopeSeq', '_travelTipShown',
     '_tributeBookstock', '_tutorialActive', 'aggravateMonster', 'aggravate_monster',
     'air_level', 'antimagic', 'astral_level', 'billObjects', 'blind', 'branches',
     'castleTune', 'context', 'deaf', 'detectMonsters', 'discover', 'displaced', 'displayName',
@@ -117,6 +117,10 @@ const transientFields = {
     _commandKey: true,
     _repeatCommands: true,
     _inDoAgain: true,
+    _toplines: true,
+    _messageHistoryWriteIndex: true,
+    _messageHistoryCursor: true,
+    _promptOwnsTopline: true,
     _ynNumber: true,
     _movementAttempt: true,
     _whatdoesShown: true,
@@ -236,6 +240,7 @@ export function copyPersistentState(state: GameState): PersistentState {
         stairs: state.stairs,
         plname: state.plname, displayName: state.displayName,
         _last_message: state._last_message,
+        _messageHistory: state._messageHistory,
     };
     const unknown: string[] = [];
     for (const key of Object.keys(state)) {

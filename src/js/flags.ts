@@ -112,6 +112,7 @@ export interface InterfaceFlags {
     wizmgender?: boolean;
     wizweight?: boolean;
     partly_eaten_hack?: boolean;
+    msg_history?: number;
     prevmsg_window?: string;
     save_uswallow?: boolean;
     terrain_typ?: number;

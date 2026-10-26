@@ -57,7 +57,7 @@ void test('fuzzer NUL commits a numeric answer without reading another key', asy
 
     assert.equal(result.answer, '#');
     assert.equal(result.count, 12n);
-    assert.equal(game.nhDisplay?.toplines, 'How many? [yn#] (n) #12');
+    assert.equal(game._toplines, 'How many? [yn#] (n) #12');
     assert.equal(await nhgetch(), 'n'.charCodeAt(0), 'the next answer must remain unread');
 });
 
@@ -69,7 +69,7 @@ void test('a number choice consumes and edits its digits before committing', asy
     const answer = await promptChoice('How many?', ['y', 'n', '#'], 'n');
 
     assert.equal(answer, '#');
-    assert.equal(game.nhDisplay?.toplines, 'How many? [yn#] (n) #13');
+    assert.equal(game._toplines, 'How many? [yn#] (n) #13');
     assert.equal(await nhgetch(), 'X'.charCodeAt(0), 'the next command follows the committed number');
 });
 

@@ -21,7 +21,7 @@ async function collapseRoom(invisible) {
     return goblin;
 }
 function displayedMessages() {
-    return [...game.nhDisplay?.messages ?? [], game._pending_message].join('\n');
+    return [...game._messageHistory, game._toplines, game._pending_message].join('\n');
 }
 void test('an unseen monster hit by drawbridge shrapnel makes a crushing sound', async () => {
     const goblin = await collapseRoom(true);

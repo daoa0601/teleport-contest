@@ -429,6 +429,19 @@ export interface GameState {
     _pending_message: string;
     _retained_message: string;
     _last_message: string;
+    // C win/tty/topl.c: gt.toplines plus the WIN_MESSAGE recall ring. The
+    // pending/retained pair tracks the physical line and its pager state;
+    // _toplines is the logical text update_topl() negotiates and
+    // remember_topl() archives into _messageHistory (bounded by
+    // msghistory), with the ^P walk position in _messageHistoryCursor.
+    _toplines: string;
+    _messageHistory: string[];
+    // cw->maxrow: next ring slot, retained even when the oldest entry drops.
+    _messageHistoryWriteIndex: number;
+    _messageHistoryCursor: number | null;
+    // C ttyDisplay->toplin == TOPLINE_SPECIAL_PROMPT: a yn/getlin prompt
+    // owns the line until the first redotoplin() or clear replaces it.
+    _promptOwnsTopline?: boolean;
     _lastPlineMessage: string;
     _lastPlineKind?: number;
     earlyRawMessages: number;
@@ -499,6 +512,8 @@ export function createGameState(): GameState {
         _monsterSwallower: null, _monsterEngulf: null, warn_obj_cnt: 0, _magicKeyTrapWarningCount: 0,
         bhitpos: { x: 0, y: 0 }, notonhead: false,
         _pending_message: '', _retained_message: '', _last_message: '',
+        _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
+        _messageHistoryCursor: null, _promptOwnsTopline: false,
         _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };
 }

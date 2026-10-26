@@ -147,6 +147,7 @@ import {
     bot,
     flush_screen, flushPendingTopline, updateStatusLines,
     pline,
+    rememberToplines,
     plineWithContinuation,
     newsym,
     map_invisible,
@@ -740,8 +741,17 @@ async function finishMoveloopPreamble() {
 function appendTurnMessage(message: string): void {
     const game = requireInitializedGame();
     if (game._suppressMessagesUntilInput) return;
-    game._pending_message = game._pending_message
+    const joins = !!game._pending_message;
+    game._pending_message = joins
         ? `${game._pending_message}  ${message}` : message;
+    // update_topl()'s negotiation keeps gt.toplines in step with the
+    // deferred publisher: a joinable line extends it, otherwise the
+    // previous line is remembered first.
+    if (joins) game._toplines = `${game._toplines}  ${message}`;
+    else {
+        rememberToplines();
+        game._toplines = message;
+    }
     game._last_message = game._pending_message;
     game._lastPlineMessage = message;
 }
