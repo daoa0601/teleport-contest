@@ -32,4 +32,26 @@ void test('a swallowed hero throwing the attached iron ball keeps it chained', a
     assert.equal(ball.where, 'free');
     assert.deepEqual([ball.ox, ball.oy], [game.u.ux, game.u.uy], 'throwit parks the ball on the hero (dothrow.c:1569-1573)');
 });
+// C thitmonst's ball branch returns early for the chained ball when it kills
+// the engulfer (dothrow.c:2239-2241) and xkilled() skips its mpickobj
+// (mon.c:3526-3538): expulsion's placebc() keeps the ball with the hero.
+void test('a swallowed hero killing the engulfer with the attached iron ball keeps it', async () => {
+    const input = freshTurnRoom({ role: 'barbarian', flags: { tips: false } });
+    const ball = await addInventoryObject(HEAVY_IRON_BALL, { owornmask: W_BALL });
+    const chain = await knownObject(IRON_CHAIN, { owornmask: W_CHAIN });
+    placeCreatedObject(chain, game.u.ux, game.u.uy);
+    game.uball = game.u.uball = ball;
+    game.uchain = game.u.uchain = chain;
+    game.u.punished = true;
+    const vortex = await createMonsterAt('steam vortex', 10, 10, MM_NOGRP | NO_MINVENT);
+    vortex.mhp = 1;
+    vortex.mhpmax = 1;
+    await installSwallowedHero(vortex);
+    input.feed(`t${ball.invlet}l    `);
+    await rhack(0);
+    assert.equal(vortex.mhp <= 0, true, 'the weak engulfer must die');
+    assert.equal(vortex.minvent?.includes(ball) ?? false, false, 'xkilled never takes the chained ball');
+    assert.equal(game.uball, ball, 'the hero stays punished');
+    assert.equal(ball.where, 'floor', 'expulsion placebc() puts the ball back on the map');
+});
 //# sourceMappingURL=swallowed_ball_throw.test.js.map

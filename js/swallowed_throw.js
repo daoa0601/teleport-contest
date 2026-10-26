@@ -150,9 +150,10 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
             state,
             guaranteedHit: true,
             ...(volley ? { volley } : {}),
-            // xkilled() leaves a returning missile free during expulsion;
-            // other projectiles join the engulfer's inventory before death.
-            ...(returns ? {} : { finishKillWithObject: finishKill }),
+            // xkilled() leaves a killing engulfer's inventory alone for the
+            // chained ball (mon.c:3526-3538): expulsion's placebc() keeps it.
+            // Other returning or attached missiles manage their own disposal.
+            ...(returns || attachedBall ? {} : { finishKillWithObject: finishKill }),
         });
         if (contact.heroDied)
             return true;
