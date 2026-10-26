@@ -18,8 +18,6 @@ import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject, } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
-import { rhack } from '../js/cmd.js';
-import { requireScreenRow } from './support/screen.js';
 const PM_WATER_ELEMENTAL = 157;
 const PM_GHOST = 287;
 function installStrongholdDrawbridge() {
