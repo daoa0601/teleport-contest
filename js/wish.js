@@ -2,10 +2,12 @@
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
 import { setArtifactOrigin } from './artifacts.js';
+import { LL_ARTIFACT, LL_CONDUCT, LL_WISH, recordGameLogEvent } from './gamelog.js';
 import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, NHW_MENU, PICK_ONE } from './const.js';
 import { bot, docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
+import { objectDescription } from './object_description.js';
 import { CORPSE } from './object_data.js';
 import { corpseName, definiteName, objectName, observeObjectForNaming, pluralizeObjectNoun, readObjectName, } from './objnam.js';
 import { getLine } from './query.js';
@@ -54,6 +56,9 @@ export async function makeWish() {
     let value = '';
     let result = null;
     let failedAttempts = 0;
+    // zap.c captures the artifact-wish conduct before readobjnam() so the
+    // livelog can report a first artifact wish.
+    const oldWishArti = game.u.uconduct.wisharti ?? 0;
     while (failedAttempts < 5) {
         const assistance = failedAttempts > 0
             && game.flags?.cmdassist !== false
@@ -61,6 +66,9 @@ export async function makeWish() {
         value = failedAttempts === 0 && game.iflags.menu_requested && game._wishHistory?.length
             ? await choosePastWish()
             : await getLine(`For what do you wish${assistance}?`, (_ch, key) => key >= 32 && key < 127);
+        // zap.c:makewish() mungspaces() the typed line before comparing it,
+        // parsing it, recording it in the history, and livelogging it.
+        value = mungWishSpaces(value ?? '');
         if ((value ?? '').trim().toLowerCase() === 'help') {
             await showWishHelp(5 - failedAttempts);
             continue;
@@ -84,6 +92,8 @@ export async function makeWish() {
     if (result.noWish) {
         if (!['nothing', 'nil', 'none'].includes((value ?? '').trim().toLowerCase()))
             rememberWish(value ?? '');
+        else
+            recordGameLogEvent('declined to make a wish', { flags: LL_WISH });
         game.context.move = 0;
         return;
     }
@@ -91,7 +101,20 @@ export async function makeWish() {
     rememberWish(value ?? '');
     if (object.oartifact)
         setArtifactOrigin(object, 'wish', { knownOrigin: true });
-    game.u.uconduct.wishes = (game.u.uconduct.wishes || 0) + 1;
+    const previousWishes = game.u.uconduct.wishes ?? 0;
+    game.u.uconduct.wishes = previousWishes + 1;
+    // zap.c:makewish() livelogs the granted wish before dropping the object;
+    // its doname() -> xname() observes the object first.
+    observeObjectForNaming(object);
+    const wish = `"${value ?? ''}", got "${await objectDescription(object)}"`;
+    const his = game.flags.female ? 'her' : 'his';
+    const artifactFlags = oldWishArti < (game.u.uconduct.wisharti ?? 0) ? LL_ARTIFACT : 0;
+    if (!previousWishes)
+        recordGameLogEvent(`made ${his} first wish - ${wish}`, { flags: LL_CONDUCT | LL_WISH | artifactFlags });
+    else if (!oldWishArti && game.u.uconduct.wisharti)
+        recordGameLogEvent(`made ${his} first artifact wish - ${wish}`, { flags: LL_CONDUCT | LL_WISH | LL_ARTIFACT });
+    else
+        recordGameLogEvent(`wished for ${wish}`, { flags: LL_WISH | artifactFlags });
     if (object.otyp === CORPSE && !(game.uarmg || game.u.uarmg)
         && touchPetrifies(object.corpsenm) && !heroResistsStoning(game))
         object.wishedfor = true;
@@ -100,6 +123,11 @@ export async function makeWish() {
         return;
     game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
     game.context.move = 0;
+}
+// C hacklib.c:mungspaces() over one getlin line: tabs become spaces, runs
+// collapse, and leading/trailing spaces vanish.
+function mungWishSpaces(text) {
+    return text.replace(/\t/g, ' ').replace(/ +/g, ' ').trim();
 }
 // C zap.c:wish_history_add()/wish_history_menu(). History belongs to the
 // running game, is limited to twenty entries, and omits repeated prefixes.

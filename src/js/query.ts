@@ -6,7 +6,7 @@ import { clearMessageWindow, flushPendingTopline, flush_screen, rememberToplines
 import { game } from './gstate.js';
 import { nhgetch, readchar, takeCommandKey } from './input.js';
 import { NO_COLOR } from './terminal.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { visibleCommandKey } from './command_keys.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
@@ -216,7 +216,7 @@ export async function yn_function(
             result = { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
         } else {
             result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
-            if (addCommandQueue) rememberCommandKey(result.answer ? result.answer.charCodeAt(0) : 0);
+            if (addCommandQueue) rememberYnAnswerKey(result.answer ? result.answer.charCodeAt(0) : 0);
         }
     }
     if (!responses || !result.answer || result.answer === '\0' || responses.includes(result.answer))

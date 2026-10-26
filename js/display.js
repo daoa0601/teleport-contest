@@ -381,7 +381,9 @@ function rememberedGlyph(glyph, loc, x, y) {
     const darkRoom = !rogue && (game.flags.dark_room ?? true) && game.flags.color !== false;
     if (loc.typ === CORR && glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
         && (rogue || !loc.waslit || darkRoom)) {
-        return { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
+        // lookat() names the square from the downgraded glyph number.
+        return { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr),
+            terrainName: 'corridor' };
     }
     if (loc.typ !== ROOM || glyph.glyph !== cmapToGlyph(CmapSymbol.room)
         || loc.waslit && !darkRoom)
@@ -1822,7 +1824,10 @@ function darkenFeltFloor(x, y, location) {
     }
     else if (location.typ === CORR && glyph?.glyph === cmapToGlyph(CmapSymbol.litcorr)
         && !location.waslit) {
-        const corridor = { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
+        const corridor = glyph.kind === 'terrain'
+            ? { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr),
+                terrainName: 'corridor' }
+            : { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
         location.remembered_glyph = corridor;
         show_glyph_cell(x, y, corridor.ch, corridor.color, corridor.decgfx, 0, corridor);
     }
