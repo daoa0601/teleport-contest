@@ -12,7 +12,7 @@ import { game } from './gstate.js';
 import {
     bot, displayLiquidName, docrt, flushPendingTopline, flush_screen, pline,
 } from './display.js';
-import { showDisclosureOverlay, showTextPages } from './windows.js';
+import { showDisclosureOverlay, showTextMenuOverlay, showTextPages } from './windows.js';
 import {
     A_WIS, G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd,
     ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL,
@@ -20,7 +20,7 @@ import {
     ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN,
     ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE,
     P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
-    SICK_NONVOMITABLE, SICK_VOMITABLE, TERMINAL_COLS, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
+    SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { simpleArmorName } from './armor.js';
@@ -373,30 +373,9 @@ function rerollConductLine() {
         killedCountPhrase(roleplay.numrerolls)}.`;
 }
 
-function paginateAttributeLines(lines: readonly string[]): TextPage[] {
-    const contentRows = 23;
-    const count = Math.ceil(lines.length / contentRows);
-    const pages: TextPage[] = [];
-    for (let index = 0; index < count; index++) {
-        // tty_end_menu() cuts each entry to cols - 2 characters after the
-        // menu's leading column, so the final terminal column stays blank.
-        const pageLines = lines.slice(
-            index * contentRows, (index + 1) * contentRows,
-        ).map(line => line.slice(0, TERMINAL_COLS - 1));
-        // tty numbers the pages only when the window needs more than one.
-        const marker = count > 1 ? ` (${index + 1} of ${count})` : ' (end)';
-        pageLines.push(marker);
-        pages.push({
-            lines: pageLines,
-            cursor: [marker.length + (count > 1 ? 0 : 1), pageLines.length - 1],
-        });
-    }
-    return pages;
-}
-
-// C insight.c:enlightenment() emits one ordered text stream.  tty owns its
-// pagination, so optional status rows move all later page boundaries.
-function attributePages({ basic = true, magic = false }: EnlightenmentOptions = {}): TextPage[] {
+// C enlightenment() uses add_menu_str() while the game is in progress.
+// The shared disclosure lines already include the tty menu leading column.
+function attributeMenuLines({ basic = true, magic = false }: EnlightenmentOptions = {}): string[] {
     const roleName = enlightenmentRoleName();
     const lines = [
         ` ${game.displayName || game.plname} the ${roleName}'s attributes:`,
@@ -409,16 +388,11 @@ function attributePages({ basic = true, magic = false }: EnlightenmentOptions = 
     if (magic) lines.push(...attributeEnlightenmentLines());
 
     lines.push(...miscellaneousLines(basic));
-    return paginateAttributeLines(lines);
+    return lines.map(line => line.startsWith(' ') ? line.slice(1) : line);
 }
 
 export async function showEnlightenment(options: EnlightenmentOptions = {}) {
-    await showTextPages(attributePages(options), {
-        validKeys: [27, 32, 10, 13],
-    });
-    await docrt();
-    await bot();
-    await flush_screen(1);
+    await showTextMenuOverlay(attributeMenuLines(options));
 }
 
 export async function doattributes() {

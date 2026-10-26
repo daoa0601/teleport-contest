@@ -2,6 +2,7 @@
 // C ref: do.c doaltarobj().
 
 import { displayColorName, plineWithContinuation } from './display.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import {
@@ -23,6 +24,7 @@ interface AltarLandingOptions {
 const COIN_CLASS = 12;
 
 async function objectDescription(object: GameObject, state: GameState): Promise<string> {
+    observeObjectForNaming(object, { state });
     return state === game
         ? await inventoryItemDescription(object)
         : simpleObjectNameWithArticle(object, state);
@@ -54,11 +56,14 @@ export async function landObjectOnAltar(
         object.buc = undefined;
     } else if (!monsterMoving) {
         const conduct = state.u.uconduct || (state.u.uconduct = {});
+        if (!conduct.gnostic) recordGameLogEvent(
+            `eschewed atheism, by dropping ${await objectDescription(object, state)} on an altar`,
+            { state },
+        );
         conduct.gnostic = (conduct.gnostic ?? 0) + 1;
     }
 
     const quantity = object.quan ?? object.quantity ?? 1;
-    observeObjectForNaming(object, { state });
     const description = await objectDescription(object, state);
     const plural = quantity > 1;
     const hallucinating = heroIsHallucinating(state);

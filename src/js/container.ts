@@ -98,7 +98,7 @@ interface ContainerTransferBatch {
 }
 export type ContainerTransferResult =
     | { moved: true; message: string; stop?: never; destroyedContainer?: never }
-    | { moved: false; message: string | null; stop?: boolean; destroyedContainer?: never }
+    | { moved: false; message: string | null; noRepeat?: boolean; stop?: boolean; destroyedContainer?: never }
     | { moved: false; message: null; stop?: never; destroyedContainer: true };
 export interface ContainerUseResult {
     spentTime: boolean;
@@ -530,7 +530,8 @@ export async function putIntoContainer(
     const rejected = rejectedPutMessage(container, object, state);
     if (rejected) {
         await restoreRejectedSplit(transfer, state);
-        return { moved: false, message: rejected };
+        return { moved: false, message: rejected,
+            noRepeat: !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) };
     }
 
     if (state.uwep === object) await setPrimaryWeapon(null, state);
@@ -693,7 +694,7 @@ async function lootTraditionally(container: GameObject, putIn: boolean, resetPic
                     : await takeFromContainer(container, transfer.object, game, -1, { resetJustPicked: resetPicked });
                 results.push(result);
                 if (!result.moved && !result.destroyedContainer) await restoreRejectedSplit(transfer, game);
-                if (result.message && (!putIn || !result.moved)) await plineWithContinuation(result.message);
+                if (result.message && (!putIn || !result.moved)) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
                 if (result.moved && !putIn) {
                     resetPicked = false;
                     if (object.oclass === 12) await bot();
@@ -733,7 +734,7 @@ async function takeSelectedObjects(container: GameObject, resetPicked: boolean, 
         );
         if (!result.moved) await restoreRejectedSplit(transfer, game);
         results.push(result);
-        if (result.message) await plineWithContinuation(result.message);
+        if (result.message) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
         if (result.moved) {
             resetJustPicked = false;
             if (selection.value.oclass === 12) await bot();
@@ -782,7 +783,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false, retry
             // and charges a turn regardless of in_container's result.
             const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
             const result = await putIntoContainer(container, transfer.object);
-            if (!result.moved && result.message) await plineWithContinuation(result.message);
+            if (!result.moved && result.message) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
             return { results: [result], spentTime: true };
         }
         selected = categories.autoSelect
@@ -798,7 +799,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false, retry
             container, selection.value, game, selection.count,
         );
         results.push(result);
-        if (!result.moved && result.message) await plineWithContinuation(result.message);
+        if (!result.moved && result.message) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
         // Stashing one item costs a turn even when it destroys the bag.
         if (stashOne && (result.destroyedContainer || result.stop)) spentTime = true;
         if (result.destroyedContainer || result.stop) break;

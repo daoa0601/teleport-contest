@@ -5,7 +5,7 @@ import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { game } from './gstate.js';
 import type { CommandInput } from './command_types.js';
 import { readchar } from './input.js';
-import { flush_screen, setTopline } from './display.js';
+import { clearMessageWindow, flush_screen, setTopline } from './display.js';
 
 export async function readCommandInput(): Promise<CommandInput> {
     game._commandCount = 0;
@@ -22,7 +22,10 @@ export async function readCommandInput(): Promise<CommandInput> {
     game._commandCount = result.count;
     setMulti(Math.max(0, result.count - 1));
     game._commandKey = result.key;
-    clearCommandMessage();
+    // tty_clear_nhwindow(WIN_MESSAGE) leaves an already empty line alone,
+    // including its cursor, until a later prompt or map flush moves it.
+    if (game._pending_message || game._retained_message || game._promptOwnsTopline)
+        clearMessageWindow();
     return result;
 }
 
@@ -47,7 +50,7 @@ async function readCommandCount(): Promise<CommandInput> {
             const text = backspaced && !count && !showZero
                 ? 'Count: ' : `Count: ${count}`;
             if (count || showZero) backspaced = false;
-            clearCommandMessage();
+            clearMessageWindow();
             await setTopline(text);
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
@@ -55,8 +58,3 @@ async function readCommandCount(): Promise<CommandInput> {
     }
 }
 
-function clearCommandMessage(): void {
-    game._pending_message = '';
-    game._retained_message = '';
-    game.nhDisplay?.clearRow(0);
-}

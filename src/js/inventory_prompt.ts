@@ -207,7 +207,10 @@ async function chooseGetobjLetter(
         let count: number | null = null;
         // A forced-menu retry reuses its letter without answering a query.
         let answered = !forcedMenu || !oneloop;
-        if (forcedMenu) {
+        if (game._inDoAgain) {
+            // getobj() reads fresh input silently once CQ_REPEAT is exhausted.
+            key = await readchar();
+        } else if (forcedMenu) {
             // The first forced menu lists likely candidates; a rejected
             // count retries the letter already chosen from it.
             if (!oneloop) key = suggested.length || downplayed.length || handsDownplayed ? QUESTION : ASTERISK;

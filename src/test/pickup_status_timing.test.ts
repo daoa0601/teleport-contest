@@ -7,6 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { placeHeroOnLevel } from '../js/hero_location.js';
 import { LARGE_BOX, ROCK } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
+import { startRun } from '../js/runmode.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -59,4 +60,18 @@ void test('declining a burdensome lift clears the question from the top line', a
 
     assert.equal(game.inventory.some(object => object.otyp === LARGE_BOX), false);
     assert.match(rowBeneathPile, /^\s+Things that are here:/);
+});
+
+void test('interrupting a run refreshes the new load while the lifting message is shown', async () => {
+    freshObjectRoom({ flags: { pickup: true, pickup_types: '' } });
+    await addInventoryObject(LARGE_BOX);
+    await floorObject(LARGE_BOX, 10, 10);
+    await flush_screen(1);
+    startRun(1, 0);
+
+    await autopickupAtHero();
+    await flush_screen(1);
+
+    assert.match(topRow(), /little trouble lifting .*large box/);
+    assert.match(statusRow(), /Burdened/);
 });

@@ -71,7 +71,11 @@ void test('attributes predicts a safe #pray from the live prayer rules', async (
     await runExtendedCommand('pray', 'y n\x1b');
     assert.equal(game.u.invulnerable, true);
 });
-// tty numbers enlightenment pages only when the report needs more than one.
+// tty numbers enlightenment pages only when the report needs more than one
+// (wintty.c tty_end_menu: npages > 1 swaps "(end) " for "(x of y)").  A short
+// report is a corner overlay (tty_display_nhwindow sets offx > 0 whenever
+// maxrow < rows and menu_overlay is on), so dmore() paints the pager prompt
+// at the menu's own bottom row and leaves the cursor just past it.
 void test('a one-page enlightenment report ends with (end), a longer one numbers its pages', async () => {
     for (const magic of [false, true]) {
         freshGameplayRoom({ role: 'valkyrie', flags: { debug: magic } });
@@ -85,8 +89,12 @@ void test('a one-page enlightenment report ends with (end), a longer one numbers
                 ]);
                 if (!blocked)
                     break;
-                const rows = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('').trimEnd());
-                footers.push(rows.filter(row => /^ \((end|\d+ of \d+)\)$/.test(row)).join());
+                const display = requireGameDisplay();
+                const pagerRow = display.grid[display.cursorRow]
+                    ?.map(cell => cell.ch).join('').trimEnd() ?? '';
+                const footer = pagerRow.match(/\((end|\d+ of \d+)\)$/)?.[1];
+                if (footer)
+                    footers.push(footer);
                 input.feed(' ');
             }
         }
@@ -95,10 +103,10 @@ void test('a one-page enlightenment report ends with (end), a longer one numbers
             await report;
         }
         if (!magic)
-            assert.deepEqual(footers, [' (end)']);
+            assert.deepEqual(footers, ['end']);
         else {
             assert.ok(footers.length > 1);
-            assert.deepEqual(footers, footers.map((_, page) => ` (${page + 1} of ${footers.length})`));
+            assert.deepEqual(footers, footers.map((_, page) => `${page + 1} of ${footers.length}`));
         }
     }
 });

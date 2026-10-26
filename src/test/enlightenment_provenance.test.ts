@@ -23,6 +23,12 @@ import { createSaddledSteed } from './support/monsters.js';
 
 async function enlightenmentText(basic = false, final = false, magic = true) {
     const input = resetInputState();
+    // A short in-game report overlays the map's right side by default
+    // (wintty.c tty_display_nhwindow picks offx > 0 for it), which leaves
+    // map glyphs inside the captured rows.  Turning the overlay off forces
+    // the full-screen menu, so each row carries only report text.
+    const savedOverlay = game.flags.menu_overlay;
+    game.flags.menu_overlay = false;
     const report = final ? showFinalAttributes({ final: ENL_GAMEOVERDEAD }) : showEnlightenment({ basic, magic });
     const lines: string[] = [];
     try {
@@ -39,6 +45,8 @@ async function enlightenmentText(basic = false, final = false, magic = true) {
     } finally {
         input.feed('\x1b');
         await report;
+        if (savedOverlay === undefined) delete game.flags.menu_overlay;
+        else game.flags.menu_overlay = savedOverlay;
     }
     return lines;
 }
