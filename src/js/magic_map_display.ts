@@ -16,7 +16,6 @@ import { NO_COLOR } from './terminal.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
-import type { DetectionObject } from './magic_detection.js';
 import { requireGameLevel } from './gstate.js';
 
 interface DetectionConstraints {
@@ -29,7 +28,6 @@ interface DetectionConstraints {
     changed: boolean;
 }
 interface BrowseDetectionOptions {
-    objects?: ReadonlyMap<string, DetectionObject> | null;
     state?: GameState;
 }
 
@@ -88,7 +86,7 @@ export function mapDetectedMonster(monster: Monster, showTail: boolean, state: G
     }
 }
 
-async function detectionDescription(x: number, y: number, terrainMode: number, objects: ReadonlyMap<string, DetectionObject> | null, state: GameState): Promise<string> {
+async function detectionDescription(x: number, y: number, terrainMode: number, state: GameState): Promise<string> {
     const glyph = glyphAt(x, y, state);
     if (state.iflags.save_uswallow && x === state.u.ux && y === state.u.uy
         && canSpotHeroSelf() && (glyph?.kind === 'monster'
@@ -117,7 +115,7 @@ async function detectionDescription(x: number, y: number, terrainMode: number, o
 }
 
 export async function browseDetectionMap(terrainMode: number, goal: string, {
-    objects = null, state = game,
+    state = game,
 }: BrowseDetectionOptions = {}) {
     const hadTip = await showGetposTip(state);
     const savedAutoDescribe = state.iflags.autodescribe;
@@ -131,7 +129,7 @@ export async function browseDetectionMap(terrainMode: number, goal: string, {
             start: { x: state.u.ux, y: state.u.uy },
             prompt: state._pending_message,
             goal, force: false,
-            describe: (x: number, y: number) => detectionDescription(x, y, terrainMode, objects, state),
+            describe: (x: number, y: number) => detectionDescription(x, y, terrainMode, state),
         });
     } finally {
         if (savedAutoDescribe === undefined) delete state.iflags.autodescribe;

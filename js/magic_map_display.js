@@ -65,7 +65,7 @@ export function mapDetectedMonster(monster, showTail, state = game) {
         show_glyph_cell(segment.x, segment.y, tail.ch, tail.color, false, attribute, tail);
     }
 }
-async function detectionDescription(x, y, terrainMode, objects, state) {
+async function detectionDescription(x, y, terrainMode, state) {
     const glyph = glyphAt(x, y, state);
     if (state.iflags.save_uswallow && x === state.u.ux && y === state.u.uy
         && canSpotHeroSelf() && (glyph?.kind === 'monster'
@@ -92,7 +92,7 @@ async function detectionDescription(x, y, terrainMode, objects, state) {
         return 'unexplored area';
     return farlookLocationDescription(x, y);
 }
-export async function browseDetectionMap(terrainMode, goal, { objects = null, state = game, } = {}) {
+export async function browseDetectionMap(terrainMode, goal, { state = game, } = {}) {
     const hadTip = await showGetposTip(state);
     const savedAutoDescribe = state.iflags.autodescribe;
     const savedTerrainMode = state.iflags.terrainmode;
@@ -106,7 +106,7 @@ export async function browseDetectionMap(terrainMode, goal, { objects = null, st
             start: { x: state.u.ux, y: state.u.uy },
             prompt: state._pending_message,
             goal, force: false,
-            describe: (x, y) => detectionDescription(x, y, terrainMode, objects, state),
+            describe: (x, y) => detectionDescription(x, y, terrainMode, state),
         });
     }
     finally {
