@@ -1380,9 +1380,7 @@ export async function rhack(key: number): Promise<void> {
         const configured = repeated?.binding ?? configuredCommand(key);
         if (!cannedCommand && response === undefined) {
             game._pending_message = '';
-            // An answered yn question owns the tty topl: parse()'s
-            // clear_nhwindow(WIN_MESSAGE) never erases that line.
-            if (!game._retainedQuestion) game._retained_message = '';
+            game._retained_message = '';
         }
         const command = cannedCommand ? cannedCommandDefinition(cannedCommand) : configured.command;
         if (!command) {

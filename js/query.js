@@ -319,9 +319,6 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
         // bypasses tty_nhgetch(). Keep a one-line question visible.
         game._pending_message = '';
         game._retained_message = displayed;
-        // clean_up leaves the answered question on the topl; parse()'s
-        // clear_nhwindow(WIN_MESSAGE) must not erase it.
-        game._retainedQuestion = coveredRows <= 1;
         if (coveredRows > 1)
             clearMessageWindow(coveredRows);
         return { answer, count };

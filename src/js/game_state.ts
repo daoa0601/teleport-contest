@@ -443,9 +443,6 @@ export interface GameState {
     // C ttyDisplay->toplin == TOPLINE_SPECIAL_PROMPT: a yn/getlin prompt
     // owns the line until the first redotoplin() or clear replaces it.
     _promptOwnsTopline?: boolean;
-    // C tty keeps an answered yn question on the topl; parse()'s
-    // clear_nhwindow(WIN_MESSAGE) erases pending prose but not that line.
-    _retainedQuestion?: boolean;
     // C tty: whether the current physical topline's leading graphics glyph
     // (putmixed()'s g_putch kludge, topl.c redotoplin()) is on the row. A
     // later redotoplin() without ttyDisplay->mixed writes the raw high-bit
@@ -524,7 +521,7 @@ export function createGameState(): GameState {
         bhitpos: { x: 0, y: 0 }, notonhead: false,
         _pending_message: '', _retained_message: '', _last_message: '',
         _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
-        _messageHistoryCursor: null, _promptOwnsTopline: false, _retainedQuestion: false,
+        _messageHistoryCursor: null, _promptOwnsTopline: false,
         _toplineGlyphPainted: false,
         _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };

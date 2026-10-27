@@ -22,12 +22,8 @@ export async function readCommandInput(): Promise<CommandInput> {
     game._commandCount = result.count;
     setMulti(Math.max(0, result.count - 1));
     game._commandKey = result.key;
-    // C parse(): clear_nhwindow(WIN_MESSAGE) erases pending prose but leaves
-    // an answered yn question on the tty topl (tty clean_up consumed it).
-    const questionOwnsTopline = !!game._retainedQuestion
-        && !game._pending_message && !game._promptOwnsTopline;
-    if (!questionOwnsTopline
-        && (game._pending_message || game._retained_message || game._promptOwnsTopline))
+    // C parse() clears WIN_MESSAGE after reading the command key.
+    if (game._pending_message || game._retained_message || game._promptOwnsTopline)
         clearMessageWindow();
     return result;
 }

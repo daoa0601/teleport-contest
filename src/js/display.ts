@@ -3097,7 +3097,6 @@ export function clearMessageWindow(coveredRows?: number) {
     game._pending_message = '';
     game._retained_message = '';
     game._promptOwnsTopline = false;
-    game._retainedQuestion = false;
     game._toplineGlyphPainted = false;
     if (!display) return;
     display.clearRow(0);
@@ -3224,7 +3223,6 @@ function replaceTopline(msg: string): void {
     game._toplineGlyphPainted = msg.includes('\x0e');
     game._pending_message = msg;
     game._retained_message = '';
-    game._retainedQuestion = false;
     game._last_message = msg;
     game._promptOwnsTopline = false;
 }
@@ -3432,7 +3430,6 @@ export async function pageTopline(
     // more() repairs covered map rows after any dismissal. Escape also
     // erases a one-line message; WIN_NOSTOP only prevents output suppression.
     game._retained_message = '';
-    game._retainedQuestion = false;
     if (lines.length > 1) {
         _buildScreenOutput();
         display?.setCursor(0, 0);
