@@ -8,9 +8,10 @@ import { runExtendedCommand } from './support/commands.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-// C invent.c:loot_xname() omits "partly eaten". Equal rations keep chain
-// order, so add_to_container()'s last insertion appears first.
-void test('container contents keep chain order for whole and partly eaten rations', async () => {
+// The recorder's contents page sorts under the partly eaten phrase: the
+// whole ration stack is listed first even though add_to_container() prepends
+// and the partly eaten piece heads the container chain (fresh6791).
+void test('container contents list the whole ration stack before the partly eaten piece', async () => {
     freshObjectRoom();
     const sack = await floorObject(SACK, game.u.ux, game.u.uy, { cknown: true });
     const whole = await knownObject(FOOD_RATION, {
@@ -42,6 +43,6 @@ void test('container contents keep chain order for whole and partly eaten ration
         .findIndex(line => /an uncursed partly eaten food ration/.test(line));
     assert.ok(wholeLine >= 0, `whole ration stack listed: ${contents}`);
     assert.ok(partlyLine >= 0, `partly eaten ration listed: ${contents}`);
-    assert.ok(partlyLine < wholeLine,
-        'the partly eaten ration was stashed last and is listed first');
+    assert.ok(wholeLine < partlyLine,
+        `the whole ration stack is listed before the partly eaten piece:\n${contents}`);
 });

@@ -280,6 +280,17 @@ export function lootObjectName(object: GameObject, state: GameState = game): str
     const nameState = { ...state, flags: { ...state.flags, debug: false } };
     let name = object.otyp === CORPSE ? corpseName(view, { singular: true })
         : objectName(view, nameState);
+    // The recorder's loot menus order partly eaten food under its full
+    // phrase: a partly eaten ration is offered after an untouched stack of
+    // the same food even though add_to_container()/place_object() prepend,
+    // leaving the split-off piece at the head of the chain. Recorded in
+    // fresh7282 (floor pickup) and fresh6791 (sack take-out); tied names
+    // otherwise keep chain order (fresh6862 step 479), so the phrase itself
+    // ranks the untouched stack first.
+    const lootClass = object.oclass ?? objectClassForType(object.otyp);
+    if (object.otyp !== CORPSE && object.otyp !== SLIME_MOLD
+        && lootClass === FOOD_CLASS && object.oeaten)
+        name = `partly eaten ${name}`;
     if (object.otyp === TOWEL) name += object.spe >= 3 ? 'x' : object.spe > 0 ? 'y' : 'z';
     if (object.globby) name += object.owt <= 100 ? 'a' : object.owt <= 300 ? 'b'
         : object.owt <= 500 ? 'c' : 'd';
