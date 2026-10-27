@@ -5,6 +5,9 @@ import { game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { CHEST, RIN_PROTECTION } from '../js/object_data.js';
 import { yn_function } from '../js/query.js';
+import { resetInputState } from '../js/input.js';
+import { ynSingleKey } from '../js/tty_prompts.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 
@@ -126,4 +129,24 @@ void test('a canned finger answer outside rl is reported and refuses the put-on'
         assert.match(screen(), /Which ring-finger, Right or Left\? \[rl\]/);
         assert.equal(game.inventory.includes(ring), true);
     } finally { await finish(engine); }
+});
+
+// C yn_function() pops the command queue once: a CMDQ_USER_INPUT entry
+// means the answer comes from the terminal, so a response-free question
+// never takes the canned entry behind it (cmd.c:5496-5539).
+void test('a user-input canned entry leaves a single-key question live', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.queueCommandResponses(['user-input', 'k'.charCodeAt(0)]);
+
+    const question = ynSingleKey('What do you look for? ');
+    const outcome = await Promise.race([
+        question.then(key => `answered:${key}`),
+        input.waitUntilBlocked().then(() => 'blocked'),
+    ]);
+
+    assert.equal(outcome, 'blocked',
+        'the question must wait for terminal input, not the next canned entry');
+    input.feed('m');
+    assert.equal(await question, 'm'.charCodeAt(0));
 });

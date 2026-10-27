@@ -84,9 +84,10 @@ export async function ynSingleKey(message: string, cursorOffset = 0): Promise<nu
         const canned = takeCommandKey();
         if (canned !== undefined) return canned;
     }
-    // C cmdq_pop() reads only CQ_REPEAT while a do-again runs, and a live
-    // answer taken during the replay still goes back into CQ_REPEAT.
-    const key = await promptKey(message, cursorOffset, { canned: !game._inDoAgain });
+    // The single cmdq_pop() already happened above (CQ_REPEAT during a
+    // do-again, CQ_CANNED otherwise); CMDQ_USER_INPUT reads live from the
+    // terminal, so the live question never takes another canned entry.
+    const key = await promptKey(message, cursorOffset, { canned: false });
     rememberYnAnswerKey(key);
     return key;
 }
