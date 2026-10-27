@@ -1549,17 +1549,24 @@ async function dispatchMovement(binding: CommandBinding, prefixes: MovementAttem
         resetCommandVariables(true);
         return;
     }
+    // C rhack() dispatches on gd.domove_attempting, which a run prefix
+    // followed by an unbound key leaves set with DOMOVE_RUSH.  That
+    // branch starts a run (multi = max(COLNO, ROWNO), context.mv) with
+    // whatever context.run now holds -- even 0 after nomul() -- so the
+    // step repeats until a move fails.  A pending DOMOVE_WALK bit takes
+    // precedence over RUSH in the dispatch order.
+    const rushDispatch = prefixes.rush && !prefixes.walk;
     const mode: DirectionalRunMode = prefixes.walk || prefixes.rush
         ? game.context.run === 2 ? 2 : game.context.run === 3 ? 3 : 0
         : controlRushDirection(key) ? 3 : ch !== ch.toLowerCase() ? 1 : 0;
     game.context.run = mode;
     if (game.iflags.menu_requested) game.context.nopick = true;
-    if (game.multi > 0 || (mode && !prefixes.walk))
+    if (game.multi > 0 || rushDispatch || (mode && !prefixes.walk))
         startRun(hero.dx, hero.dy, game, mode);
     const outcome = await domove(hero.dx, hero.dy);
     const moved = outcome === 'time';
     if (game.program_state.gameover) return;
-    if (mode && !prefixes.walk && moved && game._domoveReachedTail)
+    if ((rushDispatch || mode) && !prefixes.walk && moved && game._domoveReachedTail)
         await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     game.context.move = moved ? 1 : 0;
     if (!moved && outcome !== 'opened-door') stopRun();

@@ -462,7 +462,10 @@ export async function findit() {
                 found.unseen++;
             }
         }
-        else if (unmap_invisible(x, y, false)) {
+        else if (unmap_invisible(x, y)) {
+            // C's unmap_invisible() always follows unmap_object() with
+            // newsym(), so a visible square rediscovers its floor objects;
+            // the flash then ends on that glyph instead of bare background.
             await flashGlyphAt(x, y, { ch: 'I', kind: 'invisible' }, 6);
             found.clearedUnseen++;
         }

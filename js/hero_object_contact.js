@@ -27,7 +27,7 @@ import { objectMaterial } from './object_material.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { corpseName, objectName, pluralizeObjectNoun } from './objnam.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
-import { rnd, rn2 } from './rng.js';
+import { d, rnd, rn2 } from './rng.js';
 import { carriedObjectOwner } from './shk.js';
 import { touchPetrifies } from './stoning.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
@@ -40,7 +40,7 @@ const SPBOOK_CLASS = 10;
 const SILVER = 14;
 const PHYSICAL_OBJECTS = new Set([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]);
 const SHADE_AWARE_OBJECTS = new Set([...PHYSICAL_OBJECTS, MIRROR, CLOVE_OF_GARLIC]);
-export async function resolveHeroObjectContact(monster, object, { mode, state = game, target = { x: monster.mx, y: monster.my }, publish = plineWithContinuation, random = rn2, rollOne = rnd, finishMonsterDeath = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
+export async function resolveHeroObjectContact(monster, object, { mode, state = game, target = { x: monster.mx, y: monster.my }, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, finishMonsterDeath = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
     requirePlayingGame(state);
     const contact = {
         done: false, damage: 0, getDamageBonus: true, specialMessage: false,
@@ -117,7 +117,7 @@ export async function resolveHeroObjectContact(monster, object, { mode, state = 
             return resolveHeroEggHit(monster, object, { state, mode, publish, random, rollOne, finishMonsterKill: finishMonsterDeath });
         case CLOVE_OF_GARLIC:
             if (monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster)) {
-                const flight = await makeMonsterFlee(monster, { state, turns: rollOne(4) + rollOne(4), publish, random, rollOne });
+                const flight = await makeMonsterFlee(monster, { state, turns: rollDice(2, 4), publish, random, rollOne });
                 if (flight.heroDied)
                     return { ...contact, done: true, survived: monster.mhp > 0, heroDied: true };
             }

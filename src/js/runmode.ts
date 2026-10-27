@@ -16,7 +16,9 @@ export function startRun(dx: number, dy: number, g: GameState = game, mode: Dire
         mode,
         lastStrTurn: 0,
     };
-    if (mode && !g.multi) g.multi = Math.max(COLNO, ROWNO);
+    // C's DOMOVE_RUSH dispatch grants the movement ration whenever the
+    // repeat begins, regardless of the surviving context.run value.
+    if (!g.multi) g.multi = Math.max(COLNO, ROWNO);
     g.context.run = mode;
     g.context.mv = true;
     return g._runState;
