@@ -86,18 +86,23 @@ export async function readDirectionKey(message = 'In what direction? ') {
         const queued = takeRepeatCommand();
         if (queued)
             return queued.kind === 'key' ? queued.key : 27;
+        // C getdir() bypasses yn_function() while repeating: readchar()
+        // takes the next physical key without painting the question
+        // (cmd.c:3985-3986), and the message line is still cleared
+        // afterwards (cmd.c:4010-4011).
+        const key = (await readchar('direction')) & 255;
+        clearMessageWindow();
+        return key;
     }
-    else {
-        const queued = takeCommandResponse();
-        if (typeof queued === 'number')
-            return queued;
-        if (typeof queued === 'object')
-            return queuedDirectionKey(queued);
-        if (queued !== undefined) {
-            clearCannedCommands();
-            await impossible('getdir: command queue had no dir?');
-            return 0;
-        }
+    const queued = takeCommandResponse();
+    if (typeof queued === 'number')
+        return queued;
+    if (typeof queued === 'object')
+        return queuedDirectionKey(queued);
+    if (queued !== undefined) {
+        clearCannedCommands();
+        await impossible('getdir: command queue had no dir?');
+        return 0;
     }
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
