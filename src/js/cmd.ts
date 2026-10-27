@@ -1010,7 +1010,11 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
         return false;
     }
     if (heroIsBlind(g)) return true;
-    if (state.mode === 0) return true;
+    // C lookaround() reads svc.context.run live at every repeated step;
+    // a counted walk keeps whatever value an earlier rush or travel left
+    // behind, so the checks cannot key off this repeat's own mode.
+    const run = g.context.run ?? 0;
+    if (run === 0) return true;
 
     const u = g.u;
     let corrct = 0;
@@ -1041,7 +1045,7 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
                 && !heroIsHallucinating(g);
             const visibleHostile = visibleMonster && !safeMonster;
             if (visibleMonster && (infront
-                || (state.mode !== 1 && visibleHostile))) {
+                || (run !== 1 && visibleHostile))) {
                 if (g.flags.mention_walls)
                     await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
                 return false;
@@ -1055,11 +1059,11 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
 
             let corridorLike = false;
             const trap = knownRunTrap(x, y, g);
-            if (trap && state.mode !== 1 && infront) {
+            if (trap && run !== 1 && infront) {
                 await announceRunTrap(trap, g);
                 return false;
             }
-            if (trap && state.mode === 1) {
+            if (trap && run === 1) {
                 corridorLike = true;
             } else if (IS_OBSTRUCTED(typ) || typ === ROOM || IS_AIR(typ)
                 || typ === ICE) {
@@ -1068,13 +1072,13 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
                 const closed = hasDoorAppearance(monster) || !!(loc.doormask & (D_CLOSED | D_LOCKED));
                 if (closed) {
                     if (x !== u.ux && y !== u.uy) continue;
-                    if (state.mode !== 1) {
+                    if (run !== 1) {
                         if (g.flags.mention_walls)
                             await plineWithContinuation('You stop in front of the door.');
                         return false;
                     }
                     corridorLike = true;
-                } else if (state.mode === 1) {
+                } else if (run === 1) {
                     corridorLike = true;
                 } else if (monster) {
                     continue;
@@ -1098,11 +1102,16 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
                 }
                 continue;
             } else {
-                if (state.mode === 1) {
+                if (run === 1) {
                     // For run mode 1, stairs, furniture, and other non-room
                     // locations participate in corridor routing (the C
                     // bcorr branch) instead of being interesting stop points.
                     corridorLike = true;
+                } else if (run === 8) {
+                    // hack.c:4012: a leftover travel value rides a counted
+                    // walk without travel set, so objects and stairs ahead
+                    // are not stop points for it.
+                    continue;
                 } else if (monster) {
                     continue;
                 } else if ((x === u.ux - state.dx
@@ -1117,7 +1126,7 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
 
             if (!corridorLike || currentTyp === ROOM) continue;
 
-            if (state.mode === 1 || state.mode === 3) {
+            if (run === 1 || run === 3 || run === 8) {
                 const distance = runDist2(x, y, targetX, targetY);
                 if (distance > 2) continue;
                 if (corrct === 1 && runDist2(x, y, x0, y0) !== 1)
@@ -1133,12 +1142,12 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
         }
     }
 
-    if (corrct > 1 && state.mode === 2) {
+    if (corrct > 1 && run === 2) {
         if (g.flags.mention_walls)
             await plineWithContinuation('The corridor widens here.');
         return false;
     }
-    if ((state.mode === 1 || state.mode === 3) && !noturn && !m0 && i0
+    if ((run === 1 || run === 3 || run === 8) && !noturn && !m0 && i0
         && (corrct === 1 || (corrct === 2 && i0 === 1))) {
         let turn;
         if (i0 === 2) {

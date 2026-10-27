@@ -259,4 +259,25 @@ void test('a counted forcefight with a leftover travel run also stops at the tra
     assert.equal(game.moves, movesBefore, 'no counted step is spent at the trap');
     assert.equal(game.context.run, 0, 'the stop ends the lingering run');
 });
+// C hack.c:2791 ends any count the moment a forcefight meets a monster
+// (nomul(0) for "!is_safemon || forcefight"), and domove_fight_empty()
+// nomuls too (hack.c:2323), so a counted 'F'+direction never repeats.
+void test('a counted forcefight at a monster swings once', async () => {
+    emptyArena();
+    const target = await createMonsterAt('stalker', 9, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+    target.mhp = target.mhpmax = 500;
+    target.mpeaceful = false;
+    newsym(9, 10);
+    const bystander = await createMonsterAt('newt', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+    bystander.mpeaceful = false;
+    newsym(11, 10);
+    game.context.run = 2;
+    game.multi = 3;
+    const healthBefore = target.mhp;
+    const messages = await command('Fh', /hit|miss/);
+    const swings = (messages.match(/You (hit|miss)/g) ?? []).length;
+    assert.equal(swings, 1, 'the forcefight swing itself ends the count');
+    assert.ok(target.mhp < healthBefore, 'the single swing struck the target');
+    assert.equal(game.multi, 0, 'the swing clears the count');
+});
 //# sourceMappingURL=hero_empty_attack.test.js.map
