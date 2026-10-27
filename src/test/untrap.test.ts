@@ -9,10 +9,11 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { BEARTRAP, BOULDER, CHEST } from '../js/object_data.js';
+import { BEARTRAP, BOULDER, CHEST, OBJECT_NAMES, QUARTERSTAFF } from '../js/object_data.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { invokeInventoryObject } from './support/commands.js';
 import {
-    artifactObject, floorObject,
+    addInventoryObject, artifactObject, floorObject,
 } from './support/game-objects.js';
 import {
     addTrap, floorObjectsAt,
@@ -21,6 +22,35 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const CLOSED_DOOR_APPEARANCE = 15;
+
+void test('cursed armor held as a weapon leaves the hands available to untrap', async () => {
+    const level = freshObjectRoom({ role: 'ranger' });
+    const armor = await addInventoryObject(OBJECT_NAMES.indexOf('bronze plate mail'), { cursed: true, bknown: false });
+    await setPrimaryWeapon(armor);
+    const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
+    pushKeys('untrap\nl');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(level.traps.includes(trap), false);
+    assert.equal(armor.bknown, false);
+    assert.equal(game.context.move, 1);
+});
+
+void test('a welded two-handed weapon prevents untrapping and reveals its curse', async () => {
+    const level = freshObjectRoom({ role: 'ranger' });
+    const staff = await addInventoryObject(QUARTERSTAFF, { cursed: true, bknown: false });
+    await setPrimaryWeapon(staff);
+    const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
+    pushKeys('untrap\n');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(level.traps.includes(trap), true);
+    assert.equal(game._pending_message, 'Your hands seem to be too busy for that.');
+    assert.equal(staff.bknown, true);
+    assert.equal(game.context.move, 0);
+});
 
 void test('a ranger can disarm an adjacent bear trap', async () => {
     const level = freshObjectRoom({ role: 'ranger' });

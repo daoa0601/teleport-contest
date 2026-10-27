@@ -159,12 +159,6 @@ export function monsterKillLineVisible(monster) {
 }
 // C display.h:canseemon(), an actor-level optical sight query.
 export function canSeeMonster(monster) {
-    // While swallowed, the engulfer occupies the hero's coordinate but is
-    // not a map-visible monster for canseemon(); attack text can still name
-    // it through u.ustuck.
-    if ((game.u?.uswallow || game.uswallow)
-        && game.u?.ustuck === monster)
-        return false;
     return monster.wormno ? wormKnown(monster) && monsterVisible(monster)
         : canPhysicallyProjectMonster(monster, monster.mx, monster.my);
 }

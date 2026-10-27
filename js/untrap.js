@@ -49,6 +49,7 @@ import { resolveImmediatePetrification, touchPetrifies, } from './stoning.js';
 import { promptDirection } from './tty_prompts.js';
 import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight, } from './weight.js';
 import { isBlade } from './weapon_type.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 import { cansee } from './vision.js';
 import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
@@ -93,7 +94,7 @@ function possessiveTrap(trap) {
 }
 function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
-    return !!(weapon?.cursed && (OBJECT_BIMANUAL[weapon.otyp]));
+    return isWeldedPrimary(weapon, state) && !!weapon && !!OBJECT_BIMANUAL[weapon.otyp];
 }
 export function untrapAbilityProblem(state = game, { checkFloor = false } = {}) {
     if (nearCapacity(state) >= HVY_ENCUMBER)

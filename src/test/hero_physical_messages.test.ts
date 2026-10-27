@@ -20,14 +20,36 @@ import {
 } from '../js/object_data.js';
 import { deleteObject } from '../js/object_delete.js';
 import { setMonsterSpecies } from '../js/monster_species.js';
+import { terrainCommand } from '../js/terrain_view.js';
 import { rayMissMessage } from '../js/ray_hit_message.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const SILVER_SPEAR = OBJECT_NAMES.indexOf('silver spear');
+
+void test('melee damage punctuation uses the sight left by viewing terrain inside an engulfer', async () => {
+    freshObjectRoom({ flags: { verbose: true, tips: false } });
+    const vortex = await createMonsterAt('fire vortex', 11, 10, MM_NOGRP | NO_MINVENT);
+    await installSwallowedHero(vortex);
+    const input = resetInputState();
+    await answerPrompts(terrainCommand(), input, [
+        { prompt: /View which\?/, keys: 'c' },
+        { prompt: /Showing known terrain, traps, and objects only.*--More--/, keys: ' ' },
+        { prompt: /For instructions type a/, keys: '\x1b' },
+    ]);
+    const messages: string[] = [];
+
+    await showHeroPhysicalHit(vortex, null, {
+        mode: 'melee', damage: 8, destroyed: false, hitTextShown: false,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.deepEqual(messages, ['You hit the fire vortex!']);
+});
 
 for (const [label, type, verb] of [
     ['fist', null, 'hit'], ['shield', SMALL_SHIELD, 'bash'], ['iron ball', HEAVY_IRON_BALL, 'bash'],

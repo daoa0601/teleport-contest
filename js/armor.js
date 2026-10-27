@@ -1078,7 +1078,7 @@ export async function stopDonning(stolenObject = null, state = game) {
         : `You stop ${puttingOn ? 'putting on' : 'taking off'} the ${simpleObjectName(delayed.object, state)}.`;
     await finishHeroHelplessness(message, state);
     if (puttingOn)
-        await removeHeroArmor(delayed.object, state, { cancelledDon: true });
+        await removeHeroArmor(delayed.object, state, { cancelledDon: true, deferArmorClass: true });
     return true;
 }
 //# sourceMappingURL=armor.js.map

@@ -77,6 +77,7 @@ import {
     EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, objectWeight,
 } from './weight.js';
 import { isBlade } from './weapon_type.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 import { cansee } from './vision.js';
 import {
     observeObjectForNaming, definiteName, objectCombatName, objectQuestion,
@@ -179,7 +180,7 @@ function possessiveTrap(trap: Trap): string {
 
 function weldedTwoHandedWeapon(state: GameState): boolean {
     const weapon = state.uwep || state.u?.uwep;
-    return !!(weapon?.cursed && (OBJECT_BIMANUAL[weapon.otyp]));
+    return isWeldedPrimary(weapon, state) && !!weapon && !!OBJECT_BIMANUAL[weapon.otyp];
 }
 
 export function untrapAbilityProblem(state: GameState = game, { checkFloor = false } = {}): string | null {
