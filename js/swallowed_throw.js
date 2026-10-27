@@ -11,7 +11,7 @@ import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
-import { W_WEP } from './const.js';
+import { W_QUIVER, W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { delobj } from './object_delete.js';
@@ -29,8 +29,13 @@ const PM_AIR_ELEMENTAL = 154;
 const POTION_CLASS = 8;
 const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
 const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
+// Slots that C's canletgo() (do.c) refuses to release for a throw.  The
+// quiver is deliberately absent: canletgo() only tests W_ARMOR|W_ACCESSORY,
+// and throw_obj() (dothrow.c:262-263) unquivers the selected missile via
+// remove_worn_item() before throwit() runs, so a quivered object of any
+// class is still thrown.
 const EQUIPMENT_SLOTS = [
-    'uwep', 'uswapwep', 'uquiver', 'uarm', 'uarmu', 'uarmc', 'uarmh',
+    'uwep', 'uswapwep', 'uarm', 'uarmu', 'uarmc', 'uarmh',
     'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',
 ];
 function possessive(name) {
@@ -38,7 +43,7 @@ function possessive(name) {
 }
 function itemIsEquipped(state, item) {
     return EQUIPMENT_SLOTS.some(slot => state[slot] === item || state.u?.[slot] === item)
-        || !!(item.owornmask ?? 0);
+        || (((item.owornmask ?? 0) & ~W_QUIVER) !== 0);
 }
 function supportedLitLamp(state, item, engulfer) {
     if (!item.lamplit)
