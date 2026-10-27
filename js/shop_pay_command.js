@@ -193,7 +193,8 @@ async function paymentMenu(billed) {
             items,
         });
     }
-    game._pending_message = '';
+    // C select_menu() pages the pending topline with --More-- before the
+    // menu is drawn; tty_display_nhwindow() owns that pager.
     await flush_screen(1);
     return await showMultiSelectWindow({
         title: 'Pay for which items?', sections,
