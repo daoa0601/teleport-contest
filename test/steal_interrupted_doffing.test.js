@@ -82,11 +82,9 @@ void test('a seduced hero finishes only the remaining turns of a started suit re
     assert.equal(game.moves - started, 3, 'the theft takes the two remaining turns, not three new turns');
     assert.ok(thief.minvent.includes(suit));
 });
-// C allmain.c runs a turn's monster phase before that turn's bookkeeping
-// counts negative multi down, so a theft inside the monster phase reads the
-// pre-countdown turns: a seduction in the very turn the hero started (or
-// continued) removing armor keeps the full remaining delay for that turn.
-void test('a monster-phase seduction owes the suit delay including the running turn', async () => {
+// C allmain.c counts negative multi down after movemon(). A nymph arriving
+// in the next monster phase keeps the two turns still owed on the removal.
+void test('a nymph acting during suit removal finishes the remaining delay', async () => {
     freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -102,20 +100,13 @@ void test('a monster-phase seduction owes the suit delay including the running t
     const thief = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     thief.mux = game.u.ux;
     thief.muy = game.u.uy;
-    thief.movement = -100;
+    thief.msleeping = 0;
+    thief.movement = 12;
     const input = resetInputState();
     installPagerInput(input, { expected: /nymph|suit/, limit: 12 });
     const messages = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
-    // C movemon() wraps every real theft in the monster phase.
-    const previousMonsterMoving = game.context.mon_moving;
-    game.context.mon_moving = true;
-    try {
-        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
-    }
-    finally {
-        game.context.mon_moving = previousMonsterMoving;
-    }
+    await moveloop_core();
     assert.match(game._pending_message + messages.join('\n'), /You gladly continue removing your suit\./);
     assert.equal(game.uarm, null);
     assert.ok(game.inventory.includes(suit), 'the charmed suit waits for its theft delay');
@@ -129,7 +120,7 @@ void test('a monster-phase seduction owes the suit delay including the running t
     while (game.multi < 0)
         await moveloop_core();
     await flushPendingTopline();
-    assert.equal(game.moves - started, 4, 'the theft keeps the running turn: one elapsed turn plus all three suit-delay turns');
+    assert.equal(game.moves - started, 3, 'the monster phase preserves the two remaining turns instead of restarting removal');
     assert.ok(thief.minvent.includes(suit));
 });
 //# sourceMappingURL=steal_interrupted_doffing.test.js.map
