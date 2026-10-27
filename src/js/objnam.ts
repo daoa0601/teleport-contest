@@ -280,6 +280,13 @@ export function lootObjectName(object: GameObject, state: GameState = game): str
     const nameState = { ...state, flags: { ...state.flags, debug: false } };
     let name = object.otyp === CORPSE ? corpseName(view, { singular: true })
         : objectName(view, nameState);
+    // The loot sort orders partly eaten food under its full phrase: a
+    // partly eaten ration follows an untouched stack of the same food
+    // even when the split-off piece sits at the head of the chain.
+    const lootClass = object.oclass ?? objectClassForType(object.otyp);
+    if (object.otyp !== CORPSE && object.otyp !== SLIME_MOLD
+        && lootClass === FOOD_CLASS && object.oeaten)
+        name = `partly eaten ${name}`;
     if (object.otyp === TOWEL) name += object.spe >= 3 ? 'x' : object.spe > 0 ? 'y' : 'z';
     if (object.globby) name += object.owt <= 100 ? 'a' : object.owt <= 300 ? 'b'
         : object.owt <= 500 ? 'c' : 'd';

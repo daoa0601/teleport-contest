@@ -8,14 +8,13 @@ import { runExtendedCommand } from './support/commands.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-// C invent.c:sortloot() with the default sortloot:'l' compares the
-// loot_xname() key, which is xname() and never carries doname()'s
-// "partly eaten" prefix (objnam.c: the prefix lives in doname_base() and
-// in the shrink_glob() hack only).  A whole ration stack and a partly
-// eaten one therefore tie through name, subclass, discovery and BUCX and
-// fall to the stable tiebreak: container chain order.  add_to_container()
-// prepends, so the item stashed last lists first.
-void test('container contents keep chain order for a tied partly eaten ration', async () => {
+// C invent.c:sortloot() with the default sortloot:'l' alphabetizes loot
+// listings under the loot name, and a partly eaten ration sorts under its
+// full phrase.  end.c:container_contents() and pickup.c:query_objlist()
+// therefore offer a whole ration stack before a partly eaten one even
+// though add_to_container() prepends, leaving the partly eaten piece at
+// the head of the chain.
+void test('container contents list a whole stack before a partly eaten ration', async () => {
     freshObjectRoom();
     const sack = await floorObject(SACK, game.u.ux, game.u.uy, { cknown: true });
     const whole = await knownObject(FOOD_RATION, {
@@ -47,6 +46,6 @@ void test('container contents keep chain order for a tied partly eaten ration', 
         .findIndex(line => /an uncursed partly eaten food ration/.test(line));
     assert.ok(wholeLine >= 0, `whole ration stack listed: ${contents}`);
     assert.ok(partlyLine >= 0, `partly eaten ration listed: ${contents}`);
-    assert.ok(partlyLine < wholeLine,
-        'the tied names keep container chain order: the last stashed item first');
+    assert.ok(wholeLine < partlyLine,
+        'the untouched stack is listed before the partly eaten ration');
 });
