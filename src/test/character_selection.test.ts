@@ -85,6 +85,13 @@ void test('the unconstrained question lists race, role, gender and alignment in 
     assert.match(menu, /Shall I pick character's race, role, gender and alignment for you\? \[ynaq\]/);
 });
 
+void test('the character confirmation menu clears the answered opening question', async () => {
+    const menu = await selection('y');
+
+    assert.match(menu, /Is this ok\? \[ynaq\]/);
+    assert.doesNotMatch(menu, /Shall I pick/);
+});
+
 void test('the opening question uses combined role names before gender is chosen', async () => {
     const menu = await selection('', 'role:priest');
     assert.match(menu, /your Priest\/Priestess's race, gender and alignment/);
