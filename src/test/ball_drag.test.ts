@@ -57,7 +57,7 @@ void test('a blocked chain route restores the chain above the ball before refusi
     assert.match(game._last_message, /cannot carry all that and also drag/);
     assert.equal(floorObjectsAt(level, 8, 10)[0], chain,
         'restoring the attempted chain move puts the chain on top');
-    assert.equal(game.context.move, 0);
+    assert.equal(game.context.move, 1);
 });
 
 void test('a refused heavy drag clears temporary invulnerability and the remaining counted moves', async () => {
@@ -71,7 +71,23 @@ void test('a refused heavy drag clears temporary invulnerability and the remaini
     assert.equal(game.u.ux, 10);
     assert.equal(game.multi, 0);
     assert.equal(game.u.invulnerable, false);
-    assert.equal(game.context.move, 0);
+    assert.equal(game.context.move, 1);
+});
+
+void test('a run blocked by a heavy iron ball spends the attempted step without moving', async () => {
+    const { ball, chain } = await readyToDrag();
+    await addInventoryObject(ROCK, { quantity: Math.ceil(weightCapacity(game) * 1.6 / 10) });
+    resetInputState().feed('l');
+
+    await rhack('G'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
+    assert.deepEqual([ball.ox, chain.ox], [8, 9]);
+    assert.equal(game.context.move, 1, 'the unsuccessful drag still spends the action');
+    assert.equal(game.context.run, 0);
+    assert.equal(game.multi, 0);
+    assert.equal(game._pending_message,
+        'You cannot carry all that and also drag the heavy iron ball.');
 });
 
 void test('a pit under the chain pulls the hero backward and places the ball in the pit', async () => {

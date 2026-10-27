@@ -3,8 +3,7 @@ import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEM
 import { game } from './gstate.js';
 import { getMenuColoring } from './menu_coloring.js';
 import { nhgetch } from './input.js';
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, glyphAt } from './display.js';
-import { GlyphOffset } from './glyph_numbers.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, row_refresh } from './display.js';
 import { tty_getlin } from './query.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
@@ -299,41 +298,12 @@ async function eraseMenuCorner(window, roleSelection = false) {
     // docorner() cl_end()s every covered row from the menu's left edge and
     // then repaints only the map rows from the glyph buffer. The message
     // and status rows stay blank past that edge; nothing else redraws them.
-    const underlay = window.underlay;
     for (let row = 0; row < bottom; row++) {
         d.setCursor(left, row);
         clearRect(left, row, d.cols, row + 1);
-        if (row < 1 || row > ROWNO || !underlay)
-            continue;
-        // row_refresh() prints through NH x = COLNO-1 and skips unexplored
-        // glyphs. Each printed glyph leaves the cursor just after it.
-        for (let col = left; col < Math.min(d.cols - 1, COLNO - 1); col++) {
-            const cell = underlay[row]?.[col];
-            if (!cell)
-                continue;
-            d.setCell(col, row, cell.ch, cell.color, cell.attr);
-            const glyph = glyphAt(col + 1, row - 1);
-            if (glyph && glyph.kind !== 'unexplored')
-                d.setCursor(col + 1, row);
-        }
+        if (row >= 1 && row <= ROWNO)
+            row_refresh(left + 1, COLNO - 1, row - 1);
     }
-    // docorner() starts each cleared row at the menu edge. On map rows,
-    // row_refresh() advances past every explored or framed glyph, even
-    // stone drawn as a plain blank. It reads glyph identity, not appearance.
-    const lastRow = bottom - 1;
-    let cursorCol = left;
-    if (lastRow >= 1 && lastRow <= ROWNO && underlay) {
-        const highlight = game._mapPositionHighlight;
-        for (let x = Math.min(COLNO - 1, d.cols - 1); x > left; x--) {
-            const glyph = glyphAt(x, lastRow - 1);
-            const framed = highlight?.background && highlight.isValidLocation(x, lastRow - 1);
-            if ((glyph && glyph.glyph !== GlyphOffset.unexplored) || framed) {
-                cursorCol = x;
-                break;
-            }
-        }
-    }
-    d.setCursor(cursorCol, lastRow);
     if (bottom >= Math.min(d.rows - 2, ROWNO + 1)) {
         // The erasure wrecked the status window: botlx forces the next
         // bot() to redraw it in full. bot() itself is a no-op while status

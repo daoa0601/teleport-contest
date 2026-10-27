@@ -1,7 +1,7 @@
 import { ingSuffix } from './hacklib.js';
 // Inventory selection shared by commands which use NetHack's getobj flow.
 // C ref: invent.c getobj().
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
@@ -156,6 +156,11 @@ async function chooseGetobjLetter(word, prompt, classify, { allowCount, allowNon
         let answered = !forcedMenu || !oneloop;
         if (game._inDoAgain) {
             // getobj() reads fresh input silently once CQ_REPEAT is exhausted.
+            // Paint any rejected choice before the next silent readchar().
+            if (game._pending_message) {
+                await flush_screen(0);
+                renderKeyPrompt(game._pending_message);
+            }
             key = await readchar();
         }
         else if (forcedMenu) {

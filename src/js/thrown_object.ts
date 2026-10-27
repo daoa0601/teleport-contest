@@ -182,14 +182,6 @@ function heroThrowStrength(state: GameState): number {
     return strength;
 }
 
-export function heroThrowRange(object: GameObject, state: GameState = game): number {
-    return Math.max(
-        1,
-        Math.trunc(heroThrowStrength(state) / 2)
-            - Math.trunc((object.owt ?? 1) / 40),
-    );
-}
-
 // C throw_gold(): the whole purse uses the thrown-object formula without
 // throwit()'s minimum of one, so a heavy purse can fail to leave the hero.
 export function heroDirectGoldThrowRange(

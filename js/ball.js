@@ -610,7 +610,8 @@ export async function beginBallAndChainMove(targetX, targetY, { state = game, al
             : 'You cannot drag the heavy iron ball.');
         endVoluntaryMultiTurn(state);
         return {
-            ...plan, blocked: true, consumedTurn: false,
+            // drag_ball() leaves context.move set when the load stops it.
+            ...plan, blocked: true, consumedTurn: true,
         };
     }
     return beginDraggingBall(plan, targetX, targetY, state);

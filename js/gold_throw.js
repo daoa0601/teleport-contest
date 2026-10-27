@@ -7,6 +7,7 @@ import { currentAttribute } from './attrib.js';
 import { canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation } from './display.js';
 import { simpleArmorName } from './armor.js';
 import { heroHeadName } from './body_parts.js';
+import { hurtleHero } from './hero_hurtle.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
 import { freeInventoryObject } from './hero_inventory.js';
@@ -24,7 +25,7 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 import { requireInitializedGame } from './gstate.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { rn2, rnd } from './rng.js';
-import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowRange, prepareHeroThrownTarget, } from './thrown_object.js';
+import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowTrajectory, prepareHeroThrownTarget, } from './thrown_object.js';
 import { cansee } from './vision.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { offerThrownFood } from './thrown_food.js';
@@ -283,10 +284,17 @@ export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz
         return true;
     }
     const underwater = !!(state.underwater || state.u?.uinwater);
-    const range = underwater ? 1 : heroThrowRange(gold, state);
+    const trajectory = heroThrowTrajectory(gold, state);
+    const range = underwater ? 1 : trajectory.range;
     const { x, y, contact } = await flyHeroThrownObject({
         state, object: gold, dx, dy, range, captureFlight,
     });
+    // throwit() recoils after bhit(), before resolving the monster contact.
+    if (trajectory.recoil) {
+        await hurtleHero(-dx, -dy, trajectory.recoil, { verbose: true });
+        if (state.program_state.gameover)
+            return true;
+    }
     if (contact) {
         const handled = await resolveQuiveredGoldMonsterContact({
             state, monster: contact, gold, wakeMonster,

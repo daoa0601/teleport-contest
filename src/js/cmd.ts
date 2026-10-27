@@ -7338,7 +7338,7 @@ async function finishHeroMovement({
     const runMode = game.context.run ?? 0;
     if (runMode > 0 && runMode < 8
         && (loc?.typ === DOOR || IS_OBSTRUCTED(loc?.typ ?? STONE)
-            || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
+            || IS_FURNITURE(loc?.typ ?? STONE))) nomul(0);
 
     if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)
