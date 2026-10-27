@@ -382,7 +382,7 @@ async function attackMonsterWithWhip(
         await stumbleOntoMimic(monster, state);
         snap = false;
     } else {
-        await pline(`You flick your bullwhip towards ${monsterObject(monster)}.`);
+        await pline(`You flick your bullwhip towards ${describeMonsterName(monster, { state })}.`);
     }
     if (proficiency > 0 && await attackMonster(monster, x, y)) return;
     if (snap) await pline('Snap!');

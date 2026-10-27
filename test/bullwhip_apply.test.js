@@ -22,6 +22,21 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { makeBlinded } from '../js/sight_change.js';
+void test('a blind hero flicks a whip toward it without naming the unseen monster', async () => {
+    const level = freshPlayableRoom({ role: 'archeologist' });
+    const whip = await addInventoryObject(BULLWHIP, { wielded: true, owornmask: W_WEP });
+    game.uwep = game.u.uwep = whip;
+    await createMonsterAt('dust vortex', 11, 10);
+    await makeBlinded(20, { talk: false });
+    level.requireAt(11, 10).remembered_glyph = { kind: 'invisible', ch: 'I', color: 8 };
+    const messages = [];
+    const input = resetInputState();
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    await applyInventoryObject(whip, 'l ');
+    assert.match([...messages, game._pending_message].join('\n'), /You flick your bullwhip towards it\./);
+    assert.equal(game.context.move, 1);
+});
 void test('applying an unwielded bullwhip wields it before asking for direction', async () => {
     freshPlayableRoom({ role: 'archeologist' });
     requirePlayingGame(game);
