@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { displayMessageWindow, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
@@ -64,6 +64,36 @@ for (const pagerStyle of ['text', 'menu']) {
         assert.equal(rowText(0), '');
     });
 }
+void test('a corner disclosure does not repaint a read line after message-window display', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    await plineWithContinuation('You study the markings.');
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+    await displayMessageWindow();
+    input.feed(' ');
+    await showDisclosureOverlay(['The runes describe a doorway.'], { restoreUnderlay: true });
+    assert.equal(rowText(0), '', 'the dismissed disclosure erased the message row');
+    await flush_screen(1);
+    assert.equal(rowText(0), '', 'repainting must leave the erased row blank');
+});
+void test('a corner menu keeps an inactive message clipped after message-window display', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    await plineWithContinuation('You study the markings near the eastern doorway and the stairs.');
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+    await displayMessageWindow();
+    input.feed('\x1b');
+    await showChoiceWindow({ title: 'Choose a doorway:', entries: [{ key: 'a', text: 'the east doorway' }] });
+    assert.match(rowText(0), /^You study the markings/, 'the text left of the corner remains visible');
+    assert.doesNotMatch(rowText(0), /stairs/, 'the corner erased the end of the message');
+    await flush_screen(1);
+    assert.match(rowText(0), /^You study the markings/);
+    assert.doesNotMatch(rowText(0), /stairs/, 'repainting must not restore the erased end');
+});
 for (const { width, firstColumn, mapVisible } of [
     { width: 76, firstColumn: 2, mapVisible: true },
     { width: 77, firstColumn: 1, mapVisible: false },
