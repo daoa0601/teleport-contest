@@ -27,7 +27,7 @@ for (const dark of [false, true]) {
         }
         vision_recalc(0);
         assert.equal(cansee(12, 11), !dark);
-        assert.equal(await continueRun(), false);
+        assert.equal((await continueRun()).tookTime, false);
         assert.equal(game.u.ux, 11);
         assert.equal(game.context.run, 0);
         await flush_screen(1);
@@ -47,7 +47,7 @@ void test('travel stops for an ordinary hostile in darkness', async () => {
     location.waslit = false;
     vision_recalc(0);
     assert.equal(cansee(12, 11), false);
-    assert.equal(await continueRun(), false);
+    assert.equal((await continueRun()).tookTime, false);
     assert.equal(game.u.ux, 11);
     assert.equal(game.context.run, 0);
     await flush_screen(1);
@@ -61,7 +61,7 @@ for (const concealment of ['invisible', 'undetected']) {
         const monster = await createMonsterAt('goblin', 12, 11, MM_ANGRY | NO_MINVENT);
         monster.minvis = concealment === 'invisible' ? 1 : 0;
         monster.mundetected = concealment === 'undetected';
-        assert.equal(await continueRun(), true);
+        assert.equal((await continueRun()).tookTime, true);
         assert.equal(game.u.ux, 12);
         await flush_screen(1);
         assert.doesNotMatch(requireScreenRow(0).map(cell => cell.ch).join(''), /blocks your path/);
@@ -83,7 +83,7 @@ void test('travel stops for a peaceful monster the hero cannot spot in darkness'
     location.waslit = false;
     vision_recalc(0);
     assert.equal(cansee(12, 11), false);
-    assert.equal(await continueRun(), false);
+    assert.equal((await continueRun()).tookTime, false);
     assert.equal(game.u.ux, 11);
     await flush_screen(1);
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /blocks your path\./);

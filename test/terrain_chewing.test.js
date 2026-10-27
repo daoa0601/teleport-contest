@@ -66,7 +66,7 @@ void test('a rock mole keeps running after finishing a boulder meal', async () =
     assert.equal(boulder.where, 'gone');
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game.context.run, 1);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
 });
 //# sourceMappingURL=terrain_chewing.test.js.map

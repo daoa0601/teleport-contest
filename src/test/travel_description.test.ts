@@ -44,9 +44,9 @@ for (const killed of [false, true]) {
         const monster = await createMonsterAt('newt', 11, 11, MM_ANGRY | NO_MINVENT);
         if (killed) await finishEnvironmentalMonsterDeath(monster, game, { noCorpse: true });
 
-        const moved = await continueRun();
+        const { tookTime } = await continueRun();
 
-        assert.equal(moved, killed);
+        assert.equal(tookTime, killed);
         assert.equal(game.u.ux, killed ? 12 : 11);
     });
 }

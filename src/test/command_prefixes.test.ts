@@ -24,7 +24,7 @@ for (const keys of ['Fgl', 'gFl', 'FGl', 'GFl']) {
         assert.equal(game.context.move, 0);
         assert.equal(monster.mhp, hitPoints);
         assert.equal(monster.msleeping, 1, 'stopping must not wake the target');
-        assert.equal(await continueRun(), false);
+        assert.equal((await continueRun()).tookTime, false);
     });
 }
 
@@ -76,7 +76,7 @@ for (const [prefix, direction, mode, noPickup] of [
         assert.equal(game.context.move, 1);
         assert.equal(game.context.run, mode);
         assert.equal(!!game.context.nopick, noPickup);
-        assert.equal(await continueRun(), true);
+        assert.equal((await continueRun()).tookTime, true);
         assert.equal(game.u.ux, 12);
     });
 }
@@ -143,6 +143,6 @@ void test('an unknown key retains a rush request until a movement command consum
     await rhack(0);
     assert.equal(game.u.ux, 11);
     assert.equal(game.context.run, 2);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
     assert.equal(game.u.ux, 12);
 });

@@ -27,7 +27,7 @@ for (const flight of flightProperties) {
             game._travelTarget = { x: 14, y: 10 };
 
             await rhack(31);
-            assert.equal(await continueRun(), true);
+            assert.equal((await continueRun()).tookTime, true);
 
             assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
             assert.equal(game.context.move, 1);
@@ -43,7 +43,7 @@ void test('travel takes the direct water route with identified water-walking boo
     game._travelTarget = { x: 14, y: 10 };
 
     await rhack(31);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
 
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
     assert.equal(game.context.move, 1);
@@ -56,7 +56,7 @@ void test('travel crosses a known vibrating square on the direct route', async (
     game._travelTarget = { x: 14, y: 10 };
 
     await rhack(31);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
 
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
     assert.equal(game.context.move, 1);
@@ -70,7 +70,7 @@ void test('travel can select a known vibrating square as its destination', async
     game._travelTarget = { x: 12, y: 10 };
 
     await rhack(31);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
 
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
     assert.equal(game.context.move, 1);
@@ -96,7 +96,7 @@ void test('travel stops repeating after returning to a visited square and retrav
     level.requireAt(12, 10).typ = STONE;
     vision_recalc(0);
 
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
 
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
     assert.equal(game._pending_message, 'You stop, unsure which way to go.');
@@ -136,7 +136,7 @@ void test('travel in grid-bug form takes two steps to a diagonally adjacent dest
     assert.deepEqual([game.u.ux, game.u.uy], [10, 11]);
     assert.equal(game.context.move, 1);
     assert.equal(game.context.travel, true);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
     assert.deepEqual([game.u.ux, game.u.uy], [11, 11]);
     assert.equal(game.context.move, 1);
     assert.equal(game.context.travel, false);
@@ -151,7 +151,7 @@ void test('travel admits closed doors on the route and stops at the door', async
 
     await rhack(31);
     assert.equal(game.u.ux, 11);
-    assert.equal(await continueRun(), false);
+    assert.equal((await continueRun()).tookTime, false);
 
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game.context.move, 0);
@@ -170,7 +170,7 @@ for (const rememberedGlyph of [false, true]) {
         game._travelTarget = { x: 14, y: 10 };
 
         await rhack(31);
-        assert.equal(await continueRun(), true);
+        assert.equal((await continueRun()).tookTime, true);
 
         assert.deepEqual([game.u.ux, game.u.uy], [12, 9]);
         assert.equal(game.context.move, 1);

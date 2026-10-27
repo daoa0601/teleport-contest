@@ -3825,8 +3825,12 @@ export async function runMoveloopCore() {
     // cancels the run and the following core invocation returns to input.
     if (g.multi > 0 && g._runState) {
         g.u.umoved = false;
-        const moved = await continueRun(g);
+        const continuation = await continueRun(g);
         if (g.program_state.gameover)
+            return;
+        // C returns here when lookaround() clears multi, before vision and
+        // end-turn callbacks. Pending sight waits for the next see_* phase.
+        if (!continuation.attemptedMove)
             return;
         await finishScheduledLevelChange();
         if (g.program_state.gameover)
@@ -3834,11 +3838,11 @@ export async function runMoveloopCore() {
         if (g.vision_full_recalc)
             vision_recalc(0);
         markMultiStepStatusDirty(g);
-        if (moved) {
+        if (continuation.tookTime) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
         }
-        if (moved)
+        if (continuation.tookTime)
             await currentLuaLifecycle().runCallbacks(g, 'end_turn');
         return;
     }
