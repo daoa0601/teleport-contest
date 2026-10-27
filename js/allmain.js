@@ -65,7 +65,7 @@ import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning } from
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies, setHeroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap } from './trap_magic.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
@@ -822,6 +822,8 @@ async function finishFumblingExpiryAfterMessage(fumbled, publish) {
 async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, moveAmount, }) {
     if (game.u.warning)
         await revealWarnedMonsters();
+    if (game.were_changes)
+        setHeroSpecies(heroSpecies(game), game);
     await warnWithMasterKey(game);
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();

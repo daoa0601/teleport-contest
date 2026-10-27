@@ -250,6 +250,7 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 import { climbOutOfPit, heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
@@ -1041,8 +1042,8 @@ export async function continueRun(g = game) {
     const moved = outcome === 'time';
     if (g.program_state.gameover)
         return false;
-    if (moved)
-        await captureRunmodeDelay(g, !!g._runState);
+    if (moved && g._domoveReachedTail)
+        await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
     g.context.move = moved ? 1 : 0;
     if (!moved && outcome !== 'opened-door')
         stopRun(g);
@@ -1423,8 +1424,8 @@ async function dispatchMovement(binding, prefixes) {
     const moved = outcome === 'time';
     if (game.program_state.gameover)
         return;
-    if (mode && !prefixes.walk && moved)
-        await captureRunmodeDelay(game, !!game._runState);
+    if (mode && !prefixes.walk && moved && game._domoveReachedTail)
+        await captureRunmodeDelay(game, !!game.context.run || game.multi > 0);
     game.context.move = moved ? 1 : 0;
     if (!moved && outcome !== 'opened-door')
         stopRun();
@@ -7804,8 +7805,15 @@ async function domoveCore(dx, dy) {
         return true;
     if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
         return false;
-    if (!await heroCanMoveFromTrap(newx, newy))
-        return true;
+    if (u.utrap) {
+        const canMove = await heroCanMoveFromTrap(newx, newy);
+        // domove_core() resets trapping again after trapmove() returns;
+        // the escape message may already have flushed its status update.
+        if (!u.utrap)
+            await resetHeroTrap(true);
+        if (!canMove)
+            return true;
+    }
     // C test_move(DO_MOVE) learns obstructed terrain by touch before trying
     // to pass through it, open a door, or reject a diagonal doorway entry.
     if (loc && heroIsBlind(game) && (IS_OBSTRUCTED(loc.typ)

@@ -81,7 +81,7 @@ import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning } from
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies, setHeroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap } from './trap_magic.js';
 import type { MonsterAttackDeathOptions } from './monster_attack_death.js';
@@ -997,6 +997,7 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     sourceTurn, moveAmount,
 }: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<MaintenancePhase> {
     if (game.u.warning) await revealWarnedMonsters();
+    if (game.were_changes) setHeroSpecies(heroSpecies(game), game);
     await warnWithMasterKey(game);
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
