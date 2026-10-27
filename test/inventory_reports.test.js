@@ -9,6 +9,7 @@ import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { planInput } from './support/planned-input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const RIN_STEALTH = OBJECT_NAMES.indexOf('stealth');
 void test('the weapon report describes the wielded object and its enchantment', async () => {
@@ -89,5 +90,42 @@ void test('typed inventory filters blessed items and preserves the chosen item a
     await rhack(0);
     assert.equal(game.inventory.includes(dagger), false);
     assert.equal(game.context.move, 1);
+});
+void test('typed inventory do-again replays only the accepted class answer', async () => {
+    freshObjectRoom({ flags: { menu_style: 0 } });
+    await addInventoryObject(DAGGER);
+    const input = resetInputState();
+    input.feed('Iv$');
+    await rhack(0);
+    assert.match(game._pending_message, /You have no such objects\./);
+    game._pending_message = '';
+    input.feed('\x01');
+    const replay = rhack(0);
+    const outcome = await Promise.race([
+        replay.then(() => 'done'),
+        input.waitUntilBlocked().then(() => 'blocked'),
+    ]);
+    if (outcome === 'blocked')
+        input.feed('\x1b');
+    await replay;
+    assert.equal(outcome, 'done', 'the rejected v must not replace the accepted class on replay');
+    assert.match(game._pending_message, /You have no such objects\./);
+});
+void test('typed inventory reports an invalid canned class without asking for live input', async () => {
+    const engine = await startMenuGame();
+    try {
+        game.flags.menu_style = 0;
+        const moves = game.moves;
+        await type(engine, '#inventtype');
+        engine.inputGate.queueCommandKeys('v');
+        await type(engine, '\n');
+        assert.match(screen(), /Please report these messages to devteam@nethack\.org\./);
+        await type(engine, ' ');
+        assert.match(screen(), /You have no such objects\./);
+        assert.equal(game.moves, moves);
+    }
+    finally {
+        await finish(engine);
+    }
 });
 //# sourceMappingURL=inventory_reports.test.js.map

@@ -36,7 +36,7 @@ import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { detectTraps } from './trap_detection.js';
-import { promptKey } from './tty_prompts.js';
+import { ynSingleKey } from './tty_prompts.js';
 
 const ROCK_CLASS = 14;
 
@@ -66,7 +66,7 @@ export async function useCrystalBall(object: GameObject): Promise<GameObject | n
 
     if (game.flags.verbose) await pline('You may look for an object, monster, or special map symbol.');
     await flushPendingTopline();
-    let symbol = String.fromCharCode(await promptKey('What do you look for? '));
+    let symbol = String.fromCharCode(await ynSingleKey('What do you look for? '));
     // C's quitchars matches NUL too; space remains a ghost-class search.
     if ('\0\r\n\x1b'.includes(symbol)) {
         if (game.flags.verbose) await pline('Never mind.');

@@ -6,7 +6,7 @@ import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { clearMessageWindow, consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
 import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
-import { promptKey } from './tty_prompts.js';
+import { yn_function } from './query.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { possessiveName } from './monster_name.js';
@@ -216,18 +216,14 @@ async function typeInventory() {
         const types = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('') + (extra ? ` ${extra}` : '');
         choice = types;
         if (types.length > 1) {
-            for (;;) {
-                const key = await promptKey(`${prompt} [${types}] `);
-                // tty_yn_function() maps these keys to the NUL default.
-                if ([0, 27, 32, 10, 13].includes(key)) {
-                    clearMessageWindow();
-                    return null;
-                }
-                const symbol = String.fromCharCode(key);
-                if (OBJECT_CLASS_SYMBOLS.includes(symbol) || 'uxBUCXP'.includes(symbol)) {
-                    choice = symbol;
-                    break;
-                }
+            // invent.c:dotypeinv() accepts absent classes and categories too,
+            // but hides them after ESC in the response list.
+            const hiddenTypes = [...'uxBUCXP', ...OBJECT_CLASS_SYMBOLS]
+                .filter(symbol => !types.includes(symbol)).join('');
+            choice = (await yn_function(prompt, `${types}\x1b${hiddenTypes}`, '', true)).answer;
+            if (!choice || choice === '\0') {
+                clearMessageWindow();
+                return null;
             }
         }
     }

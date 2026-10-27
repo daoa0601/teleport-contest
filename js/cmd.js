@@ -143,7 +143,7 @@ import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, getobj, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
-import { confusePromptDirection, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
+import { confusePromptDirection, promptDirection, promptKey, readDirectionKey, restoreCommandMap, ynSingleKey, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, yn_function, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { callObjectType, objectTypeIsCallable, } from './object_call.js';
@@ -4118,7 +4118,7 @@ async function adjustSplit() {
 // first digit is filed for recall, with Escape leaving a count of zero.
 async function readInventorySplitCount() {
     await flushPendingTopline();
-    let key = await promptKey('Split off how many? ');
+    let key = await ynSingleKey('Split off how many? ');
     if (key < 48 || key > 57)
         return null;
     const firstDigit = key - 48;
@@ -5630,18 +5630,17 @@ async function putOnAccessoryObject(object) {
     }
     let hand;
     if (!game.uleft && !game.uright) {
-        for (;;) {
-            const finger = String.fromCharCode(await promptKey(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left? [rl] `)).toLowerCase();
-            // tty_yn_function() returns the zero default for quit keys.
-            if (['\x1b', '\0', ' ', '\r', '\n'].includes(finger)) {
-                game.context.move = 0;
-                return;
-            }
-            if (finger === 'r' || finger === 'l') {
-                hand = finger === 'r' ? 'right' : 'left';
-                break;
-            }
+        // C calls yn_function(qbuf, rightleftchars, '\0', TRUE): a queued
+        // answer replays without prompting and any key outside "rl" is
+        // replaced by the NUL default; a live question keeps asking until
+        // 'r', 'l', or a quit key answers it, and only that final answer
+        // is recorded into CQ_REPEAT for the next do-again.
+        const { answer } = await yn_function(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left?`, 'rl', '', true);
+        if (answer !== 'r' && answer !== 'l') {
+            game.context.move = 0;
+            return;
         }
+        hand = answer === 'r' ? 'right' : 'left';
     }
     else {
         hand = game.uright ? 'left' : 'right';

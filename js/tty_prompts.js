@@ -9,7 +9,7 @@ import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { rememberCommandKey, rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
 import { controlKeyHintLines } from './command_help.js';
 import { clearCannedCommands } from './command_state.js';
@@ -24,10 +24,10 @@ async function paintKeyPrompt(message, cursorOffset = 0) {
     await flush_screen(1);
     return renderKeyPrompt(message, cursorOffset);
 }
-export async function promptKey(message, cursorOffset = 0) {
+export async function promptKey(message, cursorOffset = 0, { canned = true } = {}) {
     // C cmd.c:yn_function() answers from the command queue without ever
     // reaching tty_yn_function(); gt.toplines is untouched then.
-    const queuedKey = takeCommandKey();
+    const queuedKey = canned ? takeCommandKey() : undefined;
     if (queuedKey !== undefined)
         return queuedKey;
     // tty_yn_function() with a null response list goes straight from its
@@ -48,6 +48,34 @@ export async function promptKey(message, cursorOffset = 0) {
     // C tty_yn_function() retains a one-line query, but clears wrapped ones.
     if (coveredRows > 1)
         clearMessageWindow(coveredRows);
+    return key;
+}
+// C cmd.c:yn_function(query, (char *) 0, def, TRUE) for a response-free
+// single-key question: cmdq_pop() answers from CQ_REPEAT during do-again
+// without drawing anything, and a live answer is recorded back into
+// CQ_REPEAT for the next do-again.
+export async function ynSingleKey(message, cursorOffset = 0) {
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued) {
+            // A non-key entry clears CQ_CANNED and answers Escape.
+            if (queued.kind !== 'key')
+                clearCannedCommands();
+            return queued.kind === 'key' ? queued.key : 27;
+        }
+    }
+    else {
+        // C cmdq_pop() takes CQ_CANNED here and sets addcmdq FALSE, so a
+        // canned answer never lands in CQ_REPEAT.
+        const canned = takeCommandKey();
+        if (canned !== undefined)
+            return canned;
+    }
+    // The single cmdq_pop() already happened above (CQ_REPEAT during a
+    // do-again, CQ_CANNED otherwise); CMDQ_USER_INPUT reads live from the
+    // terminal, so the live question never takes another canned entry.
+    const key = await promptKey(message, cursorOffset, { canned: false });
+    rememberYnAnswerKey(key);
     return key;
 }
 // C cmd.c:getdir() removes its query immediately after receiving a key,
