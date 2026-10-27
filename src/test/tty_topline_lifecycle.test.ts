@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { displayMessageWindow, docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { promptKey, readDirectionKey } from '../js/tty_prompts.js';
@@ -42,6 +42,18 @@ void test('an answered prompt stays visible but a native redraw does not page it
     assert.equal(result, 'redrawn');
     await flush_screen(1);
     assert.equal(topline(), '');
+});
+
+void test('displaying a message window preserves an already answered question', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('c');
+    await promptKey('What do you want to zap? [c or ?*] ');
+
+    await displayMessageWindow();
+    await flush_screen(1);
+
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
 });
 
 void test('successive key reads acknowledge each message without joining later prose to seen text', async () => {

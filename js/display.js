@@ -3433,6 +3433,9 @@ export async function flushPendingTopline() {
 export async function displayMessageWindow() {
     if (game._suppressMessagesUntilInput)
         return null;
+    // tty clears the physical row only after paging unread prose.
+    if (!game._pending_message)
+        return null;
     const dismissal = await flushPendingTopline();
     clearMessageWindow();
     return dismissal;

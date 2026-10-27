@@ -3483,6 +3483,8 @@ export async function flushPendingTopline() {
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
 export async function displayMessageWindow(): Promise<number | null> {
     if (game._suppressMessagesUntilInput) return null;
+    // tty clears the physical row only after paging unread prose.
+    if (!game._pending_message) return null;
     const dismissal = await flushPendingTopline();
     clearMessageWindow();
     return dismissal;
