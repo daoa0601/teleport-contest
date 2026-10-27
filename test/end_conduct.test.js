@@ -47,8 +47,9 @@ void test('quit disclosure reports broken conducts and achievements from game hi
             const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
             screens.push(screen);
             assert.ok(screens.length < 16, `Unexpected ending prompt: ${screen}`);
-            // really_done() leaves the answered question visible to the
-            // left of a corner window. The pager owns input there.
+            // tty_yn_function() leaves NON_EMPTY; really_done() displays
+            // WIN_MESSAGE, marking it EMPTY without erasing the question.
+            // The corner's pager owns input beside that retained text.
             return (screen.includes('--More--') ? ' '
                 : screen.includes('Really quit without saving?') ? 'y'
                     : screen.includes('Dump core?') ? 'n' : ' ').charCodeAt(0);
