@@ -6,6 +6,7 @@ import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberT
 import { game } from './gstate.js';
 import { nhgetch, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import type { CommandDirection } from './input.js';
+import { restoreCannedCommandTail } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import type { RepeatCommandEntry } from './command_types.js';
@@ -41,10 +42,11 @@ export async function getLine(
             // dropped entry per prompt. A non-key response from
             // takeCommandResponse() is that consumed entry already; only an
             // empty response queue leaves the next pop to the canned
-            // command entries, which model the queue's non-key tail.
-            if (entry === undefined && !game._inDoAgain
-                && game._cannedCommands?.length) {
-                game._cannedCommands.shift();
+            // command entries, whose bundled key or direction tails return
+            // to the response queue (cmd.c queues them behind the command).
+            if (entry === undefined && !game._inDoAgain) {
+                const dropped = game._cannedCommands?.shift();
+                if (dropped) restoreCannedCommandTail(dropped);
             }
             break;
         }

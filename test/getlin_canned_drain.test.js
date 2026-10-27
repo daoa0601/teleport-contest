@@ -46,4 +46,32 @@ void test('a trycall naming prompt eats the queued fire-assist fire', async () =
     }
     assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
 });
+// dothrow.c:573-576 queues [dowield, <launcher letter>, dofire] for a
+// launcher-assist fire. getlin() frees only the dowield entry, so the
+// letter survives as the next queue pop and runs as a command before the
+// fire resumes.
+void test('a naming prompt between fire-assist commands keeps the wielded launcher letter queued', async () => {
+    const input = freshTurnRoom();
+    await setPrimaryWeapon(await addInventoryObject(CLUB, { invlet: 'a' }));
+    const bow = await addInventoryObject(BOW, { invlet: 'b' });
+    bow.bknown = true;
+    await setQuiverObject(await addInventoryObject(ARROW, { invlet: 'c', quan: 3 }));
+    input.feed('f');
+    await moveloop_core();
+    const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS, { typeKnown: false, observed: false, dknown: true });
+    const call = tryCallObjectType(glass);
+    await input.waitUntilBlocked();
+    input.feed('wide\r');
+    await call;
+    assert.equal(game._objectCallNames?.[glass.otyp], 'wide');
+    // The freed queue's next pop is the launcher's letter 'b', which runs
+    // as the move-southwest command — not the fire, which would have
+    // re-queued the wield without moving the hero or spending the walk.
+    await moveloop_core();
+    assert.equal(game.u.ux, 9, 'the launcher letter ran as a command');
+    assert.equal(game.u.uy, 11, 'the letter moved the hero southwest');
+    assert.equal(game.uwep?.otyp, CLUB, 'the wield itself was eaten');
+    assert.equal(game.uquiver?.quan, 3, 'no arrow was fired yet');
+    assert.equal(game.moves, 1, 'only the walk acted; its turn is still pending');
+});
 //# sourceMappingURL=getlin_canned_drain.test.js.map

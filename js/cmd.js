@@ -2865,6 +2865,25 @@ function contextMenuResponses(selection) {
         case 'wait': return;
     }
 }
+// windows.c:getlin() frees only the popped command entry, so any key or
+// direction C queued behind it stays queued for the next pop. Several
+// canned kinds bundle that tail inside one JS entry (dothrow.c:575-576,
+// dig.c:1104-1105, apply.c:1808-1809, 2966-2967, 3442-3443, 3745-3746 and
+// the cmd.c act_on_act() chains): restore it onto the response queue. The
+// drain only drops a canned entry after the response queue emptied, so
+// appending preserves the C order — tail first, then the remaining
+// canned commands.
+export function restoreCannedCommandTail(canned) {
+    if (canned.kind === 'rub' || canned.kind === 'apply' || canned.kind === 'wield') {
+        queueCommandResponses([canned.invlet.charCodeAt(0)]);
+    }
+    else if (canned.kind === 'kick') {
+        queueCommandResponses([{ dx: canned.dx, dy: canned.dy, dz: 0 }]);
+    }
+    else if (canned.kind === 'context-menu') {
+        contextMenuResponses(canned.selection);
+    }
+}
 async function doname() {
     // do_name.c:docallcmd() uses a queued key as the naming category.
     // Any other queued entry selects nothing and clears the canned queue.
