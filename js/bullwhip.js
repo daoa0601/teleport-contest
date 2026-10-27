@@ -2,7 +2,7 @@
 // C ref: apply.c use_whip().
 import { monsterAtPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
-import { observeObjectForNaming, singularObjectName } from './objnam.js';
+import { definiteName, objectCombatName, observeObjectForNaming, ownedObjectName, singularObjectName, } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
 import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, TT_PIT, isok, } from './const.js';
 import { canSenseMonster, canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
@@ -24,7 +24,7 @@ import { unwieldMonsterWeapon } from './monster_weapon.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { BOULDER, CORPSE, OBJECT_BIMANUAL, } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { monsterName as describeMonsterName } from './monster_name.js';
+import { monsterName as describeMonsterName, monsterPossessive, possessiveName, } from './monster_name.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
@@ -52,20 +52,8 @@ const DIAGONAL_DIRECTIONS = [
 function quantityOf(object) {
     return object?.quan ?? object?.quantity ?? 1;
 }
-async function objectWithArticle(object) {
-    const description = (await inventoryItemDescription(object))
-        .replace(/ \([^)]*\)$/u, '');
-    return description;
-}
-function monsterName(monster) {
-    return monster?.name || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-function monsterObject(monster) {
-    return monster?.name ? monster.name : `the ${monsterName(monster)}`;
-}
-function possessive(text) {
-    return /s$/iu.test(text) ? `${text}'` : `${text}'s`;
-}
+// C apply.c:3099/3253/3025: mon_nam(mtmp) for the pit anchor, the flick
+// message, and a mistaken steed whip; formatMonsterName() is its port.
 function isTwoHanded(object) {
     return !!(object?.bimanual || OBJECT_BIMANUAL[object?.otyp]);
 }
@@ -166,13 +154,19 @@ async function disarmMonster(monster, weapon, proficiency, state) {
         && (!heroIsFumbling(state) || rn2(10) === 0);
     const hand = monsterHandName(monster.mnum);
     const hands = isTwoHanded(weapon) ? makePlural(hand) : hand;
-    observeObjectForNaming(weapon, { state });
-    await pline(`You wrap your bullwhip around ${await objectWithArticle(weapon)}.`);
+    // C apply.c:3158: onambuf = cxname(otmp), captured before any message can
+    // change the weapon's knowledge flags.
+    const weaponName = objectCombatName(weapon, { state });
+    // C apply.c:3166: yname(otmp) — shk_your() prefixes the carrier's name
+    // ("the soldier's") and cxname() carries no beatitude or enchantment.
+    await pline(`You wrap your bullwhip around ${ownedObjectName(weapon, state, { capitalized: false })}.`);
     if (gotWeapon && weapon.cursed) {
         const wasKnown = !!weapon.bknown;
         weapon.bknown = true;
         const subject = quantityOf(weapon) === 1 ? 'It is' : 'They are';
-        await pline(`${subject} welded to ${monsterObject(monster)}'s ${hands}${wasKnown ? '.' : '!'}`);
+        // C apply.c:3168-3170: mhis(mtmp) is the monster's pronoun, not its
+        // name with a possessive suffix.
+        await pline(`${subject} welded to ${monsterPossessive(monster, { state })} ${hands}${wasKnown ? '.' : '!'}`);
         gotWeapon = false;
     }
     if (!gotWeapon) {
@@ -189,14 +183,15 @@ async function disarmMonster(monster, weapon, proficiency, state) {
     await unwieldMonsterWeapon(monster, state, { weapon, publish: pline });
     switch (rn2(proficiency + 1)) {
         case 2:
-            observeObjectForNaming(weapon, { state });
-            await plineWithContinuation(`You yank ${await objectWithArticle(weapon)} to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
+            // C apply.c:3182: yname() again; the extracted weapon is free, so
+            // shk_your() reduces to "the" and cxname() still shows no BUC.
+            await plineWithContinuation(`You yank ${ownedObjectName(weapon, state, { capitalized: false })} to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
             await placeObject(weapon, state.u.ux, state.u.uy);
             await stack_object(weapon, state);
             break;
         case 3:
-            observeObjectForNaming(weapon, { state });
-            await plineWithContinuation(`You snatch ${await objectWithArticle(weapon)}!`);
+            // C apply.c:3209: yname() for the snatch message as well.
+            await plineWithContinuation(`You snatch ${ownedObjectName(weapon, state, { capitalized: false })}!`);
             if (await snatchPetrifyingCorpse(weapon, state))
                 return true;
             // C apply.c:3230: hold_another_object() owns fumbling, slot, and
@@ -209,8 +204,8 @@ async function disarmMonster(monster, weapon, proficiency, state) {
                 return true;
             break;
         default:
-            observeObjectForNaming(weapon, { state });
-            await plineWithContinuation(`You yank ${await objectWithArticle(weapon)} from ${possessive(monsterObject(monster))} ${hands}!`);
+            // C apply.c:3235-3236: the(onambuf) + s_suffix(mon_nam(mtmp)).
+            await plineWithContinuation(`You yank ${definiteName(weaponName, state)} from ${possessiveName(describeMonsterName(monster, { state }))} ${hands}!`);
             // C apply.c:3237-3238: obj_no_longer_held() runs before
             // place_object(); the release repeats inside the placement owner
             // by design — a fixed crysknife can survive the first release and
@@ -232,7 +227,7 @@ function pitAnchor(targetX, targetY, monster, state) {
             ? 'something' : null;
     if (monster && (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
         && canSpotMonster(monster))
-        anchor = monsterObject(monster);
+        anchor = describeMonsterName(monster, { state });
     return anchor;
 }
 function pitEscapeDestination(targetX, targetY, monster, state) {
@@ -374,7 +369,7 @@ export async function useBullwhip(whip, direction, { state = game, attackMonster
     }
     else if ((!hero.dx && !hero.dy) || hero.dz > 0) {
         if (hero.usteed && rn2(proficiency + 2) === 0) {
-            await pline(`You whip ${monsterObject(hero.usteed)}!`);
+            await pline(`You whip ${describeMonsterName(hero.usteed, { state })}!`);
             await strikeSteed({ state, announce: pline });
             return { spentTime: true };
         }

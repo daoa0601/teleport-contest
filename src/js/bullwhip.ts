@@ -3,7 +3,10 @@
 
 import { monsterAtPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
-import { observeObjectForNaming, singularObjectName } from './objnam.js';
+import {
+    definiteName, objectCombatName, observeObjectForNaming, ownedObjectName,
+    singularObjectName,
+} from './objnam.js';
 import {
     heroFootName, heroHandName, monsterHandName,
 } from './body_parts.js';
@@ -37,7 +40,9 @@ import {
     BOULDER, CORPSE, OBJECT_BIMANUAL,
 } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { monsterName as describeMonsterName } from './monster_name.js';
+import {
+    monsterName as describeMonsterName, monsterPossessive, possessiveName,
+} from './monster_name.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
@@ -81,25 +86,8 @@ function quantityOf(object: GameObject) {
     return object?.quan ?? object?.quantity ?? 1;
 }
 
-async function objectWithArticle(object: GameObject) {
-    const description = (await inventoryItemDescription(object))
-        .replace(/ \([^)]*\)$/u, '');
-    return description;
-}
-
-function monsterName(monster: Monster) {
-    return monster?.name || monsterTypeName(
-        monster?.mnum, !!monster?.female,
-    );
-}
-
-function monsterObject(monster: Monster) {
-    return monster?.name ? monster.name : `the ${monsterName(monster)}`;
-}
-
-function possessive(text: string) {
-    return /s$/iu.test(text) ? `${text}'` : `${text}'s`;
-}
+// C apply.c:3099/3253/3025: mon_nam(mtmp) for the pit anchor, the flick
+// message, and a mistaken steed whip; formatMonsterName() is its port.
 
 function isTwoHanded(object: GameObject) {
     return !!(object?.bimanual || OBJECT_BIMANUAL[object?.otyp]);
@@ -211,14 +199,21 @@ async function disarmMonster(
         && (!heroIsFumbling(state) || rn2(10) === 0);
     const hand = monsterHandName(monster.mnum);
     const hands = isTwoHanded(weapon) ? makePlural(hand) : hand;
-    observeObjectForNaming(weapon, { state });
-    await pline(`You wrap your bullwhip around ${await objectWithArticle(weapon)}.`);
+    // C apply.c:3158: onambuf = cxname(otmp), captured before any message can
+    // change the weapon's knowledge flags.
+    const weaponName = objectCombatName(weapon, { state });
+    // C apply.c:3166: yname(otmp) — shk_your() prefixes the carrier's name
+    // ("the soldier's") and cxname() carries no beatitude or enchantment.
+    await pline(`You wrap your bullwhip around ${
+        ownedObjectName(weapon, state, { capitalized: false })}.`);
 
     if (gotWeapon && weapon.cursed) {
         const wasKnown = !!weapon.bknown;
         weapon.bknown = true;
         const subject = quantityOf(weapon) === 1 ? 'It is' : 'They are';
-        await pline(`${subject} welded to ${monsterObject(monster)}'s ${hands}${
+        // C apply.c:3168-3170: mhis(mtmp) is the monster's pronoun, not its
+        // name with a possessive suffix.
+        await pline(`${subject} welded to ${monsterPossessive(monster, { state })} ${hands}${
             wasKnown ? '.' : '!'}`);
         gotWeapon = false;
     }
@@ -237,15 +232,18 @@ async function disarmMonster(
     await unwieldMonsterWeapon(monster, state, { weapon, publish: pline });
     switch (rn2(proficiency + 1)) {
     case 2:
-        observeObjectForNaming(weapon, { state });
-        await plineWithContinuation(`You yank ${await objectWithArticle(weapon)} to the ${
+        // C apply.c:3182: yname() again; the extracted weapon is free, so
+        // shk_your() reduces to "the" and cxname() still shows no BUC.
+        await plineWithContinuation(`You yank ${
+            ownedObjectName(weapon, state, { capitalized: false })} to the ${
             surfaceName(state.u.ux, state.u.uy, state)}!`);
         await placeObject(weapon, state.u.ux, state.u.uy);
         await stack_object(weapon, state);
         break;
     case 3:
-        observeObjectForNaming(weapon, { state });
-        await plineWithContinuation(`You snatch ${await objectWithArticle(weapon)}!`);
+        // C apply.c:3209: yname() for the snatch message as well.
+        await plineWithContinuation(`You snatch ${
+            ownedObjectName(weapon, state, { capitalized: false })}!`);
         if (await snatchPetrifyingCorpse(weapon, state)) return true;
         // C apply.c:3230: hold_another_object() owns fumbling, slot, and
         // capacity refusal, dropping the weapon at the hero's feet.  A fatal
@@ -256,10 +254,10 @@ async function disarmMonster(
         })).heroDied) return true;
         break;
     default:
-        observeObjectForNaming(weapon, { state });
+        // C apply.c:3235-3236: the(onambuf) + s_suffix(mon_nam(mtmp)).
         await plineWithContinuation(
-            `You yank ${await objectWithArticle(weapon)} from ${
-                possessive(monsterObject(monster))} ${hands}!`,
+            `You yank ${definiteName(weaponName, state)} from ${
+                possessiveName(describeMonsterName(monster, { state }))} ${hands}!`,
         );
         // C apply.c:3237-3238: obj_no_longer_held() runs before
         // place_object(); the release repeats inside the placement owner
@@ -282,7 +280,7 @@ function pitAnchor(targetX: number, targetY: number, monster: Monster | null, st
         : location && IS_FURNITURE(location.typ)
             ? 'something' : null;
     if (monster && (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
-        && canSpotMonster(monster)) anchor = monsterObject(monster);
+        && canSpotMonster(monster)) anchor = describeMonsterName(monster, { state });
     return anchor;
 }
 
@@ -441,7 +439,7 @@ export async function useBullwhip(
             });
     } else if ((!hero.dx && !hero.dy) || hero.dz > 0) {
         if (hero.usteed && rn2(proficiency + 2) === 0) {
-            await pline(`You whip ${monsterObject(hero.usteed)}!`);
+            await pline(`You whip ${describeMonsterName(hero.usteed, { state })}!`);
             await strikeSteed({ state, announce: pline });
             return { spentTime: true };
         }
