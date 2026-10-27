@@ -51,7 +51,11 @@ void test('quit disclosure reports broken conducts and achievements from game hi
             const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
             screens.push(screen);
             assert.ok(screens.length < 16, `Unexpected ending prompt: ${screen}`);
-            return (screen.includes('Really quit without saving?') ? 'y'
+            // tty_yn_function() leaves NON_EMPTY; really_done() displays
+            // WIN_MESSAGE, marking it EMPTY without erasing the question.
+            // The corner's pager owns input beside that retained text.
+            return (screen.includes('--More--') ? ' '
+                : screen.includes('Really quit without saving?') ? 'y'
                 : screen.includes('Dump core?') ? 'n' : ' ').charCodeAt(0);
         },
     };
@@ -59,6 +63,8 @@ void test('quit disclosure reports broken conducts and achievements from game hi
     await doquit();
 
     const conduct = screens.filter(screen => /Voluntary challenges:|Achievement|Sokoban/.test(screen)).join('\n');
+    assert.match(conduct, /^Dump core\? \[ynq\] \(q\).*Voluntary challenges:/m,
+        'the answered question remains visible outside the conduct window');
     assert.match(conduct, /You used 2 wishes \(both for artifacts\)\./);
     assert.match(conduct, /You genocided 1 type of monster\./);
     assert.match(conduct, /You hit with a wielded weapon 1 time\./);

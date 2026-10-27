@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
+import { displayMessageWindow, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { nhgetch, resetInputState } from '../js/input.js';
 import { ATR_INVERSE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { showChoiceWindow, showDisclosureOverlay } from '../js/windows.js';
 import { promptKey } from '../js/tty_prompts.js';
@@ -49,6 +49,55 @@ for (const kind of ['prose', 'choices']) {
         }
     });
 }
+for (const pagerStyle of ['text', 'menu']) {
+    void test(`a corner ${pagerStyle} disclosure clears read prose after closing and repainting`, async () => {
+        freshPlayableRoom();
+        const input = resetInputState();
+        await plineWithContinuation('You study the markings.');
+        input.feed('x');
+        await nhgetch();
+        input.feed(' ');
+        await showDisclosureOverlay(['The runes describe a doorway.'], {
+            pagerStyle, restoreUnderlay: true,
+        });
+        await flush_screen(1);
+        assert.equal(rowText(0), '');
+    });
+}
+for (const message of ['You study the markings.', 'You study the markings near the eastern doorway and the stairs.']) {
+    void test(`a corner disclosure preserves uncovered inactive prose: ${message}`, async () => {
+        freshPlayableRoom();
+        const input = resetInputState();
+        await plineWithContinuation(message);
+        await flush_screen(1);
+        input.feed('x');
+        await nhgetch();
+        await displayMessageWindow();
+        input.feed(' ');
+        await showDisclosureOverlay(['The runes describe a doorway.'], { restoreUnderlay: true });
+        assert.match(rowText(0), /^You study the markings/);
+        assert.doesNotMatch(rowText(0), /stairs/, 'the corner erases only the covered part of the message');
+        await flush_screen(1);
+        assert.match(rowText(0), /^You study the markings/);
+        assert.doesNotMatch(rowText(0), /stairs/, 'repainting keeps the covered ending erased');
+    });
+}
+void test('a corner menu keeps an inactive message clipped after message-window display', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    await plineWithContinuation('You study the markings near the eastern doorway and the stairs.');
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+    await displayMessageWindow();
+    input.feed('\x1b');
+    await showChoiceWindow({ title: 'Choose a doorway:', entries: [{ key: 'a', text: 'the east doorway' }] });
+    assert.match(rowText(0), /^You study the markings/, 'the text left of the corner remains visible');
+    assert.doesNotMatch(rowText(0), /stairs/, 'the corner erased the end of the message');
+    await flush_screen(1);
+    assert.match(rowText(0), /^You study the markings/);
+    assert.doesNotMatch(rowText(0), /stairs/, 'repainting must not restore the erased end');
+});
 for (const { width, firstColumn, mapVisible } of [
     { width: 76, firstColumn: 2, mapVisible: true },
     { width: 77, firstColumn: 1, mapVisible: false },

@@ -3,7 +3,7 @@
 // C refs: windows.c and win/tty/wintty.c.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
+import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
@@ -104,15 +104,15 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     const d = display();
     if (!d)
         return 27;
-    if (skipPendingPager)
-        clearMessageWindow();
+    // Menu/text display pages unread prose, then clears a nonempty message
+    // window. An already-empty window keeps its uncovered terminal cells.
+    if (!skipPendingPager && !game._suppressMessagesUntilInput)
+        await flushPendingTopline();
+    clearMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
-        // The menu owner pages unread prose and clears an answered question.
         return await showTextMenuOverlay(entries);
     }
-    if (!skipPendingPager)
-        await displayMessageWindow();
     const prose = entries.map(line => ({ ...line, text: compressTextWindowLine(line.text, d.cols) }));
     const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width
@@ -131,8 +131,6 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     // starts the marker one column past the window offset.
     const textLeft = cornerOffset === 0 ? 0 : cornerOffset + 1;
     const left = cornerOffset + 1;
-    // Replace the preceding question across the whole message row.
-    d.clearRow(0);
     // A dismissed corner window restores the already-painted map rather
     // than recomputing vision. Callers may retain a final page after exit.
     const underlay = restoreUnderlay
@@ -160,6 +158,8 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
                 d.setCell(col, row, cell.ch, cell.color, cell.attr);
             }
         }
+        // docorner() leaves the covered message columns blank.
+        clearRect(Math.max(0, cornerOffset - 1), 0, d.cols, 1);
         d.setCursor(underlayCursor.col, underlayCursor.row);
         d.cursorVisible = underlayCursor.visible;
     }
