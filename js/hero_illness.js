@@ -79,13 +79,13 @@ export function cureHeroSickness(state = game, type = SICK_ALL) {
 }
 // Native make_sick(0, ..., talk, type): the type mask changes before the
 // cure message; the timeout and delayed cause remain until that line returns.
-export async function cureHeroSicknessWithMessages(state = game, type = SICK_ALL) {
+export async function cureHeroSicknessWithMessages(state = game, type = SICK_ALL, publish = plineWithContinuation) {
     const hero = state.u;
     const currentType = hero.sickType ?? 0;
     if (!heroIsSick(state) || !(currentType & type))
         return false;
     hero.sickType = currentType & ~type;
-    await plineWithContinuation(formatFeltMessage(hero.sickType ? 'somewhat better.' : 'cured.  What a relief!', state));
+    await publish(formatFeltMessage(hero.sickType ? 'somewhat better.' : 'cured.  What a relief!', state));
     if (hero.sickType) {
         hero.sickTurns = Math.min(TIMEOUT, (hero.sickTurns ?? 0) * 2);
         state.context.botl = true;
@@ -143,9 +143,9 @@ async function cureFoodPoisoningByVomiting(state, publish) {
     const hero = state.u;
     if (!((hero.sickType ?? 0) & SICK_VOMITABLE))
         return false;
-    cureHeroSickness(state, SICK_VOMITABLE);
-    await publish(formatFeltMessage(hero.sickType ? 'somewhat better.' : 'cured.  What a relief!', state));
-    return true;
+    // potion.c make_sick(0): the cure line pages before Sick is cleared and
+    // botl is raised, so the --More-- it raises still shows the old status.
+    return cureHeroSicknessWithMessages(state, SICK_VOMITABLE, publish);
 }
 export async function vomitHero({ state = game, publish = pline, angerAltar = altarWrath, melt = meltIce, random = rn2, rollDice = d, } = {}) {
     const hero = state.u;

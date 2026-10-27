@@ -2,11 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HUNGRY, SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
 import { bot, flush_screen, plineWithContinuation } from '../js/display.js';
-import { cureHeroSickness, startHeroSickness } from '../js/hero_illness.js';
+import { game } from '../js/gstate.js';
+import { cureHeroSickness, startHeroSickness, vomitHero } from '../js/hero_illness.js';
+import { resetInputState } from '../js/input.js';
 import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
 import { setHeroSlimingTimeout } from '../js/slime.js';
 import { fixHeroPetrification, setHeroPetrificationTimeout } from '../js/stoning.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
 function status(): string {
@@ -42,6 +45,33 @@ for (const [type, label] of [
         assert.doesNotMatch(status(), new RegExp(`\\b${label}\\b`));
     });
 }
+
+void test('vomiting away food poisoning keeps FoodPois on the paged choke message', async () => {
+    freshObjectRoom();
+    await startHeroSickness({ turns: 20, type: SICK_VOMITABLE, cause: 'tainted meat' });
+    await flush_screen(1);
+    assert.match(status(), /\bFoodPois\b/);
+
+    const pages: string[] = [];
+    installPagerInput(resetInputState(), {
+        expected: /deathly sick|vomit|cured|relief/,
+        limit: 3,
+        pages,
+    });
+    await plineWithContinuation('You stuff yourself and then vomit voluminously.');
+    await vomitHero({ state: game });
+
+    const pause = pages.find(page =>
+        page.split('\n')[0]?.includes('You stuff yourself and then vomit voluminously.'));
+    assert.ok(pause, 'The cure line pages the pending choke message.');
+    assert.match(pause, /--More--/);
+    // potion.c make_sick() prints the cure line before clearing Sick and
+    // raising botl, so the --More-- it raises still shows the sick status.
+    assert.match(pause, /\bFoodPois\b/);
+    assert.equal(game.u.sick, false);
+    await flush_screen(1);
+    assert.doesNotMatch(status(), /\bFoodPois\b/);
+});
 
 void test('fatal conditions follow hunger in native severity order', async () => {
     freshObjectRoom({ hero: { uhs: HUNGRY } });

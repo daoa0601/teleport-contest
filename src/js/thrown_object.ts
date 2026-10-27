@@ -36,6 +36,7 @@ import { currentAttribute } from './attrib.js';
 import {
     canSpotMonster,
     flush_screen,
+    glyphAt,
     lastDirtyMapCursor,
     map_invisible,
     newsym,
@@ -167,8 +168,11 @@ function projectileMonsterAt(state: GameState, object: GameObject, x: number, y:
     if (MONSTER_NAME[monster.mnum] === 'shade' && material !== 14)
         return null;
     if (M_AP_TYPE(monster) === M_AP_OBJECT) {
-        const remembered = state.level?.at?.(x, y)?.remembered_glyph;
-        if (!remembered || !['monster', 'warning', 'invisible'].includes(remembered.kind))
+        // zap.c bhit() tests the live displayed glyph, not hero memory: the
+        // hero aims at a mimic whose square already shows a monster, warning,
+        // or remembered-unseen-monster glyph.
+        const displayed = glyphAt(x, y, state);
+        if (!displayed || !['monster', 'warning', 'invisible'].includes(displayed.kind))
             return null;
     }
     return monster;
