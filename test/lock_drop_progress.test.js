@@ -13,7 +13,9 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const action of ['picking', 'forcing']) {
     for (const successfulDrop of [true, false]) {
-        void test(`${successfulDrop ? 'dropping an item clears' : 'a refused drop preserves'} interrupted ${action} progress`, async () => {
+        // do.c:dodrop() resets occupations for every nonzero drop() result,
+        // and a refused drop is ECMD_FAIL.
+        void test(`${successfulDrop ? 'dropping an item' : 'a refused drop'} clears interrupted ${action} progress`, async () => {
             const level = freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
             const door = level.requireAt(11, 10);
             door.typ = DOOR;
@@ -39,16 +41,11 @@ for (const action of ['picking', 'forcing']) {
             assert.equal(game.context.move, successfulDrop ? 1 : 0);
             await answerPrompts(flushPendingTopline(), input, [{ prompt: /--More--/, keys: ' ' }]);
             pushKeys(action === 'picking' ? 'a' : 'force\n');
-            await answerPrompts(rhack((action === 'picking' ? 'a' : '#').charCodeAt(0)), input, successfulDrop ? [
+            await answerPrompts(rhack((action === 'picking' ? 'a' : '#').charCodeAt(0)), input, [
                 ...(action === 'picking' ? [{ prompt: /In what direction\?/, keys: 'l' }] : []),
                 { prompt: action === 'picking' ? /Unlock it\?/ : /force its lock\?/, keys: 'n' },
-            ] : []);
-            if (successfulDrop)
-                assert.equal(game._occupation, null);
-            else {
-                assert.equal(game._occupation?.key, action === 'picking' ? 'pick-lock' : 'force-lock');
-                assert.match(game._pending_message, /You resume your attempt/);
-            }
+            ]);
+            assert.equal(game._occupation, null);
         });
     }
 }
