@@ -314,27 +314,33 @@ export async function showTextWindow(lines) {
     const displayPage = async () => {
         while (page.length < pageSize)
             page.push('');
-        key = await showTextPages([{ lines: [...page, '--More--'], cursor: [8, pageSize] }]);
+        key = await readTextPage({ lines: [...page, '--More--'], cursor: [8, pageSize] });
         page = [];
     };
-    for await (const entry of lines) {
-        const line = typeof entry === 'string' ? { text: entry } : entry;
-        for (const row of textWindowRows(line.text, d.cols)) {
-            // tty_putstr flushes a full page before buffering the new row.
-            // Its caller has already computed this line at that boundary.
-            if (key === 27)
-                continue;
-            if (page.length === pageSize)
-                await displayPage();
-            if (key !== 27)
-                page.push({ ...line, text: row });
+    try {
+        for await (const entry of lines) {
+            const line = typeof entry === 'string' ? { text: entry } : entry;
+            for (const row of textWindowRows(line.text, d.cols)) {
+                // tty_putstr flushes a full page before buffering the new row.
+                // Its caller has already computed this line at that boundary.
+                if (key === 27)
+                    continue;
+                if (page.length === pageSize)
+                    await displayPage();
+                if (key !== 27)
+                    page.push({ ...line, text: row });
+            }
         }
+        // A cancelled window ignores more rows, but the producer still runs:
+        // pager.c's look lists continue applying observation side effects.
+        if (key !== 27)
+            await displayPage();
+        return key;
     }
-    // A cancelled window ignores more rows, but the producer still runs:
-    // pager.c's look lists continue applying observation side effects.
-    if (key !== 27)
-        await displayPage();
-    return key;
+    finally {
+        await docrt();
+        await flush_screen(1);
+    }
 }
 function textWindowRows(text, columns) {
     // tty_putstr() undoes topline wrapping and compresses spaces before
@@ -371,30 +377,48 @@ function compressTextWindowLine(text, columns) {
  * Escape closes the window, while any other key advances to the next page.
  */
 export async function showTextPages(pages, { validKeys = [27, 32, 10, 13] } = {}) {
+    if (!display())
+        return 27;
+    let key = 27;
+    try {
+        for (const page of pages) {
+            key = await readTextPage(page, validKeys);
+            if (key === 27)
+                break;
+        }
+    }
+    finally {
+        // erase_menu_or_text() dismisses the text window with docrt() plus
+        // flush_screen(1): docrt() queues the botlx repaint, so the flush
+        // paints the status fresh and puts the cursor back on the hero.
+        await docrt();
+        await flush_screen(1);
+    }
+    return key;
+}
+// Displaying an intermediate NHW_TEXT page leaves it active. Only its
+// window's owner restores the map when the complete window is dismissed.
+async function readTextPage(page, validKeys = [27, 32, 10, 13]) {
     const d = display();
     if (!d)
         return 27;
-    let key = 27;
-    for (const page of pages) {
-        d.clearScreen();
-        for (const [row, line] of page.lines.entries()) {
-            if (row >= d.rows)
-                break;
-            if (!line)
-                continue;
-            if (typeof line === 'string')
-                putLine(0, row, line);
-            else
-                putLine(line.col ?? 0, row, line.text || '', line.attr || ATR_NONE);
-        }
-        const cursor = page.cursor || [0, 0];
-        d.setCursor(cursor[0], cursor[1]);
-        do {
-            key = await nhgetch();
-        } while (validKeys && !validKeys.includes(key));
-        if (key === 27)
+    d.clearScreen();
+    for (const [row, line] of page.lines.entries()) {
+        if (row >= d.rows)
             break;
+        if (!line)
+            continue;
+        if (typeof line === 'string')
+            putLine(0, row, line);
+        else
+            putLine(line.col ?? 0, row, line.text || '', line.attr || ATR_NONE);
     }
+    const cursor = page.cursor ?? [0, 0];
+    d.setCursor(cursor[0], cursor[1]);
+    let key = 27;
+    do {
+        key = await nhgetch();
+    } while (validKeys && !validKeys.includes(key));
     return key;
 }
 /**

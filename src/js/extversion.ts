@@ -5,7 +5,6 @@
 // leaf, while this interactive command depends on display and window layers.
 
 import { game } from './gstate.js';
-import { bot, docrt, flush_screen } from './display.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 
@@ -67,12 +66,8 @@ export async function doextversion() {
         { lines: VERSION_PAGE_2, cursor: [8, 23] },
     ], { validKeys: [27, 32, 10, 13] });
 
-    // Destroying NHW_TEXT restores the live map rather than leaving the
-    // editor or either text page in the tty backing buffer.
+    // Destroying NHW_TEXT restored the live map; clear the topline state.
     game._pending_message = '';
     game._retained_message = '';
-    await docrt();
-    await bot();
-    await flush_screen(1);
     game.context.move = 0;
 }

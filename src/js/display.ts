@@ -2934,7 +2934,7 @@ function displayedStatusLines(): readonly [string, string] {
     return [row(22), row(23)];
 }
 
-function writeStatusLines(display: GameDisplay, lines: readonly [string, string]): void {
+export function writeStatusLines(display: GameDisplay, lines: readonly [string, string]): void {
     for (const [index, text] of lines.entries()) {
         const row = 22 + index;
         const plain = text.replace(/\x1b\[(\d+)C/g,

@@ -901,7 +901,6 @@ async function selectTravelStep(state: TravelRunState): Promise<{ dx: number; dy
         }
         game.context.run = 8;
     }
-
     const direction = await findTravelDirection(state);
     if (!direction) {
         nomul(0);
@@ -1314,7 +1313,7 @@ function prepareTimedCommand(binding: CommandBinding): void {
 }
 
 async function redrawCommand(): Promise<void> {
-    await restoreCommandMap();
+    await docrt();
     game.context.move = 0;
 }
 

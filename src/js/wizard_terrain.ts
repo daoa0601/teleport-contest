@@ -6,7 +6,7 @@ import {
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { levelIsWizardTower, sameDungeonLevel, specialDisplayName } from './dungeon.js';
-import { displayMessageWindow, docrt, flush_screen } from './display.js';
+import { displayMessageWindow } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { mayDig } from './hero_digging.js';
 import { showTextWindow } from './windows.js';
@@ -55,8 +55,6 @@ export async function showTerrainCodeLegend(): Promise<void> {
 async function showTerrainText(lines: readonly string[]): Promise<void> {
     await displayMessageWindow();
     await showTextWindow(lines);
-    await docrt();
-    await flush_screen(1);
 }
 
 function terrainCode(terrain: number): string {

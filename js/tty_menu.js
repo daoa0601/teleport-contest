@@ -294,23 +294,22 @@ async function eraseMenuCorner(window, roleSelection = false) {
     // docorner() cl_end()s every covered row from the menu's left edge and
     // then repaints only the map rows from the glyph buffer. The message
     // and status rows stay blank past that edge; nothing else redraws them.
-    const mapBottom = Math.min(bottom - 1, ROWNO);
-    for (let row = 0; row < bottom; row++) {
-        if (row >= 1 && row <= mapBottom)
-            continue;
-        clearRect(left, row, d.cols, row + 1);
-    }
     const underlay = window.underlay;
-    if (underlay) {
-        for (let row = 1; row <= mapBottom; row++) {
-            // row_refresh() repaints through NH x = COLNO-1, which the map
-            // draws in terminal column COLNO-2; docorner()'s cl_end() clears
-            // the final column, and nothing ever redraws it there.
-            for (let col = left; col < d.cols - 1; col++) {
-                const cell = underlay[row]?.[col];
-                if (cell)
-                    d.setCell(col, row, cell.ch, cell.color, cell.attr);
-            }
+    for (let row = 0; row < bottom; row++) {
+        d.setCursor(left, row);
+        clearRect(left, row, d.cols, row + 1);
+        if (row < 1 || row > ROWNO || !underlay)
+            continue;
+        // row_refresh() prints through NH x = COLNO-1 and skips unexplored
+        // glyphs. Each printed glyph leaves the cursor just after it.
+        for (let col = left; col < Math.min(d.cols - 1, COLNO - 1); col++) {
+            const cell = underlay[row]?.[col];
+            if (!cell)
+                continue;
+            d.setCell(col, row, cell.ch, cell.color, cell.attr);
+            const glyph = glyphAt(col + 1, row - 1);
+            if (glyph && glyph.kind !== 'unexplored')
+                d.setCursor(col + 1, row);
         }
     }
     // docorner() starts each cleared row at the menu edge. On map rows,

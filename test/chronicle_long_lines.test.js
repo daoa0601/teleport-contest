@@ -34,7 +34,7 @@ void test('a long chronicle line drops its padding instead of truncating', async
     assert.ok(!rows.some(row => row.startsWith('   32: consumed animal')
         && !row.endsWith('corpse')), 'the padded line must not be truncated');
 });
-void test('the chronicle describes learning the castle tune', async () => {
+void test('the chronicle describes learning the Castle tune', async () => {
     freshTurnRoom({ hero: { uachieved: [] } });
     recordAchievement(game, ACH_TUNE);
     const pages = [];

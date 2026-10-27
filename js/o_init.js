@@ -8,7 +8,7 @@ import { game } from './gstate.js';
 import { artifactById, artifactInfoLines } from './artifacts.js';
 import { initializeObjectProbabilities } from './mklev.js';
 import { rn2 } from './rng.js';
-import { bot, clearMessageWindow, docrt, flush_screen, plineWithContinuation } from './display.js';
+import { clearMessageWindow, plineWithContinuation } from './display.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE } from './const.js';
 import { yn_function } from './query.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
@@ -405,11 +405,8 @@ function discoveryClassName(oclass) {
     return name;
 }
 async function showDiscoveries(rows) {
+    // Destroying the full-screen text window redraws the map itself.
     await showTextWindow(rows);
-    // A full-screen tty text window owns docrt() when it is destroyed.
-    await docrt();
-    await bot();
-    await flush_screen(1);
     game.context.move = 0;
 }
 function discoveryClassOrder() {

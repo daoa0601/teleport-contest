@@ -4,7 +4,7 @@
 import { setArtifactOrigin } from './artifacts.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_WISH, recordGameLogEvent } from './gamelog.js';
 import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, NHW_MENU, PICK_ONE } from './const.js';
-import { bot, docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
+import { flushPendingTopline, pline, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { objectDescription } from './object_description.js';
@@ -43,9 +43,6 @@ async function showWishHelp(triesLeft) {
         lines.push('(Suppress this assistance with !cmdassist in your config file.)');
     }
     await showTextPages([{ lines, cursor: [0, lines.length - 1] }]);
-    await docrt();
-    await bot();
-    await flush_screen(1);
 }
 export async function makeWish() {
     requirePlayingGame(game);

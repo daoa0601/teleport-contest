@@ -1149,7 +1149,7 @@ function prepareTimedCommand(binding) {
     }
 }
 async function redrawCommand() {
-    await restoreCommandMap();
+    await docrt();
     game.context.move = 0;
 }
 async function performWaitCommand(force = game.iflags.menu_requested) {
