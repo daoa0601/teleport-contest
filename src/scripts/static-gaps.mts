@@ -453,17 +453,25 @@ async function screens(args: string[]): Promise<void> {
         const first = result['firstDivergence'];
         if (first === null || objectValue(first, `${label}.firstDivergence`)['kind'] !== 'screen') return;
         const screen = objectValue(result['firstScreen'], `${label}.firstScreen`);
-        if (screen['cell'] === null) return;
+        const session = typeof result['session'] === 'string' ? result['session'] : label;
+        screenOnly++;
+        const add = (key: string, entry: string): void => { clusters.set(key, [...(clusters.get(key) ?? []), entry]); };
+        // A cursor-only difference has no differing row to match literals on.
+        if (screen['cell'] === null) {
+            add('(cursor only, no differing row)', `${session}\n      cursors: ${JSON.stringify(screen['cursors'])}`);
+            return;
+        }
         const row = numberValue(objectValue(screen['cell'], `${label}.cell`)['row'], `${label}.cell.row`);
         const shown = arrayValue(screen['rows'], `${label}.rows`).map((value, rowIndex) => objectValue(value, `${label}.rows[${rowIndex}]`))
             .find(entry => entry['row'] === row);
-        if (!shown) return;
-        screenOnly++;
+        if (!shown) {
+            add(`(row ${row} not recorded)`, session);
+            return;
+        }
         const cText = stringValue(shown['c'], `${label}.rows.c`), jsText = stringValue(shown['js'], `${label}.rows.js`);
         const cOwners = owners(cText, literals), jsOwners = owners(jsText, literals);
         const key = cOwners.length ? cOwners.join(' | ') : jsOwners.length ? `(port printed) ${jsOwners.join(' | ')}` : `(row ${row}, no literal)`;
-        const session = typeof result['session'] === 'string' ? result['session'] : label;
-        clusters.set(key, [...(clusters.get(key) ?? []), `${session}\n      C:  ${cText.trim().slice(0, 100)}\n      JS: ${jsText.trim().slice(0, 100)}`]);
+        add(key, `${session}\n      C:  ${cText.trim().slice(0, 100)}\n      JS: ${jsText.trim().slice(0, 100)}`);
     });
     console.log(`${screenOnly} sessions whose first difference is on the screen\n`);
     for (const [key, sessions] of [...clusters].sort((a, b) => b[1].length - a[1].length)) {
