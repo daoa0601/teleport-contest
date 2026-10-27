@@ -1149,7 +1149,7 @@ function prepareTimedCommand(binding) {
     }
 }
 async function redrawCommand() {
-    await restoreCommandMap();
+    await docrt();
     game.context.move = 0;
 }
 async function performWaitCommand(force = game.iflags.menu_requested) {
@@ -4789,12 +4789,9 @@ async function doChronicle() {
     }
     // show_gamelog() putstr()s one formatted line at a time, so the tty
     // text window's compress_str() and wrap apply per event line.
+    // show_gamelog() destroys a full-screen NHW_TEXT window, whose tty
+    // dismissal (erase_menu_or_text()) already redraws map and status.
     await showTextWindow(lines);
-    // show_gamelog() destroys a full-screen NHW_TEXT window; its tty
-    // dismissal runs erase_menu_or_text()'s docrt() and re-draws status.
-    await docrt();
-    await bot();
-    await flush_screen(1);
     game._pending_message = '';
     game.context.move = 0;
 }

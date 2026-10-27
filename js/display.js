@@ -2886,7 +2886,7 @@ function displayedStatusLines() {
         ?.map(cell => cell.ch).join('').trimEnd() ?? '';
     return [row(22), row(23)];
 }
-function writeStatusLines(display, lines) {
+export function writeStatusLines(display, lines) {
     for (const [index, text] of lines.entries()) {
         const row = 22 + index;
         const plain = text.replace(/\x1b\[(\d+)C/g, (_match, count) => ' '.repeat(Number(count)));

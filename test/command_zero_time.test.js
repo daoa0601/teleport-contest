@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('redraw refreshes the map and takes no time after a movement command', async () => {
@@ -10,6 +11,7 @@ void test('redraw refreshes the map and takes no time after a movement command',
     assert.equal(game.context.move, 1);
     await rhack(0);
     assert.equal(game.context.move, 0);
+    await flush_screen(1);
     assert.equal(game._pending_message, '');
     assert.equal(game.nhDisplay?.grid[11]?.[10]?.ch, '@');
 });

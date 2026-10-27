@@ -113,6 +113,23 @@ void test('dismissing a corner menu leaves the last terminal column blank', asyn
     assert.equal(d.getChar(80, 2), ' ', 'the last terminal column must stay blank after corner dismissal');
     await tty_destroy_nhwindow(window);
 });
+void test('a corner dismissal leaves the cursor after the last restored map glyph', async () => {
+    freshPlayableRoom({ left: 40, right: 79, heroX: 50 });
+    await docrt();
+    await flush_screen(1);
+    const d = requireGameDisplay();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (let index = 0; index < 12; index++)
+        tty_add_menu(window, { identifier: index, text: `map ${index}` });
+    tty_end_menu(window);
+    resetInputState().feed('\n');
+    await tty_select_menu(window, PICK_ANY);
+    assert.equal(d.getChar(79, 14), '.', 'the last covered row contains known floor');
+    assert.equal(d.cursorCol, 79, 'the cursor follows the last glyph printed on that row');
+    assert.equal(d.cursorRow, 13);
+    await tty_destroy_nhwindow(window);
+});
 void test('dismissing a corner rebuilt from a cleared full-screen menu redraws only the corner', async () => {
     freshPlayableRoom({ left: 8, right: 60, bottom: 16, flags: { menu_overlay: false } });
     await docrt();

@@ -1,7 +1,7 @@
 // Top-line key prompts used by commands which can pause for input.
 // C refs: win/tty/topl.c more() and win/tty/wintty.c tty_nhgetch().
 
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, pline, renderKeyPrompt, setTopline } from './display.js';
 import { selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
 import { CLICK_1, CLICK_2, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
@@ -121,7 +121,10 @@ export async function promptDirection(
         const key = await readKey('In what direction? ');
         const code = (typeof key === 'number' ? key : String(key).charCodeAt(0)) & 255;
         if (game.commandBindings.lookup(code)?.command?.handler === 'doredraw') {
-            await restoreCommandMap();
+            // docrt_flags(docrtRefresh) resends the current glyphs without
+            // recalculating vision or choosing new hallucinated forms.
+            game.context.botl = true;
+            await flush_screen(1);
             continue;
         }
         const direction = promptedDirectionKey(code, game.commandBindings);
@@ -211,9 +214,10 @@ export function confusePromptDirection(hero: Hero, forceImpairment = false): voi
 }
 
 export async function restoreCommandMap() {
-    await docrt();
-    await bot();
-    await flush_screen(1);
+    // The dismissed menu or text window already restored its covered rows.
+    // Release its topline without another redraw or status update.
+    game._pending_message = '';
+    game._retained_message = '';
 }
 
 // C help_dir(): use the current movement bindings and hide diagonals when
