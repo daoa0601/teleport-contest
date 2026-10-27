@@ -14,10 +14,10 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
-// C steal.c:stop_donning() reports the remaining turns only for the armor
-// whose doffing it silently stops; steal.c:steal() then skips the animal
-// patience refusal and its rn2(10) roll for that armor.
-void test('a monkey takes boots the hero is already taking off', async () => {
+// C do_wear.c:stop_donning() calls cancel_don(), which zeroes multi before
+// -multi is captured, so steal.c:steal() always sees olddelay 0: an animal
+// thief still runs out of patience with armor the hero is already doffing.
+void test('a monkey can give up on boots the hero is already taking off', async () => {
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const boots = await addInventoryObject(LOW_BOOTS);
@@ -31,20 +31,14 @@ void test('a monkey takes boots the hero is already taking off', async () => {
     installPagerInput(input, { expected: /monkey|boots/, limit: 12 });
     const messages = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
-    const calls = [];
-    await performMonsterHeroAttack(thief, game, {
-        random: limit => limit - 1, rollOne: () => 1, calls,
-    });
+    await performMonsterHeroAttack(thief, game, { random: limit => limit - 1, rollOne: () => 1 });
     await flushPendingTopline();
-    assert.ok(thief.minvent.includes(boots), 'the monkey leaves with the boots');
-    assert.match(messages.join('\n'), /The monkey takes off your .*pair of low boots\./);
-    assert.match(messages.join('\n'), /The monkey stole an? .*pair of low boots\./);
-    assert.equal(calls.filter(call => call === 'rn2(10)').length, 0, 'an interrupted doffing disarms the patience refusal and its roll');
-    assert.match(messages.join('\n'), /tries to run away with your/);
+    assert.ok(!thief.minvent.includes(boots), 'the impatient monkey leaves the boots');
+    assert.ok(game.inventory.includes(boots), 'the hero keeps the boots');
 });
-// C steal.c:steal() shortens the seduction delay to the turns still owed on
-// the interrupted doffing instead of restarting the full armor delay.
-void test('a seduced hero finishes only the remaining turns of a started suit removal', async () => {
+// With olddelay always 0, steal.c:steal() restarts the suit's full oc_delay
+// instead of the turns still owed on the interrupted doffing.
+void test('a seduced hero restarts the full delay of a started suit removal', async () => {
     freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -79,12 +73,12 @@ void test('a seduced hero finishes only the remaining turns of a started suit re
     while (game.multi < 0)
         await moveloop_core();
     await flushPendingTopline();
-    assert.equal(game.moves - started, 3, 'the theft takes the two remaining turns, not three new turns');
+    assert.equal(game.moves - started, 4, 'the theft restarts the three-turn suit delay');
     assert.ok(thief.minvent.includes(suit));
 });
-// C allmain.c counts negative multi down after movemon(). A nymph arriving
-// in the next monster phase keeps the two turns still owed on the removal.
-void test('a nymph acting during suit removal finishes the remaining delay', async () => {
+// C allmain.c counts negative multi down after movemon(); a nymph acting in
+// that monster phase still restarts the whole suit delay.
+void test('a nymph acting during suit removal restarts the full delay', async () => {
     freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
@@ -120,7 +114,7 @@ void test('a nymph acting during suit removal finishes the remaining delay', asy
     while (game.multi < 0)
         await moveloop_core();
     await flushPendingTopline();
-    assert.equal(game.moves - started, 3, 'the monster phase preserves the two remaining turns instead of restarting removal');
+    assert.equal(game.moves - started, 4, 'the theft restarts the three-turn suit delay');
     assert.ok(thief.minvent.includes(suit));
 });
 //# sourceMappingURL=steal_interrupted_doffing.test.js.map
