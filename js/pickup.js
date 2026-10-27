@@ -105,7 +105,8 @@ export async function autopickupAtHero() {
     const source = pickupSourceAtHero();
     const { x, y, monster } = source;
     const level = requireGameLevel();
-    const objects = pickupObjects(source);
+    // C pickup() tests OBJ_AT(), which counts the punishment chain that
+    // drag_ball() trails behind the hero, not just pickable items.
     if (!monster) {
         const deepLiquid = (isPoolAt(x, y) && !(game.u.uinwater || game.underwater))
             || isLavaAt(x, y);
@@ -142,12 +143,19 @@ export async function autopickupAtHero() {
         // pickup.c: pickup() stops only a real run (context.run != 8) when
         // stepping onto objects, and not at all for a no-pickup move.
         // nomul(0) also requests the status refresh for the lifting message.
-        if (objects.length && (game.context.run ?? 0) > 0
+        if (source.objects.length && (game.context.run ?? 0) > 0
             && game.context.run !== 8 && !game.context.nopick)
             endVoluntaryMultiTurn();
     }
+    // C autopick() walks every object on the square: autopick_testobj()
+    // does not exclude the punishment chain, whose class passes the
+    // default empty pickup_types.  A chain-only square therefore still
+    // produces a non-empty selection, so pickup()'s menu_pickup path runs
+    // reset_justpicked() across the inventory before pickup_object()
+    // silently refuses uchain.  Stepping onto the chain while punished
+    // clears the just-picked marks even though nothing is picked up.
     const eligible = [];
-    for (const object of objects) {
+    for (const object of source.objects) {
         if (await autopickupAllows(object))
             eligible.push(object);
     }
