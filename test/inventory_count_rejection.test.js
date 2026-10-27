@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a repeated engraving reports a rejected inventory count before waiting for another choice', async () => {
@@ -13,6 +13,8 @@ void test('a repeated engraving reports a rejected inventory count before waitin
     await input.waitUntilBlocked();
     try {
         assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd(), 'No count allowed with this command.');
+        const display = requireGameDisplay();
+        assert.deepEqual([display.cursorCol, display.cursorRow], [35, 0]);
     }
     finally {
         input.feed('\x1b');

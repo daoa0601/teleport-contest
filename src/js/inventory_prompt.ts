@@ -210,8 +210,10 @@ async function chooseGetobjLetter(
         if (game._inDoAgain) {
             // getobj() reads fresh input silently once CQ_REPEAT is exhausted.
             // Paint any rejected choice before the next silent readchar().
-            await flush_screen(0);
-            if (game._pending_message) renderKeyPrompt(game._pending_message);
+            if (game._pending_message) {
+                await flush_screen(0);
+                renderKeyPrompt(game._pending_message);
+            }
             key = await readchar();
         } else if (forcedMenu) {
             // The first forced menu lists likely candidates; a rejected
