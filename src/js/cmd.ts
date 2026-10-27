@@ -6058,11 +6058,11 @@ async function doclose(): Promise<void> {
     game.context.move = game.u.confused || game.u.confusionTurns
         || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
     if (loc && heroIsBlind(game)) {
-        const previousGlyph = glyphAt(x, y)?.glyph;
+        const previousGlyph = loc.remembered_glyph?.glyph;
         recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
         feel_location(x, y);
-        if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+        if (loc.remembered_glyph?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
             game.context.move = 1;
     }
     const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
@@ -6155,13 +6155,13 @@ async function doopen(x = 0, y = 0): Promise<void> {
     let spentTime = !!(game.u.confused || game.u.confusionTurns
         || game.u.stunned || game.u.stunnedTurns);
     if (loc) {
-        const previousGlyph = glyphAt(x, y)?.glyph;
+        const previousGlyph = loc.remembered_glyph?.glyph;
         recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
         newsym(x, y);
         // doopen_indir() uses a turn when looking at the target teaches
         // the hero something, even if the target has no door to open.
-        if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+        if (loc.remembered_glyph?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
             spentTime = true;
     }
     game.context.move = Number(spentTime);
