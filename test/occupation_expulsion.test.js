@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { MM_NOGRP, NO_MINVENT, NOT_HUNGRY } from '../js/const.js';
+import { doeat } from '../js/eat.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { expelHero } from '../js/hero_expulsion.js';
+import { resetInputState } from '../js/input.js';
+import { FOOD_RATION } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installSwallowedHero } from './support/hero-state.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+for (const peaceful of [false, true]) {
+    void test(`expulsion ${peaceful ? 'allows eating beside a peaceful' : 'stops eating beside a hostile'} engulfer`, async () => {
+        freshObjectRoom({ hero: { uhunger: 400, uhs: NOT_HUNGRY } });
+        requirePlayingGame(game);
+        const trapper = await createMonsterAt('trapper', 11, 10, MM_NOGRP | NO_MINVENT);
+        trapper.mpeaceful = peaceful ? 1 : 0;
+        await installSwallowedHero(trapper);
+        const food = await addInventoryObject(FOOD_RATION, { age: game.moves });
+        const input = resetInputState();
+        installPagerInput(input, { expected: /ration|released/, limit: 4 });
+        input.feed(food.invlet);
+        await doeat();
+        const nutrition = food.oeaten;
+        await expelHero(trapper);
+        assert.equal(game.u.uswallow, 0);
+        assert.equal(food.oeaten, nutrition, 'expulsion does not take another bite');
+        if (peaceful)
+            assert.equal(game._occupation?.key, 'eat-food');
+        else {
+            assert.equal(game._occupation, null);
+            assert.equal(game._lastPlineMessage, 'You stop eating the food ration.');
+        }
+    });
+}
+//# sourceMappingURL=occupation_expulsion.test.js.map
