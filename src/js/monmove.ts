@@ -1996,6 +1996,8 @@ function petCanReachObject(monster: Monster, object: GameObject, state: PlayingG
 }
 
 function couldSeeFromHero(state: PlayingGameState, x: number, y: number) {
+    // C couldsee() reads the stored sight even when terrain browsing has
+    // left it populated while the hero is swallowed.
     // COULD_SEE is bit 0 in vision.c/js/vision.js.  Focused unit states omit
     // the vision buffer and are treated as unobstructed; live games always
     // carry the current buffer produced by domove()/vision_recalc().
