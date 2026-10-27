@@ -15,7 +15,7 @@ import { game } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { OBJECT_NAMES, ROCK, STATUE } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
+import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -210,11 +210,16 @@ void test('wielded garlic hurts and frightens an undead monster', async () => {
     await equipWeapon('clove of garlic');
 
     initRng(903n);
+    enableRngLog();
     await rhack('l'.charCodeAt(0));
 
     assert.equal(shade.mhp, 99);
     assert.equal(shade.mflee, 1);
     assert.ok((shade.mfleetim ?? 0) >= 2 && (shade.mfleetim ?? 0) <= 8);
+    // C uhitm.c:hmon_hitmon_misc_obj() rolls monflee's duration for a
+    // clove of garlic as a single d(2,4) call, not two separate rolls.
+    assert.equal(getRngLog().filter(entry => /^d\(2,4\)=/.test(entry)).length, 1);
+    assert.equal(getRngLog().filter(entry => /^rnd\(4\)=/.test(entry)).length, 0);
 });
 
 void test('a wielded cream pie blinds without damaging and consumes one pie',
