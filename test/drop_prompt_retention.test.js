@@ -21,6 +21,17 @@ void test('a silent drop leaves its answered object query visible', async () => 
     assert.equal(level.objects[10]?.[10]?.includes(apple), true);
     assert.equal(game._pending_message, '', 'an answered query needs no acknowledgment');
 });
+void test('reading the next command clears an answered object query', async () => {
+    freshGameplayRoom({ flags: { verbose: false } });
+    await addInventoryObject(APPLE, { invlet: 'a' });
+    pushKeys('a');
+    await rhack('d'.charCodeAt(0));
+    pushKeys('.');
+    await rhack(0);
+    await flush_screen(1);
+    const topline = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd();
+    assert.equal(topline, '', 'parse() clears the answered question after reading the command');
+});
 void test('answering a wrapped object query clears the message window', async () => {
     freshGameplayRoom();
     // Pairs of letters survive compactify(), so the question wraps.

@@ -314,7 +314,6 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
         // clean_up rewrites gt.toplines with the answered question; the
         // recorded answer names the key like C key2txt().
         game._toplines = message + (count ? `#${count}` : keyText(answer.charCodeAt(0)));
-        // clean_up leaves TOPLINE_NON_EMPTY (topl.c:552).
         game._promptOwnsTopline = false;
         // Native cleanup marks the question seen even when fuzzer input
         // bypasses tty_nhgetch(). Keep a one-line question visible.

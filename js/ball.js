@@ -18,7 +18,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './object_location.js';
-import { isWeldedPrimary } from './weapon_slots.js';
+import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, } from './weapon_slots.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit, } from './const.js';
 import { nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
@@ -134,7 +134,13 @@ export async function releaseCarriedBall(state, showMessage = false) {
         return;
     if (showMessage)
         await plineWithContinuation('Startled, you drop the iron ball.');
-    await removeHeroEquipment(ball, state);
+    // C ballrelease() uses setuwep(NULL), arming the bare-hands notice.
+    if ((state.uwep || state.u.uwep) === ball)
+        await setPrimaryWeapon(null, state);
+    if ((state.uswapwep || state.u.uswapwep) === ball)
+        await setSecondaryWeapon(null, state);
+    if ((state.uquiver || state.u.uquiver) === ball)
+        await setQuiverObject(null, state);
     unlinkObject(ball, state);
     await finishInventoryRemoval(ball, state);
     await reportHeroEncumbrance(state);

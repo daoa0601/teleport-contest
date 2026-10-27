@@ -23,7 +23,9 @@ function splitOnePie(stack) {
     return { pie, several: true };
 }
 async function deletePie(pie) {
-    await releaseWeaponSlots(pie);
+    // C apply.c:use_cream_pie() clears the wield slot via setnotworn(),
+    // which does not arm the "begin bashing" bare-hands notice.
+    await releaseWeaponSlots(pie, game, { keepUnweapon: true });
     unlinkObject(pie, game);
     await delobj(pie, game);
 }

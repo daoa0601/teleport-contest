@@ -21,8 +21,7 @@ export async function readCommandInput() {
     game._commandCount = result.count;
     setMulti(Math.max(0, result.count - 1));
     game._commandKey = result.key;
-    // tty_clear_nhwindow(WIN_MESSAGE) leaves an already empty line alone,
-    // including its cursor, until a later prompt or map flush moves it.
+    // C parse() clears WIN_MESSAGE after reading the command key.
     if (game._pending_message || game._retained_message || game._promptOwnsTopline)
         clearMessageWindow();
     return result;

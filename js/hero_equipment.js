@@ -24,7 +24,10 @@ export async function removeHeroEquipment(object, state = game, { deferArmorClas
         unequipEyewear(object, state);
         syncBlindness(state);
     }
-    await releaseWeaponSlots(object, state);
+    // C worn.c:setnotworn(): destroyed/used-up wielded items do not arm the
+    // "begin bashing with your bare hands" notice (zap.c:maybe_destroy_item,
+    // invent.c:useupall, apply.c:use_cream_pie all route through setnotworn).
+    await releaseWeaponSlots(object, state, { keepUnweapon: true });
 }
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
 // very item whose removal is still in progress.

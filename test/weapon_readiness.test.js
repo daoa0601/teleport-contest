@@ -2,13 +2,16 @@ import { installPagerInput } from './support/pager-input.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { fallWithIronBall } from '../js/ball.js';
 import { rhack } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { BOW, CORPSE, DAGGER, OBJECT_NAMES, PICK_AXE, TOWEL } from '../js/object_data.js';
+import { BOW, CORPSE, DAGGER, HEAVY_IRON_BALL, OBJECT_NAMES, PICK_AXE, POT_HEALING, TOWEL } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { destroyFireInventory } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
@@ -19,7 +22,7 @@ async function combatRoom() {
     const messages = [];
     const input = resetInputState();
     installPagerInput(input, {
-        expected: /wield|hand|bash|hit|miss|pick-axe|bow|halberd|towel|pony|ride|drop|dig|minotaur/i,
+        expected: /wield|hand|bash|hit|miss|pick-axe|bow|halberd|towel|pony|ride|drop|dig|minotaur|potion|evaporat|crash|shard/i,
         limit: 200,
     });
     input.beforeRead = () => {
@@ -48,6 +51,22 @@ void test('dropping a used weapon announces bare-handed combat on the next attac
     await text(messages);
     await dropInventoryObject(dagger);
     await text(messages);
+    await rhack('l'.charCodeAt(0));
+    assert.match(await text(messages), /You begin bashing monsters with your bare hands\./);
+    await rhack('l'.charCodeAt(0));
+    assert.doesNotMatch(await text(messages), /You begin bashing/);
+});
+void test('a startled drop of a wielded iron ball announces bare hands on the next attack only', async () => {
+    const messages = await combatRoom();
+    const ball = await addInventoryObject(HEAVY_IRON_BALL);
+    game.uball = ball;
+    await wield(ball);
+    await rhack('l'.charCodeAt(0));
+    await text(messages);
+    await fallWithIronBall();
+    assert.match(await text(messages), /Startled, you drop the iron ball\./);
+    assert.equal(game.inventory.includes(ball), false);
+    assert.equal(game.uwep, null);
     await rhack('l'.charCodeAt(0));
     assert.match(await text(messages), /You begin bashing monsters with your bare hands\./);
     await rhack('l'.charCodeAt(0));
@@ -122,6 +141,28 @@ for (const wet of [false, true]) {
             assert.match(output, /You begin bashing monsters with/);
     });
 }
+void test('a wielded stack destroyed by fire after its first swing does not announce bare hands', async () => {
+    const messages = await combatRoom();
+    requirePlayingGame(game);
+    // Wielding potions arms the improvised-weapon notice and the first swing
+    // consumes it ("...with your potions of healing.").  When the remaining
+    // wielded stack then burns, C zap.c:maybe_destroy_item() unwields via
+    // setnotworn(), which leaves the notice disarmed: the next bare-handed
+    // swing stays silent instead of announcing "your bare hands".
+    const potions = await addInventoryObject(POT_HEALING, { quan: 2, quantity: 2 });
+    await wield(potions);
+    await text(messages);
+    await rhack('l'.charCodeAt(0));
+    assert.match(await text(messages), /You begin bashing monsters with your potions of healing\./);
+    assert.ok(game.uwep === potions || game.u?.uwep === potions);
+    pushKeys(' '.repeat(20));
+    initRng(1n);
+    await destroyFireInventory(5);
+    assert.equal(game.uwep, null);
+    await text(messages);
+    await rhack('l'.charCodeAt(0));
+    assert.doesNotMatch(await text(messages), /You begin bashing/);
+});
 for (const explicitlyWield of [false, true]) {
     void test(`an applied pick-axe ${explicitlyWield ? 'stops warning after explicit wielding' : 'announces its first melee use'}`, async () => {
         const messages = await combatRoom();
