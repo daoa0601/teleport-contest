@@ -1418,7 +1418,11 @@ async function dispatchMovement(binding, prefixes) {
     const mode = prefixes.walk || prefixes.rush
         ? game.context.run === 2 ? 2 : game.context.run === 3 ? 3 : 0
         : controlRushDirection(key) ? 3 : ch !== ch.toLowerCase() ? 1 : 0;
-    game.context.run = mode;
+    // C cmd.c:set_move_cmd() replaces context.run only when no movement
+    // prefix is pending (domove_attempting); an 'F' or rush-prefixed
+    // direction keeps the run value an earlier rush or travel left set.
+    if (!(prefixes.walk || prefixes.rush))
+        game.context.run = mode;
     if (game.iflags.menu_requested)
         game.context.nopick = true;
     if (game.multi > 0 || rushDispatch || (mode && !prefixes.walk))
