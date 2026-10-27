@@ -5,9 +5,9 @@ import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { placeHeroOnLevel } from '../js/hero_location.js';
 import { selectInventoryObject } from '../js/invent.js';
-import { DART, FOOD_RATION, GOLD_PIECE } from '../js/object_data.js';
+import { DART, FOOD_RATION, GOLD_PIECE, HELMET, LEATHER_ARMOR } from '../js/object_data.js';
 import { placeCreatedObject } from '../js/floor_object.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 // A purse excluded from a letter-filtered inventory menu still becomes
@@ -45,5 +45,34 @@ void test('an unobserved floor purse keeps a vague quantity in farlook', async (
     newsym(14, 8);
     assert.equal(await farlookLocationDescription(14, 8), 'some gold pieces');
     assert.equal(spilled.dknown, false);
+});
+// invent.c:display_pickinv() reassigns position-sequential letters whenever
+// fixinv is off (reassign(), invent.c:3146) before filtering its menu by the
+// requested letters (invent.c:3271), so a filter built from older letters
+// selects whatever the fresh assignments put in those slots.
+void test('a letter filter applies to the freshly reassigned letters', async () => {
+    freshObjectRoom();
+    await placeHeroOnLevel(10, 8);
+    game.flags.fixinv = false;
+    const dart = await addInventoryObject(DART, { dknown: false, observed: false });
+    dart.invlet = 'a';
+    const armor = await addInventoryObject(LEATHER_ARMOR, { dknown: false, observed: false });
+    armor.invlet = 'c';
+    const helmet = await addInventoryObject(HELMET, { dknown: false, observed: false });
+    helmet.invlet = 'd';
+    const food = await addInventoryObject(FOOD_RATION, { dknown: false, observed: false });
+    food.invlet = 'e';
+    // A takeoff-style filter built from the worn items' dressed letters.
+    const input = resetInputState();
+    const selection = selectInventoryObject({ letters: 'cd' });
+    await input.waitUntilBlocked();
+    const menuText = (game.nhDisplay?.grid ?? [])
+        .map(row => row.map(cell => cell.ch).join('')).join('\n');
+    input.feed('\x1b');
+    assert.equal((await selection).key, 27);
+    assert.match(menuText, /helmet/, 'the helmet keeps letter c after reassignment');
+    assert.match(menuText, /food ration/, 'the food ration takes letter d after reassignment');
+    assert.doesNotMatch(menuText, /leather armor/, 'the armor moved to letter b and is filtered out');
+    assert.equal(armor.invlet, 'b', 'reassign() re-letters the chain positionally');
 });
 //# sourceMappingURL=inventory_menu_observation.test.js.map

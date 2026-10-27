@@ -6,6 +6,8 @@ import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { bot, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { placeHeroOnLevel } from '../js/hero_location.js';
 import { GameDisplay } from '../js/game_display.js';
 import { NO_COLOR } from '../js/terminal.js';
 import { Terminal } from '../js/terminal.js';
@@ -313,4 +315,34 @@ void test('line input clears the row its echo wraps onto', async () => {
 
     input.feed('\n');
     assert.equal(await answer, typed);
+});
+
+// C getline.c's kill character erases the typed text but the getlin
+// epilogue (clear_nhwindow(WIN_MESSAGE) with docorner()) still repaints
+// every map row the wrapped echo covered. The editor must remember how
+// far it painted, not just its current one-row height, or the covered
+// row stays blank after the answer is accepted.
+void test('clearing a wrapped answer restores the covered map row', async () => {
+    // A room reaching the top row puts visible floor on the map row the
+    // wrapped echo covers.
+    freshObjectRoom({ top: 0, bottom: 14 });
+    requirePlayingGame(game);
+    await placeHeroOnLevel(10, 8);
+    const coveredRow = () => game.nhDisplay?.grid[1]?.map(cell => cell.ch).join('') ?? '';
+
+    const typed = 'a'.repeat(38);
+    const input = resetInputState();
+    const answer = getLine('What tune are you playing? [5 notes, A-G]', () => true);
+    await input.waitUntilBlocked();
+    input.feed(typed);
+    await input.waitUntilBlocked();
+    assert.equal(coveredRow()[0], 'a', 'the echo wraps onto the next row');
+    input.feed('\u0015');
+    await input.waitUntilBlocked();
+    assert.equal(coveredRow().trim(), '', 'the kill character erases the typed text');
+    input.feed('\r');
+
+    assert.equal(await answer, '');
+    assert.match(coveredRow(), /\.+/,
+        'accepting the cleared answer repaints the covered map row');
 });

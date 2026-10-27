@@ -67,6 +67,10 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), opti
 export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMenu = false }) {
     let value = '';
     let renderedRows = 1;
+    // Rows this editor ever covered, kept apart from the current content
+    // height: shortening a wrapped answer (backspace, Ctrl-U) does not
+    // repaint the deeper rows, so cleanup must still clear them all.
+    let coveredRows = 1;
     const width = (game.nhDisplay?.cols ?? COLNO) - 1;
     const promptLength = prompt.length + 1;
     const promptRow = Math.floor((promptLength - 1) / width);
@@ -84,6 +88,7 @@ export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMe
     const renderEditor = () => {
         const line = `${prompt} ${value}`;
         const contentRows = Math.max(1, Math.ceil(line.length / width));
+        coveredRows = Math.max(coveredRows, contentRows);
         // topl_putsym() clears each row it wraps onto with cl_end()
         // before echoing there, so a freshly wrapped row cannot keep
         // stale cells from earlier message-window output.  A getlin
@@ -103,7 +108,7 @@ export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMe
         game._promptOwnsTopline = false;
     };
     const finish = (result) => {
-        clearMessageWindow(renderedRows);
+        clearMessageWindow(coveredRows);
         return result;
     };
     const clearSuppressedStatus = () => {
@@ -175,7 +180,7 @@ export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMe
         if (key === 27) {
             if (value) {
                 value = '';
-                clearMessageWindow(renderedRows);
+                clearMessageWindow(coveredRows);
                 renderedRows = 1;
                 cursorColumn = promptColumn;
                 cursorRow = promptRow;
