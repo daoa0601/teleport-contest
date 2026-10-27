@@ -1,17 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { A_STR, M_AP_F_DKNOWN, M_AP_OBJECT } from '../js/const.js';
-import { newsym } from '../js/display.js';
+import { A_STR, M_AP_F_DKNOWN, M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
+import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { prepareAppliedWeaponAttack } from '../js/hero_attack_preflight.js';
 import { dodiscovered } from '../js/o_init.js';
 import { ARROW, BOULDER, CLUB, POT_HEALING } from '../js/object_data.js';
+import { makeBlinded } from '../js/sight_change.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryWeapon } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
 for (const distance of [2, 4]) {
     void test(`a potion disguise ${distance} squares away does not add its appearance to discoveries`, async () => {
         freshObjectRoom();
@@ -69,5 +71,24 @@ void test('a thrown weapon passes over a known object disguise', async () => {
     assert.equal(mimic.mhp, hp);
     assert.ok(club.ox > mimic.mx);
     assert.equal(club.oy, mimic.my);
+});
+void test('a thrown weapon hits an object disguise on a warned square', async () => {
+    freshObjectRoom({ right: 20, hero: { warning: true, uhitinc: 50 } });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = 10;
+    const club = await addInventoryWeapon(CLUB, { invlet: 'a' });
+    const mimic = await createMonsterAt('small mimic', 12, 10, NO_MINVENT);
+    mimic.m_ap_type = M_AP_OBJECT;
+    mimic.mappearance = POT_HEALING;
+    mimic.mpeaceful = false;
+    mimic.m_lev = 8;
+    const hp = mimic.mhp;
+    await makeBlinded(10, { talk: false });
+    newsym(12, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(11, 11).ch, '2');
+    await throwInventoryObject(club, 'l', Array.from({ length: 10 }, () => ' '));
+    assert.ok(mimic.mhp < hp, 'The hero aims at the warned square, so the club hits the mimic.');
+    assert.equal(mimic.m_ap_type, 0, 'The hit wakes and reveals the disguised mimic.');
 });
 //# sourceMappingURL=mimic_discovery.test.js.map

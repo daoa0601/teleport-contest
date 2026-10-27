@@ -11,7 +11,7 @@ import { artifactById } from './artifacts.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
-import { canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, newsym, plineWithContinuation, show_glyph_cell, transientObjectGlyph, unmapObject, } from './display.js';
+import { canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, plineWithContinuation, show_glyph_cell, transientObjectGlyph, unmapObject, } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -72,8 +72,11 @@ function projectileMonsterAt(state, object, x, y) {
     if (MONSTER_NAME[monster.mnum] === 'shade' && material !== 14)
         return null;
     if (M_AP_TYPE(monster) === M_AP_OBJECT) {
-        const remembered = state.level?.at?.(x, y)?.remembered_glyph;
-        if (!remembered || !['monster', 'warning', 'invisible'].includes(remembered.kind))
+        // zap.c bhit() tests the live displayed glyph, not hero memory: the
+        // hero aims at a mimic whose square already shows a monster, warning,
+        // or remembered-unseen-monster glyph.
+        const displayed = glyphAt(x, y, state);
+        if (!displayed || !['monster', 'warning', 'invisible'].includes(displayed.kind))
             return null;
     }
     return monster;
