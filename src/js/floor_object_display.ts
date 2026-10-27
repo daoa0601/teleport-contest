@@ -181,8 +181,15 @@ export async function showFloorPile(
         game.flags.menu_overlay !== false) === 0) {
         await showDisclosureOverlay(content);
     } else {
-        await showFloorPileCorner(display, [...content, '--More--']);
+        const cornerLeft = await showFloorPileCorner(display, [...content, '--More--']);
         restoreMenuUnderlay(underlay);
+        // docorner() erased the corner without repainting the message row,
+        // so the top line stays clipped past the window's left edge until
+        // a topline writer repaints it.
+        const clipColumn = Math.max(0, cornerLeft - 2);
+        for (let col = clipColumn; col < display.cols; col++)
+            display.setCell(col, 0, ' ', NO_COLOR, 0);
+        display.toplineClipColumn = clipColumn;
     }
     const result = touchedCorpse ? await feelPetrifyingCorpse(touchedCorpse) : { died: false };
     if (!result.died) await readFloorEngraving(game.u.ux, game.u.uy);
@@ -191,7 +198,7 @@ export async function showFloorPile(
 
 // tty corner placement for a short pile window. Only a menu-dismissal key
 // destroys it and returns that input boundary to the command loop.
-async function showFloorPileCorner(display: GameDisplay, lines: readonly string[]): Promise<void> {
+async function showFloorPileCorner(display: GameDisplay, lines: readonly string[]): Promise<number> {
     // Tty menus leave one blank column after the widest line and align the
     // window to the right.
     const left = Math.max(0, Math.min(41,
@@ -206,6 +213,7 @@ async function showFloorPileCorner(display: GameDisplay, lines: readonly string[
     let key;
     do key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
+    return left;
 }
 
 export async function pricedFloorObjectDescription(object: GameObject): Promise<string> {

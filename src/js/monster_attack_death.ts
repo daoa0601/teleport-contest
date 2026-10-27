@@ -5,7 +5,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import { KILLED_BY, PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
-import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation, resetToplineClip } from './display.js';
 import { vision_recalc } from './vision.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, finishOrdinaryDeath, formatKillerCause,
@@ -207,6 +207,9 @@ export async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeat
 }
 
 export async function waitForCurrentMonsterMore(fallbackMessage = '') {
-    if (!game._pending_message) game._pending_message = fallbackMessage;
+    if (!game._pending_message) {
+        game._pending_message = fallbackMessage;
+        resetToplineClip();
+    }
     return flushPendingTopline();
 }

@@ -8,7 +8,7 @@ import {
 } from './const.js';
 import {
     clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor,
-    newsym_force, pline, plineWithContinuation, showUnrememberedTopline,
+    newsym_force, pline, plineWithContinuation, resetToplineClip, showUnrememberedTopline,
     terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
@@ -269,7 +269,11 @@ export async function paintGetposCursor(cursor: Position, message: string | null
     markedSpots: readonly Position[] | null = null,
     { flushPending = false }: { flushPending?: boolean } = {},
 ): Promise<TemporaryMapEffect | null> {
-    if (message !== null) game._pending_message = message;
+    if (message !== null) {
+        game._pending_message = message;
+        // auto_describe()'s custompline repaints the row.
+        resetToplineClip();
+    }
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the
     // hero can see, so a validity rule that admits unseen squares (polearm
     // couldsee+glyph policy) still cannot reveal them.

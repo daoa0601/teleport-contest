@@ -2,7 +2,7 @@
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberToplines, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberToplines, resetToplineClip, setTopline } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import type { CommandDirection } from './input.js';
@@ -120,6 +120,7 @@ export async function tty_getlin(
         // active. A full screen flush here would replace it with the map.
         rememberToplines();
         game._pending_message = prompt;
+        resetToplineClip();
         game._retained_message = '';
     } else {
         await setTopline(prompt);

@@ -3,7 +3,7 @@
 // tty_doprev_message() and redotoplin(), and the window-port menu those
 // build through putstr()/display_nhwindow()/destroy_nhwindow().
 import { game } from './gstate.js';
-import { messageHistoryCapacity, pageTopline, toplineRows } from './display.js';
+import { messageHistoryCapacity, pageTopline, resetToplineClip, toplineRows } from './display.js';
 import { showDisclosureOverlay } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 const CTRL_P = 16;
@@ -68,6 +68,8 @@ async function redotoplin(text) {
     const fromPrompt = !!game._promptOwnsTopline;
     game._promptOwnsTopline = false;
     const display = game.nhDisplay;
+    // redotoplin() repaints the recalled line across the whole row.
+    resetToplineClip();
     const columns = display?.cols ?? 80;
     const lines = toplineRows(text, columns, { splitWords: false });
     if (lines.length > 1 && !fromPrompt)

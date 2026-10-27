@@ -151,7 +151,9 @@ async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recurs
     }
     const steed = hero.usteed;
     const steedName = steed ? holdingMonsterName(steed) : '';
-    const deliberate = !sokoban && !steed && game.context.nopick && alreadyKnown;
+    // C trap.c:1877: the careful descent is chosen by iflags.menu_requested
+    // (the 'm' prefix), not context.nopick: travel sets nopick without it.
+    const deliberate = !sokoban && !steed && !!game.iflags.menu_requested && alreadyKnown;
     if (!sokoban) {
         if (steed) {
             await plineWithContinuation(recursiveTrap

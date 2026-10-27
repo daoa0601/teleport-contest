@@ -148,6 +148,8 @@ import {
     flush_screen, flushPendingTopline, updateStatusLines,
     pline,
     rememberToplines,
+    appendSuppressedTopline,
+    resetToplineClip,
     plineWithContinuation,
     newsym,
     map_invisible,
@@ -748,9 +750,19 @@ async function finishMoveloopPreamble() {
     game._moveloopStarted = true;
 }
 
-function appendTurnMessage(message: string): void {
+export function appendTurnMessage(message: string): void {
     const game = requireInitializedGame();
-    if (game._suppressMessagesUntilInput) return;
+    if (game._suppressMessagesUntilInput) {
+        // update_topl() with WIN_STOP still advances gt.toplines and the
+        // recall history, but redotoplin() never runs: the screen keeps
+        // its suppressed line instead of showing this prose.
+        appendSuppressedTopline(message);
+        game._last_message = message;
+        game._lastPlineMessage = message;
+        return;
+    }
+    // update_topl()'s new or joined line repaints the physical top row.
+    resetToplineClip();
     const joins = !!game._pending_message;
     game._pending_message = joins
         ? `${game._pending_message}  ${message}` : message;
