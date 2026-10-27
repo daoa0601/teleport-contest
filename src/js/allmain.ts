@@ -2122,7 +2122,8 @@ async function resolveDeferredHeroItemTheft(
     const wasDoffing = removingThisArmor || isBeingTakenOff(object, game);
     // stop_donning() reports the remaining turns only when it silently stops
     // doffing the stolen armor itself; bulk 'A' doffing carries no multi.
-    const oldDelay = removingThisArmor ? game._helplessTurns ?? 0 : 0;
+    const oldDelay = removingThisArmor
+        ? (game._helplessTurns ?? 0) : 0;
     await stopDonning(object, game);
     await stopHeroOccupation(game);
     // stop_donning() makes interrupted dressing armor unworn before steal()

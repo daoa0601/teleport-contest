@@ -91,3 +91,49 @@ void test('a seduced hero finishes only the remaining turns of a started suit re
     assert.equal(game.moves - started, 3, 'the theft takes the two remaining turns, not three new turns');
     assert.ok(thief.minvent.includes(suit));
 });
+
+// C allmain.c counts negative multi down after movemon(). A nymph arriving
+// in the next monster phase keeps the two turns still owed on the removal.
+void test('a nymph acting during suit removal finishes the remaining delay', async () => {
+    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    requirePlayingGame(game);
+    const suit = await addInventoryObject(LEATHER_ARMOR);
+    wearHeroArmor(suit);
+    pushKey(suit.invlet);
+    await rhack('T'.charCodeAt(0));
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const started = game.moves;
+    await moveloop_core();
+    await moveloop_core();
+    assert.equal(game.moves - started, 1, 'One turn of the suit removal has elapsed');
+
+    const thief = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    thief.mux = game.u.ux;
+    thief.muy = game.u.uy;
+    thief.msleeping = 0;
+    thief.movement = 12;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /nymph|suit/, limit: 12 });
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+
+    await moveloop_core();
+    assert.match(game._pending_message + messages.join('\n'), /You gladly continue removing your suit\./);
+    assert.equal(game.uarm, null);
+    assert.ok(game.inventory.includes(suit), 'the charmed suit waits for its theft delay');
+
+    let reads = 0;
+    input.display = { async readKey() {
+        assert.ok(++reads <= 24, `Suit theft did not finish: ${game._pending_message}`);
+        messages.push(game._pending_message);
+        const row = requireScreenRow(0).map(cell => cell.ch).join('');
+        return row.includes('--More--') ? 32 : 46;
+    } };
+    while (game.multi < 0) await moveloop_core();
+    await flushPendingTopline();
+
+    assert.equal(game.moves - started, 3,
+        'the monster phase preserves the two remaining turns instead of restarting removal');
+    assert.ok(thief.minvent.includes(suit));
+});
