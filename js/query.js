@@ -3,9 +3,10 @@
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberToplines, resetToplineClip, setTopline } from './display.js';
 import { game } from './gstate.js';
-import { nhgetch, readchar, takeCommandKey, takeCommandResponse } from './input.js';
+import { nhgetch, readchar, takeCommandResponse } from './input.js';
 import { restoreCannedCommandTail } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
+import { clearCannedCommands } from './command_state.js';
 import { rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
 import { visibleCommandKey } from './command_keys.js';
@@ -249,15 +250,31 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
     const queued = addCommandQueue ? takeRepeatCommand() : undefined;
     let result;
     if (queued) {
+        // A non-key CQ_REPEAT entry keeps the ESC initializer, and
+        // cmdq_clear(CQ_CANNED) drops every canned command behind it.
+        if (queued.kind !== 'key')
+            clearCannedCommands();
         const answer = queued.kind === 'key' ? String.fromCharCode(queued.key) : '\x1b';
         result = { answer, count: game._ynNumber ?? 0n };
     }
     else {
         // C cmdq_pop() takes CQ_CANNED here, but never while a do-again
-        // replay owns the input.
-        const canned = addCommandQueue && !game._inDoAgain ? takeCommandKey() : undefined;
-        if (canned !== undefined) {
-            result = { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
+        // replay owns the input. That one entry decides the outcome: a
+        // key answers, a user-input placeholder asks live, and any other
+        // entry — or a canned command reached through an empty response
+        // queue — keeps the ESC initializer while cmdq_clear(CQ_CANNED)
+        // drops the remaining canned entries, so the question is never
+        // shown.
+        const response = addCommandQueue && !game._inDoAgain
+            ? takeCommandResponse() : undefined;
+        const cannedCommand = response === undefined && addCommandQueue && !game._inDoAgain
+            ? game._cannedCommands?.shift() ?? null : null;
+        if (typeof response === 'number') {
+            result = { answer: String.fromCharCode(response), count: game._ynNumber ?? 0n };
+        }
+        else if (cannedCommand || (response !== undefined && response !== 'user-input')) {
+            clearCannedCommands();
+            result = { answer: '\x1b', count: game._ynNumber ?? 0n };
         }
         else {
             result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
