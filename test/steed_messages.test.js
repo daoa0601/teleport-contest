@@ -2,12 +2,37 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { woundHeroLegs } from '../js/hero_legs.js';
+import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { strikeSteed } from '../js/steed.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('wizard riding offers to heal a leg even when both legs are wounded', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    await woundHeroLegs('both', 20);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message.trimEnd()); };
+    input.display = {
+        async readKey() {
+            const message = game._pending_message;
+            if (message.startsWith('Force the mount'))
+                return 'y'.charCodeAt(0);
+            if (message.startsWith('Heal your'))
+                return 'n'.charCodeAt(0);
+            assert.match(message, /in no shape for riding/);
+            return ' '.charCodeAt(0);
+        },
+    };
+    await runExtendedCommand('ride', 'l');
+    assert.ok(messages.includes('Your legs are in no shape for riding.'));
+    assert.ok(messages.includes('Heal your leg? [yn] (n)'), messages.join('\n'));
+    assert.equal(game.u._woundedLegTurns, 20);
+    assert.equal(game.context.move, 0);
+});
 async function mountedSteed(species, female = false) {
     freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     const steed = await createSaddledSteed(species);

@@ -4,7 +4,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
-import { RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
+import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
@@ -266,8 +266,11 @@ async function mountSteed(steed, force, [dx, dy]) {
         const leg = both ? makePlural(heroLegName())
             : `${hero._woundedLegSide} ${heroLegName()}`;
         await pline(`Your ${leg} ${both ? 'are' : 'is'} in no shape for riding.`);
+        // mount_steed() tests HWounded_legs (the timeout), not the side
+        // flags in EWounded_legs, when choosing this prompt's suffix.
+        const pluralPrompt = ((hero._woundedLegTurns ?? 0) & BOTH_SIDES) === BOTH_SIDES;
         if (force && game.flags.debug
-            && await promptYesNo(`Heal your leg${both ? 's' : ''}?`) === 'y') {
+            && await promptYesNo(`Heal your leg${pluralPrompt ? 's' : ''}?`) === 'y') {
             await healHeroLegs();
         }
         else

@@ -6,7 +6,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 
 import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
 import {
-    RLOC_ERR, RLOC_NOMSG,
+    BOTH_SIDES, RLOC_ERR, RLOC_NOMSG,
     D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
     DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
     DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
@@ -334,8 +334,11 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
         const leg = both ? makePlural(heroLegName())
             : `${hero._woundedLegSide} ${heroLegName()}`;
         await pline(`Your ${leg} ${both ? 'are' : 'is'} in no shape for riding.`);
+        // mount_steed() tests HWounded_legs (the timeout), not the side
+        // flags in EWounded_legs, when choosing this prompt's suffix.
+        const pluralPrompt = ((hero._woundedLegTurns ?? 0) & BOTH_SIDES) === BOTH_SIDES;
         if (force && game.flags.debug
-            && await promptYesNo(`Heal your leg${both ? 's' : ''}?`) === 'y') {
+            && await promptYesNo(`Heal your leg${pluralPrompt ? 's' : ''}?`) === 'y') {
             await healHeroLegs();
         } else return false;
     }
