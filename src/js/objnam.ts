@@ -280,6 +280,13 @@ export function lootObjectName(object: GameObject, state: GameState = game): str
     const nameState = { ...state, flags: { ...state.flags, debug: false } };
     let name = object.otyp === CORPSE ? corpseName(view, { singular: true })
         : objectName(view, nameState);
+    // The recorded loot sort orders a partly eaten ration after a whole
+    // one (a "food ration" tied name would fall back to container chain
+    // order and list the partly eaten stack first), so doname()'s
+    // "partly eaten" prefix participates in the sortable loot name.
+    if (object.oeaten && object.oclass === FOOD_CLASS
+        && object.otyp !== CORPSE && !object.globby)
+        name = `partly eaten ${name}`;
     if (object.otyp === TOWEL) name += object.spe >= 3 ? 'x' : object.spe > 0 ? 'y' : 'z';
     if (object.globby) name += object.owt <= 100 ? 'a' : object.owt <= 300 ? 'b'
         : object.owt <= 500 ? 'c' : 'd';
