@@ -6,6 +6,7 @@ import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberT
 import { game } from './gstate.js';
 import { nhgetch, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import type { CommandDirection } from './input.js';
+import { restoreCannedCommandTail } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import type { RepeatCommandEntry } from './command_types.js';
@@ -35,7 +36,20 @@ export async function getLine(
         const queuedKey = typeof entry === 'number' ? entry
             : typeof entry === 'object' && 'kind' in entry && entry.kind === 'key'
                 ? entry.key : undefined;
-        if (queuedKey === undefined) break;
+        if (queuedKey === undefined) {
+            // windows.c:getlin() pops the one command queue until a key
+            // answers, then frees the first non-key entry it reaches — one
+            // dropped entry per prompt. A non-key response from
+            // takeCommandResponse() is that consumed entry already; only an
+            // empty response queue leaves the next pop to the canned
+            // command entries, whose bundled key or direction tails return
+            // to the response queue (cmd.c queues them behind the command).
+            if (entry === undefined && !game._inDoAgain) {
+                const dropped = game._cannedCommands?.shift();
+                if (dropped) restoreCannedCommandTail(dropped);
+            }
+            break;
+        }
         queued = true;
         if (queuedKey === 10) break;
         queuedKeys.push(queuedKey);
