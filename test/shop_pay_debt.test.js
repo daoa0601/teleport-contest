@@ -4,11 +4,11 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
-import { GOLD_PIECE, SACK } from '../js/object_data.js';
+import { GOLD_PIECE, POT_HEALING, SACK } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
-import { withMessagePages } from './support/planned-input.js';
+import { planInput, withMessagePages } from './support/planned-input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 for (const loan of [10, 25]) {
     void test(`paying a 25-zorkmid debt describes its ${loan}-zorkmid gold loan`, async () => {
@@ -60,6 +60,28 @@ void test('a deaf customer receives a guarded nod after paying a surcharged shop
     assert.match(game._pending_message, /Ada nods at you for shopping in his general store\./);
     assert.equal(heroGoldAmount(game), 0);
     assert.equal(shopkeeper.eshk.debit, 0);
+    assert.equal(game.context.move, 1);
+});
+void test('paying a usage debt pages the settlement before the item payment menu', async (t) => {
+    freshObjectRoom();
+    const potion = await addInventoryObject(POT_HEALING);
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: potion.o_id, bquan: 1, price: 113, useup: false },
+        ] });
+    potion.unpaid = true;
+    // a usage debt, e.g. from breaking shop goods, alongside an unpaid item
+    shopkeeper.eshk.debit = 150;
+    setHeroGoldAmount(game, 1779);
+    planInput(resetInputState(), t, [
+        { prompt: /You owe shopkeeper 150 zorkmids for the use of merchandise\.\s*--More--/, keys: ' ' },
+        { prompt: /You pay that debt\.\s*--More--/, keys: ' ' },
+        { prompt: /Pay for which items\?/, keys: '\u001b' },
+    ]);
+    await rhack('p'.charCodeAt(0));
+    assert.match(game._pending_message, /Thank you for shopping/);
+    assert.equal(shopkeeper.eshk.debit, 0);
+    assert.equal(shopkeeper.eshk.billct, 1);
+    assert.equal(heroGoldAmount(game), 1779 - 150);
     assert.equal(game.context.move, 1);
 });
 //# sourceMappingURL=shop_pay_debt.test.js.map
