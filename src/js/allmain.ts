@@ -4088,8 +4088,7 @@ export async function runMoveloopCore() {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
         }
-        const countedMultiActive = g.multi > 0;
-        await captureRunmodeDelay(g, countedMultiActive);
+        await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         return;
     }
 
