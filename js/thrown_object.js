@@ -261,6 +261,13 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     let skipping = false;
     let skips = 0;
     let capturedCell = null;
+    // zap.c bhit() opens every physical flight with tmp_at(DISP_FLASH or
+    // DISP_TETHER), whose init calls flush_screen(0) (display.c).  Pending
+    // map glyphs and a pending botl status update — a freed coin purse
+    // leaves the '$' field dirty this way — reach the terminal during the
+    // command, before its turn passes, even when the flight stops at its
+    // first square and paints no projectile cell.
+    await flush_screen(0);
     const movingLight = !!object.lamplit && !heroIsBlind(state);
     try {
         for (let step = 0; step < steps && (dx || dy); step++) {

@@ -6,7 +6,7 @@ import { exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { flyBoomerang } from './boomerang.js';
-import { flush_screen, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
@@ -83,8 +83,9 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
         if (tethered) {
             // The tether stays visible through contact and is erased by the
             // return roll, rather than by bhit()'s ordinary flight cleanup.
+            // bhit()'s tmp_at(DISP_TETHER) init flush now lives in
+            // flyPhysicalObject(), shared with DISP_FLASH flights.
             tetherDisplay = monsterProjectileDisplay(thrown, state, { tethered: true });
-            await flush_screen(0);
         }
         const flight = boomerang
             ? await flyBoomerang(thrown, actualDx, actualDy, state, volley)
