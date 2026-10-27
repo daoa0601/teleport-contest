@@ -316,7 +316,12 @@ export async function detectObjects(source, { state = game, objectClass = 0 } = 
                 const appearance = monster.mappearance;
                 if (appearance === undefined)
                     throw new Error('An object mimic requires an object appearance.');
-                const mimicObject = { otyp: appearance, oclass: objectClassForType(appearance),
+                // C starts from cg.zeroobj and assigns only otyp, quan, ox,
+                // oy, and corpsenm.  oc_class stays zero, so display.h's
+                // obj_is_generic() never hides the mimic's appearance behind
+                // the potion-class slot: a disguised potion is drawn with its
+                // own shuffled oc_color even though no dknown exists.
+                const mimicObject = { otyp: appearance, oclass: 0,
                     quan: 1, quantity: 1, ox: 0, oy: 0,
                     corpsenm: monster.mcorpsenm !== undefined && monster.mcorpsenm >= 0 ? monster.mcorpsenm : MONSTER_NAME.indexOf('tengu') };
                 showObjectAt(mimicObject, monster.mx, monster.my, shown);
@@ -425,9 +430,11 @@ function showObjectAt(object, x, y, shown) {
     map_object(object, true);
     shown.set(`${x},${y}`, object);
 }
+// C's detected-coins object is also built from cg.zeroobj; only otyp, quan,
+// and the coordinates are assigned, so it keeps a zero oc_class too.
 function detectedCoins() {
     const quantity = rnd(10);
-    return { otyp: GOLD_PIECE, oclass: COIN_CLASS, quan: quantity, quantity, ox: 0, oy: 0 };
+    return { otyp: GOLD_PIECE, oclass: 0, quan: quantity, quantity, ox: 0, oy: 0 };
 }
 function showHeroUnlessCovered(shown, state) {
     let mode = TER_DETECT | TER_OBJ;
