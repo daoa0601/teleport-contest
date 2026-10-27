@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { BEAR_TRAP, ENGRAVE } from '../js/const.js';
+import { BEAR_TRAP, D_NODOOR, DOOR, ENGRAVE } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
@@ -70,6 +70,25 @@ for (const key of ['e', 'E']) {
         assert.equal(engraving.rememberedText, 'old words');
     });
 }
+
+void test('a covered engraving on DEC-only terrain lists no obscuring symbol', async () => {
+    freshObjectRoom({ flags: { tips: false } });
+    game.symset = 'DECgraphics';
+    const square = game.level?.requireAt(11, 10);
+    assert.ok(square);
+    square.typ = DOOR;
+    square.doormask = D_NODOOR;
+    const engraving = makeEngravingAt(11, 10, 'new words', null, 0, ENGRAVE);
+    assert.ok(engraving);
+    engraving.eread = true;
+    engraving.rememberedText = 'old words';
+    newsym(11, 10);
+    const input = resetInputState();
+    input.feed('e');
+    await answerPrompts(rhack('/'.charCodeAt(0)), input, [
+        { prompt: /engravings[\s\S]*remembered text: "old words", obscured by ?(?![^\s])[\s\S]*--More--/i, keys: ' ' },
+    ]);
+});
 
 void test('look lists use a full-screen text window with a bottom-row pager', async () => {
     freshObjectRoom({ flags: { tips: false } });

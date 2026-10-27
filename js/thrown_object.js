@@ -11,7 +11,7 @@ import { artifactById } from './artifacts.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
-import { canSpotMonster, flush_screen, lastDirtyMapCursor, newsym, plineWithContinuation, show_glyph_cell, transientObjectGlyph, } from './display.js';
+import { canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, newsym, plineWithContinuation, show_glyph_cell, transientObjectGlyph, unmapObject, } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -352,6 +352,11 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             }
             contact = monster ? projectileMonsterAt(state, object, x, y) : null;
             if (contact) {
+                // zap.c bhit(): ending a thrown or kicked flight on a
+                // monster the hero cannot spot, on a square the hero can
+                // see, leaves a remembered "unseen monster" there.
+                if (cansee(x, y) && !canSpotMonster(contact))
+                    map_invisible(x, y);
                 stoppedBy = 'monster';
                 break;
             }
@@ -375,6 +380,14 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                 y = previousY;
                 stoppedBy = 'terrain';
                 break;
+            }
+            // zap.c bhit(): a missile passing over a remembered "unseen
+            // monster" square holding no monster proves the memory stale;
+            // erase it before the object continues its flight.
+            if (state.level?.at(x, y)?.remembered_glyph?.kind === 'invisible'
+                && cansee(x, y)) {
+                unmapObject(x, y);
+                newsym(x, y);
             }
             path.push({ x, y });
             if (display)

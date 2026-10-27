@@ -4,7 +4,7 @@ import type { ChoiceMenuEntry } from './windows.js';
 
 import { makePlural } from './object_grammar.js';
 import { containerContents } from './container_contents.js';
-import { bot, displayMessageWindow, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
+import { bot, displayMessageWindow, flush_screen, pline, plineWithContinuation } from './display.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -1000,8 +1000,11 @@ async function useContainerActions(container: GameObject, {
     if (game.program_state.gameover) return { spentTime: true, container, heroDied: true };
     if (spentTime) container.cknown = true;
     if (underlay) restoreMenuUnderlay(underlay);
-    await redrawMap();
-    await bot();
+    // C pickup.c use_container() ends with no redraw of its own: the tty
+    // menu dismissal already restored the covered screen from the glyph
+    // buffer, and a map recomputation here would replace remembered glyphs
+    // (such as a just-wiped engraving) that the buffer still holds. The
+    // flush only repaints the current buffer, like native flush_screen().
     await flush_screen(1);
     return { spentTime, container, tookOut, stopLooting: action === 'q' || action === '\x1b' };
 }

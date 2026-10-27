@@ -52,6 +52,7 @@ function clearRect(left: number, top: number, right: number, bottom: number): vo
 // after assigning selectors. Margins and the largest pager also occupy width.
 export function menuLayout<T extends TextMenuLine>(
     rows: readonly T[], columns: number, terminalRows: number,
+    putstrMeasured = false,
 ): MenuLayout<T> {
     if (terminalRows < 2 || columns < 2)
         throw new RangeError('A menu requires a content row, a pager row, and two columns');
@@ -65,11 +66,17 @@ export function menuLayout<T extends TextMenuLine>(
         attributeStart: 'key' in row && typeof row.key === 'string' && row.key.length > 0
             || /^. [-+#] /.test(row.text) ? 4 : 0,
     }));
-    // Native retains this bounded prompt; multi-page counters are rebuilt on display.
-    const endMarker = '(end) '.slice(0, columns);
-    const pager = pageCount > 1 ? `(${pageCount} of ${pageCount}) ` : endMarker;
-    const width = clippedRows.reduce((widest, row) => Math.max(widest, row.text.length + 2),
-        Math.min(columns, pager.length));
+    // tty_end_menu() keeps "(end) " and the page counters; a window filled
+    // only with putstr() never runs it, so dmore() falls back to the
+    // default "--More--" prompt.
+    const endMarker = putstrMeasured ? '--More--' : '(end) '.slice(0, columns);
+    const pager = putstrMeasured ? endMarker
+        : pageCount > 1 ? `(${pageCount} of ${pageCount}) `.slice(0, columns) : endMarker;
+    // putstr() measures a line as strlen + 1; tty_end_menu() re-measures its
+    // own rows, and every stored line, as strlen + 2.
+    const width = clippedRows.reduce((widest, row) =>
+        Math.max(widest, row.text.length + (putstrMeasured ? 1 : 2)),
+        putstrMeasured ? 0 : Math.min(columns, pager.length));
     const maxRows = (pageCount > 1 ? pageSize : rows.length) + 1;
     return { rows: clippedRows, pageSize, pageCount, maxRows, width, endMarker };
 }
@@ -226,7 +233,9 @@ export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>
     window.layout = null;
 }
 
-export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null = null): void {
+export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null = null,
+    putstrMeasured = false,
+): void {
     requireWindow(window);
     if (prompt !== null) {
         const heading: TtyMenuRow<T> = { text: prompt, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
@@ -247,7 +256,7 @@ export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null 
         // Native stores the clipped text, so search sees only the displayed description.
         row.text = row.text.slice(0, d.cols - 2);
     }
-    window.layout = menuLayout(window.entries, d.cols, d.rows);
+    window.layout = menuLayout(window.entries, d.cols, d.rows, putstrMeasured);
 }
 
 export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: MenuPickMode = PICK_NONE): Promise<TtyMenuResult<T>> {
