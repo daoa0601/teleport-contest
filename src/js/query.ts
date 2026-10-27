@@ -102,9 +102,17 @@ export async function tty_getlin(
     };
     const renderEditor = () => {
         const line = `${prompt} ${value}`;
-        clearEditorRows();
         const contentRows = Math.max(1, Math.ceil(line.length / width));
-        renderedRows = Math.max(renderedRows, contentRows);
+        // topl_putsym() clears each row it wraps onto with cl_end()
+        // before echoing there, so a freshly wrapped row cannot keep
+        // stale cells from earlier message-window output.  A getlin
+        // running under an open menu writes behind that menu; the menu
+        // keeps repainting its own rows, so only the rows this editor
+        // already painted are cleared there.
+        const rowsToClear = inMenu ? renderedRows : Math.max(renderedRows, contentRows);
+        for (let row = 0; row < rowsToClear; row++)
+            game.nhDisplay?.clearRow(row);
+        renderedRows = inMenu ? Math.max(renderedRows, contentRows) : contentRows;
         for (let row = 0; row < contentRows; row++) {
             game.nhDisplay?.putstr(
                 0, row, line.slice(row * width, (row + 1) * width),

@@ -7,6 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { bot, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { GameDisplay } from '../js/game_display.js';
+import { NO_COLOR } from '../js/terminal.js';
 import { Terminal } from '../js/terminal.js';
 
 void test('a confirmation displays its choices and default before reading input', async () => {
@@ -289,4 +290,27 @@ void test('a line question resumes ordinary messages after Escape stopped a More
     await plineWithContinuation('The inscription is complete.');
     await flush_screen(1);
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'The inscription is complete.');
+});
+
+// C topl.c topl_putsym(): when the echoed line wraps to the next row, the
+// new row is cleared with cl_end() before the wrapped character is echoed,
+// so stale message-window cells cannot survive beside the wrapped text.
+void test('line input clears the row its echo wraps onto', async () => {
+    freshPlayableRoom();
+    const longPrompt = 'What tune are you playing? [5 notes, A-G]';
+    const typed = 'A'.repeat(38);
+    const input = resetInputState();
+    const answer = getLine(longPrompt, () => true);
+    await input.waitUntilBlocked();
+    // A leftover cell from earlier message output beside the live prompt,
+    // as when a previous line wrapped and was dismissed.
+    game.nhDisplay?.setCell(47, 1, '#', NO_COLOR, 0);
+    input.feed(typed);
+    await input.waitUntilBlocked();
+    const row1 = game.nhDisplay?.grid[1]?.map(cell => cell.ch).join('') ?? '';
+    assert.equal(row1[0], 'A', 'the wrapped text continues onto the next row');
+    assert.equal(row1[47], ' ', 'the wrap cleared the rest of the row');
+
+    input.feed('\n');
+    assert.equal(await answer, typed);
 });
