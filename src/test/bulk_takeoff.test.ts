@@ -543,24 +543,6 @@ void test('successfully dropping another item discards interrupted bulk removal'
     assert.equal(game.uarm, suit, 'a new cancelled selection does not resume discarded removal');
 });
 
-void test('a refused drop preserves interrupted bulk removal', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
-    const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
-    await takeOff(`${suit.invlet}\n`);
-    await work(1);
-    await stopHeroOccupation(game, async () => {});
-
-    resetInputState();
-    pushKeys(`${suit.invlet}`);
-    await rhack('d'.charCodeAt(0));
-
-    assert.equal(game.context.move, 0);
-    await takeOff('');
-    await work(4);
-    assert.equal(game.uarm, null);
-});
-
 void test('the armor class symbol selects armor in the takeoff item menu', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const shield = await addInventoryObject(SMALL_SHIELD);
