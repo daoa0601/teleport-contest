@@ -363,7 +363,7 @@ import { heroCanOoze } from './monster_perception.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
-import { arriveTravel, captureRunmodeDelay, startRun, stopRun } from './runmode.js';
+import { arriveTravel, captureRunmodeDelay, startRun, startWalkRepeat, stopRun } from './runmode.js';
 import {
     armorSlotFor,
     armorSimpleName, armorOffMessage,
@@ -1576,8 +1576,12 @@ async function dispatchMovement(binding: CommandBinding, prefixes: MovementAttem
     // direction keeps the run value an earlier rush or travel left set.
     if (!(prefixes.walk || prefixes.rush)) game.context.run = mode;
     if (game.iflags.menu_requested) game.context.nopick = true;
-    if (game.multi > 0 || rushDispatch || (mode && !prefixes.walk))
+    if (rushDispatch || (mode && !prefixes.walk))
         startRun(hero.dx, hero.dy, game, mode);
+    else if (game.multi > 0)
+        // A counted walk-style direction marks the repeat active without
+        // replacing context.run or granting a rush's movement ration.
+        startWalkRepeat(hero.dx, hero.dy, game);
     const outcome = await domove(hero.dx, hero.dy);
     const moved = outcome === 'time';
     if (game.program_state.gameover) return;

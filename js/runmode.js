@@ -19,6 +19,14 @@ export function startRun(dx, dy, g = game, mode = 1) {
     g.context.mv = true;
     return g._runState;
 }
+// C rhack()'s DOMOVE_WALK dispatch (cmd.c:3785-3788): a counted direction
+// only marks the repeat active.  context.run keeps whatever value an
+// earlier rush or travel left behind, and no movement ration is granted.
+export function startWalkRepeat(dx, dy, g = game) {
+    g._runState = { dx, dy, mode: 0, lastStrTurn: 0 };
+    g.context.mv = true;
+    return g._runState;
+}
 // C hack.c:end_running(). An adjacent travel target first ends running
 // without cancelling travel, then tests the step using ordinary move rules.
 export function stopRun(g = game, andTravel = true) {

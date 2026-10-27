@@ -243,4 +243,20 @@ void test('a forcefight without a lingering run attacks thin air over a known tr
     assert.match(messages, /You attack thin air\./);
     assert.equal(game.context.move, 1);
 });
+// The DOMOVE_WALK dispatch (cmd.c:3785-3788) never touches context.run, so
+// even a counted 'F'+direction keeps a leftover travel run and
+// avoid_running_into_trap_or_liquid() stops each counted step at the known
+// trap before domove_fight_empty() can attack.
+void test('a counted forcefight with a leftover travel run also stops at the trap', async () => {
+    emptyArena();
+    const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
+    newsym(trap.tx, trap.ty);
+    game.context.run = 8;
+    const movesBefore = game.moves;
+    const messages = await command('3Fh', /never/);
+    assert.doesNotMatch(messages, /attack thin air/);
+    assert.equal(game.context.move, 0);
+    assert.equal(game.moves, movesBefore, 'no counted step is spent at the trap');
+    assert.equal(game.context.run, 0, 'the stop ends the lingering run');
+});
 //# sourceMappingURL=hero_empty_attack.test.js.map
