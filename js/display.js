@@ -2984,9 +2984,31 @@ function writeMapRow(display, y) {
         if (loc.disp_ch === ' ' && frameColor === null && !(attr & 5)
             && (color === NO_COLOR || color === CLR_GRAY))
             continue;
-        const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
-        display.setMapCell(x - 1, y + 1, ch, color, attr, frameColor);
+        writeMapCell(display, x, y, loc, frameColor);
     }
+}
+// C display.c:row_refresh(). Repaint the current glyph buffer without
+// recomputing vision or choosing new hallucinated appearances.
+export function row_refresh(start, stop, y) {
+    const display = game.nhDisplay;
+    if (!display || y < 0 || y >= ROWNO)
+        return;
+    const highlight = game._mapPositionHighlight;
+    for (let x = Math.max(1, start); x <= Math.min(stop, COLNO - 1, display.cols - 1); x++) {
+        const loc = game.level?.at(x, y);
+        if (!loc?.disp_ch)
+            continue;
+        const framed = !!highlight?.background && highlight.isValidLocation(x, y);
+        const frameColor = framed && game.flags.color !== false ? HI_ZAP : null;
+        if (glyphAt(x, y)?.glyph === GlyphOffset.unexplored && !framed)
+            continue;
+        writeMapCell(display, x, y, loc, frameColor);
+        display.setCursor(x, y + 1);
+    }
+}
+function writeMapCell(display, x, y, loc, frameColor) {
+    const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
+    display.setMapCell(x - 1, y + 1, ch, loc.disp_color ?? NO_COLOR, loc.disp_attr ?? 0, frameColor);
 }
 // ── flush_screen ──
 export async function flush_screen(mode) {
