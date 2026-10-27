@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
+import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import {
@@ -15,6 +16,7 @@ import {
     addTrap, floorObjects, floorObjectsAt,
 } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { planInput } from './support/planned-input.js';
 
 
 async function quiver(amount: number, id: number) {
@@ -208,11 +210,14 @@ void test('an upward quivered coin falls back, hurts the hero, and leaves the pa
         assert.equal(game.context.move, 1);
     });
 
-void test('a greased quivered coin can slip into a one-coin floor drop', async () => {
+void test('a greased quivered coin can slip into a one-coin floor drop', async (t) => {
     const level = freshGameplayRoom();
     const purse = await quiver(5, 29117);
     purse.greased = true;
     initRng(83n);
+    planInput(resetInputState(), t, [
+        { prompt: /The gold piece slips as you throw it!--More--/, keys: ' ' },
+    ]);
 
     await fireQuiveredGold('l');
 
@@ -221,6 +226,8 @@ void test('a greased quivered coin can slip into a one-coin floor drop', async (
     assert.equal(floorObjectsAt(level, 10, 10).includes(coin), true);
     assert.equal(purse.quantity, 4);
     assert.equal(game.uquiver, purse);
+    assert.match(game._pending_message, /greased gold piece hits the floor\.$/);
+    assert.deepEqual([game.u.dx, game.u.dy, game.u.dz], [0, 0, 1]);
 });
 
 void test('throwing the last quivered coin transfers its original identity',

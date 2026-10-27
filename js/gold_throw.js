@@ -29,6 +29,7 @@ import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrow
 import { cansee } from './vision.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { offerThrownFood } from './thrown_food.js';
+import { applyThrowSlip } from './throw_state.js';
 const M2_MERC = 0x00000200;
 const M2_GREEDY = 0x10000000;
 const PM_SOLDIER = 277;
@@ -257,17 +258,16 @@ export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz
     gold = detachHeroGold(state, 1);
     if (!gold)
         return false;
+    // Quivered coins use throwit(), including its message and persistent
+    // direction changes. An unquivered purse uses throw_gold() instead.
+    state.u.dx = dx;
+    state.u.dy = dy;
+    state.u.dz = dz;
+    await applyThrowSlip({ state, object: gold });
+    dx = state.u.dx;
+    dy = state.u.dy;
+    dz = state.u.dz;
     gold.how_lost = LOST_THROWN;
-    // throwit() probes every cursed or greased horizontal object, but a coin
-    // is not a throwing weapon so only grease can turn that probe into a
-    // slip.  The two direction draws may convert the throw into a drop.
-    if ((gold.cursed || gold.greased) && (dx || dy) && rn2(7) === 0
-        && gold.greased) {
-        dx = rn2(3) - 1;
-        dy = rn2(3) - 1;
-        if (!dx && !dy)
-            dz = 1;
-    }
     if (state.u?.uswallow && state.u?.ustuck) {
         return resolveQuiveredGoldMonsterContact({
             state, monster: state.u.ustuck, gold,
