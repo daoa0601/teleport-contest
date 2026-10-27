@@ -50,6 +50,7 @@ async function* lookListEntries(kind: LookListKind, nearby: boolean, mode: strin
         for (let x = lowX; x <= highX; x++) {
             const glyph = glyphAt(x, y);
             if (!glyph) continue;
+            const covering = coveringSymbolAt(x, y);
             let symbol = mapSymbolAt(x, y), description = '';
             let obscured = false;
             if (kind === 'monsters') {
@@ -71,7 +72,7 @@ async function* lookListEntries(kind: LookListKind, nearby: boolean, mode: strin
                 else {
                     const trap = level.traps.find(t => t.tx === x && t.ty === y && t.tseen);
                     if (trap && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
-                        description = `${trapName(trap.ttyp)}, obscured by ${symbol}`;
+                        description = `${trapName(trap.ttyp)}, obscured by ${covering}`;
                         obscured = true;
                         symbol = transientTrapGlyph(trap).ch;
                     }
@@ -86,7 +87,7 @@ async function* lookListEntries(kind: LookListKind, nearby: boolean, mode: strin
                     : suffix.startsWith(' with ') ? suffix.slice(6) : `engraving${suffix}`);
                 const shown = glyph.kind === 'engraving' || glyph.kind === 'terrain' && glyph.terrainName === 'grave';
                 if (!shown) {
-                    description += `, obscured by ${symbol}`;
+                    description += `, obscured by ${covering}`;
                     obscured = true;
                     symbol = headstone ? '|' : location.lastseentyp === CORR ? '#' : '`';
                 }
@@ -128,4 +129,14 @@ function mapSymbolAt(x: number, y: number): string {
     const location = game.level?.at(x, y);
     if (!location) return ' ';
     return location.disp_decgfx ? DEC_TO_UNICODE[location.disp_ch] ?? location.disp_ch : location.disp_ch;
+}
+
+// The "obscured by" clause decodes the covering glyph into its raw native
+// symbol byte (windows.c decode_mixed()) and prints it mid-line, outside
+// the DECgraphics shift. A DEC symbol byte never survives the captured
+// screen, so only plain ASCII symbols appear there.
+function coveringSymbolAt(x: number, y: number): string {
+    const location = game.level?.at(x, y);
+    if (!location) return ' ';
+    return location.disp_decgfx ? '' : location.disp_ch;
 }
