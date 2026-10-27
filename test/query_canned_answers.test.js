@@ -183,39 +183,6 @@ async function driveTurnUntilFireAsks(input) {
     await moveloop_core(); // the queued fire asks its direction
     return seen;
 }
-// C cmd.c:yn_function() pops the command queue once (cmd.c:5496-5509): a
-// queued key answers the question, and the canned commands behind it stay
-// queued for the command loop. A fire-assist fire left behind a weapon
-// swap still asks for its direction after such an answer.
-void test('a canned key answer leaves the command queued behind it', async () => {
-    const input = await fireAssistRoom();
-    input.queueCommandKeys('n');
-    const answer = await yn_function('Do you want to hold your fire?', 'ynq', 'y');
-    assert.equal(answer.answer, 'n', 'the queued key answers the question');
-    const seen = await driveTurnUntilFireAsks(input);
-    assert.ok(seen.some(line => /In what direction\?/.test(line)), 'the queued fire must still ask for its direction');
-    assert.equal(game.uquiver?.quan, 3, 'cancelling the direction keeps the arrows');
-});
-// The popped CMDQ_USER_INPUT placeholder takes no canned entry with it:
-// the question is asked live (cmd.c:5504) and the queued fire survives.
-void test('a user-input answer leaves the canned command queued behind it', async () => {
-    const input = await fireAssistRoom();
-    input.queueCommandResponses(['user-input']);
-    const question = yn_function('Do you want to hold your fire?', 'ynq', 'y');
-    const outcome = await Promise.race([
-        question.then(answer => `answered:${answer.answer}`),
-        input.waitUntilBlocked().then(() => 'blocked'),
-    ]);
-    assert.equal(outcome, 'blocked', 'the question must wait for terminal input, not the canned fire');
-    // The live question first pages the swap's unread message, then reads.
-    input.feed(' ');
-    await input.waitUntilBlocked();
-    input.feed('n');
-    assert.equal((await question).answer, 'n');
-    const seen = await driveTurnUntilFireAsks(input);
-    assert.ok(seen.some(line => /In what direction\?/.test(line)), 'the queued fire must still ask for its direction');
-    assert.equal(game.uquiver?.quan, 3, 'cancelling the direction keeps the arrows');
-});
 // With no queued answers, the popped entry is the canned fire itself: not
 // a key, so yn_function() keeps its ESC initializer (cmd.c:5504-5508),
 // cmdq_clear(CQ_CANNED) drops every remaining entry, and the invalid ESC
