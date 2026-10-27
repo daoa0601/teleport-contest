@@ -4,7 +4,7 @@
 
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
-import { clearMessageWindow, displayMessageWindow, docrt, flush_screen } from './display.js';
+import { clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED,
@@ -213,13 +213,14 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
 } = {}): Promise<number> {
     const d = display();
     if (!d) return 27;
-    if (skipPendingPager) clearMessageWindow();
+    // Menu/text display pages unread prose, then clears a nonempty message
+    // window. An already-empty window keeps its uncovered terminal cells.
+    if (!skipPendingPager && !game._suppressMessagesUntilInput) await flushPendingTopline();
+    clearMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
-        // The menu owner pages unread prose and clears an answered question.
         return await showTextMenuOverlay(entries);
     }
-    if (!skipPendingPager) await displayMessageWindow();
     const prose = entries.map(line => ({ ...line, text: compressTextWindowLine(line.text, d.cols) }));
     const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width

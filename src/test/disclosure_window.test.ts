@@ -3,7 +3,7 @@ import test from 'node:test';
 import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { nhgetch, resetInputState } from '../js/input.js';
 import { ATR_INVERSE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { showChoiceWindow, showDisclosureOverlay } from '../js/windows.js';
 import { promptKey } from '../js/tty_prompts.js';
@@ -49,6 +49,24 @@ for (const kind of ['prose', 'choices'] as const) {
             input.feed('\x1b\x1b');
             await window;
         }
+    });
+}
+
+for (const pagerStyle of ['text', 'menu'] as const) {
+    void test(`a corner ${pagerStyle} disclosure clears read prose after closing and repainting`, async () => {
+        freshPlayableRoom();
+        const input = resetInputState();
+        await plineWithContinuation('You study the markings.');
+        input.feed('x');
+        await nhgetch();
+        input.feed(' ');
+
+        await showDisclosureOverlay(['The runes describe a doorway.'], {
+            pagerStyle, restoreUnderlay: true,
+        });
+        await flush_screen(1);
+
+        assert.equal(rowText(0), '');
     });
 }
 
