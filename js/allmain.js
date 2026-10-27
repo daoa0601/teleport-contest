@@ -3732,14 +3732,6 @@ export async function runMoveloopCore() {
     // teleport can finish several arrival pagers before returning here; the
     // wish then begins without consuming a new hero action.
     await grantAmuletWish();
-    // C allmain.c:find_ac() is a once-per-player-input operation after all
-    // monster/global time caused by the command.  Armor is already present
-    // in the worn slot. A spare movement ration reaches this boundary even
-    // before a world turn elapses, so the next dressing action uses the new AC.
-    if (g._armorClassDirty && !g._heroTimePending) {
-        findArmorClass(g);
-        g._armorClassDirty = false;
-    }
     if (g._vaultGuardArrivalPending) {
         await continueVaultGuardArrival(g);
         const continuation = g._vaultMaintenanceContinuation;
@@ -3751,6 +3743,17 @@ export async function runMoveloopCore() {
                 g._vaultHeroTookTimePending = null;
             }
         }
+    }
+    // C allmain.c:find_ac() is a once-per-player-input operation after all
+    // monster/global time caused by the command.  The deferred vault-guard
+    // arrival (C invault(), inside the once-per-turn block) still precedes
+    // it, so its arrival message pages while a just-removed armor piece is
+    // still counted.  Armor is already present in the worn slot.  A spare
+    // movement ration reaches this boundary even before a world turn elapses,
+    // so the next dressing action uses the new AC.
+    if (g._armorClassDirty && !g._heroTimePending) {
+        findArmorClass(g);
+        g._armorClassDirty = false;
     }
     // Vision + display
     // C allmain.c refreshes the stationary input overlays before committing

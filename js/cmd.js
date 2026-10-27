@@ -1205,6 +1205,10 @@ export async function rhack(key) {
             resetCommandVariables(true);
             return;
         }
+        // C rhack() drops any pending travel destination for every command
+        // dispatched here (cmd.c:3674); the empty/ESC branches above clear
+        // it through reset_cmd_vars() instead.
+        game.context.travel = game.context.travel1 = false;
         const configured = repeated?.binding ?? configuredCommand(key);
         if (!cannedCommand && response === undefined) {
             game._pending_message = '';
@@ -6076,6 +6080,9 @@ async function dodrop() {
         const object = await chooseInventoryObject('drop', () => GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
         if (!object) {
             commandResultCancelled(); // do.c:dodrop() getobj ECMD_CANCEL.
+            // dodrop() resets occupations for every nonzero result,
+            // cancelled prompts included.
+            resetOccupations();
             return;
         }
         const spentTime = await dropHeroObject(object, {
@@ -6084,6 +6091,7 @@ async function dodrop() {
         if (!spentTime) {
             // do.c:drop() returns ECMD_FAIL for every refusal.
             commandResultFailed();
+            resetOccupations();
             return;
         }
         game.context.move = 1;
