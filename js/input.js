@@ -75,6 +75,11 @@ export class InputGate {
     takeCommandResponse() {
         return this.commandKeys.shift();
     }
+    // C cmd.c:cmdq_peek(CQ_CANNED) — inspect the next canned entry without
+    // consuming it. dip_into() refuses to run when nothing is queued.
+    peekCommandResponse() {
+        return this.commandKeys[0];
+    }
     takeCommandKey() {
         const response = this.takeCommandResponse();
         if (response === undefined || response === 'user-input')
@@ -218,6 +223,9 @@ export function takeCommandPosition() {
 }
 export function takeCommandResponse() {
     return activeInputGate.takeCommandResponse();
+}
+export function peekCommandResponse() {
+    return activeInputGate.peekCommandResponse();
 }
 export function clearCommandKeys() {
     activeInputGate.clearCommandKeys();
