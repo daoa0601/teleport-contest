@@ -1,5 +1,7 @@
 // C potion.c:dodip(), dip_into(), potion_dip().
-import { commandResultCancelled } from './command_state.js';
+import { commandResultCancelled, commandResultFailed } from './command_state.js';
+import { impossible } from './diagnostics.js';
+import { peekCommandResponse } from './input.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation } from './map_types.js';
 import type { DipTarget } from './dip_water.js';
@@ -82,6 +84,16 @@ export async function dip({
 }
 
 export async function dipInto(): Promise<void> {
+    if (peekCommandResponse() === undefined) {
+        // C potion.c:dip_into() refuses to run without the item-action
+        // potion letter queued in CQ_CANNED. A ^A do-again replay pops
+        // dip_into from CQ_REPEAT while CQ_CANNED is empty, so the
+        // replayed dip can never proceed.
+        await impossible('dip_into: where is potion?');
+        commandResultFailed();
+        game.context.move = 0;
+        return;
+    }
     const potion = await chooseInventoryObject('dip', potionClassification);
     if (!potion) {
         // potion.c:dip_into() returns ECMD_CANCEL when the potion getobj()
