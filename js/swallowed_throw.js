@@ -11,54 +11,23 @@ import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
-import { W_QUIVER, W_WEP } from './const.js';
+import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { delobj } from './object_delete.js';
-import { AKLYS, BOULDER, BRASS_LANTERN, CORPSE, HEAVY_IRON_BALL, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
-import { MONSTER_SYMBOL, monsterCanEngulf, monsterDigests, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
-import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
+import { AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, OBJECT_SUBTYPE, } from './object_data.js';
+import { MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
 import { isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 import { rnd } from './rng.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, } from './potion_hit.js';
 import { touchPetrifies } from './stoning.js';
 import { offerThrownFood } from './thrown_food.js';
-import { detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget } from './thrown_object.js';
+import { detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget, snuffThrownCandle, } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip, } from './throw_state.js';
 const PM_AIR_ELEMENTAL = 154;
 const POTION_CLASS = 8;
-const TIMED_LAMP_TYPES = new Set([BRASS_LANTERN, OIL_LAMP]);
-const LAMP_TYPES = new Set([...TIMED_LAMP_TYPES, MAGIC_LAMP]);
-// Slots that C's canletgo() (do.c) refuses to release for a throw.  The
-// quiver is deliberately absent: canletgo() only tests W_ARMOR|W_ACCESSORY,
-// and throw_obj() (dothrow.c:262-263) unquivers the selected missile via
-// remove_worn_item() before throwit() runs, so a quivered object of any
-// class is still thrown.
-const EQUIPMENT_SLOTS = [
-    'uwep', 'uswapwep', 'uarm', 'uarmu', 'uarmc', 'uarmh',
-    'uarmg', 'uarmf', 'uarms', 'uleft', 'uright', 'uamul', 'ublindf',
-];
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-function itemIsEquipped(state, item) {
-    return EQUIPMENT_SLOTS.some(slot => state[slot] === item || state.u?.[slot] === item)
-        || (((item.owornmask ?? 0) & ~W_QUIVER) !== 0);
-}
-function supportedLitLamp(state, item, engulfer) {
-    if (!item.lamplit)
-        return true;
-    if (!LAMP_TYPES.has(item.otyp) || item.artifact || item.oartifact
-        || !monsterCanEngulf(engulfer))
-        return false;
-    const timers = objectTimers(item);
-    if (item.otyp === MAGIC_LAMP)
-        return timers.length === 0;
-    const timer = timers[0];
-    return timers.length === 1 && timer !== undefined
-        && timer.kind === OBJECT_TIMER_KIND.BURN_OBJECT
-        && Number.isFinite(timer.deadline)
-        && timer.deadline >= state.moves;
 }
 function swallowedWeaponTarget(state, item, objectClass) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
@@ -76,30 +45,25 @@ function swallowedWeaponTarget(state, item, objectClass) {
     }
     return engulfer;
 }
-function genericSwallowedEligibility(state, item, objectClass, selectedQuantity) {
+function genericSwallowedEligibility(state, item, objectClass) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer)
         return null;
-    // Weapon/gem damage, effectful potions, balls, boulders,
-    // eggs, venom,
-    // shop objects, worn-state removal, unsupported burning objects, and
-    // timed stack splitting own materially different continuations and
-    // remain explicit successors.  The supported lamps below reuse the
-    // live burn-timer owner after mpickobj() has linked monster ownership.
+    // canletgo() (do.c) already refused worn armor and accessories, and
+    // throw_obj() (dothrow.c:262-263) releases any remaining weapon, quiver,
+    // or ball slot via remove_worn_item() before throwit() runs, so a
+    // non-special missile carries no detachable worn state to screen here.
+    // Weapon/gem damage, effectful potions, coins, balls, boulders, and eggs
+    // or venom own materially different continuations above.  Thrown candles
+    // are snuffed by throwit_mon_hit()'s snuff_candle() and other surviving
+    // light sources by mpickobj()'s engulfer pickup, so a lit object still
+    // follows this vanish-and-transfer arm.
     if ([2, 8, 12, 13, 15, 17].includes(objectClass)
         || item.otyp === BOULDER
         || item === state.uball || item === state.u?.uball)
         return null;
     if (objectClass === 6 && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0)
         return null; // is_weptool()
-    if (itemIsEquipped(state, item))
-        return null;
-    if (!supportedLitLamp(state, item, engulfer))
-        return null;
-    if (selectedQuantity > 1
-        && ((item.timed ?? 0) > 0 || (item.objectTimers?.length ?? 0) > 0)) {
-        return null;
-    }
     return engulfer;
 }
 function swallowedPotionEligibility(state, item, objectClass, selectedQuantity) {
@@ -338,7 +302,7 @@ export async function resolveSwallowedFoodThrow({ state = game, item, objectClas
     }
 }
 export async function resolveGenericSwallowedThrow({ state = game, item, objectClass, selectedQuantity, splitObjectId = null, wakeMonster, }) {
-    const engulfer = genericSwallowedEligibility(state, item, objectClass, selectedQuantity);
+    const engulfer = genericSwallowedEligibility(state, item, objectClass);
     if (!engulfer)
         return false;
     // freeinv() occurs before throwit() begins slip/contact handling.
@@ -348,7 +312,10 @@ export async function resolveGenericSwallowedThrow({ state = game, item, objectC
             return true;
         await applyThrowSlip({ state, object: thrown });
         await applyLowStaminaThrow({ state, object: thrown });
-        rnd(20); // thitmonst() consumes dieroll before selecting this class arm
+        // throwit_mon_hit() runs snuff_candle() before thitmonst() consumes
+        // its d20 targeting roll (dothrow.c:1490-1492, 2152).
+        await snuffThrownCandle(thrown, state);
+        rnd(20);
         const wake = await wakeMonster(engulfer);
         if (wake.heroDied)
             return true;

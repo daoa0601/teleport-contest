@@ -21,7 +21,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
     ARROW, BOOMERANG, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG,
-    FIGURINE,
+    FIGURINE, LEATHER_GLOVES,
     LONG_SWORD, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE,
     POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY,
@@ -30,7 +30,7 @@ import {
     POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
     POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING,
     POT_WATER, ROBE, ROCK,
-    SCR_BLANK_PAPER, SPEAR, STATUE, TWO_HANDED_SWORD,
+    SCR_BLANK_PAPER, SPEAR, STATUE, TALLOW_CANDLE, TWO_HANDED_SWORD, WAX_CANDLE,
 } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
@@ -50,6 +50,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
+import { carriedGold } from './support/gold-arena.js';
 
 const PM_ENERGY_VORTEX = 109;
 const PM_OCHRE_JELLY = 58;
@@ -1783,3 +1784,62 @@ for (const wearsLifeSaving of [false, true]) {
         }
     });
 }
+
+void test('a wielded non-weapon object thrown while swallowed unwields and vanishes',
+    async () => {
+        const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
+        requirePlayingGame(game);
+        const gloves = await addInventoryWeapon(LEATHER_GLOVES, {
+            wielded: true,
+            owornmask: W_WEP,
+        });
+        game.uwep = game.u.uwep = gloves;
+
+        initRng(2330n);
+        await throwInventoryObject(gloves, 'l');
+
+        assert.equal(game.uwep, null);
+        assert.equal(game.inventory.includes(gloves), false);
+        assert.strictEqual(engulfer.minvent[0], gloves);
+        assert.equal(gloves.where, 'minvent');
+        assert.equal(game.context.move, 1);
+        assert.equal(game._pending_message,
+            "The pair of leather gloves vanishes into the energy vortex's currents.");
+    });
+
+void test('a lit candle thrown while swallowed is snuffed before it vanishes',
+    async () => {
+        const engulfer = await freshSwallowedState(PM_TRAPPER);
+        requirePlayingGame(game);
+        const candle = await addInventoryObject(WAX_CANDLE, { age: 200 });
+        assert.equal(beginObjectBurn(candle, game, game.moves), true);
+        const input = resetInputState();
+        const pages: string[] = [];
+        input.beforeRead = () => { pages.push(game._pending_message); };
+        initRng(2331n);
+        await throwInventoryObject(candle, 'l', ' '.repeat(4));
+
+        assert.equal(candle.lamplit, false);
+        assert.deepEqual(objectTimers(candle), []);
+        assert.strictEqual(engulfer.minvent[0], candle);
+        const text = [...pages, game._pending_message].join('\n');
+        assert.match(text, /The candle's flame is extinguished\./);
+        assert.match(text, /The wax candle vanishes into the trapper\./);
+    });
+
+void test('a quivered coin thrown while swallowed names the engulfer currents',
+    async () => {
+        const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
+        requirePlayingGame(game);
+        const coin = await carriedGold(1);
+        game.uquiver = game.u.uquiver = coin;
+
+        initRng(2332n);
+        await throwInventoryObject(coin, 'l');
+
+        assert.equal(game.inventory.includes(coin), false);
+        assert.strictEqual(engulfer.minvent[0], coin);
+        assert.equal(game.context.move, 1);
+        assert.equal(game._pending_message,
+            "The gold piece vanishes into the energy vortex's currents.");
+    });
