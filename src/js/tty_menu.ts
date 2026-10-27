@@ -6,7 +6,7 @@ import { getMenuColoring } from './menu_coloring.js';
 import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, glyphAt } from './display.js';
 import { GlyphOffset } from './glyph_numbers.js';
-import { getLine } from './query.js';
+import { tty_getlin } from './query.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import type { TerminalCell, TerminalColor } from './terminal.js';
@@ -519,7 +519,7 @@ async function process_menu_window<T>(
             continue;
         }
         if (letter === ':' && how !== PICK_NONE) {
-            const query = await getLine('Search for:', (_ch, code) => code >= 32 && code !== 127, { inMenu: true });
+            const query = await tty_getlin('Search for:', (_ch, code) => code >= 32 && code !== 127, { inMenu: true });
             if (!query) continue;
             for (const row of rows) {
                 if (row.identifier === null || !menuSearchMatches(query, row.text)) continue;

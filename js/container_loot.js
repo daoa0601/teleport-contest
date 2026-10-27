@@ -1,5 +1,5 @@
 // C pickup.c:doloot_core(), do_loot_cont(), mon_beside(), and loot_mon().
-import { GRAVE } from './const.js';
+import { GRAVE, isok } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { flush_screen, plineWithContinuation as pline } from './display.js';
 import { heroHasNoHands, heroHasNoLimbs } from './polyself.js';
@@ -10,7 +10,7 @@ import { isContainer, useContainer } from './container.js';
 import { inventoryItemDescription } from './invent.js';
 import { showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { monsterSaddle } from './steed.js';
 import { monsterName } from './monster_name.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
@@ -49,8 +49,9 @@ export async function lootCommand(input) {
     const { ux: x, uy: y } = game.u;
     if (!game.iflags.menu_requested && await lootFloorContainers(x, y, input.unlockContainer))
         return;
-    const beside = requireGameLevel().monsters.some(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-        && Math.abs(monster.mx - x) <= 1 && Math.abs(monster.my - y) <= 1);
+    // C mon_beside(): MON_AT() over the 3x3 around the hero, so a long
+    // worm's tail segments count even when its head is farther away.
+    const beside = monBeside(x, y);
     if (!beside && !game.iflags.menu_requested) {
         await pline("You don't find anything here to loot.");
         return;
@@ -189,5 +190,20 @@ async function lootMonster(monster) {
         spentTime = !!game.context.move;
     }
     return { asked, spentTime };
+}
+// C pickup.c:mon_beside(): any monster occupying one of the 3x3 squares
+// around (x, y), with MON_AT() counting worm tail segments.
+function monBeside(x, y) {
+    for (let nx = x - 1; nx <= x + 1; nx++) {
+        for (let ny = y - 1; ny <= y + 1; ny++) {
+            if (!isok(nx, ny))
+                continue;
+            if (requireGameLevel().monsters.some(monster => monsterHasMapPosition(monster, game)
+                && monsterOccupiesPosition(monster, nx, ny)
+                && monster.mhp > 0))
+                return true;
+        }
+    }
+    return false;
 }
 //# sourceMappingURL=container_loot.js.map

@@ -7,7 +7,9 @@ import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_se
     tty_display_nhwindow, tty_clear_nhwindow, tty_dismiss_nhwindow, tty_destroy_nhwindow } from '../js/tty_menu.js';
 import { docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { showMultiSelectWindow } from '../js/windows.js';
+import { getLine } from '../js/query.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { planInput } from './support/planned-input.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
 
@@ -286,6 +288,29 @@ void test('menu search selects visible descriptions but ignores clipped suffixes
     assert.deepEqual(result.selections.map(item => item.identifier), ['dagger'],
         'search should match only text retained in the menu');
     await tty_destroy_nhwindow(window);
+});
+
+void test('menu search reads live text and leaves a canned answer for the next question', async t => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'dagger', selector: 'a', text: 'a dagger' });
+    tty_add_menu(window, { identifier: 'sword', selector: 'b', text: 'a sword' });
+    tty_end_menu(window, 'Choose a weapon');
+    const input = resetInputState();
+    input.queueCommandKeys('sword\n');
+    planInput(input, t, [
+        { prompt: /Choose a weapon/, keys: ':' },
+        { prompt: /Search for:/, keys: 'dagger\n' },
+    ]);
+    try {
+        const result = await tty_select_menu(window, PICK_ONE);
+        assert.equal(result.selections[0]?.identifier, 'dagger');
+    } finally {
+        await tty_destroy_nhwindow(window);
+    }
+
+    assert.equal(await getLine('What do you want to call it?'), 'sword');
 });
 
 void test('a group accelerator toggles every matching item with the supplied count', async () => {

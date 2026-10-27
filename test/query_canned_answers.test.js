@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { CHEST } from '../js/object_data.js';
+import { CHEST, RIN_PROTECTION } from '../js/object_data.js';
 import { yn_function } from '../js/query.js';
 import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
-import { floorObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 void test('an invalid queued tipping answer reports the problem and leaves the container alone', async () => {
     const engine = await startMenuGame();
     try {
@@ -61,6 +61,68 @@ void test('a queued NUL is returned without an invalid-answer report', async () 
         const result = await yn_function('Continue?', 'yn', 'n');
         assert.equal(result.answer, '\0');
         assert.doesNotMatch(screen(), /Program in disorder|Please report/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
+// C cmd.c:yn_function() sets addcmdq FALSE for an answer from the queue,
+// so a canned tipping yes is used for this command only: the do-again
+// replay of #tip has no saved answer and asks the question again.
+void test('a canned tipping answer is not recorded for do-again', async () => {
+    const engine = await startMenuGame();
+    try {
+        await floorObject(CHEST, 10, 10, { initialize: false });
+        await type(engine, '#tip');
+        engine.inputGate.queueCommandKeys('y');
+        await type(engine, '\n ');
+        // The replay asks live: cmdq_pop() reads only CQ_REPEAT while the
+        // do-again owns the input, and nothing was recorded for it.
+        await type(engine, '\x01');
+        assert.match(screen(), /tip it\? \[ynq\]/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
+// C windows.c:getlin() leaves "\033" in the buffer when a queued Escape
+// answers a line question. The annotate naming takes it as the typed
+// path's cancellation, so no annotation is recorded.
+void test('a canned Escape at the annotate question leaves the level unnamed', async () => {
+    const engine = await startMenuGame();
+    try {
+        await type(engine, '#annotate');
+        engine.inputGate.queueCommandKeys('\x1b');
+        await type(engine, '\r');
+        // A following annotate offers the fresh question rather than a
+        // replacement, because the cancelled naming stored nothing.
+        await type(engine, '#annotate\r');
+        assert.match(screen(), /What do you want to call this dungeon level\?/);
+        assert.doesNotMatch(screen(), /Replace annotation/);
+    }
+    finally {
+        await finish(engine);
+    }
+});
+// do_wear.c asks the ring-finger question through
+// yn_function(qbuf, rightleftchars, '\0', TRUE): a canned key outside
+// "rl" is reported and replaced with the NUL default, cancelling the
+// put-on, and it is not recorded for a later do-again.
+void test('a canned finger answer outside rl is reported and refuses the put-on', async () => {
+    const engine = await startMenuGame();
+    try {
+        const ring = await addInventoryObject(RIN_PROTECTION, { invlet: 'Z' });
+        await type(engine, 'P');
+        engine.inputGate.queueCommandKeys('R');
+        await type(engine, 'Z');
+        assert.match(screen(), /Please report these messages to devteam@nethack\.org\./);
+        assert.ok(!game.uright && !game.uleft, 'the put-on must be cancelled');
+        assert.equal(game.context.move, 0);
+        // Nothing was recorded: the do-again replay asks the finger
+        // question live again after the saved object letter.
+        await type(engine, '\x01');
+        assert.match(screen(), /Which ring-finger, Right or Left\? \[rl\]/);
+        assert.equal(game.inventory.includes(ring), true);
     }
     finally {
         await finish(engine);

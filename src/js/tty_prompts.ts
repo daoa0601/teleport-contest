@@ -13,7 +13,7 @@ import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import type { TextPage } from './windows.js';
 import type { Hero } from './hero_types.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { rememberCommandKey, rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
 import { controlKeyHintLines } from './command_help.js';
 import { clearCannedCommands } from './command_state.js';
@@ -39,10 +39,13 @@ async function paintKeyPrompt(message: string, cursorOffset = 0): Promise<number
     return renderKeyPrompt(message, cursorOffset);
 }
 
-export async function promptKey(message: string, cursorOffset = 0): Promise<number> {
+export async function promptKey(
+    message: string, cursorOffset = 0,
+    { canned = true }: { canned?: boolean } = {},
+): Promise<number> {
     // C cmd.c:yn_function() answers from the command queue without ever
     // reaching tty_yn_function(); gt.toplines is untouched then.
-    const queuedKey = takeCommandKey();
+    const queuedKey = canned ? takeCommandKey() : undefined;
     if (queuedKey !== undefined) return queuedKey;
     // tty_yn_function() with a null response list goes straight from its
     // custompline(SUPPRESS_HISTORY) prompt to readchar() and clean_up:
@@ -61,6 +64,30 @@ export async function promptKey(message: string, cursorOffset = 0): Promise<numb
     game._toplines = `${message}${keyText(key)}`;
     // C tty_yn_function() retains a one-line query, but clears wrapped ones.
     if (coveredRows > 1) clearMessageWindow(coveredRows);
+    return key;
+}
+// C cmd.c:yn_function(query, (char *) 0, def, TRUE) for a response-free
+// single-key question: cmdq_pop() answers from CQ_REPEAT during do-again
+// without drawing anything, and a live answer is recorded back into
+// CQ_REPEAT for the next do-again.
+export async function ynSingleKey(message: string, cursorOffset = 0): Promise<number> {
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued) {
+            // A non-key entry clears CQ_CANNED and answers Escape.
+            if (queued.kind !== 'key') clearCannedCommands();
+            return queued.kind === 'key' ? queued.key : 27;
+        }
+    } else {
+        // C cmdq_pop() takes CQ_CANNED here and sets addcmdq FALSE, so a
+        // canned answer never lands in CQ_REPEAT.
+        const canned = takeCommandKey();
+        if (canned !== undefined) return canned;
+    }
+    // C cmdq_pop() reads only CQ_REPEAT while a do-again runs, and a live
+    // answer taken during the replay still goes back into CQ_REPEAT.
+    const key = await promptKey(message, cursorOffset, { canned: !game._inDoAgain });
+    rememberYnAnswerKey(key);
     return key;
 }
 

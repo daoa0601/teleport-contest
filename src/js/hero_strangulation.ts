@@ -7,7 +7,7 @@ import type { DeathHandler } from './end.js';
 import type { MessagePublisher } from './display.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroNeckName } from './body_parts.js';
-import { A_STR, DIED } from './const.js';
+import { A_STR, DIED, KILLED_BY } from './const.js';
 import { displayColorName, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
@@ -129,7 +129,11 @@ export async function advanceHeroStrangulation({
     hero.strangled = true;
     const died = await die({
         killer: hero.uburied ? 'suffocation' : 'strangulation',
+        killerFormat: KILLED_BY,
         deathType: DIED,
+        // C's timeout death path calls done() directly; only losehp()
+        // prints a "You die..." line before the disclosure.
+        deathLineShown: true,
     });
     clearHeroStrangulation(state);
     const amulet = state.uamul || hero.uamul;

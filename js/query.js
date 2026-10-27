@@ -1,9 +1,9 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, flush_screen, rememberToplines, setTopline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, pline, rememberToplines, setTopline } from './display.js';
 import { game } from './gstate.js';
-import { nhgetch, readchar, takeCommandKey } from './input.js';
+import { nhgetch, readchar, takeCommandKey, takeCommandResponse } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
@@ -11,18 +11,46 @@ import { visibleCommandKey } from './command_keys.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
 import { truncateRawMessage } from './pline_text.js';
 export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
+    // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
+    // prompt and are echoed as pline("%s %s", query, buf). A queued non-key
+    // entry stops the drain and is discarded; '\n' ends the answer.
+    const queuedKeys = [];
+    let queued = false;
+    for (;;) {
+        const entry = game._inDoAgain ? takeRepeatCommand() : takeCommandResponse();
+        const queuedKey = typeof entry === 'number' ? entry
+            : typeof entry === 'object' && 'kind' in entry && entry.kind === 'key'
+                ? entry.key : undefined;
+        if (queuedKey === undefined)
+            break;
+        queued = true;
+        if (queuedKey === 10)
+            break;
+        queuedKeys.push(queuedKey);
+    }
+    if (queued) {
+        // The C buffer ends at its first NUL for both the echo and callers.
+        const joined = String.fromCharCode(...queuedKeys);
+        const text = joined.includes('\0') ? joined.slice(0, joined.indexOf('\0')) : joined;
+        await pline(`${prompt} ${text}`);
+        // C getlin() leaves "\033" in the buffer; callers cancel on it, the
+        // same cancellation the typed path reports as null.
+        return text.charCodeAt(0) === 27 ? null : text;
+    }
     // windows.c:getlin() disables bot() through tty's prompt cleanup.
     // Covered status rows stay blank until a later status update.
     const statusUpdatesDisabled = game._statusUpdatesDisabled ?? false;
     game._statusUpdatesDisabled = true;
     try {
-        return await editLine(prompt, accepts, options);
+        return await tty_getlin(prompt, accepts, options);
     }
     finally {
         game._statusUpdatesDisabled = statusUpdatesDisabled;
     }
 }
-async function editLine(prompt, accepts, { suppressStatus = false, inMenu = false }) {
+// Direct tty callers, such as menu search, read live input without consuming
+// queued command answers. Core getlin() owns that queue through getLine().
+export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMenu = false }) {
     let value = '';
     let renderedRows = 1;
     const width = (game.nhDisplay?.cols ?? COLNO) - 1;
@@ -201,7 +229,9 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
         result = { answer, count: game._ynNumber ?? 0n };
     }
     else {
-        const canned = addCommandQueue ? takeCommandKey() : undefined;
+        // C cmdq_pop() takes CQ_CANNED here, but never while a do-again
+        // replay owns the input.
+        const canned = addCommandQueue && !game._inDoAgain ? takeCommandKey() : undefined;
         if (canned !== undefined) {
             result = { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
         }
