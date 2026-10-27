@@ -1431,10 +1431,8 @@ function couldSeeFromHero(state, x, y) {
     // COULD_SEE is bit 0 in vision.c/js/vision.js.  Focused unit states omit
     // the vision buffer and are treated as unobstructed; live games always
     // carry the current buffer produced by domove()/vision_recalc().
-    // C gulpmu() runs vision_recalc(2) as soon as swallowing begins.  No
-    // external square remains in the master's sight until disgorgement.
-    if (state?.u?.uswallow)
-        return false;
+    // Use the current vision buffer, as C's couldsee() does. Terrain
+    // browsing can rebuild it while temporarily lifting engulfment.
     if (!state?.viz_array)
         return true;
     return !!((state.viz_array?.[y]?.[x] ?? 0) & 0x1);
