@@ -43,7 +43,7 @@ import {
 import {
     addObjectToMonsterInventory, linkObjectToMonsterInventory,
 } from './monster_inventory.js';
-import { MONSTER_FLAGS2, monsterDigests } from './monster_data.js';
+import { MONSTER_FLAGS2, monsterDigests, monsterIsWhirly } from './monster_data.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { makeShopkeeperHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -236,9 +236,15 @@ async function resolveQuiveredGoldMonsterContact({
     if (food) return food.handled;
 
     if (swallowed) {
+        // thitmonst()'s guaranteed-hit arm names the engulfer's entrails or
+        // currents (dothrow.c:2276-2298) before swallowit()'s mpickobj().
         await wakeMonster?.(monster);
-        await pline(`The gold piece vanishes into ${
-            monsterName(monster, { state, capitalized: true }).toLowerCase()}.`);
+        const name = monsterName(monster, { state });
+        const trail = monsterDigests(monster) ? ' entrails'
+            : monsterIsWhirly(monster) ? ' currents' : '';
+        const destination = trail
+            ? `${possessiveName(name)}${trail}` : name;
+        await pline(`The gold piece vanishes into ${destination}.`);
         await addObjectToMonsterInventory(monster, gold, state);
         return true;
     }

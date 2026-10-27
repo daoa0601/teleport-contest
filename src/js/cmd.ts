@@ -7130,14 +7130,6 @@ async function throwSelectedUnit(
         volley,
         finishKill: finishOrdinarySwallowedThrowKill,
     })) return false;
-    if (game.u?.uswallow
-        && (thrownObjectClass === 2
-            || (thrownObjectClass === 6
-                && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0))) {
-        // The ordinary floor/projectile continuation cannot model
-        // thitmonst()->hmon() while engulfed, so do not pretend it can.
-        throw new Error('swallowed weapon throwing is not implemented');
-    }
 
     if (await resolveSwallowedPotionThrow({
         state: game,
@@ -7150,8 +7142,6 @@ async function throwSelectedUnit(
             monster, 'swallowed-potion', death,
         ),
     })) return false;
-    if (game.u?.uswallow && thrownObjectClass === 8)
-        throw new Error('swallowed potion throwing is not implemented');
 
     if (await resolveSwallowedFoodThrow({
         state: game,
@@ -7168,11 +7158,13 @@ async function throwSelectedUnit(
         selectedQuantity,
         wakeMonster: wakeAttackedMonster,
     })) return false;
-    if (game.u?.uswallow && thrownObjectClass !== 8) {
-        // An unresolved swallowed object cannot use the ordinary floor path;
-        // that path targets map coordinates rather than the engulfing monster.
-        throw new Error('swallowed special-object throwing is not implemented');
+    if (game.u?.uswallow) {
+        // Every swallowed object class owns a monster-contact continuation
+        // above: C's throwit() never reaches its flight or floor paths
+        // while u.uswallow (dothrow.c:1569-1578, 1704-1706).
+        throw new Error('a swallowed throw reached no engulfer contact arm');
     }
+
 
     if (!game.u?.uswallow && await resolveMapPotionThrow({
         state: game,
