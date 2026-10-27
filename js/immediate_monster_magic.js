@@ -37,7 +37,7 @@ import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { affectMonsterSpeed } from './monster_speed_magic.js';
 import { BOULDER, CHEST, FIGURINE, LARGE_BOX, OBJECT_COLOR, OBJECT_NAMES, POT_POLYMORPH, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, STATUE, WAN_CANCELLATION, WAN_LIGHT, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectName } from './objnam.js';
+import { objectName, simpleObjectTypeName } from './objnam.js';
 import { landFloorObject } from './floor_effects.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -282,7 +282,10 @@ async function healMonsterWithMagic(monster, spell, state) {
             const appearance = monster.mappearance;
             if (appearance === undefined)
                 throw new Error('An object mimic requires an object appearance.');
-            const name = objectName({ otyp: appearance, oclass: objectClassForType(appearance), dknown: true }, state, { minimal: true });
+            // C mon.c:mimic_hit_msg() names the mimicked appearance with
+            // The(simple_typename(ap)): the type name without its label,
+            // so an unknown scroll reads just "The scroll".
+            const name = simpleObjectTypeName(appearance, state);
             const color = OBJECT_COLOR_NAMES[state.objectColors?.[appearance] ?? OBJECT_COLOR[appearance] ?? 0];
             await pline(`The ${name} seems a more vivid ${color} than before.`);
         }
