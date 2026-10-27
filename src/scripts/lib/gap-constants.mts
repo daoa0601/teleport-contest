@@ -168,13 +168,27 @@ export async function checkConstants(root: string, tree: CSourceTree, cacheDir: 
     writeFileSync(unit, lines.join('\n') + '\n');
     const result = spawnSync('clang', [...tree.clangArgs, '-ferror-limit=0', unit],
         { cwd: tree.dir, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+    if (result.error) throw new Error(`clang could not run the constant assertions: ${result.error.message}`);
+    if (result.signal !== null || result.status === null) {
+        throw new Error(`clang stopped on the constant assertions (${result.signal ?? 'no exit status'})`);
+    }
     const failures = new Map<string, { status: 'mismatch' | 'incomparable'; cValue: string | null; detail: string }>();
     const diagnostics = result.stderr.split('\n');
+    // A name counts as matching only when clang finished and every error it
+    // reported is an assertion line's own diagnostic.
+    const unexplained = diagnostics.filter(text => /\b(?:fatal )?error: /.test(text)
+        && !/constants\.c:(\d+):\d+: error: /.test(text));
+    const explained = diagnostics.filter(text => /constants\.c:(\d+):\d+: error: /.test(text));
+    if (unexplained.length || (result.status !== 0 && !explained.length)) {
+        throw new Error(`clang failed outside the constant assertions (exit ${result.status}): `
+            + (unexplained[0] ?? result.stderr.slice(0, 2000)));
+    }
     diagnostics.forEach((text, index) => {
         const match = /constants\.c:(\d+):\d+: error: (.*)$/.exec(text);
         if (!match?.[1] || match[2] === undefined) return;
         const name = lineOwner.get(Number(match[1]));
-        if (!name || failures.get(name)?.status === 'incomparable') return;
+        if (!name) throw new Error(`clang reported an error on constants.c line ${match[1]}, which holds no assertion`);
+        if (failures.get(name)?.status === 'incomparable') return;
         if (match[2].startsWith('static assertion failed')) {
             const note = diagnostics.slice(index + 1, index + 6).map(line => /evaluates to '(.*) == /.exec(line)?.[1])
                 .find(value => value !== undefined);

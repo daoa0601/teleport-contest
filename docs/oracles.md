@@ -121,7 +121,8 @@ routes random-call failures.
 
 Ledgers: `docs/ledger/c-messages.tsv` (literals present),
 `c-constants.tsv` (names whose value matches C) and `c-edges.tsv` (present
-edges). The `static-gaps` job in `verify.yml` fails when any entry is lost.
+edges). The `static-gaps.yml` workflow runs on every pull request and integration
+push, and fails when any entry is lost.
 As with the RNG ledgers, add entries with `--write-ledger` only after a
 batch passes all its other checks.
 
