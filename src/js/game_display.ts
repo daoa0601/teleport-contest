@@ -18,6 +18,8 @@ export class GameDisplay {
     private readonly mapFrameCells = new Set<HTMLSpanElement>();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline: string | null = null;
+    // Displaying an empty WIN_MESSAGE can leave its answered question painted.
+    preserveEmptyMessageRow = false;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines: readonly [string, string] | null = null;
     statusLine2Fields: StatusLine2Fields | null = null;
@@ -76,11 +78,13 @@ export class GameDisplay {
     }
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() {
+        this.preserveEmptyMessageRow = false;
         for (const span of this.mapFrameCells) span.style.backgroundColor = '';
         this.mapFrameCells.clear();
         this.terminal.clearScreen();
     }
     clearRow(row: number) {
+        if (row === 0) this.preserveEmptyMessageRow = false;
         this.clearMapFrames(0, row, this.cols);
         this.terminal.clearRow(row);
     }

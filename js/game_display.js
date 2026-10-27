@@ -14,6 +14,8 @@ export class GameDisplay {
     mapFrameCells = new Set();
     // update_topl() keeps accepting logical text while WIN_STOP hides output.
     stoppedTopline = null;
+    // Displaying an empty WIN_MESSAGE can leave its answered question painted.
+    preserveEmptyMessageRow = false;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines = null;
     statusLine2Fields = null;
@@ -70,12 +72,15 @@ export class GameDisplay {
     }
     setCursor(col, row) { return this.terminal.setCursor(col, row); }
     clearScreen() {
+        this.preserveEmptyMessageRow = false;
         for (const span of this.mapFrameCells)
             span.style.backgroundColor = '';
         this.mapFrameCells.clear();
         this.terminal.clearScreen();
     }
     clearRow(row) {
+        if (row === 0)
+            this.preserveEmptyMessageRow = false;
         this.clearMapFrames(0, row, this.cols);
         this.terminal.clearRow(row);
     }

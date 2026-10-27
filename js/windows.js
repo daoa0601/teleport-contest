@@ -104,16 +104,15 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     const d = display();
     if (!d)
         return 27;
-    // tty_display_nhwindow() pages a NEED_MORE topline before the window,
-    // but a TOPLINE_SPECIAL_PROMPT line is only erased, never paged.
     if (skipPendingPager)
         clearMessageWindow();
-    else
-        await displayMessageWindow();
     const entries = lines.map(line => typeof line === 'string' ? { text: line } : line);
     if (pagerStyle === 'menu') {
+        // The menu owner pages unread prose and clears an answered question.
         return await showTextMenuOverlay(entries);
     }
+    if (!skipPendingPager)
+        await displayMessageWindow();
     const prose = entries.map(line => ({ ...line, text: compressTextWindowLine(line.text, d.cols) }));
     const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width

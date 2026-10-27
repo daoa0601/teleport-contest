@@ -1,8 +1,7 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
 
-import { dealWithMonsterOvercrowding } from './teleport.js';
-import { updateMonsterRegions } from './regions.js';
+import { moveMonsterNextToHero } from './teleport.js';
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -13,7 +12,7 @@ import { impossible } from './diagnostics.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { heroFormSticks } from './hero_species.js';
 import { heroIsBlind } from './senses.js';
-import { MGIVENNAME } from './const.js';
+import { MGIVENNAME, RLOC_NOMSG } from './const.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS2, monsterDigests, monsterEnfolds, monsterIsWhirly,
     monsterTypeName,
@@ -28,7 +27,6 @@ import {
 import { placeBallAndChain } from './ball.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { rnd, rn2 } from './rng.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { vision_reset } from './vision.js';
 
 export interface ReleaseHeroOptions {
@@ -157,26 +155,9 @@ export async function expelHero(monster: Monster, {
         else await impossible('Swallower has no engulfing attack?', { state });
     }
     await releaseHeroFromMonster(monster, { state, publish, redraw, rollOne });
-    const destination = findNearbyMonsterPosition(
-        monster.mnum, state.u.ux, state.u.uy, { state, random },
-    );
-    const oldx = monster.mx;
-    const oldy = monster.my;
-    if (destination) {
-        monster.mx = destination.x;
-        monster.my = destination.y;
-        monster.mtrack = [];
-        // Native mnexto() keeps the vision from unstuck() until the normal
-        // monster light refresh; relocation alone must not reveal terrain.
-        // rloc_to_core() still moves the engulfer between gas clouds.
-        updateMonsterRegions(monster, state);
-    } else {
-        // C mnexto(): no free square anywhere means the engulfer leaves for
-        // limbo (or clogs the endgame), leaving the hero at a distance.
-        await dealWithMonsterOvercrowding(monster, state);
-    }
-    refresh(oldx, oldy);
-    refresh(monster.mx, monster.my);
+    await moveMonsterNextToHero(monster, state, { flags: RLOC_NOMSG, random });
+    if (state.program_state.gameover) return { expelled: true, died: true };
+    // mnexto() redraws the monster; expels() then redraws only the hero.
     refresh(state.u.ux, state.u.uy);
     const distance = Math.max(
         Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy),

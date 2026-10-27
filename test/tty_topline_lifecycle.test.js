@@ -4,7 +4,8 @@ import { requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { readCommandInput } from '../js/command_input.js';
+import { clearMessageWindow, displayMessageWindow, docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { promptKey, readDirectionKey } from '../js/tty_prompts.js';
@@ -35,6 +36,28 @@ void test('an answered prompt stays visible but a native redraw does not page it
         input.waitUntilBlocked().then(() => 'paged'),
     ]);
     assert.equal(result, 'redrawn');
+    await flush_screen(1);
+    assert.equal(topline(), '');
+});
+void test('an empty message window keeps its answered question through command input and clearing', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('c');
+    await promptKey('What do you want to zap? [c or ?*] ');
+    await displayMessageWindow();
+    await flush_screen(1);
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+    input.feed('.');
+    assert.equal((await readCommandInput()).key, '.'.charCodeAt(0));
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+    clearMessageWindow();
+    await flush_screen(1);
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+    await plineWithContinuation('A door opens.');
+    await flush_screen(1);
+    assert.equal(topline(), 'A door opens.');
+    input.feed('.');
+    await readCommandInput();
     await flush_screen(1);
     assert.equal(topline(), '');
 });

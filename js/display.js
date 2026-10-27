@@ -2916,11 +2916,17 @@ function _buildScreenOutput() {
     let output = '';
     const blankMainWindow = !!game._suppressMapStatusForFlush;
     // Row 0: message
+    const preserveMessageRow = display.preserveEmptyMessageRow
+        && !game._pending_message && !game._retained_message && !game._promptOwnsTopline;
     const visibleMessage = game._pending_message
-        || game._retained_message || '';
+        || game._retained_message
+        || (preserveMessageRow ? display.grid[0]?.map(cell => cell.ch).join('').trimEnd() : '')
+        || '';
     if (game.program_state?.saving) {
-        display.clearRow(0);
-        display.putstr(0, 0, visibleMessage.slice(0, display.cols), NO_COLOR);
+        if (!preserveMessageRow) {
+            display.clearRow(0);
+            display.putstr(0, 0, visibleMessage.slice(0, display.cols), NO_COLOR);
+        }
         return;
     }
     output += visibleMessage + '\n';
@@ -2935,23 +2941,27 @@ function _buildScreenOutput() {
     game._screen_output = output;
     // Also write to grid for serialize_terminal_grid
     if (display.grid) {
-        display.clearScreen();
-        // Message line. A mixed line's DEC markers do not occupy cells:
-        // tty_putmixed() folds them before update_topl() paints, and the
-        // glyph cell only holds the graphics character while the kludge
-        // painted it (see replaceTopline()).
-        const msg = visibleMessage;
-        if (msg.includes('\x0e')) {
-            const cells = decodeMixedTopline(msg);
-            for (const [c, cell] of cells.entries()) {
-                if (c >= display.cols)
-                    break;
-                display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0);
-            }
+        if (preserveMessageRow) {
+            for (let row = 1; row < display.rows; row++)
+                display.clearRow(row);
         }
         else {
-            for (let c = 0; c < Math.min(msg.length, display.cols); c++)
-                display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
+            display.clearScreen();
+            // tty_putmixed() folds DEC markers before update_topl() paints.
+            // Only the graphics kludge paints the leading glyph cell.
+            const msg = visibleMessage;
+            if (msg.includes('\x0e')) {
+                const cells = decodeMixedTopline(msg);
+                for (const [c, cell] of cells.entries()) {
+                    if (c >= display.cols)
+                        break;
+                    display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0);
+                }
+            }
+            else {
+                for (let c = 0; c < Math.min(msg.length, display.cols); c++)
+                    display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
+            }
         }
         if (!blankMainWindow) {
             // Map — write characters to grid (DEC → Unicode for browser display)
@@ -3069,6 +3079,8 @@ export async function cls() {
 export function clearMessageWindow(coveredRows) {
     const text = game._pending_message || game._retained_message || '';
     const display = game.nhDisplay;
+    if (display?.preserveEmptyMessageRow && !text && !game._promptOwnsTopline)
+        return;
     // The line editor wraps at character boundaries, unlike update_topl().
     // Its rendered row count is authoritative when clearing its prompt.
     const rows = coveredRows ?? toplineRows(text, display?.cols ?? COLNO).length;
@@ -3195,8 +3207,10 @@ export async function setTopline(msg) {
     game._lastPlineKind = PLNMSG_UNKNOWN;
 }
 function replaceTopline(msg) {
-    if (game.nhDisplay)
+    if (game.nhDisplay) {
+        game.nhDisplay.preserveEmptyMessageRow = false;
         game.nhDisplay.stoppedTopline = game._suppressMessagesUntilInput ? msg : null;
+    }
     // putmixed()'s graphics kludge painted this line's leading glyph onto
     // the physical row (topl.c redotoplin() with ttyDisplay->mixed); a
     // plain line paints no glyph cell.
@@ -3433,6 +3447,13 @@ export async function flushPendingTopline() {
 export async function displayMessageWindow() {
     if (game._suppressMessagesUntilInput)
         return null;
+    if (!game._pending_message) {
+        game._retained_message = '';
+        game._promptOwnsTopline = false;
+        if (game.nhDisplay)
+            game.nhDisplay.preserveEmptyMessageRow = true;
+        return null;
+    }
     const dismissal = await flushPendingTopline();
     clearMessageWindow();
     return dismissal;
