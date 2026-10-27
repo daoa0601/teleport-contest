@@ -1,4 +1,6 @@
 // C apply.c:use_stone() and touchstone_ok().
+import { commandResultCancelled } from './command_state.js';
+
 
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
@@ -43,7 +45,8 @@ export async function useGrayStone(stone: GameObject, { state = game }: { state?
     const object = await chooseInventoryObject(`rub on the stone${plural ? 's' : ''}`,
         target => known ? touchstoneSuggestion(target, state) : GETOBJ_SUGGEST,
         { forcePrompt: true });
-    if (!object) return { spentTime: false };
+    // apply.c:use_stone() returns ECMD_CANCEL when getobj() is declined.
+    if (!object) { commandResultCancelled(state); return { spentTime: false }; }
     const quantity = object.quantity ?? object.quan ?? 1;
     if (object === stone && quantity === 1) {
         await plineWithContinuation(`You can't rub the ${objectName(object, state)} on itself.`);

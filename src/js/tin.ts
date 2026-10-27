@@ -1,4 +1,5 @@
 // Opening and eating tins. C eat.c:start_tin(), opentin(), consume_tin().
+import { commandResultCancelled, commandResultSpentTime } from './command_state.js';
 import { armorSimpleName } from './armor.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -206,7 +207,14 @@ export async function useTinOpener(tool: GameObject, { state = game, swapWeapons
     }
     const tin = await chooseInventoryObject('open', object =>
         object?.otyp === TIN ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE);
-    if (!tin) return { usedTime, cancelled: true, heroDied: false };
+    // eat.c:use_tin_opener() returns res|ECMD_CANCEL for a declined tin;
+    // res is ECMD_TIME when the opener was wielded this command, and
+    // rhack() lets the TIME bit keep the turn despite the cancellation.
+    if (!tin) {
+        commandResultCancelled(state);
+        if (usedTime) commandResultSpentTime(state);
+        return { usedTime, cancelled: true, heroDied: false };
+    }
     const result = await startTin(tin, { state });
     return { usedTime: true, cancelled: false, heroDied: result.heroDied };
 }

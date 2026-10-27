@@ -1,5 +1,5 @@
 // C apply.c:use_figurine(). Placement is shared with the timer owner.
-import { setMulti } from './command_state.js';
+import { commandResultCancelled, setMulti } from './command_state.js';
 import { Is_airlevel, Is_waterlevel } from './const.js';
 import { map_invisible, plineWithContinuation as pline } from './display.js';
 import { makeFamiliar } from './familiar.js';
@@ -18,7 +18,9 @@ export async function useFigurine(object) {
     }
     const direction = await promptDirection();
     if (!direction) {
+        // apply.c:use_figurine() returns ECMD_CANCEL after zeroing multi.
         setMulti(0);
+        commandResultCancelled();
         return { spentTime: false, object };
     }
     const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;

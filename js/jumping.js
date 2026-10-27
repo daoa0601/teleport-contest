@@ -3,7 +3,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { ACCESSIBLE, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, IS_STWALL, Is_airlevel, Is_waterlevel, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { commandResultCancelled, commandResultFailed, nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
 import { bot, newsym, redrawMap, plineWithContinuation } from './display.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposInstructions, showGetposTip } from './getpos.js';
@@ -204,16 +204,27 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
         isValidLocation: valid,
         highlightHero: false,
     });
-    if (!target)
+    // apply.c:dojump() reports ECMD_CANCEL for Escape and ECMD_FAIL for an
+    // invalid or steed-in-place target. The jump spell (magic > 0) consumes
+    // the same bits inside spelleffects (spell.c:1585) without reporting
+    // them to rhack(), so only the physical command records a result.
+    if (!target) {
+        if (magic === 0)
+            commandResultCancelled(state);
         return jumpResult(false, state);
+    }
     const refusal = jumpRestriction(target.x, target.y, magic, state);
     if (refusal) {
         await plineWithContinuation(refusal);
+        if (magic === 0)
+            commandResultFailed(state);
         return jumpResult(false, state);
     }
     const hero = state.u;
     if (hero.usteed && target.x === hero.ux && target.y === hero.uy) {
         await plineWithContinuation(`${monsterName(hero.usteed, { article: 'your', capitalized: true })} isn't capable of jumping in place.`);
+        if (magic === 0)
+            commandResultFailed(state);
         return jumpResult(false, state);
     }
     const wasTrapped = !!hero.utrap;

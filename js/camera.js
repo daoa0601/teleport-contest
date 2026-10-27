@@ -1,5 +1,6 @@
 // C apply.c:use_camera(), do_blinding_ray(); zap.c self-camera branch.
 import { MM_NOMSG } from './const.js';
+import { commandResultCancelled } from './command_state.js';
 import { monsterStomachName } from './body_parts.js';
 import { canSpotMonster, plineWithContinuation as pline, randomDisplayMonsterName, } from './display.js';
 import { makemonAt } from './mklev.js';
@@ -22,8 +23,11 @@ export async function useCamera(object, { state = game } = {}) {
         return result;
     }
     const direction = await promptDirection();
-    if (!direction)
+    // apply.c:use_camera() returns ECMD_CANCEL for a refused direction.
+    if (!direction) {
+        commandResultCancelled(state);
         return result;
+    }
     result.spentTime = true;
     if (object.spe <= 0) {
         await pline('Nothing happens.');

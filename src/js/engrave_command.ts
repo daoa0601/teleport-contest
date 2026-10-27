@@ -4,7 +4,7 @@
 // engrave(), rloc_engr(), disturb_grave(), blengr(); hacklib.c xcrypt();
 // invent.c getobj()'s "write with" flow.
 
-import { resetCommandVariables, setMulti } from './command_state.js';
+import { commandResultCancelled, commandResultFailed, setMulti } from './command_state.js';
 import { plineWithContinuation as pline, newsym } from './display.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
@@ -367,7 +367,10 @@ export async function doengrave(state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     const hero = state.u;
     if (!await heroCanEngrave(state)) {
-        resetCommandVariables(true); // doengrave() returns ECMD_FAIL.
+        // engrave.c:doengrave() returns ECMD_FAIL when u_can_engrave()
+        // rejects the attempt.
+        commandResultFailed(state);
+        state.context.move = 0;
         return;
     }
 
@@ -390,13 +393,13 @@ export async function doengrave(state: GameState = game): Promise<void> {
     setMulti(0, state); /* moves consumed */
 
     // C's single doengr_exit label: refresh, then report the time result.
-    // rhack() clears both command queues when the command reports
+    // The rhack seam clears both command queues when the command reports
     // ECMD_CANCEL (getobj() escape) or ECMD_FAIL, so ^A cannot repeat a
     // cancelled engraving.
     const exit = (): void => {
         if (setup.disprefresh) newsym(hero.ux, hero.uy);
-        if (setup.ret === 'cancel' || setup.ret === 'fail')
-            resetCommandVariables(true);
+        if (setup.ret === 'cancel') commandResultCancelled(state);
+        else if (setup.ret === 'fail') commandResultFailed(state);
         state.context.move = setup.ret === 'time' ? 1 : 0;
     };
 

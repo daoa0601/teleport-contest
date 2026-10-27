@@ -1,4 +1,4 @@
-import { setMulti } from './command_state.js';
+import { commandResultCancelled, setMulti } from './command_state.js';
 import { MENU_FULL, MENU_TRADITIONAL } from './const.js';
 import { promptChoice } from './query.js';
 import type { ShopBillItem } from './shop_types.js';
@@ -264,7 +264,12 @@ async function choosePaymentShopkeeper(): Promise<PaymentTarget | null> {
         prompt: game._pending_message, goal,
     });
     game._pending_message = '';
-    if (!position) return null;
+    if (!position) {
+        // shk.c:dopay() returns ECMD_CANCEL when getpos() is dismissed;
+        // the later "no one there" refusals stay ECMD_OK.
+        commandResultCancelled();
+        return null;
+    }
     if (position.x === game.u.ux && position.y === game.u.uy) {
         await pline('You are generous to yourself.');
         return null;

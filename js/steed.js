@@ -53,7 +53,7 @@ import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalRe
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { resetCommandVariables } from './command_state.js';
+import { commandResultCancelled } from './command_state.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
@@ -105,7 +105,7 @@ export async function doride() {
     }
     const direction = await promptDirection();
     if (!direction) {
-        resetCommandVariables(true); // doride() returns ECMD_CANCEL.
+        commandResultCancelled(); // doride() returns ECMD_CANCEL.
         return;
     }
     const { dx, dy } = direction;
@@ -113,7 +113,7 @@ export async function doride() {
     const x = hero.ux + dx;
     const y = hero.uy + dy;
     if (!isok(x, y)) {
-        resetCommandVariables(true);
+        commandResultCancelled(); // doride() getdir+isok ECMD_CANCEL.
         return;
     }
     const force = !!game.flags.debug
@@ -436,13 +436,17 @@ export async function useSaddle(saddle) {
         await plineWithContinuation(`You have no free ${heroHandName(game)}.`);
         return false;
     }
+    // steed.c:use_saddle() folds swallowed, underwater, and a refused
+    // direction into one ECMD_CANCEL.
     if (hero.uswallow || hero.uinwater || game.underwater) {
         await plineWithContinuation('Never mind.');
+        commandResultCancelled();
         return false;
     }
     const direction = await promptDirection();
     if (!direction) {
         await plineWithContinuation('Never mind.');
+        commandResultCancelled();
         return false;
     }
     if (!direction.dx && !direction.dy) {

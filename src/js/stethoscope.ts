@@ -26,6 +26,7 @@ import { vision_note_blocker_change } from './vision.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { commandResultCancelled } from './command_state.js';
 
 export async function useStethoscope(object: GameObject): Promise<boolean> {
     requirePlayingGame(game);
@@ -46,7 +47,8 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
         return false;
     }
     const direction = await promptDirection();
-    if (!direction) return false;
+    // apply.c:use_stethoscope() returns ECMD_CANCEL for a refused direction.
+    if (!direction) { commandResultCancelled(); return false; }
     const sequence = game._heroActionSeq ?? 0;
     let spentTime = sequence === game._stethoscopeSeq;
     game._stethoscopeSeq = sequence;

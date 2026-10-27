@@ -3,7 +3,7 @@ import { A_CHA, COLNO, MAXULEV, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINV
 import { currentAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroFaceName, monsterStomachName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { commandResultCancelled, nomul } from './command_state.js';
 import { canSeeMonster, displayColorName, howMonsterSeen, plineWithContinuation as pline, } from './display.js';
 import { game, requireLiveGame, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -43,8 +43,11 @@ const DIRECT_SIGHT = MONSEEN_NORMAL | MONSEEN_SEEINVIS | MONSEEN_INFRAVIS;
 export async function useMirror(object, { state = game } = {}) {
     requireLiveGame(state);
     const direction = await promptDirection();
-    if (!direction)
+    // apply.c:use_mirror() returns ECMD_CANCEL for a refused direction.
+    if (!direction) {
+        commandResultCancelled(state);
         return { spentTime: false, heroDied: false, object };
+    }
     const result = { spentTime: true, heroDied: false, object };
     const hero = state.u;
     const invisible = heroIsInvisible(state);
