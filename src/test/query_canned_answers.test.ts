@@ -230,3 +230,60 @@ void test('a user-input answer leaves the canned command queued behind it', asyn
         'the queued fire must still ask for its direction');
     assert.equal(game.uquiver?.quan, 3, 'cancelling the direction keeps the arrows');
 });
+
+// With no queued answers, the popped entry is the canned fire itself: not
+// a key, so yn_function() keeps its ESC initializer (cmd.c:5504-5508),
+// cmdq_clear(CQ_CANNED) drops every remaining entry, and the invalid ESC
+// reports the yn impossible and falls back to the default answer.
+void test('a canned command answers a yes/no question through the yn impossible', async () => {
+    const input = await fireAssistRoom();
+    const question = yn_function('Do you want to hold your fire?', 'ynq', 'y');
+    const outcome = await Promise.race([
+        question.then(answer => `answered:${answer.answer}`),
+        input.waitUntilBlocked().then(() => 'blocked'),
+    ]);
+    assert.equal(outcome, 'answered:y',
+        'the canned command must answer instead of a live question');
+    assert.match(game._pending_message ?? '',
+        /Please report these messages to devteam@nethack\.org\./,
+        'the impossible feedback must be the pending message');
+
+    const seen = await driveTurnUntilFireAsks(input);
+    assert.ok(!seen.some(line => /In what direction\?/.test(line)),
+        'the cleared fire must never ask for a direction');
+    assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
+});
+
+// The same single pop answers a response-free yn_function() call: the
+// canned command returns Escape without drawing the question, and the
+// queue behind it is gone (cmd.c:5496-5509).
+void test('a canned command answers a single-key question with Escape', async () => {
+    const input = await fireAssistRoom();
+    const question = ynSingleKey('What do you look for? ');
+    const outcome = await Promise.race([
+        question.then(key => `answered:${key}`),
+        input.waitUntilBlocked().then(() => 'blocked'),
+    ]);
+    assert.equal(outcome, 'answered:27',
+        'the canned command must answer Escape without asking');
+
+    const seen = await driveTurnUntilFireAsks(input);
+    assert.ok(!seen.some(line => /In what direction\?/.test(line)),
+        'the cleared fire must never ask for a direction');
+    assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
+});
+
+// A popped CMDQ_DIR entry is not a key either: the answer is Escape and
+// cmdq_clear(CQ_CANNED) also drops the canned commands behind it, so the
+// queued fire never runs (cmd.c:5508).
+void test('a direction answer clears the canned command behind it', async () => {
+    const input = await fireAssistRoom();
+    input.queueCommandResponses([{ dx: 0, dy: 1, dz: 0 }]);
+    const key = await ynSingleKey('What do you look for? ');
+    assert.equal(key, 27, 'the direction entry answers Escape');
+
+    const seen = await driveTurnUntilFireAsks(input);
+    assert.ok(!seen.some(line => /In what direction\?/.test(line)),
+        'the cleared fire must never ask for a direction');
+    assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
+});
