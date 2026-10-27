@@ -2936,10 +2936,23 @@ function _buildScreenOutput() {
     // Also write to grid for serialize_terminal_grid
     if (display.grid) {
         display.clearScreen();
-        // Message line
+        // Message line. A mixed line's DEC markers do not occupy cells:
+        // tty_putmixed() folds them before update_topl() paints, and the
+        // glyph cell only holds the graphics character while the kludge
+        // painted it (see replaceTopline()).
         const msg = visibleMessage;
-        for (let c = 0; c < Math.min(msg.length, display.cols); c++)
-            display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
+        if (msg.includes('\x0e')) {
+            const cells = decodeMixedTopline(msg);
+            for (const [c, cell] of cells.entries()) {
+                if (c >= display.cols)
+                    break;
+                display.setCell(c, 0, cell.dec && !game._toplineGlyphPainted ? ' ' : cell.ch, NO_COLOR, 0);
+            }
+        }
+        else {
+            for (let c = 0; c < Math.min(msg.length, display.cols); c++)
+                display.setCell(c, 0, msg.charAt(c), NO_COLOR, 0);
+        }
         if (!blankMainWindow) {
             // Map — write characters to grid (DEC → Unicode for browser display)
             for (let y = 0; y < ROWNO; y++)
@@ -3022,6 +3035,7 @@ export async function cls() {
         display.clearScreen();
     game._pending_message = '';
     game._retained_message = '';
+    game._toplineGlyphPainted = false;
     // clear_glyph_buffer() forgets the display, preserving remembered terrain.
     for (let y = 0; y < ROWNO; y++)
         for (let x = 1; x < COLNO; x++)
@@ -3039,6 +3053,7 @@ export function clearMessageWindow(coveredRows) {
     game._pending_message = '';
     game._retained_message = '';
     game._promptOwnsTopline = false;
+    game._toplineGlyphPainted = false;
     if (!display)
         return;
     display.clearRow(0);
@@ -3160,6 +3175,10 @@ export async function setTopline(msg) {
 function replaceTopline(msg) {
     if (game.nhDisplay)
         game.nhDisplay.stoppedTopline = game._suppressMessagesUntilInput ? msg : null;
+    // putmixed()'s graphics kludge painted this line's leading glyph onto
+    // the physical row (topl.c redotoplin() with ttyDisplay->mixed); a
+    // plain line paints no glyph cell.
+    game._toplineGlyphPainted = msg.includes('\x0e');
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;

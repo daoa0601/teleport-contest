@@ -123,6 +123,7 @@ const transientFields = {
     _messageHistoryWriteIndex: true,
     _messageHistoryCursor: true,
     _promptOwnsTopline: true,
+    _toplineGlyphPainted: true,
     _ynNumber: true,
     _movementAttempt: true,
     _whatdoesShown: true,
