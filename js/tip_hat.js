@@ -25,7 +25,7 @@ export async function tipWornHelmet(helmet) {
         helmet.bknown = true;
         return discovery;
     }
-    const direction = await promptDirection(() => readDirectionKey('At whom? (in what direction) '));
+    const direction = await promptDirection((_message, retry) => readDirectionKey('At whom? (in what direction) ', retry));
     if (!direction)
         return discovery;
     await pline(`You briefly doff your ${armorSimpleName(helmet)}.`);

@@ -2956,7 +2956,7 @@ async function doname() {
 async function getAdjacentLocation(prompt, errorMessage, x, y) {
     // C cmd.c:get_adjacent_loc() delegates input and command assistance to
     // getdir(), then turns its relative result into a checked map location.
-    const direction = await promptDirection(() => readDirectionKey(`${prompt} `));
+    const direction = await promptDirection((_message, retry) => readDirectionKey(`${prompt} `, retry));
     if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
@@ -3189,7 +3189,7 @@ async function dochat() {
         game.context.move = 1;
         return;
     }
-    const direction = await promptDirection(() => readDirectionKey('Talk to whom? (in what direction) '));
+    const direction = await promptDirection((_message, retry) => readDirectionKey('Talk to whom? (in what direction) ', retry));
     if (!direction) {
         commandResultCancelled(); // sounds.c:dochat() returns ECMD_CANCEL.
         return;
@@ -3419,7 +3419,7 @@ async function wizTelekinesis() {
         const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
         if (!(monster && canSpotMonster(monster)) && !atHero)
             continue;
-        const direction = await promptDirection(() => readDirectionKey('which direction? '));
+        const direction = await promptDirection((_message, retry) => readDirectionKey('which direction? ', retry));
         if (!direction)
             break;
         if (monster) {
@@ -6230,7 +6230,7 @@ async function doopen(x = 0, y = 0) {
         const inPitWithContainer = game.u.utrap && game.u.utraptype === TT_PIT
             && boxes.some(object => isContainer(object));
         const direction = await promptDirection(inPitWithContainer
-            ? () => readDirectionKey('Open where? [.>] ') : readDirectionKey);
+            ? (_message, retry) => readDirectionKey('Open where? [.>] ', retry) : readDirectionKey);
         if (!direction) {
             await pline('Never mind.');
             game.context.move = 0;
@@ -6342,7 +6342,7 @@ async function openClosedDoor(door, x, y) {
     vision_note_blocker_change(x, y);
 }
 async function pickAxeDirection(prompt) {
-    return promptDirection(() => readDirectionKey(`${prompt} `));
+    return promptDirection((_message, retry) => readDirectionKey(`${prompt} `, retry));
 }
 async function applyPickAxe(item) {
     const result = await usePickAxe(item, {
