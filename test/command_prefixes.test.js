@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueRun, rhack } from '../js/cmd.js';
+import { flushPendingTopline } from '../js/display.js';
+import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { POT_HEALING } from '../js/object_data.js';
+import { FLINT, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
+import { installPagerInput } from './support/pager-input.js';
 for (const keys of ['Fgl', 'gFl', 'FGl', 'GFl']) {
     void test(`${keys} stops before a visible hostile without attacking or spending time`, async () => {
         const input = freshTurnRoom();
@@ -131,5 +134,35 @@ void test('an unknown key retains a rush request until a movement command consum
     assert.equal(game.context.run, 2);
     assert.equal((await continueRun()).tookTime, true);
     assert.equal(game.u.ux, 12);
+});
+void test('a fight prefix retained past an unknown key force-fights a run step into a visible pet', async () => {
+    const input = freshTurnRoom();
+    const pet = await createMonsterAt('kitten', 11, 10);
+    initializePet(pet, { state: game });
+    const stones = await addInventoryObject(FLINT);
+    assert.ok(stones.invlet, 'the flint stones need an inventory letter');
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message || ''); };
+    installPagerInput(input, {
+        expected: /flint|bash|kitten|hit|miss|weapon in hand/i,
+        limit: 20,
+    });
+    input.feed(stones.invlet);
+    await rhack('w'.charCodeAt(0));
+    await flushPendingTopline();
+    messages.length = 0;
+    // hack.c:2764 stops a run only for a monster that is not _is_safemon();
+    // forcefight is not part of that macro, so the pending fight request
+    // turns the run step into a real attack on the peaceful pet.
+    input.feed('F~Gl');
+    await rhack(0);
+    assert.equal(game._pending_message, "Unknown command '~'.");
+    await rhack(0);
+    await flushPendingTopline();
+    assert.match(messages.join('\n'), /You begin bashing monsters with your flint stones?\./);
+    assert.equal(game.u.ux, 10, 'the attack replaces the step');
+    assert.equal(game.context.move, 1, 'the attack spends the turn');
+    assert.equal(pet.mx, 11, 'the pet is attacked rather than displaced');
+    assert.equal(pet.my, 10);
 });
 //# sourceMappingURL=command_prefixes.test.js.map

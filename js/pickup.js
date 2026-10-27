@@ -75,6 +75,15 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0),
         game.context.move = 0;
         return;
     }
+    // pickup.c:734: an object underfoot stops a pending run (except
+    // travel's run == 8 and 'm'-prefixed no-pick moves) even for a manual
+    // pickup.  nomul(0) clears the run flag and re-flags the time display,
+    // which otherwise never refreshes because the lingering run value
+    // suppresses moveloop's per-turn time update.
+    if (!source.monster && source.objects.length
+        && (game.context.run ?? 0) > 0 && game.context.run !== 8
+        && !game.context.nopick)
+        endVoluntaryMultiTurn();
     let attempted;
     if (game.flags.menu_style === MENU_TRADITIONAL && !game.iflags.menu_requested) {
         const result = await pickUpTraditionally(source, count);

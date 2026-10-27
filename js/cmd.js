@@ -7782,7 +7782,12 @@ async function domoveCore(dx, dy) {
         // destination terrain is insufficient when minvis hides its occupant;
         // that case must reach attack_checks() and install the invisible
         // marker instead.
-        if (game.context.run && !safeMonster
+        // hack.c:2764 gates this on !_is_safemon() alone; forcefight is not
+        // part of that macro.  An 'F' prefix that survives an intervening
+        // unbound key past a later 'G' run prefix therefore bypasses the
+        // guard for a visible peaceful pet, and the run step becomes a real
+        // attack in do_attack().
+        if (game.context.run && !heroMayDisplaceMonster(monster)
             && ((!heroIsBlind(game) && monsterVisible(monster, game)
                 && ((M_AP_TYPE(monster) !== M_AP_FURNITURE
                     && M_AP_TYPE(monster) !== M_AP_OBJECT)
