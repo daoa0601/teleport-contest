@@ -214,7 +214,7 @@ export async function showTextMenuOverlay(lines, { viaPutstr = false, } = {}) {
             tty_add_menu(window, { identifier: null,
                 ...(viaPutstr ? { itemflags: MENU_ITEMFLAGS_SKIPMENUCOLORS } : {}),
                 ...(typeof line === 'string' ? { text: line } : line) });
-        tty_end_menu(window);
+        tty_end_menu(window, null, viaPutstr);
         const result = viaPutstr
             ? await tty_display_and_dismiss(window)
             : await tty_select_menu(window, PICK_NONE);
