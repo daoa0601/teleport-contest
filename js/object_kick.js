@@ -31,7 +31,7 @@ import { containedGold } from './gold.js';
 import { roomsAt } from './room.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { seeTrap } from './trap.js';
+import { findTrap } from './detect.js';
 import { isIceAt, isPoolAt } from './terrain_properties.js';
 import { resolveGoldMonsterContact } from './gold_throw.js';
 import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
@@ -95,7 +95,8 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     const passesWalls = state.u.passesWalls;
     if (trap && ((is_pit(trap.ttyp) && !passesWalls)
         || trap.ttyp === WEB)) {
-        seeTrap(trap, state);
+        if (!trap.tseen)
+            await findTrap(trap);
         await publish(`You can't kick something that's in a ${heroIsHallucinating(state) ? 'tizzy' : trap.ttyp === WEB ? 'web' : 'pit'}!`);
         return true;
     }

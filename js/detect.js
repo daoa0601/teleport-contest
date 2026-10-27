@@ -238,7 +238,7 @@ async function searchAdjacentSecrets(automatic = false) {
 }
 // C detect.c:find_trap(). Only clutter in the remembered layer needs a
 // separate trap display; a visible monster overlays that layer.
-async function findTrap(trap) {
+export async function findTrap(trap) {
     trap.tseen = true;
     exerciseWisdom();
     feel_newsym(trap.tx, trap.ty);
