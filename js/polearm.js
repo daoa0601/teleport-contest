@@ -2,7 +2,8 @@
 // C refs: apply.c use_pole(), calc_pole_range(), find_poleable_mon(),
 // get_valid_polearm_position(), snickersnee_used_dist_attk().
 import { monsterAtPosition } from './monster_location.js';
-import { ACCESSIBLE, COLNO, IS_FURNITURE, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, ROWNO, SCORR, STONE, STATUE_TRAP, isok, } from './const.js';
+import { COLNO, IS_FURNITURE, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, ROWNO, SCORR, STONE, STATUE_TRAP, isok, } from './const.js';
+import { isAccessibleAt } from './terrain_properties.js';
 import { artifactById } from './artifacts.js';
 import { canSenseMonster, glyphAt, pline, unmap_invisible } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -278,7 +279,10 @@ export async function usePolearm(object, { state = game, ensureWielded, autohit 
         }
         else {
             const location = state.level?.at(cc.x, cc.y);
-            if (!location || !ACCESSIBLE(location.typ) || IS_FURNITURE(location.typ)) {
+            // apply.c:use_pole() tests accessible(), whose closed_door()
+            // half rejects closed doors that the typ-only ACCESSIBLE
+            // macro would admit.
+            if (!location || !isAccessibleAt(cc.x, cc.y, state) || IS_FURNITURE(location.typ)) {
                 await pline(`You uselessly attack ${obstacleDescription(glyph, cc.x, cc.y, state)}.`);
             }
             else {

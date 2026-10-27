@@ -96,10 +96,6 @@ export async function tty_getlin(
         }
         if (cursorColumn > 0) cursorColumn--;
     };
-    const clearEditorRows = () => {
-        for (let row = 0; row < renderedRows; row++)
-            game.nhDisplay?.clearRow(row);
-    };
     const renderEditor = () => {
         const line = `${prompt} ${value}`;
         const contentRows = Math.max(1, Math.ceil(line.length / width));

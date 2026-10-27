@@ -829,8 +829,9 @@ export async function selectInventoryObject({
     }
     // invent.c:display_pickinv() runs sortloot() over the whole inventory
     // (observing every object via loot_classify()) and only afterwards
-    // drops entries whose letters are absent from the requested set.
-    const sections = await inventorySections(game.inventory, true, letters ?? null);
+    // drops entries whose letters are absent from the requested set,
+    // treating an empty set as no filter at all.
+    const sections = await inventorySections(game.inventory, includeGold, letters || null);
     if (extraChoice && !wizardIdentification) sections.unshift({
         heading: game.flags.sortpack === false ? null : 'Miscellaneous',
         items: [{ text: extraChoice, key: '-' }],
