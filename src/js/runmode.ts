@@ -55,12 +55,19 @@ export function arriveTravel(g: GameState = game): void {
     if (g.multi > 0) g.multi = 0;
 }
 
+// C flag.h RUN_TPORT: runmode:teleport skips every per-step display
+// update until the multi-step action stops. Options normalize the value.
+export function isTeleportRunmode(g: GameState = game): boolean {
+    const runmode = String(g.flags?.runmode || 'run').toLowerCase();
+    return runmode === 'teleport' || runmode === 'tport';
+}
+
 export function runmodeDelayFrameCount(
     g: GameState = game, enabled = false, sourceTurn = g.moves || 0,
 ) {
     const runmode = String(g.flags?.runmode || 'run').toLowerCase();
     return !enabled
-        || runmode === 'teleport' || runmode === 'tport'
+        || isTeleportRunmode(g)
         || ((runmode === 'run' || runmode === 'leap')
             && sourceTurn % 7 !== 0)
         ? 0 : runmode === 'crawl' ? 5 : 1;

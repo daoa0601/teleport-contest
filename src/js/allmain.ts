@@ -328,7 +328,7 @@ import { setSlipperyHands } from './towel.js';
 import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
-import { captureRunmodeDelay } from './runmode.js';
+import { captureRunmodeDelay, isTeleportRunmode } from './runmode.js';
 
 interface TurnMaintenance {
     sourceTurn: number;
@@ -3934,6 +3934,21 @@ export async function moveloop_core(): Promise<void> {
     return runMoveloopCore();
 }
 
+// C allmain.c:moveloop_core() end-of-command display cadence: while a
+// multi-step action is pending with no run or with teleport runmode,
+// every 7th step marks the status line dirty (travel strides on moves,
+// plain runs and count repeats on the remaining multi) so the next
+// flush repaints the turn counter mid-run. Non-tport runs refresh
+// through runmode_delay_output() instead, and display_nhwindow(WIN_MAP,
+// FALSE) is a tty fflush with no screen effect.
+function markMultiStepStatusDirty(g: GameState): void {
+    if ((!g.context.run || isTeleportRunmode(g)) && g.multi
+        && (g.context.travel ? (g.moves || 0) % 7 === 0 : g.multi % 7 === 0)
+        && g.flags.time && g.context.run) {
+        g.context.botl = true;
+    }
+}
+
 // C ref: allmain.c moveloop_core()
 export async function runMoveloopCore() {
     const g = requireInitializedGame();
@@ -4088,6 +4103,7 @@ export async function runMoveloopCore() {
         await finishScheduledLevelChange();
         if (g.program_state.gameover) return;
         if (g.vision_full_recalc) vision_recalc(0);
+        markMultiStepStatusDirty(g);
         if (moved) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
@@ -4113,6 +4129,7 @@ export async function runMoveloopCore() {
     // C refreshes command-induced sight changes before monsters act again.
     // Falling into a pit narrows sight after domove()'s earlier refresh.
     if (g.vision_full_recalc) vision_recalc(0);
+    markMultiStepStatusDirty(g);
 
     // Advance turn
     if (g.context?.move) {
