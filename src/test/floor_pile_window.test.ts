@@ -195,6 +195,34 @@ void test('dismissing a floor-pile corner window leaves the seen top line clippe
 });
 
 
+void test('a narrower floor-pile window does not restore text a wider one erased', async () => {
+    freshObjectRoom();
+    const apple = await floorObject(APPLE, 10, 10);
+    const ration = await floorObject(FOOD_RATION, 10, 10, { oname: 'provisions for the long road home' });
+    const leash = await floorObject(LEASH, 10, 10);
+    const input = resetInputState();
+    await pline('You hear a jackal barking in the corridor.');
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+
+    const wide = showFloorPile([apple, ration, leash]);
+    await input.waitUntilBlocked();
+    const wideColumn = displayedRow(0).indexOf('Things that are here:');
+    input.feed(' ');
+    await wide;
+    const narrow = showFloorPile([apple, leash]);
+    await input.waitUntilBlocked();
+    const narrowColumn = displayedRow(0).indexOf('Things that are here:');
+    input.feed(' ');
+    await narrow;
+    await flush_screen(1);
+
+    assert.ok(wideColumn > 0 && narrowColumn > wideColumn, 'the second window must sit further right');
+    assert.equal(displayedRow(0).trimEnd(), 'You hear a jackal barking in the corridor.'.slice(0, wideColumn - 2),
+        'the wider window\'s erasure survives the narrower one');
+});
+
 // A farlook description returns through putmixed(): its leading map glyph
 // is carried by \x0e/\x0f markers that occupy no screen cell. docorner()
 // clears physical columns, so the clip must keep every cell before the

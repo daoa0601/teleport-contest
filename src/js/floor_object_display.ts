@@ -185,11 +185,12 @@ export async function showFloorPile(
         restoreMenuUnderlay(underlay);
         // docorner() erased the corner without repainting the message row,
         // so the top line stays clipped past the window's left edge until
-        // a topline writer repaints it.
+        // a topline writer repaints it. Cells an earlier, wider window
+        // erased stay erased.
         const clipColumn = Math.max(0, cornerLeft - 2);
         for (let col = clipColumn; col < display.cols; col++)
             display.setCell(col, 0, ' ', NO_COLOR, 0);
-        display.toplineClipColumn = clipColumn;
+        display.toplineClipColumn = Math.min(display.toplineClipColumn ?? clipColumn, clipColumn);
     }
     const result = touchedCorpse ? await feelPetrifyingCorpse(touchedCorpse) : { died: false };
     if (!result.died) await readFloorEngraving(game.u.ux, game.u.uy);
