@@ -29,7 +29,6 @@ export async function getLine(
     // entry stops the drain and is discarded; '\n' ends the answer.
     const queuedKeys: number[] = [];
     let queued = false;
-    let discardedCannedCommand = false;
     for (;;) {
         const entry: number | string | CommandDirection | RepeatCommandEntry | undefined
             = game._inDoAgain ? takeRepeatCommand() : takeCommandResponse();
@@ -38,14 +37,14 @@ export async function getLine(
                 ? entry.key : undefined;
         if (queuedKey === undefined) {
             // windows.c:getlin() pops the one command queue until a key
-            // answers; the first non-key entry ends the drain and is freed
-            // there. Canned command entries model those non-key pops, so a
-            // pending one is discarded the same way — e.g. a fire-assist
-            // 'fire' that never runs because this prompt ate its queue slot.
-            if (!game._inDoAgain && !discardedCannedCommand
+            // answers, then frees the first non-key entry it reaches — one
+            // dropped entry per prompt. A non-key response from
+            // takeCommandResponse() is that consumed entry already; only an
+            // empty response queue leaves the next pop to the canned
+            // command entries, which model the queue's non-key tail.
+            if (entry === undefined && !game._inDoAgain
                 && game._cannedCommands?.length) {
                 game._cannedCommands.shift();
-                discardedCannedCommand = true;
             }
             break;
         }
