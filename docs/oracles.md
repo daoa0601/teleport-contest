@@ -57,6 +57,74 @@ under a name with no traceable reference. Infrastructure files (storage,
 options, Lua bindings, glyph caches) are excluded from that ranking. Use the
 never-executed list to aim new scenario recipes.
 
+## Static gaps: C behavior absent from the port
+
+```sh
+git submodule update --init nethack-c/upstream            # once; plus its Lua headers:
+git -C nethack-c/upstream submodule update --init submodules/lua
+node scripts/static-gaps.mjs messages [--coverage OUT/c-coverage.json] [--check-ledger L.tsv] [--write-ledger L.tsv]
+node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
+node scripts/static-gaps.mjs edges [--function C_NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
+node scripts/static-gaps.mjs screens RUN_DIR
+```
+
+The session oracles above only see code that some recorded game reaches.
+`static-gaps` reads the C itself, so it also maps branches that no session
+has run. It never decides whether ported code is right: sessions, the RNG
+ledgers, the state oracle and the equivalence proofs still do that.
+
+`messages` reads every string literal in `src/*.c` and the tty window files
+from clang's JSON AST (the patched `nethack-c/recorder` tree when built, else
+the pinned submodule). Literals inside `impossible()`, `panic()` and other
+developer diagnostics, and inside `debugpline()` guards, are skipped. For
+each remaining literal, it takes the longest piece between printf conversions
+and looks for it among the port's string, template and folded `+` fragments in
+`src/js`. A literal printed or prompted (`pline()`, `You()`, `yn_function()`,
+`putstr()` and so on) counts as a message; anything else, such as names or
+buffer text, counts as other text. A `~` marks a near match: the piece is
+present once a leading or trailing word is dropped, so the port probably
+composes the message differently. Check those last. `--coverage` joins
+`state-oracle coverage` output, so missing messages in functions that the
+corpus never runs can be routed to new scenario recipes.
+
+`constants` takes every exported upper-case constant and enum member in
+`src/js` whose name is also a C macro or enum constant, and compiles one
+`_Static_assert(NAME == value)` per name against the pinned headers. clang
+evaluates the C side. The report lists each differing value, most-used first;
+an unused constant can simply be corrected or removed. A differing value that
+is used consistently can still be right: an internal re-encoding is harmless
+until code compares it with `<` or copies it into saved or displayed state.
+
+`edges` compares the C call graph (clang's `debug.DumpCallGraph`, limited to
+functions whose bodies live in a `.c` file) with the port. Each C function's
+port counterpart is found by name, ignoring case and underscores, by
+`docs/ledger/c-ts-aliases.tsv`, or by a `name()` citation in the comment
+above a port function. For each C callee, the edge is:
+- **present** when the counterpart, or a port function it calls up to two
+  levels deep, names the callee (parameters included, since the port injects
+  `random = rn2`);
+- **cited** when the callee is only cited in a comment on that path, or its
+  words appear in order in a reached port name (`heal_legs` matches
+  `healHeroLegs`): probably renamed, so check these last;
+- **missing** otherwise.
+
+Missing edges are audit leads, not verdicts. Inlined helpers and renames
+show up as missing until an alias is recorded. Add an alias line to
+`c-ts-aliases.tsv` whenever an audit confirms a rename. `--function NAME`
+prints one function's three lists.
+
+`screens RUN_DIR` reads a finished `triage-holdout` run. It charges each
+screen-only first difference to the C function whose literal appears on the
+differing row. When only the port's row matches a literal, it is reported as
+"port printed". This routes screen failures to owners the way the RNG table
+routes random-call failures.
+
+Ledgers: `docs/ledger/c-messages.tsv` (literals present),
+`c-constants.tsv` (names whose value matches C) and `c-edges.tsv` (present
+edges). The `static-gaps` job in `verify.yml` fails when any entry is lost.
+As with the RNG ledgers, add entries with `--write-ledger` only after a
+batch passes all its other checks.
+
 ## Measurement guard
 
 `npm run lint:types` runs `check-measurement-guard.mts seeds`. It rejects

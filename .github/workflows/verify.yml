@@ -16,6 +16,10 @@ on:
     paths:
       - .github/workflows/verify.yml
       - src/scripts/triage-holdout.mts
+      - src/scripts/static-gaps.mts
+      - src/scripts/lib/c-sources.mts
+      - src/scripts/lib/gap-*.mts
+      - docs/ledger/c-*.tsv
 
 concurrency:
   group: verify-${{ github.event_name }}-${{ github.ref }}
@@ -52,6 +56,55 @@ jobs:
           # Hosted runners have four cores; test files share no files or ports.
           TEST_CONCURRENCY: 4
         run: npm test
+
+  static-gaps:
+    # Static maps of C behavior the port lacks; no game is played. Each ledger
+    # lists what the port already matches (C messages, constant values, call
+    # edges); losing an entry fails the run, like the RNG ledgers.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          check-latest: true
+      - name: Fetch the pinned C sources and Lua headers
+        run: |
+          git submodule update --init --depth 1 nethack-c/upstream
+          git -C nethack-c/upstream submodule update --init --depth 1 submodules/lua
+          echo "NETHACK_SHA=$(git rev-parse HEAD:nethack-c/upstream)" >> "$GITHUB_ENV"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .cache/static-gaps/c-facts
+            .cache/static-gaps/c-graph
+          key: static-gaps-${{ env.NETHACK_SHA }}-${{ hashFiles('src/scripts/static-gaps.mts', 'src/scripts/lib/c-sources.mts', 'src/scripts/lib/gap-edges.mts') }}
+      - run: npm ci --ignore-scripts
+      - run: npm run compile
+      - name: Message ledger check
+        run: |
+          node scripts/static-gaps.mjs messages --check-ledger docs/ledger/c-messages.tsv | tee static-messages.txt
+          { echo '```'; head -6 static-messages.txt; tail -1 static-messages.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Constant ledger check
+        run: |
+          node scripts/static-gaps.mjs constants --check-ledger docs/ledger/c-constants.tsv | tee static-constants.txt
+          { echo '```'; head -4 static-constants.txt; tail -1 static-constants.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Call-edge ledger check
+        run: |
+          node scripts/static-gaps.mjs edges --check-ledger docs/ledger/c-edges.tsv | tee static-edges.txt
+          { echo '```'; head -5 static-edges.txt; tail -1 static-edges.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: static-gaps
+          path: |
+            static-*.txt
+            .cache/static-gaps/*.json
+          retention-days: 30
 
   pool:
     runs-on: ubuntu-latest

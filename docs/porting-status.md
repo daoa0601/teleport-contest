@@ -451,6 +451,38 @@ state on the PR is `completed`.
 Verify run on `91120ea9`. No verified random call was lost; the ledgers hold
 350 eval and 363 public functions.
 
+## Static gap maps
+
+`scripts/static-gaps.mjs` (`docs/oracles.md`) reads the pinned C through
+clang and lists what the port lacks. It does this without playing a game, and
+its output feeds the existing audits, tests, ledgers and proofs. At this
+commit:
+
+- **messages**: 217 of 4,118 printed C messages are absent verbatim (183 in
+  gameplay files); 154 have no near match. Real clusters: `#exploremode`
+  (`enter_explore_mode`), key rebinding and status-hilite menus, double
+  rush/run prefixes, monster door messages in `postmov()`, monster escapes
+  and digging in `use_defensive()`, `wildmiss()` displaced-image misses,
+  `doseduce()` ring placement, `passivemm()`/`passiveum()` minor effects,
+  `dohide()` refusals, and `really_kick_object()` refusals.
+- **constants**: 2,012 port constants share a C name. 1,954 match and 58
+  differ. The used ones are `GETOBJ_EXCLUDE*` (getobj callback results),
+  `DIGCHECK_*`, `MON_EXPLODE`/`TRAP_EXPLODE`/`BURNING_OIL` (explosion
+  sources), the `ATR_*` attributes and `BUC_*`. Each needs a check that no
+  caller compares or stores the C value. 26 differing ones are unused.
+- **edges**: 1,309 C functions have a counterpart (635 of them through
+  comment citations). Gameplay files have 1,914 missing edges and 1,148
+  cited-only edges. The alias table is new, so most missing edges are still
+  renames. First confirmed find: `mount_steed()` names the liquid with
+  `hliquid("water")` (hallucinated names), while `steed.ts` prints a fixed
+  "water".
+
+Ledgers `docs/ledger/c-{messages,constants,edges}.tsv` are checked by the
+`static-gaps` CI job. Next: grow `c-ts-aliases.tsv` (a bulk-analysis job for
+`glm-5.3-flash`, reviewed), triage the used differing constants, and widen
+the state digest (`mtame` values, `mundetected`, traps, timers) as one
+reviewed measurement change.
+
 ## Next work
 
 Fresh native batches 4671-4990 (96,000 sessions across all four kind mixes)
