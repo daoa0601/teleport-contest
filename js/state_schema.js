@@ -107,6 +107,7 @@ const transientFields = {
     _toplines: true,
     _messageHistoryWriteIndex: true,
     _messageHistoryCursor: true,
+    _retainedQuestion: true,
     _promptOwnsTopline: true,
     _toplineGlyphPainted: true,
     _ynNumber: true,
