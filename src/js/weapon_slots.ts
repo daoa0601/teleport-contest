@@ -170,6 +170,7 @@ export async function losePrimaryWeapon(state: GameState = game): Promise<void> 
 
 export async function releaseWeaponSlots(
     object: GameObject | null | undefined, state: GameState = game,
+    { keepUnweapon = false }: { keepUnweapon?: boolean } = {},
 ): Promise<void> {
     if (!object) return;
     const primary = state.uwep === object || state.u?.uwep === object;
@@ -193,7 +194,10 @@ export async function releaseWeaponSlots(
     if (state.uquiver === object) state.uquiver = null;
     if (state.u?.uquiver === object) state.u.uquiver = null;
 
-    if (primary) state._unweapon = true;
+    // C worn.c:setnotworn() clears a wielded slot without arming the
+    // "begin bashing" notice; only uwepgone()/setuwep(NULL) set unweapon.
+    // Callers whose C counterpart uses setnotworn() pass keepUnweapon.
+    if (primary && !keepUnweapon) state._unweapon = true;
     object.wielded = false;
     object.alternate = false;
     object.ready = false;

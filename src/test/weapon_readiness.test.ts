@@ -9,7 +9,9 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { BOW, CORPSE, DAGGER, OBJECT_NAMES, PICK_AXE, TOWEL } from '../js/object_data.js';
+import { BOW, CORPSE, DAGGER, OBJECT_NAMES, PICK_AXE, POT_HEALING, TOWEL } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { destroyFireInventory } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
@@ -21,7 +23,7 @@ async function combatRoom() {
     const messages: string[] = [];
     const input = resetInputState();
     installPagerInput(input, {
-        expected: /wield|hand|bash|hit|miss|pick-axe|bow|halberd|towel|pony|ride|drop|dig|minotaur/i,
+        expected: /wield|hand|bash|hit|miss|pick-axe|bow|halberd|towel|pony|ride|drop|dig|minotaur|potion|evaporat|crash|shard/i,
         limit: 200,
     });
     input.beforeRead = () => {
@@ -140,6 +142,32 @@ for (const wet of [false, true]) {
         else assert.match(output, /You begin bashing monsters with/);
     });
 }
+
+void test('a wielded stack destroyed by fire after its first swing does not announce bare hands', async () => {
+    const messages = await combatRoom();
+    requirePlayingGame(game);
+    // Wielding potions arms the improvised-weapon notice and the first swing
+    // consumes it ("...with your potions of healing.").  When the remaining
+    // wielded stack then burns, C zap.c:maybe_destroy_item() unwields via
+    // setnotworn(), which leaves the notice disarmed: the next bare-handed
+    // swing stays silent instead of announcing "your bare hands".
+    const potions = await addInventoryObject(POT_HEALING, { quan: 2, quantity: 2 });
+    await wield(potions);
+    await text(messages);
+    await rhack('l'.charCodeAt(0));
+    assert.match(await text(messages), /You begin bashing monsters with your potions of healing\./);
+    assert.ok(game.uwep === potions || game.u?.uwep === potions);
+
+    pushKeys(' '.repeat(20));
+    initRng(1n);
+    await destroyFireInventory(5);
+    assert.equal(game.uwep, null);
+    await text(messages);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.doesNotMatch(await text(messages), /You begin bashing/);
+});
 
 for (const explicitlyWield of [false, true]) {
     void test(`an applied pick-axe ${explicitlyWield ? 'stops warning after explicit wielding' : 'announces its first melee use'}`, async () => {
