@@ -719,15 +719,6 @@ async function selectTravelStep(state) {
     }
     return direction;
 }
-function canSeeRunMonster(monster, x, y, g = game) {
-    if (g === game)
-        return canSeeMonster(monster);
-    const visibleSquare = !g.viz_array
-        || !!((g.viz_array?.[y]?.[x] ?? 0) & 0x2);
-    return !g.blind && !((g.u.blindTurns ?? 0) > 0) && visibleSquare
-        && (!monster.minvis || !!g.u.seeInvisible)
-        && !monster.mundetected;
-}
 // C hack.c:lookaround() for travel (context.run == 8): moveloop runs it
 // before every automatic travel step.  Travel stops for a grid-bug
 // diagonal, a visible monster that is not peaceful-safe, a known trap
@@ -835,17 +826,16 @@ export async function lookaroundRun(state = game._runState, g = game) {
             if (noDiagonal && x !== u.ux && y !== u.uy)
                 continue;
             const infront = x === targetX && y === targetY;
-            const monster = g.level.monsters?.find(mon => monsterHasMapPosition(mon, g) &&
-                mon.mx === x && mon.my === y);
+            const monster = monsterAtPosition(g.level, x, y, g);
             // hack.c:lookaround() considers an actor interesting only inside
             // its mon_visible() branch.  An invisible monster directly in
             // front must reach domove()/attack_checks(), which remembers the
             // unseen occupant instead of silently ending the run.
             const visibleMonster = monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
                 && M_AP_TYPE(monster) !== M_AP_OBJECT
-                && canSeeRunMonster(monster, monster.mx, monster.my, g);
+                && monsterVisible(monster, g);
             const safeMonster = monster && (g.flags.safe_dog ?? true)
-                && monster.mpeaceful && !g.context.forcefight
+                && monster.mpeaceful && canSpotMonster(monster) && !g.context.forcefight
                 && !(u.confusionTurns ?? 0) && !u.stunned && !(u.stunnedTurns ?? 0)
                 && !heroIsHallucinating(g);
             const visibleHostile = visibleMonster && !safeMonster;

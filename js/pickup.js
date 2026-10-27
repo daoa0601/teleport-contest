@@ -67,7 +67,11 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0),
     const objects = pickupObjects(source);
     game._pickupEncumbrance = 0;
     if (!source.monster && heroCannotTake(game)) {
-        await pline('You are physically incapable of picking anything up.');
+        const look = await checkHere(source, false);
+        if (look.died)
+            return;
+        if (source.objects.length && game.flags.pickup)
+            await plineWithContinuation('You are physically incapable of picking anything up.');
         game.context.move = 0;
         return;
     }

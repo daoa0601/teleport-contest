@@ -17,6 +17,7 @@ import {
 } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { planInput } from './support/planned-input.js';
+import { installSwallowedHero } from './support/hero-state.js';
 
 
 async function quiver(amount: number, id: number) {
@@ -175,8 +176,7 @@ void test('a swallowed quivered coin wakes the engulfer and enters its inventory
             mnum: 202, mx: 10, my: 10,
             mpeaceful: 1, msleeping: 1,
         });
-        game.u.uswallow = true;
-        game.u.ustuck = engulfer;
+        await installSwallowedHero(engulfer);
 
         await fireQuiveredGold('l', ' ');
 
