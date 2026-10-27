@@ -3,7 +3,7 @@
 // and before trap handling (C spoteffects(): IS_SINK && Levitation).
 
 import { observeObjectForNaming } from './objnam.js';
-import { A_CON, A_DEX, I_SPECIAL, TIMEOUT, W_ARTI } from './const.js';
+import { A_CON, A_DEX, I_SPECIAL, NO_KILLER_PREFIX, TIMEOUT, W_ARTI } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { armorOffMessage, removeHeroArmor, stopDonning } from './armor.js';
 import { removeHeroAccessory } from './accessory.js';
@@ -92,7 +92,8 @@ export async function fallIntoSink(
         await publish('You crash to the floor!');
         const damage = rn1(8, 25 - currentAttribute(A_CON, state));
         if (await loseHeroHp(maybeHalfPhysicalDamage(damage, state),
-            FELL_ON_SINK, { state, publish, die })) return { fell: true, died: true };
+            FELL_ON_SINK, { state, publish, die, killerFormat: NO_KILLER_PREFIX }))
+            return { fell: true, died: true };
         await exerciseAttribute(A_DEX, false, state);
         const touch = await selfTouchPetrifyingWeapons({
             messageStart: 'Falling, you', state, publish, die,
@@ -104,7 +105,7 @@ export async function fallIntoSink(
             observeObjectForNaming(object, { state });
             await publish(`You fell on ${await floorObjectDescription(object)}.`);
             if (await loseHeroHp(maybeHalfPhysicalDamage(rnd(3), state),
-                FELL_ON_SINK, { state, publish, die })) {
+                FELL_ON_SINK, { state, publish, die, killerFormat: NO_KILLER_PREFIX })) {
                 return { fell: true, died: true };
             }
             await exerciseAttribute(A_CON, false, state);

@@ -6,14 +6,16 @@ import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { fallIntoSink } from '../js/sink_fall.js';
-import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, LEVITATION_BOOTS, OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive, refreshProperty, } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
+import { loadScoreRecords } from '../js/score_records.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { addInventoryObject, floorObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon } from './support/topology.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
@@ -206,5 +208,35 @@ void test('sink results survive a save and restore round trip', async () => {
     // restore rebuilds object identities, so match by type and wear state
     const restored = game.inventory.find(object => object.otyp === RIN_LEVITATION);
     assert.equal(restored?.worn, false);
+});
+void test('a fatal sink fall records the crash without a killer prefix', async () => {
+    // C hack.c:dosinkfall() kills with "fell onto a sink" and
+    // NO_KILLER_PREFIX, so topten.c:formatkiller() adds no "killed by".
+    freshObjectRoom({
+        hero: { uhp: 1, uhpmax: 100, urexp: 100 },
+        flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o', tombstone: true },
+    });
+    requirePlayingGame(game);
+    game.plname = 'Victim';
+    game.storage = memoryStorage();
+    game.iflags.toptenwin = false;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
+    game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
+    game.u.levitationTurns = 40;
+    refreshProperty('levitation');
+    let tombstone = '';
+    const input = resetInputState();
+    input.beforeRead = () => {
+        const screen = requireGameDisplay(game).grid
+            .map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (screen.includes('REST'))
+            tombstone = screen;
+    };
+    pushKeys(' '.repeat(100));
+    await fallIntoSink();
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(loadScoreRecords()[0]?.death, 'fell onto a sink');
+    assert.match(tombstone, /fell onto a sink/);
+    assert.doesNotMatch(tombstone, /killed by/);
 });
 //# sourceMappingURL=sink_fall.test.js.map
