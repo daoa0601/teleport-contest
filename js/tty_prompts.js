@@ -70,6 +70,12 @@ export async function ynSingleKey(message, cursorOffset = 0) {
         const canned = takeCommandKey();
         if (canned !== undefined)
             return canned;
+        // The next canned entry is a command, not a key: yn_function()
+        // answers with its ESC initializer after cmdq_clear(CQ_CANNED).
+        if (game._cannedCommands?.length) {
+            clearCannedCommands();
+            return 27;
+        }
     }
     // The single cmdq_pop() already happened above (CQ_REPEAT during a
     // do-again, CQ_CANNED otherwise); CMDQ_USER_INPUT reads live from the

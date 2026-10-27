@@ -8,6 +8,7 @@ import { nhgetch, readchar, takeCommandKey, takeCommandResponse } from './input.
 import type { CommandDirection } from './input.js';
 import { restoreCannedCommandTail } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
+import { clearCannedCommands } from './command_state.js';
 import { rememberYnAnswerKey, takeRepeatCommand } from './command_repeat.js';
 import type { RepeatCommandEntry } from './command_types.js';
 import { doprevMessage, keyText, messageWindowMode } from './prevmsg.js';
@@ -261,14 +262,25 @@ export async function yn_function(
     const queued = addCommandQueue ? takeRepeatCommand() : undefined;
     let result: TtyPromptAnswer;
     if (queued) {
+        // A non-key CQ_REPEAT entry keeps the ESC initializer, and
+        // cmdq_clear(CQ_CANNED) drops every canned command behind it.
+        if (queued.kind !== 'key') clearCannedCommands();
         const answer = queued.kind === 'key' ? String.fromCharCode(queued.key) : '\x1b';
         result = { answer, count: game._ynNumber ?? 0n };
     } else {
         // C cmdq_pop() takes CQ_CANNED here, but never while a do-again
         // replay owns the input.
         const canned = addCommandQueue && !game._inDoAgain ? takeCommandKey() : undefined;
+        const cannedCommand = addCommandQueue && !game._inDoAgain
+            ? game._cannedCommands?.shift() ?? null : null;
         if (canned !== undefined) {
             result = { answer: String.fromCharCode(canned), count: game._ynNumber ?? 0n };
+        } else if (cannedCommand) {
+            // The popped entry is a command, not a key: res keeps its ESC
+            // initializer and cmdq_clear(CQ_CANNED) drops the remaining
+            // canned entries, so no window-port question is ever shown.
+            clearCannedCommands();
+            result = { answer: '\x1b', count: game._ynNumber ?? 0n };
         } else {
             result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
             if (addCommandQueue) rememberYnAnswerKey(result.answer ? result.answer.charCodeAt(0) : 0);
