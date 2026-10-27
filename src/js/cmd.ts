@@ -1080,6 +1080,8 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
                     corridorLike = true;
                 } else if (run === 1) {
                     corridorLike = true;
+                } else if (run === 8) {
+                    continue;
                 } else if (monster) {
                     continue;
                 } else if ((x === u.ux - state.dx

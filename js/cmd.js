@@ -885,6 +885,9 @@ export async function lookaroundRun(state = game._runState, g = game) {
                 else if (run === 1) {
                     corridorLike = true;
                 }
+                else if (run === 8) {
+                    continue;
+                }
                 else if (monster) {
                     continue;
                 }
