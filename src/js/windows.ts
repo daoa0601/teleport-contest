@@ -242,8 +242,6 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     // starts the marker one column past the window offset.
     const textLeft = cornerOffset === 0 ? 0 : cornerOffset + 1;
     const left = cornerOffset + 1;
-    // Replace the preceding question across the whole message row.
-    d.clearRow(0);
     // A dismissed corner window restores the already-painted map rather
     // than recomputing vision. Callers may retain a final page after exit.
     const underlay = restoreUnderlay
@@ -269,6 +267,8 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
                 d.setCell(col, row, cell.ch, cell.color, cell.attr);
             }
         }
+        // docorner() leaves the covered message columns blank.
+        clearRect(Math.max(0, cornerOffset - 1), 0, d.cols, 1);
         d.setCursor(underlayCursor.col, underlayCursor.row);
         d.cursorVisible = underlayCursor.visible;
     }

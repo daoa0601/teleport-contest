@@ -64,20 +64,24 @@ for (const pagerStyle of ['text', 'menu']) {
         assert.equal(rowText(0), '');
     });
 }
-void test('a corner disclosure does not repaint a read line after message-window display', async () => {
-    freshPlayableRoom();
-    const input = resetInputState();
-    await plineWithContinuation('You study the markings.');
-    await flush_screen(1);
-    input.feed('x');
-    await nhgetch();
-    await displayMessageWindow();
-    input.feed(' ');
-    await showDisclosureOverlay(['The runes describe a doorway.'], { restoreUnderlay: true });
-    assert.equal(rowText(0), '', 'the dismissed disclosure erased the message row');
-    await flush_screen(1);
-    assert.equal(rowText(0), '', 'repainting must leave the erased row blank');
-});
+for (const message of ['You study the markings.', 'You study the markings near the eastern doorway and the stairs.']) {
+    void test(`a corner disclosure preserves uncovered inactive prose: ${message}`, async () => {
+        freshPlayableRoom();
+        const input = resetInputState();
+        await plineWithContinuation(message);
+        await flush_screen(1);
+        input.feed('x');
+        await nhgetch();
+        await displayMessageWindow();
+        input.feed(' ');
+        await showDisclosureOverlay(['The runes describe a doorway.'], { restoreUnderlay: true });
+        assert.match(rowText(0), /^You study the markings/);
+        assert.doesNotMatch(rowText(0), /stairs/, 'the corner erases only the covered part of the message');
+        await flush_screen(1);
+        assert.match(rowText(0), /^You study the markings/);
+        assert.doesNotMatch(rowText(0), /stairs/, 'repainting keeps the covered ending erased');
+    });
+}
 void test('a corner menu keeps an inactive message clipped after message-window display', async () => {
     freshPlayableRoom();
     const input = resetInputState();
