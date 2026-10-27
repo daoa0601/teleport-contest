@@ -4,7 +4,6 @@
 
 import { monsterAtPosition } from './monster_location.js';
 import {
-    ACCESSIBLE,
     COLNO,
     IS_FURNITURE,
     P_BASIC,
@@ -16,6 +15,7 @@ import {
     STATUE_TRAP,
     isok,
 } from './const.js';
+import { isAccessibleAt } from './terrain_properties.js';
 import { artifactById } from './artifacts.js';
 import { canSenseMonster, glyphAt, pline, unmap_invisible } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -341,7 +341,10 @@ export async function usePolearm(
             await wakeMonstersNearWithMessages(cc.x, cc.y, 25, state);
         } else {
             const location = state.level?.at(cc.x, cc.y);
-            if (!location || !ACCESSIBLE(location.typ) || IS_FURNITURE(location.typ)) {
+            // apply.c:use_pole() tests accessible(), whose closed_door()
+            // half rejects closed doors that the typ-only ACCESSIBLE
+            // macro would admit.
+            if (!location || !isAccessibleAt(cc.x, cc.y, state) || IS_FURNITURE(location.typ)) {
                 await pline(
                     `You uselessly attack ${obstacleDescription(glyph, cc.x, cc.y, state)}.`,
                 );
