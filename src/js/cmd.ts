@@ -2983,16 +2983,6 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
 }
 
 async function executeInventoryAction({ key, item }: InventoryAction): Promise<void> {
-    try {
-        await runInventoryAction({ key, item });
-    } finally {
-        // These keys belong to this item's prompts. Native rhack discards
-        // them if the command fails before it asks for the selected item.
-        clearCommandKeys();
-    }
-}
-
-async function runInventoryAction({ key, item }: InventoryAction): Promise<void> {
     const letter = item.invlet;
     if (!letter || !game.inventory.includes(item)) {
         game.context.move = 0;
@@ -3050,7 +3040,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
         if ((item.owornmask ?? 0) & W_ARMOR) await removeWornItem('take off', true);
         else await tipCommand();
         return;
-    case 't': await dothrow(item); return;
+    case 't': queueCommandKeys(letter); await dothrow(); return;
     case 'w': queueCommandKeys(letter); await dowield(); return;
     case 'V': queueCommandKeys(letter); await doinvoke(); return;
     case 'x': await doswapweapon(); return;

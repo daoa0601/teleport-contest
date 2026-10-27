@@ -2959,16 +2959,6 @@ function inventoryActionCommand({ key, item }) {
     return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
 }
 async function executeInventoryAction({ key, item }) {
-    try {
-        await runInventoryAction({ key, item });
-    }
-    finally {
-        // These keys belong to this item's prompts. Native rhack discards
-        // them if the command fails before it asks for the selected item.
-        clearCommandKeys();
-    }
-}
-async function runInventoryAction({ key, item }) {
     const letter = item.invlet;
     if (!letter || !game.inventory.includes(item)) {
         game.context.move = 0;
@@ -3071,7 +3061,8 @@ async function runInventoryAction({ key, item }) {
                 await tipCommand();
             return;
         case 't':
-            await dothrow(item);
+            queueCommandKeys(letter);
+            await dothrow();
             return;
         case 'w':
             queueCommandKeys(letter);

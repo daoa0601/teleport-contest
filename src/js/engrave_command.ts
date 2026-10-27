@@ -367,7 +367,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     const hero = state.u;
     if (!await heroCanEngrave(state)) {
-        state.context.move = 0;
+        resetCommandVariables(true); // doengrave() returns ECMD_FAIL.
         return;
     }
 
