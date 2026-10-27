@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { W_ARMF, W_RINGL, W_RINGR } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION, RIN_PROTECTION_FROM_SHAPE_CHANGERS, WAN_STRIKING } from '../js/object_data.js';
+import { MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION, RIN_PROTECTION_FROM_SHAPE_CHANGERS, SCR_BLANK_PAPER, WAN_STRIKING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 // C cmd.c:rhack() clears CQ_REPEAT whenever a command reports ECMD_CANCEL
@@ -11,6 +11,8 @@ import { freshTurnRoom } from './support/playable-room.js';
 // zap.c:dozap(), apply.c:dorub(), and pager.c:doidtrap() all return
 // ECMD_CANCEL when their getobj()/getdir() is declined or empty, so a
 // following ^A has nothing to repeat (cmd.c:do_repeat()).
+// write.c:dowrite() likewise reports ECMD_CANCEL when the marker's
+// "write on" getobj() is declined, through apply.c:doapply().
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const RING = RIN_PROTECTION;
 const CLEARING_CASES = [
@@ -23,6 +25,20 @@ const CLEARING_CASES = [
     { name: 'declining the rub prompt', keys: '#rub\n\x1b', setup: { lamp: true } },
     { name: 'declining the showtrap direction', keys: '^\x1b', setup: {} },
 ];
+// write.c:dowrite() reports ECMD_CANCEL for a declined "write on" prompt;
+// apply.c:doapply() propagates it, so ^A has nothing to repeat.
+void test('declining the marker write-on prompt leaves no command available to repeat', async () => {
+    const input = freshTurnRoom();
+    const marker = await addInventoryObject(MAGIC_MARKER, { spe: 20 });
+    await addInventoryObject(SCR_BLANK_PAPER);
+    input.feed(`a${marker.invlet}\x1b`);
+    await rhack(0);
+    assert.equal(game.context.move, 0);
+    input.feed('\x01');
+    await rhack(0);
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.context.move, 0);
+});
 for (const { name, keys, setup } of CLEARING_CASES) {
     void test(`${name} leaves no command available to repeat`, async () => {
         const input = freshTurnRoom();

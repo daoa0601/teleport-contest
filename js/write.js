@@ -2,6 +2,7 @@
 // new_book_description(). Inventory, billing, and holding keep their owners.
 import { exerciseWisdom } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
+import { commandResultCancelled } from './command_state.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -43,8 +44,12 @@ export async function useMagicMarker(pen) {
         return [SCR_BLANK_PAPER, SPE_BLANK_PAPER].includes(object.otyp)
             ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
     });
-    if (!paper)
+    // write.c:dowrite() returns ECMD_CANCEL when the "write on" getobj()
+    // is declined; doapply() propagates it and rhack() clears CQ_REPEAT.
+    if (!paper) {
+        commandResultCancelled();
         return false;
+    }
     const typeword = paper.otyp === SPE_NOVEL ? 'book'
         : paper.oclass === SPBOOK_CLASS ? 'spellbook' : 'scroll';
     if (heroIsBlind(game)) {
