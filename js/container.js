@@ -2,7 +2,7 @@
 // C refs: pickup.c use_container(), in_container(), out_container().
 import { makePlural } from './object_grammar.js';
 import { containerContents } from './container_contents.js';
-import { bot, displayMessageWindow, flush_screen, pline, plineWithContinuation } from './display.js';
+import { bot, consumeHallucinatedMenuObjectGlyph, displayMessageWindow, flush_screen, pline, plineWithContinuation } from './display.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -229,7 +229,11 @@ async function selectionSections(objects, useInventoryLetters) {
     const sections = [];
     for (const group of groups) {
         const items = [];
-        for (const object of group.members)
+        for (const object of group.members) {
+            // pickup.c:query_objlist() draws obj_to_glyph() for every menu
+            // item before naming it, which consumes a display-RNG draw per
+            // item while hallucinating.
+            consumeHallucinatedMenuObjectGlyph(object);
             items.push({
                 key: object.otyp === GOLD_PIECE ? '$'
                     : useInventoryLetters && object.invlet
@@ -238,6 +242,7 @@ async function selectionSections(objects, useInventoryLetters) {
                 text: await objectDescription(object, inventoryPrimaryHandDetail(object)),
                 value: object,
             });
+        }
         sections.push({ heading: group.name, items });
     }
     return sections;
