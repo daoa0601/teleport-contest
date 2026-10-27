@@ -6,12 +6,30 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ATR_INVERSE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { showChoiceWindow, showDisclosureOverlay } from '../js/windows.js';
+import { promptKey } from '../js/tty_prompts.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
 function rowText(row: number): string {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
 }
+
+void test('a menu-built disclosure clears its answered question before opening', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    input.feed('y');
+    await promptKey('Do you want to see the dungeon overview? [ynq] (n) ');
+
+    const overview = showDisclosureOverlay(['The Dungeons of Doom:'], { pagerStyle: 'menu' });
+    try {
+        await input.waitUntilBlocked();
+        assert.match(rowText(0), /The Dungeons of Doom:/);
+        assert.doesNotMatch(rowText(0), /Do you want/);
+    } finally {
+        input.feed(' ');
+        await overview;
+    }
+});
 
 for (const kind of ['prose', 'choices'] as const) {
     void test(`a ${kind} window acknowledges unread prose before painting its contents`, async () => {
