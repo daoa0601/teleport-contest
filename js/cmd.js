@@ -7358,7 +7358,7 @@ async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     if (runMode > 0 && runMode < 8
         && (loc?.typ === DOOR || IS_OBSTRUCTED(loc?.typ ?? STONE)
             || IS_FURNITURE(loc?.typ ?? STONE)))
-        stopRun();
+        nomul(0);
     if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)
         && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
