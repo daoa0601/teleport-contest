@@ -345,6 +345,8 @@ export interface GameState {
     _cannedCommands?: CannedCommand[];
     _commandCount?: number;
     _commandKey?: number;
+    // ECMD_* bits (const.js) the running command reported to the rhack seam.
+    _commandResult?: number;
     _repeatCommands?: RepeatCommandEntry[];
     _inDoAgain?: boolean;
     _ynNumber?: bigint;

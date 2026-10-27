@@ -101,6 +101,7 @@ const transientFields = {
     _cursorOverride: true,
     _clicklookTarget: true,
     _commandCount: true,
+    _commandResult: true,
     _commandKey: true,
     _repeatCommands: true,
     _inDoAgain: true,

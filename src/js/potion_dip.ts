@@ -1,4 +1,5 @@
 // C potion.c:dodip(), dip_into(), potion_dip().
+import { commandResultCancelled } from './command_state.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation } from './map_types.js';
 import type { DipTarget } from './dip_water.js';
@@ -82,10 +83,22 @@ export async function dip({
 
 export async function dipInto(): Promise<void> {
     const potion = await chooseInventoryObject('dip', potionClassification);
-    if (!potion) { game.context.move = 0; return; }
+    if (!potion) {
+        // potion.c:dip_into() returns ECMD_CANCEL when the potion getobj()
+        // is declined.
+        commandResultCancelled();
+        game.context.move = 0;
+        return;
+    }
     const name = simpleObjectName(potion);
     const object = await chooseDipTarget(`dip into ${objectQuantity(potion) > 1 ? 'one of ' : ''}the ${name}`, false);
-    if (!object || object !== 'hands' && await reportCoveredEquipment(object)) { game.context.move = 0; return; }
+    if (!object || object !== 'hands' && await reportCoveredEquipment(object)) {
+        // A declined dip target is ECMD_CANCEL; covered equipment keeps
+        // potion.c's ECMD_OK.
+        if (!object) commandResultCancelled();
+        game.context.move = 0;
+        return;
+    }
     game.context.move = Number(await finishDip(object, potion));
 }
 

@@ -1,5 +1,6 @@
 // C apply.c:use_grease(), grease_ok(); do_wear.c:inaccessible_equipment().
 import { armorSimpleName } from './armor.js';
+import { commandResultCancelled } from './command_state.js';
 import { heroFingerName } from './body_parts.js';
 import { GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -32,8 +33,11 @@ export async function useGrease(can) {
     const selection = await getobj('grease', greaseSuggestion, {
         forcePrompt: true, hands: GETOBJ_SUGGEST, handsText: `your ${fingers(false)}`,
     });
-    if (selection.cancelled)
+    // apply.c:use_grease() returns ECMD_CANCEL when getobj() is declined.
+    if (selection.cancelled) {
+        commandResultCancelled();
         return false;
+    }
     const target = selection.object;
     if (target) {
         const covering = coveringEquipment(target);

@@ -1,9 +1,32 @@
-// Runtime command counts and interruption.
-// C refs: cmd.c:reset_cmd_vars(), hack.c:nomul().
+// Runtime command counts, interruption, and the per-command ECMD_* result
+// that handlers report to the rhack() seam.
+// C refs: cmd.c:reset_cmd_vars(), rhack(), hack.c:nomul().
 import { game } from './gstate.js';
+import { ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME } from './const.js';
 import { stopRun } from './runmode.js';
 import { clearCommandKeys } from './input.js';
 import { clearRepeatCommand } from './command_repeat.js';
+// C command handlers return an ECMD_* status which rhack() inspects after
+// the command finishes (cmd.c:3810): ECMD_CANCEL and ECMD_FAIL make it call
+// reset_cmd_vars(TRUE), clearing CQ_CANNED and CQ_REPEAT. JS handlers run
+// before that seam, so they record the same bits here instead.
+export function beginCommandResult(state = game) {
+    state._commandResult = ECMD_OK;
+}
+// Multiple failure paths can combine bits exactly like a C return value
+// (use_pole() returns res|ECMD_CANCEL after an already-timed wield).
+export function commandResultCancelled(state = game) {
+    state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_CANCEL;
+}
+export function commandResultFailed(state = game) {
+    state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_FAIL;
+}
+// doapply() ORs arti_speak()'s ECMD_TIME into the tool result
+// (apply.c:4422), so a cancelled tool use by a speaking artifact still
+// spends its turn.
+export function commandResultSpentTime(state = game) {
+    state._commandResult = (state._commandResult ?? ECMD_OK) | ECMD_TIME;
+}
 // C cmd.c:reset_cmd_vars(). Full command_count belongs to the next parse.
 // Unlike end_running(), reset_cmd_vars() zeroes context.run directly: no
 // time repaint is queued and the terrain classifier is not recomputed.

@@ -6,7 +6,7 @@ export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: G
 export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 
 // Spell learning and the native spell.c:spelleffects() transaction.
-import { resetCommandVariables } from './command_state.js';
+import { commandResultFailed } from './command_state.js';
 import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { promptDirection } from './tty_prompts.js';
@@ -230,7 +230,9 @@ async function applyDirectedSpell(source: GameObject, atSelf: boolean, state: Pl
 export async function docast() {
     const spell = await selectSpellToCast(game);
     if (!spell) {
-        resetCommandVariables(true);
+        // spell.c:docast() returns ECMD_FAIL when getspell() finds nothing
+        // or the spell menu is dismissed.
+        commandResultFailed();
         return;
     }
     const index = (game.spells ?? []).indexOf(spell);

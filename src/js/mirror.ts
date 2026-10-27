@@ -7,7 +7,7 @@ import {
 import { currentAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroFaceName, monsterStomachName } from './body_parts.js';
-import { nomul } from './command_state.js';
+import { commandResultCancelled, nomul } from './command_state.js';
 import {
     canSeeMonster, displayColorName, howMonsterSeen, plineWithContinuation as pline,
 } from './display.js';
@@ -62,7 +62,11 @@ const DIRECT_SIGHT = MONSEEN_NORMAL | MONSEEN_SEEINVIS | MONSEEN_INFRAVIS;
 export async function useMirror(object: GameObject, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     const direction = await promptDirection();
-    if (!direction) return { spentTime: false, heroDied: false, object };
+    // apply.c:use_mirror() returns ECMD_CANCEL for a refused direction.
+    if (!direction) {
+        commandResultCancelled(state);
+        return { spentTime: false, heroDied: false, object };
+    }
     const result = { spentTime: true, heroDied: false, object };
     const hero = state.u;
     const invisible = heroIsInvisible(state);

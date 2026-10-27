@@ -1,8 +1,7 @@
 // C pickup.c:dotip(), choose_tip_container_menu(), tipcontainer(),
 // tipcontainer_gettarget(), and tipcontainer_checks().
-import { nomul } from './command_state.js';
+import { commandResultCancelled, nomul } from './command_state.js';
 import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL, PLNMSG_OBJNAM_ONLY } from './const.js';
-import { resetCommandVariables } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { plineWithContinuation as pline } from './display.js';
 import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject } from './container.js';
@@ -67,8 +66,12 @@ export async function tipCommand() {
                 const picked = await showMultiSelectWindow({ title: 'Tip which container?',
                     sections: [{ items }], pageLocalKeys: true,
                     omitHeadings: true, pickOne: true, signalEscape: true });
-                if (picked === null)
+                // pickup.c:choose_tip_container_menu() returns ECMD_CANCEL
+                // when the container menu is dismissed with Escape.
+                if (picked === null) {
+                    commandResultCancelled();
                     return;
+                }
                 const source = picked.find(object => object !== null);
                 if (source) {
                     await tipContainer(source);
@@ -98,7 +101,7 @@ export async function tipCommand() {
             && object.dknown && objectTypeKnown(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
     }, { forcePrompt: true });
     if (!object) {
-        resetCommandVariables(true);
+        commandResultCancelled(); // pickup.c:dotip() getobj ECMD_CANCEL.
         return;
     }
     if (isContainer(object) || object.otyp === HORN_OF_PLENTY) {

@@ -1,6 +1,7 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
 
+import { commandResultCancelled } from './command_state.js';
 import { formatFeltMessage } from './hero_speech.js';
 import type { Artifact } from './artifacts.js';
 import type { ArtifactPower } from './data_types.js';
@@ -360,6 +361,8 @@ async function invokeBlindingRay(object: GameObject, state: GameState, publish: 
     if (!direction) {
         await publish('Never mind.');
         object.age = state.moves;
+        // artifact.c:invoke_blinding_ray() returns ECMD_CANCEL.
+        commandResultCancelled(state);
         return false;
     }
     if (direction.dx || direction.dy) {
@@ -488,6 +491,8 @@ async function invokeFlingPoison(object: GameObject, state: GameState, publish: 
     if (!direction) {
         await publish('Never mind.');
         object.age = state.moves;
+        // artifact.c:invoke_fling_poison() returns ECMD_CANCEL.
+        commandResultCancelled(state);
         return false;
     }
     const venom = await mksobj(rn2(2) ? BLINDING_VENOM : ACID_VENOM, true, false);
@@ -555,6 +560,9 @@ export async function invokeArtifactPower(
             const target = await chooseObjectToCharge(state);
             if (!target) {
                 object.age = 0;
+                // artifact.c:invoke_charge_obj() returns ECMD_CANCEL when
+                // getobj() for the charge target is declined.
+                commandResultCancelled(state);
                 return { used: true, ready: true, spentTime: false };
             }
             const heroRole = state.urole;
@@ -590,7 +598,9 @@ export async function invokeArtifactPower(
                 publish,
             });
             if (state.program_state.gameover) return { used: true, heroDied: true };
-            if (!spentTime) object.age = 0;
+            // artifact.c:invoke_untrap() returns ECMD_CANCEL when untrap()
+            // reports that nothing was done.
+            if (!spentTime) { object.age = 0; commandResultCancelled(state); }
             return { used: true, ready: true, spentTime };
         }
     }
