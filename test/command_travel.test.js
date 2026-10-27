@@ -19,7 +19,7 @@ void test('travel reports the first hostile in map order rather than monster cre
     goblin.mpeaceful = false;
     const orc = await createMonsterAt('orc', 10, 10);
     orc.mpeaceful = false;
-    assert.equal(await continueRun(), false);
+    assert.equal((await continueRun()).tookTime, false);
     await flush_screen(1);
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /An orc blocks your path\./);
     assert.equal(game.u.ux, 11);
@@ -34,7 +34,7 @@ void test('travel reports a trap ahead before a hostile later in map order', asy
     pit.tseen = true;
     const goblin = await createMonsterAt('goblin', 12, 11);
     goblin.mpeaceful = false;
-    assert.equal(await continueRun(), false);
+    assert.equal((await continueRun()).tookTime, false);
     await flush_screen(1);
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /You stop in front of a pit\./);
     assert.equal(game.u.ux, 11);
@@ -49,7 +49,7 @@ void test('travel with no previous direction ignores a known trap underfoot', as
     pit.tseen = true;
     game.u.dx = 0;
     game.u.dy = 0;
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
     assert.equal(game.u.ux, 12);
     await flush_screen(1);
     assert.doesNotMatch(requireScreenRow(0).map(cell => cell.ch).join(''), /You stop in front/);

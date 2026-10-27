@@ -25,9 +25,9 @@ for (const dark of [false, true]) {
         await rhack('G'.charCodeAt(0));
         assert.equal(game.u.ux, 11);
 
-        const moved = await continueRun();
+        const { tookTime } = await continueRun();
 
-        assert.equal(moved, false);
+        assert.equal(tookTime, false);
         assert.equal(game.u.ux, 11);
         assert.equal(game.context.move, 0);
         assert.equal(game._pending_message, dark ? 'It blocks your path.' : 'A long worm blocks your path.');

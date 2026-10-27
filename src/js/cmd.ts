@@ -1163,19 +1163,24 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
     return true;
 }
 
-export async function continueRun(g: GameState = game): Promise<boolean> {
+export interface RunContinuation {
+    attemptedMove: boolean;
+    tookTime: boolean;
+}
+
+export async function continueRun(g: GameState = game): Promise<RunContinuation> {
     const state = g._runState;
     if (state?.mode === 8) {
         if (await travelLookaroundStops(g)) {
             stopRun(g);
             g.context.move = 0;
-            return false;
+            return { attemptedMove: false, tookTime: false };
         }
         await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
         if (g.multi < COLNO && --g.multi === 0) stopRun(g);
         const outcome = await domove(g.u.dx ?? 0, g.u.dy ?? 0, false);
         const moved = outcome === 'time';
-        if (g.program_state.gameover) return false;
+        if (g.program_state.gameover) return { attemptedMove: true, tookTime: false };
         // C domove_core() skips runmode_delay_output() on early returns,
         // including attacks, blocked steps and the final travel pet bump.
         // A refused pet swap reaches the tail after restoring the hero.
@@ -1197,24 +1202,24 @@ export async function continueRun(g: GameState = game): Promise<boolean> {
         // Pathfinding can end travel without entering the target. Keep
         // C's restored run value and let screen flushes own time updates.
         else if (!g._runState && g.context.run === 8) arriveTravel(g);
-        return moved;
+        return { attemptedMove: true, tookTime: moved };
     }
     if (!state || !await lookaroundRun(state, g)) {
         stopRun(g);
         g.context.move = 0;
-        return false;
+        return { attemptedMove: false, tookTime: false };
     }
 
     await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
     if (g.multi < COLNO && --g.multi === 0) stopRun(g);
     const outcome = await domove(state.dx, state.dy, false);
     const moved = outcome === 'time';
-    if (g.program_state.gameover) return false;
+    if (g.program_state.gameover) return { attemptedMove: true, tookTime: false };
     if (moved && g._domoveReachedTail)
         await captureRunmodeDelay(g, !!g.context.run || g.multi > 0);
     g.context.move = moved ? 1 : 0;
     if (!moved && outcome !== 'opened-door') stopRun(g);
-    return moved;
+    return { attemptedMove: true, tookTime: moved };
 }
 
 // C refs: cmd.c set_occupation()/timed_occupation() and

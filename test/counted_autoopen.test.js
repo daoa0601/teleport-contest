@@ -21,7 +21,7 @@ void test('a counted walk opens its door without time and continues through it',
     assert.equal(door.doormask, D_ISOPEN);
     assert.equal(game.context.move, 0);
     assert.equal(game.u.ux, 10);
-    assert.equal(await continueRun(), true, 'opening leaves the next counted step available');
+    assert.equal((await continueRun()).tookTime, true, 'opening leaves the next counted step available');
     assert.equal(game.u.ux, 11);
     assert.equal(game.context.move, 1);
 });

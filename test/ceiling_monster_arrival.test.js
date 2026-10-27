@@ -64,7 +64,7 @@ void test('a concealed piercer stops running even when its fall misses the hero'
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game.u.uhp, health, 'the surprise ends running without needing damage');
     assert.equal(game.context.run, 0);
-    assert.equal(await continueRun(), false);
+    assert.equal((await continueRun()).tookTime, false);
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
 for (const blind of [false, true]) {

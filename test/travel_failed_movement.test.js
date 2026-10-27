@@ -40,7 +40,7 @@ for (const continuation of [false, true]) {
         game.u.umoved = false;
         initRng(4n);
         if (continuation)
-            assert.equal(await continueRun(), true);
+            assert.equal((await continueRun()).tookTime, true);
         else
             await rhack(31);
         assert.deepEqual([game.u.ux, game.u.uy], [ux, uy]);
@@ -65,7 +65,7 @@ for (const continuation of [false, true]) {
         grantIntrinsicProperty('swimming', 'outside');
         initRng(4n);
         if (continuation)
-            assert.equal(await continueRun(), true);
+            assert.equal((await continueRun()).tookTime, true);
         else
             await rhack(31);
         assert.deepEqual([game.u.ux, game.u.uy], [ux, uy]);
@@ -213,7 +213,7 @@ void test('a final continued step retains running checks after stun changes its 
     game.u.stunnedTurns = 10;
     game.u.umoved = false;
     initRng(1n);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
     assert.deepEqual([game.u.ux, game.u.uy], [12, 9]);
     assert.equal(game.u.umoved, true);
     assert.equal(game._travelTarget, null);
@@ -229,7 +229,7 @@ void test('counted travel completes its last step after the count ends running',
     game._travelTarget = { x: 14, y: 10 };
     resetInputState().feed('2\x1f');
     await rhack(0);
-    assert.equal(await continueRun(), true);
+    assert.equal((await continueRun()).tookTime, true);
     assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
     assert.equal(game.context.move, 1);
     assertTravelStopped();
