@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { doprevMessage } from '../js/prevmsg.js';
-import { newsym, pline } from '../js/display.js';
+import { flush_screen, newsym, pline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
@@ -72,6 +72,21 @@ void test('previous-message recall renders an encoded glyph byte as a blank', as
     await doprevMessage();
 
     assert.equal(requireScreenCell(0, 0).ch, ' ');
+});
+
+// The full-screen repaint at the next input boundary rebuilds row 0 from
+// the pending message; the DEC shift markers are zero-width there, and the
+// glyph cell stays blank once the recall repaint has run, matching the tty
+// shadow's rendering of putsyms()' raw high-bit byte.
+void test('screen repaint after glyph recall leaves the glyph cell blank', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
+    await doprevMessage();
+
+    await flush_screen(1);
+
+    assert.equal(requireScreenCell(0, 0).ch, ' ');
+    assert.match(toplineText(), /^ {9}a doorway or the floor of a room *$/);
 });
 
 // C cmd.c:dotravel() plines the travel question and getpos() plines the

@@ -147,8 +147,15 @@ export async function removeEyewear(object = null, { state = game, publish = pli
 export async function applyEyewear(object) {
     const worn = currentEyewear();
     if (worn === object) {
-        if (object.cursed)
+        // apply.c:doapply()'s BLINDFOLD/LENSES branch runs do_wear.c
+        // cursed() before Blindf_off(): a cursed worn item refuses with
+        // "You can't.  It is cursed." and reveals its BUC.
+        if (object.cursed) {
+            const plural = object.otyp === LENSES || (object.quan ?? 1) > 1;
+            await pline(`You can't.  ${plural ? 'They are' : 'It is'} cursed.`);
+            object.bknown = true;
             return false;
+        }
         return removeEyewear(object);
     }
     if (!worn)

@@ -6,12 +6,13 @@ import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { A_CON, A_DEX, A_STR, A_WIS, LOST_STOLEN, P_BASIC, PIT, W_AMUL, W_QUIVER, W_SWAPWEP, W_WEP, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { flush_screen } from '../js/display.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/light.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, ARROW, BOOMERANG, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LONG_SWORD, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION, POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING, POT_WATER, ROCK, SCR_BLANK_PAPER, SPEAR, STATUE, TWO_HANDED_SWORD, } from '../js/object_data.js';
+import { ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, ARROW, BOOMERANG, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LONG_SWORD, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION, POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING, POT_WATER, ROBE, ROCK, SCR_BLANK_PAPER, SPEAR, STATUE, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -369,6 +370,26 @@ void test('throwing a quivered dart preserves two-weapon mode', async () => {
     assert.strictEqual(game.uwep, sword);
     assert.strictEqual(game.uswapwep, dagger);
     assert.ok(engulfer.mhp < 40);
+});
+void test('firing a quivered robe while swallowed transfers it to the engulfer', async () => {
+    const engulfer = await freshSwallowedState(PM_ENERGY_VORTEX);
+    requirePlayingGame(game);
+    const robe = await addInventoryObject(ROBE, {
+        invlet: 'b', ready: true, owornmask: W_QUIVER,
+    });
+    game.uquiver = game.u.uquiver = robe;
+    initRng(2310n);
+    pushKey('k');
+    await rhack('f'.charCodeAt(0));
+    // thitmonst()'s guaranteed-hit branch for a non-weapon, non-potion
+    // object (dothrow.c:2276-2298), then swallowit()'s mpickobj().
+    await flush_screen(1);
+    const message = requireScreenRow(0).map(cell => cell.ch).join('');
+    assert.match(message, /The robe vanishes into the energy vortex's currents\./);
+    assert.ok(engulfer.minvent.includes(robe), 'the engulfer keeps the vanished robe');
+    assert.ok(!game.inventory.includes(robe));
+    assert.notStrictEqual(game.uquiver, robe);
+    assert.equal(game.context.move, 1);
 });
 void test('a polymorphed throw does not use human Strength damage', async () => {
     async function daggerDamage(formName) {

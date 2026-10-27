@@ -16,6 +16,7 @@ export function createGameState() {
         _pending_message: '', _retained_message: '', _last_message: '',
         _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
         _messageHistoryCursor: null, _promptOwnsTopline: false,
+        _toplineGlyphPainted: false,
         _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };
 }

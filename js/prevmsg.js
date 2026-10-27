@@ -76,11 +76,17 @@ async function redotoplin(text) {
         for (const [row, line] of lines.entries()) {
             display.clearRow(row);
             for (const [column, cell] of line.entries())
+                // redotoplin() runs without ttyDisplay->mixed: its putsyms()
+                // copy of the leading graphics byte never reaches the tty
+                // shadow, so a recorded recall shows a blank in that cell
+                // whether or not the live display painted the glyph.
                 display.setCell(column, row, cell.dec ? ' ' : cell.ch, NO_COLOR, 0);
         }
         const last = lines.at(-1) ?? lines[0];
         display.setCursor(last.length, lines.length - 1);
     }
+    // The recalled repaint blanked the glyph cell.
+    game._toplineGlyphPainted = false;
     game._pending_message = text;
     game._retained_message = '';
     return 0;

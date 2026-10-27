@@ -7036,7 +7036,9 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     if (!direction) {
         if (splitParent)
             await rejoinObjectStack(splitParent, item, game);
-        game._pending_message = '';
+        // getdir() already cleared its prompt; a message it printed for
+        // the rejected key ("What a strange direction!") stays visible in
+        // C because throw_obj() just returns ECMD_CANCEL (dothrow.c).
         return 'cancelled';
     }
     const { dx, dy, dz } = direction;

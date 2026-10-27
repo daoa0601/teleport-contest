@@ -443,6 +443,12 @@ export interface GameState {
     // C ttyDisplay->toplin == TOPLINE_SPECIAL_PROMPT: a yn/getlin prompt
     // owns the line until the first redotoplin() or clear replaces it.
     _promptOwnsTopline?: boolean;
+    // C tty: whether the current physical topline's leading graphics glyph
+    // (putmixed()'s g_putch kludge, topl.c redotoplin()) is on the row. A
+    // later redotoplin() without ttyDisplay->mixed writes the raw high-bit
+    // byte through putsyms(), which the tty shadow rejects, so that cell
+    // keeps whatever the last paint left there.
+    _toplineGlyphPainted?: boolean;
     _lastPlineMessage: string;
     _lastPlineKind?: number;
     earlyRawMessages: number;
@@ -516,6 +522,7 @@ export function createGameState(): GameState {
         _pending_message: '', _retained_message: '', _last_message: '',
         _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
         _messageHistoryCursor: null, _promptOwnsTopline: false,
+        _toplineGlyphPainted: false,
         _lastPlineMessage: '', earlyRawMessages: 0, _screen_output: '',
     };
 }
