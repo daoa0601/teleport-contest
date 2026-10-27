@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
-import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, showUnrememberedTopline, terrain_glyph, } from './display.js';
+import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, resetToplineClip, showUnrememberedTopline, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { readcharPoskey, takeCommandPosition } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -216,8 +216,11 @@ export function isGetposPickCharacter(ch) {
 // getpos() flushes the existing glyph buffer. Recalculating sight here would
 // discover warnings or erase unseen-monster memory in the middle of a turn.
 export async function paintGetposCursor(cursor, message, markedSpots = null, { flushPending = false } = {}) {
-    if (message !== null)
+    if (message !== null) {
         game._pending_message = message;
+        // auto_describe()'s custompline repaints the row.
+        resetToplineClip();
+    }
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the
     // hero can see, so a validity rule that admits unseen squares (polearm
     // couldsee+glyph policy) still cannot reveal them.

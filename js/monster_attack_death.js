@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import { KILLED_BY, PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
-import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation, resetToplineClip } from './display.js';
 import { vision_recalc } from './vision.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, finishOrdinaryDeath, formatKillerCause, identifyLifeSavingAmulet, restoreHeroAfterDeath, } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
@@ -195,8 +195,10 @@ export async function finishHeroDeathAfterMonsterMessage(options) {
     return finishHeroDeath(options);
 }
 export async function waitForCurrentMonsterMore(fallbackMessage = '') {
-    if (!game._pending_message)
+    if (!game._pending_message) {
         game._pending_message = fallbackMessage;
+        resetToplineClip();
+    }
     return flushPendingTopline();
 }
 //# sourceMappingURL=monster_attack_death.js.map

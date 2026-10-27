@@ -130,12 +130,23 @@ function terrainViewGlyph(location, x, y, subset, swallowed) {
     const remembered = level.flags.hero_memory !== false ? location.remembered_glyph
         : seen ? terrainBackground(location, x, y) : null;
     const displayed = location.disp_glyph;
+    // C reveal_terrain_getglyph(): a non-swallowed square starts from
+    // glyph_at(), the screen buffer, whose never-drawn value is
+    // GLYPH_UNEXPLORED; levl[][].glyph backs it up only when a monster or
+    // warning glyph is being hidden (or the hero is swallowed).
+    const unexploredGlyph = () => ({ ch: ' ', color: NO_COLOR,
+        decgfx: false, kind: 'unexplored', glyph: GlyphOffset.unexplored });
+    // C mklev.c: zerorm.glyph is GLYPH_UNEXPLORED, so a remembered glyph
+    // that was never written hides a sensed monster behind unexplored space;
+    // the S_stone default only applies without hero memory or after
+    // unmap_object().
+    const memoryFallback = level.flags.hero_memory !== false ? unexploredGlyph() : empty();
     let glyph = !swallowed && displayed ? {
         ...displayed, ch: location.disp_ch, color: location.disp_color, decgfx: location.disp_decgfx,
-    } : remembered ?? empty();
+    } : swallowed ? (remembered ?? memoryFallback) : unexploredGlyph();
     let wasMonster = false;
     if (glyph.kind === 'monster' || glyph.kind === 'warning' || glyph.kind === 'effect') {
-        glyph = remembered ?? empty();
+        glyph = remembered ?? memoryFallback;
         wasMonster = true;
     }
     const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);

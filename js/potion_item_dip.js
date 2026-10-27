@@ -17,7 +17,7 @@ import { objectQuantity } from './object_stack.js';
 import { blessObjectState, curseObject, unblessObjectState, uncurseObjectState } from './object_state.js';
 import { CORPSE, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_HEALING, POT_OIL, POT_POLYMORPH, POT_SICKNESS, POT_WATER, TOWEL } from './object_data.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { objectCombatName, objectNameIsPlural, ownedObjectAction, ownedObjectName } from './objnam.js';
+import { objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName } from './objnam.js';
 import { setPropertyTimeout } from './properties.js';
 import { d } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsHallucinating } from './senses.js';
@@ -184,6 +184,9 @@ async function dipInPolymorph(object, potion) {
     if (replacement.otyp !== oldType) {
         learnObjectType(POT_POLYMORPH);
         await consumeInventoryItem(potion);
+        // C prinv() formats with doname(), whose xname() observes the
+        // polymorphed item's new appearance before naming it.
+        observeObjectForNaming(replacement);
         await pline(`${replacement.invlet} - ${await inventoryItemDescription(replacement)}.`);
     }
     else {

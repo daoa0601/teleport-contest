@@ -173,8 +173,16 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
         await showDisclosureOverlay(content);
     }
     else {
-        await showFloorPileCorner(display, [...content, '--More--']);
+        const cornerLeft = await showFloorPileCorner(display, [...content, '--More--']);
         restoreMenuUnderlay(underlay);
+        // docorner() erased the corner without repainting the message row,
+        // so the top line stays clipped past the window's left edge until
+        // a topline writer repaints it. Cells an earlier, wider window
+        // erased stay erased.
+        const clipColumn = Math.max(0, cornerLeft - 2);
+        for (let col = clipColumn; col < display.cols; col++)
+            display.setCell(col, 0, ' ', NO_COLOR, 0);
+        display.toplineClipColumn = Math.min(display.toplineClipColumn ?? clipColumn, clipColumn);
     }
     const result = touchedCorpse ? await feelPetrifyingCorpse(touchedCorpse) : { died: false };
     if (!result.died)
@@ -198,6 +206,7 @@ async function showFloorPileCorner(display, lines) {
     do
         key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
+    return left;
 }
 export async function pricedFloorObjectDescription(object) {
     return await objectDescription(object, { withPrice: true });

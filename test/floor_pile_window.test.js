@@ -1,12 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
+import { farlookLocationDescription } from '../js/cmd.js';
+import { flush_screen, newsym, pline, plineWithContinuation } from '../js/display.js';
 import { showFloorPile } from '../js/floor_object_display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { APPLE, FOOD_RATION, LEASH } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
+import { screenDescription } from '../js/pager_description.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { GameDisplay } from '../js/game_display.js';
+import { Terminal } from '../js/terminal.js';
 function displayedRow(row) {
     const cells = requireGameDisplay(game).grid[row];
     assert.ok(cells, `Display row ${row} exists`);
@@ -134,5 +138,93 @@ void test('a floor-pile window too wide for a corner overlays only its own rows'
     assert.match(marker, /^ --More--/);
     // look_here() flushes the lit room before the window; its rows stay.
     assert.match(rowBelowWindow, /^ {6}\.{10} *$/);
+});
+// C invent.c:look_here() shows the pile in a corner window and its
+// destroy_nhwindow() runs docorner(), which erases every covered row from
+// the window's left edge and repaints only map rows. The seen top line
+// stays physically clipped until a new message replaces it.
+void test('dismissing a floor-pile corner window leaves the seen top line clipped', async () => {
+    freshObjectRoom();
+    const apple = await floorObject(APPLE, 10, 10);
+    const ration = await floorObject(FOOD_RATION, 10, 10);
+    const input = resetInputState();
+    await pline('You hear a jackal barking in the corridor.');
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+    const listing = showFloorPile([apple, ration]);
+    await input.waitUntilBlocked();
+    const duringDisplay = displayedRow(0);
+    input.feed(' ');
+    await listing;
+    await flush_screen(1);
+    const titleColumn = duringDisplay.indexOf('Things that are here:');
+    assert.ok(titleColumn > 0, 'the corner window must be on screen');
+    const clipped = displayedRow(0).trimEnd();
+    assert.equal(clipped.length, titleColumn - 2, 'the top line survives only to the corner window\'s left edge');
+    assert.equal(clipped, 'You hear a jackal barking in the corridor.'.slice(0, titleColumn - 2));
+    await pline('You hear a jackal barking in the corridor.');
+    await flush_screen(1);
+    assert.equal(displayedRow(0).trimEnd(), 'You hear a jackal barking in the corridor.', 'repeating the clipped text repaints the whole top line');
+});
+void test('a narrower floor-pile window does not restore text a wider one erased', async () => {
+    freshObjectRoom();
+    const apple = await floorObject(APPLE, 10, 10);
+    const ration = await floorObject(FOOD_RATION, 10, 10, { oname: 'provisions for the long road home' });
+    const leash = await floorObject(LEASH, 10, 10);
+    const input = resetInputState();
+    await pline('You hear a jackal barking in the corridor.');
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+    const wide = showFloorPile([apple, ration, leash]);
+    await input.waitUntilBlocked();
+    const wideColumn = displayedRow(0).indexOf('Things that are here:');
+    input.feed(' ');
+    await wide;
+    const narrow = showFloorPile([apple, leash]);
+    await input.waitUntilBlocked();
+    const narrowColumn = displayedRow(0).indexOf('Things that are here:');
+    input.feed(' ');
+    await narrow;
+    await flush_screen(1);
+    assert.ok(wideColumn > 0 && narrowColumn > wideColumn, 'the second window must sit further right');
+    assert.equal(displayedRow(0).trimEnd(), 'You hear a jackal barking in the corridor.'.slice(0, wideColumn - 2), 'the wider window\'s erasure survives the narrower one');
+});
+// A farlook description returns through putmixed(): its leading map glyph
+// is carried by \x0e/\x0f markers that occupy no screen cell. docorner()
+// clears physical columns, so the clip must keep every cell before the
+// window edge, not that many bytes of the encoded message.
+void test('a farlook description is clipped by screen cells, not raw bytes', async () => {
+    freshObjectRoom();
+    const apple = await floorObject(APPLE, 10, 10);
+    const ration = await floorObject(FOOD_RATION, 10, 10);
+    const input = resetInputState();
+    // A wide terminal keeps the description on one row, so its whole
+    // cell range falls inside the later corner clip.
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 120, rows: 24 }));
+    // The same putmixed() line the farlook command publishes for the
+    // floor square west of the hero: the glyph prefix plus the resolved description.
+    game.symset = 'DECgraphics';
+    newsym(game.u.ux - 1, game.u.uy);
+    const detail = await farlookLocationDescription(game.u.ux - 1, game.u.uy);
+    const described = screenDescription(game.u.ux - 1, game.u.uy, detail).text;
+    assert.ok(described.includes('\x0e'), 'the farlook description must carry the mixed glyph prefix');
+    await pline(described);
+    await flush_screen(1);
+    input.feed('x');
+    await nhgetch();
+    const listing = showFloorPile([apple, ration]);
+    await input.waitUntilBlocked();
+    const duringDisplay = displayedRow(0);
+    input.feed(' ');
+    await listing;
+    await flush_screen(1);
+    const titleColumn = duringDisplay.indexOf('Things that are here:');
+    assert.ok(titleColumn > 0, 'the corner window must be on screen');
+    const clipped = displayedRow(0).trimEnd();
+    assert.equal(clipped.length, titleColumn - 2, 'the glyph markers must not consume clip columns');
+    assert.ok(clipped.includes('a doorway or the floor of a ro'), 'the visible cells still carry the description');
+    assert.ok(!clipped.includes('(floor of a room)'), 'the clip falls inside the message');
 });
 //# sourceMappingURL=floor_pile_window.test.js.map

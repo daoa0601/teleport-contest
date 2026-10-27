@@ -22,6 +22,9 @@ export class GameDisplay {
     statusCapacityBlank = false;
     // Tty keeps the replacement prefix until BL_LEVELDESC changes.
     statusLevelPrefixChanged = false;
+    // docorner() of a corner window erases the physical top line past its
+    // left edge; nothing repaints it until a new message replaces it.
+    toplineClipColumn = null;
     statusVisible = true;
     constructor(terminalOrContainerId = null) {
         // A supplied terminal permits headless use; a container ID creates the browser surface.

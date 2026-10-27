@@ -298,6 +298,8 @@ async function eraseMenuCorner(window, roleSelection = false) {
     // docorner() cl_end()s every covered row from the menu's left edge and
     // then repaints only the map rows from the glyph buffer. The message
     // and status rows stay blank past that edge; nothing else redraws them.
+    // The erased top line stays clipped until a topline writer repaints it.
+    d.toplineClipColumn = left;
     for (let row = 0; row < bottom; row++) {
         d.setCursor(left, row);
         clearRect(left, row, d.cols, row + 1);
