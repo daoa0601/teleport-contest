@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { CHEST, RIN_PROTECTION } from '../js/object_data.js';
+import { ARROW, BOW, CHEST, RIN_PROTECTION } from '../js/object_data.js';
+import { moveloop_core } from '../js/allmain.js';
+import { setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { yn_function } from '../js/query.js';
 import { resetInputState } from '../js/input.js';
 import { ynSingleKey } from '../js/tty_prompts.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { freshTurnRoom } from './support/playable-room.js';
 import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 void test('an invalid queued tipping answer reports the problem and leaves the container alone', async () => {
@@ -146,5 +149,71 @@ void test('a user-input canned entry leaves a single-key question live', async (
     assert.equal(outcome, 'blocked', 'the question must wait for terminal input, not the next canned entry');
     input.feed('m');
     assert.equal(await question, 'm'.charCodeAt(0));
+});
+// A fire-assist 'f' with a bow as the secondary weapon and arrows in the
+// quiver leaves the resuming fire queued behind the canned weapon swap.
+async function fireAssistRoom() {
+    const input = freshTurnRoom();
+    const bow = await addInventoryObject(BOW, { invlet: 'b' });
+    await setSecondaryWeapon(bow);
+    await setQuiverObject(await addInventoryObject(ARROW, { invlet: 'c', quan: 3 }));
+    input.feed('f');
+    await moveloop_core();
+    const swap = moveloop_core();
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await swap;
+    assert.equal(game.uwep, bow, 'the canned weapon swap ran');
+    return input;
+}
+// Complete the swap's turn and run the queued fire: acknowledge every
+// pager message with space, answer the fire's direction question with
+// Escape, and record each top line the engine blocked on.
+async function driveTurnUntilFireAsks(input) {
+    const seen = [];
+    input.display = {
+        async readKey() {
+            const display = requireGameDisplay(game);
+            const top = (display.grid[0] ?? []).map(cell => cell.ch).join('');
+            seen.push(top);
+            return /In what direction\?/.test(top) ? 27 : ' '.charCodeAt(0);
+        },
+    };
+    await moveloop_core(); // the swap's turn completes
+    await moveloop_core(); // the queued fire asks its direction
+    return seen;
+}
+// C cmd.c:yn_function() pops the command queue once (cmd.c:5496-5509): a
+// queued key answers the question, and the canned commands behind it stay
+// queued for the command loop. A fire-assist fire left behind a weapon
+// swap still asks for its direction after such an answer.
+void test('a canned key answer leaves the command queued behind it', async () => {
+    const input = await fireAssistRoom();
+    input.queueCommandKeys('n');
+    const answer = await yn_function('Do you want to hold your fire?', 'ynq', 'y');
+    assert.equal(answer.answer, 'n', 'the queued key answers the question');
+    const seen = await driveTurnUntilFireAsks(input);
+    assert.ok(seen.some(line => /In what direction\?/.test(line)), 'the queued fire must still ask for its direction');
+    assert.equal(game.uquiver?.quan, 3, 'cancelling the direction keeps the arrows');
+});
+// The popped CMDQ_USER_INPUT placeholder takes no canned entry with it:
+// the question is asked live (cmd.c:5504) and the queued fire survives.
+void test('a user-input answer leaves the canned command queued behind it', async () => {
+    const input = await fireAssistRoom();
+    input.queueCommandResponses(['user-input']);
+    const question = yn_function('Do you want to hold your fire?', 'ynq', 'y');
+    const outcome = await Promise.race([
+        question.then(answer => `answered:${answer.answer}`),
+        input.waitUntilBlocked().then(() => 'blocked'),
+    ]);
+    assert.equal(outcome, 'blocked', 'the question must wait for terminal input, not the canned fire');
+    // The live question first pages the swap's unread message, then reads.
+    input.feed(' ');
+    await input.waitUntilBlocked();
+    input.feed('n');
+    assert.equal((await question).answer, 'n');
+    const seen = await driveTurnUntilFireAsks(input);
+    assert.ok(seen.some(line => /In what direction\?/.test(line)), 'the queued fire must still ask for its direction');
+    assert.equal(game.uquiver?.quan, 3, 'cancelling the direction keeps the arrows');
 });
 //# sourceMappingURL=query_canned_answers.test.js.map

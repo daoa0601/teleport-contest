@@ -26,10 +26,10 @@ void test('a leftover fire-assist command answers death disclosure through the y
     game.u.sickCause = 'rotted gnome corpse';
     input.feed('f');
     await moveloop_core();
-    assert.deepEqual(game._cannedCommands?.map(command => command.kind), ['wield', 'fire'], 'fire assist must queue the launcher wield and the resuming fire');
+    assert.equal(game.uquiver?.quan, 3, 'the fire assist must not fire immediately');
     const pages = [];
     installPagerInput(input, { expected: /[\s\S]/, limit: 40, pages });
-    await moveloop_core(); // the canned launcher wield
+    await moveloop_core(); // the canned launcher wield, without a new command key
     // The turn the wield spent completes here; terminal illness kills the
     // hero before the command loop can pop the queued fire again.
     await moveloop_core();
@@ -38,6 +38,6 @@ void test('a leftover fire-assist command answers death disclosure through the y
     assert.ok(pages.some(page => /Please report these messages to devteam@nethack\.org\./.test(page)), 'the impossible feedback must reach the message pager');
     assert.ok(!pages.some(page => /Do you want your possessions identified\?/.test(page)), 'the queued command answers the possessions question without asking it');
     assert.ok(pages.some(page => /Do you want to see your attributes\?/.test(page)), 'the following disclosure question is asked live again');
-    assert.equal(game._cannedCommands?.length, 0, 'cmdq_clear(CQ_CANNED) drops the remaining canned commands');
+    assert.equal(game.uquiver?.quan, 3, 'the leftover fire never ran: the disclosure cleared it');
 });
 //# sourceMappingURL=yn_canned_disclosure.test.js.map

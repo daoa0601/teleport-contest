@@ -80,12 +80,17 @@ export async function ynSingleKey(message: string, cursorOffset = 0): Promise<nu
         }
     } else {
         // C cmdq_pop() takes CQ_CANNED here and sets addcmdq FALSE, so a
-        // canned answer never lands in CQ_REPEAT.
-        const canned = takeCommandKey();
-        if (canned !== undefined) return canned;
-        // The next canned entry is a command, not a key: yn_function()
-        // answers with its ESC initializer after cmdq_clear(CQ_CANNED).
-        if (game._cannedCommands?.length) {
+        // canned answer never lands in CQ_REPEAT. That one entry decides:
+        // a key answers, a user-input placeholder asks live, and any other
+        // entry — or a canned command reached through an empty response
+        // queue — answers Escape after cmdq_clear(CQ_CANNED).
+        const response = takeCommandResponse();
+        if (typeof response === 'number') return response;
+        if (response === undefined && game._cannedCommands?.length) {
+            clearCannedCommands();
+            return 27;
+        }
+        if (response !== undefined && response !== 'user-input') {
             clearCannedCommands();
             return 27;
         }
