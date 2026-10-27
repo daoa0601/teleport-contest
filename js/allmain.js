@@ -1916,7 +1916,14 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     const wasDoffing = removingThisArmor || isBeingTakenOff(object, game);
     // stop_donning() reports the remaining turns only when it silently stops
     // doffing the stolen armor itself; bulk 'A' doffing carries no multi.
-    const oldDelay = removingThisArmor ? game._helplessTurns ?? 0 : 0;
+    // C runs the monster phase of a turn before that turn's bookkeeping
+    // countdown, while this engine counts the hero action's turn down when
+    // the action completes. During a monster-phase theft, C's -multi still
+    // holds the turn: stop_donning() reads one more turn than _helplessTurns
+    // shows there. Direct attack harnesses outside a world turn have no such
+    // pending countdown and keep the plain remaining count.
+    const oldDelay = removingThisArmor
+        ? (game._helplessTurns ?? 0) + (game.context.mon_moving ? 1 : 0) : 0;
     await stopDonning(object, game);
     await stopHeroOccupation(game);
     // stop_donning() makes interrupted dressing armor unworn before steal()
