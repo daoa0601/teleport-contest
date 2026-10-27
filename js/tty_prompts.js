@@ -80,10 +80,14 @@ export async function ynSingleKey(message, cursorOffset = 0) {
 }
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
-export async function readDirectionKey(message = 'In what direction? ') {
+// Its cmdq_pop() at function entry (cmd.c:3962) is consumed once per
+// getdir() call; after the help or redraw retry, every further key comes
+// from readchar() (repeating) or yn_function() (ordinary play), never from
+// the command queue again.
+export async function readDirectionKey(message = 'In what direction? ', retry = false) {
     // C cmdq_pop() selects CQ_REPEAT during do-again, otherwise CQ_CANNED.
     if (game._inDoAgain) {
-        const queued = takeRepeatCommand();
+        const queued = retry ? undefined : takeRepeatCommand();
         if (queued)
             return queued.kind === 'key' ? queued.key : 27;
         // C getdir() bypasses yn_function() while repeating: readchar()
@@ -94,7 +98,7 @@ export async function readDirectionKey(message = 'In what direction? ') {
         clearMessageWindow();
         return key;
     }
-    const queued = takeCommandResponse();
+    const queued = retry ? undefined : takeCommandResponse();
     if (typeof queued === 'number')
         return queued;
     if (typeof queued === 'object')
@@ -131,8 +135,10 @@ function queuedDirectionKey({ dx, dy, dz }) {
     return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
 }
 export async function promptDirection(readKey = readDirectionKey, { ctrlCommandHint = false } = {}) {
+    let retry = false;
     for (;;) {
-        const key = await readKey('In what direction? ');
+        const key = await readKey('In what direction? ', retry);
+        retry = true; // the entry cmdq_pop() is spent; retries read fresh keys
         const code = (typeof key === 'number' ? key : String(key).charCodeAt(0)) & 255;
         if (game.commandBindings.lookup(code)?.command?.handler === 'doredraw') {
             // docrt_flags(docrtRefresh) resends the current glyphs without
