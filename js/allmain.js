@@ -1914,10 +1914,9 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     const previousDelay = pendingArmorAction(game);
     const removingThisArmor = previousDelay?.kind === 'remove' && previousDelay.object === object;
     const wasDoffing = removingThisArmor || isBeingTakenOff(object, game);
-    // stop_donning() reports the remaining turns only when it silently stops
-    // doffing the stolen armor itself; bulk 'A' doffing carries no multi.
-    const oldDelay = removingThisArmor
-        ? (game._helplessTurns ?? 0) : 0;
+    // C stop_donning() captures -multi only after cancel_don() has already
+    // zeroed it, so steal()'s olddelay is always 0: interrupting a doff
+    // never shortens the seduction delay nor disarms the patience roll.
     await stopDonning(object, game);
     await stopHeroOccupation(game);
     // stop_donning() makes interrupted dressing armor unworn before steal()
@@ -1927,15 +1926,13 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     let removalMessage = null;
     let charmed = false;
     if (equipmentSlots.some(slot => slot.startsWith('uarm') && game[slot] === object)) {
-        const delay = oldDelay > 0 && oldDelay < (OBJECT_DELAY[object.otyp] ?? 0)
-            ? oldDelay : OBJECT_DELAY[object.otyp] ?? 0;
+        const delay = OBJECT_DELAY[object.otyp] ?? 0;
         const helplessReason = game._helplessReason;
         const reason = typeof helplessReason === 'string' ? helplessReason : helplessReason?.text;
         const unresponsive = heroIsUnaware(game) || (heroHasInvoluntaryDelay(game)
             && !!reason && /^(?:frozen|paralyzed)/.test(reason));
         if (animal || unresponsive) {
-            // A doff already under way disarms the patience refusal and its roll.
-            if (delay >= 1 && !oldDelay && draw(10))
+            if (delay >= 1 && draw(10))
                 return refuse();
         }
         else {
