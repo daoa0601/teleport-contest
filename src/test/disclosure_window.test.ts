@@ -31,6 +31,24 @@ void test('a menu-built disclosure clears its answered question before opening',
     }
 });
 
+void test('a disclosure menu clears its answered question before showing the overview', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    input.feed('y');
+    await promptKey('Do you want to see the dungeon overview? [ynq] ');
+    const overview = showDisclosureOverlay(['The Dungeons of Doom: levels 1 to 2'], {
+        pagerStyle: 'menu', marker: '(end)',
+    });
+    try {
+        await input.waitUntilBlocked();
+        assert.match(rowText(0), /The Dungeons of Doom: levels 1 to 2/);
+        assert.doesNotMatch(rowText(0), /Do you want/);
+    } finally {
+        input.feed(' ');
+        await overview;
+    }
+});
+
 for (const kind of ['prose', 'choices'] as const) {
     void test(`a ${kind} window acknowledges unread prose before painting its contents`, async () => {
         freshPlayableRoom();

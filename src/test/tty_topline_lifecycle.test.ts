@@ -74,6 +74,52 @@ void test('an empty message window keeps its answered question through command i
     assert.equal(topline(), '');
 });
 
+void test('displaying a message window preserves an already answered question', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('c');
+    await promptKey('What do you want to zap? [c or ?*] ');
+
+    await displayMessageWindow();
+    await flush_screen(1);
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+    await pline('The wand glows.');
+    await flush_screen(1);
+    assert.equal(topline(), 'The wand glows.', 'New prose replaces the answered question without paging it.');
+});
+
+void test('displaying an answered question leaves it visible through silent commands until new text replaces it', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('c');
+    await promptKey('What do you want to zap? [c or ?*] ');
+
+    await displayMessageWindow();
+    await flush_screen(1);
+
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+    input.feed('l');
+    await rhack(0);
+    await flush_screen(1);
+    assert.equal(game.u.ux, 11, 'The next command moves the hero without printing a message.');
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+
+    input.feed('j');
+    await rhack(0);
+    await flush_screen(1);
+    assert.equal(game.u.uy, 11);
+    assert.equal(topline(), 'What do you want to zap? [c or ?*]');
+
+    await pline('The wand glows.');
+    await flush_screen(1);
+    assert.equal(topline(), 'The wand glows.', 'New prose replaces the answered question without paging it.');
+
+    input.feed('l');
+    await rhack(0);
+    await flush_screen(1);
+    assert.equal(topline(), '', 'Ordinary prose is still cleared after the next command key.');
+});
+
 void test('successive key reads acknowledge each message without joining later prose to seen text', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

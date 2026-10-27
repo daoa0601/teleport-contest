@@ -71,6 +71,23 @@ void test('an unknown command replaces the line without being remembered', async
     await rhack(16);
     assert.equal(rowText(0), 'You remember this line.', 'the line before the complaint is still the newest entry');
 });
+void test('a recalled line is cleared after the next silent command key', async () => {
+    freshObjectRoom();
+    game.iflags.prevmsg_window = 's';
+    const input = resetInputState();
+    await pline('The door creaks open.');
+    await markSeen(input);
+    await pline('A gust of wind follows.');
+    input.feed('\x10');
+    await rhack(0);
+    await flush_screen(1);
+    assert.equal(rowText(0), 'A gust of wind follows.');
+    input.feed('l');
+    await rhack(0);
+    await flush_screen(1);
+    assert.equal(game.u.ux, 11);
+    assert.equal(rowText(0), '');
+});
 void test('msg_window:full lists the ring oldest-first with the pending line last', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

@@ -3444,6 +3444,7 @@ export async function flushPendingTopline() {
 }
 // C tty_display_nhwindow(WIN_MESSAGE): unlike a direct more(), the window
 // display honors Escape's WIN_STOP/WIN_CANCELLED flag before acknowledging.
+// Only TOPLINE_NEED_MORE erases the row; answered questions remain visible.
 export async function displayMessageWindow() {
     if (game._suppressMessagesUntilInput)
         return null;

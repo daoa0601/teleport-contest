@@ -252,7 +252,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
 
 // C detect.c:find_trap(). Only clutter in the remembered layer needs a
 // separate trap display; a visible monster overlays that layer.
-async function findTrap(trap: Trap): Promise<void> {
+export async function findTrap(trap: Trap): Promise<void> {
     trap.tseen = true;
     exerciseWisdom();
     feel_newsym(trap.tx, trap.ty);
