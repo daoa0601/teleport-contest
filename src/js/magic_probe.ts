@@ -16,7 +16,10 @@ import { monsterStatusLine } from './monster_status.js';
 import { CHEST, EGG, LARGE_BOX, STATUE, TIN } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
 import { heroIsHallucinating } from './senses.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { objectClassForType } from './object_knowledge.js';
 import { showInventoryWindow } from './windows.js';
+import type { InventorySection } from './windows.js';
 
 function schroedingersBox(object: GameObject) {
     return object.otyp === LARGE_BOX && object.spe === 1;
@@ -37,10 +40,31 @@ export async function probeMonster(monster: Monster, {
         return;
     }
     probeObjectChain(inventory, { state });
-    const name = monsterName(monster, { state, capitalized: true, suppressIt: true });
-    const items = [];
-    for (const object of inventory) items.push({ text: await inventoryItemDescription(object) });
-    await showInventoryWindow([{ heading: '', items }], {
+    // invent.c:display_minventory() titles the menu with
+    // s_suffix(noit_Monnam(mon)) — ARTICLE_YOUR plus SUPPRESS_IT, matching
+    // the empty-carrier message above — and shows the monster's whole
+    // inventory through query_objlist() with INVORDER_SORT: entries group
+    // by class in inv_order under class headings, the tty layer generates
+    // the selector letters, and only a leading gold stack keeps its own
+    // '$' selector (pickup.c:1129-1139).
+    const name = monsterName(monster, { state, capitalized: true, article: 'your', suppressIt: true });
+    const sorted = sortObjects(inventory, { mode: lootSortMode({ state }), state });
+    const sections: InventorySection<GameObject>[] = [];
+    let leading = true;
+    for (const oclass of inventoryClassOrder(state)) {
+        const objects = sorted.filter(object => (object.oclass || objectClassForType(object.otyp)) === oclass);
+        if (!objects.length) continue;
+        sections.push({
+            heading: objectClassHeading(oclass),
+            items: await Promise.all(objects.map(async object => ({
+                ...(leading && oclass === 12 ? { key: '$' } : {}),
+                text: await inventoryItemDescription(object),
+                value: object,
+            }))),
+        });
+        leading = false;
+    }
+    await showInventoryWindow(sections, {
         title: `${possessiveName(name)} possessions:`,
     });
 }
