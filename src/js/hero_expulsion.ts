@@ -155,12 +155,9 @@ export async function expelHero(monster: Monster, {
         else await impossible('Swallower has no engulfing attack?', { state });
     }
     await releaseHeroFromMonster(monster, { state, publish, redraw, rollOne });
-    const oldx = monster.mx;
-    const oldy = monster.my;
     await moveMonsterNextToHero(monster, state, { flags: RLOC_NOMSG, random });
     if (state.program_state.gameover) return { expelled: true, died: true };
-    refresh(oldx, oldy);
-    refresh(monster.mx, monster.my);
+    // mnexto() redraws the monster; expels() then redraws only the hero.
     refresh(state.u.ux, state.u.uy);
     const distance = Math.max(
         Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy),
