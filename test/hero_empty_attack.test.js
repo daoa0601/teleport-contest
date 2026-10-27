@@ -2,6 +2,9 @@ import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { requireGameLevel } from '../js/gstate.js';
+import { addTrap } from './support/level-state.js';
+import { SPIKED_PIT } from '../js/const.js';
 import { AIR, D_CLOSED, DOOR, FOUNTAIN, MM_NOGRP, MM_NOWAIT, NO_MINVENT, POOL, SCORR, SDOOR, STONE, Upolyd, } from '../js/const.js';
 import { glyphAt, map_invisible, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -213,5 +216,68 @@ void test('an invisible marker prevents force fighting with a pick from starting
     assert.match(messages, /You harmlessly attack the stone\./);
     assert.equal(state._occupation ?? null, null);
     assert.notEqual(glyphAt(11, 10)?.kind, 'invisible');
+});
+// C cmd.c:set_move_cmd() keeps context.run when a movement prefix is
+// pending, so a leftover travel or rush run (never cleared because the
+// intervening commands all took time) makes hack.c:
+// avoid_running_into_trap_or_liquid() stop an 'F'+direction forcefight at
+// a known trap before domove_fight_empty() can attack, spending no turn.
+void test('a leftover travel run silently stops a forcefight at a known trap', async () => {
+    emptyArena();
+    const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
+    newsym(trap.tx, trap.ty);
+    game.context.run = 8;
+    const movesBefore = game.moves;
+    const messages = await command('Fh', /never/);
+    assert.doesNotMatch(messages, /attack thin air/);
+    assert.equal(game.context.move, 0);
+    assert.equal(game.moves, movesBefore, 'the stopped fight spends no turn');
+    assert.equal(game.context.run, 0, 'the stop ends the lingering run');
+});
+void test('a forcefight without a lingering run attacks thin air over a known trap', async () => {
+    emptyArena();
+    const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
+    newsym(trap.tx, trap.ty);
+    game.context.run = 0;
+    const messages = await command('Fh', /attack thin air/);
+    assert.match(messages, /You attack thin air\./);
+    assert.equal(game.context.move, 1);
+});
+// The DOMOVE_WALK dispatch (cmd.c:3785-3788) never touches context.run, so
+// even a counted 'F'+direction keeps a leftover travel run and
+// avoid_running_into_trap_or_liquid() stops each counted step at the known
+// trap before domove_fight_empty() can attack.
+void test('a counted forcefight with a leftover travel run also stops at the trap', async () => {
+    emptyArena();
+    const trap = addTrap(requireGameLevel(game), SPIKED_PIT, 9, 10, { tseen: true });
+    newsym(trap.tx, trap.ty);
+    game.context.run = 8;
+    const movesBefore = game.moves;
+    const messages = await command('3Fh', /never/);
+    assert.doesNotMatch(messages, /attack thin air/);
+    assert.equal(game.context.move, 0);
+    assert.equal(game.moves, movesBefore, 'no counted step is spent at the trap');
+    assert.equal(game.context.run, 0, 'the stop ends the lingering run');
+});
+// C hack.c:2791 ends any count the moment a forcefight meets a monster
+// (nomul(0) for "!is_safemon || forcefight"), and domove_fight_empty()
+// nomuls too (hack.c:2323), so a counted 'F'+direction never repeats.
+void test('a counted forcefight at a monster swings once', async () => {
+    emptyArena();
+    const target = await createMonsterAt('stalker', 9, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+    target.mhp = target.mhpmax = 500;
+    target.mpeaceful = false;
+    newsym(9, 10);
+    const bystander = await createMonsterAt('newt', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+    bystander.mpeaceful = false;
+    newsym(11, 10);
+    game.context.run = 2;
+    game.multi = 3;
+    const healthBefore = target.mhp;
+    const messages = await command('Fh', /hit|miss/);
+    const swings = (messages.match(/You (hit|miss)/g) ?? []).length;
+    assert.equal(swings, 1, 'the forcefight swing itself ends the count');
+    assert.ok(target.mhp < healthBefore, 'the single swing struck the target');
+    assert.equal(game.multi, 0, 'the swing clears the count');
 });
 //# sourceMappingURL=hero_empty_attack.test.js.map

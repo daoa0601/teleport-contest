@@ -417,13 +417,18 @@ export async function rerollMenu() {
     }
     return reroll;
 }
-async function inventorySections(items = game.inventory || [], includeGold = true) {
-    return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold);
+async function inventorySections(items = game.inventory || [], includeGold = true, letters = null) {
+    return await inventorySectionsInOrder(sortObjects(items, { mode: inventorySortMode() }), includeGold, letters);
 }
-async function inventorySectionsInOrder(items, includeGold = true) {
+async function inventorySectionsInOrder(items, includeGold = true, letters = null) {
     const grouped = new Map();
     for (const item of items) {
         if (!includeGold && item.oclass === COIN_CLASS)
+            continue;
+        // C display_pickinv() filters by letters when rendering, after
+        // sortloot() has classified -- and observed -- every object in the
+        // passed list, so items hidden by the filter are still named.
+        if (letters !== null && !letters.includes(item.invlet ?? ''))
             continue;
         observeObjectForNaming(item);
         consumeHallucinatedMenuObjectGlyph(item);
@@ -823,7 +828,11 @@ export async function selectInventoryObject({ letters, includeGold = true, title
         const key = await showMessageMenu(letter, item ? pickMode : PICK_ONE, `${letter} - ${description}.`);
         return { key, count: null };
     }
-    const sections = await inventorySections(visible, true);
+    // invent.c:display_pickinv() runs sortloot() over the whole inventory
+    // (observing every object via loot_classify()) and only afterwards
+    // drops entries whose letters are absent from the requested set,
+    // treating an empty set as no filter at all.
+    const sections = await inventorySections(game.inventory, includeGold, letters || null);
     if (extraChoice && !wizardIdentification)
         sections.unshift({
             heading: game.flags.sortpack === false ? null : 'Miscellaneous',

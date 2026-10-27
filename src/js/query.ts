@@ -83,6 +83,10 @@ export async function tty_getlin(
 ): Promise<string | null> {
     let value = '';
     let renderedRows = 1;
+    // Rows this editor ever covered, kept apart from the current content
+    // height: shortening a wrapped answer (backspace, Ctrl-U) does not
+    // repaint the deeper rows, so cleanup must still clear them all.
+    let coveredRows = 1;
     const width = (game.nhDisplay?.cols ?? COLNO) - 1;
     const promptLength = prompt.length + 1;
     const promptRow = Math.floor((promptLength - 1) / width);
@@ -96,15 +100,20 @@ export async function tty_getlin(
         }
         if (cursorColumn > 0) cursorColumn--;
     };
-    const clearEditorRows = () => {
-        for (let row = 0; row < renderedRows; row++)
-            game.nhDisplay?.clearRow(row);
-    };
     const renderEditor = () => {
         const line = `${prompt} ${value}`;
-        clearEditorRows();
         const contentRows = Math.max(1, Math.ceil(line.length / width));
-        renderedRows = Math.max(renderedRows, contentRows);
+        coveredRows = Math.max(coveredRows, contentRows);
+        // topl_putsym() clears each row it wraps onto with cl_end()
+        // before echoing there, so a freshly wrapped row cannot keep
+        // stale cells from earlier message-window output.  A getlin
+        // running under an open menu writes behind that menu; the menu
+        // keeps repainting its own rows, so only the rows this editor
+        // already painted are cleared there.
+        const rowsToClear = inMenu ? renderedRows : Math.max(renderedRows, contentRows);
+        for (let row = 0; row < rowsToClear; row++)
+            game.nhDisplay?.clearRow(row);
+        renderedRows = inMenu ? Math.max(renderedRows, contentRows) : contentRows;
         for (let row = 0; row < contentRows; row++) {
             game.nhDisplay?.putstr(
                 0, row, line.slice(row * width, (row + 1) * width),
@@ -117,7 +126,7 @@ export async function tty_getlin(
         game._promptOwnsTopline = false;
     };
     const finish = (result: string | null): string | null => {
-        clearMessageWindow(renderedRows);
+        clearMessageWindow(coveredRows);
         return result;
     };
     const clearSuppressedStatus = () => {
@@ -184,7 +193,7 @@ export async function tty_getlin(
         if (key === 27) {
             if (value) {
                 value = '';
-                clearMessageWindow(renderedRows);
+                clearMessageWindow(coveredRows);
                 renderedRows = 1;
                 cursorColumn = promptColumn;
                 cursorRow = promptRow;

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    DUST, P_POLEARMS, P_SKILLED, STATUE_TRAP, THRONE,
+    D_CLOSED, DOOR, DUST, P_POLEARMS, P_SKILLED, STATUE_TRAP, THRONE,
 } from '../js/const.js';
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
@@ -276,3 +276,19 @@ void test('quivered ammunition defers to the wielded polearm when it can strike'
         assert.equal(game.inventory.includes(arrow), true);
         assert.equal(game.context.move, 1);
     });
+
+void test('a polearm blow at a closed door is a useless attack', async () => {
+    freshPolearmRoom();
+    requirePlayingGame(game);
+    const pole = await installPolearm();
+    const door = requireGameLevel().requireAt(12, 10);
+    door.typ = DOOR;
+    door.doormask = D_CLOSED;
+    paintAt(12, 10);
+
+    await applyInventoryObject(pole, 'll.');
+
+    assert.match(game._pending_message,
+        /You uselessly attack the closed door\.$/);
+    assert.equal(game.context.move, 1);
+});

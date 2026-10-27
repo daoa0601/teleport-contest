@@ -39,14 +39,12 @@ export interface DirectionalRunState {
     mode: DirectionalRunMode;
     dx: number;
     dy: number;
-    lastStrTurn: number;
 }
 
 export interface TravelRunState {
     mode: 8;
     targetX: number;
     targetY: number;
-    lastStrTurn: number;
     visited?: Set<number>;
 }
 

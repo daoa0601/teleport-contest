@@ -9,13 +9,22 @@ export function startRun(dx, dy, g = game, mode = 1) {
     g._runState = {
         dx, dy,
         mode,
-        lastStrTurn: 0,
     };
+    g.lastStrTurn = 0;
     // C's DOMOVE_RUSH dispatch grants the movement ration whenever the
     // repeat begins, regardless of the surviving context.run value.
     if (!g.multi)
         g.multi = Math.max(COLNO, ROWNO);
     g.context.run = mode;
+    g.context.mv = true;
+    return g._runState;
+}
+// C rhack()'s DOMOVE_WALK dispatch (cmd.c:3785-3788): a counted direction
+// only marks the repeat active.  context.run keeps whatever value an
+// earlier rush or travel left behind, as does the last corridor turn.
+// No movement ration is granted.
+export function startWalkRepeat(dx, dy, g = game) {
+    g._runState = { dx, dy, mode: 0 };
     g.context.mv = true;
     return g._runState;
 }
