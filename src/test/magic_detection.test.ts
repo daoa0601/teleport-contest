@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ROOM, SCORR, CORR, SDOOR, POOL } from '../js/const.js';
+import { ROOM, SCORR, CORR, SDOOR, POOL, M_AP_OBJECT } from '../js/const.js';
 import { addBuriedObject } from '../js/buried_object.js';
 import { glyphAt, map_object } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -9,7 +9,8 @@ import { InputGate, bindInputGate, pushKeys } from '../js/input.js';
 import { detectFood, detectGold, detectMonsters, detectObjects, mapVicinity } from '../js/magic_detection.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import {
-    APPLE, GOLD_PIECE, LARGE_BOX, POT_HEALING, POT_MONSTER_DETECTION, SPE_DETECT_TREASURE, SPE_CLAIRVOYANCE, OBJECT_NAMES,
+    APPLE, GOLD_PIECE, LARGE_BOX, POT_HEALING, POT_MONSTER_DETECTION, SPE_DETECT_TREASURE, SPE_CLAIRVOYANCE, OBJECT_NAMES, OBJECT_COLOR,
+    WORTHLESS_PIECE_OF_WHITE_GLASS,
 } from '../js/object_data.js';
 import { floorObject, uninitializedObject, unopenedCatBox } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -19,6 +20,7 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 
 const FOOD_DETECTION = OBJECT_NAMES.indexOf('food detection');
+const OBJECT_DETECTION = OBJECT_NAMES.indexOf('object detection');
 const GOLD_DETECTION = OBJECT_NAMES.indexOf('gold detection');
 // objects.h generic slot shown for a potion whose appearance is unobserved.
 const POTION_CLASS = 8;
@@ -143,6 +145,43 @@ void test('blessed treasure detection observes nested and buried objects, then r
     assert.equal(box.dknown, true);
     assert.equal(potion.dknown, true);
     assert.equal(rememberedObjectAt(30, 10).otyp, LARGE_BOX);
+});
+
+void test('cursed object detection reveals a mimic disguise with its own object color', async () => {
+    detectionRoom();
+    requirePlayingGame(game);
+    const mimic = await createMonsterAt('small mimic', 30, 10);
+    mimic.m_ap_type = M_AP_OBJECT;
+    mimic.mappearance = POT_HEALING;
+    dismissViews();
+
+    const result = await detectObjects(await uninitializedObject(OBJECT_DETECTION, { cursed: true }));
+
+    assert.equal(result.result, 0);
+    // detect.c builds the disguise from cg.zeroobj; the zeroed oc_class
+    // means obj_is_generic() cannot hide the potion behind the gray class
+    // slot, so the map remembers the exact type in its shuffled oc_color.
+    const glyph = rememberedObjectAt(30, 10);
+    assert.equal(glyph.otyp, POT_HEALING);
+    assert.equal(glyph.color, game.objectColors?.[POT_HEALING] ?? OBJECT_COLOR[POT_HEALING]);
+});
+
+void test('cursed object detection draws a gem disguise through the strange-object slot', async () => {
+    detectionRoom();
+    requirePlayingGame(game);
+    const mimic = await createMonsterAt('small mimic', 30, 10);
+    mimic.m_ap_type = M_AP_OBJECT;
+    mimic.mappearance = WORTHLESS_PIECE_OF_WHITE_GLASS;
+    dismissViews();
+
+    await detectObjects(await uninitializedObject(OBJECT_DETECTION, { cursed: true }));
+
+    // The zeroed oc_class also feeds obj_is_generic(): a gem or spellbook
+    // disguise stays generic, and generic_obj_to_glyph() adds that zero
+    // class, so C maps the mimic onto the strange-object slot and its color.
+    const glyph = rememberedObjectAt(30, 10);
+    assert.equal(glyph.otyp, 0);
+    assert.equal(glyph.color, OBJECT_COLOR[0]);
 });
 
 void test('cursed monster detection wakes sleeping and frozen actors without making them peaceful', async () => {
