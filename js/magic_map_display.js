@@ -102,6 +102,12 @@ export async function redisplayDetectionMap(constraints, state = game) {
         await under_water(2);
     if (state.u.uburied)
         await under_ground(2);
-    await flush_screen(1);
+    // C map_redisplay() does not flush: docrt() only sets the status
+    // redraw flag ("caller needs to call bot()"), so the restored map and
+    // the status line both repaint at moveloop's once-per-input bot() +
+    // curs_on_u(), after any monster phase and moves++ have settled.  An
+    // eager flush here renders the turn counter one input early whenever
+    // the suppressing run flag (travel leaves context.run at 8) blocks the
+    // time update that would otherwise re-flag it.
 }
 //# sourceMappingURL=magic_map_display.js.map
