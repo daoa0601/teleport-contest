@@ -988,8 +988,8 @@ function startTravel(targetX: number, targetY: number, g: GameState = game): Tra
         mode: 8,
         targetX,
         targetY,
-        lastStrTurn: 0,
     };
+    g.lastStrTurn = 0;
     g._travelTarget = { x: targetX, y: targetY };
     if (!g.multi) g.multi = Math.max(COLNO, ROWNO);
     g.context.run = 8;
@@ -1162,9 +1162,9 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
             turn = ((x0 - u.ux === y0 - u.uy && !state.dy)
                 || (x0 - u.ux !== y0 - u.uy && state.dy)) ? 1 : -1;
         }
-        turn += state.lastStrTurn;
+        turn += g.lastStrTurn ?? 0;
         if (turn >= -2 && turn <= 2) {
-            state.lastStrTurn = turn;
+            g.lastStrTurn = turn;
             state.dx = x0 - u.ux;
             state.dy = y0 - u.uy;
             u.dx = state.dx;
