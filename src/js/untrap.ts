@@ -253,11 +253,7 @@ export async function untrap({
         });
     }
     const direction = await chooseDirection();
-    if (!direction) {
-        state._pending_message = '';
-        state._retained_message = '';
-        return false;
-    }
+    if (!direction) return false;
     const hero = state.u;
     hero.dx = direction.dx;
     hero.dy = direction.dy;

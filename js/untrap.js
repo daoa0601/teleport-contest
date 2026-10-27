@@ -146,11 +146,8 @@ export async function untrap({ state = game, container = null, door = null, forc
         });
     }
     const direction = await chooseDirection();
-    if (!direction) {
-        state._pending_message = '';
-        state._retained_message = '';
+    if (!direction)
         return false;
-    }
     const hero = state.u;
     hero.dx = direction.dx;
     hero.dy = direction.dy;
