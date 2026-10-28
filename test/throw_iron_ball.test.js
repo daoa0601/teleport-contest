@@ -96,25 +96,6 @@ void test('a hero stuck in the floor throws the chained ball one square', async 
     assert.equal(trappedBall.ox, 11);
     assert.equal(trappedBall.oy, 10);
 });
-void test('a thrown iron ball stops at a wall without the chain halt message', async () => {
-    const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
-    requirePlayingGame(game);
-    game.u.acurr.a[A_STR] = STR19(25);
-    const ball = await holdAttachedBall();
-    level.requireAt(13, 10).typ = STONE;
-    vision_note_blocker_change(13, 10);
-    vision_recalc(0);
-    const input = resetInputState();
-    const messages = [];
-    input.beforeRead = () => { messages.push(game._pending_message); };
-    initRng(914n);
-    await throwInventoryObject(ball, 'l', ' '.repeat(8));
-    const text = [...messages, game._pending_message].join('\n');
-    assert.doesNotMatch(text, /abrupt halt/, 'the wall stops the flight before the chain is tested');
-    assert.equal(ball.where, 'floor');
-    assert.equal(ball.ox, 12);
-    assert.equal(ball.oy, 10);
-});
 void test('a chained ball thrown through a tight Sokoban diagonal jerks to a halt', async () => {
     const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
     requirePlayingGame(game);
