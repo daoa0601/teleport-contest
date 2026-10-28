@@ -16,7 +16,6 @@ import {
     IS_SOFT,
     IS_WATERWALL,
     Is_airlevel,
-    In_sokoban,
     LAVAWALL,
     LOST_THROWN,
     M_AP_OBJECT,
@@ -62,7 +61,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { objectName, ownedObjectName } from './objnam.js';
+import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { shopkeeperCatch } from './shop_damage.js';
@@ -566,20 +565,24 @@ async function flyPhysicalObject({
                     .find(item => item.otyp === BOULDER);
                 if (boulder) {
                     if (cansee(x, y)) {
-                        await publish(`${ownedObjectName(object, state)} hits ${
+                        const name = await distantObjectName(
+                            object, ball => objectName(ball, state), state);
+                        await publish(`The ${name} hits ${
                             withIndefiniteArticle(objectName(boulder, state))}.`);
                     }
                     break;
                 }
                 if (object === state.uball || object === state.u?.uball) {
-                    if (heroMoveBlockedBetween(previousX, previousY, x + dx, y + dy, state)) {
+                    if (heroMoveBlockedBetween(previousX, previousY, x, y, state)) {
                         // nb: it didn't hit anything directly.
                         if (cansee(x, y)) {
-                            await publish(`${ownedObjectName(object, state)} jerks to an abrupt halt.`);
+                            const name = await distantObjectName(
+                                object, ball => objectName(ball, state), state);
+                            await publish(`The ${name} jerks to an abrupt halt.`);
                         }
                         break;
                     }
-                    if (In_sokoban(state.u.uz)
+                    if (state.level?.flags.sokoban_rules
                         && (state.level?.traps.some(trap => trap.tx === x && trap.ty === y
                             && (is_pit(trap.ttyp) || is_hole(trap.ttyp))))) {
                         // The hero would fall into the trap, so the ball stops.

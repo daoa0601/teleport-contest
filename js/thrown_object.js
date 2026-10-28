@@ -5,7 +5,7 @@ import { objectMaterial } from './object_material.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
-import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, In_sokoban, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
+import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
 import { monsterName } from './monster_name.js';
 import { artifactById } from './artifacts.js';
 import { heroMoveBlockedBetween } from './cmd.js';
@@ -21,7 +21,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { objectName, ownedObjectName } from './objnam.js';
+import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { shopkeeperCatch } from './shop_damage.js';
@@ -425,19 +425,21 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                     .find(item => item.otyp === BOULDER);
                 if (boulder) {
                     if (cansee(x, y)) {
-                        await publish(`${ownedObjectName(object, state)} hits ${withIndefiniteArticle(objectName(boulder, state))}.`);
+                        const name = await distantObjectName(object, ball => objectName(ball, state), state);
+                        await publish(`The ${name} hits ${withIndefiniteArticle(objectName(boulder, state))}.`);
                     }
                     break;
                 }
                 if (object === state.uball || object === state.u?.uball) {
-                    if (heroMoveBlockedBetween(previousX, previousY, x + dx, y + dy, state)) {
+                    if (heroMoveBlockedBetween(previousX, previousY, x, y, state)) {
                         // nb: it didn't hit anything directly.
                         if (cansee(x, y)) {
-                            await publish(`${ownedObjectName(object, state)} jerks to an abrupt halt.`);
+                            const name = await distantObjectName(object, ball => objectName(ball, state), state);
+                            await publish(`The ${name} jerks to an abrupt halt.`);
                         }
                         break;
                     }
-                    if (In_sokoban(state.u.uz)
+                    if (state.level?.flags.sokoban_rules
                         && (state.level?.traps.some(trap => trap.tx === x && trap.ty === y
                             && (is_pit(trap.ttyp) || is_hole(trap.ttyp))))) {
                         // The hero would fall into the trap, so the ball stops.
