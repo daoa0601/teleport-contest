@@ -152,7 +152,11 @@ export async function checkConstants(root, tree, cacheDir) {
     const lineOwner = new Map();
     for (const [name, definitions] of [...byName].sort((a, b) => a[0].localeCompare(b[0]))) {
         for (const value of new Set(definitions.map(definition => definition.value))) {
-            lines.push(`_Static_assert((long long)(${name}) == ${literal(value)}, "${name}");`);
+            // JS bitwise operators yield int32, so a negative port value also
+            // matches the same 32 bits as an unsigned C mask (0x80000000U).
+            const unsigned = value < 0n && value >= -(2n ** 31n)
+                ? ` || (long long)(${name}) == ${literal(value + 2n ** 32n)}` : '';
+            lines.push(`_Static_assert((long long)(${name}) == ${literal(value)}${unsigned}, "${name}");`);
             lineOwner.set(lines.length, name);
         }
     }

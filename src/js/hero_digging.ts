@@ -7,7 +7,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import {
     RLOC_NOMSG,
     A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED,
-    D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK,
+    D_NODOOR, D_TRAPPED, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK,
     DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT,
     IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL,
     LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR,
@@ -89,11 +89,6 @@ export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
-// C hack.h enum digcheck_result.  digging_terrain.js digCheck() returns
-// these numeric values; the failure gate must match C's >= DIGCHECK_FAILED.
-const DIGCHECK_PASSED = 1;
-const DIGCHECK_PASSED_DESTROY_TRAP = 2;
-const DIGCHECK_FAILED = 4;
 
 function trapAt(x: number, y: number, state: GameState): Trap | null {
     return state.level?.traps?.find(candidate =>
