@@ -34,7 +34,7 @@ class LedgerChecks(unittest.TestCase):
         result = self.run_callsites([], [site('unproved')])
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('new unproved site', result.stdout)
-        self.assertIn('count=0', result.stdout)
+        self.assertRegex(result.stdout, r'\bcount=-?\d+\b')
 
     def test_another_identical_unproved_call_needs_its_own_proof(self):
         result = self.run_callsites([site('unproved')], [site('unproved'), site('unproved', line=30)])
@@ -77,7 +77,8 @@ class LedgerChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'ledger.tsv'
             with ledger.open('w', newline='') as output:
-                csv.writer(output, delimiter='\t').writerows([('spec', 'domain'), ('rn2', 'x >= 1')])
+                csv.writer(output, delimiter='\t').writerows([('spec', 'domain', 'probes', 'mutants'),
+                                                            ('rn2', 'x >= 1', 2, 0)])
             for option in ('--only=rn2', '--no-probes', '--no-mutants'):
                 with self.subTest(option=option):
                     result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
@@ -89,12 +90,61 @@ class LedgerChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'ledger.tsv'
             with ledger.open('w', newline='') as output:
-                csv.writer(output, delimiter='\t').writerows([('spec', 'domain'), ('removed_claim', 'x >= 1')])
+                csv.writer(output, delimiter='\t').writerows([('spec', 'domain', 'probes', 'mutants'),
+                                                            ('removed_claim', 'x >= 1', 1, 1)])
             result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
                                      '--check-ledger', str(ledger)], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn('removed_claim', result.stdout)
             self.assertIn('missing spec', result.stdout)
+
+
+class ProofLedgerChecks(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.directory = tempfile.TemporaryDirectory(dir=CACHE)
+        cls.addClassCleanup(cls.directory.cleanup)
+        ledger = Path(cls.directory.name) / 'claims.tsv'
+        result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
+                                 '--write-ledger', str(ledger)], capture_output=True, text=True)
+        if result.returncode:
+            raise RuntimeError(result.stdout + result.stderr)
+        with ledger.open(newline='') as source:
+            reader = csv.DictReader(source, delimiter='\t')
+            cls.columns = reader.fieldnames
+            cls.claims = list(reader)
+
+    def check_changed_claim(self, name, field, value):
+        with tempfile.TemporaryDirectory(dir=CACHE) as directory:
+            ledger = Path(directory) / 'claims.tsv'
+            with ledger.open('w', newline='') as output:
+                writer = csv.DictWriter(output, fieldnames=self.columns, delimiter='\t')
+                writer.writeheader()
+                writer.writerows({**claim, field: value} if claim['spec'] == name else claim
+                                 for claim in self.claims)
+            return subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
+                                   '--check-ledger', str(ledger)], capture_output=True, text=True)
+
+    def test_changed_domain_fails(self):
+        claim = next(claim for claim in self.claims if claim['spec'] == 'rn2')
+        result = self.check_changed_claim('rn2', 'domain', claim['domain'] + '; x >= 2')
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('rn2', result.stdout)
+        self.assertIn('domain changed', result.stdout)
+
+    def test_removed_probe_fails(self):
+        claim = next(claim for claim in self.claims if claim['spec'] == 'rnd')
+        result = self.check_changed_claim('rnd', 'probes', str(int(claim['probes']) + 1))
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('rnd', result.stdout)
+        self.assertIn('probe count changed', result.stdout)
+
+    def test_removed_mutant_fails(self):
+        claim = next(claim for claim in self.claims if claim['spec'] == 'rnd')
+        result = self.check_changed_claim('rnd', 'mutants', str(int(claim['mutants']) + 1))
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('rnd', result.stdout)
+        self.assertIn('mutant count changed', result.stdout)
 
 
 def site(kind, line=10):

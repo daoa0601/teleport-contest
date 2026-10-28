@@ -19,6 +19,7 @@ import os
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 import z3
@@ -34,6 +35,14 @@ from isaac_seed import run as prove_seed_packing
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+LEDGER_COLUMNS = ('spec', 'domain', 'probes', 'mutants')
+
+
+@dataclass(frozen=True)
+class ClaimSummary:
+    domain: str
+    probes: int
+    mutants: int
 
 
 def recorder_dir() -> Path:
@@ -199,23 +208,29 @@ def main() -> int:
     parser.add_argument('--only', action='append')
     parser.add_argument('--no-probes', action='store_true')
     parser.add_argument('--no-mutants', action='store_true')
-    parser.add_argument('--check-ledger', type=Path, help='fail if a listed spec is missing or fails')
+    parser.add_argument('--check-ledger', type=Path, help='require recorded domains, check counts, and successful proofs')
     parser.add_argument('--write-ledger', type=Path, help='record all claims after a successful complete run')
     args = parser.parse_args()
     if (args.check_ledger or args.write_ledger) and (args.only or args.no_probes or args.no_mutants):
         parser.error('ledger checks require every spec, probe, and mutant')
-    claims = {spec.name: domain_summary(spec) for spec in SPECS}
+    claims = {spec.name: ClaimSummary(domain_summary(spec), len(spec.probes), len(spec.mutants)) for spec in SPECS}
     if len(claims) != len(SPECS):
         parser.error('spec names must be unique')
     if args.check_ledger:
         try:
-            missing = sorted(read_ledger(args.check_ledger) - claims.keys())
+            recorded = read_ledger(args.check_ledger)
         except (OSError, ValueError) as error:
             parser.error(str(error))
-        for name in missing:
-            print(f'FAILED  {name:<20} missing spec listed in {args.check_ledger}')
-        if missing:
-            print(f'{len(missing)} claim(s) failed')
+        failures = 0
+        for name, expected in sorted(recorded.items()):
+            current = claims.get(name)
+            changes = ['missing spec'] if current is None else claim_changes(expected, current)
+            if changes:
+                print(f'FAILED  {name:<20} {"; ".join(changes)}')
+                failures += 1
+        if failures:
+            print('Review claim changes before using --write-ledger to accept them.')
+            print(f'{failures} claim(s) failed')
             return 1
 
     recorder = recorder_dir()
@@ -255,8 +270,9 @@ def main() -> int:
     if failures == 0 and args.write_ledger:
         with args.write_ledger.open('w', newline='') as output:
             writer = csv.writer(output, delimiter='\t', lineterminator='\n')
-            writer.writerow(('spec', 'domain'))
-            writer.writerows(sorted(claims.items()))
+            writer.writerow(LEDGER_COLUMNS)
+            writer.writerows((name, claim.domain, claim.probes, claim.mutants)
+                             for name, claim in sorted(claims.items()))
     print('all claims hold' if failures == 0 else f'{failures} claim(s) failed')
     return 1 if failures else 0
 
@@ -271,17 +287,35 @@ def domain_summary(spec) -> str:
     return '; '.join(summary)
 
 
-def read_ledger(path: Path) -> set[str]:
+def claim_changes(recorded: ClaimSummary, current: ClaimSummary) -> list[str]:
+    changes = []
+    if recorded.domain != current.domain:
+        changes.append(f'domain changed (ledger: {recorded.domain}; current: {current.domain})')
+    if recorded.probes != current.probes:
+        changes.append(f'probe count changed (ledger: {recorded.probes}; current: {current.probes})')
+    if recorded.mutants != current.mutants:
+        changes.append(f'mutant count changed (ledger: {recorded.mutants}; current: {current.mutants})')
+    return changes
+
+
+def read_ledger(path: Path) -> dict[str, ClaimSummary]:
     with path.open(newline='') as source:
         rows = csv.reader(source, delimiter='\t')
-        if next(rows, None) != ['spec', 'domain']:
-            raise ValueError(f'{path}: expected spec and domain columns')
-        names = set()
+        if next(rows, None) != list(LEDGER_COLUMNS):
+            raise ValueError(f'{path}: expected {", ".join(LEDGER_COLUMNS)} columns')
+        claims = {}
         for line, row in enumerate(rows, 2):
-            if len(row) != 2 or not all(row) or row[0] in names:
+            if len(row) != len(LEDGER_COLUMNS) or not all(row) or row[0] in claims:
                 raise ValueError(f'{path}:{line}: invalid or duplicate claim')
-            names.add(row[0])
-    return names
+            name, domain, probes, mutants = row
+            try:
+                counts = (int(probes), int(mutants))
+            except ValueError as error:
+                raise ValueError(f'{path}:{line}: probe and mutant counts must be nonnegative integers') from error
+            if min(counts) < 0:
+                raise ValueError(f'{path}:{line}: probe and mutant counts must be nonnegative integers')
+            claims[name] = ClaimSummary(domain, *counts)
+    return claims
 
 
 if __name__ == '__main__':
