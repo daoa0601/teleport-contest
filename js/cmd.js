@@ -417,6 +417,11 @@ async function rejectHeroDiagonalDoorExit(dx, dy) {
 export function heroTestMove(x, y, g = game) {
     return testHeroMove(g.u.ux, g.u.uy, x, y, 'move', g).passes;
 }
+// C test_move(TEST_MOVE) from an arbitrary origin square. zap.c bhit()
+// checks the chain's next step from a thrown iron ball's previous square.
+export function heroMoveBlockedBetween(fromX, fromY, x, y, g = game) {
+    return !testHeroMove(fromX, fromY, x, y, 'move', g).passes;
+}
 // Shop doorway checks print even during a path search, so publish them at
 // the awaited boundary while the shared movement decision remains pure.
 async function testTravelMove(fromX, fromY, x, y, mode, g) {
