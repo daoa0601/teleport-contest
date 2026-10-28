@@ -343,7 +343,7 @@ async function mountSteed(steed, force, [dx, dy]) {
         }
     }
     if (!force && hero.uinwater && !((MONSTER_FLAGS1[steed.mnum] ?? 0) & M1_SWIM)) {
-        await pline("You can't ride that creature while under water.");
+        await pline(`You can't ride that creature while under ${displayLiquidName('water')}.`);
         return false;
     }
     if (!monsterCanBeSaddled(steed) || !heroCanRideSteed(steed)) {
