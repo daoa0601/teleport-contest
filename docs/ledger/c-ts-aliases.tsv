@@ -1,0 +1,19 @@
+# C function	port name — counterparts the name match cannot see (static-gaps.mjs edges)
+# Random functions the port injects as parameters (monster_action_types.ts).
+rn2	random
+rn2	RandomBelow
+rnd	rollOne
+rnd	RollOne
+d	rollDice
+d	RollDice
+rnl	luckRandom
+losehp	loseHeroHp
+heal_legs	healHeroLegs
+maybewakesteed	wakeSteedForRiding
+can_ride	heroCanRideSteed
+can_saddle	monsterCanBeSaddled
+m_unleash	releaseMonsterLeash
+instapetrify	resolveImmediatePetrification
+update_inventory	updateInventoryPresentation
+unconscious	heroIsUnconscious
+exercise	exerciseAttribute

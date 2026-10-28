@@ -32,7 +32,13 @@ beyond the brief is still delegated, not done in the main session.
    their function tables, and `state-oracle compare`, labelled
    `base-<short-sha>`. Every unit compares against this baseline.
 3. Build the queue from the baseline, not from memory: group failing
-   sessions by first divergence and owning C file or mechanic. Each unit
+   sessions by first divergence and owning C file or mechanic. Add static
+   gaps (`docs/oracles.md`) grouped by C file as audit units. Each brief
+   lists that file's missing messages, differing constants and missing call
+   edges, executed or not. Route screen-only failures with `static-gaps
+   screens RUN_DIR`. A gap in code the
+   corpus never runs also needs a scenario recipe or a behavior test that
+   fails before the fix. Each unit
    names its example sessions and the first differing call or screen row.
    Units that run together must not share an owning C file.
 
@@ -81,6 +87,16 @@ of editing the handoff.
 2. `npm run compile` and the focused tests for the touched mechanics.
 3. One public run, checked against the baseline function table and
    `docs/ledger/public-rng.tsv`. Any lost verified call fails the unit.
+4. `static-gaps.mjs` `messages`, `constants` and `edges`, each with
+   `--check-ledger docs/ledger/c-{messages,constants,edges}.tsv`: no listed
+   C message, matching constant or present call edge may be lost. An audit
+   unit also reports, for its file, which missing messages, differing
+   constants and missing edges it fixed, and why each remaining one stays
+   (renames go into `c-ts-aliases.tsv`). Where a fixed function is in the
+   equivalence prover's reach (`verification/equivalence`), its proof is
+   added or still passes, mutants included.
+   The static gap list only adds to the whole-file reading, the tests and the
+   ledgers above; it never replaces them.
 
 Corpus runs serialize machine-wide because the corpus lock checks live
 processes. Wait for the lock with a polling loop; never kill another
