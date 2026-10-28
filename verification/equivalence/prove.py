@@ -13,6 +13,7 @@ undefined behavior and no JavaScript exception or inexact arithmetic.
 from __future__ import annotations
 
 import argparse
+import csv
 import functools
 import os
 import subprocess
@@ -198,7 +199,24 @@ def main() -> int:
     parser.add_argument('--only', action='append')
     parser.add_argument('--no-probes', action='store_true')
     parser.add_argument('--no-mutants', action='store_true')
+    parser.add_argument('--check-ledger', type=Path, help='fail if a listed spec is missing or fails')
+    parser.add_argument('--write-ledger', type=Path, help='record all claims after a successful complete run')
     args = parser.parse_args()
+    if (args.check_ledger or args.write_ledger) and (args.only or args.no_probes or args.no_mutants):
+        parser.error('ledger checks require every spec, probe, and mutant')
+    claims = {spec.name: domain_summary(spec) for spec in SPECS}
+    if len(claims) != len(SPECS):
+        parser.error('spec names must be unique')
+    if args.check_ledger:
+        try:
+            missing = sorted(read_ledger(args.check_ledger) - claims.keys())
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
+        for name in missing:
+            print(f'FAILED  {name:<20} missing spec listed in {args.check_ledger}')
+        if missing:
+            print(f'{len(missing)} claim(s) failed')
+            return 1
 
     recorder = recorder_dir()
     front = CFront(recorder, [recorder / 'src' / file for file in C_FILES] + list((HERE / 'harness').glob('*.c')))
@@ -234,8 +252,36 @@ def main() -> int:
                 failures += proved != equivalent
     failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
     failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
+    if failures == 0 and args.write_ledger:
+        with args.write_ledger.open('w', newline='') as output:
+            writer = csv.writer(output, delimiter='\t', lineterminator='\n')
+            writer.writerow(('spec', 'domain'))
+            writer.writerows(sorted(claims.items()))
     print('all claims hold' if failures == 0 else f'{failures} claim(s) failed')
     return 1 if failures else 0
+
+
+def domain_summary(spec) -> str:
+    """Keep the ledger's reviewable domain derived from the actual spec."""
+    symbols = {name: z3.Int(name) for name, _ in spec.params}
+    symbols.update({name: z3.Int(name) for name, _, _ in spec.state})
+    types = [(name, t) for name, t in spec.params] + [(name, t) for name, t, _ in spec.state]
+    summary = [f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types]
+    summary.extend(' '.join(str(term).split()) for term in spec.pre(symbols))
+    return '; '.join(summary)
+
+
+def read_ledger(path: Path) -> set[str]:
+    with path.open(newline='') as source:
+        rows = csv.reader(source, delimiter='\t')
+        if next(rows, None) != ['spec', 'domain']:
+            raise ValueError(f'{path}: expected spec and domain columns')
+        names = set()
+        for line, row in enumerate(rows, 2):
+            if len(row) != 2 or not all(row) or row[0] in names:
+                raise ValueError(f'{path}:{line}: invalid or duplicate claim')
+            names.add(row[0])
+    return names
 
 
 if __name__ == '__main__':

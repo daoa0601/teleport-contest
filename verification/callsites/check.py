@@ -21,14 +21,19 @@ JavaScript while C truncates; such sites are unproved.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import re
+import sys
 import time
 from collections import Counter
+from pathlib import Path
 
 import z3
 
 INT_MAX = 2 ** 31 - 1
+CLASSES = ('constant', 'guarded', 'invariant', 'unproved')
+LEDGER_COLUMNS = ('file', 'function', 'callee', 'arguments', 'class')
 
 
 # (leaf text pattern, minimum, maximum or None, C source of the range)
@@ -381,11 +386,19 @@ def group(site, locals=None):
     return 'other'
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('input')
     parser.add_argument('--json', help='Write classifications and triage groups for review')
+    parser.add_argument('--check-ledger', type=Path, help='reject weaker classes and new unproved sites')
+    parser.add_argument('--write-ledger', type=Path, help='record the current classes for review')
     options = parser.parse_args()
+    baseline = {}
+    if options.check_ledger:
+        try:
+            baseline = read_ledger(options.check_ledger)
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
     started = time.perf_counter()
     with open(options.input) as source:
         data = json.load(source)
@@ -414,6 +427,64 @@ def main():
         with open(options.json, 'w') as output:
             json.dump({'seconds': elapsed, 'sites': report}, output, indent=2)
 
+    results = [(row, row['class'], row['reason']) for row in report]
+    failures = check_ledger(baseline, results) if options.check_ledger else 0
+    if failures == 0 and options.write_ledger:
+        with options.write_ledger.open('w', newline='') as output:
+            writer = csv.writer(output, delimiter='\t', lineterminator='\n')
+            writer.writerow(LEDGER_COLUMNS)
+            writer.writerows(sorted((*site_key(site), kind) for site, kind, _ in results))
+    if options.check_ledger:
+        print(f'call-site ledger: {failures} regression(s)', flush=True)
+    return 1 if failures else 0
+
+
+def site_key(site) -> tuple[str, str, str, str]:
+    """Line numbers are diagnostics, never identity. Keep repeated calls too."""
+    return site['file'], site['fn'], site['callee'], json.dumps(site['args'], ensure_ascii=False)
+
+
+def read_ledger(path: Path) -> dict:
+    baseline = {}
+    with path.open(newline='') as source:
+        rows = csv.reader(source, delimiter='\t')
+        if next(rows, None) != list(LEDGER_COLUMNS):
+            raise ValueError(f'{path}: expected {", ".join(LEDGER_COLUMNS)} columns')
+        for line, row in enumerate(rows, 2):
+            if len(row) != len(LEDGER_COLUMNS) or row[-1] not in CLASSES:
+                raise ValueError(f'{path}:{line}: invalid call-site entry')
+            baseline.setdefault(tuple(row[:-1]), []).append(row[-1])
+    return baseline
+
+
+def check_ledger(baseline, results) -> int:
+    # Identical calls in one function share a key. Match the weakest classes
+    # first. Additional proved calls need no old entry; unproved copies do.
+    grouped = {}
+    for site, kind, why in results:
+        grouped.setdefault(site_key(site), []).append((site, kind, why))
+    failures = 0
+    for key, current in sorted(grouped.items()):
+        previous = sorted(baseline.get(key, []), key=CLASSES.index)
+        additions = max(0, len(current) - len(previous))
+        for site, kind, why in sorted(current, key=lambda row: CLASSES.index(row[1]), reverse=True):
+            if additions and kind != 'unproved':
+                additions -= 1
+                continue
+            old = previous.pop() if previous else None
+            if old is not None and CLASSES.index(kind) <= CLASSES.index(old):
+                continue
+            if old is None and kind != 'unproved':
+                continue
+            reason = why or {'guarded': 'now requires guards or helper bounds',
+                             'invariant': 'now requires assumed C or readonly-table invariants',
+                             'unproved': 'domain not established'}[kind]
+            call = f"{site['callee']}({', '.join(site['args'])})"
+            change = f'{old} -> {kind}' if old else 'new unproved site'
+            print(f"FAILED {site['file']}:{site['line']} {site['fn']} {call}: {change}; {reason}", flush=True)
+            failures += 1
+    return failures
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
