@@ -23,6 +23,29 @@ cd verification/equivalence && uv run prove.py
 `--only NAME` limits the run; `--no-probes` and `--no-mutants` skip the
 negative checks. The exit status is nonzero if any claim fails.
 
+There are 20 scoped claims: the original ten RNG/geometry claims plus
+`enermod`, `newuexp`, `xlev_to_rank`, `rounddiv`, both alignment-mask macros,
+Strength/Dexterity `acurr`, `acurrstr`, and human-form `abon`/`dbon`.
+The exact domains, assumed state correspondence, probes and mutants live in
+`specs.py` and are described in `docs/formal-verification.md`. The attribute
+claims assume no gauntlets; equipment effects and other attribute cases are
+not covered. `enermod` relates C's role enumerator to each of the 13 JS role
+keys. Every new claim has a concrete failing probe and a killed mutant.
+
+Run the executor's language tests separately (24 tests; no game sessions):
+
+```sh
+cd verification/equivalence
+NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v test_executors
+```
+
+They check table reads and bounds, nested global state and attribute arrays,
+switch fallthrough/break/return behavior, C signed and unsigned bit operations,
+JS 32-bit coercion, imports, defaults, scopes, and rejected constructs. C table
+values come from clang initializers. JS constant arrays are read from emitted
+modules; this assumes their initial values have not been mutated. No new
+game-table pair or writable heap state is claimed.
+
 | File | Role |
 |---|---|
 | `cfront.py` | clang's typed JSON AST of the real C sources (macros, `#if`, conversions resolved by clang) |
@@ -32,6 +55,8 @@ negative checks. The exit status is nonzero if any claim fails.
 | `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant and variant |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
+| `harness/alignment.c` | wrappers so clang expands the two real `align.h` macros |
+| `test_executors.py` | language behavior and rejection checks, run through both AST front ends |
 
 ## `callsites/`: do callers stay inside the proved domains?
 
