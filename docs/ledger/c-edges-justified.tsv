@@ -74,3 +74,35 @@ doopen_indir	set_msg_xy	n/a	accessiblemsg only
 doopen_indir	sgn	inlined	Math.sign
 doopen_indir	yn_function	inlined	ynq("Kick it?") through promptYesNoQuit (cmd.ts)
 getbones	yn_function	inlined	wizard-mode bonesPrompt (mklev.ts)
+minliquid_core	is_waterwall	inlined	typ === WATER (mon.ts resolveMonsterLiquid)
+slip_or_trip	confdir	inlined	same dirs_ord table, skipped for grid bugs as in C (fumbling.ts)
+slip_or_trip	sobj_at	inlined	rock lookup in the floor pile (fumbling.ts)
+kick_door	get_iter_mons	inlined	witnessDoorKick thief branch (kick_door.ts)
+kick_door	get_iter_mons_xy	inlined	witnessDoorKick door-damage branch (kick_door.ts)
+kick_door	kick_dumb	inlined	kickDumb is injected as a callback from cmd.ts
+kick_door	kick_ouch	inlined	kickOuch is injected as a callback from cmd.ts
+mkshop	isbig	inlined	area > 20 (mklev.ts)
+mkshop	mkzoo	n/a	only through the wizard SHOPTYPE environment override
+mkshop	mktemple	n/a	only through the wizard SHOPTYPE environment override
+mkshop	mkswamp	n/a	only through the wizard SHOPTYPE environment override
+linedup	distmin	inlined	monster_ranged_alignment.ts
+linedup	sgn	inlined	Math.sign
+linedup	sobj_at	inlined	boulder test (monster_ranged_alignment.ts)
+exerchk	exerper	inlined	periodicTurnExercise runs beside exerchk in the same turn pass (allmain.ts)
+exerchk	sgn	inlined	Math.sign
+drinkfountain	update_inventory	n/a	no perm_invent window on an 80x24 tty
+gush	set_levltyp	inlined	the old type is always ROOM, so it reduces to typ = POOL (fountain.ts)
+gush	sobj_at	inlined	fountain.ts
+destroy_arm	obj_erode_type	inlined	ordered erosion-type search (armor.ts)
+watch_on_duty	picking_lock	inlined	occupation key 'pick-lock' on the door being picked (monmove.ts)
+dozap	update_inventory	n/a	no perm_invent window on an 80x24 tty
+losestr	minuhpmax	inlined	Math.max(ulevel, 1) (attrib.ts)
+losestr	setuhpmax	inlined	max-HP and HP clamps (attrib.ts)
+throw_obj	acurrstr	inlined	raw STR compared with 16 and 18 gives the same result (hero_multishot.ts)
+throw_obj	weapon_type	inlined	Math.abs(oc_skill) (hero_multishot.ts)
+throw_obj	welded	n/a	canletgo() already refuses a welded weapon before throw_obj reaches it
+lava_effects	monstunseesu	n/a	that branch needs fire resistance, so boil_away is false there
+dowaterdemon	level_difficulty	inlined	injected by summonFountainDemon (cmd.ts)
+dowaterdemon	makemon	inlined	makemonNear injected by summonFountainDemon (cmd.ts)
+rndcurse	spec_ability	inlined	artifact.selfWilled is SPFX_INTEL (throne.ts)
+rndcurse	update_inventory	n/a	no perm_invent window on an 80x24 tty

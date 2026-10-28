@@ -465,23 +465,32 @@ commit:
   and digging in `use_defensive()`, `wildmiss()` displaced-image misses,
   `doseduce()` ring placement, `passivemm()`/`passiveum()` minor effects,
   `dohide()` refusals, and `really_kick_object()` refusals.
-- **constants**: 2,012 port constants share a C name. 1,954 match and 58
-  differ. The used ones are `GETOBJ_EXCLUDE*` (getobj callback results),
-  `DIGCHECK_*`, `MON_EXPLODE`/`TRAP_EXPLODE`/`BURNING_OIL` (explosion
-  sources), the `ATR_*` attributes and `BUC_*`. Each needs a check that no
-  caller compares or stores the C value. 26 differing ones are unused.
-- **edges**: 1,309 C functions have a counterpart (635 of them through
-  comment citations). Gameplay files have 1,914 missing edges and 1,148
-  cited-only edges. The alias table is new, so most missing edges are still
-  renames. First confirmed find: `mount_steed()` names the liquid with
-  `hliquid("water")` (hallucinated names), while `steed.ts` prints a fixed
-  "water".
+- **constants**: 2,009 port constants share a C name and 2,006 match. The
+  57 differing values were triaged: each was compared only within the port's
+  own encoding, so none changed play. They now take the C values, and the
+  duplicate `DIGCHECK_*` copy in `hero_digging.ts` is gone. The three left,
+  `ATR_INVERSE`/`ATR_BOLD`/`ATR_BLINK`, are the frozen terminal's attribute
+  bits; `color_attr.ts` maps C's values onto them.
+- **edges**: 1,374 C functions have a counterpart. 1,776 edges are missing,
+  1,111 only cited, 106 justified and 2,107 present. Every missing edge of
+  the 65 most-run gameplay functions (by RNG-ledger call count) was read on
+  both sides. 105 renames went into `c-ts-aliases.tsv`, and inlined or
+  unobservable edges went into `c-edges-justified.tsv` with a note each. No
+  gap that common play reaches was found. Two rare ones were fixed:
+  `makemon()` births now carry the monster square for `accessiblemsg`, and
+  the Book of the Dead's lava survival message uses its seen name and
+  `hcolor()`. `mount_steed()`'s `hliquid("water")` was a false lead: C
+  refuses a hallucinating rider before the underwater check. Known rare gaps
+  left: the `trickery()` bones-id check, `enter_explore_mode()` on restore,
+  and status-hilite unhighlighting (no hilite_status support).
 
 Ledgers `docs/ledger/c-{messages,constants,edges}.tsv` are checked by the
-`static-gaps` CI job. Next: grow `c-ts-aliases.tsv` (a bulk-analysis job for
-`glm-5.3-flash`, reviewed), triage the used differing constants, and widen
-the state digest (`mtame` values, `mundetected`, traps, timers) as one
-reviewed measurement change.
+`static-gaps` CI job. The busiest functions turned up no common-play gaps,
+so the remaining missing edges sit mostly in code the corpus rarely runs.
+Use them as audit checklists alongside the 154 no-match messages, and give
+each finding a native recipe. Next measurement change: widen the state
+digest (`mtame` values, `mundetected`, traps, timers), with `MEASUREMENT_HASH`
+approved out of band.
 
 ## Next work
 

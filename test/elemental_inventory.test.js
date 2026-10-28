@@ -19,6 +19,7 @@ import { igniteItems } from '../js/light.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, GLOB_OF_GREEN_SLIME, OBJECT_NAMES, POT_HEALING, POT_SPEED, RIN_PROTECTION, SCR_IDENTIFY, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_COLD, } from '../js/object_data.js';
 import { objectTimers, OBJECT_TIMER_KIND } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
+import { destroyLavaInventory } from '../js/trap.js';
 import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, } from '../js/zap.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -299,4 +300,16 @@ for (const sight of ['sighted', 'blind', 'hallucinating']) {
         assert.equal(text.includes(`potion (${appearance})`), sight === 'sighted');
     });
 }
+// C trap.c lava_effects(): a surviving hero sees the Book glow with
+// hcolor("dark red"), like the fire-damage path.
+void test('the Book survives lava with a hallucinated glow', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    requireFixtureGame(game);
+    const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
+    const messages = [];
+    await destroyLavaInventory({ protectedObject: null, showMessages: true, publish: async (message) => { messages.push(message); } });
+    assert.equal(book.where, 'inventory');
+    assert.equal(messages.length, 1);
+    assert.match(messages[0] ?? '', /^The Book of the Dead glows a strange (?!dark red)[^,]+, but remains intact\.$/);
+});
 //# sourceMappingURL=elemental_inventory.test.js.map

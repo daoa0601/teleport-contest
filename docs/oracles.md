@@ -106,12 +106,17 @@ above a port function. For each C callee, the edge is:
 - **cited** when the callee is only cited in a comment on that path, or its
   words appear in order in a reached port name (`heal_legs` matches
   `healHeroLegs`): probably renamed, so check these last;
+- **justified** when `docs/ledger/c-edges-justified.tsv` records, with a
+  note, that the port inlines the callee or that it cannot change play
+  (`inlined` or `n/a`);
 - **missing** otherwise.
 
 Missing edges are audit leads, not verdicts. Inlined helpers and renames
-show up as missing until an alias is recorded. Add an alias line to
-`c-ts-aliases.tsv` whenever an audit confirms a rename. `--function NAME`
-prints one function's three lists.
+show up as missing until they are recorded. When an audit confirms a
+rename, add an alias line to `c-ts-aliases.tsv`. An alias adds a
+counterpart and never hides a comment citation. When an audit confirms an
+inlined or unobservable edge, add a justification line. `--function NAME`
+prints one function's lists.
 
 `screens RUN_DIR` reads a finished `triage-holdout` run. It charges each
 screen-only first difference to the C function whose literal appears on the

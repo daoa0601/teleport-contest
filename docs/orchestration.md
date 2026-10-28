@@ -92,7 +92,8 @@ of editing the handoff.
    C message, matching constant or present call edge may be lost. An audit
    unit also reports, for its file, which missing messages, differing
    constants and missing edges it fixed, and why each remaining one stays
-   (renames go into `c-ts-aliases.tsv`). Where a fixed function is in the
+   (renames go into `c-ts-aliases.tsv`; confirmed inlined or unobservable
+   edges go into `c-edges-justified.tsv`). Where a fixed function is in the
    equivalence prover's reach (`verification/equivalence`), its proof is
    added or still passes, mutants included.
    The static gap list only adds to the whole-file reading, the tests and the

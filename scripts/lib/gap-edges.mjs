@@ -290,7 +290,11 @@ export async function compareEdges(root, tree, cacheDir, definedIn) {
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {
         const file = graph.fileOf.get(caller) ?? '?';
         const byName = [...new Set(portNames(caller).flatMap(name => index.byName.get(name) ?? []))];
-        const counterparts = byName.length ? byName : [...new Set(portNames(caller).flatMap(name => index.byCitation.get(name) ?? []))];
+        // A citation counts when the C name itself has no same-named port
+        // function; an alias adds counterparts but never hides a citation.
+        const ownName = index.byName.get(normalizedName(caller)) ?? [];
+        const counterparts = [...new Set([...byName,
+                ...(ownName.length ? [] : portNames(caller).flatMap(name => index.byCitation.get(name) ?? []))])];
         if (!counterparts.length) {
             unmapped.push({ file, function: caller });
             continue;
