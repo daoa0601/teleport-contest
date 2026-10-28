@@ -37,7 +37,7 @@ export async function finishMonsterBirth(monster, flags = 0, state = game) {
             const near = Math.abs(dx) <= 1 && Math.abs(dy) <= 1 ? ' next to you'
                 : dx * dx + dy * dy <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
             await plineWithContinuation(`${subject}${exclaim ? ' suddenly' : ''} ${verbForSubject(subject, 'appear')}${near}${exclaim ? '!' : '.'}`, {
-                noRepeat: true,
+                noRepeat: true, position: { x: monster.mx, y: monster.my },
             });
         }
     }

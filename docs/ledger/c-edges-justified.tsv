@@ -1,0 +1,76 @@
+# caller	callee	verdict	note — C call edges the port covers without naming the callee (inlined), or that cannot change play (n/a); static-gaps.mjs edges
+# Read on both sides for the most-run C functions (RNG ledger call counts).
+rndmonst_adj	uncommon	inlined	rndmonstReservoir tests NOGEN/UNIQ, G_GONE, Inhell alignment and G_HELL (mklev.ts)
+mkclass_aligned	init_mongen_order	inlined	monsterGenerationOrder sorts by symbol, difficulty, index (mklev.ts)
+mkclass_aligned	mk_gen_ok	inlined	mvflags, genocide mask, placeholders and mail daemon tested in the class loop (mklev.ts)
+mkclass_aligned	sgn	inlined	Math.sign
+fill_ordinary_room	mksink	inlined	sink placement in fillOrdinaryRoom (mklev.ts)
+makemon	alloc	n/a	memory allocation
+makemon	dist2	inlined	distu computed in finishMonsterBirth (monster_birth.ts)
+makemon	quest_info	inlined	urole.ldrnum/neminum compared directly (mklev.ts)
+makemon	sgn	inlined	Math.sign
+place_level	pick_level	inlined	impossible picks are removed from the candidate list (dungeon.ts)
+walkfrom	okay	inlined	carveMazeFrom tests the same up/right/down/left moves (maze_terrain.ts)
+mkgold	g_at	inlined	existing gold stack lookup (mklev.ts)
+mkgold	mksobj_at	inlined	mksobj then placeCreatedObject (mklev.ts)
+mktrap	sobj_at	inlined	boulder check (mklev.ts)
+mktrap	traptype_roguelvl	inlined	same seven-entry table with rn2(7) (mklev.ts)
+makerooms	create_des_coder	inlined	beginLevel(special: false) resets the coder (mklev.ts)
+makerooms	nhl_done	n/a	Lua state teardown
+makerooms	reset_xystart_size	inlined	beginRoom and the des.map finally block restore the whole-level frame (mklev.ts)
+makelevel	init_dungeons	n/a	only on C's impossible() path
+makelevel	mklev_sanity_check	n/a	sanity_check/debug_fuzzer option only
+makelevel	themerooms_post_level_generate	inlined	post_level_generate and wallification (mklev.ts)
+set_mimic_sym	t_at	inlined	level.traps lookup (mklev.ts)
+init_objects	init_oclass_probs	inlined	class totals summed on each mkobj (mklev.ts)
+getbones	compress_bonesfile	n/a	file I/O
+getbones	sfi_char	n/a	binary save reader; decodeBonesPayload replaces it
+dog_goal	cursed_object_at	inlined	cursedAtLocation (monmove.ts)
+hitmu	midnight	inlined	recorderLocalHour(...) === 0 (monmove.ts)
+hitmu	minuhpmax	inlined	Math.max(ulevel, 1) clamp (monmove.ts)
+mattackm	is_fainted	inlined	heroIsUnaware tests uhs === FAINTED (hero_sleep.ts)
+gulpmu	sobj_at	inlined	boulder-in-pit test in monsterCanEngulfHero (hero_engulf.ts)
+gulpmu	number_leashed	inlined	inventory leash count (hero_engulf.ts)
+gulpmu	monstseesu	n/a	returns early while u.uswallow; C's own comment calls these no-ops
+gulpmu	monstunseesu	n/a	returns early while u.uswallow
+create_gas_cloud	is_hero_inside_gas_cloud	inlined	regions.some(region => region.heroInside) (regions.ts)
+create_gas_cloud	add_rect_to_reg	n/a	the port stores cells directly and derives the bounding box when drawing
+escape_from_sticky_mon	dist2	inlined	m_next2u as distu <= 2 (hack.ts)
+gethungry	is_fainted	inlined	heroIsUnaware tests uhs === FAINTED (hero_sleep.ts)
+newuhs	is_fainted	inlined	old === FAINTED (hunger.ts)
+newuhs	sgn	inlined	Math.sign
+moveloop_core	age_spells	inlined	spell memory stored as an expiry turn (spell_casting_rules.ts)
+moveloop_core	any_visible_region	inlined	visible-region test in the turn loop (allmain.ts)
+moveloop_core	ckmailstatus	n/a	mail is not delivered in the recorded game
+moveloop_core	dobjsfree	n/a	memory release
+moveloop_core	end_of_input	n/a	SAFERHANGUP only
+moveloop_core	intervene	inlined	deferred intervention kinds in the turn loop (allmain.ts)
+moveloop_core	maybe_generate_rnd_mon	inlined	random generation in the turn loop (allmain.ts)
+moveloop_core	maybe_shuffle_customizations	n/a	glyph customization display
+moveloop_core	nhassert_failed	n/a	assertion
+moveloop_core	regen_pw	inlined	energy regeneration in the turn loop (allmain.ts)
+moveloop_core	reset_eat	n/a	only sets victual.doreset, which start_eating clears before bite() reads it
+moveloop_core	sanity_check	n/a	debug option
+moveloop_core	u_calc_moveamt	inlined	movement allowance in the turn loop (allmain.ts)
+u_calc_moveamt	rn2	inlined	the roll is in the turn loop; allmain.ts u_calc_moveamt is only the adder
+dosounds	g_at	inlined	gold scan (ambient_sounds.ts)
+dosounds	gd_sound	inlined	!occupied && !findVaultGuard (ambient_sounds.ts)
+dosounds	noisy_shop	inlined	shopkeeperInOwnShop plus the wake call (ambient_sounds.ts)
+moveloop_preamble	update_inventory	n/a	no perm_invent window on an 80x24 tty
+vary_init_attr	adjattrib	inlined	clamped directly; C's below-minimum roll cannot fire for any role and race (u_init.ts)
+u_init_misc	init_uhunger	inlined	u_init.ts
+u_init_misc	max_rank_sz	n/a	only do_statusline1 (dumplog) reads mrank_sz
+u_init_misc	rn2	inlined	handedness roll passed in from startup.ts in C order
+dosearch0	set_msg_xy	n/a	accessiblemsg location for a message the search path never prints
+dosearch0	spec_ability	inlined	artifact SPFX_SEARCH flag test (detect.ts)
+confdir	u_maybe_impaired	inlined	tty_prompts.ts
+angrygods	gods_angry	inlined	godVoice(..., 'Thou hast angered me.') (divine_wrath.ts)
+doopen_indir	cmdq_add_dir	inlined	canned kick command with dx/dy (cmd.ts)
+doopen_indir	cmdq_add_ec	inlined	same canned command (cmd.ts)
+doopen_indir	container_at	inlined	cmd.ts
+doopen_indir	get_adjacent_loc	inlined	promptDirection, "Never mind." and isok (cmd.ts)
+doopen_indir	is_db_wall	inlined	loc.typ === DBWALL (cmd.ts)
+doopen_indir	set_msg_xy	n/a	accessiblemsg only
+doopen_indir	sgn	inlined	Math.sign
+doopen_indir	yn_function	inlined	ynq("Kick it?") through promptYesNoQuit (cmd.ts)
+getbones	yn_function	inlined	wizard-mode bonesPrompt (mklev.ts)

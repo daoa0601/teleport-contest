@@ -303,3 +303,15 @@ void test('a level without terrain memory names the currently displayed disguise
         `A ${game.objectDescriptions?.[POT_HEALING]} potion suddenly appears next to you!`);
     assert.equal(glyphAt(11, 10)?.kind, 'object');
 });
+
+// C makemon.c: set_msg_xy(mtmp->mx, mtmp->my) before the birth Norep(), so
+// the accessiblemsg option prefixes the newcomer's square.
+void test('an accessible birth message names the monster square', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.accessiblemsg = true;
+
+    await makemonAt(species('goblin'), 11, 10, NO_MINVENT);
+
+    assert.match(game._pending_message || '', /^\(east\): A goblin suddenly appears next to you!$/);
+});

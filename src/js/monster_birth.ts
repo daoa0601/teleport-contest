@@ -45,7 +45,7 @@ export async function finishMonsterBirth<T extends Monster>(monster: T, flags = 
                 : dx * dx + dy * dy <= BOLT_LIM * BOLT_LIM ? ' close by' : '';
             await plineWithContinuation(`${subject}${exclaim ? ' suddenly' : ''} ${
                 verbForSubject(subject, 'appear')}${near}${exclaim ? '!' : '.'}`, {
-                noRepeat: true,
+                noRepeat: true, position: { x: monster.mx, y: monster.my },
             });
         }
     }

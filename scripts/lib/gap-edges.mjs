@@ -261,10 +261,29 @@ function readAliases(path) {
     }
     return aliases;
 }
+// `caller<TAB>callee<TAB>verdict<TAB>note` rows from c-edges-justified.tsv:
+// edges a reader confirmed the port covers without naming the callee
+// (`inlined`), or that cannot change what the player sees (`n/a`).
+function readJustified(path) {
+    const justified = new Map();
+    if (!existsSync(path))
+        return justified;
+    readFileSync(path, 'utf8').split('\n').forEach((line, index) => {
+        if (!line || line.startsWith('#'))
+            return;
+        const [caller, callee, verdict, note] = line.split('\t');
+        if (!caller || !callee || (verdict !== 'inlined' && verdict !== 'n/a') || !note) {
+            throw new Error(`${path}:${index + 1}: expected caller, callee, inlined|n/a and a note`);
+        }
+        justified.set(`${caller}\t${callee}`, verdict);
+    });
+    return justified;
+}
 export async function compareEdges(root, tree, cacheDir, definedIn) {
     const graph = await cCallGraph(tree, cacheDir, definedIn);
     const index = portIndex(root);
     const aliases = readAliases(join(root, 'docs', 'ledger', 'c-ts-aliases.tsv'));
+    const justified = readJustified(join(root, 'docs', 'ledger', 'c-edges-justified.tsv'));
     const portNames = (cName) => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
     const rows = [];
     const unmapped = [];
@@ -287,13 +306,15 @@ export async function compareEdges(root, tree, cacheDir, definedIn) {
                 rawWords.push(words(name));
         }
         const row = { file, function: caller, mapping: byName.length ? 'name' : 'citation',
-            port: counterparts.map(index.locate), present: [], cited: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
+            port: counterparts.map(index.locate), present: [], cited: [], justified: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
         for (const callee of [...callees].sort()) {
             if (HELPER_CALLEES.has(callee))
                 continue;
             const names = portNames(callee);
             if (names.some(name => reached.has(name)))
                 row.present.push(callee);
+            else if (justified.has(`${caller}\t${callee}`))
+                row.justified.push(callee);
             else if (names.some(name => cited.has(name)) || rawWords.some(portWords => wordMatch(words(callee), portWords))) {
                 row.cited.push(callee);
             }
