@@ -56,7 +56,7 @@ export async function polymorphSink(state, publish) {
                 location.looted = 1;
             break;
         case 1:
-            symbolName = 'throne';
+            symbolName = 'opulent throne';
             location.typ = THRONE;
             if (sinkLooted)
                 location.looted = 1;
