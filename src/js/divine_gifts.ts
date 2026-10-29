@@ -3,7 +3,6 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { recordAchievement } from './achievements.js';
 import { deityName } from './alignment.js';
-import { findArmorClass } from './armor.js';
 import {
     artifactById, artifactByName, discoverArtifact, findArtifact, nameArtifact,
 } from './artifacts.js';
@@ -194,7 +193,7 @@ async function grantDivineProperty(): Promise<void> {
             grantIntrinsicProperty('protection', 'outside');
             if (!game.u.ublessed) game.u.ublessed = rn1(3, 2);
         } else game.u.ublessed = (game.u.ublessed || 0) + 1;
-        findArmorClass();
+        game._armorClassDirty = true;
         name = 'my protection';
     }
     await pline(`"and thus I grant thee the gift of ${name}!"`);
