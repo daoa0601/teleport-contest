@@ -234,6 +234,9 @@ def main() -> int:
             if changes:
                 print(f'FAILED  {name:<20} {"; ".join(changes)}')
                 failures += 1
+        for name in sorted(claims.keys() - recorded.keys()):
+            print(f'FAILED  {name:<20} unrecorded spec')
+            failures += 1
         if failures:
             print('Review claim changes before using --write-ledger to accept them.')
             print(f'{failures} claim(s) failed')

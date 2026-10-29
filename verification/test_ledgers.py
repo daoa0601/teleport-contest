@@ -124,13 +124,16 @@ class ProofLedgerChecks(unittest.TestCase):
             cls.claims = list(reader)
 
     def check_changed_claim(self, name, field, value):
+        return self.check_claims({**claim, field: value} if claim['spec'] == name else claim
+                                 for claim in self.claims)
+
+    def check_claims(self, claims):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'claims.tsv'
             with ledger.open('w', newline='') as output:
                 writer = csv.DictWriter(output, fieldnames=self.columns, delimiter='\t')
                 writer.writeheader()
-                writer.writerows({**claim, field: value} if claim['spec'] == name else claim
-                                 for claim in self.claims)
+                writer.writerows(claims)
             return subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
                                    '--check-ledger', str(ledger)], capture_output=True, text=True)
 
@@ -140,6 +143,20 @@ class ProofLedgerChecks(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('rn2', result.stdout)
         self.assertIn('domain changed', result.stdout)
+
+    def test_unrecorded_leaf_claim_fails_before_proving(self):
+        result = self.check_claims(claim for claim in self.claims if claim['spec'] != 'rn2')
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('rn2', result.stdout)
+        self.assertIn('unrecorded spec', result.stdout)
+        self.assertNotIn('PROVED', result.stdout)
+
+    def test_unrecorded_isaac_claim_fails_before_proving(self):
+        result = self.check_claims(claim for claim in self.claims if claim['spec'] != 'lower_bits')
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('lower_bits', result.stdout)
+        self.assertIn('unrecorded spec', result.stdout)
+        self.assertNotIn('PROVED', result.stdout)
 
     def test_removed_probe_fails(self):
         claim = next(claim for claim in self.claims if claim['spec'] == 'rnd')
