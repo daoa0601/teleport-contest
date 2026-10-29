@@ -657,8 +657,7 @@ async function applyHeroFormWaterEffect(state, publish, random, rollDice) {
     return { kind: 'rust', damage, died };
 }
 async function finishLiquidTeleport(movement, { state, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
-    state.u.uinwater = 0;
-    state.underwater = false;
+    // spoteffects() announces surfacing before it clears the submerged view.
     repaint(movement.oldx, movement.oldy);
     resetVision();
     recalculateVision(0);
@@ -948,8 +947,11 @@ export async function heroLiquidEffects(options = {}) {
                 recalculateVision,
                 applyLandingEffects,
             });
-            if (!escape.died)
+            if (!escape.died) {
+                await setHeroInWater(false, state);
+                state.underwater = false;
                 await announceTerrainRescue(DROWNING, state, publish);
+            }
             return escape;
         }
         await publish("You're still drowning.");
