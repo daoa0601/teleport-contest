@@ -1,5 +1,6 @@
 import { setHeroGrip } from './hero_grip.js';
 import { heroLocomotion } from './hero_locomotion.js';
+import { publishHeardMessage } from './hero_speech.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { maybeResetPick } from './lock_context.js';
@@ -423,9 +424,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             await plineWithContinuation(
                 'The odor of burnt flesh and decay pervades the air.',
             );
-            await plineWithContinuation(
-                'You hear groans and moans everywhere.',
-            );
+            await publishHeardMessage('groans and moans everywhere.', plineWithContinuation, game);
         }
         let familiarMessage = '';
         // bones_include_name() matches through the hero name's trailing hyphen.
@@ -502,9 +501,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             await plineWithContinuation(
                 'The odor of burnt flesh and decay pervades the air.',
             );
-            await plineWithContinuation(
-                'You hear groans and moans everywhere.',
-            );
+            await publishHeardMessage('groans and moans everywhere.', plineWithContinuation, game);
         }
         if (Is_knox_level(newDepth)
             && (!cached || !monsterDeathCount(MONSTER_NAME.indexOf('Croesus')))) {

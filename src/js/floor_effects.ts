@@ -182,6 +182,8 @@ export async function applyFloorEffects(
         const result = await waterDamageObject(object, messages, state, {
             random,
             luckRoll,
+            // C flooreffects() supplies the landing square through bhitpos.
+            position: { x, y },
         });
         await publishAll(messages, publish);
         if (result === 'destroyed') {

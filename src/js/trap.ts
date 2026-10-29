@@ -47,7 +47,7 @@ import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { Trap } from './map_types.js';
+import type { Position, Trap } from './map_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { verbForSubject } from './object_grammar.js';
 
@@ -89,6 +89,7 @@ interface LavaFloorOptions {
 }
 
 interface WaterDamageOptions {
+    position?: Position;
     force?: boolean;
     description?: string | null;
     random?: RandomBelow;
@@ -408,7 +409,7 @@ export async function waterDamageObject(
     messages: string[] = [],
     state = game,
     { force = false, description = null, random = rn2, luckRoll = rnl,
-        rollOne = rnd, publish, mentionWater, acidContext }: WaterDamageOptions = {},
+        rollOne = rnd, publish, mentionWater, acidContext, position }: WaterDamageOptions = {},
 ): Promise<WaterDamageOutcome> {
     if (!object) return 'nothing';
     const emit: MessagePublisher = async message => {
@@ -446,6 +447,7 @@ export async function waterDamageObject(
             }
             await damageWaterChain(objectContents(object), messages, state,
                 { random, luckRoll, rollOne, publish: emit,
+                    ...(position ? { position } : {}),
                     ...(acidContext ? { acidContext } : {}) });
         } else if (carried && !heroIsBlind(state) && !state.underwater) {
             await emit(`The ${displayLiquidName('water', state)} cannot get into your ${name}.`);
@@ -504,7 +506,7 @@ export async function waterDamageObject(
         return 'damaged';
     }
     return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll,
-        grease: false, displayName: name });
+        grease: false, displayName: name, ...(position ? { position } : {}) });
 }
 
 // C pot_acid_damage(): water destroys the bottle without impact or vapors.
