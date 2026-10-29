@@ -98,6 +98,8 @@ const seeds = {
     'doppelganger-players': 777,
     'throne-vlad-special': 13,
     'boulder-plug-hole': 13,
+    // trap.c:untrap_prob() fails one disarm roll in three; 47 repairs.
+    'squeaky-board-untrap': 47,
 };
 for (const name of Object.keys(ROUND12_RECIPES)) {
     const characterKey = recipeCharacter[name] ?? 'wizard';

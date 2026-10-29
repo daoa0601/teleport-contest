@@ -140,39 +140,31 @@ export const ROUND12_RECIPES: Record<string, Recipe> = {
         ['The land mine is disarmed into a pickable object, or it detonates.'],
         [keys('h'), keys('j'), ...wish('land mine trap'), keys('\x05'),
             keys('#untrap\r.\r'), keys('#untrap\r.\r'), keys('#untrap\r.\r')]),
-    // trap.c:disarm_squeaky_board() and unsqueak_ok(). The suggested
-    // untrap-with letter is the grease slot, which each starting role
-    // owns at a fixed inventory position; the recipe therefore only
-    // accepts those three roles instead of guessing a letter.
-    'squeaky-board-untrap': (() => {
-        const greaseSlot: Record<string, string> = { wizard: 'o', rogue: 'g', barbarian: 'e' };
-        return {
-            roles: ['wizard', 'rogue', 'barbarian'],
-            options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips', 'pettype:none'],
-            description: 'Wish a squeaky board, reveal it, and repair it with a can of grease.',
-            success: ['The squeaky board is repaired with grease.'],
-            build: ({ seed, datetime, rc, character }: {
-                seed: number; datetime: string;
-                rc: (overrides?: string[]) => string;
-                character: { role: string };
-            }) => {
-                if (!(character.role in greaseSlot)) {
-                    throw new Error(`squeaky-board-untrap has no grease slot for ${character.role}`);
-                }
-                return [{
-                    seed, datetime, nethackrc: rc(), driver: [
-                        keys('#levelchange\r20\r'), keys('h'), keys('j'),
-                        ...wish('squeaky board', 'can of grease'), keys('\x05'),
-                        ...Array.from({ length: 3 }, () => [
-                            keys('#untrap\r.'),
-                            answer('What do you want to untrap with?', `${greaseSlot[character.role]}\r`),
-                        ]).flat(),
-                        keys('\x1b:\x1b'),
-                    ],
-                }];
-            },
-        } satisfies Recipe;
-    })(),
+    // trap.c:disarm_squeaky_board() and unsqueak_ok(). The untrap-with
+    // getobj suggests only the grease, and u_init.c's random starting
+    // kit (blindfold 1-in-5, lamp 1-in-6, merging potions) moves its
+    // inventory letter per seed, so the recipe runs with force_invmenu:
+    // the getobj opens a menu whose only listed candidate is the can of
+    // grease, and the driver picks that entry by name. A space cannot
+    // pick it (getobj() treats the empty space-commit as a cancel), and
+    // a second untrap attempt after a successful repair shows no menu,
+    // so one attempt per recording; try_disarm() still fails one roll
+    // in three, which the recording seed choice absorbs.
+    'squeaky-board-untrap': {
+        roles: null,
+        options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips',
+            'pettype:none', 'force_invmenu'],
+        description: 'Wish a squeaky board, reveal it, and repair it with a can of grease.',
+        success: ['The squeaky board is repaired with grease.'],
+        build: ({ seed, datetime, rc }) => [{
+            seed, datetime, nethackrc: rc(), driver: [
+                keys('#levelchange\r20\r'), keys('h'), keys('j'),
+                ...wish('squeaky board', 'can of grease'), keys('\x05'),
+                keys('#untrap\r.'), choose('can of grease', ''),
+                keys('\x1b:\x1b'),
+            ],
+        }],
+    },
     // teleport.c:level_tele_trap().
     'level-teleporter-step': recipe(
         'Wish a level teleporter and step onto it to be thrown to a random level.',
