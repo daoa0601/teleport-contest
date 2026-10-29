@@ -206,16 +206,16 @@ def show_path(model, label, p):
     return f'{label}: returns {value}, draws {pos}, log {events}'
 
 
-def check(spec, front, modules, pre_fn) -> tuple[bool, str]:
+def check(spec, front, modules, pre_fn, *, pairwise_outputs=False) -> tuple[bool, str]:
     if spec.partitions is None:
-        return _check(spec, front, modules, pre_fn)
+        return _check(spec, front, modules, pre_fn, pairwise_outputs)
     covered = 0
     for label, fixed in spec.partitions(front):
         def partition(s):
             return pre_fn(s) + [s[key] == value for key, value in fixed.items()]
         partition.unrelated_state = getattr(pre_fn, 'unrelated_state', ())
         partition.fixed_inputs = fixed
-        proved, report = _check(spec, front, modules, partition)
+        proved, report = _check(spec, front, modules, partition, pairwise_outputs)
         if report == 'domain is empty':
             continue
         if not proved:
@@ -228,7 +228,7 @@ def check(spec, front, modules, pre_fn) -> tuple[bool, str]:
     return True, f'{covered} species partitions, log=off and log=on'
 
 
-def _check(spec, front, modules, pre_fn) -> tuple[bool, str]:
+def _check(spec, front, modules, pre_fn, pairwise_outputs=False) -> tuple[bool, str]:
     """Return (proved, report) over both logging settings."""
     summary = []
     for logging in (False, True):
@@ -275,8 +275,9 @@ def _check(spec, front, modules, pre_fn) -> tuple[bool, str]:
         differences = [(c, j, z3.And(*c.pc, *j.pc, z3.Not(_outputs_equal(c, j))))
                        for c in c_paths for j in j_paths]
         # A small table partition shares most of its conditions. RNG claims
-        # solve better one path pair at a time, especially their mutants.
-        queries = ([differences] if spec.partitions is not None
+        # solve better one path pair at a time. Negative checks also split
+        # path pairs: the large table disjunction can hide an easy witness.
+        queries = ([differences] if spec.partitions is not None and not pairwise_outputs
                    else [[difference] for difference in differences])
         for candidates in queries:
             result, solver = _solve(world.pre + [z3.Or(*(term for _, _, term in candidates))])
@@ -296,6 +297,8 @@ def _check(spec, front, modules, pre_fn) -> tuple[bool, str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--only', action='append')
+    parser.add_argument('--skip-slow', action='store_true',
+                        help='report and exclude claims marked slow, including their negative checks')
     parser.add_argument('--no-probes', action='store_true')
     parser.add_argument('--no-mutants', action='store_true')
     parser.add_argument('--check-ledger', type=Path, help='require recorded domains, check counts, and successful proofs')
@@ -338,13 +341,16 @@ def main() -> int:
     for spec in SPECS:
         if args.only and spec.name not in args.only:
             continue
+        if args.skip_slow and spec.slow:
+            print(f'SKIPPED {spec.name} (slow)')
+            continue
         start = time.monotonic()
         proved, report = check(spec, front, modules, spec.pre)
         print(f'{"PROVED " if proved else "FAILED "} {spec.name:<20} {time.monotonic() - start:6.1f}s  {report}')
         failures += not proved
         if not args.no_probes:
             for label, pre_fn in spec.probes:
-                proved, report = check(spec, front, modules, pre_fn)
+                proved, report = check(spec, front, modules, pre_fn, pairwise_outputs=True)
                 concrete = 'outputs differ:' in report or ('logging=' in report and 'solver gave up' not in report)
                 passed = not proved and (not spec.require_counterexamples or concrete)
                 print(f'  {"differs" if passed else "PROBE FAILED"} outside domain ({label}): {report}')
@@ -358,7 +364,7 @@ def main() -> int:
                     failures += 1
                     continue
                 mutated = load_modules({file: source.replace(old.encode(), new.encode())})
-                proved, report = check(spec, front, mutated, spec.pre)
+                proved, report = check(spec, front, mutated, spec.pre, pairwise_outputs=True)
                 first = report.splitlines()[0]
                 verdict = ('equivalent' if proved else 'NOT EQUIVALENT') if equivalent else \
                     ('killed' if not proved else 'SURVIVED')

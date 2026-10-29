@@ -7,7 +7,8 @@ lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
 `verification/equivalence/` now proves 33 scoped C/JavaScript claims,
-including hero equipment, forms, initial monster tables, and eight ISAAC64 claims. Use it as a CI check on leaf functions, add function-level
+including hero equipment, forms, initial monster tables, and eight ISAAC64
+claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
 
@@ -41,7 +42,9 @@ over rank 4.
 
 ## The proof of concept
 
-`cd verification/equivalence && uv run prove.py` (clang and uv; about 48 s).
+`cd verification/equivalence && uv run prove.py` (clang and uv).
+`--skip-slow` excludes the two table claims and their negative checks, with
+an explicit `SKIPPED` line for each. The default includes all 33 claims.
 In a worktree, set `NETHACK_RECORDER` to the main checkout's pinned recorder.
 
 **Claim.** For every input in the domain, every random sequence (core and
@@ -60,55 +63,72 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 
 | Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
 |---|---|---|---|---|
-| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.2 s |
+| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.1 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
-| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.4 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 0.8 s |
+| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.6 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 0.9 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.3 s |
-| `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 1.0 s |
-| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 4.1 s |
+| `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 0.7 s |
+| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 3.5 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
-| `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 8×1 | 0.3 s |
-| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 1.4 s |
-| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 7×13 | 3.8 s |
-| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.4 s |
+| `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 4×1 | 0.1 s |
+| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 0.3 s |
+| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 4×4 | 2.0 s |
+| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 0.7 s |
 | `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.2 s |
-| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.5 s |
-| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.5 s |
-| `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.2 s |
-| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.2 s |
-| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.5 s |
-| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.8 s |
-| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 15.5 s |
-| `acurr:all` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 8.4 s |
-| `dbon:all` | corresponding arrays/items; human and polymorphed forms | 8×8 | 1.0 s |
-| `abon:forms` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 98.6 s |
-| `exper.c:experience` ↔ `monsterExperience` (`experience:tables`) | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 1212.9 s |
-| `mon.c:mcalcmove` ↔ `mcalcmove` (`mcalcmove:tables`) | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 341.8 s |
-| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
+| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.4 s |
+| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.7 s |
+| `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 0.9 s |
+| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 4×2 | 0.9 s |
+| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.3 s |
+| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 8×8 | 0.5 s |
+| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 24×17 | 1.8 s |
+| `acurr:all` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 5.2 s |
+| `dbon:all` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | corresponding arrays/items; human and polymorphed forms | 8×8 | 0.3 s |
+| `abon:forms` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 42.1 s |
+| `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 382.4 s |
+| `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `monster_speed.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 169.5 s |
+| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
 | `isaac64_update` | `isaac64.c:isaac64_update` ↔ frozen same name | 256 initialized words in m/r; arbitrary uint64 a/b/c | Two loop invariants cover all 256 updates | 0.3 s |
-| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 3.2 s |
+| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 4.0 s |
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
-| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | <0.1 s |
+| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
 
-The final `--check-ledger` run used the main checkout's pinned recorder and
-passed all 28 claims, 31 domain probes, and 34 mutant checks in 47.8 seconds.
-One mutant is intentionally equivalent; the other 33 were killed. The
-latest checks also passed compilation (13.6 seconds), 31 executor tests
-(16.7 seconds), two target-selection tests (4.9 seconds), ten analyzer tests
-(1.6 seconds), and 28 ledger tests (57.8 seconds, including their full proof
-baseline). The ledger tests reject
-redirected C/JS functions and files, missing ISAAC64 claims, narrowed input
-relations, and lost mutants before running proofs. All three target redirects
-were accepted before the target-identity fix and rejected afterward.
-Two further tests omit the row for a current leaf or ISAAC64 claim. Both
-failed before the unrecorded-spec check and pass afterward; the CLI now
-rejects those omissions before proving. A long-precondition regression test
-removes a valid input beyond Z3's display cutoff: the CLI accepted it before
-complete SMT serialization and rejects it afterward.
+**Runtime and CI split.** A `cProfile` run of species 0 found 552
+feasibility checks plus 266 arithmetic implication checks for experience;
+movement added 376 feasibility checks. The sampled experience proof changed
+from 5.36 to 4.67 s, and movement from 2.50 to 2.05 s, including first-use
+clang reads. These profiles do not establish a sub-120-second table claim.
+
+The leaf executors now share an incremental solver for one entry domain and
+use push/pop for temporary path conditions. Changing any domain constraint
+rebuilds that context. The bounded UNSAT cache still keys complete propositions;
+SAT and unknown results are not cached. Tests check that temporary path facts
+do not escape, cached contradictions do not cross domains, and changing an
+entry constraint changes feasibility. No proof domain, logging mode, safety
+obligation, probe or mutant was removed.
+
+An initial full run exited 1 because experience's grouped mutant query timed
+out without a model. That was a failed negative check, not a killed mutant.
+Counterexample searches now check the same output conditions separately for
+each path pair; the experience mutant then produced a concrete C 135 / JS 136
+witness in 3.25 s. Equivalence proofs retain the grouped table query. A
+regression test covers both branches and a mismatch in a later partition.
+
+The final full command exited 0 in **646.04 s**, with all **33 claims**, **37
+domain probes**, and **41 mutant checks** behaving as specified. Of the mutant
+checks, 39 have concrete counterexamples, one is the retained unsupported
+shadowing-language rejection, and one is proved equivalent. The full table
+above reports that run's per-claim times, excluding probes and mutants.
+Experience took **382.4 s** (previously 1212.9 s); movement took **169.5 s**
+(previously 341.8 s). Neither met the approximately 120-second target, so both
+remain `slow`. The final fast command exited 0 in **97.07 s**, proving 31 claims
+with 34 domain probes and 39 mutant checks, while explicitly skipping both
+slow claims. No game tests, corpora or TypeScript compilation were run; no game
+source was changed.
 
 The byte-seed relation comes from `isaac64.h`: C reads unsigned bytes and
 the supplied length equals the JS array length. Both arrays contain at least
@@ -164,15 +184,15 @@ both sides. Loops are unrolled with an unwinding check, or, for `d`, proved
 by a hand-written relational invariant over a recursively defined sum (the
 leaf executor's manual proof step, about 30 lines in `specs.py`).
 
-**Non-vacuity.** Across the full and focused runs, the specs have 29 domain
-probes and 31
-mutant checks: 29 concrete counterexamples, one retained language-rejection
+**Non-vacuity.** The 25 leaf specs have 29 domain probes and 31 mutant
+checks: 29 concrete mutant counterexamples, one retained language-rejection
 check (the shadowing declaration mutant), and one equivalent mutant.
 Every fv-leaves2 claim has both a failing domain probe with a concrete model
 and a killed JavaScript mutant; rejection or timeout cannot satisfy those
 gates. Numeric probes leave the arithmetic or interface
 domain; attribute probes remove one equality from the assumed state relation.
-Such a probe tests the need for the relation, not a game bug. The ISAAC64 claims add eight domain probes and ten killed mutants, including
+Such a probe tests the need for the relation, not a game bug. The ISAAC64
+claims add eight domain probes and ten killed mutants, including
 shift, mask and memory-index changes. They also require solver counterexamples.
 One existing mutant is genuinely equivalent (`ulevel < 15` →
 `ulevel < 16`, since 15/3 = 5), and the tool proves it.
@@ -230,7 +250,7 @@ callers. `enermod` is called with a small level-energy increment from
 **Concrete generator cross-check.** With `NETHACK_RECORDER` set, run
 `cd verification/equivalence && uv run ../isaac64/crosscheck.py`. A tiny
 harness compiles the real `isaac64.c`; Node imports `frozen/isaac64.js` directly.
-The latest run passed 17 cases and 17,000 draws in 0.8 s: seven uint64 seeds,
+The run passed 17 cases and 17,000 draws in 2.11 s: seven uint64 seeds,
 seven byte lengths including zero, partial words, 2048, and over-cap, plus
 three midstream reseeds. Each case checks 1,000 numeric outputs and stops at
 the first mismatch. This is a concrete cross-check, not the universal proof.
@@ -238,8 +258,9 @@ Two target-selection regression tests exercise both verification entry points
 with intentionally disagreeing frozen/emitted copies. A healthy frozen copy
 must pass even when the emitted copy differs; a divergent frozen copy must
 fail even when the emitted copy is healthy. Both tests failed before the
-target correction and pass after it, including the final rerun after this
-rebase and the latest ledger fix (two tests in 4.9 s). Run them with
+target correction and pass after it, including the rerun after this rebase
+(two tests in 6.047 s). The 39 language, solver and selection tests also
+passed after the rebase in 9.020 s. Run them with
 `uv run python ../isaac64/test_scoring_target.py` from `verification/equivalence`.
 
 **Divergences found outside the earlier numeric domains.** These boundaries
@@ -267,7 +288,8 @@ that a negative `rounddiv` denominator can be reached through a debug option:
   stated domains; the algorithm itself is no longer assumed equivalent.
 - The trust base is the Python executors and loop annotations (unverified), clang's
   AST, tree-sitter, and Z3, plus the explicit pure dungeon-difficulty call
-  contract. That helper's bodies are not executed by `abon:forms`. Mutants and probes reduce the risk; replaying
+  contract. That helper's bodies are not executed by `abon:forms`. Mutants and
+  probes reduce the risk; replaying
   counterexamples concretely through compiled C and Node would reduce it more.
 - Loop annotation facts are trusted. For `d`, they state the recursive sum
   for `rnd.c:d`'s `while (n--) tmp += RND(x)` and the uint64 range of each
@@ -293,7 +315,7 @@ that a negative `rounddiv` denominator can be reached through a debug option:
   in their defining module. Module table reads assume their initial values
   have not been mutated. The two new game-table claims assume the native and
   emitted fields still have their initial values, including Erinys.
-  The 33 executor tests cover these operations and rejection boundaries using
+  The 34 language tests cover these operations and rejection boundaries using
   small C and JS programs, rather than copies of game functions.
 - Leaf and ISAAC64 executors use `core.bit_operation` for bit-vector operations. The
   leaf executor keeps C's promoted widths and JS Number coercions; the ISAAC64

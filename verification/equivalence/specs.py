@@ -43,6 +43,7 @@ class Spec:
     arguments: Callable | None = None  # explicit C/JS API argument correspondence
     partitions: Callable | None = None # finite, exhaustive subdomains
     require_counterexamples: bool = False
+    slow: bool = False
 
 
 @dataclass(frozen=True)

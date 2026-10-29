@@ -27,3 +27,38 @@ def solve(constraints, timeout):
         if len(_UNSAT) > _LIMIT:
             _UNSAT.popitem(last=False)
     return result, solver
+
+
+class QueryContext:
+    """Keep one entry domain asserted while checking independent path facts."""
+
+    def __init__(self, constraints):
+        self.constraints = tuple(constraints)
+        self.domain = z3.simplify(z3.And(*constraints))
+        self.solver = z3.Solver()
+        self.solver.add(self.domain)
+
+    def matches(self, constraints):
+        # Object identity detects both appends and replacements without asking
+        # Z3 to compare formulas on every branch. Equivalent replacements may
+        # rebuild the solver, which is harmless.
+        return (len(self.constraints) == len(constraints)
+                and all(a is b for a, b in zip(self.constraints, constraints)))
+
+    def check(self, constraints, timeout):
+        proposition = z3.simplify(z3.And(self.domain, *constraints))
+        if proposition in _UNSAT:
+            _UNSAT.move_to_end(proposition)
+            return z3.unsat
+        self.solver.set(timeout=timeout)
+        self.solver.push()
+        try:
+            self.solver.add(*constraints)
+            result = self.solver.check()
+        finally:
+            self.solver.pop()
+        if result == z3.unsat:
+            _UNSAT[proposition] = None
+            if len(_UNSAT) > _LIMIT:
+                _UNSAT.popitem(last=False)
+        return result

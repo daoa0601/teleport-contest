@@ -14,7 +14,7 @@ one to match.
 
 | Class | C behavior | JavaScript default | Alternative in the port | Status |
 |---|---|---|---|---|
-| Fixed-width integers | `int`, `long`, `schar`, `uchar`, `coordxy` (`int16_t`), and unsigned types wrap or truncate on overflow and narrowing | Doubles: no wrap, exact to 2^53 | Narrow explicitly where C narrows (`\| 0`, `<< 24 >> 24`, `& 0xff`, `Math.imul`). `isaac64` uses BigInt with 64-bit masks. | The proofs in `docs/formal-verification.md` make overflow a proof obligation. Known out-of-domain divergences: `rnz` above about 1.07e8 (`long` to `int`), `distmin`/`dist2` outside ±16384 |
+| Fixed-width integers | `int`, `long`, `schar`, `uchar`, `coordxy` (`int16_t`), and unsigned types wrap or truncate on overflow and narrowing | Doubles: no wrap, exact to 2^53 | Narrow explicitly where C narrows (`\| 0`, `<< 24 >> 24`, `& 0xff`, `Math.imul`). `isaac64` uses BigInt with 64-bit masks. | The proofs in `docs/formal-verification.md` make overflow a proof obligation. Known out-of-domain divergences: `rnz` above about 1.07e8 (`long` to `int`), `distmin`/`dist2` outside ±16384; wizard-glob nutrition narrowing (below) |
 | Undefined behavior | `x % 0`, signed overflow, `abs(INT_MIN)`: the result is whatever the compiler and CPU did | Defined: `NaN`, exact values, or the port returns 0 | Treat each as a domain fact. Prove that callers stay inside the domain, and only otherwise emulate the arm64 result. | `rn2(0)` and similar: C consumes a draw, the port does not. No corpus session reaches it. Callers are checked by `verification/callsites/`; 202 sites remain unproved |
 | Library sort | Plain libc `qsort()` is not stable, but the recorder patch `002-deterministic-qsort.patch` turns every game `qsort()` into `nh_deterministic_qsort()`, which breaks comparator ties by original index | `Array.prototype.sort` is stable, which matches the patched rule | Sort the same input order with the same comparator. Never emulate libc's unstable order. | Matches by construction. A port sort can still differ through its comparator or its input order |
 | Shared storage | `union`s and `obj.h` field aliases (`opoisoned`=`otrapped`, `orotten`=`oeroded`, `leashmon`=`corpsenm`, and others): writing one name changes the other | Separate fields | Every C test, copy, or reset of the base field also covers each alias that applies. The full list is in the unit brief and `obj.h`. | Ongoing; past mergeability and erosion bugs came from this |
@@ -25,6 +25,27 @@ one to match.
 | Process-lifetime statics | `static` locals and file-level globals persist for the process and reset only at `dealloc` or restart | Module state persists across games in the same page | Keep game state in `GameState`. Every field is classified as persistent or transient, which `AGENTS.md` enforces at compile time. | Enforced by the schema |
 | Operating-system features | Mail delivery (`MAIL`, polled every `MAILCKFREQ`=50 moves from the mailbox file), `MSGHANDLER` fork and exec, data-file seek errors, terminal size checks for `perm_invent`, bones and save file I/O, `getenv`, uid | No processes or filesystem in the grader | Port only the effects a recording can show. With no mailbox and no handler, the mail and handler paths do nothing and draw no random numbers. | `md_rush` and `execplinehandler` texts are listed by `static-gaps` but out of scope |
 | Wall clock | `getnow()` sets the moon phase, Friday the 13th, `night()`, and `midnight()`, and the recorder's fixed date inherits the current New York daylight-saving offset | No clock in the replay | Take the recorded datetime from the session, and apply C's local-time conversion, DST included | Preamble, moon, and restored-birthday mismatches have been real |
+
+## Fixed-width integers: wizard-glob weight override
+
+Known divergence: `objnam.c:readobjnam` permits a wizard to override its glob
+weight limit. Wishing for `107374336 small globs of brown pudding` and
+accepting that override produces unsigned weight/nutrition `2147486720`.
+`eat.c:obj_nutrition` returns that weight; `eat.c:doeat:3050` narrows it to
+signed `int` `-2147480576`, passed as the denominator at `eat.c:doeat:3058`.
+The zero-denominator guard does not reject a negative value.
+
+The emitted port already differs earlier: the native meal delay is `33554483`,
+while `corpse_meal.js:prepareCorpseMeal` uses a signed right shift and yields
+`-33554381`. The negative denominator also lies outside the proved positive
+`rounddiv` domain. This construction requires the wizard-mode weight override;
+ordinary wishes retain the glob-count cap. No game fix is included.
+
+`verification/equivalence/rounddiv_witness.py` evaluates the real clang and
+emitted JavaScript AST expressions and checks native arithmetic obligations.
+The complete wish/eating path was source-audited, not replayed. See
+[the caller audit](formal-verification.md#all-rounddiv-callers-and-the-negative-denominator-gap)
+for all six native call sites and corresponding port calculations.
 
 ## Library sort: the recorder wrapper and every call site
 

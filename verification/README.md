@@ -196,10 +196,11 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 25 scoped claims: the original 20 plus all-attribute `acurr`,
-human/polymorphed `dbon` and `abon`, initial-table monster experience, and
-initialized monster movement. The monster claims check all 383 valid native
-species with symbolic state; movement uses arbitrary random streams.
+There are 33 scoped claims: the original 20 plus all-attribute `acurr`,
+human/polymorphed `dbon` and `abon`, initial-table monster experience,
+initialized monster movement, and eight ISAAC64/seed-packing claims. The monster
+claims check all 383 valid native species with symbolic state; movement uses
+arbitrary random streams.
 `abon:forms` assumes an equal, pure dungeon-difficulty result. Experience
 covers monsters with no inventory. Live table mutations and preservation of
 entry relations by initialization/equipment updates remain unproved.
@@ -207,17 +208,19 @@ entry relations by initialization/equipment updates remain unproved.
 `specs.py`, `state_specs.py` and `state_world.py` declare the domains and
 correspondences; `docs/formal-verification.md` gives their native sources.
 The new claims require both a concrete failing domain probe and a concrete
-killed mutant. The full run exits 0 with 25 claims; broader hero/mount entry
-relations also passed focused reruns. No game code or corpora were changed.
+killed mutant. No game code or corpora were changed.
 
-Run the executor's language tests separately (33 tests; no game sessions):
+Run the language, solver-isolation and command-selection tests
+(39 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
-NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v test_executors
+NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v \
+  test_executors test_queries test_proof_selection
 ```
 
-They check table reads and bounds, nested global state and attribute arrays,
+The post-rebase run passed all 39 tests in 9.020 s. They check table reads and
+bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
 JS 32-bit coercion, imports, defaults, scopes, and rejected constructs. C table
 values come from clang initializers. JS constant arrays are read from emitted
@@ -266,23 +269,41 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 | `core.py` | paths, abstract random streams, loop rules, and the shared bit-vector operations used by both executors |
 | `specs.py` | common spec declarations, original function pairs, probes, mutants and the loop invariant/variant |
 | `state_specs.py`, `state_world.py` | stateful leaf domains, pointer/API correspondences and the explicit difficulty contract |
-| `queries.py` | bounded reuse of UNSAT results for identical complete Z3 propositions |
+| `queries.py` | incremental per-domain solvers with isolated path conditions, and bounded reuse of complete UNSAT queries |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
 | `harness/alignment.c` | wrappers so clang expands the two real `align.h` macros |
 | `harness/hero_properties.c` | expands the actual `Amphibious` property for the experience API relation |
 | `rounddiv_witness.py` | checks the native/emitted expressions in the wizard-glob counterexample |
 | `test_executors.py` | language behavior and rejection checks, run through both AST front ends |
+| `test_queries.py`, `test_proof_selection.py` | path/domain isolation and fast-command selection behavior |
 | `bv.py` | typed C wraparound, unbounded BigInt intermediates with checked widths, bit-vector arrays and safety obligations |
 | `isaac_c.py`, `isaac_js.py` | separate AST executors for the ISAAC64 array/state subset |
 | `isaac_specs.py` | seven generator claims, explicit state relation, loop invariants and variants, proved-call summaries, probes and mutants |
 | `isaac_seed.py` | proof of the eight-byte packing loops in `rnd.c` and emitted `rng.js` |
 | `isaac_ledger.py` | ledger domains from the ISAAC64 runners' symbolic inputs and loop plans |
 
-The latest ledger check passed all 28 claims in 47.8 s,
-with 31 domain probes and 34 mutants (33 rejected, one intentionally
-equivalent). Eight claims cover ISAAC64 and seed packing, with eight
-counterexample probes and ten killed mutants.
+`experience:tables` and `mcalcmove:tables` are marked `slow` in their specs.
+The default command includes them, all probes and all mutants. Use
+`uv run prove.py --skip-slow` for pull-request checks: it reports each excluded
+claim and checks the other 31. A scheduled full run should use the default
+command. Run just the slow claims with:
+
+```sh
+uv run prove.py --only experience:tables --only mcalcmove:tables
+```
+
+The integration branch has no equivalence ledger or proof CI job yet. When
+those land, retain these two claims in that ledger with a `slow` marker and
+run the full command in a scheduled/nightly step; skipping them does not
+establish their claims. The exact domains and negative checks are unchanged.
+See `docs/formal-verification.md` for measured times and profiling limits.
+
+The final full command exited 0 with all 33 claims, 37 domain probes and 41
+mutant checks in 646.04 s. The final `--skip-slow` run exited 0 with 31 claims,
+34 probes and 39 mutant checks in 97.07 s. Table proof times were 382.4 s for
+experience and 169.5 s for movement; both remain above the 120-second target.
+
 Both executor families use `core.bit_operation`; their C-width, JS Number
 coercion, and BigInt bounds remain explicit at the callers.
 `isaac64_reseed` covers all byte seeds with lengths 0..INT_MAX, capping at
@@ -308,7 +329,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 4.9 s on the latest run):
+after it (two tests in 6.047 s on this post-rebase run):
 
 ```sh
 cd verification/equivalence

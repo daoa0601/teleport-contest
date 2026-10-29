@@ -22,7 +22,8 @@ GLIBC_ASSERT = '''
 
 class ExecutorTests(unittest.TestCase):
     def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None,
-                references=(), configure=lambda world, front, modules: None):
+                references=(), configure=lambda world, front, modules: None,
+                partitions=None, pairwise_outputs=False):
         with TemporaryDirectory(prefix='fv-language-', dir=REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             c_file.write_text(c)
@@ -32,8 +33,9 @@ class ExecutorTests(unittest.TestCase):
                 parsed[label] = (raw, *parse_module(raw))
             spec = Spec('example', 'example', 'example', list(params), pre=pre,
                         state=list(state), js_file='js/example.js',
-                        references=list(references), configure=configure)
-            return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre)
+                        references=list(references), configure=configure, partitions=partitions)
+            return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre,
+                         pairwise_outputs=pairwise_outputs)
 
     def equivalent(self, *args, **kwargs):
         proved, report = self.compare(*args, **kwargs)
@@ -94,6 +96,18 @@ class ExecutorTests(unittest.TestCase):
             with self.subTest(source=source):
                 self.rejected(source, 'function example(x) { return x; }',
                               params=[('x', INT)], reason='C expression StmtExpr')
+
+    def test_pairwise_output_queries_cover_later_partitions_and_every_branch(self):
+        native = 'int example(int band, int x) { return x < 0 ? band + 1 : band; }'
+        options = dict(params=[('band', INT), ('x', INT)],
+                       pre=lambda s: [s['x'] >= -3, s['x'] <= 3],
+                       partitions=lambda front: [('first', {'band': 0}), ('last', {'band': 2})],
+                       pairwise_outputs=True)
+        self.equivalent(native, 'function example(band, x) { return x < 0 ? band + 1 : band; }',
+                        **options)
+        self.rejected(native, 'function example(band, x) { '
+                      'return x < 0 ? band + 1 : band + (band === 2 ? 1 : 0); }',
+                      reason='last: outputs differ', **options)
 
     def test_nested_state_and_hero_attribute_arrays(self):
         self.equivalent(

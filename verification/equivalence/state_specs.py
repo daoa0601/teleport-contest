@@ -66,6 +66,7 @@ def experience_domain(s):
 
 STATE_SPECS += [
     Spec('experience:tables', 'experience', 'monsterExperience', [('species', INT), ('nk', INT)],
+         slow=True,
          require_counterexamples=True, js_file='js/exper.js',
          state=[('monster.m_lev', (8, False), 'monster.m_lev'),
                 ('monster.mrevived', (32, False), 'monster.mrevived'),
@@ -91,6 +92,7 @@ def movement_domain(s, minimum_gallop=0):
 STATE_SPECS += [
     Spec('mcalcmove:tables', 'mcalcmove', 'mcalcmove',
          [('species', INT), ('moving', (8, False)), ('riding', INT), ('steed_present', INT), ('movement', INT)],
+         slow=True,
          require_counterexamples=True, js_file='js/monster_speed.js',
          state=[('monster.mspeed', (32, False), 'monster.mspeed'),
                 ('u.ugallop', (64, True), 'game.u.ugallop'),
