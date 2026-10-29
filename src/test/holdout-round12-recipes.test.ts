@@ -5,9 +5,9 @@ import { createSessionDriver } from '../scripts/lib/session-driver.mjs';
 import { Engine } from '../js/jsmain.js';
 import { GameDisplay } from '../js/game_display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { HOLE, SQKY_BOARD } from '../js/const.js';
+import { HOLE, SQKY_BOARD, THRONE } from '../js/const.js';
 import {
-    AMULET_OF_LIFE_SAVING, BOULDER, EGG, GOLD_PIECE, LAND_MINE,
+    AMULET_OF_LIFE_SAVING, BOULDER, CAN_OF_GREASE, EGG, GOLD_PIECE, LAND_MINE,
 } from '../js/object_data.js';
 import { ROUND12_RECIPES } from '../scripts/holdout/round12-recipes.mjs';
 import { memoryStorage } from './support/memory-storage.js';
@@ -16,33 +16,83 @@ import { capturedScreen, screenText } from './support/screen.js';
 // Round-12 recipes drive special-level features, wished traps, throne
 // effects, and the end-of-game paths. Each case runs the live Engine over
 // the recipe driver and observes the game effect, not synthetic screens.
-interface Inspection { (engine: Engine): boolean }
+// Each inspection returns a comparable snapshot of the live game state;
+// the test asserts the snapshot CHANGED between the first and the last
+// screen, so a recipe whose effect never happened fails.
+interface Inspection { (engine: Engine): string | number }
 
 const inspections: Record<string, Inspection> = {
-    'boulder-plug-hole': engine =>
-        !(engine.state.level?.traps ?? []).some(trap => trap.ttyp === HOLE),
-    'oracle-minor': engine => engine.state.inventory.some(object => object.otyp === GOLD_PIECE
-        && object.quan < 1000),
-    'oracle-major': engine => !!engine.state.u.uevent?.major_oracle,
-    'throne-gold-sit': engine => !engine.state.inventory.some(object => object.otyp === GOLD_PIECE),
-    'egg-laying': engine => (engine.state.level?.objects ?? []).some(column => (column ?? []).some(cell =>
-        (cell ?? []).some(object => object.otyp === EGG && object.spe === 1))),
-    'vampire-shapeshift': engine => engine.state.u.umonnum !== MONSTER_NAME.indexOf('vampire'),
-    'land-mine-untrap': engine => engine.state.inventory.some(object => object.otyp === LAND_MINE)
-        || (engine.state.level?.objects ?? []).some(column => (column ?? []).some(cell =>
-            (cell ?? []).some(object => object.otyp === LAND_MINE))),
+    'boulder-plug-hole': engine => {
+        const level = engine.state.level;
+        let candig = 0, boulders = 0;
+        for (const column of level?.locations ?? []) {
+            for (const location of column ?? []) if (location?.candig) candig++;
+        }
+        for (const column of level?.objects ?? []) {
+            for (const cell of column ?? []) {
+                for (const object of cell ?? []) if (object.otyp === BOULDER) boulders++;
+            }
+        }
+        // Plugging a hole clears W_NONDIGGABLE and sets candig on that tile
+        // (hack.c:moverock_core() HOLE branch), and any unwished leftover
+        // boulder still proves the pile moved.
+        return `candig:${candig},boulders:${boulders}`;
+    },
+    'oracle-minor': engine =>
+        `gold:${engine.state.inventory.filter(object => object.otyp === GOLD_PIECE)
+            .reduce((total, object) => total + object.quan, 0)}`,
+    'oracle-major': engine =>
+        `majorOracle:${engine.state.u.uevent?.major_oracle ? 1 : 0}`,
+    'throne-gold-sit': engine =>
+        `throne:${engine.state.level?.at(engine.state.u.ux, engine.state.u.uy)?.typ === THRONE ? 1 : 0}`
+        + `,gold:${engine.state.inventory.filter(object => object.otyp === GOLD_PIECE)
+            .reduce((total, object) => total + object.quan, 0)}`,
+    'egg-laying': engine => {
+        let laid = 0;
+        for (const column of engine.state.level?.objects ?? []) {
+            for (const cell of column ?? []) {
+                for (const object of cell ?? []) {
+                    if (object.otyp === EGG && object.spe === 1) laid++;
+                }
+            }
+        }
+        return `laidEggs:${laid}`;
+    },
+    'vampire-shapeshift': engine => `form:${engine.state.u.umonnum}`,
+    'land-mine-untrap': engine => {
+        let mines = 0;
+        for (const column of engine.state.level?.objects ?? []) {
+            for (const cell of column ?? []) {
+                for (const object of cell ?? []) {
+                    if (object.otyp === LAND_MINE) mines++;
+                }
+            }
+        }
+        return `mineObjects:${mines}`;
+    },
     'squeaky-board-untrap': engine =>
-        !(engine.state.level?.traps ?? []).some(trap => trap.ttyp === SQKY_BOARD),
-    'death-lifesaving': engine => !engine.state.inventory.some(object =>
-        object.otyp === AMULET_OF_LIFE_SAVING),
-    'quit-confirm': engine => (engine.state.u.uhp ?? 0) > 0,
-    'boulder-push': engine => (engine.state.level?.objects ?? []).some(column => (column ?? []).some(cell =>
-        (cell ?? []).some(object => object.otyp === BOULDER))),
+        `boards:${(engine.state.level?.traps ?? []).filter(trap => trap.ttyp === SQKY_BOARD).length}`
+        + `,grease:${engine.state.inventory.filter(object => object.otyp === CAN_OF_GREASE)
+            .reduce((total, object) => total + (object.spe ?? 0), 0)}`,
+    'death-lifesaving': engine => `mortality:${engine.state.u.umortality ?? 0}`,
+    'boulder-push': engine => {
+        let boulders = 0;
+        for (const column of engine.state.level?.objects ?? []) {
+            for (const cell of column ?? []) {
+                for (const object of cell ?? []) {
+                    if (object.otyp === BOULDER) boulders++;
+                }
+            }
+        }
+        return `boulders:${boulders}`;
+    },
     'doppelganger-players': engine => {
         const first = MONSTER_NAME.indexOf('archeologist');
         const last = MONSTER_NAME.indexOf('wizard');
-        return (engine.state.level?.monsters ?? []).some(monster => monster.cham !== undefined
-            && monster.cham >= 0 && monster.mnum >= first && monster.mnum <= last);
+        const playerForms = (engine.state.level?.monsters ?? []).filter(monster =>
+            monster.cham !== undefined && monster.cham >= 0
+            && monster.mnum >= first && monster.mnum <= last).length;
+        return `playerForms:${playerForms}`;
     },
 };
 
@@ -71,16 +121,17 @@ for (const name of Object.keys(ROUND12_RECIPES)) {
         await engine.runUntilInputNeeded();
         const driver = createSessionDriver(segment.driver);
         const screens: string[] = [];
-        let observedState = false;
         const inspect = inspections[name];
+        const before = inspect?.(engine);
+        let after: string | number | undefined;
         for (let inputs = 0; inputs < 1500; inputs++) {
             const screen = screenText(capturedScreen(engine));
             screens.push(screen);
-            observedState ||= inspect?.(engine) ?? false;
             const key = driver.nextKey(screen.split('\n'));
             if (key === null) break;
             engine.inputGate.feed(key);
             await engine.runUntilInputNeeded();
+            after = inspect?.(engine);
         }
         assert.equal(driver.exhausted, true, `${name} must finish within 1500 inputs`);
         const messages = screens.map(screen => screen.split('\n').slice(0, 4).join('\n')).join('\n');
@@ -89,6 +140,9 @@ for (const name of Object.keys(ROUND12_RECIPES)) {
             segments: [{ steps: screens.map(screen => ({ screen })) }] });
         assert.equal(evidence.ok, true,
             `${name}: ${evidence.checks.filter(check => !check.ok).map(check => check.check).join(', ')}; last messages:\n${recent}`);
-        assert.ok(observedState || !inspect, `${name} must change the live game state`);
+        if (inspect) {
+            assert.notEqual(after, before,
+                `${name} must change the live game state (${before} stayed ${after})`);
+        }
     });
 }

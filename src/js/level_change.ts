@@ -593,15 +593,17 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         })) return true;
     }
     await autopickupAtHero();
+    if (game.program_state?.gameover) return true;
     // deferred_goto() prints a deferred message that is not the
     // materialization line only after goto_level() has finished
     // (do.c:2096), so it lands after the arrival, temperature, and
-    // annotation messages above.
+    // annotation messages above.  C never reaches that print when the
+    // arrival pickup killed the hero: done() does not return, so the
+    // game-over check above comes first.
     if (postMessage) {
         await plineWithContinuation(postMessage);
         postMessage = '';
     }
-    if (game.program_state?.gameover) return true;
     game.u.uz0 = { ...game.u.uz };
     return true;
 }
