@@ -14,7 +14,7 @@ import { artifactById } from './artifacts.js';
 import { heroHasMagicKey } from './monster_key.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
-import { heroFingerName } from './body_parts.js';
+import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LANDMINE, MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, WEB, WT_TOOMUCH_DIAGONAL, isok, } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
@@ -54,7 +54,7 @@ import { cansee } from './vision.js';
 import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
 const G_UNIQ = 0x1000;
@@ -579,14 +579,14 @@ async function helpMonsterOut(monster, trap, options) {
     }
     const failed = untrapFailureRoll(trap, state, random);
     if (failed && !monsterIsHelpless(monster)) {
-        await publish(`You try to reach out your arms, but ${canonicalMonsterName(monster, { state })} backs away skeptically.`);
+        await publish(`You try to reach out your ${makePlural(heroArmName(state))}, but ${canonicalMonsterName(monster, { state })} backs away skeptically.`);
         return true;
     }
     if (touchPetrifies(monster.mnum)
         && !(state.uarmg || state.u?.uarmg)
         && !(state.u.stoneResistance)) {
         const species = monsterTypeName(monster.mnum, !!monster.female);
-        await publish(`You grab the trapped ${species} using your bare hands.`);
+        await publish(`You grab the trapped ${species} using your bare ${makePlural(heroHandName(state))}.`);
         const contact = await resolveImmediatePetrification({
             state,
             killer: `trying to help ${withIndefiniteArticle(species)} out of a pit`,
@@ -604,7 +604,7 @@ async function helpMonsterOut(monster, trap, options) {
         }
         return true;
     }
-    await publish(`You reach out your arms and grab ${canonicalMonsterName(monster, { state })}.`);
+    await publish(`You reach out your ${makePlural(heroArmName(state))} and grab ${canonicalMonsterName(monster, { state })}.`);
     if (monster.msleeping) {
         monster.msleeping = 0;
         await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} awakens.`);
