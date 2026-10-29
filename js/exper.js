@@ -9,7 +9,7 @@ import { returnHeroToHumanForm } from './polyself.js';
 import { currentAttribute } from './attrib.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
-import { A_CON, A_WIS, MAXULEV, Upolyd } from './const.js';
+import { A_CON, A_WIS, KILLED_BY, MAXULEV, Upolyd } from './const.js';
 import { plineWithContinuation, see_monsters } from './display.js';
 import { rankAchievement, recordAchievement, } from './achievements.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
@@ -228,8 +228,10 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
         recordGameLogEvent(`lost experience level ${oldLevel}`, { state, flags: LL_MINORAC });
     }
     else {
+        // losexp() calls done() directly, without the damage death announcement.
         if (drainer && await die({
-            killer: drainer, deathCause: `killed by ${drainer}`,
+            killer: drainer, killerFormat: KILLED_BY,
+            deathCause: `killed by ${drainer}`, deathLineShown: true,
         }))
             return true;
         if (hero.ulevel > 1)

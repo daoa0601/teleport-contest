@@ -123,7 +123,7 @@ export async function tryWizardTerrainWish(parsed) {
             setBridgeSurface(location, DB_ICE);
         else {
             location.typ = ICE;
-            location.icedpool = location.flags = previousType === ROOM ? ICED_POOL : ICED_MOAT;
+            setMapFlags(location, previousType === ROOM ? ICED_POOL : ICED_MOAT);
         }
         deleteEngravingAt(x, y);
         if (name.startsWith('melting '))
@@ -140,7 +140,7 @@ export async function tryWizardTerrainWish(parsed) {
                     : name.startsWith('unaligned ') ? A_NONE
                         : !rn2(6) ? A_NONE : rn2(3) - 1;
         location.typ = ALTAR;
-        location.altarmask = location.flags = Align2amask(alignment);
+        setMapFlags(location, Align2amask(alignment));
         const word = alignment === A_CHAOTIC ? 'chaotic' : alignment === A_NEUTRAL ? 'neutral'
             : alignment === A_LAWFUL ? 'lawful' : 'unaligned';
         await say(`${withIndefiniteArticle(word)} altar.`);
@@ -258,7 +258,7 @@ function makeWishedDoor(location, parsed, secret, previousType) {
     if (parsed.trapped === 'trapped' && (secret || location.doormask & (D_LOCKED | D_CLOSED)))
         location.doormask |= D_TRAPPED;
     location.wall_info = secret ? wallInfo & WM_MASK : 0;
-    location.flags = location.doormask | location.wall_info;
+    setMapFlags(location, location.doormask | location.wall_info);
 }
 function describeWishedDoor(location, secret) {
     const mask = location.doormask;
@@ -269,19 +269,25 @@ function describeWishedDoor(location, secret) {
     return `${prefix}${state}${(mask & ~D_TRAPPED) === D_NODOOR ? 'doorless doorway' : 'door'}`;
 }
 function setLooted(location, flags) {
-    location.looted = location.flags = flags;
+    setMapFlags(location, flags);
 }
 function clearMapFlags(location) {
-    location.flags = location.doormask = location.wall_info = 0;
+    setMapFlags(location, 0);
+}
+// C rm.h stores these terrain-specific views in the same five flag bits.
+function setMapFlags(location, flags) {
+    location.flags = location.doormask = location.wall_info = location.icedpool = flags;
+    location.looted = location.ladder = location.drawbridgemask = location.altarmask = flags;
+    location.emptygrave = flags !== 0;
 }
 function setBridgeSurface(location, surface) {
     location.drawbridgemask = ((location.drawbridgemask ?? location.flags) & ~DB_UNDER) | surface;
-    location.flags = location.drawbridgemask;
+    setMapFlags(location, location.drawbridgemask);
 }
 function setWallProperties(location, parsed) {
     location.wall_info |= (parsed.undiggable ? W_NONDIGGABLE : 0)
         | (parsed.unphaseable ? W_NONPASSWALL : 0);
-    location.flags |= location.wall_info;
+    setMapFlags(location, location.flags | location.wall_info);
 }
 async function bridgeMessage(surface, type) {
     await say(`${surface} ${type === DRAWBRIDGE_UP ? 'in front of' : 'under'} the drawbridge.`);
