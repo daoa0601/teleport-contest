@@ -2,7 +2,6 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { recordAchievement } from './achievements.js';
 import { deityName } from './alignment.js';
-import { findArmorClass } from './armor.js';
 import { artifactById, artifactByName, discoverArtifact, findArtifact, nameArtifact, } from './artifacts.js';
 import { heroFootName, monsterStomachName } from './body_parts.js';
 import { ACH_TUNE, A_STR, P_BROAD_SWORD, P_LONG_SWORD, PLNMSG_OBJ_GLOWS, Upolyd } from './const.js';
@@ -206,7 +205,7 @@ async function grantDivineProperty() {
         }
         else
             game.u.ublessed = (game.u.ublessed || 0) + 1;
-        findArmorClass();
+        game._armorClassDirty = true;
         name = 'my protection';
     }
     await pline(`"and thus I grant thee the gift of ${name}!"`);
