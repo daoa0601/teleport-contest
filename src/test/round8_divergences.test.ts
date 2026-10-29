@@ -36,8 +36,8 @@ void test('dipping a potion of polymorph can turn the sink into an opulent thron
     const screens = await drive(engine, driver, 400);
     const text = screens.join('\n');
     assert.equal(driver.exhausted, true, 'dipping must finish within 400 inputs');
-    assert.match(text, /The sink transforms into /);
-    assert.doesNotMatch(text, /The sink transforms into a throne!/, 'the throne keeps its opulent description');
+    const transformation = text.match(/The sink transforms into [^!\n]+!/)?.[0];
+    assert.equal(transformation, 'The sink transforms into an opulent throne!');
 });
 
 void test('a wished rolling boulder trap reveals its boulder on the map', async () => {
