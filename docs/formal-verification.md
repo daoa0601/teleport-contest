@@ -763,6 +763,19 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
    miss. No CI job, full game suite or new recording was added. Coverage
    guidance is still future work. See `verification/README.md` for domains,
    source assumptions, exact commands, projection limits and runtime details.
+
+   Two later rounds extend the same runner. Creation adds
+   `mkobj.c:mksobj`/`mkobj`, `objnam.c:rnd_class`, `makemon.c:rndmonst`/
+   `mkclass_aligned` and the whole `makemon` constructor with
+   `m_initweap`/`m_initinv`: 13,885 cases, zero differences, 16 killed
+   mutants. Naming adds `objnam.c:makeplural`/`makesingular`,
+   `xname`/`doname` with the `an`/`the`/`aobjnam` wrappers, and
+   `do_name.c:x_monnam` across its article and suppression flags: 11,548
+   cases, zero differences, 17 rejected probes and 10 killed mutants. God
+   minions' `x_monnam` names were excluded while a game fix for them
+   landed separately. Neither round found a reachable port defect.
+   `verification/difftest/README.md` lists the entry points, input domains and
+   correspondence assumptions.
 6. **Optional state relation.** A typed relation between `GameState` and C
    globals for monster, object, and hero records would extend refinement proofs
    to stateful functions. Expect diminishing returns. Whole-game equivalence
