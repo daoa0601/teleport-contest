@@ -7,6 +7,7 @@ import type { Hero } from './hero_types.js';
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
 import { game, requireGameLevel } from './gstate.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -2191,7 +2192,8 @@ export function newsym_force(x: number, y: number): void {
 // ── newsym ──
 function monsterDisplayAttribute(state: 'normal' | 'pet' | 'detected') {
     // C tty_print_glyph() applies pet highlighting independently of use_inverse.
-    if (state === 'pet') return game.flags.hilite_pet ? ATR_INVERSE : 0;
+    if (state === 'pet') return game.flags.hilite_pet
+        ? terminalAttrFromCAttr(game.iflags.wc2_petattr ?? C_ATR_INVERSE) : 0;
     const inverse = game.flags?.use_inverse !== false
         && game.iflags?.use_inverse !== false && game.iflags?.wc_inverse !== false;
     return state === 'detected' && inverse ? ATR_INVERSE : 0;

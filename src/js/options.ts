@@ -666,7 +666,7 @@ export function parseNethackrc(rc: string, sources: ConfigurationSources = {}): 
     const result: NethackConfiguration = {
         name: '', role: null, race: null, gender: null, align: null,
         configErrors: [],
-        flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
+        flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: { wc2_petattr: C_ATR_INVERSE }, commandBindings: new CommandBindings(),
     };
     const fileReport: ConfigurationErrorReport = { source: sources.fileName || '.nethackrc', errors: [] };
     parseConfiguration(rc, result, fileReport, true);
@@ -1246,6 +1246,23 @@ function parseConfiguration(
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx))
                 .trimEnd().toLowerCase().trimStart();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+
+            // optfn_petattr(): the attribute also controls hilite_pet.
+            // Even a missing parameter reapplies that boolean, but an
+            // unknown attribute leaves both settings unchanged.
+            if (canonical === 'petattr') {
+                if (!optionValue) addError(`Missing parameter for '${stripped}'`);
+                else {
+                    const attr = matchAttributeName(optionValue, null);
+                    if (attr === -1) {
+                        addError(`Unknown petattr parameter '${stripped}'`);
+                        continue;
+                    }
+                    result.iflags.wc2_petattr = attr;
+                }
+                result.flags.hilite_pet = (result.iflags.wc2_petattr ?? C_ATR_INVERSE) !== C_ATR_NONE;
+                continue;
+            }
 
             // optfn_boolean(): a boolean's value must spell on or off —
             // a prefix of true/false/yes/no, exactly "on"/"off", or a
@@ -2311,6 +2328,8 @@ function setConfigurationBoolean(settings: ConfigurationSettings, option: Boolea
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         settings.iflags[property] = value;
     else settings.flags[property] = value;
+    if (property === 'hilite_pet' && value && settings.iflags.wc2_petattr === C_ATR_NONE)
+        settings.iflags.wc2_petattr = C_ATR_INVERSE;
 }
 
 function setRequestBoolean(option: BooleanOption, value: boolean): void {
@@ -2322,6 +2341,8 @@ function setRequestBoolean(option: BooleanOption, value: boolean): void {
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         game.iflags[property] = value;
     else game.flags[property] = value;
+    if (property === 'hilite_pet' && value && game.iflags.wc2_petattr === C_ATR_NONE)
+        game.iflags.wc2_petattr = C_ATR_INVERSE;
 }
 
 function requestMenuIdentity() {
@@ -2568,7 +2589,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('number_pad', `number_pad              [${numberPadDescription()}]`),
             choice('packorder', `packorder               [${inventoryOrderSymbols()}]`),
             choice('paranoid_confirmation', `paranoid_confirmation   [${compoundMenuValue('paranoid_confirmation')}]`),
-            choice('petattr', 'petattr                 [inverse]'),
+            choice('petattr', `${'petattr'.padEnd(24)}[${attributeName(game.iflags.wc2_petattr ?? C_ATR_INVERSE)}]`),
             choice('pickup_burden', `pickup_burden           [${compoundMenuValue('pickup_burden')}]`),
             choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
             choice('pile_limit', 'pile_limit              [5]'),
@@ -2815,6 +2836,17 @@ async function editMenuHeadings(): Promise<void> {
     game.iflags.menu_headings = { attr, color };
 }
 
+// options.c:handler_petattr() commits and requests a redraw even when
+// the accepted attribute equals the current one. Escape changes nothing.
+async function editPetAttribute(): Promise<boolean> {
+    const attr = await queryAttributeMenu('Select pet highlight attribute',
+        game.iflags.wc2_petattr ?? C_ATR_INVERSE);
+    if (attr === null) return false;
+    game.iflags.wc2_petattr = attr;
+    game.flags.hilite_pet = attr !== C_ATR_NONE;
+    return true;
+}
+
 // options.c optfn_boolean()'s after-change flags, served by
 // reset_needed_visuals() once the selected options finished: opt_need_redraw
 // versus the customsymbols/customcolors resets.
@@ -3027,6 +3059,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'autopickup_exceptions') await editAutopickupExceptions();
     else if (name === 'menu_colors') await editMenuColors();
     else if (name === 'menu_headings') await editMenuHeadings();
+    else if (name === 'petattr') return await editPetAttribute();
     // OthrOpt handlers: options.c o_status_hilites and o_bind_keys do_handler.
     else if (name === 'status_highlights') await statusHiliteMenu();
     else if (name === 'bind_keys') await handlerRebindKeys();
