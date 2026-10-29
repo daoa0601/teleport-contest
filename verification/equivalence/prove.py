@@ -23,7 +23,7 @@ from cfront import CFront
 from core import STREAMS, Machine, Unsupported, World
 from csym import CExec, CPtr, CVal, in_range
 from jssym import JSExec, V, parse_module
-from specs import SPECS
+from specs import C_FILES, JS_FILES, SPECS
 
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
@@ -43,14 +43,14 @@ def recorder_dir() -> Path:
 
 def load_modules(overrides=None) -> dict:
     modules = {}
-    for label in ('js/rng.js', 'js/hacklib.js'):
+    for label in JS_FILES:
         source = (overrides or {}).get(label) or (REPO / label).read_bytes()
         functions, imports, module_vars = parse_module(source)
-        modules[label] = (source, functions, imports)
+        modules[label] = (source, functions, imports, module_vars)
     return modules
 
 
-def build_world(spec, logging: bool, pre_fn) -> World:
+def build_world(spec, logging: bool, pre_fn, front) -> World:
     params, symbols, pre = [], {}, []
     for name, t in spec.params:
         sym = z3.Int(name)
@@ -62,11 +62,27 @@ def build_world(spec, logging: bool, pre_fn) -> World:
         sym = z3.Int(key)
         symbols[key] = sym
         c_state[key] = (sym, t)
-        js_state[js_path] = sym
+        if key in getattr(pre_fn, 'unrelated_state', ()):
+            other = z3.Int('js:' + js_path)
+            pre.append(in_range(other, t))
+            js_state[js_path] = other
+        else:
+            js_state[js_path] = sym
         pre.append(in_range(sym, t))
+    choices = {}
+    for key, t, js_path, mapping in spec.enum_state:
+        sym = z3.Int(key)
+        symbols[key] = sym
+        c_state[key] = (sym, t)
+        pre.append(in_range(sym, t))
+        entries = [(sym == front.enum_value(native), text) for native, text in mapping]
+        pre.append(z3.Or(*(condition for condition, _ in entries)))
+        choices[js_path] = entries
     pre.extend(pre_fn(symbols))
+    c_globals = {'rng_logfile': CPtr(logging), 'rng_log_disp': CVal(z3.IntVal(0), (32, True))}
+    c_globals.update({key: CPtr(False) for key, _ in spec.nulls})
     return World(logging=logging, pre=pre, params=params, c_state=c_state, js_state=js_state,
-                 c_globals={'rng_logfile': CPtr(logging), 'rng_log_disp': CVal(z3.IntVal(0), (32, True))},
+                 c_globals=c_globals, js_choices=choices,
                  loops=spec.loops)
 
 
@@ -102,6 +118,8 @@ def _outputs_equal(c, j):
 def describe_model(model, world, extra=()):
     parts = [f'{name}={model.eval(sym, model_completion=True)}' for name, sym, _ in world.params]
     parts += [f'{key}={model.eval(sym, model_completion=True)}' for key, (sym, _) in world.c_state.items()]
+    parts += [f'js:{key}={model.eval(sym, model_completion=True)}' for key, sym in world.js_state.items()
+              if not any(z3.eq(sym, original) for original, _ in world.c_state.values())]
     parts.append(f'logging={world.logging}')
     for s, fn in world.streams.items():
         draws = [f'{model.eval(fn(k), model_completion=True)}' for k in range(3)]
@@ -124,7 +142,10 @@ def check(spec, front, modules, pre_fn) -> tuple[bool, str]:
     summary = []
     for logging in (False, True):
         reports = []
-        world = build_world(spec, logging, pre_fn)
+        try:
+            world = build_world(spec, logging, pre_fn, front)
+        except Unsupported as error:
+            return False, f'unsupported: {error}'
         if _solve(world.pre)[0] != z3.sat:
             return False, 'domain is empty'
         cm, jm = Machine(world, 'c'), Machine(world, 'js')
@@ -132,7 +153,11 @@ def check(spec, front, modules, pre_fn) -> tuple[bool, str]:
             c_args = [CVal(sym, t) for _, sym, t in world.params]
             c_paths = CExec(cm, front).run(spec.c, c_args)
             j_args = [V('num', sym) for _, sym, _ in world.params]
-            j_paths = JSExec(jm, modules, js_module_env(logging)).run(spec.js, j_args)
+            env = js_module_env(logging)
+            env.update({key: V('null') for _, paths in spec.nulls for key in paths})
+            j_args.extend(V('choice', world.js_choices[value]) if kind == 'state' else V(kind, value)
+                          for kind, value in spec.js_args)
+            j_paths = JSExec(jm, modules, env).run(spec.js, j_args, spec.js_file)
         except Unsupported as error:
             return False, f'unsupported: {error}'
         for machine in (cm, jm):
@@ -171,7 +196,7 @@ def main() -> int:
     args = parser.parse_args()
 
     recorder = recorder_dir()
-    front = CFront(recorder, [recorder / 'src' / 'rnd.c', recorder / 'src' / 'hacklib.c', HERE / 'harness' / 'rn1.c'])
+    front = CFront(recorder, [recorder / 'src' / file for file in C_FILES] + list((HERE / 'harness').glob('*.c')))
     modules = load_modules()
     print(f'C sources: {recorder}/src   JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
     failures = 0

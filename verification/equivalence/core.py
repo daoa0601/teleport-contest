@@ -42,6 +42,7 @@ class Path:
     events: list
     ret: object = None
     returned: bool = False
+    broken: bool = False
 
     @property
     def env(self) -> dict:
@@ -49,7 +50,7 @@ class Path:
 
     def fork(self) -> 'Path':
         return Path(list(self.pc), [dict(f) for f in self.frames], dict(self.pos),
-                    list(self.events), self.ret, self.returned)
+                    list(self.events), self.ret, self.returned, self.broken)
 
 
 @dataclass
@@ -87,6 +88,7 @@ class World:
     c_state: dict                      # 'u.uluck' -> (z3 Int, ctype)
     js_state: dict                     # 'game.u.uluck' -> z3 Int
     c_globals: dict                    # name -> executor value
+    js_choices: dict = field(default_factory=dict)  # path -> [(condition, literal string)]
     loops: dict = field(default_factory=dict)   # (side, function, ordinal) -> LoopSpec
     unroll: int = 12
     streams: dict = field(default_factory=lambda: {s: stream_fn(s) for s in STREAMS})
@@ -157,6 +159,45 @@ class Machine:
         path.pos[stream] = z3.simplify(position + 1)
         return value
 
+    def array_bounds(self, path, index, length, where):
+        self.oblige(path, z3.And(index >= 0, index < length),
+                    f'{self.side} array index outside [0, {length})', where)
+
+    def switch(self, path, matches, statements, execute):
+        """Select the first matching label, then execute with fallthrough.
+
+        A None match is the default label, which runs only if no case matches,
+        including cases after default. A break belongs to this switch; returns
+        keep their function-level meaning.
+        """
+        pending, selected, default = [path], [], None
+        for i, match in enumerate(matches):
+            if match is None:
+                if default is not None:
+                    raise Unsupported('multiple default labels')
+                default = i
+                continue
+            following = []
+            for p in pending:
+                for q, taken in self.branch(p, match):
+                    if taken:
+                        selected.append((q, i))
+                    else:
+                        following.append(q)
+            pending = following
+        out = pending if default is None else []
+        if default is not None:
+            selected.extend((p, default) for p in pending)
+        for p, start in selected:
+            paths = [p]
+            for group in statements[start:]:
+                for statement in group:
+                    paths = seq(paths, lambda q, s=statement: execute(q, s))
+            for q in paths:
+                q.broken = False
+            out.extend(paths)
+        return out
+
     # ---- loops -------------------------------------------------------------
 
     def run_loop(self, paths, key, cond_fn, body_fn, modset_fn, view_fn, havoc_fn, where):
@@ -184,8 +225,13 @@ class Machine:
                             self.oblige(p3, False, f'loop runs more than {bound} iterations', where)
                         else:
                             following.extend(body_fn(p3))
-            out.extend(p for p in following if p.returned)
-            current = [p for p in following if not p.returned]
+            current = []
+            for p in following:
+                if p.returned or p.broken:
+                    p.broken = False
+                    out.append(p)
+                else:
+                    current.append(p)
         return out
 
     def _induct(self, path, spec, cond_fn, body_fn, modset_fn, view_fn, havoc_fn, where):
@@ -217,8 +263,8 @@ class Machine:
                 measure = spec.variant(view, entry)
                 self.oblige(p3, measure >= 0, 'loop variant is non-negative when the body runs', where)
                 for p4 in body_fn(p3):
-                    if p4.returned or len(p4.events) != events_before:
-                        raise Unsupported(f'{where}: annotated loop returns or logs inside its body')
+                    if p4.returned or p4.broken or len(p4.events) != events_before:
+                        raise Unsupported(f'{where}: annotated loop returns, breaks, or logs inside its body')
                     for s in STREAMS:
                         if s not in spec.streams and not z3.eq(p4.pos[s], head.pos[s]):
                             raise Unsupported(f'{where}: loop draws from unlisted stream {s}')
@@ -234,7 +280,7 @@ def seq(paths, fn):
     """Apply fn to every live path; returned paths pass through unchanged."""
     out = []
     for p in paths:
-        out.extend([p] if p.returned else fn(p))
+        out.extend([p] if p.returned or p.broken else fn(p))
     return out
 
 
@@ -247,3 +293,18 @@ def tdiv(a, b):
 def trem(a, b):
     """Remainder with the sign of the dividend (C99 %, JavaScript BigInt %)."""
     return a - b * tdiv(a, b)
+
+
+def bit_int(value, bits, signed):
+    """Interpret a bit-vector as a two's-complement or unsigned integer."""
+    return z3.BV2Int(value, is_signed=signed)
+
+
+def select_int(values, index):
+    """A finite array read. The caller separately obliges an in-bounds index."""
+    if not values:
+        raise Unsupported('read from an empty array')
+    result = values[-1]
+    for i in reversed(range(len(values) - 1)):
+        result = z3.If(index == i, values[i], result)
+    return z3.simplify(result)

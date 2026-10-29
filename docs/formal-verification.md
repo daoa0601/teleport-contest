@@ -6,8 +6,8 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` proves 10 C/JavaScript function pairs in 19
-seconds. Use it as a CI check on leaf functions, add function-level
+`verification/equivalence/` now proves 20 scoped C/JavaScript claims,
+including read-only hero state and role-dependent formulas. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
 
@@ -41,7 +41,7 @@ over rank 4.
 
 ## The proof of concept
 
-`cd verification/equivalence && uv run prove.py` (clang and uv; about 20 s).
+`cd verification/equivalence && uv run prove.py` (clang and uv).
 
 **Claim.** For every input in the domain, every random sequence (the core and
 display streams as arbitrary `uint64` sequences), and RNG logging both on and
@@ -53,12 +53,32 @@ undefined behavior. The JavaScript never throws and stays exact.
 | C ↔ JS | Domain (beyond C parameter types) | Paths C×JS | Time |
 |---|---|---|---|
 | `rn2`, `rnd`, `rn2_on_display_rng` ↔ `rn2`, `rnd`, `rn2Display` | `x >= 1` | 1×1 | <0.3 s |
-| `rn1` macro (expanded by clang through `hack.h`, caller-log wrapper included) ↔ `rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.2 s |
-| `rnl` ↔ `rnl` | `1 <= x <= INT_MAX-256`; any `schar` `uluck` and `moreluck` | 13×18 | 1.3 s |
+| `rn1` macro (expanded by clang through `hack.h`, caller-log wrapper included) ↔ `rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.5 s |
+| `rnl` ↔ `rnl` | `1 <= x <= INT_MAX-256`; any `schar` `uluck` and `moreluck` | 13×18 | 1.0 s |
 | `d` ↔ `d` | `n >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX`; unbounded `n`, by induction | 1×1 | 0.3 s |
-| `rne` ↔ `rne` | `x >= 1`, `0 <= ulevel <= 30` (complete unrolling, checked) | 20×25 | 1.5 s |
-| `rnz` ↔ `rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 5.3 s |
-| `distmin`, `dist2` ↔ `distmin`, `dist2` | coordinates in [-16384, 16383] | 8×1, 1×1 | 0.3 s, 1.9 s |
+| `rne` ↔ `rne` | `x >= 1`, `0 <= ulevel <= 30` (complete unrolling, checked) | 20×25 | 1.2 s |
+| `rnz` ↔ `rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 4.4 s |
+| `distmin`, `dist2` ↔ `distmin`, `dist2` | coordinates in [-16384, 16383] | 8×1, 1×1 | 0.3 s, 1.0 s |
+| `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; one of the 13 playable roles, with its corresponding JS role key | 7×13 | 5.1 s |
+| `exper.c:newuexp` ↔ `newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.6 s |
+| `botl.c:xlev_to_rank` ↔ `experienceRankIndex` | every C `int` | 3×3 | 0.3 s |
+| `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.6 s |
+| `align.h:Align2amask` ↔ `Align2amask` | alignment in `{-128, -1, 0, 1}` | 3×3 | 0.5 s |
+| `align.h:Amask2align` ↔ `Amask2align` | every C `int` mask | 3×3 | 1.3 s |
+| `attrib.c:acurr` ↔ `currentAttribute` | Strength or Dexterity; corresponding six-element `schar` attribute arrays; no gauntlets | 6×2 | 1.3 s |
+| `attrib.c:acurrstr` ↔ `currentStrength` | corresponding attribute arrays; no gauntlets | 5×3 | 0.5 s |
+| `weapon.c:dbon` ↔ `heroStrengthDamageBonus` | corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.8 s |
+| `weapon.c:abon` ↔ `heroAttributeHitBonus` | same, with corresponding level in 1..30 | 96×60 | 18.0 s |
+
+The fv-leaves run used `NETHACK_RECORDER` pointing at the main checkout's pinned
+recorder and exited 0 with all 20 claims and negative checks passing. The
+separate 24 executor tests passed in 17.0 seconds. No game source, game test
+suite, or session corpus was changed or run for this unit.
+
+These are isolated function claims, including private emitted JS functions.
+The two alignment wrappers only include `hack.h` and invoke its actual macros;
+they do not copy their definitions. There is no claim about all callers or
+about equipment effects, polymorphed attack bonuses, or other attributes.
 
 **How it works.** Clang's typed JSON AST supplies the C side, so macros,
 `#if`, typedefs, and implicit conversions come from the compiler. tree-sitter
@@ -73,11 +93,51 @@ both sides. Loops are unrolled with an unwinding check, or, for `d`, proved
 by a hand-written relational invariant over a recursively defined sum (the
 only manual proof step, about 30 lines in `specs.py`).
 
-**Non-vacuity.** Every function has negative checks, and all behave as
-expected: 13 domain probes and 10 mutants. Each probe weakens the domain and
-must fail with a concrete counterexample. Each mutant edits the JavaScript and
-must fail. One mutant is genuinely equivalent (`ulevel < 15` →
+**Non-vacuity.** The run includes 23 domain probes and 24 mutant checks.
+Every new claim has both a failing domain probe with a concrete model and a
+killed JavaScript mutant. Numeric probes leave the arithmetic or interface
+domain; attribute probes remove one equality from the assumed state relation.
+Such a probe tests the need for the relation, not a game bug. One existing
+mutant is genuinely equivalent (`ulevel < 15` →
 `ulevel < 16`, since 15/3 = 5), and the tool proves it.
+
+| New claim | Domain probe | Killed mutant |
+|---|---|---|
+| `enermod` | `en = INT_MAX` overflows C's multiplication | wizard/priest multiplier 2 → 3 |
+| `newuexp` | arbitrary `int` level can leave the JS exact-integer range | first multiplier 10 → 11 |
+| `xlev_to_rank` | input 4294967297 narrows to C `int` 1: C 0, JS 8 | rank numerator `level + 2` → `level + 1` |
+| `rounddiv` | `(2, -3)`: C -1, JS 0 | denominator half → third |
+| `Align2amask` | alignment -3: C 4294967295, JS 255 | alignment offset 2 → 1 |
+| `Amask2align` | input 9007199254740993 violates the exact JS input obligation | normal alignment mask → shrine bit |
+| `acurr:StrDex` | remove base Strength correspondence: returned attributes differ | add 1 to the attribute sum |
+| `acurrstr` | remove base Strength correspondence: condensed Strength differs | Strength divisor 50 → 51 |
+| `dbon:human` | remove base Strength correspondence: damage bonuses differ | 18/75 endpoint inclusive → exclusive |
+| `abon:human` | remove base Dexterity correspondence: hit bonuses differ | Dexterity offset 14 → 13 |
+
+The mask probe is a counterexample to the numeric input obligation, not an
+observed C/JS result difference. The model accepts only exact integer Numbers;
+it does not pretend that 9007199254740993 is a representable JS Number.
+
+The new state assumptions are explicit in `specs.py`: `attrib.h` declares
+`u.acurr.a`, `u.abon.a`, and `u.atemp.a` as six signed-char fields; each
+corresponds to the matching `game.u` element. C `uarmg` and both JS gauntlet
+slot aliases are null. `you.h:Upolyd` supplies the human-form assumption
+`u.umonnum == u.umonster`, with both fields corresponding to JS. `you.h`'s
+`Role_switch` reads `gu.urole.mnum`; the 13 role enumerators are read through
+clang and related to the role keys used by `exper.js`. These are assumed
+relations at entry, not proofs of character initialization or restoration.
+
+The new numeric counterexamples are outside ordinary caller inputs:
+`exper.c` and `botl.c` call `newuexp` with levels 0..30;
+`xlev_to_rank` receives native `int` levels; `polyself.c:newman` calls
+`rounddiv` with denominator 10, positive maximum HP, or energy maximum
+clamped to at least 1. Its JS counterpart also clamps those maxima.
+`dungeon.c:induced_align`, `mklev.c:mkaltar`, and the mimic altar branch of
+`makemon.c:set_mimic_sym` generate alignment -1, 0, or 1; hero alignment
+fields use the named alignment constants in `align.h`. This caller inspection
+does not discharge the upper bounds on `rounddiv` inputs or all alignment
+callers. `enermod` is called with a small level-energy increment from
+`newpw`; the INT_MAX probe does not describe that path.
 
 **Divergences found outside the domains.** The game should never reach these,
 but none is checked yet:
@@ -100,7 +160,7 @@ but none is checked yet:
 
 - ISAAC64 is abstracted. The proof holds for every random sequence, so it is
   sound for any generator, but `isaac64.ts` ≡ `isaac64.c` is unproved.
-- The trust base is the Python executors (~1,600 lines, unverified), clang's
+- The trust base is the Python executors (unverified), clang's
   AST, tree-sitter, and Z3. Mutants and probes reduce the risk; replaying
   counterexamples concretely through compiled C and Node would reduce it more.
 - State correspondence is assumed, not proved: JS `game.u.uluck` holds the
@@ -109,10 +169,26 @@ but none is checked yet:
   arguments. Negative zero is identified with zero.
 - What is verified is the emitted JavaScript, not the TypeScript; `npm run
   compile` keeps them in step.
-- Supported subset: integer C with locals, struct reads from globals, calls,
-  and `while`; JS with numbers, BigInt, `Math`, calls, and `for`/`while`. Not
-  yet: pointers and heap writes, arrays, `switch`, Lua, `async`/`await`,
-  exceptions as control flow, loops that log inside their bodies under
+- Supported subset: integer C with locals, nested declared global-field reads,
+  fixed state arrays, constant integer tables from clang initializers, calls,
+  `switch` and `while`; JS with numbers, BigInt, `Math`, constant arrays,
+  default parameters, simple array bindings, optional state reads, calls,
+  literal-label `switch`, and `for`/`while`. Switches preserve fallthrough,
+  default placement, breaks, and early returns. Both sides support ternaries.
+  Out-of-bounds array reads are obligations; partially initialized C arrays
+  and JS array holes are rejected. Imported constants and functions resolve
+  in their defining module. Module table reads assume their initial values
+  have not been mutated; no new game-table equivalence claim is made yet.
+  The 24 executor tests cover these operations and rejection boundaries using
+  small C and JS programs, rather than copies of game functions.
+- Bitwise `&`, `|`, `^`, `~`, `<<`, and `>>` use C's typed widths and JS's
+  32-bit coercions; JS `>>>` is unsigned and shift counts are masked modulo
+  32. C shift counts must fit the promoted left operand's width; signed left
+  shifts require a nonnegative representable result. Negative signed right
+  shifts use clang's arithmetic shift on the recorder target. Unsigned
+  operations wrap. JS powers of two are supported only for exponents 0..53.
+- Not yet: pointers and heap writes, general C `for`, Lua, `async`/`await`,
+  escaped JS string literals, exceptions as control flow, loops that log inside their bodies under
   induction, and JS declarations that shadow an outer binding (rejected, not
   modeled). An induction loop needs a variant as well as an invariant, so
   equivalence includes termination. `sizeof` is evaluated for the LP64
@@ -195,10 +271,15 @@ nearly all because their inputs have no stated maximum.
 1. **CI (days).** Build the recorder sources in a GitHub Actions job (as
    `fresh-batches.yml` already does) and run `prove.py`. Fail on any lost claim,
    like the ledger check.
-2. **Read-only state and more leaves (1–2 weeks).** Add symbolic reads of
-   struct fields and constant tables, `switch`, and bit operations. Target
-   `hacklib.c` helpers, attribute and experience formulas, `mcalcmove`, and
-   to-hit and damage arithmetic. Choose targets from ledger blame.
+2. **Read-only state and more leaves (partly done).** Nested declared state
+   reads, bounded arrays, constant tables, switches and bit operations are in;
+   ten new claims above pass with probes and mutants. Next: equipment and form
+   branches of `acurr`/`abon`/`dbon`, monster experience's permonst reads, and
+   `mcalcmove`. The latter is hot in both RNG ledgers, but its JS entry also
+   initializes mutable monster fields, outside the read-only model. `sgn`,
+   `isqrt`, `online2`, and `rank_to_xlev` have no matching standalone emitted
+   JS function in the inspected modules, so none was invented for a claim.
+   Constant-table support is tested, but a game-table pair remains future work.
 3. **ISAAC64 (1–2 weeks).** Prove `isaac64.ts` (BigInt) ≡ `isaac64.c`
    (`uint64_t`) with bit-vectors and a per-round loop invariant. This removes
    the generator from the trust base.
