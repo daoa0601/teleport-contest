@@ -28,11 +28,12 @@ import z3
 from cfront import CFront
 from core import STREAMS, Machine, Unsupported, World
 from csym import CExec, CPtr, CVal, in_range
-from jssym import JSExec, V, parse_module
+from jssym import JSExec, Modules, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
 from isaac_specs import run as prove_isaac64
 from isaac_seed import run as prove_seed_packing
 from isaac_ledger import claims as isaac_claims
+from queries import solve
 
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
@@ -59,7 +60,7 @@ def recorder_dir() -> Path:
 
 
 def load_modules(overrides=None) -> dict:
-    modules = {}
+    modules = Modules()
     for label in JS_FILES:
         source = (overrides or {}).get(label) or (REPO / label).read_bytes()
         functions, imports, module_vars = parse_module(source)
@@ -69,23 +70,26 @@ def load_modules(overrides=None) -> dict:
 
 def build_world(spec, logging: bool, pre_fn, front) -> World:
     params, symbols, pre = [], {}, []
+    fixed = getattr(pre_fn, 'fixed_inputs', {})
     for name, t in spec.params:
-        sym = z3.Int(name)
+        sym = z3.IntVal(fixed[name]) if name in fixed else z3.Int(name)
         params.append((name, sym, t))
         symbols[name] = sym
         pre.append(in_range(sym, t))
     c_state, js_state = {}, {}
     for key, t, js_path in spec.state:
-        sym = z3.Int(key)
+        sym = z3.IntVal(fixed[key]) if key in fixed else z3.Int(key)
         symbols[key] = sym
         c_state[key] = (sym, t)
+        pre.append(in_range(sym, t))
+        if js_path is None:
+            continue
         if key in getattr(pre_fn, 'unrelated_state', ()):
             other = z3.Int('js:' + js_path)
             pre.append(in_range(other, t))
             js_state[js_path] = other
         else:
             js_state[js_path] = sym
-        pre.append(in_range(sym, t))
     choices = {}
     for key, t, js_path, mapping in spec.enum_state:
         sym = z3.Int(key)
@@ -98,9 +102,20 @@ def build_world(spec, logging: bool, pre_fn, front) -> World:
     pre.extend(pre_fn(symbols))
     c_globals = {'rng_logfile': CPtr(logging), 'rng_log_disp': CVal(z3.IntVal(0), (32, True))}
     c_globals.update({key: CPtr(False) for key, _ in spec.nulls})
+    js_values = {}
+    for key, aliases in spec.references:
+        present = z3.Int(key + ':present')
+        pre.append(z3.Or(present == 0, present == 1))
+        c_globals[key] = CPtr(present != 0, key)
+        slots = z3.Int(key + ':slots')
+        pre.append(z3.And(slots >= 1, slots < 2 ** len(aliases)))
+        for index, alias in enumerate(aliases):
+            active = z3.And(present != 0, (slots / (2 ** index)) % 2 == 1)
+            js_values[alias] = V('choice', [(active, V('obj', aliases[0])),
+                                           (z3.Not(active), V('null'))])
     return World(logging=logging, pre=pre, params=params, c_state=c_state, js_state=js_state,
                  c_globals=c_globals, js_choices=choices,
-                 loops=spec.loops)
+                 loops=spec.loops, js_values=js_values)
 
 
 def js_module_env(logging: bool) -> dict:
@@ -113,10 +128,7 @@ def js_module_env(logging: bool) -> dict:
 
 
 def _solve(constraints):
-    s = z3.Solver()
-    s.set('timeout', 120_000)
-    s.add(*constraints)
-    return s.check(), s
+    return solve(constraints, 120_000)
 
 
 def _outputs_equal(c, j):
@@ -132,11 +144,51 @@ def _outputs_equal(c, j):
     return z3.And(eqs)
 
 
+def coalesce_returns(paths):
+    """Join read-only outcomes with the same return and stream positions.
+
+    An unused branch (for example Strength in polymorphed abon) need not
+    multiply the equality queries. Logged outcomes retain their full paths.
+    """
+    groups = []
+    for path in paths:
+        if path.events:
+            groups.append(path)
+            continue
+        value = returned_integer(path)
+        if value is None:
+            groups.append(path)
+            continue
+        value = z3.simplify(value)
+        for other in groups:
+            other_value = returned_integer(other)
+            if (not other.events and other_value is not None and z3.eq(value, z3.simplify(other_value))
+                    and all(z3.eq(path.pos[s], other.pos[s]) for s in STREAMS)):
+                other.pc = [z3.Or(z3.And(*other.pc), z3.And(*path.pc))]
+                break
+        else:
+            groups.append(path.fork())
+    return groups
+
+
+def returned_integer(path):
+    if isinstance(path.ret, CVal):
+        return path.ret.v
+    if isinstance(path.ret, V) and path.ret.kind == 'num':
+        return path.ret.v
+    return None
+
+
 def describe_model(model, world, extra=()):
     parts = [f'{name}={model.eval(sym, model_completion=True)}' for name, sym, _ in world.params]
     parts += [f'{key}={model.eval(sym, model_completion=True)}' for key, (sym, _) in world.c_state.items()]
     parts += [f'js:{key}={model.eval(sym, model_completion=True)}' for key, sym in world.js_state.items()
               if not any(z3.eq(sym, original) for original, _ in world.c_state.values())]
+    parts += [f'{key}:nonnull={model.eval(value.nonnull, model_completion=True)}'
+              for key, value in world.c_globals.items()
+              if isinstance(value, CPtr) and isinstance(value.nonnull, z3.BoolRef)]
+    parts += [f'{name}()={model.eval(value.v, model_completion=True)}'
+              for name, (_, value) in world.c_calls.items() if isinstance(value, CVal)]
     parts.append(f'logging={world.logging}')
     for s, fn in world.streams.items():
         draws = [f'{model.eval(fn(k), model_completion=True)}' for k in range(3)]
@@ -155,51 +207,87 @@ def show_path(model, label, p):
 
 
 def check(spec, front, modules, pre_fn) -> tuple[bool, str]:
+    if spec.partitions is None:
+        return _check(spec, front, modules, pre_fn)
+    covered = 0
+    for label, fixed in spec.partitions(front):
+        def partition(s):
+            return pre_fn(s) + [s[key] == value for key, value in fixed.items()]
+        partition.unrelated_state = getattr(pre_fn, 'unrelated_state', ())
+        partition.fixed_inputs = fixed
+        proved, report = _check(spec, front, modules, partition)
+        if report == 'domain is empty':
+            continue
+        if not proved:
+            return False, f'{label}: {report}'
+        covered += 1
+        if covered % 64 == 0:
+            print(f'    {spec.name}: {covered} species domains checked')
+    if not covered:
+        return False, 'domain is empty'
+    return True, f'{covered} species partitions, log=off and log=on'
+
+
+def _check(spec, front, modules, pre_fn) -> tuple[bool, str]:
     """Return (proved, report) over both logging settings."""
     summary = []
     for logging in (False, True):
         reports = []
         try:
             world = build_world(spec, logging, pre_fn, front)
+            if _solve(world.pre)[0] == z3.unsat:
+                return False, 'domain is empty'
+            spec.configure(world, front, modules)
         except Unsupported as error:
             return False, f'unsupported: {error}'
-        if _solve(world.pre)[0] != z3.sat:
+        domain_result = _solve(world.pre)[0]
+        if domain_result == z3.unsat:
             return False, 'domain is empty'
+        if domain_result == z3.unknown:
+            return False, 'solver gave up on domain satisfiability'
         cm, jm = Machine(world, 'c'), Machine(world, 'js')
         try:
             c_args = [CVal(sym, t) for _, sym, t in world.params]
-            c_paths = CExec(cm, front).run(spec.c, c_args)
             j_args = [V('num', sym) for _, sym, _ in world.params]
             env = js_module_env(logging)
             env.update({key: V('null') for _, paths in spec.nulls for key in paths})
             j_args.extend(V('choice', world.js_choices[value]) if kind == 'state' else V(kind, value)
                           for kind, value in spec.js_args)
+            if spec.arguments is not None:
+                c_args, j_args = spec.arguments(world, front)
+            c_paths = CExec(cm, front).run(spec.c, c_args)
             j_paths = JSExec(jm, modules, env).run(spec.js, j_args, spec.js_file)
+            c_paths, j_paths = coalesce_returns(c_paths), coalesce_returns(j_paths)
         except Unsupported as error:
             return False, f'unsupported: {error}'
         for machine in (cm, jm):
-            seen = set()
+            groups = {}
             for ob in machine.obligations:
-                if (ob.what, ob.where) in seen:
-                    continue
-                result, solver = _solve(world.pre + ob.pc + [z3.Not(ob.cond)])
+                groups.setdefault((ob.what, ob.where), []).append(z3.And(*ob.pc, z3.Not(ob.cond)))
+            for (what, where), violations in groups.items():
+                result, solver = _solve(world.pre + [z3.Or(*violations)])
                 if result == z3.sat:
-                    seen.add((ob.what, ob.where))
-                    reports.append(f'{ob.what} at {ob.where}: {describe_model(solver.model(), world)}')
+                    reports.append(f'{what} at {where}: {describe_model(solver.model(), world)}')
                 elif result == z3.unknown:
-                    seen.add((ob.what, ob.where))
-                    reports.append(f'{ob.what} at {ob.where}: solver gave up')
+                    reports.append(f'{what} at {where}: solver gave up')
         if reports:
             return False, f'log={"on" if logging else "off"}: ' + '\n    '.join(reports)
-        for c in c_paths:
-            for j in j_paths:
-                result, solver = _solve(world.pre + c.pc + j.pc + [z3.Not(_outputs_equal(c, j))])
-                if result == z3.sat:
-                    model = solver.model()
-                    return False, (f'outputs differ: {describe_model(model, world)}\n    '
-                                   f'{show_path(model, "C ", c)}\n    {show_path(model, "JS", j)}')
-                if result == z3.unknown:
-                    return False, 'solver gave up on output equality'
+        differences = [(c, j, z3.And(*c.pc, *j.pc, z3.Not(_outputs_equal(c, j))))
+                       for c in c_paths for j in j_paths]
+        # A small table partition shares most of its conditions. RNG claims
+        # solve better one path pair at a time, especially their mutants.
+        queries = ([differences] if spec.partitions is not None
+                   else [[difference] for difference in differences])
+        for candidates in queries:
+            result, solver = _solve(world.pre + [z3.Or(*(term for _, _, term in candidates))])
+            if result == z3.sat:
+                model = solver.model()
+                c, j, _ = next((c, j, term) for c, j, term in candidates
+                               if z3.is_true(model.eval(term, model_completion=True)))
+                return False, (f'outputs differ: {describe_model(model, world)}\n    '
+                               f'{show_path(model, "C ", c)}\n    {show_path(model, "JS", j)}')
+            if result == z3.unknown:
+                return False, 'solver gave up on output equality'
         summary.append(f'log={"on" if logging else "off"}: {len(c_paths)} C x {len(j_paths)} JS paths, '
                        f'{len(cm.obligations) + len(jm.obligations)} obligations')
     return True, '; '.join(summary)
@@ -257,8 +345,10 @@ def main() -> int:
         if not args.no_probes:
             for label, pre_fn in spec.probes:
                 proved, report = check(spec, front, modules, pre_fn)
-                print(f'  {"differs" if not proved else "UNEXPECTEDLY EQUAL"} outside domain ({label}): {report}')
-                failures += proved
+                concrete = 'outputs differ:' in report or ('logging=' in report and 'solver gave up' not in report)
+                passed = not proved and (not spec.require_counterexamples or concrete)
+                print(f'  {"differs" if passed else "PROBE FAILED"} outside domain ({label}): {report}')
+                failures += not passed
         if not args.no_mutants:
             for file, old, new, *expect in spec.mutants:
                 equivalent = expect == ['equivalent']
@@ -272,8 +362,12 @@ def main() -> int:
                 first = report.splitlines()[0]
                 verdict = ('equivalent' if proved else 'NOT EQUIVALENT') if equivalent else \
                     ('killed' if not proved else 'SURVIVED')
+                concrete = 'outputs differ:' in report or ('logging=' in report and 'solver gave up' not in report)
+                invalid_kill = spec.require_counterexamples and not equivalent and not concrete
+                if invalid_kill:
+                    verdict = 'NO COUNTEREXAMPLE'
                 print(f'  {verdict} mutant {old!r} -> {new!r}: {first}')
-                failures += proved != equivalent
+                failures += proved != equivalent or invalid_kill
     failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
     failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
     if failures == 0 and args.write_ledger:

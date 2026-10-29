@@ -81,7 +81,27 @@ class CVal:
 
 @dataclass(frozen=True)
 class CPtr:
-    nonnull: bool
+    nonnull: object
+    key: object = None
+    identity: object = None
+
+
+@dataclass(frozen=True)
+class CElement:
+    table: str
+    index: object
+
+
+@dataclass(frozen=True)
+class CRecord:
+    fields: dict
+    file: object
+
+
+@dataclass(frozen=True)
+class CSelected:
+    values: tuple
+    index: object
 
 
 @dataclass(frozen=True)
@@ -132,6 +152,8 @@ def _unwrap(n):
 
 
 def _walk(n):
+    if not n.get('kind'):
+        return
     yield n
     for c in n.get('inner', []):
         if isinstance(c, dict):
@@ -230,6 +252,9 @@ class CExec:
         p = path.fork()
         frame = {}
         for prm, a in zip(params, args):
+            if prm['type']['qualType'].endswith('*') and isinstance(a, CPtr):
+                frame[prm['name']] = a
+                continue
             t = ctype(prm['type'])
             frame[prm['name']] = CVal(self.conv(p, a.v, a.t, t), t)
         p.frames.append(frame)
@@ -280,6 +305,8 @@ class CExec:
             return out
         if k == 'WhileStmt':
             return self._while(path, n)
+        if k == 'ForStmt':
+            return self._for(path, n)
         if k == 'SwitchStmt':
             return self._switch(path, n)
         if k == 'BreakStmt':
@@ -315,6 +342,17 @@ class CExec:
             raise Unsupported(f'uninitialized C array {name}')
         if d.get('storageClass') == 'static':
             raise Unsupported(f'C static local {name}')
+        if d['type']['qualType'].endswith('*'):
+            if not d.get('inner'):
+                path.env[name] = CUninit(name)
+                return [path]
+            out = []
+            for p, v in self.eval(path, d['inner'][0]):
+                if not isinstance(v, CPtr):
+                    raise Unsupported('C pointer initialized from a non-pointer')
+                p.env[name] = v
+                out.append(p)
+            return out
         t = ctype(d['type'])
         if not d.get('inner'):
             path.env[name] = CUninit(name)
@@ -381,13 +419,31 @@ class CExec:
 
     def _while(self, path, n):
         cond, body = n['inner']
+        return self._loop(path, n, cond, body)
+
+    def _for(self, path, n):
+        if len(n['inner']) != 5 or n['inner'][1]:
+            raise Unsupported('C for with a condition declaration or missing clauses')
+        init, _, cond, update, body = n['inner']
+        if not all(clause.get('kind') for clause in (init, cond, update, body)):
+            raise Unsupported('C for with a missing clause')
+        outer = set(path.env)
+        paths = self.exec(path, init)
+        paths = seq(paths, lambda p: self._loop(p, n, cond, body, update))
+        for p in paths:
+            for name in set(p.env) - outer:
+                del p.env[name]
+        return paths
+
+    def _loop(self, path, n, cond, body, update=None):
         fn_name, _, ordinals = self.stack[-1]
 
         def cond_fn(p):
             return [(p2, self.truth(v)) for p2, v in self.eval(p, cond)]
 
         def body_fn(p):
-            return self.exec(p, body)
+            paths = self.exec(p, body)
+            return paths if update is None else seq(paths, lambda q: [q2 for q2, _ in self.eval(q, update)])
 
         def view_fn(p):
             return {k: v.v for k, v in p.env.items() if isinstance(v, CVal)}
@@ -398,7 +454,7 @@ class CExec:
             p.pc.append(in_range(v, old.t))
             p.env[name] = CVal(v, old.t)
 
-        modset = _assigned(cond) | _assigned(body)
+        modset = _assigned(cond) | _assigned(body) | (_assigned(update) if update is not None else set())
         return self.m.run_loop([path], (fn_name, ordinals[id(n)]), cond_fn, body_fn,
                                lambda: modset, view_fn, havoc_fn, self.where(n))
 
@@ -409,7 +465,7 @@ class CExec:
         if isinstance(v, CVal):
             return v.v != 0
         if isinstance(v, CPtr):
-            return z3.BoolVal(v.nonnull)
+            return z3.BoolVal(v.nonnull) if isinstance(v.nonnull, bool) else v.nonnull
         raise Unsupported(f'truth value of {v}')
 
     def eval_list(self, path, nodes):
@@ -449,9 +505,20 @@ class CExec:
         if k == 'MemberExpr':
             out = []
             for p, base in self.eval(path, n['inner'][0]):
-                if not isinstance(base, CState) or n.get('isArrow'):
+                if isinstance(base, CPtr) and n.get('isArrow'):
+                    self.m.oblige(p, self.truth(base), 'C null pointer dereference', self.where(n))
+                    if isinstance(base.key, CElement):
+                        array = self.m.world.c_globals[base.key.table]
+                        self.m.array_bounds(p, base.key.index, len(array.values), self.where(n))
+                        base = self._select(array.values, base.key.index)
+                    else:
+                        base = CState(base.key)
+                if isinstance(base, CState):
+                    out.append((p, self._state(f'{base.key}.{n["name"]}', n)))
+                elif isinstance(base, (CRecord, CSelected)):
+                    out.append((p, self._record_member(p, base, n['name'])))
+                else:
                     raise Unsupported(f'C member access {n["name"]}')
-                out.append((p, self._state(f'{base.key}.{n["name"]}', n)))
             return out
         if k == 'ArraySubscriptExpr':
             out = []
@@ -465,6 +532,13 @@ class CExec:
                 out.append((p, value))
             return out
         if k == 'InitListExpr':
+            qual = n['type']['qualType'].replace('const ', '')
+            if qual.startswith('struct ') and not qual.endswith(']'):
+                fields = self.front.record_fields(qual, self.stack[-1][1])
+                children = n.get('inner', [])
+                if len(fields) != len(children):
+                    raise Unsupported('partially initialized C record')
+                return [(path, CRecord(dict(zip(fields, children)), self.stack[-1][1]))]
             if 'array_filler' in n:
                 raise Unsupported('partially initialized C array')
             return [(p, CArray(tuple(values))) for p, values in self.eval_list(path, n.get('inner', []))]
@@ -500,7 +574,7 @@ class CExec:
                 return value
             if name in self.m.world.c_globals:
                 return self.m.world.c_globals[name]
-            if any(key.startswith(name + '.') for key in self.m.world.c_state):
+            if any(key.startswith(name + '.') for key in (*self.m.world.c_state, *self.m.world.c_globals)):
                 return CState(name)
             if 'const ' in decl['type']['qualType'] and decl['type']['qualType'].endswith(']'):
                 definition = self.front.constant_array(name, self.stack[-1][1])
@@ -514,6 +588,11 @@ class CExec:
         raise Unsupported(decl['kind'])
 
     def _state(self, key, node):
+        if key in self.m.world.c_globals:
+            value = self.m.world.c_globals[key]
+            if isinstance(value, CVal) and value.t != ctype(node['type']):
+                raise Unsupported(f'C state type mismatch for {key}')
+            return value
         fields = self.m.world.c_state
         if key in fields:
             sym, declared = fields[key]
@@ -531,19 +610,38 @@ class CExec:
             if not qual.endswith(f'[{len(values)}]'):
                 raise Unsupported(f'C state array dimension for {key}: {qual}')
             return CArray(tuple(values))
-        if any(k.startswith(key + '.') for k in fields):
+        if any(k.startswith(key + '.') for k in (*fields, *self.m.world.c_globals)):
             return CState(key)
         raise Unsupported(f'unmodeled C state {key}')
 
     def _select(self, values, index):
         if not values:
             raise Unsupported('C read from an empty array')
+        number = z3.simplify(index)
+        if z3.is_int_value(number) and 0 <= number.as_long() < len(values):
+            return values[number.as_long()]
         if all(isinstance(v, CVal) and v.t == values[0].t for v in values):
             return CVal(select_int([v.v for v in values], index), values[0].t)
         if all(isinstance(v, CArray) and len(v.values) == len(values[0].values) for v in values):
             return CArray(tuple(self._select(tuple(v.values[i] for v in values), index)
                                 for i in range(len(values[0].values))))
+        if all(isinstance(v, (CRecord, CSelected)) for v in values):
+            return CSelected(values, index)
         raise Unsupported('C table contains mixed element types')
+
+    def _record_member(self, path, record, name):
+        if isinstance(record, CSelected):
+            return self._select(tuple(self._record_member(path, v, name) for v in record.values), record.index)
+        if name not in record.fields:
+            raise Unsupported(f'C record has no field {name}')
+        self.stack.append(('<table>', record.file, {}))
+        try:
+            results = self.eval(path, record.fields[name])
+        finally:
+            self.stack.pop()
+        if len(results) != 1 or results[0][0] is not path:
+            raise Unsupported('branching C record initializer')
+        return results[0][1]
 
     def _cast(self, path, n):
         kind = n['castKind']
@@ -551,6 +649,10 @@ class CExec:
         for p, v in self.eval(path, n['inner'][0]):
             if kind == 'ToVoid':
                 out.append((p, None))
+            elif kind == 'NullToPointer':
+                if not isinstance(v, CVal) or not z3.is_true(z3.simplify(v.v == 0)):
+                    raise Unsupported('C nonzero integer converted to pointer')
+                out.append((p, CPtr(False)))
             elif kind in ('LValueToRValue', 'NoOp', 'FunctionToPointerDecay', 'BuiltinFnToFnPtr',
                         'ArrayToPointerDecay', 'BitCast'):
                 out.append((p, v))
@@ -608,6 +710,12 @@ class CExec:
                 raise Unsupported('C assignment to a non-local lvalue')
             out = []
             for p, v in self.eval(path, right):
+                if target['type']['qualType'].endswith('*'):
+                    if not isinstance(v, CPtr):
+                        raise Unsupported('C pointer assignment from a non-pointer')
+                    p.env[target['referencedDecl']['name']] = v
+                    out.append((p, v))
+                    continue
                 t = ctype(target['type'])
                 v = CVal(self.conv(p, v.v, v.t, t), t)
                 p.env[target['referencedDecl']['name']] = v
@@ -629,6 +737,19 @@ class CExec:
                 out.append((p, b))
                 continue
             if op in ('<', '<=', '>', '>=', '==', '!='):
+                if isinstance(a, CPtr) and isinstance(b, CPtr) and op in ('==', '!='):
+                    if a.identity is not None or b.identity is not None:
+                        if a.identity is None or b.identity is None:
+                            raise Unsupported('comparison of pointers from different identity domains')
+                        same = a.identity == b.identity
+                    elif isinstance(a.key, CElement) and isinstance(b.key, CElement):
+                        same = z3.And(a.key.table == b.key.table, a.key.index == b.key.index)
+                    else:
+                        same = z3.BoolVal(a.key == b.key)
+                    equal = z3.Or(z3.And(z3.Not(self.truth(a)), z3.Not(self.truth(b))),
+                                  z3.And(self.truth(a), self.truth(b), same))
+                    out.append((p, CVal(z3.If(equal if op == '==' else z3.Not(equal), 1, 0), (32, True))))
+                    continue
                 c = {'<': a.v < b.v, '<=': a.v <= b.v, '>': a.v > b.v, '>=': a.v >= b.v,
                      '==': a.v == b.v, '!=': a.v != b.v}[op]
                 out.append((p, CVal(z3.If(c, 1, 0), (32, True))))
@@ -692,6 +813,17 @@ class CExec:
     def _address(self, path, operand):
         """&rnglist[i].rng_state names random stream i (rnd.c's rnglist[])."""
         node = _unwrap(operand)
+        if node['kind'] == 'ArraySubscriptExpr':
+            base = _unwrap(node['inner'][0])
+            if base['kind'] == 'DeclRefExpr':
+                name = base['referencedDecl']['name']
+                if isinstance(self.m.world.c_globals.get(name), CArray):
+                    results = self.eval(path, node['inner'][1])
+                    if len(results) != 1 or results[0][0] is not path:
+                        raise Unsupported('branching C address index')
+                    index = results[0][1].v
+                    self.m.array_bounds(path, index, len(self.m.world.c_globals[name].values), self.where(node))
+                    return CPtr(True, CElement(name, index))
         if node['kind'] == 'MemberExpr' and node['name'] == 'rng_state':
             sub = _unwrap(node['inner'][0])
             if sub['kind'] == 'ArraySubscriptExpr' and _unwrap(sub['inner'][0])['referencedDecl']['name'] == 'rnglist':
@@ -714,6 +846,11 @@ class CExec:
 
     def _invoke(self, p, name, args, arg_nodes, n):
         where = self.where(n)
+        if name in self.m.world.c_calls:
+            expected, result = self.m.world.c_calls[name]
+            if len(args) != len(expected) or any(a != b for a, b in zip(args, expected)):
+                raise Unsupported(f'C call contract argument mismatch for {name}')
+            return [(p, result)]
         if name == '__builtin_expect':
             return [(p, args[0])]  # branch prediction hint; both arguments were evaluated
         if name == 'abs':

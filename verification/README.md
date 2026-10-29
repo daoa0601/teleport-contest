@@ -196,16 +196,21 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 20 scoped leaf claims: the original ten RNG/geometry claims plus
-`enermod`, `newuexp`, `xlev_to_rank`, `rounddiv`, both alignment-mask macros,
-Strength/Dexterity `acurr`, `acurrstr`, and human-form `abon`/`dbon`.
-The exact domains, assumed state correspondence, probes and mutants live in
-`specs.py` and are described in `docs/formal-verification.md`. The attribute
-claims assume no gauntlets; equipment effects and other attribute cases are
-not covered. `enermod` relates C's role enumerator to each of the 13 JS role
-keys. Every new claim has a concrete failing probe and a killed mutant.
+There are 25 scoped claims: the original 20 plus all-attribute `acurr`,
+human/polymorphed `dbon` and `abon`, initial-table monster experience, and
+initialized monster movement. The monster claims check all 383 valid native
+species with symbolic state; movement uses arbitrary random streams.
+`abon:forms` assumes an equal, pure dungeon-difficulty result. Experience
+covers monsters with no inventory. Live table mutations and preservation of
+entry relations by initialization/equipment updates remain unproved.
 
-Run the executor's language tests separately (31 tests; no game sessions):
+`specs.py`, `state_specs.py` and `state_world.py` declare the domains and
+correspondences; `docs/formal-verification.md` gives their native sources.
+The new claims require both a concrete failing domain probe and a concrete
+killed mutant. The full run exits 0 with 25 claims; broader hero/mount entry
+relations also passed focused reruns. No game code or corpora were changed.
+
+Run the executor's language tests separately (33 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
@@ -214,11 +219,11 @@ NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v test_e
 
 They check table reads and bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
-JS 32-bit coercion, imports, defaults, scopes, assertions, and rejected
-constructs. C table values come from clang initializers. JS constant arrays
-are read from emitted modules; this assumes their initial values have not been
-mutated. No new game-table pair or writable heap state is claimed.
-
+JS 32-bit coercion, imports, defaults, scopes, and rejected constructs. C table
+values come from clang initializers. JS constant arrays are read from emitted
+modules; this assumes the fields read still have their initial values. The
+game-table claims include native record and attack fields. Writable heap state
+is not modeled; movement's initializer performs no writes in its entry domain.
 CI runs the complete check against `docs/ledger/equivalence.tsv`:
 
 ```sh
@@ -259,10 +264,14 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 | `csym.py` | C symbolic executor: typed integers, UB obligations |
 | `jssym.py` | JavaScript symbolic executor (tree-sitter): exact-integer number model, BigInt |
 | `core.py` | paths, abstract random streams, loop rules, and the shared bit-vector operations used by both executors |
-| `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant and variant |
+| `specs.py` | common spec declarations, original function pairs, probes, mutants and the loop invariant/variant |
+| `state_specs.py`, `state_world.py` | stateful leaf domains, pointer/API correspondences and the explicit difficulty contract |
+| `queries.py` | bounded reuse of UNSAT results for identical complete Z3 propositions |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
 | `harness/alignment.c` | wrappers so clang expands the two real `align.h` macros |
+| `harness/hero_properties.c` | expands the actual `Amphibious` property for the experience API relation |
+| `rounddiv_witness.py` | checks the native/emitted expressions in the wizard-glob counterexample |
 | `test_executors.py` | language behavior and rejection checks, run through both AST front ends |
 | `bv.py` | typed C wraparound, unbounded BigInt intermediates with checked widths, bit-vector arrays and safety obligations |
 | `isaac_c.py`, `isaac_js.py` | separate AST executors for the ISAAC64 array/state subset |
@@ -409,3 +418,24 @@ Only the prepared C tree and uv's package cache are cached, using an exact key
 including the C submodule revision, recorder patches, prover and extractor
 files, dependency lock, and workflow. Proof results, classifications, emitted
 JavaScript, and Node dependencies are rebuilt on every run.
+
+## `rounddiv` caller audit and reachable debug-mode gap
+
+From the repo root:
+
+```sh
+NETHACK_RECORDER=/path/to/recorder node verification/callsites/rounddiv.mjs
+cd verification/equivalence
+NETHACK_RECORDER=/path/to/recorder uv run rounddiv_witness.py
+```
+
+The audit resolves all six native calls through clang and rejects escaping
+function references that would require indirect-call analysis. It lists the
+six corresponding emitted calculations. `doeat` can receive a negative
+`rounddiv` denominator after a wizard overrides the glob weight limit:
+`107374336` small globs produce weight/nutrition `2147486720`, narrowed to
+`-2147480576`. The AST witness also finds an earlier delay difference:
+C `33554483`, JS `-33554381`, from the emitted signed right shift.
+The witness discharges native arithmetic obligations; the wish/meal path is
+a source audit, not a session replay. Game code is unchanged. See the full
+caller table and limitations in `docs/formal-verification.md`.

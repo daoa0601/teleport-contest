@@ -6,11 +6,10 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` proves 28 scoped claims: 20 arithmetic/read-only
-state claims plus eight ISAAC64 and seed-packing claims. The combined run,
-including all probes and mutants, runs in CI with both ledgers enforced. Add
-function-level differential fuzzing for stateful code, and keep whole-game
-equivalence empirical: session replay, ledgers, and the state oracle.
+`verification/equivalence/` now proves 33 scoped C/JavaScript claims,
+including hero equipment, forms, initial monster tables, and eight ISAAC64 claims. Use it as a CI check on leaf functions, add function-level
+differential fuzzing for stateful code, and keep whole-game equivalence
+empirical: session replay, ledgers, and the state oracle.
 
 ## What "verified" can mean
 
@@ -77,11 +76,16 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 | `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.5 s |
 | `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.5 s |
 | `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.2 s |
-| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.1 s |
-| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.4 s |
-| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.7 s |
-| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 13.7 s |
-| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
+| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.2 s |
+| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.5 s |
+| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.8 s |
+| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 15.5 s |
+| `acurr:all` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 8.4 s |
+| `dbon:all` | corresponding arrays/items; human and polymorphed forms | 8×8 | 1.0 s |
+| `abon:forms` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 98.6 s |
+| `exper.c:experience` ↔ `monsterExperience` (`experience:tables`) | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 1212.9 s |
+| `mon.c:mcalcmove` ↔ `mcalcmove` (`mcalcmove:tables`) | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 341.8 s |
+| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
 | `isaac64_update` | `isaac64.c:isaac64_update` ↔ frozen same name | 256 initialized words in m/r; arbitrary uint64 a/b/c | Two loop invariants cover all 256 updates | 0.3 s |
@@ -142,9 +146,10 @@ unrelated initial `m` and `n`, which justifies initialization's use of the
 summary before those fields have values.
 
 These are isolated function claims, including private emitted JS functions.
-The two alignment wrappers only include `hack.h` and invoke its actual macros;
-they do not copy their definitions. There is no claim about all callers or
-about equipment effects, polymorphed attack bonuses, or other attributes.
+The original 20 scoped claims remain present. The alignment wrappers invoke
+the real `hack.h` macros; the Amphibious wrapper invokes the real property
+macro. There is no all-callers claim. The `abon:forms` dungeon-difficulty
+contract and the monster-table/initialization limits are explicit below.
 
 **Leaf proof method.** Clang's typed JSON AST supplies the C side, so macros,
 `#if`, typedefs, and implicit conversions come from the compiler. tree-sitter
@@ -159,16 +164,17 @@ both sides. Loops are unrolled with an unwinding check, or, for `d`, proved
 by a hand-written relational invariant over a recursively defined sum (the
 leaf executor's manual proof step, about 30 lines in `specs.py`).
 
-**Non-vacuity.** Every function has negative checks, and all behave as
-expected: the 23 leaf domain probes and 24 leaf mutants, plus eight ISAAC64
-domain probes and ten ISAAC64 mutants. The new probes violate input types,
-array allocation, seed allocation, or the available-count bound, and must
-produce a solver counterexample; unsupported translation and solver unknown
-do not count. All ten new mutants are killed, including shift `21 → 20`, mask
-`0xffffffffffffffff → 0x7fffffffffffffff`, and a memory index changed by one.
-For example, the mask mutant gives working `b = 9223372036854775808` in C and
-`b = 0` in JS when initial `b = 9223372036854775807` and `c = 0`.
-One original mutant is genuinely equivalent (`ulevel < 15` →
+**Non-vacuity.** Across the full and focused runs, the specs have 29 domain
+probes and 31
+mutant checks: 29 concrete counterexamples, one retained language-rejection
+check (the shadowing declaration mutant), and one equivalent mutant.
+Every fv-leaves2 claim has both a failing domain probe with a concrete model
+and a killed JavaScript mutant; rejection or timeout cannot satisfy those
+gates. Numeric probes leave the arithmetic or interface
+domain; attribute probes remove one equality from the assumed state relation.
+Such a probe tests the need for the relation, not a game bug. The ISAAC64 claims add eight domain probes and ten killed mutants, including
+shift, mask and memory-index changes. They also require solver counterexamples.
+One existing mutant is genuinely equivalent (`ulevel < 15` →
 `ulevel < 16`, since 15/3 = 5), and the tool proves it.
 The existing prototype lacks dedicated mutants for `rn2` and `rn1`, and
 dedicated domain probes for `d` and `rne`. This CI work adds no claims and does
@@ -188,11 +194,19 @@ a killed mutant; the current CLI runs every check supplied by the specs.
 | `dbon:human` | remove base Strength correspondence: damage bonuses differ | 18/75 endpoint inclusive → exclusive |
 | `abon:human` | remove base Dexterity correspondence: hit bonuses differ | Dexterity offset 14 → 13 |
 
+| fv-leaves2 claim | Domain probe | Killed mutant |
+|---|---|---|
+| `acurr:all` | remove base Strength correspondence | dunce-cap value 6 → 7; power-gauntlet floor 125 → 124 |
+| `dbon:all` | remove base Strength correspondence | polymorph damage bonus 0 → 1 |
+| `abon:forms` | remove base Dexterity correspondence | form bonus offset -3 → -2; Wizard counter reads next species |
+| `experience:tables` | remove monster-level correspondence | initial award 1 → 2 |
+| `mcalcmove:tables` | remove speed correspondence; allow gallop -1 | rounding threshold `<` → `<=` |
+
 The mask probe is a counterexample to the numeric input obligation, not an
 observed C/JS result difference. The model accepts only exact integer Numbers;
 it does not pretend that 9007199254740993 is a representable JS Number.
 
-The new state assumptions are explicit in `specs.py`: `attrib.h` declares
+For the retained earlier attribute claims, the state assumptions in `specs.py` are: `attrib.h` declares
 `u.acurr.a`, `u.abon.a`, and `u.atemp.a` as six signed-char fields; each
 corresponds to the matching `game.u` element. C `uarmg` and both JS gauntlet
 slot aliases are null. `you.h:Upolyd` supplies the human-form assumption
@@ -228,8 +242,9 @@ target correction and pass after it, including the final rerun after this
 rebase and the latest ledger fix (two tests in 4.9 s). Run them with
 `uv run python ../isaac64/test_scoring_target.py` from `verification/equivalence`.
 
-**Divergences found outside the domains.** The game should never reach these,
-but none is checked yet:
+**Divergences found outside the earlier numeric domains.** These boundaries
+are not discharged at every caller. The wizard-glob path below demonstrates
+that a negative `rounddiv` denominator can be reached through a debug option:
 
 - In the recorder build, `NH_DEVEL_STATUS` is `RELEASED`, so `rnd.c`'s
   `impossible()` guards are compiled out. `rn2(0)`, `rnd(0)`, `rnl(0)`, and
@@ -251,7 +266,8 @@ but none is checked yet:
   `frozen/isaac64.js` now establish equal generator outputs and successor states on their
   stated domains; the algorithm itself is no longer assumed equivalent.
 - The trust base is the Python executors and loop annotations (unverified), clang's
-  AST, tree-sitter, and Z3. Mutants and probes reduce the risk; replaying
+  AST, tree-sitter, and Z3, plus the explicit pure dungeon-difficulty call
+  contract. That helper's bodies are not executed by `abon:forms`. Mutants and probes reduce the risk; replaying
   counterexamples concretely through compiled C and Node would reduce it more.
 - Loop annotation facts are trusted. For `d`, they state the recursive sum
   for `rnd.c:d`'s `while (n--) tmp += RND(x)` and the uint64 range of each
@@ -275,8 +291,9 @@ but none is checked yet:
   Out-of-bounds array reads are obligations; partially initialized C arrays
   and JS array holes are rejected. Imported constants and functions resolve
   in their defining module. Module table reads assume their initial values
-  have not been mutated; no new game-table equivalence claim is made yet.
-  The 31 executor tests cover these operations and rejection boundaries using
+  have not been mutated. The two new game-table claims assume the native and
+  emitted fields still have their initial values, including Erinys.
+  The 33 executor tests cover these operations and rejection boundaries using
   small C and JS programs, rather than copies of game functions.
 - Leaf and ISAAC64 executors use `core.bit_operation` for bit-vector operations. The
   leaf executor keeps C's promoted widths and JS Number coercions; the ISAAC64
@@ -296,7 +313,12 @@ but none is checked yet:
   shifts require a nonnegative representable result. Negative signed right
   shifts use clang's arithmetic shift on the recorder target. Unsigned
   operations wrap. JS powers of two are supported only for exponents 0..53.
-- Outside the leaf executor: pointers and heap writes, general C `for`, Lua, `async`/`await`,
+- Read-only nullable item pointers, equality of monster pointers, record
+  fields and nested record/attack arrays are supported. Finite Map reads,
+  literal object options, array defaults and `Number.isFinite` cover the
+  corresponding initialized JS paths. C `for` loops require an initializer,
+  condition and update, and use the same checked unrolling rule as `while`.
+- Not yet: heap writes, pointer arithmetic, general sparse JS arrays, Lua, `async`/`await`,
   escaped JS string literals, exceptions as control flow, loops that log inside their bodies under
   induction, and JS declarations that shadow an outer binding (rejected, not
   modeled). An induction loop needs a variant as well as an invariant, so
@@ -313,6 +335,119 @@ but none is checked yet:
   remain in the trust base. No whole-game equivalence is claimed.
 - Log comparison uses structured entries. C's `@ caller` annotation and
   number prefix are ignored, as in scoring.
+
+## Stateful leaf entry relations
+
+`state_specs.py` and `state_world.py` state the new entry relations. These
+relations are assumptions at function entry; initialization, equipment changes,
+restoration and later table mutations are not proved to preserve them.
+
+- The six elements of each attribute array correspond, including every signed
+  `u.abon` value. `do_wear.c:Ring_on` and `Ring_gone` apply gain-strength,
+  gain-constitution and adornment rings through `adjust_attrib`. Their effects
+  are therefore included in the assumed array correspondence. Accuracy and
+  damage rings update `u.uhitinc`/`u.udaminc`; native `abon`/`dbon` do not read
+  those fields, and their callers add those bonuses separately.
+- Each of `uarmg`, `uarmh` and `uwep` is either null or a corresponding live
+  item. Each active JS slot alias refers to that item; at least one alias is
+  active when the C pointer is non-null. Root-only, hero-only and shared slots
+  are included.
+  `otyp` is a native `short`; `oartifact` is a signed `char` (`obj.h`). The
+  artifact runtime map has the IDs and names from emitted `ARTIFACT_DATA`, as
+  copied by `artifacts.js:initializeArtifacts`. The claim executes the real
+  `artifactById` Map lookup and native `artifact.c:is_art`.
+- `gy.youmonst.data` points to `mons[u.umonnum]`, as installed by
+  `polyself.c:set_uasmon`; the species index is in `0..NUMMONS-1`. The table
+  fields read here retain `monst.c:mons_init` values, copied at startup by
+  `monst_globals_init`. Emitted module data likewise retains its initial
+  values. Live Erinys upgrades (`mon.c:adj_erinys` / `adjustErinys`), quest
+  retargeting and seduction attack replacement are excluded.
+- `abon:forms` executes native `makemon.c:adj_lev` and emitted
+  `adjustedMonsterLevel`, including the Wizard death counter (an `uchar`) and
+  special levels above 49. Other species death counters remain independent. It **assumes** that the two nullary,
+  read-only `level_difficulty` calls return the same value in `1..32767`
+  (`dungeon.c`, native return type `xint16`). The dungeon traversal and property
+  calculations behind that call are not proved here. This is a conditional
+  claim, not a proof of all polymorphed attack accuracy.
+- `experience:tables` covers monsters with no inventory and a zero worn mask.
+  It executes `worn.c:find_mac`, including base AC and its cap. The monster
+  level spans the whole `uchar` range, revived/cloned flags span both values,
+  and `nk` spans `0..255` (`mvitals.died` in `monst.h`). The JS `amphibious`
+  option equals C's effective `Amphibious` property. Its input expression is
+  built by executing the actual macro through `harness/hero_properties.c`,
+  with arbitrary native breathing intrinsics/extrinsics and form flags.
+  Attack types, damage types, dice, speed and `M2_NASTY` are read from the real
+  native initializer; the JS side reads `MONSTER_EXPERIENCE_META` and
+  `MONSTER_MOVE`. `experience` does not itself read `permonst.mresists`.
+  Equipped monster AC and the JS fallback for a missing monster level remain
+  outside this claim.
+- `mcalcmove:tables` assumes initialized numeric `movement`, `mmove` and
+  `mspeed` fields. The cached JS `mmove` is the emitted `MONSTER_MOVE` entry;
+  C independently reads the native species entry. The initializer executes
+  without writes under this relation. Speed spans the whole two-bit native
+  field; both moving modes, mount identity, galloping and context movement
+  flags are covered, with a missing mount, this monster as mount, or another
+  monster as mount. Gallop is in `0..2^53`: `steed.c:kick_steed` increments
+  it, dismounting resets it, and `timeout.c:nh_timeout` decrements it only
+  when nonzero. Nonnegativity is assumed, not proved; the upper bound is the
+  JS exact-integer domain, not a native invariant. A negative timer probe
+  demonstrates its necessity. Every rounding and gallop draw is symbolic;
+  the claim covers all random sequences, including the draw when the speed
+  remainder is zero. Missing-field initialization and later cache updates
+  remain unproved.
+
+The two monster claims partition the complete valid index range using clang's
+`NUMMONS`. Each species retains symbolic state and, for movement, arbitrary
+random streams; these are not enumerated example game states. Clang supplies
+record field order, field types and nested attack initializers. All new
+negative checks require a concrete counterexample: unsupported syntax, empty
+domains and solver timeouts do not count as successful probes or killed
+mutants. Identical read-only return paths can be joined by disjoining their
+conditions. Obligation queries at one source location are grouped, and a
+bounded cache reuses only UNSAT results for identical complete Z3 propositions,
+including their entry conditions.
+
+## All rounddiv callers and the negative-denominator gap
+
+`verification/callsites/rounddiv.mjs` uses clang's typed AST to list resolved
+native calls. `rg` selects candidate translation units; it does not interpret
+C. The script also lists emitted named calls and the inline volley expression.
+There are six C calls and six corresponding port calculations:
+
+| Native call | Port calculation | Denominator |
+|---|---|---|
+| `polyself.c:newman:390` | `polyself.js:renewHumanForm:1034`, `roundDiv` | 10 |
+| `polyself.c:newman:396` | `polyself.js:renewHumanForm:1041`, `roundDiv` | native `u.uhpmax`; JS clamps it to at least 1 |
+| `polyself.c:newman:404` | `polyself.js:renewHumanForm:1048`, `roundDiv` | 10 |
+| `polyself.c:newman:409` | `polyself.js:renewHumanForm:1055`, `roundDiv` | maximum of native energy maximum and 1; JS also clamps |
+| `mthrowu.c:monmulti:236` | `monster_throw.js:monsterVolleyCount:269`, inline `Math.trunc((spe + 1) / 3)` | 3; the call is guarded by launcher `spe > 1` |
+| `eat.c:doeat:3058` | `eat.js:doeat:101`, `roundNutritionTime` | `(int) obj_nutrition(otmp)`; zero is guarded |
+
+**A negative denominator has a source-derived game path in wizard mode.**
+`objnam.c:readobjnam:5042-5067` permits a wizard to override the glob weight
+limit. Requesting `107374336 small globs of brown pudding`, and accepting
+that override, gives one glob weighing `107374336 * 20 = 2147486720`.
+The count fits `int` and the multiplication fits `unsigned`. Fresh, unrotted
+food can reach `doeat`'s rounding call with that nutrition. The cast to `int`
+at `eat.c:3050` gives `-2147480576`, which is then the denominator at line
+3058. This is not the `INT_MIN` negation case.
+
+`uv run rounddiv_witness.py` evaluates the actual clang and emitted JS AST
+expressions at that state, and discharges the native arithmetic obligations:
+
+- Native `eatcorpse` delay: `33554483`; emitted `prepareCorpseMeal` delay:
+  `-33554381`. The emitted `>> 6` coerces the unsigned weight to signed 32 bits.
+- The native call then has numerator `72057806638965760`, denominator
+  `-2147480576`, and returns `-33554579`.
+
+The expression witness is checked; the wish/meal path is a source audit, not
+an end-to-end replay. No game code was changed. Ordinary-play food weights
+still need an upper-bound invariant; absorbing globs uses signed intermediate
+weights in `mkobj.c:obj_absorb`, so it is not a proof that arbitrarily large
+ordinary globs are reachable without earlier UB. The four native `newman`
+calls rely on a positive live maximum HP or an explicit positive denominator;
+this inspection does not prove their numerator bounds. The existing
+`rounddiv(2, -3)` counterexample remains outside the positive-denominator claim.
 
 ## Call-site domains
 
@@ -517,19 +652,19 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
    hosted-job measurement. The updated hosted job has not run yet. Extraction
    has an explicit 2 GiB V8 heap because the original roughly 1 GiB default
    exhausted memory in an earlier local run.
-2. **Read-only state and more leaves (partly done).** Nested declared state
-   reads, bounded arrays, constant tables, switches and bit operations are in;
-   ten new claims above pass with probes and mutants. Next: equipment and form
-   branches of `acurr`/`abon`/`dbon`, monster experience's permonst reads, and
-   `mcalcmove`. The latter is hot in both RNG ledgers, but its JS entry also
-   initializes mutable monster fields, outside the read-only model. `sgn`,
-   `isqrt`, `online2`, and `rank_to_xlev` have no matching standalone emitted
-   JS function in the inspected modules, so none was invented for a claim.
-   Constant-table support is tested, but a game-table pair remains future work.
+2. **Read-only state and more leaves (scoped claims done).** All six
+   attributes, equipment and form branches now have claims under the entry
+   relations above. Monster experience is the first game-table pair; movement
+   covers all random sequences under initialized field/cache correspondence.
+   Remaining work: discharge `abon`'s dungeon-difficulty contract, equipped
+   monster AC, live table mutations, missing-field initialization and preservation
+   of those relations by state-changing callers. `sgn`, `isqrt`, `online2`,
+   and `rank_to_xlev` still have no matching standalone emitted function in the
+   inspected modules; no function was invented for a claim.
 3. **ISAAC64 (done for the stated domains).** The frozen BigInt generator
    and C uint64 generator have equal outputs and successor states for init,
    reseed, mix, update, and next; wrapper seed packing also proves. The full
-   command includes twenty leaf claims and eight ISAAC64 claims, with domain probes,
+   command includes twenty-five leaf claims and eight ISAAC64 claims, with domain probes,
    shift/mask/index mutants, and a compiled-C/Node cross-check. Caller state
    correspondence and context routing remain outside these proofs.
 4. **Call-site domains (strengthened analyzer and CI implemented).** Stable

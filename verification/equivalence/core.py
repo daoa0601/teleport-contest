@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 import z3
+from queries import solve
 
 STREAMS = ('core', 'display')
 U64 = 2 ** 64
@@ -89,6 +90,9 @@ class World:
     js_state: dict                     # 'game.u.uluck' -> z3 Int
     c_globals: dict                    # name -> executor value
     js_choices: dict = field(default_factory=dict)  # path -> [(condition, literal string)]
+    js_values: dict = field(default_factory=dict)   # explicitly related pointers and finite maps
+    c_calls: dict = field(default_factory=dict)     # explicit read-only call contracts
+    js_calls: dict = field(default_factory=dict)
     loops: dict = field(default_factory=dict)   # (side, function, ordinal) -> LoopSpec
     unroll: int = 12
     streams: dict = field(default_factory=lambda: {s: stream_fn(s) for s in STREAMS})
@@ -111,10 +115,7 @@ class Machine:
         return Path([], [{}], {s: z3.IntVal(0) for s in STREAMS}, [])
 
     def feasible(self, pc: list) -> bool:
-        s = z3.Solver()
-        s.set('timeout', 5000)
-        s.add(*self.world.pre, *pc)
-        return s.check() != z3.unsat
+        return solve(self.world.pre + pc, 5000)[0] != z3.unsat
 
     def branch(self, path: Path, cond) -> list[tuple[Path, bool]]:
         cond = z3.simplify(cond)
@@ -136,10 +137,7 @@ class Machine:
         cond = z3.simplify(cond)
         if z3.is_true(cond) or z3.is_false(cond):
             return z3.is_true(cond)
-        s = z3.Solver()
-        s.set('timeout', 2000)
-        s.add(*self.world.pre, *path.pc, z3.Not(cond))
-        return s.check() == z3.unsat
+        return solve(self.world.pre + path.pc + [z3.Not(cond)], 2000)[0] == z3.unsat
 
     def tdiv(self, path: Path, a, b):
         return a / b if self.proves(path, z3.And(a >= 0, b > 0)) else tdiv(a, b)
