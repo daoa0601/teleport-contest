@@ -24,6 +24,8 @@ from core import STREAMS, Machine, Unsupported, World
 from csym import CExec, CPtr, CVal, in_range
 from jssym import JSExec, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
+from isaac_specs import run as prove_isaac64
+from isaac_seed import run as prove_seed_packing
 
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
@@ -227,6 +229,8 @@ def main() -> int:
                     ('killed' if not proved else 'SURVIVED')
                 print(f'  {verdict} mutant {old!r} -> {new!r}: {first}')
                 failures += proved != equivalent
+    failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
+    failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
     print('all claims hold' if failures == 0 else f'{failures} claim(s) failed')
     return 1 if failures else 0
 
