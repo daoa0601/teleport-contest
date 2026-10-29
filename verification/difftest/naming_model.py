@@ -376,6 +376,14 @@ def naming_edges(meta):
         cases.append(case('makeplural', text=text) if text else None)
         cases.append(case('makesingular', text=text) if text else None)
     cases = [c for c in cases if c]
+    # Include titles and personal names from the hallucination table without
+    # enabling hallucination or drawing its RNG stream. CapitalMon() uses
+    # this table even for an ordinary call to the().
+    for name in meta['bogusMonsters']:
+        cases.append(case('articles', text=name))
+    for name in ['Klingon', 'Ancient Multi-Hued Dragon']:
+        for suffix in [' corpse', "'s corpse", 'ish']:
+            cases.append(case('articles', text=name + suffix))
     # Object naming: one representative per interesting rule.
     types = meta['objects']
     by_class = {}
@@ -598,7 +606,7 @@ def naming_generated(meta, count, seed):
     for index in range(count):
         target = NAMING_BASE + index % len(NAMING_TARGETS)
         if target < NAMING_BASE + 3:
-            word = rng.choice(meta['names'] + meta['monsters']
+            word = rng.choice(meta['names'] + meta['monsters'] + meta['bogusMonsters']
                               + SUFFIX_STEMS + ONE_OFF_PLURALS + AS_IS_WORDS)
             template = rng.choice(['{}', '{} of {}', 'pair of {}', '{} called {}',
                                    '{} named {}', '{} labeled {}', 'the {}',

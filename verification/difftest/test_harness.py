@@ -1,5 +1,8 @@
 """Tests of the comparison/reduction boundaries, outside the game test suite."""
 from copy import deepcopy
+import json
+import subprocess
+from tempfile import TemporaryDirectory
 import unittest
 
 from build import CACHE
@@ -102,6 +105,30 @@ class HarnessTests(unittest.TestCase):
                 Worker(['node', str(HERE / 'port.mjs')], 'string-port2') as port:
             left, right = native.call(state), port.call(state)
         self.assertIsNone(difference(left, right))
+
+    def test_naming_articles_recognize_bogus_titles_and_personal_names(self):
+        with Worker([str(CACHE / 'native')], 'title-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'title-port') as port:
+            for text, expected in [
+                ('Klingon', 'the Klingon'),
+                ('Ancient Multi-Hued Dragon', 'the Ancient Multi-Hued Dragon'),
+                ("Klingon's corpse", "the Klingon's corpse"),
+                ('Klingonish', 'Klingonish'),
+                ('Godzilla', 'Godzilla'),
+                ('King Kong', 'King Kong'),
+            ]:
+                with self.subTest(text=text):
+                    state = canonical(dict(target='articles', text=text), self.meta)
+                    for worker in [native, port]:
+                        self.assertEqual(worker.call(state)['the'], expected)
+
+    def test_naming_worker_rejects_missing_native_data(self):
+        state = canonical(dict(target='articles', text='Klingon'), self.meta)
+        with TemporaryDirectory(dir=CACHE) as empty_directory:
+            result = subprocess.run([str(CACHE / 'native')], cwd=empty_directory,
+                                    input=json.dumps(state) + '\n', text=True,
+                                    capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 2)
 
     def test_naming_reducer_keeps_a_real_emitted_mutant_counterexample(self):
         state = canonical(dict(target='doname',

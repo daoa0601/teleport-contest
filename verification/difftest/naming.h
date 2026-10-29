@@ -1,7 +1,17 @@
 /* Naming observations: objnam.c and do_name.c formatting functions.
  * The linked recorder sources keep every algorithm; this only loads state. */
 
+#include "dlb.h"
+
 static char naming_text_buf[8][128];
+
+static void naming_data_setup(void)
+{
+    dlb *bogus;
+    bogus = dlb_fopen(BOGUSMONFILE, "r");
+    if (!bogus) reject_input("Cannot open naming bogus monster data");
+    dlb_fclose(bogus);
+}
 
 /* member() aborts when absent; naming needs an optional lookup. */
 static int member0(int parent, const char *name)
@@ -254,9 +264,10 @@ static void run_naming_case(void)
     struct monst monster;
 
     if (target <= 14) {
-        /* Pure string functions need no game state beyond gender tables. */
+        /* the() also needs the native capitalized-title data. */
         decl_globals_init();
         monst_globals_init();
+        if (target == 14) naming_data_setup();
         naming_rng_start();
         text = string_member(0, "text", 0);
         if (target == 12)
@@ -274,6 +285,7 @@ static void run_naming_case(void)
 
     hero = member(0, "hero");
     naming_setup(number(hero, "role", 0, 3));
+    naming_data_setup();
     if (target == 17) {
         int monster_id = member(0, "monster"), suppress, article;
         const char *adjective, *given;

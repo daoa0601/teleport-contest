@@ -322,7 +322,10 @@ poisoned weapons, wet towels, candelabra, diluted potions, holy/unholy water,
 including `implicit_uncursed` and `partly_eaten_hack`. `makeplural`/
 `makesingular` run over every object and monster name plus the C special-case
 tables (`as_is[]`, `one_off[]`, `special_subjs[]`, `Japanese_items[]`) and
-generated compounds. `x_monnam` runs over every monster species with articles,
+generated compounds. `articles` also covers all 374 emitted bogus-name entries,
+with their classification prefixes removed as in `do_name.c:bogusmon`, and
+checks full-word, possessive and non-word boundaries for capitalized titles.
+`x_monnam` runs over every monster species with articles,
 adjectives, suppression bits, tame/peaceful/named/shopkeeper/priest/invisible
 states, mplayer ranks and ghosts.
 
@@ -345,6 +348,7 @@ The naming state relation extends the creation relation. Facts beyond it:
 | Input restriction or assumed fact | Native source |
 |---|---|
 | Text inputs are printable ASCII without quote or backslash and contain a non-space character; `impossible()` needs windowprocs the harness cannot supply | `objnam.c:makeplural`, `makesingular`, `an`, `the` |
+| The configured recorder disables DLB, so `dlb_fopen` is `fopen`. The build copies generated `dat/bogusmon` into the native worker's working directory; article/object/monster cases fail if it cannot be opened. Native `CapitalMon` decodes the file itself. The correspondence between that data and emitted `random_text_data.js:BOGUS_MONSTERS` is assumed, not proved | `include/config.h` DLB setting; `include/dlb.h` non-DLB macros; `rumors.c:CapitalMon`, `init_CapMons` |
 | `oeroded`/`odiluted` and `otrapped`/`opoisoned` alias one C field; each pair is exclusive and potions use the shared field only as `odiluted` 0/1 | `obj.h` field aliases |
 | Generic class rows before `FIRST_OBJECT` and `SPE_NOVEL` (named at construction) are excluded | `mkobj.c:mksobj`, `o_init.c` |
 | Worn masks are 0 or one supported slot appropriate to the type, and contained objects have mask 0. Body armor uses suits, ring slots use rings or a meat ring, amulet slots use amulets, eyewear uses blindfold/lenses/towel, and punishment slots use their ball/chain types. `uarm*`/`uwep` slot owners stay null so `donning()`/`doffing()` stay false | `do_wear.c:canwearobj`, `accessory_or_armor_on`, `donning`, `doffing`; `read.c:punish` |
@@ -363,13 +367,13 @@ The naming state relation extends the creation relation. Facts beyond it:
 
 ## Naming measured results
 
-Latest review rerun: native build, 140 objects in 15.37 s.
+Latest review rerun: native build, 140 objects in 16.30 s.
 `--naming --count 6000 --self-test`:
-17 domain probes rejected, 9 emitted-JS mutants killed (`makeplural` default
+17 domain probes rejected, 10 emitted-JS mutants killed (`makeplural` default
 suffix, an extra `rnd(1)` draw inside `makePlural`, `makesingular` ies→y,
-`an` single-letter x-rule, `the` insertion, lenses `pair of`, `greased`
+`an` single-letter x-rule, `the` insertion, removal of bogus titles, lenses `pair of`, `greased`
 prefix, `invisible` adjective, and removal of `objectCombatName`'s own
-observation), 11,168 cases in 15.91 s with 0 mismatches. String targets
+observation), 11,548 cases in 16.09 s with 0 mismatches. String targets
 measure the real stream position and RNG log on both sides; the extra-draw
 mutant is killed through `rng.core`, not a constant zero. The `xname`
 pairing relies on `objectCombatName`'s internal observation (C `xname()`
@@ -380,15 +384,15 @@ observation to its caller, observes explicitly.
 |---|---:|---:|
 | `makeplural` | 2,519 | 0 |
 | `makesingular` | 2,136 | 0 |
-| `articles` | 1,026 | 0 |
+| `articles` | 1,406 | 0 |
 | `xname` | 1,718 | 0 |
 | `doname` | 1,712 | 0 |
 | `x_monnam` | 2,057 | 0 |
 
-The naming batch includes 5,168 boundary and full type/species sweep cases.
+The naming batch includes 5,548 boundary and full type/species sweep cases.
 Hand-authored cases default to their type's initial knowledge, and only the
-documented domain exclusions are dropped. All 35 harness tests passed in
-18.300 s. The latest domain fixes add five tests: four rejection/generation
+documented domain exclusions are dropped. All 37 harness tests passed in
+19.848 s. The earlier domain fixes added five tests: four rejection/generation
 tests failed before the fixes (14 failing subtests) and pass afterward;
 all 15 positive equipment cases match native/JS naming, including the meat
 ring, non-weapons in weapon slots and gold in the quiver.
@@ -419,7 +423,7 @@ the normal reducer passes. No new game behavior or equivalence claim is
 introduced by either self-test change.
 
 `npm run compile` exited 0. The requested public replay used one worker and
-finished all 44 sessions in 28.900 s: 43 full matches, 11,396/11,405 screens,
+finished all 44 sessions in 29.384 s: 43 full matches, 11,396/11,405 screens,
 792,838/792,838 random calls and zero crashes. The public ledger check exited
 0, retaining every verified call for all 363 functions. The remaining
 screen difference is `seed2200-wizard-quaff-zap-read`, step 158: native option
@@ -437,6 +441,7 @@ recording was run.
 | Redundant expected RNG counts/log | Removed the assertions of native core count 0 and emitted `{core:0, display:0, log:[]}`. Tests retain native/emitted comparison and detection of the extra-draw mutant through the comparison result. They no longer read those RNG records directly. |
 | See invisible without detection | Fixed: `{"target":"x_monnam","monster":{"mnum":"newt","minvis":1},"hero":{"detect":0,"seeInvis":1}}` was accepted and now raises `ValueError`. Native `display.h:_mon_visible` permits see invisible, so `do_name.c:x_monnam`'s `canspotmon` result would otherwise depend on uncomputed `cansee`. Generated see-invisible cases now enable detection; undetected invisible cases remain covered. |
 | Worn bits on incompatible types | Fixed: `{"target":"doname","object":{"otyp":"DAGGER","wornMask":131072},"discovery":{"nameKnown":1}}` was accepted and now raises `ValueError`. Validator and generator share the supported type/slot relation described above. Tests also reject amulet bits on boots, body-armor bits on wands/helmets, eyewear bits on daggers, swapped ball/chain bits, equipped contents and coins in weapon slots. Native `accessory_or_armor_on`'s meat-ring exception and `ready_ok`'s gold-quiver allowance remain valid. |
+| Missing bogus-name data for `the()` | Fixed: the native worker now receives generated `dat/bogusmon` and rejects missing data instead of silently using an incomplete `CapitalMon` table. The reported absence of `dlb_init()` is not the cause in this configured build: `include/dlb.h` maps `dlb_fopen` directly to `fopen` when DLB is off. The C naming functions remain unchanged. |
 
 The six restored `implicit_uncursed` cases are exercised through both real
 backends. The tested uncursed wand with known charges omits the prefix when
@@ -444,6 +449,31 @@ the option is enabled; the tested scroll and armor still print it under native
 `doname_base`'s uncharged-item/armor conditions. Rejection tests check exception
 types without matching error-message wording. The quantity-domain self-test
 first completes a healthy native/JS control run, then rejects the altered domain.
+
+### Bogus-title review regression
+
+The new article test failed before the data setup change on three inputs:
+
+| Minimal input (`target=articles`) | Native before | Emitted JS | Both after |
+|---|---|---|---|
+| `Klingon` | `Klingon` | `the Klingon` | `the Klingon` |
+| `Ancient Multi-Hued Dragon` | `Ancient Multi-Hued Dragon` | `the Ancient Multi-Hued Dragon` | `the Ancient Multi-Hued Dragon` |
+| `Klingon's corpse` | `Klingon's corpse` | `the Klingon's corpse` | `the Klingon's corpse` |
+
+`objnam.c:the` calls `rumors.c:CapitalMon`; `init_CapMons` reads and decodes
+the native file, includes capitalized titles, and excludes personal names
+using `do_name.c:bogon_is_pname`. `CapitalMon` accepts a name followed by a
+space or apostrophe, but not a longer word. The test also preserves the
+unprefixed results `Klingonish`, `Godzilla` and `King Kong`. A second test
+runs the worker from an empty directory and checks that missing native data
+exits with status 2. No error-message wording is asserted.
+
+The new emitted-JS mutant removes the entire bogus-title contribution to
+`objnam.js:CAPITALIZED_MONSTER_TITLES`. The self-test kills it on `Klingon`
+(`the Klingon` versus `Klingon`) through the `the` result field, after a
+healthy native/JS control. The existing overlength `articles` domain probe
+still rejects inputs outside the string buffer bound. No game code changed
+and no new formal equivalence claim is made.
 
 ### Candidate bugs
 
@@ -474,33 +504,33 @@ Per-claim times exclude their negative checks:
 | `rn2` | PROVED | 0.2 s |
 | `rnd` | PROVED | 0.1 s |
 | `rn1` | PROVED | 0.7 s |
-| `rnl` | PROVED | 1.6 s |
+| `rnl` | PROVED | 1.8 s |
 | `d` | PROVED | 0.4 s |
-| `rne` | PROVED | 0.8 s |
+| `rne` | PROVED | 0.7 s |
 | `rnz` | PROVED | 2.6 s |
 | `rn2_on_display_rng` | PROVED | 0.1 s |
 | `distmin` | PROVED | 0.2 s |
 | `dist2` | PROVED | 0.4 s |
-| `enermod` | PROVED | 2.4 s |
-| `newuexp` | PROVED | 0.8 s |
+| `enermod` | PROVED | 2.8 s |
+| `newuexp` | PROVED | 1.1 s |
 | `xlev_to_rank` | PROVED | 0.2 s |
-| `rounddiv` | PROVED | 0.5 s |
-| `Align2amask` | PROVED | 0.8 s |
-| `Amask2align` | PROVED | 1.1 s |
+| `rounddiv` | PROVED | 0.4 s |
+| `Align2amask` | PROVED | 0.7 s |
+| `Amask2align` | PROVED | 0.9 s |
 | `acurr:StrDex` | PROVED | 1.0 s |
 | `acurrstr` | PROVED | 0.4 s |
 | `dbon:human` | PROVED | 0.6 s |
-| `abon:human` | PROVED | 2.2 s |
-| `acurr:all` | PROVED | 5.7 s |
+| `abon:human` | PROVED | 2.1 s |
+| `acurr:all` | PROVED | 5.3 s |
 | `dbon:all` | PROVED | 0.3 s |
-| `abon:forms` | PROVED | 42.2 s |
-| `experience:tables` | PROVED | 442.0 s |
-| `mcalcmove:tables` | PROVED | 180.0 s |
+| `abon:forms` | PROVED | 43.0 s |
+| `experience:tables` | PROVED | 399.7 s |
+| `mcalcmove:tables` | PROVED | 178.1 s |
 | `lower_bits` | PROVED | 0.1 s |
 | `upper_bits` | PROVED | 0.0 s |
 | `isaac64_mix` | PROVED | 0.1 s |
 | `isaac64_update` | PROVED | 0.4 s |
-| `isaac64_reseed` | PROVED | 5.1 s |
+| `isaac64_reseed` | PROVED | 4.8 s |
 | `isaac64_init` | PROVED | 0.1 s |
 | `isaac64_next_uint64` | PROVED | 0.1 s |
 | `isaac64_seed_packing` | PROVED | 0.1 s |

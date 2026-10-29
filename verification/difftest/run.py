@@ -392,6 +392,7 @@ def naming_negative_checks(native, port, meta):
         'naming_singular': dict(target='makesingular', text='rubies'),
         'naming_an': dict(target='articles', text='x'),
         'naming_the': dict(target='articles', text='elven dagger'),
+        'naming_bogus_titles': dict(target='articles', text='Klingon'),
         'naming_xname': dict(target='xname', object=dict(otyp='LENSES', dknown=1),
                              discovery=dict(nameKnown=1)),
         'naming_doname': dict(target='doname', object=dict(otyp='MACE', greased=1, dknown=1),
@@ -407,7 +408,8 @@ def naming_negative_checks(native, port, meta):
             raise RuntimeError(f'Naming mutant control already diverges: {name}')
         with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
             found = difference(c_result, worker.call(state))
-        expected = {'naming_the': 'the', 'naming_string_draw': 'rng.core'}.get(name, 'result')
+        expected = {'naming_the': 'the', 'naming_bogus_titles': 'the',
+                    'naming_string_draw': 'rng.core'}.get(name, 'result')
         if not found or not found['path'].startswith(expected):
             raise RuntimeError(f'Naming mutant survived or hit the wrong field: {name}: {found}')
         print(f'KILLED {name}: {found["native"]!r} != {found["port"]!r}', flush=True)

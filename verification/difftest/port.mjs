@@ -43,6 +43,8 @@ const changes = {
         "return 'aefhilmnos'.includes(word.charAt(0)) ? 'an ' : 'a ';"],
     naming_the: ['objnam.js', "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the ${name}`;",
         "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the  ${name}`;"],
+    naming_bogus_titles: ['objnam.js', '...BOGUS_MONSTERS.flatMap(name => {',
+        '...[].flatMap(name => {'],
     naming_xname: ['objnam.js', "noun = `pair of ${noun}`;", "noun = `two ${noun}`;"],
     naming_doname: ['object_description.js', "if (object.greased)\n        prefix.push('greased');",
         "if (object.greased)\n        prefix.push('sleazy');"],
@@ -73,6 +75,7 @@ const constants = await import('../../js/const.js');
 const methods = await import('../../js/monster_attack_types.js');
 const { objectClassForType } = await import('../../js/object_knowledge.js');
 const { armorSlotFor } = await import('../../js/armor.js');
+const { BOGUS_MONSTERS } = await import('../../js/random_text_data.js');
 if (process.argv.includes('--metadata')) {
     console.log(JSON.stringify({
         objects: {
@@ -90,6 +93,9 @@ if (process.argv.includes('--metadata')) {
         classes: data.OBJECT_NAMES.map((_, index) => objectClassForType(index)), names: data.OBJECT_NAMES,
         monsterClasses: monsters.MONSTER_SYMBOL, specialPM: monsters.SPECIAL_PM,
         monsters: monsters.MONSTER_NAME, bodies: monsters.MONSTER_BODY_META,
+        // do_name.c:bogusmon removes the optional classification prefix.
+        bogusMonsters: BOGUS_MONSTERS.map(name =>
+            '-_+|='.includes(name.charAt(0)) ? name.slice(1) : name),
         ironBallIncrement: constants.WT_IRON_BALL_INCR,
         methods: { weapon: methods.AT_WEAP, kick: methods.AT_KICK, bite: methods.AT_BITE },
     }));
