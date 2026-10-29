@@ -19,6 +19,19 @@ void test('ordinary look ends after an unknown direction', async () => {
     assert.equal(game.context.move, 0);
 });
 
+void test('ordinary look ends on a quit character without describing a location', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const input = resetInputState();
+    input.feed('/ ');
+
+    await answerPrompts(rhack('/'.charCodeAt(0)), input, []);
+
+    await flush_screen(1);
+    const text = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.match(text, /^Done\./);
+    assert.equal(game.context.move, 0);
+});
+
 void test('quick look restores its goal after disabling descriptions and restores verbosity', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: true } });
     const input = resetInputState();

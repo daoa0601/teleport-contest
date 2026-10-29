@@ -5427,7 +5427,7 @@ async function doFarlook(quick = true): Promise<void> {
                 prompt: game._pending_message || game._retained_message,
                 goal: 'a monster, object or location',
             });
-            if (!cursor) break;
+            if (!cursor || cursor.x < 0) break;
             position = { x: cursor.x, y: cursor.y };
             verbose = false;
             game.flags.verbose = false;

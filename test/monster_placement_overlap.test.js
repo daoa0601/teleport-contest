@@ -2,13 +2,24 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { monsterAtPosition } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from '../js/monster_location.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('placing a monster over itself diagnoses the occupied square and retains the monster', async () => {
+    const level = freshObjectRoom();
+    const monster = await createMonsterAt('goblin', 12, 10);
+    monster.mpeaceful = 0;
+    const input = resetInputState();
+    await answerPrompts(placeMonsterOnMap(monster, 12, 10), input, [
+        { prompt: /placing goblin <12,10> over itself at <12,10>[\s\S]*--More--/, keys: ' ' },
+        { prompt: /Program in disorder![\s\S]*--More--/, keys: ' ' },
+    ]);
+    assert.equal(monsterAtPosition(level, 12, 10), monster);
+});
 void test('forced relocation reports an occupied square before replacing its mapped monster', async () => {
     const level = freshObjectRoom();
     const resident = await createMonsterAt('goblin', 12, 10);
