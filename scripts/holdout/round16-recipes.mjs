@@ -28,9 +28,10 @@ const EFFECTS = {
     'terrain-chewing': [['terrain chewed', /You (?:eat the boulder|chew a hole in the (?:wall|rock))/]],
     'kicked-greedy-gold': [['kicked gold hits leprechaun', /gold pieces? harmlessly hits? the leprechaun|leprechaun.*catches the gold/]],
     'gecko-conversation': [['hallucinatory gecko pitch', /15 minutes could save you/]],
-    'angry-lawful-minions': [['god sends a minion', /Then die, mortal/]],
+    'angry-lawful-minions': [['god sends a minion', /Then die, mortal/],
+        ['minion acts', /(?:couatl|Aleax|Angel|ki-rin|Archon) of [^\n]+ (?:bites|kicks|hits|swings|casts|brushes|misses|thrusts|shoots)/]],
     'demon-reinforcements': [['demon summons help', /appears in a (?:cloud|burst|flash) of/]],
-    'astral-conflict': [['god sends hostile angels', /Thy desire for conflict shall be fulfilled/]],
+    'astral-conflict': [['god sends hostile angels', /Thy desire for conflict shall be fulfilled/], ['angel examined', /\b[Aa]ngel\b/]],
     'astral-furies': [['alignment change summons furies', /erinys|erinyes/]],
     'acid-weapon-corrosion': [['acid corrodes a weapon', /(?:sword|spear|dagger|mace|pike|axe|knife|morning star).*corrodes/]],
     'lava-sinking': [['hero sinks into lava', /sink deeper into the lava/], ['sinking resolves', /sink below the surface and die/]],
@@ -139,8 +140,9 @@ export const ROUND16_RECIPES = {
         ...protectedHero(), ...create('4 hostile bone devil'), ...waitWithLifeSaving(80),
     ]),
     'astral-conflict': recipe('astral-conflict', 'Enter the Astral Plane while causing conflict.', [
-        ...protectedHero(), ...wish('uncursed ring of conflict'), identify(), choose('ring of conflict', 'P*'), answer('Which ring-finger', 'l'),
+        ...protectedHero(), ...intrinsic('see invisible', 1000), ...wish('uncursed ring of conflict'), identify(), choose('ring of conflict', 'P*'), answer('Which ring-finger', 'l'),
         choose('astral', 'm\x16'), answer('For what do you wish?', 'nothing\r'),
+        ...Array.from({ length: 8 }, (_, index) => [keys(';'), answer('Pick a monster, object or location.', `${'m'.repeat(index + 1)}.`), keys('\x1b')]).flat(),
     ]),
     'astral-furies': recipe('astral-furies', 'Change alignment on the Astral Plane and face the furies.', [
         ...protectedHero(), ...wish('uncursed helm of opposite alignment'), identify(),
@@ -243,7 +245,7 @@ function create(monster) {
     return [keys('\x07'), answer('Create what kind of monster', `${monster}\r`)];
 }
 function intrinsic(property, turns) {
-    const laterPage = ['pass thru walls', 'magical breathing', 'fire resistance', 'light-induced blindness resistance', 'sleep resistance'].includes(property);
+    const laterPage = ['pass thru walls', 'magical breathing', 'fire resistance', 'light-induced blindness resistance', 'sleep resistance', 'see invisible'].includes(property);
     return [keys(`#wizintrinsic\r${laterPage ? ' ' : ''}${turns}`), choose(property, ''), keys('\r')];
 }
 function play(instrument) {
