@@ -3,10 +3,17 @@ import { newExperienceThreshold } from './exper.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { statusTitle } from './status_title.js';
-import { A_STR, A_DEX, A_CON, A_INT, A_WIS, A_CHA, BL_TITLE, BL_STR, BL_DX, BL_CO, BL_IN, BL_WI, BL_CH, BL_ALIGN, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC, BL_XP, BL_EXP, BL_HD, BL_TIME, BL_HUNGER, BL_CAP, BL_GOLD, BL_LEVELDESC, BL_VERS, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TH_ALWAYS_HILITE, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, EQ_VALUE, LT_VALUE, LE_VALUE, GT_VALUE, GE_VALUE, TXT_VALUE, Upolyd, HL_BOLD, HL_DIM, HL_ITALIC, HL_ULINE, HL_BLINK, HL_INVERSE, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE, CLR_MAX, } from './const.js';
+import { A_STR, A_DEX, A_CON, A_INT, A_WIS, A_CHA, BL_TITLE, BL_STR, BL_DX, BL_CO, BL_IN, BL_WI, BL_CH, BL_ALIGN, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC, BL_XP, BL_EXP, BL_HD, BL_TIME, BL_HUNGER, BL_CAP, BL_GOLD, BL_LEVELDESC, BL_VERS, BL_WEAPON, BL_ARMOR, BL_TERRAIN, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TH_ALWAYS_HILITE, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, EQ_VALUE, LT_VALUE, LE_VALUE, GT_VALUE, GE_VALUE, TXT_VALUE, Upolyd, HL_BOLD, HL_DIM, HL_ITALIC, HL_ULINE, HL_BLINK, HL_INVERSE, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE, CLR_MAX, } from './const.js';
 import { MONSTER_LEVEL } from './monster_data.js';
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
+// botl.c initblstats evaluates gold as the eleventh field.  A forced
+// gu.update_all from the gold encoding check therefore re-evaluates gold
+// and every field after it, leaving title, attributes, alignment, score
+// and carrying-capacity alone.
+const AT_OR_AFTER_GOLD = new Set([BL_GOLD, BL_ENE, BL_ENEMAX, BL_XP, BL_AC, BL_HD,
+    BL_TIME, BL_HUNGER, BL_HP, BL_HPMAX, BL_LEVELDESC, BL_EXP, BL_VERS,
+    BL_WEAPON, BL_ARMOR, BL_TERRAIN]);
 export class StatusHighlights {
     fields = new Map();
     styles = new Map();
@@ -16,6 +23,13 @@ export class StatusHighlights {
     enabled = false;
     resetPending = true;
     moves = null;
+    // botl.c:1498-1499 oldrndencode/oldgoldsym statics.
+    oldRndEncode = null;
+    oldGoldSym = null;
+    // wintty.c tty_status[NOW][BL_TITLE].color/.attr and hpbar_crit_hp: the
+    // hitpoint bar style, owned by whichever title or HP update ran last.
+    barStyle = { color: NO_COLOR, attr: 0 };
+    barCritical = false;
     spans = [[], []];
     reset() {
         this.resetPending = true;
@@ -35,7 +49,7 @@ export class StatusHighlights {
         }
         return update;
     }
-    update(state, fields) {
+    update(state, fields, goldSymbol = '$') {
         // bot_via_windowport() alternates buffers even when values are unchanged.
         // Each buffer keeps its percentage until that field recalculates it.
         const previous = this.currentPercentages;
@@ -44,8 +58,16 @@ export class StatusHighlights {
         this.moves ??= state.moves;
         this.enabled = !!state.iflags.hiliteDelta;
         this.conditionMasks = [...(state.iflags.condHilites ?? [])];
+        // botl.c:1564-1570: a changed gold encoding (the new-game rndencode
+        // or a new symbol set) forces gu.update_all while gold is evaluated.
+        // The first update never needs it; status_initialize already set
+        // update_all for that round.
+        const encodingChanged = this.oldGoldSym !== null
+            && (this.oldGoldSym !== goldSymbol || this.oldRndEncode !== (state.rndencode ?? 0));
+        this.oldGoldSym = goldSymbol;
+        this.oldRndEncode = state.rndencode ?? 0;
         for (const [field, value] of fieldValues(state, fields))
-            this.updateField(state, field, value);
+            this.updateField(state, field, value, encodingChanged);
         this.resetPending = false;
     }
     updateTime(state) {
@@ -71,12 +93,21 @@ export class StatusHighlights {
             return { color: NO_COLOR, attr: 0 };
         if (span.condition !== undefined)
             return conditionStyle(span.condition, this.conditionMasks);
-        return this.styles.get(span.hitpointBar ? BL_HP : span.field) ?? { color: NO_COLOR, attr: 0 };
+        return this.styles.get(span.field) ?? { color: NO_COLOR, attr: 0 };
     }
-    updateField(state, field, current) {
+    // wintty.c:5233-5241: the lit portion of the hitpoint bar takes the
+    // title cell's colour, applied only while status highlighting is on.
+    barSpanStyle() {
+        return { color: this.enabled ? this.barStyle.color : NO_COLOR, attr: this.barStyle.attr };
+    }
+    updateField(state, field, current, encodingChanged = false) {
         const previous = this.fields.get(field);
         const rules = state.iflags.statusThresholds?.[field] ?? [];
-        const reset = this.resetPending || !previous;
+        // botl.c:1574-1576: gu.update_all, forced from BL_GOLD onward by a
+        // gold encoding change, evaluates the field as unchanged (chg = 0)
+        // and clears its temporary-highlight timer.
+        const reset = this.resetPending || !previous
+            || encodingChanged && AT_OR_AFTER_GOLD.has(field);
         let change = reset ? 0 : compare(previous.raw, current.raw);
         const percentMatters = field === BL_HP || field === BL_ENE || field === BL_XP || field === BL_EXP;
         const calculatePercent = (percentMatters && rules.length > 0 && (change !== 0 || reset || field === BL_XP))
@@ -101,6 +132,17 @@ export class StatusHighlights {
         this.fields.set(field, { raw: current.raw, rule, changed: true,
             expires: reset || expired ? 0 : previous?.expires ?? 0 });
         this.styles.set(field, rule ? decodeStyle(rule.coloridx) : { color: NO_COLOR, attr: 0 });
+        // wintty.c:4588-4589 stores the title rule's colour and attribute on
+        // the title cell; wintty.c:4613-4615 overwrite the cell when the HP
+        // field is updated (botl.c evaluates the title first).  A status
+        // round that updates neither field keeps the previous bar style.
+        if (field === BL_TITLE)
+            this.barStyle = rule ? decodeStyle(rule.coloridx) : { color: NO_COLOR, attr: 0 };
+        if (field === BL_HP && state.flags.hitpointbar) {
+            this.barCritical = criticallyLowHp(true, state);
+            this.barStyle = { color: rule ? rule.coloridx & 255 : NO_COLOR,
+                attr: hiliteAttributes(HL_INVERSE | (this.barCritical ? HL_BLINK : 0)) };
+        }
     }
 }
 // C best-fit precedence is shared between absolute and percentage rules:
@@ -260,11 +302,12 @@ function plainStatusText(text) {
     return text.replace(/\x1b\[(\d+)C/g, (_match, count) => ' '.repeat(Number(count)))
         .replace(/\x1b\[[0-9;]*m/g, '');
 }
-export function firstStatusLineSpans(text, hitpointBar) {
+export function firstStatusLineSpans(text, hitpointBar, hitpointBarFill = 0) {
     const plain = plainStatusText(text);
     const stats = plain.lastIndexOf(' St:');
     const spans = [{ field: BL_TITLE, start: hitpointBar ? 1 : 0,
-            end: hitpointBar ? 31 : Math.max(0, stats), hitpointBar }];
+            end: hitpointBar ? 31 : Math.max(0, stats), hitpointBar,
+            ...(hitpointBar ? { fill: hitpointBarFill } : {}) }];
     const fields = new Map([['St', BL_STR], ['Dx', BL_DX], ['Co', BL_CO], ['In', BL_IN], ['Wi', BL_WI], ['Ch', BL_CH]]);
     for (const match of plain.slice(stats + 1).matchAll(/(St|Dx|Co|In|Wi|Ch):\S+/g)) {
         const field = fields.get(match[1] ?? '');
@@ -292,13 +335,17 @@ function conditionStyle(mask, masks) {
             attr |= bit;
     return { color, attr };
 }
-function decodeStyle(coloridx) {
-    const attributes = coloridx >> 8;
+// term_attr_fixup() is identity for the recorded terminal, so hilite
+// attribute masks map straight onto terminal attributes.
+function hiliteAttributes(mask) {
     let attr = 0;
     for (const [hilite, terminal] of [[HL_BOLD, ATR_BOLD], [HL_DIM, TERMINAL_DIM], [HL_ITALIC, TERMINAL_ITALIC],
         [HL_ULINE, ATR_UNDERLINE], [HL_BLINK, ATR_BLINK], [HL_INVERSE, ATR_INVERSE]])
-        if (attributes & hilite)
+        if (mask & hilite)
             attr |= terminal;
-    return { color: coloridx & 255, attr };
+    return attr;
+}
+function decodeStyle(coloridx) {
+    return { color: coloridx & 255, attr: hiliteAttributes(coloridx >> 8) };
 }
 //# sourceMappingURL=status_highlighting.js.map
