@@ -205,8 +205,6 @@ def naming_case(raw, meta):
         for key in ['blind', 'implicitUncursed', 'partlyEatenHack', 'detect', 'seeInvis']:
             integer(hero[key], 0, 1, f'hero.{key}')
         integer(hero['role'], 0, 3, 'hero.role')
-        if not hero['detect'] and not hero['seeInvis']:
-            pass  # object naming never consults canspotmon()
         result['hero'] = hero
         floor = meta['objects']['ARROW']
         initial = meta.get('initialKnown') or [0] * len(meta['names'])

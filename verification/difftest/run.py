@@ -131,11 +131,10 @@ def reductions(state, meta):
                 yield path, value[:index] + value[index + 1:]
             for index, child in enumerate(value):
                 if isinstance(child, dict):
+                    defaults = NAMING_OBJECT if state['target'] >= 12 else OBJECT
                     child_default = ({'mnum': child['mnum'], 'flags': 0, 'born': 0}
                                      if path == ('vitals',)
-                                     else {**deepcopy(OBJECT), 'otyp': child['otyp']}
-                                     if path[0] != 'contents' or state['target'] < 12
-                                     else {**deepcopy(NAMING_OBJECT), 'otyp': child['otyp']})
+                                     else {**deepcopy(defaults), 'otyp': child['otyp']})
                     yield from walk(child, child_default, (*path, index))
         elif value != default:
             yield path, default
@@ -385,6 +384,7 @@ def naming_negative_checks(native, port, meta):
             raise RuntimeError(f'Naming domain probe unexpectedly accepted: {raw}')
     mutants = {
         'naming_plural': dict(target='makeplural', text='newt'),
+        'naming_string_draw': dict(target='makeplural', text='newt'),
         'naming_singular': dict(target='makesingular', text='rubies'),
         'naming_an': dict(target='articles', text='x'),
         'naming_the': dict(target='articles', text='elven dagger'),
@@ -403,7 +403,7 @@ def naming_negative_checks(native, port, meta):
             raise RuntimeError(f'Naming mutant control already diverges: {name}')
         with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
             found = difference(c_result, worker.call(state))
-        expected = 'the' if name == 'naming_the' else 'result'
+        expected = {'naming_the': 'the', 'naming_string_draw': 'rng.core'}.get(name, 'result')
         if not found or not found['path'].startswith(expected):
             raise RuntimeError(f'Naming mutant survived or hit the wrong field: {name}: {found}')
         print(f'KILLED {name}: {found["native"]!r} != {found["port"]!r}', flush=True)

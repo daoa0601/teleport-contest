@@ -4,7 +4,7 @@ import unittest
 
 from build import CACHE
 from model import canonical, metadata
-from run import HERE, Worker, difference, minimize
+from run import HERE, Worker, difference, minimize, reductions
 
 
 class HarnessTests(unittest.TestCase):
@@ -82,6 +82,55 @@ class HarnessTests(unittest.TestCase):
         right['state']['object'][1]['spe'] = 4
         found = difference(left, right)
         self.assertEqual(found, dict(path='state.object[1].spe', native=3, port=4))
+
+    def test_naming_string_targets_measure_their_rng_stream(self):
+        # An extra draw in the string grammar must reach the rng comparison;
+        # a constant zero on the JS side would hide it.
+        state = canonical(dict(target='makeplural', text='newt'), self.meta)
+        with Worker([str(CACHE / 'native')], 'string-native') as native:
+            observed = native.call(state)
+        with Worker(['node', str(HERE / 'port.mjs')], 'string-mutant',
+                    'naming_string_draw') as mutant:
+            found = difference(observed, mutant.call(state))
+        self.assertIsNotNone(found)
+        self.assertTrue(found['path'].startswith('rng.core'), found)
+        self.assertEqual(observed['rng']['core'], 0)
+
+    def test_naming_string_stream_matches_the_native_measurement(self):
+        state = canonical(dict(target='articles', text='elven dagger',
+                               seed=1234, position=257), self.meta)
+        with Worker([str(CACHE / 'native')], 'string-native2') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'string-port2') as port:
+            left, right = native.call(state), port.call(state)
+        self.assertIsNone(difference(left, right))
+        self.assertEqual(right['rng'], dict(core=0, display=0, log=[]))
+
+    def test_naming_contents_children_reduce_against_naming_defaults(self):
+        # Reducing a naming case must reset contained-object fields to the
+        # naming defaults (key present at 0), not delete keys the weight
+        # schema never had.
+        state = canonical(dict(target='doname', object=dict(otyp='SACK', cknown=1,
+            dknown=1, contents=[dict(otyp='DAGGER', dknown=1, known=1)])), self.meta)
+        # The reducer offers one-field candidates resetting the naming-only
+        # child fields (dknown/known) back to their domain defaults.
+        resets = [candidate for candidate in reductions(state, self.meta)
+                  if candidate['object']['contents']
+                  and (candidate['object']['contents'][0]['dknown'] == 0
+                       or candidate['object']['contents'][0]['known'] == 0)]
+        self.assertTrue(resets)
+
+    def test_naming_container_child_keeps_table_knowledge(self):
+        # Root discovery applies to the root type only: a container with an
+        # initially-known child stays describable with nameKnown=0 roots.
+        state = canonical(dict(target='doname',
+            object=dict(otyp='SACK', cknown=1, dknown=1,
+                        contents=[dict(otyp='GOLD_PIECE', quan=1)]),
+            discovery=dict(nameKnown=0, callName='glork')), self.meta)
+        with Worker([str(CACHE / 'native')], 'child-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'child-port') as port:
+            left, right = native.call(state), port.call(state)
+        self.assertIsNone(difference(left, right))
+        self.assertIn('glork', right['result'])
 
     def test_domain_rejects_nonfood_eating_and_unknown_fields(self):
         for raw in [dict(object=dict(oeaten=1)), dict(hero=dict(str=True)),

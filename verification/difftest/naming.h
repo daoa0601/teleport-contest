@@ -171,7 +171,7 @@ static void naming_fruits(void)
 static struct obj *naming_object(int id, int depth)
 {
     struct obj *object = calloc(1, sizeof *object), **tail;
-    int children, child, discovery;
+    int children, child;
     const char *oname;
     if (!object || depth > 2) reject_input("naming object allocation");
     object->otyp = number(id, "otyp", 1, NUM_OBJECTS - 1);
@@ -216,9 +216,16 @@ static struct obj *naming_object(int id, int depth)
         (*tail)->ocontainer = object;
         tail = &(*tail)->nobj;
     }
-    /* Per-type knowledge lives on the class entry, like docall() results. */
-    if ((discovery = member0(0, "discovery")) >= 0) {
-        int call;
+    return object;
+}
+
+/* Per-type knowledge lives on the class entry, like docall() results.
+   The case's discovery applies to the root object's type only; contained
+   types keep their table knowledge, exactly like the emitted loader. */
+static void naming_discovery(int root, struct obj *object)
+{
+    int discovery, call;
+    if ((discovery = member0(root, "discovery")) >= 0) {
         objects[object->otyp].oc_name_known = number(discovery, "nameKnown", 0, 1);
         if ((call = member0(discovery, "callName")) >= 0) {
             char *name = string_member(discovery, "callName", 6);
@@ -226,7 +233,6 @@ static struct obj *naming_object(int id, int depth)
                 objects[object->otyp].oc_uname = dupstr(name);
         }
     }
-    return object;
 }
 
 static void naming_free_objects(struct obj *object)
@@ -314,6 +320,7 @@ static void run_naming_case(void)
 
     naming_fruits();
     object = naming_object(member(0, "object"), 0);
+    naming_discovery(0, object);
     naming_hero(hero);
     naming_rng_start();
     if (target == 15) {

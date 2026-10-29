@@ -48,6 +48,8 @@ const changes = {
         "if (object.greased)\n        prefix.push('sleazy');"],
     naming_monnam: ['monster_name.js', "if (invisible)\n        adjectives += 'invisible ';",
         "if (invisible)\n        adjectives += 'unseen ';"],
+    naming_string_draw: ['object_grammar.js', 'export function makePlural(value) {',
+        "import { rnd } from './rng.js';\nexport function makePlural(value) {\n    rnd(1);"],
 };
 const mutation = process.env.DIFFTEST_MUTANT;
 if (mutation) {

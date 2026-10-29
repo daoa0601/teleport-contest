@@ -357,14 +357,17 @@ The naming state relation extends the creation relation. Facts beyond it:
 | Artifacts (`oartifact`) are not covered; `obj_is_pname` needs artifact discovery state | `objnam.c:obj_is_pname`, `find_artifact` |
 | Price quotes keep both defaults (`pricequotes` off on both sides) with an empty quote table | `options.c` optlist defaults, `shk.c:append_price_quote` |
 | Shapeshifter species (vampire, doppelganger, sandestin, chameleon) are restored to the requested species after construction; naming describes `mons[mnum]` | `makemon.c` shapeshifter creation |
+| The case `discovery` applies to the root object's type only; contained types keep their table knowledge on both sides | `objnam.c:xname_flags` reads `objects[otyp]`; `o_init.c:docall` writes one type |
 
 ## Naming measured results
 
-Native build: 140 objects in 14.2 s. `--naming --count 6000 --self-test`:
-16 domain probes rejected, 7 emitted-JS mutants killed (`makeplural` default
-suffix, `makesingular` ies→y, `an` single-letter x-rule, `the` insertion,
-lenses `pair of`, `greased` prefix, `invisible` adjective), 11,016 cases in
-13.4 s with 0 mismatches.
+Native build: 140 objects in 14.4 s. `--naming --count 6000 --self-test`:
+16 domain probes rejected, 8 emitted-JS mutants killed (`makeplural` default
+suffix, an extra `rnd(1)` draw inside `makePlural`, `makesingular` ies→y,
+`an` single-letter x-rule, `the` insertion, lenses `pair of`, `greased`
+prefix, `invisible` adjective), 11,016 cases in 14.5 s with 0 mismatches.
+String targets measure the real stream position and RNG log on both sides;
+the extra-draw mutant is killed through `rng.core`, not a constant zero.
 
 | Target | Cases | Mismatches |
 |---|---:|---:|

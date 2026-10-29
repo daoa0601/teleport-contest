@@ -25,13 +25,18 @@ const AUGMENT_IT = 0x40;
 export async function runNaming(input) {
     if (input.target < 15) {
         // Pure string functions; the empty fruit registry matches C's empty
-        // ffruit list, and the RNG must stay untouched.
+        // ffruit list. The stream is measured like every other target, so an
+        // accidental draw in the string grammar fails the comparison.
         game.fruits = [];
+        initRng(input.seed);
+        for (let i = 0; i < input.position; i++) isaac64_next_uint64(game.coreCtx);
+        const before = [position(game.coreCtx), position(game.displayCtx)];
+        enableRngLog();
         const result = input.target === 12 ? makePlural(input.text)
             : input.target === 13 ? makeSingular(input.text)
                 : withIndefiniteArticle(input.text);
         return { result, ...(input.target === 14 ? { the: definiteName(input.text, game) } : {}),
-            rng: { core: 0, display: 0, log: [] } };
+            rng: namingRng(before) };
     }
     if (input.target === 17)
         return monsterNaming(input);
