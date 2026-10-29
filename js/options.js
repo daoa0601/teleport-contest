@@ -1508,6 +1508,8 @@ function parseConfiguration(rc, result, report, fromFile) {
             if (canonical === 'sortvanquished') {
                 const initial = optionValue?.charAt(0) ?? '';
                 const mode = 'tdaACcnz'.indexOf(initial);
+                if (!optionValue)
+                    addError(`Missing parameter for '${stripped}'`);
                 if (negated)
                     result.flags.vanqSortmode = 0;
                 else if (initial && mode >= 0)
@@ -1516,8 +1518,6 @@ function parseConfiguration(rc, result, report, fromFile) {
                     result.flags.vanqSortmode = Number(initial);
                 else if (optionValue)
                     addError(`Unknown sortvanquished parameter '${optionValue}'`);
-                else
-                    addError(`Missing parameter for '${stripped}'`);
                 continue;
             }
             if (canonical === 'sortloot') {
