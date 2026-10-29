@@ -134,6 +134,7 @@ const transientFields = {
     _inTeleportTrap: true,
     lastMonsterWeaponReturnMessage: true,
     _monTelecontrol: true,
+    _monPolycontrol: true,
     _monsterSwallower: true,
     _monsterEngulf: true,
     _occupation: true,

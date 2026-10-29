@@ -123,9 +123,15 @@ class CharacterSelection {
                 if (answer === 'yes')
                     return this.result();
                 if (answer === 'rename') {
-                    do {
-                        this.name = (await this.readName()).name;
-                    } while (!this.name);
+                    for (;;) {
+                        const renamed = await this.readName();
+                        // tty_askname() gave up; the game ends with the player.
+                        if (renamed === null)
+                            return null;
+                        this.name = renamed.name;
+                        if (this.name)
+                            break;
+                    }
                     game.plname = this.name;
                     continue;
                 }

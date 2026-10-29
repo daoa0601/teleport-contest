@@ -1393,7 +1393,7 @@ async function chooseHeroForm({ forced, dragon, lycanthrope }: {
 
 // C mkclass_poly(): choose by generation frequency, allowing extinction
 // but excluding genocide, placeholders, and specially generated monsters.
-function pickFormFromClass(monsterClass: number): number {
+export function pickFormFromClass(monsterClass: number): number {
     requirePlayingGame(game);
     const first = MONSTER_SYMBOL.indexOf(monsterClass);
     if (first < 0 || first >= SPECIAL_PM) return -1;

@@ -3691,6 +3691,11 @@ async function wizWhere() {
     await docrt();
     game.context.move = 0;
 }
+// C wizcmds.c:wiz_show_nhuuid(). The recorder build defines no NHUUID, so
+// svn.nhuuid stays empty and the native game prints an empty identifier.
+async function wizShowNhuuid() {
+    await pline('The NHUUID for this game is {  }.');
+}
 // C dungeon.c:print_dungeon(TRUE), with the endgame entry prerequisite.
 export async function chooseWizardLevelDestination() {
     const { rows, choices } = wizardLevelMenu();
@@ -3869,6 +3874,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizmakemap', wizMakeMap],
     ['wizborn', doborn],
     ['timeout', wizTimeoutQueue],
+    ['wizshownhuuid', wizShowNhuuid],
 ]);
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0

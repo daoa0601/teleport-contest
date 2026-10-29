@@ -422,6 +422,7 @@ export interface GameState {
     _travelTipShown?: boolean;
     _wishHistory?: string[];
     _monTelecontrol?: boolean;
+    _monPolycontrol?: boolean;
     _inTeleportTrap?: boolean;
 
     // Display and vision data are transient, except the saved topline.
