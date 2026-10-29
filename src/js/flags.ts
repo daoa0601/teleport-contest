@@ -122,6 +122,7 @@ export interface InterfaceFlags {
     use_inverse?: boolean;
     wc_eight_bit_input?: boolean;
     wc_inverse?: boolean;
+    wc2_petattr?: number;
     wc_splash_screen?: boolean;
     warningSymbols?: string;
     menuColorings?: MenuColoringRule[];

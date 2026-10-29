@@ -5,6 +5,7 @@ import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 export function unconstrainMap(state = game) {
@@ -50,7 +51,8 @@ export function mapDetectedMonster(monster, showTail, state = game) {
     const inverse = state.flags.use_inverse !== false
         && state.iflags.use_inverse !== false && state.iflags.wc_inverse !== false;
     const attribute = detected ? inverse ? 1 : 0
-        : monster.mtame && state.flags.hilite_pet ? 1 : 0;
+        : monster.mtame && state.flags.hilite_pet
+            ? terminalAttrFromCAttr(state.iflags.wc2_petattr ?? C_ATR_INVERSE) : 0;
     show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, false, attribute, glyph);
     if (!showTail || monster.mnum !== LONG_WORM)
         return;

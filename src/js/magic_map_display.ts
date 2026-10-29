@@ -9,6 +9,7 @@ import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';
+import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
@@ -70,7 +71,8 @@ export function mapDetectedMonster(monster: Monster, showTail: boolean, state: G
     const inverse = state.flags.use_inverse !== false
         && state.iflags.use_inverse !== false && state.iflags.wc_inverse !== false;
     const attribute = detected ? inverse ? 1 : 0
-        : monster.mtame && state.flags.hilite_pet ? 1 : 0;
+        : monster.mtame && state.flags.hilite_pet
+            ? terminalAttrFromCAttr(state.iflags.wc2_petattr ?? C_ATR_INVERSE) : 0;
     show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color,
         false, attribute, glyph);
     if (!showTail || monster.mnum !== LONG_WORM) return;
