@@ -490,8 +490,11 @@ async function wizForceChamForm(monster: Monster, state: GameState): Promise<num
     }
     if (triesLeft <= 0) await plineWithContinuation(thats_enough_tries);
     if (monsterIsVampireShifter(monster)) {
+        // validvamp() rewrites mndx even when it accepts: Vlad with the
+        // Candelabrum keeps his true form from an empty or random answer,
+        // and a class answer maps onto the shifter's own forms.
         const shifted = validVampForm(monster, mnum ?? NON_PM, monsterClass, state);
-        if (!shifted.valid) mnum = pickVampireShape(monster);
+        mnum = shifted.valid ? shifted.form : pickVampireShape(monster);
     }
     return mnum;
 }

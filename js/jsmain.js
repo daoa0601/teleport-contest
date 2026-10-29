@@ -373,8 +373,9 @@ export class Engine {
         return display;
     }
     // wintty.c tty_askname(). An empty answer or Escape re-asks: the hint
-    // replaces the previous prompt row and the new prompt drops one row,
-    // and ten failures give up. No fabricated default name exists natively.
+    // lands one row above the prompt, the prompt row itself is cleared and
+    // redrawn in place, and ten failures give up. No fabricated default
+    // name exists natively.
     async _readPlayerName(row = 12, showCopyright = true) {
         const display = this.requireDisplay();
         display.clearScreen();
@@ -392,6 +393,8 @@ export class Engine {
                     return null;
                 }
                 display.putstr(0, row - 1, 'Enter a name for your character...', NO_COLOR);
+                // cl_end() erases the previous prompt and any partial echo.
+                display.clearRow(row);
             }
             display.putstr(0, row, prompt, NO_COLOR);
             let name = '';
@@ -426,10 +429,9 @@ export class Engine {
             }
             if (!cancelled && name) {
                 // tty_curs() steps past the line to echo the accepted return.
-                display.setCursor(0, row + 2);
+                display.setCursor(0, row + 1);
                 return parseCharacterName(name);
             }
-            row += 1;
         }
     }
     run() {

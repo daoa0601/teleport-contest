@@ -138,17 +138,17 @@ class CharacterSelection {
                 if (answer === 'quit') return null;
                 if (answer === 'yes') return this.result();
                 if (answer === 'rename') {
-                for (;;) {
-                    const renamed = await this.readName();
-                    // tty_askname() gave up; the game ends with the player.
-                    if (renamed === null) return null;
-                    this.name = renamed.name;
-                    if (this.name) break;
+                    for (;;) {
+                        const renamed = await this.readName();
+                        // tty_askname() gave up; the game ends with the player.
+                        if (renamed === null) return null;
+                        this.name = renamed.name;
+                        if (this.name) break;
+                    }
+                    game.plname = this.name;
+                    continue;
                 }
-                game.plname = this.name;
-                continue;
-            }
-            pickForYou = 'n';
+                pickForYou = 'n';
                 this.choices = { ...EMPTY_CHOICES };
                 this.random.clear();
                 break;

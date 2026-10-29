@@ -8,6 +8,9 @@ import type { InputGate } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initRng } from '../js/rng.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { CANDELABRUM_OF_INVOCATION } from '../js/object_data.js';
+import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -73,7 +76,8 @@ void test('a rejected monpolycontrol answer retries and relabels the prompt', as
     assert.match(log, /into what kind of monster\?/,
         'the second and later prompts spell out the expected answer');
     assert.match(log, /That's enough tries!/, 'five failures give up on the player');
-    assert.notEqual(MONSTER_NAME[monster.mnum], 'zzzz');
+    assert.notEqual(MONSTER_NAME[monster.mnum], 'jackal',
+        'the exhausted prompt falls back to an arbitrary form');
 });
 
 void test('monpolycontrol maps a bat class answer onto the vampire bat', async () => {
@@ -106,4 +110,20 @@ void test('a basic vampire cannot be forced into a wolf', async () => {
     const log = messageLog();
     assert.match(log, /It can't become that\./);
     assert.equal(MONSTER_NAME[monster.mnum], 'fog cloud');
+});
+
+void test('Vlad with the Candelabrum keeps his true form on a random answer', async () => {
+    const monster = await setupShapechanger('vampire bat', 'Vlad the Impaler');
+    await addObjectToMonsterInventory(monster, await knownObject(CANDELABRUM_OF_INVOCATION));
+    initRng(9n);
+    const input = scriptedInput('*\n');
+
+    try {
+        await changeMonsterForm(monster, null, game);
+    } finally {
+        input.display = null;
+    }
+
+    assert.equal(MONSTER_NAME[monster.mnum], 'Vlad the Impaler',
+        'an empty answer still lands on his own form, not an arbitrary one');
 });
