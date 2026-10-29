@@ -1621,6 +1621,7 @@ monster_nearby	isok
 mount_steed	can_ride
 mount_steed	can_saddle
 mount_steed	heal_legs
+mount_steed	hliquid
 mount_steed	instapetrify
 mount_steed	losehp
 mount_steed	maybewakesteed
