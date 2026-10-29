@@ -2,12 +2,16 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HUNGRY, SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
 import { bot, flush_screen, plineWithContinuation } from '../js/display.js';
+import { doeat } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { cureHeroSickness, startHeroSickness, vomitHero } from '../js/hero_illness.js';
 import { resetInputState } from '../js/input.js';
 import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { CORPSE } from '../js/object_data.js';
 import { setHeroSlimingTimeout } from '../js/slime.js';
 import { fixHeroPetrification, setHeroPetrificationTimeout } from '../js/stoning.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
@@ -28,6 +32,28 @@ void test('curing petrification removes Stone when the cure feedback is displaye
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /You feel limber!/);
     assert.doesNotMatch(status(), /\bStone\b/);
 });
+
+for (const species of ['lizard', 'acid blob']) {
+    void test(`eating ${species} flesh clears Stone before the cure message is displayed`, async () => {
+        freshObjectRoom({ hero: { uhunger: 200 } });
+        const food = await addInventoryObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf(species), age: game.moves,
+        });
+        await setHeroPetrificationTimeout(30);
+        await bot();
+        assert.match(status(), /\bStone\b/);
+        const input = resetInputState();
+        installPagerInput(input, { expected: /limber|corpse|acidic/, limit: 4 });
+        input.feed(food.invlet);
+
+        await doeat();
+        await flush_screen(1);
+
+        assert.equal(game.u.stonedTurns, 0);
+        assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /You feel limber!/);
+        assert.doesNotMatch(status(), /\bStone\b/);
+    });
+}
 
 for (const [type, label] of [
     [SICK_VOMITABLE, 'FoodPois'], [SICK_NONVOMITABLE, 'TermIll'],

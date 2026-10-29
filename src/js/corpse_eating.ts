@@ -5,7 +5,7 @@ import {
     adjustAttribute, attributeChangeMessage, currentAttribute, exerciseWisdom,
 } from './attrib.js';
 import { applyCannibalPenalty, heroMayEatOwnKind } from './cannibalism.js';
-import { A_CHA, A_INT, DIED, KILLED_BY, STONING, Upolyd } from './const.js';
+import { A_INT, DIED, KILLED_BY, STONING, Upolyd } from './const.js';
 import { corpseEnergyBuzz, grantCorpseIntrinsic } from './corpse_intrinsics.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -30,11 +30,11 @@ import {
     grantIntrinsicProperty, hasPermanentIntrinsicProperty, removePermanentIntrinsicProperty,
 } from './properties.js';
 import { rn1, rn2 } from './rng.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { heroCanBeSlimed, startHeroSliming } from './slime.js';
 import {
-    clearHeroPetrification, fleshPetrifies, formCanBecomeStoneGolem,
+    fixHeroPetrification, fleshPetrifies, formCanBecomeStoneGolem,
     heroIsPetrifying, heroResistsStoning,
 } from './stoning.js';
 import { attrcurse } from './throne.js';
@@ -79,7 +79,7 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
         await plineWithContinuation(formatFeltMessage(`that eating the ${name} was a bad idea.`, state));
         grantIntrinsicProperty('aggravateMonster', 'outside', state);
     } else if (name === 'lizard') {
-        if (heroIsPetrifying(state)) await curePetrificationByFood(state);
+        if (heroIsPetrifying(state)) await fixHeroPetrification({ state });
     } else if (monsterIsRider({ mnum })) {
         await plineWithContinuation('Eating that is instantly fatal.');
         const cause = `unwisely ate the body of ${name}`;
@@ -100,19 +100,9 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
             startHeroSliming({ state, killer: '' });
         }
         if (requireMonsterData(MONSTER_FLAGS1, mnum) & M1_ACID && heroIsPetrifying(state))
-            await curePetrificationByFood(state);
+            await fixHeroPetrification({ state });
     }
     return { stopped: false, heroDied: !!state.program_state.gameover };
-}
-
-export async function curePetrificationByFood(state: GameState = game) {
-    const message = heroIsHallucinating(state)
-        ? `What a pity--you just ruined a future piece of ${currentAttribute(A_CHA, state) > 15 ? 'fine ' : ''}art!`
-        : 'You feel limber!';
-    state.u.stonedTurns = 0;
-    state.u.stoned = false;
-    await plineWithContinuation(message);
-    clearHeroPetrification(state);
 }
 
 export async function applyCorpsePostEffects(mnum: number, { state = game, tin = null }: CorpseOptions = {}) {
