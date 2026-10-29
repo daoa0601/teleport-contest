@@ -287,7 +287,7 @@ function rustMetalObject(object, description, luckRoll) {
         erosion: object.oeroded,
     };
 }
-export async function waterDamageObject(object, messages = [], state = game, { force = false, description = null, random = rn2, luckRoll = rnl, rollOne = rnd, publish, mentionWater, acidContext } = {}) {
+export async function waterDamageObject(object, messages = [], state = game, { force = false, description = null, random = rn2, luckRoll = rnl, rollOne = rnd, publish, mentionWater, acidContext, position } = {}) {
     if (!object)
         return 'nothing';
     const emit = async (message) => {
@@ -330,6 +330,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
                     mentionWater?.();
             }
             await damageWaterChain(objectContents(object), messages, state, { random, luckRoll, rollOne, publish: emit,
+                ...(position ? { position } : {}),
                 ...(acidContext ? { acidContext } : {}) });
         }
         else if (carried && !heroIsBlind(state) && !state.underwater) {
@@ -400,7 +401,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         return 'damaged';
     }
     return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll,
-        grease: false, displayName: name });
+        grease: false, displayName: name, ...(position ? { position } : {}) });
 }
 // C pot_acid_damage(): water destroys the bottle without impact or vapors.
 async function destroyWetAcidPotion(object, described, emit, state, context) {
