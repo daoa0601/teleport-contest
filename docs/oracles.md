@@ -108,7 +108,10 @@ above a port function. For each C callee, the edge is:
   `healHeroLegs`): probably renamed, so check these last;
 - **missing** otherwise.
 
-Missing edges are audit leads, not verdicts. Inlined helpers and renames
+Missing edges are audit leads, not verdicts. `docs/c-js-semantics.md` lists the
+false-alarm classes audits have found (composed messages, dead C branches,
+recorder instrumentation, renames) and the C behavior JavaScript needs an
+explicit alternative for. Inlined helpers and renames
 show up as missing until an alias is recorded. Add an alias line to
 `c-ts-aliases.tsv` whenever an audit confirms a rename. `--function NAME`
 prints one function's three lists.
