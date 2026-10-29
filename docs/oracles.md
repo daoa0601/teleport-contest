@@ -62,7 +62,7 @@ never-executed list to aim new scenario recipes.
 ```sh
 git submodule update --init nethack-c/upstream            # once; plus its Lua headers:
 git -C nethack-c/upstream submodule update --init submodules/lua
-node scripts/static-gaps.mjs messages [--coverage OUT/c-coverage.json] [--check-ledger L.tsv] [--write-ledger L.tsv]
+node scripts/static-gaps.mjs messages [--coverage OUT/c-coverage.json] [--verbose] [--reviewed-ledger R.tsv] [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs edges [--function C_NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
 node scripts/static-gaps.mjs screens RUN_DIR
@@ -86,6 +86,27 @@ present once a leading or trailing word is dropped, so the port probably
 composes the message differently. Check those last. `--coverage` joins
 `state-oracle coverage` output, so missing messages in functions that the
 corpus never runs can be routed to new scenario recipes.
+
+`docs/ledger/c-messages-reviewed.tsv` records audited false alarms. Its five
+tab-separated columns are `file`, `owner`, `piece`, `verdict`, and `reason`.
+The first three use the same key and `\\`, `\t`, `\n`, `\r` escapes as
+`c-messages.tsv`. When several C literals share a key, review every variant
+before adding it. Verdicts are `composed`, `dead`, `out-of-scope`, or
+`diagnostic`. Give the native unreachable condition for `dead`, the runtime
+boundary for `out-of-scope`, and the diagnostic purpose for `diagnostic`.
+For `composed`, begin the reason with `src/js/FILE.ts:FUNCTION` (preferred)
+or `src/js/FILE.ts:LINE`, followed by an explanation after a semicolon.
+Additional source locations in the reason use the same syntax.
+
+Reviewed keys leave the missing list and appear as counts per verdict;
+`--verbose` includes their keys and reasons. Full JSON rows retain their
+review. `--reviewed-ledger` selects a different review file for an audit.
+Malformed rows fail with a file and line number. A review is stale when its
+C key disappears or any cited composition file, function definition, or line
+disappears. A stale verdict never hides a missing literal and is always reported;
+`messages --check-ledger docs/ledger/c-messages.tsv` also fails on them.
+This checks that references still exist; a human must check that a changed
+function still prints every reviewed variant.
 
 `constants` takes every exported upper-case constant and enum member in
 `src/js` whose name is also a C macro or enum constant, and compiles one

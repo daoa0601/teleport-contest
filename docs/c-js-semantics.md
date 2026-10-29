@@ -148,5 +148,10 @@ false alarm:
   `mcast_spell()` (20 of 20) are mostly restructured, not missing. They
   shrink as `docs/ledger/c-ts-aliases.tsv` grows.
 
-When an audit decides a lead is one of these, record the verdict, so the
-next audit starts from it instead of repeating the work.
+Record audited message verdicts in `docs/ledger/c-messages-reviewed.tsv`,
+using the same `file`, `owner`, and escaped `piece` keys as `c-messages.tsv`,
+followed by a verdict and a concrete reason. Reviewed keys leave the missing
+list; `--verbose` shows their reasons. The stale check reports vanished C
+keys and missing composed-message files, function definitions, or lines, and
+fails `static-gaps messages --check-ledger docs/ledger/c-messages.tsv`.
+Existing references still require human review when their behavior changes.

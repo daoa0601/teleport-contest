@@ -1,6 +1,6 @@
 // static-gaps.mjs — static maps of C behavior that the port lacks.
 //
-//   node scripts/static-gaps.mjs messages [--coverage C-COVERAGE.json] [--check-ledger L.tsv] [--write-ledger L.tsv]
+//   node scripts/static-gaps.mjs messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs constants [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs edges [--function NAME] [--check-ledger L.tsv] [--write-ledger L.tsv]
 //   node scripts/static-gaps.mjs screens RUN_DIR
@@ -8,9 +8,11 @@
 // `messages` lists every C string literal (outside debugging calls) whose
 // longest fixed piece, with printf conversions cut out, never appears among
 // the port's string and template fragments. A missing message is a map
-// entry for an unported branch, found without a game that reaches it.
+// entry to audit, found without a game that reaches it. Reviewed verdicts
+// live in docs/ledger/c-messages-reviewed.tsv and are checked for stale
+// C literals and composed-message port locations.
 // Gameplay sessions, the RNG ledgers and the state oracle still decide
-// whether ported code is right; this only says where code is absent.
+// whether ported code is right; this identifies leads for source review.
 //
 // `constants` compiles a `_Static_assert` against the pinned C headers for
 // every exported upper-case constant and enum member of the port whose name
@@ -35,6 +37,7 @@ import ts from 'typescript';
 import { INFRASTRUCTURE_FILES, baseName, calleeName, forEachTopLevelDecl, resolveCSourceTree, walkJson, } from './lib/c-sources.mjs';
 import { checkConstants } from './lib/gap-constants.mjs';
 import { compareEdges } from './lib/gap-edges.mjs';
+import { checkMessageReviews, messageLedgerKey } from './lib/gap-message-reviews.mjs';
 import { arrayValue, errorMessage, numberValue, objectValue, stringValue } from './lib/session-types.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CACHE = join(ROOT, '.cache', 'static-gaps');
@@ -270,7 +273,6 @@ function executedFunctions(path) {
     });
     return executed;
 }
-const ledgerKey = (row) => `${row.file}\t${row.owner}\t${row.piece.replace(/[\t\n\r\\]/g, ch => JSON.stringify(ch).slice(1, -1))}`;
 function readLedger(path) {
     return new Set(readFileSync(path, 'utf8').split('\n').filter(line => line && !line.startsWith('#')));
 }
@@ -313,19 +315,22 @@ async function messages(args) {
     const tree = resolveCSourceTree(ROOT, CACHE);
     process.stderr.write(`C sources: ${relative(ROOT, tree.dir)} (${tree.files.length} files)\n`);
     const { literals } = await cFacts(tree);
+    const reviewPath = option('--reviewed-ledger') ?? join(ROOT, 'docs', 'ledger', 'c-messages-reviewed.tsv');
+    const { reviewed, stale } = checkMessageReviews(ROOT, reviewPath, literals);
     const text = portText();
     const coveragePath = option('--coverage');
     const executed = coveragePath ? executedFunctions(coveragePath) : null;
     const rows = literals.map(literal => {
         const present = text.includes(literal.piece);
-        return { ...literal, present, near: !present && nearPresent(literal.piece, text), infrastructure: INFRASTRUCTURE_FILES.has(literal.file),
+        return { ...literal, review: reviewed.get(messageLedgerKey(literal)) ?? null,
+            present, near: !present && nearPresent(literal.piece, text), infrastructure: INFRASTRUCTURE_FILES.has(literal.file),
             executed: executed ? executed.has(`${literal.file}:${literal.owner}`) : null };
     });
     mkdirSync(CACHE, { recursive: true });
     writeFileSync(join(CACHE, 'messages.json'), JSON.stringify(rows, null, 1) + '\n');
-    const missing = rows.filter(row => !row.present);
+    const missing = rows.filter(row => !row.present && !row.review);
     const count = (filter) => `${missing.filter(filter).length} of ${rows.filter(filter).length}`;
-    console.log('# C literals absent from the port\n');
+    console.log('# Unreviewed C literals absent from the port\n');
     console.log(`messages (printed or prompted): ${count(row => row.category === 'message')}`
         + ` (${missing.filter(row => row.category === 'message' && !row.near).length} with no near match)`);
     console.log(`  in gameplay files:            ${count(row => row.category === 'message' && !row.infrastructure)}`);
@@ -335,6 +340,19 @@ async function messages(args) {
         console.log(`missing messages in functions the corpus never runs: `
             + `${missing.filter(row => row.category === 'message' && row.executed === false).length}`);
     }
+    console.log('\nReviewed literals:');
+    for (const verdict of ['composed', 'dead', 'out-of-scope', 'diagnostic']) {
+        console.log(`  ${verdict}: ${[...reviewed.values()].filter(review => review.verdict === verdict).length}`);
+    }
+    if (args.includes('--verbose')) {
+        for (const [key, review] of reviewed)
+            console.log(`  [${review.verdict}] ${key}\n    ${review.reason}`);
+    }
+    for (const { review, reason } of stale) {
+        console.error(`Stale reviewed literal (${reason}): ${messageLedgerKey(review)}\n  ${review.reason}`);
+    }
+    if (stale.length && option('--check-ledger'))
+        process.exitCode = 1;
     const byFile = new Map();
     for (const row of missing) {
         if (row.infrastructure || row.category !== 'message')
@@ -351,7 +369,7 @@ async function messages(args) {
         }
     }
     console.log(`\nFull rows: ${relative(ROOT, join(CACHE, 'messages.json'))}`);
-    applyLedger(option, rows.filter(row => row.present).map(ledgerKey), 'messages', 'file\towner\tpiece — C literals present in the port (static-gaps.mjs messages)');
+    applyLedger(option, rows.filter(row => row.present).map(messageLedgerKey), 'messages', 'file\towner\tpiece — C literals present in the port (static-gaps.mjs messages)');
 }
 // ── constants ──
 async function constants(args) {
@@ -464,7 +482,8 @@ async function screens(args) {
             console.log(`    ${entry}`);
     }
 }
-const USAGE = 'usage: static-gaps.mjs {messages [--coverage C-COVERAGE.json] | constants | edges [--function NAME] | screens RUN_DIR} '
+const USAGE = 'usage: static-gaps.mjs {messages [--coverage C-COVERAGE.json] [--reviewed-ledger R.tsv] [--verbose] '
+    + '| constants | edges [--function NAME] | screens RUN_DIR} '
     + '[--check-ledger L.tsv] [--write-ledger L.tsv]';
 const [command, ...rest] = process.argv.slice(2);
 try {
