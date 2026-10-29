@@ -1,0 +1,126 @@
+# file	owner	piece	verdict	reason
+# Keys and piece escapes match c-messages.tsv. A shared key covers every native literal with that file, owner and longest fixed piece.
+# Composed reasons start with src/js/FILE.ts:FUNCTION (preferred) or :LINE; every such location is checked.
+apply.c	flip_through_book	ink in this spellbook is	composed	src/js/book_flip.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
+apply.c	use_leash	from inside.	composed	src/js/leash_apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
+artifact.c	artifact_hit	blade drains your	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+artifact.c	artifact_hit	blade draws the	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+cmd.c	do_run	Double run prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
+cmd.c	do_rush	Double rush prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
+cmd.c	enter_explore_mode	Note: normally you wouldn't be allowed into explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
+cmd.c	enter_explore_mode	cannot access explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
+dig.c	use_pick_axe2	merely scratches the	composed	src/js/pick_axe.ts:applyPickAxeDirection; ownedObjectAction supplies the singular scratches verb before the named surface.
+dig.c	zap_dig	rock glows then fades.	composed	src/js/digging_magic.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
+dig.c	zap_dig	wall glows then fades.	composed	src/js/digging_magic.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
+do.c	dodown	go down here	composed	src/js/cmd.ts:travelStairs; Composes up or down and the vibrating-square yet suffix.
+do.c	dodown	were unable to fit	dead	The squeeze block requires trap != NULL; seen holes return through uescaped_shaft(), all other traps return in the following else-if, and stairs leave trap NULL.
+do.c	dosinkring	faucet flashes brightly for a moment.	composed	src/js/ring_sink.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
+do.c	dosinkring	got lost in the sink, but there it is!	composed	src/js/ring_sink.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
+do_wear.c	dotakeoff	dragon scale mail is	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
+do_wear.c	dotakeoff	dragon scales are	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
+dokick.c	really_kick_object	It comes loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
+dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
+dokick.c	really_kick_object	n't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
+dothrow.c	thitmonst	catches and drops	composed	src/js/unicorn_gift.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
+eat.c	rottenfood	rather trippy.	composed	src/js/ordinary_food_effects.ts:applyRottenFood; Hallucination selects trippy in the felt-message template.
+explode.c	engulfer_explosion_msg	gets slightly	composed	src/js/explosion.ts:engulferMessage; A nondigesting engulfer inserts slightly and selects the native damage-type adjective.
+hack.c	domove_swap_with_pet	can't move diagonally.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	doesn't want to swap places.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	won't fit into the same spot that you're at.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	won't fit through.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+invent.c	adjust_split	at least 1.	composed	src/js/cmd.ts:adjustSplit; A count below one selects at least 1 before the period.
+lock.c	doforce	here, but its lock is already	composed	src/js/lock.ts:doforce; Joins the box description with already and the broken or unlocked state.
+lock.c	pick_lock	no lock on the drawbridge.	composed	src/js/lock_pick.ts:pickDoorLock; Selects see or feel and lock on the drawbridge for the portcullis.
+mail.c	md_rush	This place's too crowded.  I'm outta here.	out-of-scope	The mail daemon requires host mailbox polling and delivery (MAIL without SIMPLE_MAIL); the browser runtime has no OS mailbox integration.
+mhitm.c	passivemm	is jolted with electricity!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is mildly chilly.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is mildly tingled.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is mildly warmed.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is suddenly very cold!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitm.c	passivemm	is suddenly very hot!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
+mhitu.c	doseduce	on your left	composed	src/js/monster_seduction.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
+mhitu.c	doseduce	on your right	composed	src/js/monster_seduction.ts:exchangeAdornmentRings; Selects right or left and the hero hand name after the ring description.
+mhitu.c	gazemu	doesn't look all that ugly	dead	The AD_STON cancellation branch tests !react while react is still initialized to -1; assignments later in the switch cannot reach that test.
+mhitu.c	passiveum	is jolted with your electricity!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is mildly chilly.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is mildly warm.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is slightly tingled.	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is suddenly very cold!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	passiveum	is suddenly very hot!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
+mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	wildmiss	displaced image...	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mkmaze.c	mv_bubble	bubble xmax: x =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
+mkmaze.c	mv_bubble	bubble xmin: x =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
+mkmaze.c	mv_bubble	bubble ymax: y =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
+mkmaze.c	mv_bubble	bubble ymin: y =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
+mon.c	lifesaved_monster	looks much better!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
+mon.c	lifesaved_monster	reconstitutes!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
+mon.c	make_corpse	recently regrown horn crumbles to dust.	composed	src/js/monster_death.ts:createMonsterPart; Appends crumbles to dust to the possessive unicorn name and recently regrown horn.
+mon.c	minliquid_core	burns slightly.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
+mon.c	minliquid_core	surrenders to the fire.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
+monmove.c	postmov	a door crash open.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	a door unlock and open.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	smashes down a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+monmove.c	postmov	unlocks and opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+muse.c	use_defensive	escapes down the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	escapes downstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	escapes up the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	escapes upstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	has made a hole in the	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	has made a pit in the	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+music.c	do_earthquake	throne falls	composed	src/js/earthquake.ts:shakeTerrain; Selects throne and falls before the fixed into a chasm suffix.
+music.c	do_improvisation	produces a familiar, lilting melody	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
+music.c	do_improvisation	produces a lilting melody	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
+music.c	do_improvisation	twangs a familiar tune	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
+music.c	do_play_instrument	click and	composed	src/js/passtune.ts:announceTuneHint; Joins tumbler and gear counts with their singular or plural suffixes.
+pager.c	doidtrap	That is a trapped	composed	src/js/pager_traps.ts:identifyTrap; detectedTrapDisguise supplies trapped chest or trapped door after That is a.
+pager.c	look_engrs	No engravings seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects engravings and the optional nearby suffix.
+pager.c	look_traps	No traps seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects traps and the optional nearby suffix.
+pickup.c	query_category	Auto-select every item being worn or wielded	dead	The only WORN_TYPES caller is menu_remarm(), which omits CHOOSE_ALL; the do_worn arm of the CHOOSE_ALL menu is unreachable.
+pickup.c	query_objlist	pick yourself up!	dead	fake_hero_object is included only for look-here with PICK_NONE, so it cannot be returned as a selected object.
+polyself.c	break_armor	is pulled apart!	composed	src/js/polyself.ts:changeArmorForHeroForm; An alchemy smock selects knot and is pulled apart around the simple armor name.
+polyself.c	dohide	fountain is not deep enough to hide in.	dead	The only caller domonability() requires is_hider() or hides_under(); every S_EEL species lacks both M1_HIDE and M1_CONCEAL.
+polyself.c	dohide	to hide in here.	dead	The only caller domonability() requires is_hider() or hides_under(); every S_EEL species lacks both M1_HIDE and M1_CONCEAL.
+potion.c	dodrink	Drink from the fountain?	composed	src/js/quaff.ts:quaff; Selects fountain or sink inside the drinking prompt.
+potion.c	dodrink	Drink from the sink?	composed	src/js/quaff.ts:quaff; Selects fountain or sink inside the drinking prompt.
+potion.c	potion_dip	Something happens.	dead	The whole message block is guarded by !Blind; newbuf is always filled by clears or turns plus the color before its empty-buffer fallback.
+potion.c	potion_dip	with an oily sheen.	composed	src/js/potion_item_dip.ts:dipInOil; Visible undamaged gear selects gleam or gleams with an oily sheen.
+pray.c	god_zaps_you	disintegrates into a pile of dust!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
+pray.c	god_zaps_you	fries to a crisp!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
+priest.c	priest_talk	Begone!  Thou desecratest this holy place with thy presence.	dead	The earlier !inhistemple(priest) branch returns, and inhistemple() requires has_shrine(); the later !has_shrine branch cannot run.
+priest.c	priest_talk	asks you for a contribution for the temple (base	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
+priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
+read.c	recharge	clockwise for a moment.	composed	src/js/recharge.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.
+read.c	seffect_enchant_armor	for a while, then	composed	src/js/scroll_armor_effects.ts:enchantArmor; armorGlow supplies violent vibration or colored glow; armorVerb supplies evaporate or evaporates.
+shk.c	shk_chat	that business is bad.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
+shk.c	shk_chat	that business is good.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
+shk.c	u_left_shop	!  Don't you leave without paying!	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
+shk.c	u_left_shop	!  Please pay before leaving.	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
+shknam.c	shkinit	Room at (	diagnostic	DEBUG-only shop-door failure dump after impossible("Where is shopdoor?"), guarded by wizard in shknam.c:shkinit().
+shknam.c	shkinit	doormax=	diagnostic	DEBUG-only shop-door failure dump after impossible("Where is shopdoor?"), guarded by wizard in shknam.c:shkinit().
+spell.c	show_spells	You didn't know any spells.	out-of-scope	Only dump_everything() calls show_spells(), under DUMPLOG in end.c; host dumplog file output is outside the browser runtime.
+steed.c	mount_steed	are already riding	dead	The only caller doride() dismounts when u.usteed is set and calls mount_steed() only from its else branch.
+timeout.c	burn_object	flicker low!	composed	src/js/light.ts:announceCandleBurn; Composes ownership, candle count, possessive and flicker agreement for carried and floor candles and candelabra.
+trap.c	chest_trap	trigger a trap!	composed	src/js/chest_trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
+trap.c	lava_effects	and are about to be immolated	dead	This else-if follows if (!Fire_resistance), so Fire_resistance is true and boil_away = !Fire_resistance is false.
+trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
+trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
+uhitm.c	gulpum	is burning to a crisp!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	is freezing to death!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	seems mildly chilly.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	gulpum	seems mildly hot.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	mhitm_ad_cold	frost doesn't chill	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
+uhitm.c	mhitm_ad_cold	frost doesn't seem to chill	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
+uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
+uhitm.c	mhitm_ad_elec	gets zapped!	composed	src/js/monster_combat_elements.ts:elementalContact; The monster-to-monster electric branch selects gets zapped after the defender name.
+uhitm.c	mhitm_ad_fire	fire doesn't heat	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose fire does not heat; src/js/monster_combat_elements.ts:elementalContact composes the monster-to-monster seem to burn variant.
+uhitm.c	mhitm_ad_fire	fire doesn't seem to burn	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose fire does not heat; src/js/monster_combat_elements.ts:elementalContact composes the monster-to-monster seem to burn variant.
+uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
+uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
+wield.c	ready_weapon	dominant left	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
+wield.c	ready_weapon	dominant right	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
+worn.c	mon_break_armor	a cracking sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
+worn.c	mon_break_armor	a ripping sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
+zap.c	bhito	a defibrillator.	composed	src/js/immediate_zap.ts:reviveFloorCorpse; An unseen revival heard by a nondeaf hallucinating Healer selects a defibrillator and appends the period.
+zap.c	poly_obj	is furious!	composed	src/js/object_polymorph.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shop_damage.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.
