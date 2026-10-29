@@ -789,7 +789,8 @@ export async function statusHiliteMenu(): Promise<boolean> {
             redo = true;
         }
         linestrDone();
-        if (!redo) break;
+        // The native fuzzer gets one attempt at the nested field menus.
+        if (!redo || game.iflags.debug_fuzzer) break;
     }
     // statushilites doubles as the on-switch for highlighting: enabling a
     // default duration when rules now exist.

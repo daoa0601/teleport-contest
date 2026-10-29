@@ -2904,6 +2904,18 @@ const TOGGLE_BOOLEAN_NAMES = (() => {
         : left.toLowerCase() > right.toLowerCase() ? 1 : 0);
     return names;
 })();
+// options.c:reset_needed_visuals(), after the toggle message. A pending
+// status update must finish even when option messages have been silenced.
+async function resetBooleanVisuals(needsRedraw) {
+    if (needsRedraw) {
+        checkGoldSymbol();
+        reglyph_darkroom();
+        await docrt();
+        await flush_screen(1);
+    }
+    if (game.context.botl)
+        await bot();
+}
 // options.c:toggle_bool_option() behind #toggle(<prefix>): every set_in_game
 // boolean whose name starts with the text is toggled through the ordinary
 // option path, with the menu's visual refresh after each one. give_opt_msg
@@ -2922,6 +2934,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
             await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
             game.iflags.optionMessages = false;
             giveMessages = false;
+            await resetBooleanVisuals(false);
             toggled = true;
             continue;
         }
@@ -2930,8 +2943,10 @@ export async function toggleBooleanOptionPrefix(prefix) {
             const value = !(game.iflags[wcBoolean[1]] ?? wcBoolean[2]);
             // can_set_perm_invent() refuses enabling it on the pinned tty
             // port, which is built without WC_PERM_INVENT.
-            if (name === 'perm_invent' && value)
+            if (name === 'perm_invent' && value) {
+                await resetBooleanVisuals(false);
                 continue;
+            }
             game.iflags[wcBoolean[1]] = value;
             if (name === 'ascii_map')
                 game.iflags.wc_tiled_map = !value;
@@ -2939,12 +2954,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
                 game.iflags.wc_ascii_map = !value;
             if (giveMessages)
                 await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
-            if (name === 'ascii_map' || name === 'tiled_map' || name === 'perm_invent') {
-                checkGoldSymbol();
-                reglyph_darkroom();
-                await docrt();
-                await flush_screen(1);
-            }
+            await resetBooleanVisuals(name === 'ascii_map' || name === 'tiled_map' || name === 'perm_invent');
             toggled = true;
             continue;
         }
@@ -2955,14 +2965,10 @@ export async function toggleBooleanOptionPrefix(prefix) {
         setRequestBoolean(option, value);
         if (option[0] === 'rest_on_space')
             game.commandBindings.setRestOnSpace(value);
+        const needsRedraw = applyBooleanVisualChange(option[0]);
         if (giveMessages)
             await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
-        if (applyBooleanVisualChange(option[0])) {
-            checkGoldSymbol();
-            reglyph_darkroom();
-            await docrt();
-            await flush_screen(1);
-        }
+        await resetBooleanVisuals(needsRedraw);
         toggled = true;
     }
     return toggled;

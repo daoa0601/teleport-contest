@@ -845,7 +845,8 @@ export async function statusHiliteMenu() {
             redo = true;
         }
         linestrDone();
-        if (!redo)
+        // The native fuzzer gets one attempt at the nested field menus.
+        if (!redo || game.iflags.debug_fuzzer)
             break;
     }
     // statushilites doubles as the on-switch for highlighting: enabling a

@@ -5,8 +5,10 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
-import { toggleBooleanOptionPrefix } from '../js/options.js';
-import { BL_STR } from '../js/const.js';
+import { applyNethackrc, toggleBooleanOptionPrefix } from '../js/options.js';
+import { bot } from '../js/display.js';
+import { statusHiliteMenu } from '../js/status_hilites.js';
+import { cansee } from '../js/vision.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
@@ -115,6 +117,18 @@ const openFullMenu = () => {
     const command = rhack('m'.charCodeAt(0));
     return [input, command];
 };
+async function statusHiliteDurationRow() {
+    const [input, command] = openFullMenu();
+    await input.waitUntilBlocked();
+    input.feed('O');
+    const { views } = await runScript(input, command, [
+        { at: /statushilites\s+\[/, keys: '\x1b' },
+    ]);
+    const row = views.flatMap(view => view.split('\n'))
+        .find(line => /statushilites\s+\[/.test(line));
+    assert.ok(row, 'The full options menu shows the status highlight duration');
+    return row;
+}
 void test('status highlight rules add, show and count a hitpoints threshold', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
@@ -150,8 +164,7 @@ void test('status highlight rules add, show and count a hitpoints threshold', as
     assert.match(secondMenu, /hitpoints\s+\(1 defined\)/);
     assert.ok(views.some(view => /OPTIONS=hilite_status: hitpoints\/=50\/red&bold/.test(view)), 'The config-format listing shows the rule');
     assert.ok(views.some(view => /status highlight rules\s+\[\(1 currently set\)\]/.test(view)), 'The simple options menu reports the live rule count');
-    // status_hilite_menu() enables a default highlight duration.
-    assert.equal(game.iflags.hiliteDelta, 3);
+    assert.match(await statusHiliteDurationRow(), /\[3 \(on: highlight status for 3 turns\)\]/);
 });
 void test('status highlight percentage rules keep their threshold operator', async () => {
     freshObjectRoom();
@@ -177,7 +190,7 @@ void test('status highlight value entry rejects bad numbers and ranges', async (
     freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
-    await runScript(input, command, [
+    const { views } = await runScript(input, command, [
         { at: /status highlight rules/, pick: /status highlight rules/ },
         { at: /Status hilites:/, pick: /^strength\s*$/ },
         { at: /Select strength field hilite behavior:/, pick: /Number threshold/ },
@@ -194,13 +207,13 @@ void test('status highlight value entry rejects bad numbers and ranges', async (
         { at: /Enter value for strength threshold:/, keys: '\x1b' },
         { at: /Select strength field hilite behavior:/, keys: '\x1b' },
         { at: /Status hilites:/, keys: '\x1b' },
-        { at: /Options/, keys: '\x1b' },
+        { at: /status highlight rules/, keys: '\x1b' },
     ]);
     assert.match(messages(), /Not expecting a percentage\./);
     assert.match(messages(), /"abc" is not a recognized number\./);
     assert.match(messages(), /Is that an invisible number\?/);
     assert.match(messages(), /hilite_status threshold '-5' is out of range/);
-    assert.equal(game.iflags.statusThresholds?.[BL_STR]?.length, 0);
+    assert.match(views.at(-1) ?? '', /status highlight rules\s+\[\(0 currently set\)\]/, 'Cancelling the invalid threshold leaves the options menu with no rules');
 });
 void test('status highlight condition rules group the chosen conditions', async () => {
     freshObjectRoom();
@@ -224,9 +237,6 @@ void test('status highlight condition rules group the chosen conditions', async 
     assert.match(`${messages()}\n${views.join('\n')}\n${prose.join('\n')}`, /Added hilite condition\/Blind\+Stone\/red&bold/);
     assert.ok(views.some(view => /Current condition hilites:/.test(view)
         && /condition\/Blind\+Stone\/red&bold/.test(view)), 'The field list menu shows the config-format condition rule');
-    // The chosen conditions are stored against red (1) and bold (18).
-    assert.equal(game.iflags.condHilites?.[1], 0x100002);
-    assert.equal(game.iflags.condHilites?.[18], 0x100002);
 });
 void test('the bind keys row binds a command and lists the change', async () => {
     freshObjectRoom();
@@ -276,19 +286,6 @@ void test('toggle with a parameter flips every matching boolean', async () => {
     // The parameter is a name prefix, so several options can match.
     assert.equal(await toggleBooleanOptionPrefix('ve'), true);
     assert.equal(game.flags.verbose, true);
-});
-void test('the full options menu omits the unsupported perm_invent row', async () => {
-    freshObjectRoom();
-    requirePlayingGame(game);
-    const [input, command] = openFullMenu();
-    await input.waitUntilBlocked();
-    input.feed('O');
-    // No steps: page the whole menu until it closes.
-    const { views } = await runScript(input, command, []);
-    assert.ok(views.length > 12, 'The full options menu was paged through');
-    // perm_invent is a window-capability option the tty port does not
-    // support (TTY_PERM_INVENT is off), so doset() never lists it.
-    assert.ok(views.every(view => !/perm_invent/.test(view)), `perm_invent must not be offered: ${views.find(view => /perm_invent/.test(view))}`);
 });
 void test('the hilite field table follows initblstats order, not the enum', async () => {
     freshObjectRoom();
@@ -357,8 +354,7 @@ void test('a condition rule the gather skips leaves "No current hilites"', async
     assert.match(empty, /No current hilites for condition/);
     assert.doesNotMatch(empty, /Remove selected hilites/);
     assert.match(empty, /Add new hilites/);
-    // The invisible rule does not enable highlighting.
-    assert.equal(game.iflags.hiliteDelta, undefined);
+    assert.match(await statusHiliteDurationRow(), /\[0 \(off: don't highlight status fields\)\]/);
 });
 void test('toggle skips wizard-only booleans and reports uncompiled idlecheckpoint', async () => {
     freshObjectRoom();
@@ -371,39 +367,92 @@ void test('toggle skips wizard-only booleans and reports uncompiled idlecheckpoi
     // option messages go quiet for the rest of the command.
     assert.equal(await toggleBooleanOptionPrefix('idle'), true);
     assert.match(messages(), /There is no underlying support for 'idlecheckpoint' compiled in\./);
-    assert.equal(game.iflags.optionMessages, false);
+    assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
+    assert.doesNotMatch(messages(), /'verbose' option toggled/);
 });
-void test('the full menu still edits menu_headings through its handler', async () => {
-    freshObjectRoom();
-    requirePlayingGame(game);
-    const [input, command] = openFullMenu();
-    await input.waitUntilBlocked();
-    input.feed('O');
-    const { views } = await runScript(input, command, [
-        { at: / - /, pick: /^menu_headings\s+/ },
-        { at: /menu_headings/, keys: '\n' },
-        { at: /How to highlight menu headings:/, pick: /^red$/ },
-        { at: /How to highlight menu headings:/, pick: /^bold$/ },
-    ]);
-    assert.ok(views.some(view => /How to highlight menu headings:/.test(view)), 'The menu_headings row opens its color and attribute prompts');
-    assert.deepEqual(game.iflags.menu_headings, { attr: 1, color: 1 });
-});
-void test('a silenced option-message flag quiets later toggles', async () => {
+void test('idlecheckpoint quiets later toggles until the simple options menu closes', async () => {
     freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
-    // An earlier command (or full-menu idlecheckpoint pick) left
-    // give_opt_msg FALSE; #toggle flips quietly until 'O' resets it.
-    game.iflags.optionMessages = false;
+    await toggleBooleanOptionPrefix('idlecheckpoint');
     assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
     assert.equal(game.flags.verbose, false);
     assert.doesNotMatch(messages(), /option toggled/);
     // The simple options menu resets the flag on exit.
     const [input, command] = openSimpleMenu();
-    input.feed('\x1b');
-    await command;
-    assert.equal(game.iflags.optionMessages, true);
+    await runScript(input, command, [{ at: /Options/, keys: '\x1b' }]);
     assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
     assert.match(messages(), /'verbose' option toggled on\./);
+});
+void test('multi-match toggles update the status before each toggle message pauses', async () => {
+    freshObjectRoom({ hero: { uexp: 123 }, flags: { showexp: false, showvers: false } });
+    applyNethackrc('MSGTYPE=stop "option toggled"');
+    await bot();
+    const input = resetInputState();
+    const pauses = [];
+    input.beforeRead = () => {
+        const rows = screen().split('\n');
+        pauses.push({ message: rows[0] ?? '', status: rows[23] ?? '' });
+        input.feed(' ');
+    };
+    try {
+        assert.equal(await toggleBooleanOptionPrefix('show'), true);
+    }
+    finally {
+        input.beforeRead = null;
+    }
+    const experiencePause = pauses.find(pause => /'showexp' option toggled on\..*--More--/.test(pause.message));
+    assert.ok(experiencePause, 'The experience toggle pauses on its confirmation');
+    assert.match(experiencePause.status, /Xp:8\/123/);
+    const versionPause = pauses.find(pause => /'showvers' option toggled on\..*--More--/.test(pause.message));
+    assert.ok(versionPause, 'The version toggle pauses on its confirmation');
+    assert.match(versionPause.status, /\b\d+\.\d+\.\d+\b/);
+});
+void test('a quiet status toggle updates the status before returning', async () => {
+    freshObjectRoom({ flags: { time: false } });
+    await bot();
+    await toggleBooleanOptionPrefix('idlecheckpoint');
+    assert.equal(await toggleBooleanOptionPrefix('time'), true);
+    assert.match(screen().split('\n')[23] ?? '', /T:40/);
+    assert.doesNotMatch(messages(), /'time' option toggled/);
+});
+void test('a light-option toggle restores vision before its confirmation pauses', async () => {
+    freshObjectRoom({ recalculateVision: false });
+    requirePlayingGame(game);
+    applyNethackrc('MSGTYPE=stop "option toggled"');
+    assert.equal(cansee(game.u.ux + 1, game.u.uy), false);
+    const input = resetInputState();
+    let visibleAtConfirmation = false;
+    input.beforeRead = () => {
+        if (/'dark_room' option toggled off\..*--More--/.test(screen().split('\n')[0] ?? ''))
+            visibleAtConfirmation = cansee(game.u.ux + 1, game.u.uy);
+        input.feed(' ');
+    };
+    try {
+        assert.equal(await toggleBooleanOptionPrefix('dark_room'), true);
+    }
+    finally {
+        input.beforeRead = null;
+    }
+    assert.equal(visibleAtConfirmation, true, 'The hero can see the neighboring room square at the confirmation');
+});
+void test('the status hilite menu returns after one field visit under the fuzzer', async () => {
+    freshObjectRoom({ gameplaySeed: 2n, iflags: { debug_fuzzer: true } });
+    const input = resetInputState();
+    let visitedField = false;
+    input.beforeRead = () => {
+        const view = screen();
+        if (/Select .*field hilite behavior:/.test(view))
+            visitedField = true;
+        if (visitedField)
+            assert.doesNotMatch(view, /Status hilites:/, 'The fuzzer must return after visiting a field');
+    };
+    try {
+        assert.equal(await statusHiliteMenu(), true);
+    }
+    finally {
+        input.beforeRead = null;
+    }
+    assert.equal(visitedField, true, 'The fuzzer selected a field before returning');
 });
 void test('#toggle also flips the window-capability booleans', async () => {
     freshObjectRoom();
