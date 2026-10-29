@@ -24,7 +24,7 @@ import {
     map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell,
     unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph,
     transientMonsterGlyph, transientTrapGlyph,
-    cls, displaySelf, docrt, feel_newsym,
+    cls, displaySelf, docrt, feel_newsym, set_msg_xy,
 } from './display.js';
 import {
     BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR,
@@ -305,6 +305,8 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
             || MONSTER_SYMBOL[monster.mnum] === 57;
         if (monster.mundetected && hides) {
             if (viaWarning && found) {
+                // C mfind0() marks the hidden monster's square.
+                set_msg_xy(monster.mx, monster.my);
                 await plineWithContinuation(`Your danger sense causes you to take a second ${
                     heroIsBlind(game) ? 'to check nearby' : 'look close by'}.`);
                 await displayMessageWindow();
@@ -321,8 +323,11 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
     exerciseWisdom();
     if (!canSpotMonster(monster)) {
         map_invisible(monster.mx, monster.my);
+        // C mfind0() marks the sensed square before both descriptions.
+        set_msg_xy(monster.mx, monster.my);
         await plineWithContinuation(formatFeltMessage('an unseen monster!'));
     } else if (!canSenseMonster(monster)) {
+        set_msg_xy(monster.mx, monster.my);
         await plineWithContinuation(`You find ${monsterName(monster, {
             article: monster.mtame ? 'your' : 'a',
         })}.`);
