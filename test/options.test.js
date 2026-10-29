@@ -310,6 +310,34 @@ void test('ordinary play does not show the Wizard-only monster-control option', 
     input.feed('O');
     await command;
 });
+void test('the Wizard options menu lists monpolycontrol next to montelecontrol', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.debug = true;
+    game.flags.tips = game.flags.verbose = false;
+    const off = await chooseOption('monpolycontrol', true);
+    assert.match(off, /monpolycontrol\s+\[false\]/, 'the row shows the option with its starting value');
+    assert.equal(game._monPolycontrol, true);
+    const on = await chooseOption('monpolycontrol', true);
+    assert.match(on, /monpolycontrol\s+\[true\]/, 'selecting the row toggles the displayed value');
+    assert.equal(game._monPolycontrol, false);
+});
+void test('ordinary play does not show the Wizard-only polymorph control option', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.flags.debug = false;
+    const input = resetInputState();
+    const command = rhack('m'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.beforeRead = () => {
+        const screen = visibleOptions();
+        assert.doesNotMatch(screen, /monpolycontrol/);
+        const page = screen.match(/\((\d+) of (\d+)\)/);
+        input.feed(page && page[1] !== page[2] ? ' ' : '\x1b');
+    };
+    input.feed('O');
+    await command;
+});
 void test('the in-game option enables real controlled monster relocation', async () => {
     freshObjectRoom({ right: 24 });
     requirePlayingGame(game);

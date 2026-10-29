@@ -2622,7 +2622,7 @@ function requestMenuSections() {
                 ...(game.flags.debug ? [boolean('menu_tab_sep')] : []),
                 boolean('menucolors'),
                 boolean('mon_movement'),
-                ...(game.flags.debug ? [boolean('montelecontrol')] : []),
+                ...(game.flags.debug ? [boolean('monpolycontrol'), boolean('montelecontrol')] : []),
                 boolean('null'),
                 boolean('pickup_stolen'),
                 boolean('pickup_thrown'),
