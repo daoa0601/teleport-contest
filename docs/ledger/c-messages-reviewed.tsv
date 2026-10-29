@@ -5,6 +5,12 @@ apply.c	flip_through_book	ink in this spellbook is	composed	src/js/book_flip.ts:
 apply.c	use_leash	from inside.	composed	src/js/leash_apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
 artifact.c	artifact_hit	blade drains your	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
 artifact.c	artifact_hit	blade draws the	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+cfgfiles.c	config_erradd	config_error_add:	dead	The prefix needs !config_error_ready and !window_inited together. Recorder startup parses files and NETHACKOPTIONS inside config_error_init() frames; interactive option errors run after window initialization.
+cfgfiles.c	do_write_config_file	All manual customization and comments are removed from the file!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
+cfgfiles.c	do_write_config_file	An error occurred, wrote only partial data (	out-of-scope	Reports a short fwrite() when overwriting the host configuration file; native filesystem partial writes are outside the browser runtime, and recorded games also reject #saveoptions as NOFUZZERCMD.
+cfgfiles.c	do_write_config_file	Some settings are not saved!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
+cfgfiles.c	do_write_config_file	Strange, could not figure out config file name.	dead	The recorder initializes configfile while reading its rc file, and #saveoptions is NOFUZZERCMD, rejected by rhack() during recorded debug_fuzzer games.
+cfgfiles.c	do_write_config_file	Warning: saveoptions is highly experimental!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
 cmd.c	do_run	Double run prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
 cmd.c	do_rush	Double rush prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
 cmd.c	enter_explore_mode	Note: normally you wouldn't be allowed into explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
@@ -24,6 +30,9 @@ dokick.c	really_kick_object	n't come loose.	composed	src/js/object_kick.ts:kickF
 dothrow.c	thitmonst	catches and drops	composed	src/js/unicorn_gift.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
 eat.c	rottenfood	rather trippy.	composed	src/js/ordinary_food_effects.ts:applyRottenFood; Hallucination selects trippy in the felt-message template.
 explode.c	engulfer_explosion_msg	gets slightly	composed	src/js/explosion.ts:engulferMessage; A nondigesting engulfer inserts slightly and selects the native damage-type adjective.
+files.c	commit_bonesfile	couldn't rename	out-of-scope	Requires the host rename() or link()/unlink() of a temporary bones file to fail; the browser bones store does not use native file renames.
+files.c	livelog_add	Cannot open live log file!	out-of-scope	Reports fopen_datafile(LIVELOGFILE) failure after acquiring a native logfile lock; host livelog files and locking are outside the browser runtime.
+files.c	read_tribute	too overwhelmed to continue!	out-of-scope	Only dlb_fopen(TRIBUTEFILE) failure prints this line; the pinned tribute passages are bundled resources, and missing host data files are outside the browser runtime.
 hack.c	domove_swap_with_pet	can't move diagonally.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	doesn't want to swap places.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	won't fit into the same spot that you're at.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
@@ -74,6 +83,14 @@ music.c	do_improvisation	produces a familiar, lilting melody	composed	src/js/mus
 music.c	do_improvisation	produces a lilting melody	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
 music.c	do_improvisation	twangs a familiar tune	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
 music.c	do_play_instrument	click and	composed	src/js/passtune.ts:announceTuneHint; Joins tumbler and gear counts with their singular or plural suffixes.
+nhlua.c	nhl_test	TEST:{ x=	dead	No bundled dat Lua script calls nh.test(). Supplying a new caller requires loading an external Lua file with #wizloadlua/#wizloaddes, both NOFUZZERCMD and rejected during recorded debug_fuzzer games.
+options.c	handler_menu_colors	Error adding the menu color.	out-of-scope	The handler validates the pattern with test_regex_pattern() before querying color and attribute. A subsequent compile of the same pattern can fail only at the host allocation boundary; invalid user patterns take the earlier MENUCOLORS regex diagnostic.
+options.c	handler_msg_window	' option is not supported for '	dead	The pinned window port is tty with PREV_MSGS enabled, so handler_msg_window() always enters its supported tty branch.
+options.c	handler_msgtype	Error adding the message type.	out-of-scope	The handler validates the pattern with test_regex_pattern() before querying its type. A subsequent compile of the same pattern can fail only at the host allocation boundary; invalid user patterns take the earlier MSGTYPE regex diagnostic.
+options.c	handler_perminv_mode	'perminv_mode'	dead	The pinned tty build leaves TTY_PERM_INVENT undefined and does not advertise WC_PERM_INVENT. doset() filters perminv_mode out through wc_supported(), so its handler cannot be selected.
+options.c	handler_versinfo	development branch	dead	The pinned build defines no NETHACK_GIT_BRANCH, so date.c leaves nomakedefs.git_branch null and have_branch is false; NH_DEVEL_STATUS is NH_STATUS_RELEASED, selecting (not applicable).
+options.c	handler_whatis_coord	screen: row is offset to accommodate tty interface's use of top line	dead	The explanatory row is guarded by strcmp(windowprocs.name, "tty"); the pinned recorder only uses tty.
+options.c	rejectoption	can be set only from NETHACKOPTIONS or	dead	doset() makes set_gameview options read-only and omits set_in_config options. Every selectable string_for_env_opt() owner has a do_handler that avoids do_set; cnf_line_OPTIONS() uses initial=TRUE, including Lua parse_config().
 pager.c	doidtrap	That is a trapped	composed	src/js/pager_traps.ts:identifyTrap; detectedTrapDisguise supplies trapped chest or trapped door after That is a.
 pager.c	look_engrs	No engravings seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects engravings and the optional nearby suffix.
 pager.c	look_traps	No traps seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects traps and the optional nearby suffix.
@@ -93,6 +110,16 @@ priest.c	priest_talk	asks you for a contribution for the temple (base	composed	s
 priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
 read.c	recharge	clockwise for a moment.	composed	src/js/recharge.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.
 read.c	seffect_enchant_armor	for a while, then	composed	src/js/scroll_armor_effects.ts:enchantArmor; armorGlow supplies violent vibration or colored glow; armorVerb supplies evaporate or evaporates.
+report.c	dobugreport	Unable to send bug report.  Please visit	out-of-scope	Requires submit_web_report() to launch a host reporting process and fail; #bugreport is also NOFUZZERCMD, rejected during recorded debug_fuzzer games.
+restore.c	restgamestate	Saved game was not yours.	out-of-scope	Compares a native savefile uid with the host getuid(); browser saves have no OS ownership metadata.
+restore.c	restore_menu	Never mind (quit)	out-of-scope	This row belongs to restore_menu() after get_saved_games() discovers native saves in the host save directory; native save-directory discovery is outside the browser runtime.
+restore.c	restore_menu	Select one of your saved games	out-of-scope	restore_menu() enumerates native saved games from the host save directory through get_saved_games(); native save-directory discovery is outside the browser runtime.
+restore.c	restore_menu	Start a new character	out-of-scope	This row belongs to restore_menu() after get_saved_games() discovers native saves in the host save directory; native save-directory discovery is outside the browser runtime.
+restore.c	trickery	Somebody is trying some trickery here...	out-of-scope	trickery() diagnoses tampered native level/bones files, including process, level and bones identifiers; host save-file tampering is outside the browser runtime.
+restore.c	trickery	Strange, this map is not as I remember it.	out-of-scope	trickery() diagnoses tampered native level/bones files, including process, level and bones identifiers; host save-file tampering is outside the browser runtime.
+restore.c	trickery	This game is void.	out-of-scope	trickery() diagnoses tampered native level/bones files, including process, level and bones identifiers; host save-file tampering is outside the browser runtime.
+save.c	dosave0	Cannot open save file.	out-of-scope	Requires create_savefile() to fail while opening a native save file; native filesystem permissions and file-descriptor failures are outside the browser runtime.
+save.c	tricked_fileremoved	Probably someone removed it.	out-of-scope	Requires a native level/save file to disappear before it is reopened; host concurrent file removal and its TRICKED death are outside the browser runtime.
 shk.c	shk_chat	that business is bad.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
 shk.c	shk_chat	that business is good.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
 shk.c	u_left_shop	!  Don't you leave without paying!	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
@@ -101,6 +128,9 @@ shknam.c	shkinit	Room at (	diagnostic	DEBUG-only shop-door failure dump after im
 shknam.c	shkinit	doormax=	diagnostic	DEBUG-only shop-door failure dump after impossible("Where is shopdoor?"), guarded by wizard in shknam.c:shkinit().
 spell.c	show_spells	You didn't know any spells.	out-of-scope	Only dump_everything() calls show_spells(), under DUMPLOG in end.c; host dumplog file output is outside the browser runtime.
 steed.c	mount_steed	are already riding	dead	The only caller doride() dismounts when u.usteed is set and calls mount_steed() only from its else branch.
+symbols.c	do_symset	Unable to access "	out-of-scope	Requires read_sym_file() to fail opening the host symbols data file; bundled symbol sets do not depend on a mutable native file.
+symbols.c	do_symset	symbol sets available.	dead	The pinned dat/symbols always supplies appropriate unrestricted sets (plain, Blank and IBMgraphics) for both primary and rogue pickers, so setcount cannot be zero.
+symbols.c	do_symset	were no symbol sets found in "	out-of-scope	Requires the host symbols file to be empty or contain no start entries; the bundled pinned symbols resource contains named sets.
 timeout.c	burn_object	flicker low!	composed	src/js/light.ts:announceCandleBurn; Composes ownership, candle count, possessive and flicker agreement for carried and floor candles and candelabra.
 trap.c	chest_trap	trigger a trap!	composed	src/js/chest_trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
 trap.c	lava_effects	and are about to be immolated	dead	This else-if follows if (!Fire_resistance), so Fire_resistance is true and boil_away = !Fire_resistance is false.
@@ -118,6 +148,8 @@ uhitm.c	mhitm_ad_fire	fire doesn't heat	composed	src/js/hero_natural_damage.ts:e
 uhitm.c	mhitm_ad_fire	fire doesn't seem to burn	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose fire does not heat; src/js/monster_combat_elements.ts:elementalContact composes the monster-to-monster seem to burn variant.
 uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
 uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
+version.c	check_version	Configuration incompatibility for file "	out-of-scope	Checks native feature bits and entity-count metadata in binary save/bones/data headers; native binary file compatibility is outside the browser runtime.
+version.c	check_version	Version mismatch for file "	out-of-scope	Checks the binary incarnation header of native save/bones/data files; the browser validates its own saved-state format and does not load native binary files.
 wield.c	ready_weapon	dominant left	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
 wield.c	ready_weapon	dominant right	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
 worn.c	mon_break_armor	a cracking sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.

@@ -166,7 +166,7 @@ async function editLocationFilter(): Promise<void> {
 
 async function editVersionInfo(): Promise<void> {
     const previous = game.flags.versinfo ?? 1;
-    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not available)'] ] as const;
+    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not applicable)'] ] as const;
     const selected = await showMultiSelectWindow({
         title: 'Select version information flags:', omitHeadings: true,
         sections: [{ items: choices.map(([key, bit, text]) => ({ key, value: bit,
