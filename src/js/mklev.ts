@@ -4768,7 +4768,7 @@ export async function flipSpecialLevel(flp: number, extras = false): Promise<voi
             game.u.uy = game.u.uy0 = hero.y;
         }
         if (replaceBallAndChain) await placeBallAndChain();
-        flipCoordinate(game.iflags.travelcc);
+        flipCoordinate(game._travelTarget); // C iflags.travelcc
         flipCoordinate(game.context.digging?.pos);
     }
     fix_wall_spines(1, 0, COLNO - 1, ROWNO - 1);

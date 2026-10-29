@@ -4773,7 +4773,7 @@ export async function flipSpecialLevel(flp, extras = false) {
         }
         if (replaceBallAndChain)
             await placeBallAndChain();
-        flipCoordinate(game.iflags.travelcc);
+        flipCoordinate(game._travelTarget); // C iflags.travelcc
         flipCoordinate(game.context.digging?.pos);
     }
     fix_wall_spines(1, 0, COLNO - 1, ROWNO - 1);

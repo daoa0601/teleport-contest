@@ -118,7 +118,6 @@ export interface InterfaceFlags {
     terrain_typ?: number;
     terrainmode?: number;
     toptenwin?: boolean;
-    travelcc?: { x: number; y: number };
     use_inverse?: boolean;
     wc_eight_bit_input?: boolean;
     wc_inverse?: boolean;

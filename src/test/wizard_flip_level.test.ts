@@ -30,7 +30,7 @@ void test('#wizfliplevel reflects the active level and its position-dependent ef
         cells: [{ x: 8, y: 11 }], monsterIds: [], heroInside: false });
     const timer = scheduleLevelTimer(9, 12, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves + 20);
     assert.ok(timer);
-    game.iflags.travelcc = { x: 8, y: 10 };
+    game._travelTarget = { x: 8, y: 10 };
     const moves = game.moves;
     const input = resetInputState();
     planInput(input, t, [{ prompt: /Flip 0=randomly, 1=vertically, 2=horizontally, 3=both:/, keys: '2' }]);
@@ -50,7 +50,7 @@ void test('#wizfliplevel reflects the active level and its position-dependent ef
     assert.equal((level.requireAt(12, 8).drawbridgemask ?? 0) & DB_DIR, DB_EAST);
     assert.deepEqual(level.regions[0]?.cells, [{ x: 14, y: 11 }]);
     assert.equal(timer.x, 13);
-    assert.deepEqual(game.iflags.travelcc, { x: 14, y: 10 });
+    assert.deepEqual(game._travelTarget, { x: 14, y: 10 });
     assert.equal(game.moves, moves);
     assert.equal(game.context.move, 0);
 });
