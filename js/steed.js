@@ -342,8 +342,11 @@ async function mountSteed(steed, force, [dx, dy]) {
             return false;
         }
     }
+    // C steed.c:mount_steed(): "under hliquid("water")".  This branch needs
+    // !force, and a hallucinating hero already bounced off the designated-
+    // driver check above, so the rename never fires here either.
     if (!force && hero.uinwater && !((MONSTER_FLAGS1[steed.mnum] ?? 0) & M1_SWIM)) {
-        await pline("You can't ride that creature while under water.");
+        await pline(`You can't ride that creature while under ${displayLiquidName('water')}.`);
         return false;
     }
     if (!monsterCanBeSaddled(steed) || !heroCanRideSteed(steed)) {
