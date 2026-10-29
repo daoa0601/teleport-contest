@@ -72,6 +72,7 @@ const monsters = await import('../../js/monster_data.js');
 const constants = await import('../../js/const.js');
 const methods = await import('../../js/monster_attack_types.js');
 const { objectClassForType } = await import('../../js/object_knowledge.js');
+const { armorSlotFor } = await import('../../js/armor.js');
 if (process.argv.includes('--metadata')) {
     console.log(JSON.stringify({
         objects: {
@@ -81,8 +82,11 @@ if (process.argv.includes('--metadata')) {
         },
         weights: data.OBJECT_WEIGHT, nutrition: data.OBJECT_NUTRITION, merge: data.OBJECT_MERGE,
         initialKnown: data.OBJECT_INITIAL_KNOWN,
-        wornMasks: [0, 0x1, 0x100, 0x200, 0x400, 0x10000, 0x20000,
-                    0x40000, 0x80000, 0x200000, 0x400000],
+        wornSlots: Object.fromEntries([
+            'W_ARM', 'W_WEP', 'W_QUIVER', 'W_SWAPWEP', 'W_AMUL',
+            'W_RINGL', 'W_RINGR', 'W_TOOL', 'W_BALL', 'W_CHAIN',
+        ].map(name => [name, constants[name]])),
+        armorSlots: data.OBJECT_NAMES.map((_, index) => armorSlotFor(index)),
         classes: data.OBJECT_NAMES.map((_, index) => objectClassForType(index)), names: data.OBJECT_NAMES,
         monsterClasses: monsters.MONSTER_SYMBOL, specialPM: monsters.SPECIAL_PM,
         monsters: monsters.MONSTER_NAME, bodies: monsters.MONSTER_BODY_META,

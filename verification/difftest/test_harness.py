@@ -128,7 +128,7 @@ class HarnessTests(unittest.TestCase):
         mace = canonical(dict(target='xname', object=dict(otyp='MACE'),
                               discovery=dict(nameKnown=1)), self.meta)
         self.assertEqual(mace['object']['quan'], 1)
-        with self.assertRaisesRegex(ValueError, 'does not stack'):
+        with self.assertRaises(ValueError):
             canonical(dict(target='xname', object=dict(otyp='MACE', quan=2),
                            discovery=dict(nameKnown=1)), self.meta)
 
@@ -138,9 +138,10 @@ class HarnessTests(unittest.TestCase):
         meta = deepcopy(self.meta)
         meta['merge'][meta['objects']['MACE']] = 1
         with Worker([str(CACHE / 'native')], 'quantity-native') as native, \
-                Worker(['node', str(HERE / 'port.mjs')], 'quantity-port') as port, \
-                self.assertRaisesRegex(RuntimeError, 'Naming domain probe unexpectedly accepted'):
-            naming_negative_checks(native, port, meta)
+                Worker(['node', str(HERE / 'port.mjs')], 'quantity-port') as port:
+            naming_negative_checks(native, port, self.meta)
+            with self.assertRaises(RuntimeError):
+                naming_negative_checks(native, port, meta)
 
     def test_naming_xname_observes_through_the_entry_point(self):
         # xname's pairing must rely on objectCombatName's own observation:

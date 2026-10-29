@@ -347,10 +347,12 @@ The naming state relation extends the creation relation. Facts beyond it:
 | Text inputs are printable ASCII without quote or backslash and contain a non-space character; `impossible()` needs windowprocs the harness cannot supply | `objnam.c:makeplural`, `makesingular`, `an`, `the` |
 | `oeroded`/`odiluted` and `otrapped`/`opoisoned` alias one C field; each pair is exclusive and potions use the shared field only as `odiluted` 0/1 | `obj.h` field aliases |
 | Generic class rows before `FIRST_OBJECT` and `SPE_NOVEL` (named at construction) are excluded | `mkobj.c:mksobj`, `o_init.c` |
-| Worn masks are 0 or one supported slot bit; `uarm*`/`uwep` slot owners stay null so `donning()`/`doffing()` stay false | `do_wear.c:donning`, `doffing` |
+| Worn masks are 0 or one supported slot appropriate to the type, and contained objects have mask 0. Body armor uses suits, ring slots use rings or a meat ring, amulet slots use amulets, eyewear uses blindfold/lenses/towel, and punishment slots use their ball/chain types. `uarm*`/`uwep` slot owners stay null so `donning()`/`doffing()` stay false | `do_wear.c:canwearobj`, `accessory_or_armor_on`, `donning`, `doffing`; `read.c:punish` |
+| Armor-category metadata is read from emitted `armor.js:armorSlotFor`; its agreement with native `oc_armcat` is an assumed table correspondence. Slot bits come from emitted `const.js` | `obj.h:is_suit`, `objects.h` armor entries, `prop.h` worn masks |
+| Weapon/alternate slots accept non-weapons but exclude coins; the quiver permits gold and other non-ammunition | `wield.c:wield_ok`, `ready_ok`, `dowield`, `doquiver_core` |
 | `leashmon` (corpsenm alias) must be 0; the harness has no live leashed monster | `objnam.c:doname_base` leash branch |
 | `slime mold spe` must index a registered input fruit (`fruit_from_indx`) | `objnam.c:xname_flags` |
-| Visible monsters require hero monster detection: C's `cansee` depends on uncomputed vision in this harness, detection short-circuits `canspotmon` on both sides | `display.h:canspotmon` |
+| Monsters that are not invisible, or are observable with see invisible, require hero monster detection. Detection makes the naming visibility result independent of the uncomputed vision map. Undetected cases require `minvis=1` and `seeInvis=0`; this conservative domain applies when blind too | `display.h:_mon_visible`, `_canseemon`, `canspotmon`; `do_name.c:x_monnam` |
 | Hallucination is off; hallucinated names draw display RNG | `do_name.c:x_monnam` |
 | Minions of a god (emin/isminion) are excluded: unit fix-wide-misc31 owns that path; `ispriest` temple priests are covered | `do_name.c:x_monnam`, `priest.c:priestname` |
 | `SUPPRESS_MAPPEARANCE` alone, and `SUPPRESS_NAME` with an adjective or `called=TRUE`, have no C caller and no emitted entry point | `do_name.c:noname_monnam`, `l_monnam` |
@@ -361,13 +363,13 @@ The naming state relation extends the creation relation. Facts beyond it:
 
 ## Naming measured results
 
-Latest review rerun: native build, 140 objects in 15.84 s.
+Latest review rerun: native build, 140 objects in 15.37 s.
 `--naming --count 6000 --self-test`:
 17 domain probes rejected, 9 emitted-JS mutants killed (`makeplural` default
 suffix, an extra `rnd(1)` draw inside `makePlural`, `makesingular` ies→y,
 `an` single-letter x-rule, `the` insertion, lenses `pair of`, `greased`
 prefix, `invisible` adjective, and removal of `objectCombatName`'s own
-observation), 11,168 cases in 22.02 s with 0 mismatches. String targets
+observation), 11,168 cases in 15.91 s with 0 mismatches. String targets
 measure the real stream position and RNG log on both sides; the extra-draw
 mutant is killed through `rng.core`, not a constant zero. The `xname`
 pairing relies on `objectCombatName`'s internal observation (C `xname()`
@@ -385,9 +387,11 @@ observation to its caller, observes explicitly.
 
 The naming batch includes 5,168 boundary and full type/species sweep cases.
 Hand-authored cases default to their type's initial knowledge, and only the
-documented domain exclusions are dropped. All 30 harness tests passed in
-18.871 s, including the five new naming-domain tests. Four of those methods
-failed before the fixes; the class-matrix coverage test already passed.
+documented domain exclusions are dropped. All 35 harness tests passed in
+18.300 s. The latest domain fixes add five tests: four rejection/generation
+tests failed before the fixes (14 failing subtests) and pass afterward;
+all 15 positive equipment cases match native/JS naming, including the meat
+ring, non-weapons in weapon slots and gold in the quiver.
 
 ### Quantity and reducer self-tests
 
@@ -415,7 +419,7 @@ the normal reducer passes. No new game behavior or equivalence claim is
 introduced by either self-test change.
 
 `npm run compile` exited 0. The requested public replay used one worker and
-finished all 44 sessions in 30.703 s: 43 full matches, 11,396/11,405 screens,
+finished all 44 sessions in 28.900 s: 43 full matches, 11,396/11,405 screens,
 792,838/792,838 random calls and zero crashes. The public ledger check exited
 0, retaining every verified call for all 363 functions. The remaining
 screen difference is `seed2200-wizard-quaff-zap-read`, step 158: native option
@@ -431,12 +435,15 @@ recording was run.
 | First class members silently lost | Not reproduced. The metadata comes from emitted `object_knowledge.js:objectClassForType`, not the generic rows' native `oc_class` fields. It returns class 0 for all 17 pre-`ARROW` indices, so none was selected for the real-class matrix. The first-member coverage test passes both before and after. The class buckets now start explicitly at `ARROW`, and accidental generic edge inputs raise rather than being silently dropped. Initially known types still exclude `nameKnown=0` as documented. |
 | Missing hand-picked and generated type keys | Fixed: use `WAN_FIRE`, `WAN_COLD`, `SCR_IDENTIFY`, `SCR_ENCHANT_WEAPON` and `GAIN_STRENGTH`. Strict lookups also exposed nonexistent `ELVEN_RING_MAIL`; its armor case now uses `ELVEN_MITHRIL_COAT`. The unused `BLESSED_STATUETTE` alternative was removed. Required names now raise `KeyError` if missing instead of skipping a case or selecting a different type. These are the native wand, scroll, ring and armor names from `include/objects.h`. The restored cases include a known zero-charge fire wand and both `implicit_uncursed` settings for cold wands, identify scrolls and elven armor. Native `objnam.c:doname_base` controls charge suffixes and the `uncursed` prefix. |
 | Redundant expected RNG counts/log | Removed the assertions of native core count 0 and emitted `{core:0, display:0, log:[]}`. Tests retain native/emitted comparison and detection of the extra-draw mutant through the comparison result. They no longer read those RNG records directly. |
+| See invisible without detection | Fixed: `{"target":"x_monnam","monster":{"mnum":"newt","minvis":1},"hero":{"detect":0,"seeInvis":1}}` was accepted and now raises `ValueError`. Native `display.h:_mon_visible` permits see invisible, so `do_name.c:x_monnam`'s `canspotmon` result would otherwise depend on uncomputed `cansee`. Generated see-invisible cases now enable detection; undetected invisible cases remain covered. |
+| Worn bits on incompatible types | Fixed: `{"target":"doname","object":{"otyp":"DAGGER","wornMask":131072},"discovery":{"nameKnown":1}}` was accepted and now raises `ValueError`. Validator and generator share the supported type/slot relation described above. Tests also reject amulet bits on boots, body-armor bits on wands/helmets, eyewear bits on daggers, swapped ball/chain bits, equipped contents and coins in weapon slots. Native `accessory_or_armor_on`'s meat-ring exception and `ready_ok`'s gold-quiver allowance remain valid. |
 
 The six restored `implicit_uncursed` cases are exercised through both real
 backends. The tested uncursed wand with known charges omits the prefix when
 the option is enabled; the tested scroll and armor still print it under native
-`doname_base`'s uncharged-item/armor conditions. Missing-metadata tests check
-the specific absent key, so an unrelated error cannot satisfy them.
+`doname_base`'s uncharged-item/armor conditions. Rejection tests check exception
+types without matching error-message wording. The quantity-domain self-test
+first completes a healthy native/JS control run, then rejects the altered domain.
 
 ### Candidate bugs
 
@@ -470,30 +477,30 @@ Per-claim times exclude their negative checks:
 | `rnl` | PROVED | 1.6 s |
 | `d` | PROVED | 0.4 s |
 | `rne` | PROVED | 0.8 s |
-| `rnz` | PROVED | 2.8 s |
+| `rnz` | PROVED | 2.6 s |
 | `rn2_on_display_rng` | PROVED | 0.1 s |
 | `distmin` | PROVED | 0.2 s |
 | `dist2` | PROVED | 0.4 s |
-| `enermod` | PROVED | 2.5 s |
-| `newuexp` | PROVED | 0.9 s |
-| `xlev_to_rank` | PROVED | 0.3 s |
+| `enermod` | PROVED | 2.4 s |
+| `newuexp` | PROVED | 0.8 s |
+| `xlev_to_rank` | PROVED | 0.2 s |
 | `rounddiv` | PROVED | 0.5 s |
 | `Align2amask` | PROVED | 0.8 s |
-| `Amask2align` | PROVED | 1.0 s |
-| `acurr:StrDex` | PROVED | 1.1 s |
+| `Amask2align` | PROVED | 1.1 s |
+| `acurr:StrDex` | PROVED | 1.0 s |
 | `acurrstr` | PROVED | 0.4 s |
 | `dbon:human` | PROVED | 0.6 s |
-| `abon:human` | PROVED | 2.4 s |
-| `acurr:all` | PROVED | 6.0 s |
+| `abon:human` | PROVED | 2.2 s |
+| `acurr:all` | PROVED | 5.7 s |
 | `dbon:all` | PROVED | 0.3 s |
-| `abon:forms` | PROVED | 47.7 s |
-| `experience:tables` | PROVED | 407.0 s |
-| `mcalcmove:tables` | PROVED | 180.6 s |
+| `abon:forms` | PROVED | 42.2 s |
+| `experience:tables` | PROVED | 442.0 s |
+| `mcalcmove:tables` | PROVED | 180.0 s |
 | `lower_bits` | PROVED | 0.1 s |
 | `upper_bits` | PROVED | 0.0 s |
 | `isaac64_mix` | PROVED | 0.1 s |
-| `isaac64_update` | PROVED | 0.3 s |
-| `isaac64_reseed` | PROVED | 4.7 s |
+| `isaac64_update` | PROVED | 0.4 s |
+| `isaac64_reseed` | PROVED | 5.1 s |
 | `isaac64_init` | PROVED | 0.1 s |
 | `isaac64_next_uint64` | PROVED | 0.1 s |
 | `isaac64_seed_packing` | PROVED | 0.1 s |

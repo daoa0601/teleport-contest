@@ -179,11 +179,38 @@ def naming_object_state(value, meta, depth=0, count=None):
             raise ValueError('Partly eaten food needs 0 < oeaten <= nutrition (eat.c:obj_nutrition)')
     # Worn masks without the matching equipment slot owners keep donning() and
     # doffing() false in C (ga.afternmv is null, takeoff mask empty).
-    if 'wornMasks' in meta and result['wornMask'] not in meta['wornMasks']:
-        raise ValueError('wornMask must be 0 or exactly one harness-supported slot bit')
+    integer(result['wornMask'], 0, 0x400000, 'wornMask')
+    if result['wornMask'] not in naming_worn_masks(otyp, meta):
+        raise ValueError('wornMask must match a supported slot for this object type')
+    if depth and result['wornMask']:
+        raise ValueError('Contained objects cannot be equipped')
     result['contents'] = [naming_object_state(child, meta, depth + 1, count)
                           for child in result['contents']]
     return result
+
+
+def naming_worn_masks(otyp, meta):
+    """Supported hero slots from do_wear.c, wield.c and read.c:punish."""
+    slots, types = meta['wornSlots'], meta['objects']
+    oclass = meta['classes'][otyp]
+    masks = [0, slots['W_QUIVER']]
+    # wield_ok excludes coins but downplays other non-weapons; ready_ok
+    # permits gold and other non-ammunition in the quiver.
+    if oclass != 12:
+        masks.extend([slots['W_WEP'], slots['W_SWAPWEP']])
+    if meta['armorSlots'][otyp] == 'uarm':
+        masks.append(slots['W_ARM'])
+    if oclass == 4 or otyp == types['MEAT_RING']:
+        masks.extend([slots['W_RINGL'], slots['W_RINGR']])
+    if oclass == 5:
+        masks.append(slots['W_AMUL'])
+    if otyp in [types['BLINDFOLD'], types['LENSES'], types['TOWEL']]:
+        masks.append(slots['W_TOOL'])
+    if otyp == types['HEAVY_IRON_BALL']:
+        masks.append(slots['W_BALL'])
+    if otyp == types['IRON_CHAIN']:
+        masks.append(slots['W_CHAIN'])
+    return masks
 
 
 def naming_case(raw, meta):
@@ -258,10 +285,10 @@ def naming_case(raw, meta):
     if monster['mgivenname'] != '':
         plain_text(monster['mgivenname'], 'mgivenname', 30)
     plain_text(monster['shkName'], 'shkName', 30)
-    if not monster['minvis'] and not hero['detect']:
+    if not hero['detect'] and (not monster['minvis'] or hero['seeInvis']):
         # canspotmon() relies on uncomputed vision in the C harness; without
-        # detection a visible monster would compare harness artifacts.
-        raise ValueError('Visible monsters need hero detection in this domain')
+        # detection, visible and see-invisible monsters compare harness artifacts.
+        raise ValueError('Visually observable monsters need hero detection in this domain')
     result['monster'] = monster
     result['article'] = integer(raw.get('article', 1), 0, 3, 'article')
     result['adjective'] = plain_text(raw.get('adjective', ''), 'adjective', 40) \
@@ -621,7 +648,7 @@ def naming_generated(meta, count, seed):
             if rng.randrange(6) == 0:
                 body['oname'] = rng.choice(['Sting', 'Fido', 'Glork', 'Excalibur Jr'])
             if rng.randrange(6) == 0:
-                body['wornMask'] = rng.choice(meta['wornMasks'])
+                body['wornMask'] = rng.choice(naming_worn_masks(otyp, meta))
             if rng.randrange(8) == 0 and not body.get('oeroded') and oclass == 8:
                 body['odiluted'] = 1
             discovery = dict(nameKnown=1 if meta['initialKnown'][otyp]
@@ -659,12 +686,13 @@ def naming_generated(meta, count, seed):
             suppress &= ~0x40
         adjective = '' if suppress & 0x20 else rng.choice(['', '', 'poor', 'angry'])
         called = 0 if suppress & 0x20 else rng.randrange(2)
+        see_invisible = int(rng.randrange(4) == 0)
+        detect = 1 if not monster['minvis'] or see_invisible else int(rng.randrange(3) != 0)
         yield naming_case(dict(target=target, monster=monster,
                                article=rng.randrange(4),
                                adjective=adjective,
                                suppress=suppress, called=called,
                                hero=dict(blind=int(rng.randrange(4) == 0),
-                                         detect=1 if not monster['minvis'] or rng.randrange(3) else 0,
-                                         seeInvis=int(rng.randrange(4) == 0)),
+                                         detect=detect, seeInvis=see_invisible),
                                seed=rng.randrange(2147483648),
                                position=rng.choice([0, 1, 63, 255, 256])), meta)
