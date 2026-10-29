@@ -138,7 +138,8 @@ export class CommandBindings {
         const character = String.fromCharCode(key);
         if (!key || key === 10 || key === 13 || key === 27 || key === 32
             || /^[a-zA-Z0-9]$/.test(character) || '])[="(%!?+/$*`0_.'.includes(character)) return false;
-        if (this.menuAliases.length < 32) this.menuAliases.push({ key, command });
+        if (this.menuAliases.length >= 32) return false;
+        this.menuAliases.push({ key, command });
         return true;
     }
 

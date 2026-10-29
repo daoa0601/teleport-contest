@@ -957,8 +957,8 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
                         addError(illegal);
                         addError(`Bad menu key ${visctrl(code)}:${command}`);
                     }
-                    else
-                        result.commandBindings.bindMenuKey(code, command);
+                    else if (!result.commandBindings.bindMenuKey(code, command))
+                        addRawError('out of menu map space.', false);
                     continue;
                 }
                 const bound = result.commandBindings.bindKey(code, command);
@@ -1087,8 +1087,8 @@ function parseConfiguration(rc, result, report, fromFile) {
         const addError = (message) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
         };
-        const addRawError = (message) => {
-            report.errors.push({ sourceLine, lineNumber, message, raw: true });
+        const addRawError = (message, pause = true) => {
+            report.errors.push({ sourceLine, lineNumber, message, raw: true, pause });
         };
         // parse_config_line() condenses whitespace for every statement name
         // and value, but passes the original OPTIONS statement to
@@ -1289,8 +1289,8 @@ function parseConfiguration(rc, result, report, fromFile) {
                     const illegal = menuCommandKeyError(key);
                     if (illegal)
                         addError(illegal);
-                    else
-                        result.commandBindings.bindMenuKey(key, canonical);
+                    else if (!result.commandBindings.bindMenuKey(key, canonical))
+                        addRawError('out of menu map space.', false);
                 }
                 continue;
             }

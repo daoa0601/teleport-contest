@@ -974,7 +974,7 @@ function handleConfigStatement(
     parsed: ParsedConfigStatement,
     result: ConfigurationSettings,
     addError: (message: string) => void,
-    addRawError: (message: string) => void,
+    addRawError: (message: string, pause?: boolean) => void,
 ): void {
     switch (statement) {
     // Accepted by the C table without effect in this port: path prefixes
@@ -1022,7 +1022,8 @@ function handleConfigStatement(
                 if (illegal) {
                     addError(illegal);
                     addError(`Bad menu key ${visctrl(code)}:${command}`);
-                } else result.commandBindings.bindMenuKey(code, command);
+                } else if (!result.commandBindings.bindMenuKey(code, command))
+                    addRawError('out of menu map space.', false);
                 continue;
             }
             const bound = result.commandBindings.bindKey(code, command);
@@ -1140,8 +1141,8 @@ function parseConfiguration(
         const addError = (message: string) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
         };
-        const addRawError = (message: string) => {
-            report.errors.push({ sourceLine, lineNumber, message, raw: true });
+        const addRawError = (message: string, pause = true) => {
+            report.errors.push({ sourceLine, lineNumber, message, raw: true, pause });
         };
         // parse_config_line() condenses whitespace for every statement name
         // and value, but passes the original OPTIONS statement to
@@ -1337,7 +1338,8 @@ function parseConfiguration(
                     const key = bindingKeyCode(raw);
                     const illegal = menuCommandKeyError(key);
                     if (illegal) addError(illegal);
-                    else result.commandBindings.bindMenuKey(key, canonical);
+                    else if (!result.commandBindings.bindMenuKey(key, canonical))
+                        addRawError('out of menu map space.', false);
                 }
                 continue;
             }

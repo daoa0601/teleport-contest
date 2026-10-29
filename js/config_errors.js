@@ -30,7 +30,8 @@ export async function displayConfigurationErrors(reports) {
         for (const error of report.errors) {
             if (error.raw) {
                 rawPrintf(error.message);
-                await awaitStartupReturn();
+                if (error.pause !== false)
+                    await awaitStartupReturn();
                 continue;
             }
             if (error.lineNumber !== previousLine)
