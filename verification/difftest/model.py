@@ -190,6 +190,10 @@ def edge_cases(meta):
                           monster=dict(mnum='orc', mstun=1), object=dict(otyp='DAGGER', spe=2)))
     for left, right in [(-21, -21), (-5, -21), (0, 3), (5, -5), (3, 5)]:
         cases.append(case('find_roll_to_hit', hero=dict(leftRing=left, rightRing=right)))
+    for species in ['wererat', 'werejackal', 'werewolf']:
+        for form, name in enumerate(meta['monsters']):
+            if name == species:
+                cases.append(case('inv_weight', hero=dict(form=form)))
     return cases
 
 

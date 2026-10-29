@@ -56,7 +56,8 @@ if (process.argv.includes('--metadata')) {
 const { freshObjectRoom } = await import('../../test/support/object-room.js');
 const { uninitializedObject } = await import('../../test/support/game-objects.js');
 const { createMonsterAt } = await import('../../test/support/monsters.js');
-const { installHeroWeaponSkills, installPolymorphedHero } = await import('../../test/support/hero-state.js');
+const { installHeroWeaponSkills } = await import('../../test/support/hero-state.js');
+const { setHeroSpecies } = await import('../../js/hero_species.js');
 const stateModule = await import('../../js/gstate.js');
 const { initRng, enableRngLog, getRngLog } = await import('../../js/rng.js');
 const { isaac64_next_uint64 } = await import('../../js/isaac64.js');
@@ -131,7 +132,11 @@ async function runCase(input) {
         },
     });
     const { game } = stateModule;
-    if (hero.form >= 0) installPolymorphedHero(monsters.MONSTER_NAME[hero.form]);
+    if (hero.form >= 0) {
+        game.u.mtimedone = 100;
+        game.u.mh = game.u.mhmax = 40;
+        setHeroSpecies(hero.form, game);
+    }
     // The serialized bits add outside sources. Form intrinsics and trap/float
     // blocks are established by the real initialization helpers on both sides.
     if (hero.levitating) grantIntrinsicProperty('levitation', 'outside');
@@ -184,7 +189,7 @@ async function runCase(input) {
     }
     return { result, armorPenalty, state: {
         object: [saveObject(object)], inventory: game.inventory.map(saveObject),
-        hero: saveHero(game), attacks: input.attacks + Number(input.target === 5),
+        hero: saveHero(game),
         alignment: game.u.ualign.record, monster: saveMonster(monster),
     }, rng: { core: position(game.coreCtx) - before[0],
         display: position(game.displayCtx) - before[1], log: [...getRngLog()] } };

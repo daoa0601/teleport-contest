@@ -281,12 +281,12 @@ static void run_case(void)
     printf(",\"hero\":{\"str\":%d,\"dex\":%d,\"con\":%d,\"level\":%d,"
            "\"luck\":%d,\"moreluck\":%d,\"hitinc\":%d,\"trapped\":%d,\"form\":%d,"
            "\"levitating\":%d,\"flying\":%d,\"legs\":%d,\"role\":%d,"
-           "\"leftRing\":%d,\"rightRing\":%d},\"attacks\":%d",
+           "\"leftRing\":%d,\"rightRing\":%d}",
            ABASE(A_STR), ABASE(A_DEX), ABASE(A_CON), u.ulevel, u.uluck, u.moreluck,
            u.uhitinc, u.utrap, Upolyd ? u.umonnum : NON_PM,
            !!Levitation, !!Flying,
            (EWounded_legs & LEFT_SIDE ? 1 : 0) | (EWounded_legs & RIGHT_SIDE ? 2 : 0),
-           Role_if(PM_MONK), uleft ? uleft->spe : -21, uright ? uright->spe : -21, attacks);
+           Role_if(PM_MONK), uleft ? uleft->spe : -21, uright ? uright->spe : -21);
     printf(",\"alignment\":%d,\"monster\":{\"mnum\":%d,\"mcanmove\":%d,"
            "\"msleeping\":%d,\"mstun\":%d,\"mflee\":%d}},"
            "\"rng\":{\"core\":%u,\"display\":%u,\"log\":[",
