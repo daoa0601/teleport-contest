@@ -6000,7 +6000,6 @@ vault.c	wallify_vault	whispers an incantation.
 version.c	copyright_banner_line	By Stichting Mathematisch Centrum and M. Stephenson.
 version.c	copyright_banner_line	NetHack, Copyright 1985-2026
 version.c	copyright_banner_line	See license for details.
-version.c	status_version	status_version
 weapon.c	barehands_or_martial	bare handed combat
 weapon.c	drain_weapon_skill	your training in
 weapon.c	enhance_weapon_skill	Advance skills without practice?
