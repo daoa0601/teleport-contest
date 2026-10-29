@@ -622,6 +622,14 @@ export function heroTestMove(x: number, y: number, g: GameState = game): boolean
     return testHeroMove(g.u.ux, g.u.uy, x, y, 'move', g).passes;
 }
 
+// C test_move(TEST_MOVE) from an arbitrary origin square. zap.c bhit()
+// checks the chain's next step from a thrown iron ball's previous square.
+export function heroMoveBlockedBetween(
+    fromX: number, fromY: number, x: number, y: number, g: GameState = game,
+): boolean {
+    return !testHeroMove(fromX, fromY, x, y, 'move', g).passes;
+}
+
 interface HeroMoveTest {
     passes: boolean;
     blockedBy?: Shopkeeper;
