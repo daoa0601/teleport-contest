@@ -4,9 +4,9 @@ import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { PICK_AXE } from '../js/object_data.js';
-import { SINK } from '../js/const.js';
+import { FOUNTAIN, SINK } from '../js/const.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 // C dig.c:dig_check() tests On_stairs(x, y) -- the stairway structure --
@@ -41,6 +41,7 @@ void test('digging down on a ladder reports the ladder refusal', async () => {
     freshObjectRoom();
     const square = game.level?.requireAt(game.u.ux, game.u.uy);
     assert.ok(square, 'hero must stand on the room floor');
+    square.typ = FOUNTAIN;
     game.stairs = {
         sx: game.u.ux, sy: game.u.uy, up: true, isladder: true,
         u_traversed: false, tolev: { dnum: 0, dlevel: 0 }, next: null,
@@ -55,6 +56,7 @@ void test('digging down on a ladder reports the ladder refusal', async () => {
     for (let swing = 0; game._occupation && swing < 20; swing++)
         await continueCountedCommand();
     assert.equal(game._pending_message, 'You start digging downward.  The ladder resists your effort.');
+    assert.equal(game.level?.at(game.u.ux, game.u.uy)?.typ, FOUNTAIN, 'the fountain must survive the ladder refusal');
     assert.ok(!game._occupation, 'the refused dig must not start an occupation.');
 });
 //# sourceMappingURL=dig_stairway_refusal.test.js.map
