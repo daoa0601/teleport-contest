@@ -3,6 +3,7 @@ Cloak_off	newsym
 Hear_again	make_deaf
 Hear_again	rn2
 RND	isaac64_next_uint64
+able_to_loot	hliquid
 abon	acurr
 accessory_or_armor_on	yn_function
 acurrstr	acurr
@@ -72,6 +73,7 @@ cardinal_nextto_room	isok
 carry_count	weight
 cast_chain_lightning	map_invisible
 cast_chain_lightning	zapdir_to_glyph
+cast_protection	hliquid
 cast_protection	spell_skilltype
 charm_snakes	newsym
 chat_with_leader	com_pager
@@ -151,6 +153,7 @@ deferred_decor	describe_decor
 describe_decor	deferred_decor
 desecrate_altar	godvoice
 destroy_arm	rn2
+destroy_drawbridge	hliquid
 destroy_drawbridge	is_pool
 destroy_drawbridge	newsym
 destroy_drawbridge	rn2
@@ -192,6 +195,7 @@ digactualhole	rn2
 digactualhole	shopdig
 digactualhole	surface
 digactualhole	trapname
+digcheck_fail_message	hliquid
 digcheck_fail_message	surface
 dighole	d
 dighole	destroy_drawbridge
@@ -200,6 +204,7 @@ dighole	dig_up_grave
 dighole	digactualhole
 dighole	explode
 dighole	furniture_handled
+dighole	hliquid
 dighole	is_pool_or_lava
 dighole	isok
 dighole	liquid_flow
@@ -341,6 +346,7 @@ dogenocided	list_genocided
 doinvoke	getobj
 dokick	acurr
 dokick	glyph_at
+dokick	hliquid
 dokick	inv_weight
 dokick	is_pool
 dokick	isok
@@ -427,6 +433,7 @@ doset_simple	flush_screen
 dosit	altar_wrath
 dosit	d
 dosit	exercise
+dosit	hliquid
 dosit	losehp
 dosit	rn2
 dosit	rnd
@@ -477,12 +484,14 @@ drain_item	bot
 drain_weapon_skill	rn2
 drinkfountain	exercise
 drinkfountain	fruitname
+drinkfountain	hliquid
 drinkfountain	losehp
 drinkfountain	newsym
 drinkfountain	rn2
 drinkfountain	rnd
 drinksink	acurr
 drinksink	exercise
+drinksink	hliquid
 drinksink	losehp
 drinksink	makemon
 drinksink	mkobj_at
@@ -490,6 +499,7 @@ drinksink	newsym
 drinksink	rn2
 drinksink	rnd
 drop_ball	bc_order
+drop_ball	hliquid
 drop_ball	is_pool
 drop_ball	losehp
 drop_ball	newsym
@@ -503,6 +513,7 @@ drop_throw	should_mulch_missile
 drown	d
 drown	emergency_disrobe
 drown	feel_newsym
+drown	hliquid
 drown	is_pool
 drown	is_waterwall
 drown	losehp
@@ -772,6 +783,7 @@ landing_spot	isok
 landing_spot	rn2
 lava_effects	d
 lava_effects	feel_newsym
+lava_effects	hliquid
 lava_effects	ignite_items
 lava_effects	losehp
 lava_effects	rn2
@@ -792,6 +804,7 @@ linedup	blocking_terrain
 linedup	clear_path
 linedup	rn2
 liquid_flow	fire_damage_chain
+liquid_flow	hliquid
 liquid_flow	is_pool_or_lava
 liquid_flow	water_damage_chain
 list_genocided	set_vanq_order
@@ -1008,6 +1021,7 @@ monster_nearby	isok
 mount_steed	can_ride
 mount_steed	can_saddle
 mount_steed	heal_legs
+mount_steed	hliquid
 mount_steed	instapetrify
 mount_steed	losehp
 mount_steed	maybewakesteed
@@ -1124,6 +1138,7 @@ pet_type	rn2
 pick_animal	rn2
 pick_lock	can_reach_floor
 pick_lock	feel_location
+pick_lock	hliquid
 pick_lock	is_pool
 pick_lock	lock_action
 pick_lock	reset_pick
@@ -1156,6 +1171,7 @@ polyman	set_mimic_blocking
 polymon	can_ride
 polymon	d
 polymon	exercise
+polymon	hliquid
 polymon	instapetrify
 polymon	learn_egg_type
 polymon	make_blinded
@@ -1170,6 +1186,7 @@ polymorph_sink	newsym
 polymorph_sink	rn2
 pooleffects	check_special_room
 pooleffects	docrt
+pooleffects	hliquid
 pooleffects	is_pool
 pooleffects	is_waterwall
 possible_places	level_range
@@ -1228,6 +1245,7 @@ repair_damage	rn2
 repair_damage	trapname
 repair_damage	weight
 reroll_menu	acurr
+rescued_from_terrain	hliquid
 reset_glyphmap	cmap_to_roguecolor
 reset_occupations	reset_pick
 retouch_equipment	clear_bypasses
@@ -1618,6 +1636,7 @@ wallification	wall_cleanup
 wallify_vault	newsym
 warnreveal	isok
 wash_hands	fingers_or_gloves
+wash_hands	hliquid
 watch_on_duty	in_town
 watch_on_duty	is_digging
 watch_on_duty	rn2

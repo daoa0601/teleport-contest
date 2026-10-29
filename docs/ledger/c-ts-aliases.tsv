@@ -17,3 +17,4 @@ instapetrify	resolveImmediatePetrification
 update_inventory	updateInventoryPresentation
 unconscious	heroIsUnconscious
 exercise	exerciseAttribute
+hliquid	displayLiquidName
