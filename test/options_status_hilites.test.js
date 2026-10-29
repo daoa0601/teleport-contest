@@ -10,7 +10,7 @@ import { bot } from '../js/display.js';
 import { statusHiliteMenu } from '../js/status_hilites.js';
 import { cansee } from '../js/vision.js';
 import { BL_HP, BL_TH_ALWAYS_HILITE, HL_NONE, MAXBLSTATS, NO_LTEQGT } from '../js/const.js';
-import { CLR_RED, ATR_BOLD } from '../js/terminal.js';
+import { CLR_RED, ATR_BOLD, NO_COLOR } from '../js/terminal.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
@@ -201,6 +201,7 @@ class HiliteFuzzerInput extends InputGate {
 void test('status highlight rules add, show and count a hitpoints threshold', async () => {
     freshObjectRoom({ hero: { uhp: 50, uhpmax: 60 } });
     requirePlayingGame(game);
+    await bot();
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
         { at: /status highlight rules\s+\[\(0 currently set\)\]/, pick: /status highlight rules/ },
@@ -233,12 +234,22 @@ void test('status highlight rules add, show and count a hitpoints threshold', as
     assert.match(secondMenu, /hitpoints\s+\(1 defined\)/);
     assert.ok(views.some(view => /OPTIONS=hilite_status: hitpoints\/=50\/red&bold/.test(view)), 'The config-format listing shows the rule');
     assert.ok(views.some(view => /status highlight rules\s+\[\(1 currently set\)\]/.test(view)), 'The simple options menu reports the live rule count');
-    const cells = game.nhDisplay?.grid[23] ?? [];
-    const hitpoints = cells[cells.map(cell => cell.ch).join('').indexOf('HP:50')];
-    assert.ok(hitpoints, 'The status shows the hero hitpoints after adding the rule');
-    assert.equal(hitpoints.color, CLR_RED);
-    assert.equal(hitpoints.attr, ATR_BOLD);
+    function hitpointsCell(value) {
+        const cells = game.nhDisplay?.grid[23] ?? [];
+        const hitpoints = cells[cells.map(cell => cell.ch).join('').indexOf(`HP:${value}`)];
+        assert.ok(hitpoints, `The status shows HP:${value}`);
+        return hitpoints;
+    }
     assert.match(await statusHiliteDurationRow(), /\[3 \(on: highlight status for 3 turns\)\]/);
+    assert.equal(hitpointsCell(50).color, NO_COLOR, 'Enabling highlights leaves unchanged HP uncolored');
+    assert.equal(hitpointsCell(50).attr, 0);
+    game.u.uhp = 49;
+    await bot();
+    assert.equal(hitpointsCell(49).color, NO_COLOR);
+    game.u.uhp = 50;
+    await bot();
+    assert.equal(hitpointsCell(50).color, CLR_RED, 'Changing HP evaluates the new rule');
+    assert.equal(hitpointsCell(50).attr, ATR_BOLD);
 });
 void test('status highlight percentage rules keep their threshold operator', async () => {
     freshObjectRoom();

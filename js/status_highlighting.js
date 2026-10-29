@@ -58,9 +58,13 @@ export class StatusHighlights {
         const reset = this.resetPending || !previous;
         let change = reset ? 0 : compare(previous.raw, current.raw);
         const percentMatters = field === BL_HP || field === BL_ENE || field === BL_XP || field === BL_EXP;
-        const percent = percentMatters && (change || reset || field === BL_XP
-            || field === BL_HP && state.flags.hitpointbar) ? current.percent : previous?.percent ?? 0;
-        const percentChanged = !reset && percent !== previous?.percent;
+        const calculatePercent = (percentMatters && rules.length > 0 && (change !== 0 || reset || field === BL_XP))
+            || (field === BL_HP && state.flags.hitpointbar);
+        // C keeps the cached percentage but passes zero to get_hilite() when
+        // this update does not calculate it, including temporary hilite expiry.
+        const percent = calculatePercent ? current.percent : 0;
+        const cachedPercent = calculatePercent ? percent : previous?.percent ?? 0;
+        const percentChanged = calculatePercent && !reset && percent !== previous?.percent;
         if (percentChanged) {
             change = compare(previous?.percent ?? 0, percent);
             if (change === 1 && field === BL_XP && previous)
@@ -71,7 +75,7 @@ export class StatusHighlights {
             return;
         const rule = chooseHilite(rules, { ...current, percent }, change, field === BL_HP && rules.some(entry => entry.behavior === BL_TH_CRITICALHP)
             && criticallyLowHp(false, state), field === BL_TITLE && Upolyd(state.u));
-        this.fields.set(field, { ...current, percent, rule, changed: true,
+        this.fields.set(field, { ...current, percent: cachedPercent, rule, changed: true,
             expires: reset || expired ? 0 : previous?.expires ?? 0 });
         this.styles.set(field, rule ? decodeStyle(rule.coloridx) : { color: NO_COLOR, attr: 0 });
     }

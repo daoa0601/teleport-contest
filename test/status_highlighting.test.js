@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot, flush_screen, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetStatusHilites } from '../js/status_hilites.js';
-import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE, BL_TH_VAL_ABSOLUTE, BL_TH_UPDOWN, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, BL_MASK_BLIND, HL_BOLD, HL_INVERSE, HL_NONE, EQ_VALUE, LT_VALUE, TXT_VALUE, MAXBLSTATS, NO_LTEQGT, BL_ATTCLR_MAX, HL_ATTCLR_BOLD } from '../js/const.js';
+import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE, BL_TH_VAL_ABSOLUTE, BL_TH_UPDOWN, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, BL_MASK_BLIND, HL_BOLD, HL_INVERSE, HL_NONE, EQ_VALUE, LT_VALUE, GT_VALUE, TXT_VALUE, MAXBLSTATS, NO_LTEQGT, BL_ATTCLR_MAX, HL_ATTCLR_BOLD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, CLR_GREEN, CLR_BLUE, NO_COLOR } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
@@ -60,6 +60,30 @@ void test('temporary change highlights expire back to the persistent rule', asyn
     assert.equal(fieldCell('HP:39').color, CLR_GREEN);
     assert.equal(fieldCell('HP:39').attr, 0);
 });
+for (const hitpointbar of [false, true]) {
+    void test(`expired HP highlights use ${hitpointbar ? 'the recalculated' : 'zero'} percentage with hitpointbar ${hitpointbar}`, async () => {
+        roomWithRules([
+            rule(BL_HP, BL_TH_VAL_PERCENTAGE, 30, LT_VALUE, CLR_RED),
+            rule(BL_HP, BL_TH_UPDOWN, 0, GT_VALUE, CLR_GREEN, HL_BOLD),
+        ]);
+        game.flags.hitpointbar = hitpointbar;
+        game.u.uhp = 39;
+        await bot();
+        game.u.uhp = 40;
+        await bot();
+        assert.equal(fieldCell('HP:40').color, CLR_GREEN);
+        assert.equal(fieldCell('HP:40').attr, ATR_BOLD);
+        statusEvalNextUnhilite();
+        game.moves += 3;
+        statusEvalNextUnhilite();
+        updateStatusLines();
+        assert.equal(fieldCell('HP:40').color, hitpointbar ? NO_COLOR : CLR_RED, 'Only the HP bar recalculates the percentage when unchanged HP loses its temporary highlight');
+        assert.equal(fieldCell('HP:40').attr, 0);
+        resetStatusHilites();
+        await bot();
+        assert.equal(fieldCell('HP:40').color, NO_COLOR, 'A full highlight reset uses the actual percentage');
+    });
+}
 void test('experience percentage highlights change while the level stays the same', async () => {
     roomWithRules([
         rule(BL_XP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),

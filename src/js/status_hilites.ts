@@ -261,10 +261,10 @@ export function clearStatusHilites(): void {
     game.iflags.condHilites = new Array<number>(BL_ATTCLR_MAX).fill(0);
 }
 
-// botl.c reset_status_hilites(): display side only; the pending full status
-// repaint is disp.botlx in C.
+// botl.c reset_status_hilites(): repaint even when highlighting is off,
+// but only re-evaluate unchanged fields when it is already on.
 export function resetStatusHilites(): void {
-    game.nhDisplay?.statusHighlights.reset();
+    if (game.iflags.hiliteDelta) game.nhDisplay?.statusHighlights.reset();
     game.context.botl = true;
 }
 
