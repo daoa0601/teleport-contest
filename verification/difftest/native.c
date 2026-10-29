@@ -312,6 +312,7 @@ static void run_case(void)
 }
 
 #include "creation.h"
+#include "naming.h"
 
 int main(void)
 {
@@ -321,7 +322,20 @@ int main(void)
         input = line; cursor = ntokens = 0;
         parse_value(); whitespace();
         if (input[cursor]) reject_input("trailing input");
-        if (number(0, "target", 0, 11) >= 6) {
+        if (number(0, "target", 0, 17) >= 12) {
+            /* A fresh process gives private C caches and name tables the
+               same lifetime as a fresh JS game, with no reset model. */
+            int status;
+            pid_t child = fork();
+            if (child < 0) reject_input("fork failed");
+            if (!child) {
+                run_naming_case();
+                fflush(stdout);
+                _exit(0);
+            }
+            if (waitpid(child, &status, 0) != child || !WIFEXITED(status)
+                || WEXITSTATUS(status) != 0) exit(2);
+        } else if (number(0, "target", 0, 11) >= 6) {
             /* A fresh process gives private C caches, timers and heap owners
                the same lifetime as a fresh JS game, with no reset model. */
             int status;

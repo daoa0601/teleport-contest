@@ -35,6 +35,19 @@ const changes = {
         'rnd(1); return applyErosion(object, damage);'],
     log: ['weapon_damage.js', 'return applyErosion(object, damage);',
         'd(0, 4); return applyErosion(object, damage);'],
+    naming_plural: ['object_grammar.js', "return replacePluralSuffix(stem, '', 's') + excess;",
+        "return replacePluralSuffix(stem, '', 'es') + excess;"],
+    naming_singular: ['object_grammar.js', "return finish(replacePluralSuffix(stem, 'ies', 'y'));",
+        "return finish(replacePluralSuffix(stem, 'ies', 'ye'));"],
+    naming_an: ['object_grammar.js', "return 'aefhilmnosx'.includes(word.charAt(0)) ? 'an ' : 'a ';",
+        "return 'aefhilmnos'.includes(word.charAt(0)) ? 'an ' : 'a ';"],
+    naming_the: ['objnam.js', "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the ${name}`;",
+        "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the  ${name}`;"],
+    naming_xname: ['objnam.js', "noun = `pair of ${noun}`;", "noun = `two ${noun}`;"],
+    naming_doname: ['object_description.js', "if (object.greased)\n        prefix.push('greased');",
+        "if (object.greased)\n        prefix.push('sleazy');"],
+    naming_monnam: ['monster_name.js', "if (invisible)\n        adjectives += 'invisible ';",
+        "if (invisible)\n        adjectives += 'unseen ';"],
 };
 const mutation = process.env.DIFFTEST_MUTANT;
 if (mutation) {
@@ -63,6 +76,9 @@ if (process.argv.includes('--metadata')) {
             ...Object.fromEntries(Object.entries(data).filter(([, value]) => typeof value === 'number')),
         },
         weights: data.OBJECT_WEIGHT, nutrition: data.OBJECT_NUTRITION, merge: data.OBJECT_MERGE,
+        initialKnown: data.OBJECT_INITIAL_KNOWN,
+        wornMasks: [0, 0x1, 0x100, 0x200, 0x400, 0x10000, 0x20000,
+                    0x40000, 0x80000, 0x200000, 0x400000],
         classes: data.OBJECT_NAMES.map((_, index) => objectClassForType(index)), names: data.OBJECT_NAMES,
         monsterClasses: monsters.MONSTER_SYMBOL, specialPM: monsters.SPECIAL_PM,
         monsters: monsters.MONSTER_NAME, bodies: monsters.MONSTER_BODY_META,
@@ -138,6 +154,10 @@ function position(context) {
 }
 
 async function runCase(input) {
+    if (input.target >= 12) {
+        const { runNaming } = await import('./naming.mjs');
+        return runNaming(input);
+    }
     if (input.target >= 6) {
         const { runCreation } = await import('./creation.mjs');
         return runCreation(input);

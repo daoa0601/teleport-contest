@@ -17,10 +17,14 @@ import time
 from build import CACHE, build
 from model import LOCATIONS, OBJECT, TARGETS, canonical, edge_cases, generated_cases, metadata
 
+
 from creation_model import CREATION_TARGETS, CREATION_LOCATIONS, creation_edges, creation_generated
 
-ALL_TARGETS = TARGETS + CREATION_TARGETS
-ALL_LOCATIONS = LOCATIONS + CREATION_LOCATIONS
+from naming_model import (NAMING_TARGETS, NAMING_LOCATIONS, NAMING_OBJECT, naming_edges,
+                          naming_generated)
+
+ALL_TARGETS = TARGETS + CREATION_TARGETS + NAMING_TARGETS
+ALL_LOCATIONS = LOCATIONS + CREATION_LOCATIONS + NAMING_LOCATIONS
 HERE = Path(__file__).resolve().parent
 
 
@@ -111,11 +115,16 @@ def difference(left, right, path=''):
 def reductions(state, meta):
     """Try deleting list members and resetting scalar fields to domain defaults."""
     baseline = canonical(dict(target=state['target']), meta)
+    DELETE = object()
+
     def walk(value, default, path=()):
         if isinstance(value, dict):
             for key, child in value.items():
                 if key in ['target', 'otyp', 'mnum']:
                     continue  # preserve which function/type the repro exercises
+                if key not in default:
+                    yield (*path, key), DELETE
+                    continue
                 yield from walk(child, default[key], (*path, key))
         elif isinstance(value, list):
             for index in range(len(value)):
@@ -124,16 +133,22 @@ def reductions(state, meta):
                 if isinstance(child, dict):
                     child_default = ({'mnum': child['mnum'], 'flags': 0, 'born': 0}
                                      if path == ('vitals',)
-                                     else {**deepcopy(OBJECT), 'otyp': child['otyp']})
+                                     else {**deepcopy(OBJECT), 'otyp': child['otyp']}
+                                     if path[0] != 'contents' or state['target'] < 12
+                                     else {**deepcopy(NAMING_OBJECT), 'otyp': child['otyp']})
                     yield from walk(child, child_default, (*path, index))
         elif value != default:
             yield path, default
+
     for path, replacement in walk(state, baseline):
         candidate = deepcopy(state)
         parent = candidate
         for key in path[:-1]:
             parent = parent[key]
-        parent[path[-1]] = replacement
+        if replacement is DELETE:
+            del parent[path[-1]]
+        else:
+            parent[path[-1]] = replacement
         try:
             yield canonical(candidate, meta)
         except ValueError:
@@ -263,6 +278,7 @@ def creation_negative_checks(native, port, meta):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--creation', action='store_true', help='creation inputs instead of the six original targets')
+    parser.add_argument('--naming', action='store_true', help='naming inputs instead of the six original targets')
     parser.add_argument('--count', type=int, default=600, help='random cases, in addition to edge cases')
     parser.add_argument('--seed', type=int, default=20261029, help='input generator seed, not gameplay seed')
     parser.add_argument('--input', type=Path, help='JSON case or JSONL cases; skips generated cases')
@@ -288,7 +304,9 @@ def main():
         else:
             cases = [canonical(raw, meta)]
     else:
-        cases = ([*creation_edges(meta), *creation_generated(meta, args.count, args.seed)]
+        cases = ([*naming_edges(meta), *naming_generated(meta, args.count, args.seed)]
+                 if args.naming else
+                 [*creation_edges(meta), *creation_generated(meta, args.count, args.seed)]
                  if args.creation else [*edge_cases(meta), *generated_cases(meta, args.count, args.seed)])
     if not cases:
         parser.error('No input cases; an empty run cannot pass')
@@ -299,9 +317,12 @@ def main():
         native = stack.enter_context(Worker([str(CACHE / 'native')], 'native'))
         port = stack.enter_context(Worker(['node', str(HERE / 'port.mjs')], 'port'))
         if args.self_test:
-            negative_checks(native, port, meta)
-            if args.creation:
-                creation_negative_checks(native, port, meta)
+            if args.naming:
+                naming_negative_checks(native, port, meta)
+            else:
+                negative_checks(native, port, meta)
+                if args.creation:
+                    creation_negative_checks(native, port, meta)
         for index, state in enumerate(cases):
             target = ALL_TARGETS[state['target']]
             totals[target] += 1
@@ -332,6 +353,62 @@ def main():
     elapsed = time.monotonic() - started
     print(f'{sum(totals.values())} cases; {sum(failures.values())} mismatches; {elapsed:.2f}s; {args.report}')
     return 1 if failures else 0
+
+
+def naming_negative_checks(native, port, meta):
+    """Domain probes plus one killed emitted-JS mutant per naming target."""
+    probes = [
+        dict(target='makeplural', text='quote " inside'),
+        dict(target='makeplural', text='new\nline'),
+        dict(target='makeplural', text=''),
+        dict(target='makesingular', text='slash \\ here'),
+        dict(target='articles', text='x' * 121),
+        dict(target='xname', object=dict(otyp='SPE_NOVEL')),
+        dict(target='xname', object=dict(otyp=0)),
+        dict(target='xname', object=dict(otyp='POTION_OF_BOOZE', quan=2)),
+        dict(target='xname', object=dict(otyp='CORPSE', corpsenm=-1)),
+        dict(target='doname', object=dict(otyp='FOOD_RATION', oeaten=99999)),
+        dict(target='doname', object=dict(otyp='MACE', wornMask=0x20000000)),
+        dict(target='x_monnam', article=4),
+        dict(target='x_monnam', suppress=0x10),
+        dict(target='x_monnam', monster=dict(mnum='newt', minvis=0), hero=dict(detect=0)),
+        dict(target='x_monnam', monster=dict(mnum='angel', isminion=1)),
+        dict(target='x_monnam', suppress=0x60),
+    ]
+    rejected = 0
+    for raw in probes:
+        try:
+            canonical(raw, meta)
+        except ValueError:
+            rejected += 1
+        else:
+            raise RuntimeError(f'Naming domain probe unexpectedly accepted: {raw}')
+    mutants = {
+        'naming_plural': dict(target='makeplural', text='newt'),
+        'naming_singular': dict(target='makesingular', text='rubies'),
+        'naming_an': dict(target='articles', text='x'),
+        'naming_the': dict(target='articles', text='elven dagger'),
+        'naming_xname': dict(target='xname', object=dict(otyp='LENSES', dknown=1),
+                             discovery=dict(nameKnown=1)),
+        'naming_doname': dict(target='doname', object=dict(otyp='MACE', greased=1, dknown=1),
+                              discovery=dict(nameKnown=1)),
+        'naming_monnam': dict(target='x_monnam',
+                              monster=dict(mnum='newt', minvis=1), article=1),
+    }
+    killed = 0
+    for name, raw in mutants.items():
+        state = canonical(raw, meta)
+        c_result = native.call(state)
+        if difference(c_result, port.call(state)):
+            raise RuntimeError(f'Naming mutant control already diverges: {name}')
+        with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
+            found = difference(c_result, worker.call(state))
+        expected = 'the' if name == 'naming_the' else 'result'
+        if not found or not found['path'].startswith(expected):
+            raise RuntimeError(f'Naming mutant survived or hit the wrong field: {name}: {found}')
+        print(f'KILLED {name}: {found["native"]!r} != {found["port"]!r}', flush=True)
+        killed += 1
+    print(f'Naming checks: {rejected} rejected input probes, {killed} killed mutants', flush=True)
 
 
 if __name__ == '__main__':
