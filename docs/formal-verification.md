@@ -539,9 +539,37 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
    classes and new unproved occurrences. Next: collection ownership and
    non-emptiness, relational data facts, callback invoker bounds, and upper
    arithmetic obligations. The 237 residual sites remain unproved.
-5. **Differential fuzzing of stateful functions (2–3 weeks).** Drive single C
-   functions in the probe build and their TS ports from serialized state, with
-   coverage guidance, for code where a state model is not worth writing.
+5. **Differential fuzzing of stateful functions (concrete prototype).**
+   `verification/difftest/` links the real patched recorder and imports the
+   emitted ports through the scoring adapters. Six entry points now run from
+   shared serialized hero, inventory/container and defender state:
+   `mkobj.c:weight`, `hack.c:inv_weight`/`calc_capacity`/`near_capacity`,
+   `weapon.c:dmgval`, and human-form `uhitm.c:find_roll_to_hit` (archeologist
+   and monk, basic skills, accuracy rings). It compares returns, a declared
+   successor-state projection, consumed core/display words and RNG entries.
+   The numeric C attack-counter update is outside that projection: the port's
+   entry point takes a first-attack boolean and exposes no counter result.
+   The acceptance batch ran 6,083 cases with zero differences, five rejected
+   domain probes and seven killed emitted-JS mutants; eight harness tests passed.
+   Native compilation took 14.98 s and the batch took 7.01 s on this macOS host.
+   The separate required proof run kept all 28 previous claims PROVED; the
+   full table and times are in `verification/README.md`.
+
+   This adds empirical evidence, not a new proved claim. The correspondence
+   is the shared JSON plus unproved loaders and table-ID relation. The native
+   loader calls `set_uasmon` to establish form properties; omitting it caused
+   false fog-cloud differences during development. JS preserves the supplied
+   form index through `setHeroSpecies`, including the six animal/human were
+   entries whose display names repeat. No reachable port defect
+   was established. Input reduction retains each mismatch as a reproducing
+   state; callers still need to establish whether it can arise in play.
+   Messages, full heap/global state, arbitrary equipment/artifacts, polymorphed
+   accuracy and resumed input remain outside the comparison. The requested
+   public replay matched all 792,838 RNG calls and kept every verified call for
+   all 363 ledger functions; 43/44 sessions passed fully, with one screen-only
+   miss. No CI job, full game suite or new recording was added. Coverage
+   guidance is still future work. See `verification/README.md` for domains,
+   source assumptions, exact commands, projection limits and runtime details.
 6. **Optional state relation.** A typed relation between `GameState` and C
    globals for monster, object, and hero records would extend refinement proofs
    to stateful functions. Expect diminishing returns. Whole-game equivalence

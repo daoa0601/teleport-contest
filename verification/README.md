@@ -4,6 +4,172 @@ Formal-verification experiments for the C-to-TypeScript port. Nothing here is
 part of the game, the grader, or `npm run check`. See
 `docs/formal-verification.md` for the assessment and plan.
 
+## `difftest/`: concrete calls with serialized heap and hero state
+
+This prototype calls real linked recorder functions and their emitted-JavaScript
+ports. It is empirical testing, with no new equivalence theorem and no CI job.
+It currently covers these six entry points:
+
+| Recorder function | Emitted JavaScript |
+|---|---|
+| `mkobj.c:weight` | `weight.js:objectWeight` |
+| `hack.c:inv_weight` | `weight.js:invWeight` |
+| `hack.c:calc_capacity` | `weight.js:calcCapacity` |
+| `hack.c:near_capacity` | `weight.js:nearCapacity` |
+| `weapon.c:dmgval` | `weapon_damage.js:rollPhysicalWeaponDamage` |
+| `uhitm.c:find_roll_to_hit` | `hero_attack_accuracy.js:findHeroMeleeHitThreshold` |
+
+Run from the worktree root (tested on macOS; requires clang, make, Node and uv):
+
+```sh
+npm run compile
+export NETHACK_RECORDER=/Users/anhdao/project/contest/nethack-c/recorder
+uv run verification/difftest/build.py
+uv run verification/difftest/test_harness.py -v
+uv run verification/difftest/run.py --count 6000 --self-test
+```
+
+`build.py` asks the configured recorder Makefile for its link objects, then
+recompiles all 140 linked objects with clang and undefined-behavior sanitization.
+It reads the existing configured headers and Lua archive. All outputs go under
+this worktree's `.cache/fv-difftest/`; it never builds in or writes to the recorder
+tree. The recorder must already have been configured by `build-recorder.sh`.
+Rerun `build.py` after native source/header or harness changes; there is no
+automatic source freshness check. `run.py --build` also performs this build.
+
+The Python entry point validates and fills the input schema in `model.py` before
+sending it to either child. A minimal custom case can be written as one JSON
+object, or cases can be supplied as JSONL:
+
+```json
+{"target":"dmgval","seed":42,"position":255,"object":{"otyp":"TWO_HANDED_SWORD"},"monster":{"mnum":"giant"}}
+```
+
+```sh
+uv run verification/difftest/run.py --input .cache/my-case.json
+```
+
+Each call compares the returned value, armor penalty, selected hero fields,
+alignment, ordered inventory and recursive contents, object
+quantity/weight/food/enchantment/erosion fields, ownership and worn masks, and
+the supplied monster flags. It also compares consumed core/display word counts
+and RNG operation/arguments/result entries. C source annotations and sequence
+numbers are omitted from log entries; these have no JS counterpart. Differences
+are reported one field at a time, without expanding an entire log assertion.
+
+Every mismatch is written to `.cache/fv-difftest/mismatches.jsonl`, with the case
+index, both observations and a reproducing input. The reducer deletes list
+elements and resets scalars to domain defaults, preserving object/species types
+and the first differing field. Its result is one-minimal under those operations,
+not globally smallest. `--no-minimize` retains original inputs instead. A replay
+can use the report's `input` object. Exit status 1 means a difference; native UB,
+constructor failures, timeouts, malformed results and empty inputs fail the run.
+Constructor errors retain the input in `.cache/fv-difftest/harness-error.json`.
+
+**Correspondence and assumed invariants.** The shared JSON and the two loaders
+are the state relation; neither is proved. JS uses the emitted test-support
+constructors. C calls `decl_globals_init`, the object/monster table initializers,
+and `set_uasmon` so form intrinsics and movement blocks exist. Outside flying and
+levitation sources are added to the form's sources; the input bits are not an
+override of innate flight. Accuracy rings are real inventory objects worn through
+C `Ring_on` and JS `wearHeroAccessory`, before the target's RNG measurement starts.
+An armed accuracy call aliases its object with the wielded inventory object.
+The supplied form index goes directly to JS `setHeroSpecies`, matching C's
+`u.umonnum` and `set_uasmon`. The animal and human were forms in
+`include/monsters.h` share display names, so the index must survive initialization.
+Input `attacks` selects the port's `firstAttack` argument. C increments its attack
+counter in `uhitm.c:find_roll_to_hit`, but the port entry point has no numeric
+counter output. That update is outside the compared projection and omitted from
+both outputs.
+
+| Input restriction or assumed fact | Native source |
+|---|---|
+| Matching numeric object/species IDs and initial metadata tables | `objects.c:objects_globals_init`, `monst.c:monst_globals_init`; emitted data modules; no table-equivalence proof |
+| Positive quantities, singleton non-mergeable types and globs; at most 100 objects and four containment edges | `obj.h` ownership and `Is_container`; `objects.h:oc_merge`; `mkobj.c:weight` |
+| `oeaten` is zero or no greater than full food nutrition | `eat.c:obj_nutrition`, `eaten_stat` |
+| Heavy-ball extra weight is a whole `WT_IRON_BALL_INCR`; candelabrum candles 0..7 | `weapon.c:dmgval`, `read.c` heavy-ball growth; `apply.c` candelabrum handling |
+| Strength 3..125, Dexterity/Constitution 3..25, level 1..30, Luck -13..13 plus moreluck -3..3 | `attrib.h`, `attrib.c:acurr`; `global.h:MAXULEV`; `you.h:Luck` |
+| Human archeologist/monk accuracy; basic weapon skills; no artifact, armor, steed, monster equipment or shapechanger state | `uhitm.c:find_roll_to_hit`; `weapon.c:hitval`, `weapon_hit_bonus` |
+| Input `hitinc` is the bonus before the supplied accuracy rings; -21 means no ring and -20..20 is an enchantment | `do_wear.c:Ring_on`; -21 is a harness sentinel |
+| Quantities/cached weights fit the conservative 100,000,000 weight budget | `mkobj.c:weight`, `hack.c:inv_weight`, `calc_capacity`; avoids C int overflow in tested calls |
+| Cached inventory weights already correspond to the intended object state | C `inv_weight` reads `owt`; JS reconstructs most ordinary weights. Reachability of a stale cache is not established here. |
+
+The tree shape excludes cycles, shared container contents and multiple owners.
+The JSON boundary requires integers; all tested totals fit exact JS arithmetic.
+The RNG is the actual seeded ISAAC64 stream, advanced by `position` before the
+call. C includes the unmodified recorder `rnd.c` and counts calls to its real
+ISAAC next-word function; JS loads the frozen scoring adapters without rewriting
+`js/`. This tests sampled seeds/positions, not arbitrary draw streams. Setup draws
+are excluded. Display consumption is counted, but these targets do not exercise
+display draws. No C function bodies are extracted or translated by this tool;
+clang compiles the real translation units, rather than a textual C model.
+
+**Measured acceptance (fv-difftest).** The native build took 14.98 s. The eight
+harness tests passed in 2.340 s. New regressions failed before the review fixes
+on the claimed attack-counter output and the three human were forms. Both forms
+of wererat, werejackal and werewolf now retain their requested indices.
+A batch of 6,083 cases (6,000 random plus 83 boundary inputs) took 7.01 s,
+including five rejected domain probes and seven killed emitted-JS mutants.
+Mutants independently cover weight, inventory capacity,
+damage and accuracy results, an object mutation, extra RNG consumption, and a
+log-only change with unchanged result and stream position.
+
+| Target | Cases | Mismatches |
+|---|---:|---:|
+| `weight` | 1,031 | 0 |
+| `inv_weight` | 1,019 | 0 |
+| `calc_capacity` | 1,006 | 0 |
+| `near_capacity` | 1,006 | 0 |
+| `dmgval` | 1,009 | 0 |
+| `find_roll_to_hit` | 1,012 | 0 |
+
+No game-code bug or reachable counterexample was established. Initial fog-cloud
+differences came from omitting C's form initialization and disappeared after the
+loader called `set_uasmon`; a focused harness test now exercises that behavior.
+A generated mismatch alone cannot establish play reachability. Inspect the
+owning C callers and initialization before reporting an in-play port defect.
+
+**Limits.** This compares a declared projection, not all of C memory or all of
+`GameState`. It omits messages/screens, most hero fields, arbitrary equipment,
+artifact-specific damage, monster ownership graphs, floor piles and map changes,
+Lua, asynchronous suspension, and save/restore. The temporary C `gw.wc` capacity
+cache has no stored JS counterpart and is not compared. Accuracy's chivalry/giri
+effects and polymorphed accuracy are outside the current role/form domain.
+The numeric attack-counter update is also outside the projection, because the
+port takes a first-attack boolean rather than a mutable counter.
+Generated inputs are random plus explicit boundaries, not coverage-guided.
+Some accepted states need not be reachable in play. UB sanitization only checks
+executed paths and does not prove UB freedom.
+
+The requested public replay completed 44 sessions with 43 full passes, zero
+errors, 11,396/11,405 matched screens and 792,838/792,838 matched RNG calls.
+`rng-function-table.mjs --check-ledger docs/ledger/public-rng.tsv` passed:
+all 363 listed functions retained every verified call. The screen-only miss
+was `seed2200-wizard-quaff-zap-read` at step 158. No full game behavior suite,
+pool/eval corpus or new recording was run; game code, measurement ledgers and
+CI workflows were unchanged.
+
+The separate required `equivalence/prove.py` run exited 0 with all 28 previous
+claims still PROVED, including their probes and mutants. Its complete per-claim
+times from this unit's run are below (these exclude each claim's negative checks):
+
+| Claim | Result | Time | Claim | Result | Time |
+|---|---|---:|---|---|---:|
+| `rn2` | PROVED | 0.2 s | `rnd` | PROVED | 0.1 s |
+| `rn1` | PROVED | 0.4 s | `rnl` | PROVED | 0.9 s |
+| `d` | PROVED | 0.3 s | `rne` | PROVED | 1.1 s |
+| `rnz` | PROVED | 4.2 s | `rn2_on_display_rng` | PROVED | 0.1 s |
+| `distmin` | PROVED | 0.3 s | `dist2` | PROVED | 1.3 s |
+| `enermod` | PROVED | 4.6 s | `newuexp` | PROVED | 1.1 s |
+| `xlev_to_rank` | PROVED | 0.3 s | `rounddiv` | PROVED | 0.6 s |
+| `Align2amask` | PROVED | 0.5 s | `Amask2align` | PROVED | 1.2 s |
+| `acurr:StrDex` | PROVED | 1.2 s | `acurrstr` | PROVED | 0.5 s |
+| `dbon:human` | PROVED | 0.8 s | `abon:human` | PROVED | 15.0 s |
+| `lower_bits` | PROVED | 0.1 s | `upper_bits` | PROVED | 0.0 s |
+| `isaac64_mix` | PROVED | 0.1 s | `isaac64_update` | PROVED | 0.3 s |
+| `isaac64_reseed` | PROVED | 3.2 s | `isaac64_init` | PROVED | 0.1 s |
+| `isaac64_next_uint64` | PROVED | 0.0 s | `isaac64_seed_packing` | PROVED | 0.1 s |
+
 ## `equivalence/`: C ≡ JavaScript translation validation
 
 Proves that pinned NetHack C functions and the JavaScript used for scoring
