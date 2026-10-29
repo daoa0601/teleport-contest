@@ -71,6 +71,9 @@ jobs:
           make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
       - run: npm ci --ignore-scripts
       - run: npm run compile
+      - name: Test C and JavaScript executor behavior
+        working-directory: verification/equivalence
+        run: uv run --locked python -m unittest -v test_executors
       - name: Test ledger acceptance and rejection
         working-directory: verification/equivalence
         run: uv run --locked ../test_ledgers.py

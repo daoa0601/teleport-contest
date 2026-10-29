@@ -281,8 +281,17 @@ def domain_summary(spec) -> str:
     """Keep the ledger's reviewable domain derived from the actual spec."""
     symbols = {name: z3.Int(name) for name, _ in spec.params}
     symbols.update({name: z3.Int(name) for name, _, _ in spec.state})
+    symbols.update({name: z3.Int(name) for name, _, _, _ in spec.enum_state})
     types = [(name, t) for name, t in spec.params] + [(name, t) for name, t, _ in spec.state]
+    types.extend((name, t) for name, t, _, _ in spec.enum_state)
     summary = [f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types]
+    summary.extend(f'{name} == {js_path}' for name, _, js_path in spec.state)
+    for name, _, js_path, choices in spec.enum_state:
+        mapping = ', '.join(f'{native}={js}' for native, js in choices)
+        summary.append(f'{name} corresponds to {js_path} in {{{mapping}}}')
+    for name, js_paths in spec.nulls:
+        summary.append(f'{name} == NULL')
+        summary.extend(f'{js_path} == null' for js_path in js_paths)
     summary.extend(' '.join(str(term).split()) for term in spec.pre(symbols))
     return '; '.join(summary)
 

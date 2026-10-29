@@ -146,6 +146,22 @@ class ProofLedgerChecks(unittest.TestCase):
         self.assertIn('rnd', result.stdout)
         self.assertIn('mutant count changed', result.stdout)
 
+    def test_changed_equipment_assumption_fails(self):
+        claim = next(claim for claim in self.claims if claim['spec'] == 'acurrstr')
+        domain = claim['domain'].replace('uarmg == NULL', 'uarmg != NULL')
+        result = self.check_changed_claim('acurrstr', 'domain', domain)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('acurrstr', result.stdout)
+        self.assertIn('domain changed', result.stdout)
+
+    def test_changed_role_correspondence_fails(self):
+        claim = next(claim for claim in self.claims if claim['spec'] == 'enermod')
+        domain = claim['domain'].replace('PM_WIZARD=wizard', 'PM_WIZARD=knight')
+        result = self.check_changed_claim('enermod', 'domain', domain)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('enermod', result.stdout)
+        self.assertIn('domain changed', result.stdout)
+
 
 def site(kind, line=10):
     # One rn2(count) call, with the evidence available to the classifier.
