@@ -138,6 +138,44 @@ def _walk(n):
             yield from _walk(c)
 
 
+def _assertion(n):
+    """Recognize only libc's assert branches; return (condition, success value)."""
+    def fails(node):
+        call = _unwrap(node)
+        if call['kind'] != 'CallExpr':
+            return False
+        callee = _unwrap(call['inner'][0])
+        return (callee['kind'] == 'DeclRefExpr'
+                and callee['referencedDecl']['kind'] == 'FunctionDecl'
+                and callee['referencedDecl']['name'] in ('__assert_fail', '__assert_rtn'))
+
+    def void_zero(node):
+        cast = _unwrap(node)
+        if cast['kind'] != 'CStyleCastExpr' or cast['castKind'] != 'ToVoid':
+            return False
+        value = _unwrap(cast['inner'][0])
+        return value['kind'] == 'IntegerLiteral' and value['value'] == '0'
+
+    if n['kind'] == 'UnaryOperator' and n['opcode'] == '__extension__':
+        n = _unwrap(n['inner'][0])
+    if n['kind'] == 'ConditionalOperator':
+        condition, yes, no = n['inner']
+        if void_zero(yes) and fails(no):
+            return condition, True
+        if fails(yes) and void_zero(no):
+            return condition, False
+    if n['kind'] == 'StmtExpr':
+        body = n['inner'][0]
+        if body['kind'] == 'CompoundStmt' and len(body.get('inner', [])) == 1:
+            statement = body['inner'][0]
+            if (statement['kind'] == 'IfStmt' and statement.get('hasElse')
+                    and len(statement['inner']) == 3):
+                condition, yes, no = statement['inner']
+                if yes['kind'] == 'NullStmt' and fails(no):
+                    return condition, True
+    return None
+
+
 def _assigned(n) -> set:
     names = set()
     for m in _walk(n):
@@ -386,6 +424,16 @@ class CExec:
 
     def eval(self, path, n) -> list:
         k = n['kind']
+        if k in ('ConditionalOperator', 'StmtExpr', 'UnaryOperator'):
+            assertion = _assertion(n)
+            if assertion is not None:
+                condition, success = assertion
+                out = []
+                for p, value in self.eval(path, condition):
+                    holds = self.truth(value) if success else z3.Not(self.truth(value))
+                    self.m.oblige(p, holds, 'C assertion failed', self.where(n))
+                    out.extend((q, None) for q, taken in self.m.branch(p, holds) if taken)
+                return out
         if k in ('ParenExpr', 'ConstantExpr'):
             return self.eval(path, n['inner'][0])
         if k in ('ImplicitCastExpr', 'CStyleCastExpr'):

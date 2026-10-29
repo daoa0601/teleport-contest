@@ -20,7 +20,8 @@ defaults:
 
 jobs:
   equivalence:
-    runs-on: ubuntu-latest
+    # The native recorder uses macos-latest; keep its SDK headers and Apple clang.
+    runs-on: macos-latest
     timeout-minutes: 15
     env:
       NETHACK_RECORDER: ${{ github.workspace }}/nethack-c/recorder
@@ -37,10 +38,11 @@ jobs:
         with:
           node-version: '22'
           check-latest: true
-      - name: Install clang and uv
+      - name: Use Apple clang and install uv
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang
+          echo "$(dirname "$(xcrun --find clang)")" >> "$GITHUB_PATH"
+          echo "SDKROOT=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+          xcrun clang --version
           python3 -m venv .cache/uv-bootstrap
           .cache/uv-bootstrap/bin/pip install uv==0.13.5
           echo "$PWD/.cache/uv-bootstrap/bin" >> "$GITHUB_PATH"
@@ -54,7 +56,7 @@ jobs:
           path: |
             nethack-c/recorder
             .cache/uv
-          key: equivalence-${{ runner.os }}-${{ runner.arch }}-${{ env.NETHACK_SHA }}-${{ hashFiles('nethack-c/patches/**', 'nethack-c/build-recorder.sh', 'verification/**/*.py', 'verification/**/*.mjs', 'verification/equivalence/harness/**', 'verification/equivalence/uv.lock', 'verification/equivalence/pyproject.toml', '.github/workflows/equivalence.yml') }}
+          key: equivalence-${{ runner.os }}-${{ runner.arch }}-${{ env.NETHACK_SHA }}-${{ hashFiles('nethack-c/patches/**', 'nethack-c/build-recorder.sh', 'nethack-c/macosx-minimal', 'verification/**/*.py', 'verification/**/*.mjs', 'verification/equivalence/harness/**', 'verification/equivalence/uv.lock', 'verification/equivalence/pyproject.toml', '.github/workflows/equivalence.yml') }}
       - name: Prepare patched recorder sources and Lua headers
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -66,9 +68,11 @@ jobs:
           git -c user.email=build@local -c user.name=build commit -q -m baseline
           for patch in ../patches/*.patch; do git apply --recount "$patch"; done
           python3 -c 'import shutil; shutil.rmtree(".git")'
-          sh sys/unix/setup.sh sys/unix/hints/linux-minimal
+          cp ../macosx-minimal sys/unix/hints/macosx-minimal
+          sed -i.bak "s|__NETHACK_PREFIX__|$PWD/install|g" sys/unix/hints/macosx-minimal
+          sh sys/unix/setup.sh sys/unix/hints/macosx-minimal
           make fetch-lua
-          make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
+          make CC=clang SYSCFLAGS=-DLUA_USE_MACOSX include/nhlua.h
       - run: npm ci --ignore-scripts
       - run: npm run compile
       - name: Test C and JavaScript executor behavior
