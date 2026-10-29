@@ -22,8 +22,29 @@ def full_attributes(s):
     return [s['chridx'] >= 0, s['chridx'] < 6]
 
 
+HERO_ASSUMPTIONS = (
+    'polyself.c:set_uasmon: hero data points to mons[u.umonnum], 0 <= u.umonnum < NUMMONS',
+    'monst.c:monst_globals_init: fields read retain mons_init values; emitted table fields retain initial values',
+    'artifacts.js:initializeArtifacts: runtime map retains artifact_data identity/name pairs',
+    'do_wear.c:Ring_on/Ring_gone: ring attribute effects correspond through the declared u.abon arrays',
+)
+EXPERIENCE_ASSUMPTIONS = (
+    'monst.c:monst_globals_init: all NUMMONS species partitioned; native/emitted fields retain initial values',
+    'worn.c:find_mac: monster inventory is null and misc_worn_check is zero',
+    'exper.c:experience: monster.data points to mons[species]; emitted mnum equals species',
+    'youprop.h:Amphibious: emitted option is derived by executing verification_amphibious over the related C state',
+)
+MOVEMENT_ASSUMPTIONS = (
+    'monst.c:monst_globals_init: all NUMMONS species partitioned; native/emitted fields retain initial values',
+    'mon.c:mcalcmove: monster.data points to mons[species]; emitted mnum equals species',
+    'monster_speed.js:initializeMonsterMovement: finite movement/mmove/mspeed are already initialized',
+    'monster_speed.js:naturalMonsterSpeed: cached mmove equals emitted MONSTER_MOVE[species]',
+    'you.h:usteed: missing/same/other mount identities correspond; other mount fields are unread',
+)
+
 STATE_SPECS = [
     Spec('acurr:all', 'acurr', 'currentAttribute', [('chridx', INT)],
+         assumptions=HERO_ASSUMPTIONS,
          require_counterexamples=True, js_file=ATTRIB, state=HERO, references=WORN, configure=hero_state,
          pre=full_attributes,
          probes=[('base attribute correspondence omitted', UnrelatedState(
@@ -31,6 +52,7 @@ STATE_SPECS = [
          mutants=[(ATTRIB, "return [6, 6];", "return [7, 7];"),
                   (ATTRIB, '? STR25 : 3, STR25]', '? 124 : 3, STR25]')]),
     Spec('dbon:all', 'dbon', 'heroStrengthDamageBonus', [],
+         assumptions=HERO_ASSUMPTIONS,
          require_counterexamples=True, js_file=WEAPON_DAMAGE, js_args=[('obj', 'game')],
          state=HERO, references=WORN, configure=hero_state,
          probes=[('base Strength correspondence omitted', UnrelatedState(
@@ -40,6 +62,10 @@ STATE_SPECS = [
 
 STATE_SPECS += [
     Spec('abon:forms', 'abon', 'heroAttributeHitBonus', [],
+         assumptions=HERO_ASSUMPTIONS + (
+             'dungeon.c:level_difficulty: assumed equal pure xint16 result in 1..32767',
+             'monst.h:mvitals.died: corresponding Wizard death count; other JS counters are independent uchar values',
+         ),
          require_counterexamples=True, js_file=HIT_BONUS, js_args=[('obj', 'game')],
          state=HERO + ULEVEL + [('svm.mvitals[PM_WIZARD_OF_YENDOR].died', (8, False), None)],
          references=WORN, configure=hit_bonus_state,
@@ -66,7 +92,7 @@ def experience_domain(s):
 
 STATE_SPECS += [
     Spec('experience:tables', 'experience', 'monsterExperience', [('species', INT), ('nk', INT)],
-         slow=True,
+         slow=True, assumptions=EXPERIENCE_ASSUMPTIONS,
          require_counterexamples=True, js_file='js/exper.js',
          state=[('monster.m_lev', (8, False), 'monster.m_lev'),
                 ('monster.mrevived', (32, False), 'monster.mrevived'),
@@ -92,7 +118,7 @@ def movement_domain(s, minimum_gallop=0):
 STATE_SPECS += [
     Spec('mcalcmove:tables', 'mcalcmove', 'mcalcmove',
          [('species', INT), ('moving', (8, False)), ('riding', INT), ('steed_present', INT), ('movement', INT)],
-         slow=True,
+         slow=True, assumptions=MOVEMENT_ASSUMPTIONS,
          require_counterexamples=True, js_file='js/monster_speed.js',
          state=[('monster.mspeed', (32, False), 'monster.mspeed'),
                 ('u.ugallop', (64, True), 'game.u.ugallop'),

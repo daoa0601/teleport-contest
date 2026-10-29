@@ -38,7 +38,7 @@ from queries import solve
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-LEDGER_COLUMNS = ('spec', 'domain', 'probes', 'mutants')
+LEDGER_COLUMNS = ('spec', 'domain', 'probes', 'mutants', 'runtime')
 
 
 @dataclass(frozen=True)
@@ -46,6 +46,7 @@ class ClaimSummary:
     domain: str
     probes: int
     mutants: int
+    slow: bool = False
 
 
 def recorder_dir() -> Path:
@@ -297,16 +298,21 @@ def _check(spec, front, modules, pre_fn, pairwise_outputs=False) -> tuple[bool, 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--only', action='append')
-    parser.add_argument('--skip-slow', action='store_true',
-                        help='report and exclude claims marked slow, including their negative checks')
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument('--slow-only', action='store_true',
+                           help='check only slow proofs, preserving complete ledger metadata checks')
+    selection.add_argument('--skip-slow', action='store_true',
+                           help='report and exclude claims marked slow, including their negative checks')
     parser.add_argument('--no-probes', action='store_true')
     parser.add_argument('--no-mutants', action='store_true')
     parser.add_argument('--check-ledger', type=Path, help='require recorded domains, check counts, and successful proofs')
     parser.add_argument('--write-ledger', type=Path, help='record all claims after a successful complete run')
     args = parser.parse_args()
     if (args.check_ledger or args.write_ledger) and (args.only or args.no_probes or args.no_mutants):
-        parser.error('ledger checks require every spec, probe, and mutant')
-    claims = {spec.name: ClaimSummary(domain_summary(spec), len(spec.probes), len(spec.mutants)) for spec in SPECS}
+        parser.error('ledger checks require every selected spec, probe, and mutant')
+    if args.write_ledger and (args.skip_slow or args.slow_only):
+        parser.error('writing a ledger requires all fast and slow proofs')
+    claims = {spec.name: ClaimSummary(domain_summary(spec), len(spec.probes), len(spec.mutants), spec.slow) for spec in SPECS}
     if len(claims) != len(SPECS):
         parser.error('spec names must be unique')
     for name, (domain, probes, mutants) in isaac_claims(REPO).items():
@@ -341,8 +347,8 @@ def main() -> int:
     for spec in SPECS:
         if args.only and spec.name not in args.only:
             continue
-        if args.skip_slow and spec.slow:
-            print(f'SKIPPED {spec.name} (slow)')
+        if (args.skip_slow and spec.slow) or (args.slow_only and not spec.slow):
+            print(f'SKIPPED {spec.name} ({"slow" if spec.slow else "fast"})')
             continue
         start = time.monotonic()
         proved, report = check(spec, front, modules, spec.pre)
@@ -374,13 +380,14 @@ def main() -> int:
                     verdict = 'NO COUNTEREXAMPLE'
                 print(f'  {verdict} mutant {old!r} -> {new!r}: {first}')
                 failures += proved != equivalent or invalid_kill
-    failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
-    failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
+    if not args.slow_only:
+        failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
+        failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
     if failures == 0 and args.write_ledger:
         with args.write_ledger.open('w', newline='') as output:
             writer = csv.writer(output, delimiter='\t', lineterminator='\n')
             writer.writerow(LEDGER_COLUMNS)
-            writer.writerows((name, claim.domain, claim.probes, claim.mutants)
+            writer.writerows((name, claim.domain, claim.probes, claim.mutants, 'slow' if claim.slow else 'fast')
                              for name, claim in sorted(claims.items()))
     print('all claims hold' if failures == 0 else f'{failures} claim(s) failed')
     return 1 if failures else 0
@@ -395,13 +402,20 @@ def domain_summary(spec) -> str:
     types.extend((name, t) for name, t, _, _ in spec.enum_state)
     summary = [f'C function: {spec.c}', f'JS function: {spec.js_file}:{spec.js}']
     summary.extend(f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types)
-    summary.extend(f'{name} == {js_path}' for name, _, js_path in spec.state)
+    summary.extend(f'{name} == {js_path}' for name, _, js_path in spec.state if js_path is not None)
     for name, _, js_path, choices in spec.enum_state:
         mapping = ', '.join(f'{native}={js}' for native, js in choices)
         summary.append(f'{name} corresponds to {js_path} in {{{mapping}}}')
     for name, js_paths in spec.nulls:
         summary.append(f'{name} == NULL')
         summary.extend(f'{js_path} == null' for js_path in js_paths)
+    for name, aliases in spec.references:
+        summary.append(f'{name}: nullable item shared by nonempty subsets of JS aliases {", ".join(aliases)}')
+    for label, function in (('state construction', spec.configure), ('argument relation', spec.arguments),
+                            ('exhaustive partitions', spec.partitions)):
+        if function is not None and function.__name__ != '<lambda>':
+            summary.append(f'{label}: {function.__module__}.{function.__qualname__}')
+    summary.extend(spec.assumptions)
     summary.extend(' '.join(term.sexpr().split()) for term in spec.pre(symbols))
     if spec.js_args:
         summary.append('JS extra arguments: ' + json.dumps(spec.js_args))
@@ -441,6 +455,8 @@ def claim_changes(recorded: ClaimSummary, current: ClaimSummary) -> list[str]:
         changes.append(f'domain changed (ledger: {recorded.domain}; current: {current.domain})')
     if recorded.probes != current.probes:
         changes.append(f'probe count changed (ledger: {recorded.probes}; current: {current.probes})')
+    if recorded.slow != current.slow:
+        changes.append('runtime classification changed')
     if recorded.mutants != current.mutants:
         changes.append(f'mutant count changed (ledger: {recorded.mutants}; current: {current.mutants})')
     return changes
@@ -455,14 +471,16 @@ def read_ledger(path: Path) -> dict[str, ClaimSummary]:
         for line, row in enumerate(rows, 2):
             if len(row) != len(LEDGER_COLUMNS) or not all(row) or row[0] in claims:
                 raise ValueError(f'{path}:{line}: invalid or duplicate claim')
-            name, domain, probes, mutants = row
+            name, domain, probes, mutants, runtime = row
+            if runtime not in ('fast', 'slow'):
+                raise ValueError(f'{path}:{line}: runtime must be fast or slow')
             try:
                 counts = (int(probes), int(mutants))
             except ValueError as error:
                 raise ValueError(f'{path}:{line}: probe and mutant counts must be nonnegative integers') from error
             if min(counts) < 0:
                 raise ValueError(f'{path}:{line}: probe and mutant counts must be nonnegative integers')
-            claims[name] = ClaimSummary(domain, *counts)
+            claims[name] = ClaimSummary(domain, *counts, runtime == 'slow')
     return claims
 
 

@@ -683,9 +683,18 @@ class CExec:
             if signed:
                 # the quotient of the minimum by -1 is unrepresentable, which
                 # makes both / and % undefined even though the remainder is 0
-                self.m.oblige(path, z3.Not(z3.And(a == -2 ** (bits - 1), b == -1)),
-                              f'C signed overflow in {op} (minimum by -1)', where)
-                r = self.m.tdiv(path, a, b) if op == '/' else self.m.trem(path, a, b)
+                # Proving the divisor alone avoids mixing an impossible -1
+                # case with a large nonlinear numerator in the final query.
+                if not self.m.proves(path, b != -1):
+                    self.m.oblige(path, z3.Not(z3.And(a == -2 ** (bits - 1), b == -1)),
+                                  f'C signed overflow in {op} (minimum by -1)', where)
+                # For in-range signed operands, nonzero division and remainder
+                # fit this type except minimum / -1 (also undefined for %).
+                # Check those premises directly instead of asking the solver
+                # to bound a nested truncating-division expression again.
+                self.m.oblige(path, in_range(a, t), 'C division numerator outside promoted type', where)
+                self.m.oblige(path, in_range(b, t), 'C division divisor outside promoted type', where)
+                return self.m.tdiv(path, a, b) if op == '/' else self.m.trem(path, a, b)
             else:
                 r = a / b if op == '/' else a % b
         elif op == '+':

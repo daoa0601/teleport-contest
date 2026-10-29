@@ -211,7 +211,7 @@ The new claims require both a concrete failing domain probe and a concrete
 killed mutant. No game code or corpora were changed.
 
 Run the language, solver-isolation and command-selection tests
-(39 tests; no game sessions):
+(51 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
@@ -219,18 +219,22 @@ NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v \
   test_executors test_queries test_proof_selection
 ```
 
-The post-rebase run passed all 39 tests in 9.020 s. They check table reads and
+The post-rebase run passed all 51 tests in 10.550 s. They check table reads and
 bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
-JS 32-bit coercion, imports, defaults, scopes, and rejected constructs. C table
+JS 32-bit coercion, imports, defaults, scopes, libc assertions, signed division safety and rejected constructs. C table
 values come from clang initializers. JS constant arrays are read from emitted
 modules; this assumes the fields read still have their initial values. The
 game-table claims include native record and attack fields. Writable heap state
 is not modeled; movement's initializer performs no writes in its entry domain.
-CI runs the complete check against `docs/ledger/equivalence.tsv`:
+CI checks the complete ledger metadata, then proves the selected runtime class:
 
 ```sh
 cd verification/equivalence
+uv run --locked prove.py --skip-slow --check-ledger ../../docs/ledger/equivalence.tsv
+# Nightly and workflow_dispatch slow job:
+uv run --locked prove.py --slow-only --check-ledger ../../docs/ledger/equivalence.tsv
+# Complete local check:
 uv run --locked prove.py --check-ledger ../../docs/ledger/equivalence.tsv
 ```
 
@@ -238,8 +242,9 @@ The ledger records each spec name, its C function and JS function/file, and
 its domain (parameter and state types,
 state correspondence, role mappings, null-pointer assumptions, and
 preconditions), supplied JS arguments (kind, value, and order), loop
-annotations (facts, invariant, variant, and streams), and probe and mutant
-counts. Preconditions and loop formulas use complete SMT expressions rather
+annotations (facts, invariant, variant, and streams), probe/mutant counts, and
+a `runtime` value of `fast` or `slow`. Stateful rows also record item aliases,
+state/argument/partition constructor identities, and explicit native assumptions. Preconditions and loop formulas use complete SMT expressions rather
 than Z3's display strings, which can truncate long terms. Loop formulas use
 independent symbols for current locals, entry locals, and RNG positions. The
 ledger records the complete formula rather than a few concrete iterations. Annotation locals must be read by name.
@@ -286,23 +291,27 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 `experience:tables` and `mcalcmove:tables` are marked `slow` in their specs.
 The default command includes them, all probes and all mutants. Use
 `uv run prove.py --skip-slow` for pull-request checks: it reports each excluded
-claim and checks the other 31. A scheduled full run should use the default
-command. Run just the slow claims with:
+claim and checks the other 31. The separate scheduled job uses `--slow-only --check-ledger`.
+Run just the slow claims with:
 
 ```sh
-uv run prove.py --only experience:tables --only mcalcmove:tables
+uv run prove.py --slow-only --check-ledger ../../docs/ledger/equivalence.tsv
 ```
 
-The integration branch has no equivalence ledger or proof CI job yet. When
-those land, retain these two claims in that ledger with a `slow` marker and
-run the full command in a scheduled/nightly step; skipping them does not
-establish their claims. The exact domains and negative checks are unchanged.
+Both claims remain in the ledger with `runtime=slow`. Both proof selectors
+check every recorded row and the complete current claim inventory before
+proving their selection. Missing fast claims and changes to runtime markers
+fail even with `--skip-slow`. A partial run cannot write a ledger. Skipping a
+claim does not establish it; its domains and negative checks are unchanged.
 See `docs/formal-verification.md` for measured times and profiling limits.
 
 The final full command exited 0 with all 33 claims, 37 domain probes and 41
-mutant checks in 646.04 s. The final `--skip-slow` run exited 0 with 31 claims,
-34 probes and 39 mutant checks in 97.07 s. Table proof times were 382.4 s for
-experience and 169.5 s for movement; both remain above the 120-second target.
+mutant checks in 652.64 s. The final `--skip-slow` run exited 0 with 31 claims,
+34 probes and 39 mutant checks in 93.37 s. Table proof times were 383.5 s for
+experience and 173.8 s for movement; both remain above the 120-second target.
+The separate `--slow-only --check-ledger` job command passed both claims, three
+probes and two mutants in 567.39 s. The 33-row ledger was generated only after
+a complete `--write-ledger` run succeeded.
 
 Both executor families use `core.bit_operation`; their C-width, JS Number
 coercion, and BigInt bounds remain explicit at the callers.
@@ -329,7 +338,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 6.047 s on this post-rebase run):
+after it (two tests in 6.151 s on this post-rebase run):
 
 ```sh
 cd verification/equivalence
@@ -406,26 +415,30 @@ call or strengthening its class is allowed. Upper bounds remain a separate
 summary, outside this ledger. Use `--write-ledger` with the same path to record
 a reviewed baseline; combining it with `--check-ledger` writes only on success.
 
-The 28 ledger CLI behavior tests assert exit status, with reports used only
+The 37 ledger CLI behavior tests assert exit status, with reports used only
 for failure diagnostics. They run with:
 
 ```sh
 cd verification/equivalence && uv run --locked ../test_ledgers.py
 ```
 
-`.github/workflows/equivalence.yml` runs on every pull request and on pushes to
-`daoa/recovery-architecture` and `main`. It uses `macos-latest` and Apple clang,
-matching the native recorder job in `fresh-batches.yml`. Clang reads system
-headers through `hack.h`, including `assert.h`, `stdint.h`, `limits.h`, and
-`ctype.h`; the SDK is therefore part of the C input. The job selects Apple
-clang and its SDK with `xcrun`. It prepares the pinned upstream C tree with the
-recorder patches and generates `nhlua.h` using the recorder's Lua build rules.
-Those patches change the RNG functions, logging macros, and `hacklib.c`, so
-using upstream alone would check different code. It installs uv, compiles the
-TypeScript, runs the executor, target-selection, analyzer, and ledger tests,
-cross-checks the C and scoring generators, and reruns both analyses and the
-source-wide call-site mutant gate. The job summary and retained reports
-include wall-clock times.
+`.github/workflows/equivalence.yml` runs the fast job on every pull request,
+on pushes to `daoa/recovery-architecture` and `main`, nightly at 02:17 UTC, and
+on `workflow_dispatch`. The separate `slow-equivalence` job runs after it only
+on schedule or manual dispatch, using `--slow-only` with the same ledger.
+Both jobs use `ubuntu-latest`, install clang and prepare the recorder-patched
+C sources and Lua headers with `linux-minimal` / `LUA_USE_POSIX`. Each job
+compiles the TypeScript before proving emitted JavaScript. The fast job also
+runs executor, target-selection, analyzer and ledger tests, the generator
+cross-check and both call-site gates. The slow job retains a separate proof
+report and runtime. Hosted Actions results have not been observed for this
+change.
+
+Clang reads system headers through `hack.h`; those headers remain part of the
+C input. A local Ubuntu 24.04 arm64 container using glibc headers proved
+`acurr:all` in 5.7 s and `abon:forms` in 48.9 s, including their probes and
+mutants. This checks Linux header handling; it is not a hosted Ubuntu x86-64
+measurement. The assertions are also exercised in explicit libc-form tests.
 
 Assertions are proof obligations. The executor recognizes Apple's conditional
 `__assert_rtn` expansion and glibc's `__assert_fail` statement expression from

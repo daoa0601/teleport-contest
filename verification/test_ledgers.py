@@ -9,6 +9,7 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import shutil
 import sys
 import tempfile
 import unittest
@@ -116,8 +117,8 @@ class LedgerChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'ledger.tsv'
             with ledger.open('w', newline='') as output:
-                csv.writer(output, delimiter='\t').writerows([('spec', 'domain', 'probes', 'mutants'),
-                                                            ('rn2', 'x >= 1', 2, 0)])
+                csv.writer(output, delimiter='\t').writerows([('spec', 'domain', 'probes', 'mutants', 'runtime'),
+                                                            ('rn2', 'x >= 1', 2, 0, 'fast')])
             for option in ('--only=rn2', '--no-probes', '--no-mutants'):
                 with self.subTest(option=option):
                     result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
@@ -128,8 +129,8 @@ class LedgerChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'ledger.tsv'
             with ledger.open('w', newline='') as output:
-                csv.writer(output, delimiter='\t').writerows([('spec', 'domain', 'probes', 'mutants'),
-                                                            ('removed_claim', 'x >= 1', 1, 1)])
+                csv.writer(output, delimiter='\t').writerows([('spec', 'domain', 'probes', 'mutants', 'runtime'),
+                                                            ('removed_claim', 'x >= 1', 1, 1, 'fast')])
             result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
                                      '--check-ledger', str(ledger)], capture_output=True, text=True)
             self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -141,20 +142,17 @@ class ProofLedgerChecks(unittest.TestCase):
         cls.directory = tempfile.TemporaryDirectory(dir=CACHE)
         cls.addClassCleanup(cls.directory.cleanup)
         ledger = Path(cls.directory.name) / 'claims.tsv'
-        result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
-                                 '--write-ledger', str(ledger)], capture_output=True, text=True)
-        if result.returncode:
-            raise RuntimeError(result.stdout + result.stderr)
+        shutil.copyfile(prove.REPO / 'docs/ledger/equivalence.tsv', ledger)
         with ledger.open(newline='') as source:
             reader = csv.DictReader(source, delimiter='\t')
             cls.columns = reader.fieldnames
             cls.claims = list(reader)
 
-    def check_changed_claim(self, name, field, value):
-        return self.check_claims({**claim, field: value} if claim['spec'] == name else claim
-                                 for claim in self.claims)
+    def check_changed_claim(self, name, field, value, *options):
+        return self.check_claims(({**claim, field: value} if claim['spec'] == name else claim
+                                  for claim in self.claims), options=options)
 
-    def check_claims(self, claims):
+    def check_claims(self, claims, *, options=()):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'claims.tsv'
             with ledger.open('w', newline='') as output:
@@ -162,7 +160,39 @@ class ProofLedgerChecks(unittest.TestCase):
                 writer.writeheader()
                 writer.writerows(claims)
             return subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
-                                   '--check-ledger', str(ledger)], capture_output=True, text=True)
+                                   '--check-ledger', str(ledger), *options], capture_output=True, text=True)
+
+    def test_fast_check_accepts_the_complete_ledger(self):
+        result = self.check_claims(self.claims, options=('--skip-slow',))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_fast_check_rejects_a_missing_recorded_fast_claim(self):
+        result = self.check_claims((claim for claim in self.claims if claim['spec'] != 'rn2'),
+                                   options=('--skip-slow',))
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_fast_check_rejects_a_fast_spec_removed_from_the_runner(self):
+        output = io.StringIO()
+        ledger = Path(self.directory.name) / 'claims.tsv'
+        with (
+            patch.object(prove, 'SPECS', [spec for spec in prove.SPECS if spec.name != 'rn2']),
+            patch.object(sys, 'argv', ['prove.py', '--skip-slow', '--check-ledger', str(ledger)]),
+            redirect_stdout(output),
+        ):
+            status = prove.main()
+        self.assertNotEqual(status, 0, output.getvalue())
+
+    def test_fast_check_cannot_relabel_a_fast_claim_as_slow(self):
+        result = self.check_changed_claim('rn2', 'runtime', 'slow', '--skip-slow')
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_partial_runs_cannot_write_a_ledger(self):
+        for option in ('--skip-slow', '--slow-only'):
+            with self.subTest(option=option):
+                result = subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'), option,
+                                         '--write-ledger', str(Path(self.directory.name) / 'partial.tsv')],
+                                        capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_changed_domain_fails(self):
         claim = next(claim for claim in self.claims if claim['spec'] == 'rn2')
@@ -241,7 +271,8 @@ class ProofLedgerChecks(unittest.TestCase):
 
 
 class AssumptionLedgerChecks(unittest.TestCase):
-    def check_assumptions(self, change, pre=lambda s: [s['n'] >= 0, s['n'] <= 3]):
+    def check_assumptions(self, change, pre=lambda s: [s['n'] >= 0, s['n'] <= 3],
+                          *, slow=False, selection=()):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             c_file = Path(directory) / 'example.c'
             js_file = Path(directory) / 'example.js'
@@ -256,18 +287,18 @@ class AssumptionLedgerChecks(unittest.TestCase):
                 variant=lambda v, e: e['n'] - v['i'],
                 facts=lambda v, e, pos, pos0: [e['n'] >= 0], streams=())
             spec = Spec('example', 'example', 'example', [('n', INT)],
-                        pre=pre,
+                        pre=pre, slow=slow,
                         loops={('c', 'example', 0): loop, ('js', 'example', 0): loop},
                         js_file=str(js_file), js_args=[('num', 0)])
 
-            def run(current, option):
+            def run(current, option, selection=()):
                 output = io.StringIO()
                 with (
                     patch.multiple(prove, SPECS=[current], C_FILES=[str(c_file)], JS_FILES=[current.js_file]),
                     patch.object(prove, 'isaac_claims', return_value={}),
                     patch.object(prove, 'prove_isaac64', return_value=0),
                     patch.object(prove, 'prove_seed_packing', return_value=0),
-                    patch.object(sys, 'argv', ['prove.py', option, str(ledger)]),
+                    patch.object(sys, 'argv', ['prove.py', option, str(ledger), *selection]),
                     redirect_stdout(output),
                 ):
                     status = prove.main()
@@ -275,7 +306,33 @@ class AssumptionLedgerChecks(unittest.TestCase):
 
             status, report = run(spec, '--write-ledger')
             self.assertEqual(status, 0, report)
-            return run(change(spec), '--check-ledger')
+            return run(change(spec), '--check-ledger', selection)
+
+    def test_slow_only_proves_the_selected_body(self):
+        def change_body(spec):
+            Path(spec.js_file).write_text('function example(n, bonus = 0) { return n + 1; }')
+            return spec
+
+        status, report = self.check_assumptions(change_body, slow=True, selection=('--slow-only',))
+        self.assertNotEqual(status, 0, report)
+
+    def test_fast_check_keeps_slow_metadata_without_proving_the_slow_body(self):
+        def change_body(spec):
+            Path(spec.js_file).write_text('function example(n, bonus = 0) { return n + 1; }')
+            return spec
+
+        status, report = self.check_assumptions(change_body, slow=True, selection=('--skip-slow',))
+        self.assertEqual(status, 0, report)
+
+    def test_changed_state_assumptions_require_review(self):
+        status, report = self.check_assumptions(
+            lambda spec: replace(spec, assumptions=('entry state has an additional restriction',)))
+        self.assertNotEqual(status, 0, report)
+
+    def test_changed_pointer_correspondence_requires_review(self):
+        status, report = self.check_assumptions(
+            lambda spec: replace(spec, references=[('item', ('game.item',))]))
+        self.assertNotEqual(status, 0, report)
 
     def test_unchanged_loop_and_arguments_pass(self):
         status, report = self.check_assumptions(lambda spec: spec)

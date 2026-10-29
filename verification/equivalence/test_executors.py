@@ -154,6 +154,39 @@ class ExecutorTests(unittest.TestCase):
             'function example(x) { let r = 0; while (x > 0) { switch (x) { '
             'case 2: r = 7; break; default: r = 3; } break; } return r; }', params=[('x', INT)])
 
+    def test_reachable_minimum_divided_by_minus_one_is_rejected(self):
+        self.rejected('int example(int x, int y) { return x / y; }',
+                      'function example(x, y) { return Math.trunc(x / y); }',
+                      params=[('x', INT), ('y', INT)],
+                      pre=lambda s: [s['x'] == -(2 ** 31), s['y'] == -1],
+                      reason='C signed overflow in /')
+
+    def test_reachable_minimum_remainder_by_minus_one_is_rejected(self):
+        self.rejected('int example(int x, int y) { return x % y; }',
+                      'function example(x, y) { return x % y; }',
+                      params=[('x', INT), ('y', INT)],
+                      pre=lambda s: [s['x'] == -(2 ** 31), s['y'] == -1],
+                      reason='C signed overflow in %')
+
+    def test_overflow_before_division_is_not_hidden_by_a_fitting_quotient(self):
+        self.rejected('int example(int x) { return (x + 1) / 2; }',
+                      'function example(x) { return Math.trunc((x + 1) / 2); }',
+                      params=[('x', INT)], pre=lambda s: [s['x'] == 2 ** 31 - 1],
+                      reason='C signed overflow in +')
+
+    def test_positive_composite_divisor_preserves_truncation_towards_zero(self):
+        self.equivalent('long example(int x, int y, long n) { '
+                        'long divisor = (1000L + x) * y; return n / divisor; }',
+                        'function example(x, y, n) { return Math.trunc(n / ((1000 + x) * y)); }',
+                        params=[('x', INT), ('y', INT), ('n', LONG)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 999, s['y'] >= 1, s['y'] <= 10,
+                                       s['n'] >= -(2 ** 40), s['n'] <= 2 ** 40])
+
+    def test_long_to_int_return_narrows_where_javascript_preserves_the_number(self):
+        self.rejected('int example(long x) { return x; }',
+                      'function example(x) { return x; }', params=[('x', LONG)],
+                      pre=lambda s: [s['x'] == 2 ** 31], reason='outputs differ')
+
     def test_signed_bit_operations_and_right_shift(self):
         self.equivalent('int example(int x) { return ((x & 255) | 16) ^ ((~x) >> 3); }',
                         'function example(x) { return ((x & 255) | 16) ^ ((~x) >> 3); }', params=[('x', INT)])

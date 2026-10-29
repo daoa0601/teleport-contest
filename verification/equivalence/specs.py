@@ -44,6 +44,7 @@ class Spec:
     partitions: Callable | None = None # finite, exhaustive subdomains
     require_counterexamples: bool = False
     slow: bool = False
+    assumptions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -146,10 +147,13 @@ SPECS = [
          pre=lambda s: [s['x'] >= 1, s['u.ulevel'] >= 0, s['u.ulevel'] <= 30],
          mutants=[(RNG, 'ulevel < 15 ? 5', 'ulevel < 16 ? 5', 'equivalent'),   # 15 / 3 == 5
                   (RNG, 'Math.trunc(ulevel / 3)', 'Math.trunc(ulevel / 4)')]),
-    Spec('rnz', 'rnz', 'rnz', [('i', INT)], state=ULEVEL,
+    # rnd.c:rnz returns (int)x. Fix only the excluded input boundary so the
+    # negative check finds that narrowing with a fully symbolic random stream.
+    Spec('rnz', 'rnz', 'rnz', [('i', INT)], state=ULEVEL, require_counterexamples=True,
          pre=lambda s: [s['i'] >= -10 ** 8, s['i'] <= 10 ** 8,
                         s['u.ulevel'] >= 0, s['u.ulevel'] <= 30],
-         probes=[('any int i', lambda s: [s['u.ulevel'] >= 0, s['u.ulevel'] <= 30])],
+         probes=[('INT_MAX narrows on return', lambda s: [s['i'] == INT_MAX,
+                                                        s['u.ulevel'] >= 0, s['u.ulevel'] <= 30])],
          mutants=[(RNG, 'tmp *= rne(4);', 'tmp *= rne(5);')]),
     Spec('rn2_on_display_rng', 'rn2_on_display_rng', 'rn2Display', [('x', INT)],
          pre=lambda s: [s['x'] >= 1],
