@@ -166,6 +166,11 @@ void test('message history mode uses its own choice menu and confirmation', asyn
     assert.equal(game.iflags.prevmsg_window, 'r');
     assert.match(game._pending_message, /'msg_window' changed to "reversed"\./);
 });
+void test('version choices describe the absent branch for the released build', async () => {
+    freshObjectRoom();
+    const views = await fullOptions(['versinfo'], view => view.includes('Select version information flags:') ? '\x1b' : ' ');
+    assert.ok(views.some(view => /b - \(not applicable\)/.test(view)), 'The released build has no development branch to display');
+});
 void test('paranoid confirmation can clear all preselected actions', async () => {
     freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
     const views = await fullOptions(['paranoid_confirmation'], () => '-\n');

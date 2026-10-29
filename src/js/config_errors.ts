@@ -17,6 +17,8 @@ export interface ConfigurationError {
     // still pauses for a key: before init_nhwindows() WIN_MAP is WIN_ERR and
     // tty_wait_synch() falls back to getret().
     raw?: boolean;
+    // add_menu_cmd_alias() uses pline() without wait_synch() at startup.
+    pause?: boolean;
 }
 
 export interface ConfigurationErrorReport {
@@ -48,7 +50,7 @@ export async function displayConfigurationErrors(reports: readonly Configuration
         for (const error of report.errors) {
             if (error.raw) {
                 rawPrintf(error.message);
-                await awaitStartupReturn();
+                if (error.pause !== false) await awaitStartupReturn();
                 continue;
             }
             if (error.lineNumber !== previousLine) rawConfigurationMessage(`\n${error.sourceLine}`);
