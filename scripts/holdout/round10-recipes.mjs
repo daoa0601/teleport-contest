@@ -14,8 +14,15 @@ function wish(...items) {
 function create(monster) {
     return keys(`\x07${monster}\r`);
 }
-function chat(answers = '') {
-    return [...'hykulnjb'].map(direction => keys(`#chat\r${direction}${answers}\x1b`));
+function chat() {
+    return [...'hykulnjb'].map(direction => keys(`#chat\r${direction}\x1b`));
+}
+function offerGold(amount) {
+    return [...'hykulnjb'].flatMap(direction => [
+        keys(`#chat\r${direction}`),
+        { type: 'answer-prompt', prompt: 'How much will you offer', value: `${amount}\r`, dismissMore: true },
+        keys('\x1b'),
+    ]);
 }
 function recipe(description, success, actions) {
     return {
@@ -42,9 +49,10 @@ export const ROUND10_RECIPES = {
     'monkey-theft': recipe('Let a monkey try to steal carried equipment.', ['The monkey attempts theft.'], [create('hostile monkey'), wait(20)]),
     // mhitu.c:doseduce(), mayberem(). Remove body armor first so refusing
     // the optional helmet/glove removal cannot stop the encounter.
-    'demon-seduction': recipe('Accept a succubus invitation and resolve its aftermath.', ['The seducer approaches the hero.', 'Seduction reaches its aftermath.'], character => [
+    'demon-seduction': recipe('Accept a demon invitation and resolve its aftermath.', ['The seducer approaches the hero.', 'Seduction reaches its aftermath.'], character => [
         ...(character.role === 'knight' ? [choose('ring mail', 'T*')] : [keys('T')]), wait(5),
-        create('peaceful succubus'), ...chat('\x1b'.repeat(10)),
+        create(`peaceful ${character.gender === 'female' ? 'incubus' : 'succubus'}`),
+        ...[...'hykulnjb'].map(direction => keys(`#chat\r${direction}${'\x1b'.repeat(10)}`)),
     ]),
     // mhitu.c:u_slow_down().
     'shade-slowing': recipe('Gain intrinsic speed, then endure a shade touch.', ['The shade removes intrinsic speed.'], [
@@ -59,14 +67,14 @@ export const ROUND10_RECIPES = {
     // minion.c:demon_talk(), bribe().
     'demon-bribery': recipe('Offer a peaceful demon all carried gold for safe passage.', ['The demon accepts a bribe and vanishes.'], [
         ...wish('1000 gold pieces'), create('peaceful Geryon'), keys('y'),
-        ...chat('\x151000\r'),
+        ...offerGold(1000),
     ]),
     // priest.c:priest_talk(). A priest outside a temple refuses friendly chat.
     'displaced-priest': recipe('Chat with a peaceful priest outside a temple.', ['The priest answers angrily.'], [create('peaceful aligned priest'), keys('y'), ...chat()]),
     // priest.c:priest_talk(), minion.c:bribe().
     'temple-donation': recipe('Visit the Minetown altar and offer a temple contribution.', ['The priest requests a contribution.', 'The hero donates gold.', 'The priest rewards the hero with protection.'], [
         ...wish('30000 gold pieces'), choose('minetn', 'm\x16'), keys('\x06\x14_.'),
-        ...chat('20000\r'),
+        ...offerGold(20000),
     ]),
     // were.c:you_were(), you_unwere(). Canned meat avoids carrying a heavy corpse.
     'lycanthropy-cure': recipe('Catch lycanthropy from werewolf meat and purify it with holy water.', ['The hero catches lycanthropy.', 'Holy water purifies the hero.'], [

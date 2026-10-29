@@ -11,6 +11,9 @@ function validateActions(actions) {
         if (action.type === 'select-menu-entry' && !action.target.trim()) {
             throw new Error('driver menu action needs a target');
         }
+        if (action.type === 'answer-prompt' && !action.prompt.trim()) {
+            throw new Error('driver prompt answer needs a prompt');
+        }
     }
 }
 export function createSessionDriver(actions) {
@@ -52,7 +55,14 @@ export function createSessionDriver(actions) {
         morePages = 0;
         while (actionIndex < actions.length) {
             const action = itemAt(actions, actionIndex);
-            if (action.type === 'keys') {
+            // A failed chat returns to command input. Skip its answer unless
+            // the expected question is visible; digits would become a count.
+            if (action.type === 'answer-prompt' && keyIndex === 0
+                && !visibleLines(lines).some(line => line.trimStart().startsWith(action.prompt))) {
+                actionIndex++;
+                continue;
+            }
+            if (action.type === 'keys' || action.type === 'answer-prompt') {
                 if (keyIndex >= action.value.length) {
                     actionIndex++;
                     keyIndex = 0;

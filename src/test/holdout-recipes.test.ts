@@ -11,6 +11,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { decodeActions } from '../scripts/lib/session-types.mjs';
 
 import {
     LEGAL_CHARACTERS, RECIPE_NAMES, ROLES, RACES,
@@ -129,7 +130,7 @@ for (const name of RECIPE_NAMES) {
                 'segment carries driver actions');
             assert.equal(seg.moves, undefined, 'driver segments carry no fixed moves');
             for (const action of seg.driver) {
-                assert.ok(['keys', 'select-menu-entry'].includes(action.type));
+                assert.doesNotThrow(() => decodeActions([action]), 'the recorder must accept each driver action');
                 if (action.type === 'keys') {
                     assert.equal(action.dismissMore, true,
                         'keys actions must dismiss pending --More-- prompts');
