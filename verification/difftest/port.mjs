@@ -5,6 +5,20 @@ import { readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 
 const changes = {
+    create_object: ['mklev.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
+        'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); otmp.spe = 100;'],
+    create_class: ['mklev.js', 'const excludeNovel = oclass === SPBOOK_no_NOVEL;',
+        'oclass = WEAPON_CLASS; const excludeNovel = oclass === SPBOOK_no_NOVEL;'],
+    random_range: ['mklev.js', 'return first === last ? first : 0;',
+        'return first === last ? first + 1 : 0;'],
+    random_monster: ['mklev.js', 'return selected >= 0 ? selected : null;',
+        'return selected >= 0 ? selected + 1 : null;'],
+    monster_class: ['mklev.js', 'if ((choice -= weight) <= 0)\n            return mndx;',
+        'if ((choice -= weight) <= 0)\n            return mndx + 1;'],
+    monster_weapons: ['mklev.js', 'if (!initializeMonsterEquipment) {',
+        'if (true) {'],
+    monster_inventory: ['mklev.js', 'if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 12) {',
+        'if (false) {'],
     weight: ['weight.js', 'return base * quantity(object);', 'return base * quantity(object) + 1;'],
     capacity: ['weight.js', 'return inventoryWeight(state) - weightCapacity(state);',
         'return inventoryWeight(state) - weightCapacity(state) + 1;'],
@@ -46,6 +60,7 @@ if (process.argv.includes('--metadata')) {
         },
         weights: data.OBJECT_WEIGHT, nutrition: data.OBJECT_NUTRITION, merge: data.OBJECT_MERGE,
         classes: data.OBJECT_NAMES.map((_, index) => objectClassForType(index)), names: data.OBJECT_NAMES,
+        monsterClasses: monsters.MONSTER_SYMBOL, specialPM: monsters.SPECIAL_PM,
         monsters: monsters.MONSTER_NAME, bodies: monsters.MONSTER_BODY_META,
         ironBallIncrement: constants.WT_IRON_BALL_INCR,
         methods: { weapon: methods.AT_WEAP, kick: methods.AT_KICK, bite: methods.AT_BITE },
@@ -119,6 +134,10 @@ function position(context) {
 }
 
 async function runCase(input) {
+    if (input.target >= 6) {
+        const { runCreation } = await import('./creation.mjs');
+        return runCreation(input);
+    }
     const hero = input.hero;
     const attributes = [hero.str, 12, 12, hero.dex, hero.con, 12];
     freshObjectRoom({ role: hero.role ? 'monk' : 'archeologist',

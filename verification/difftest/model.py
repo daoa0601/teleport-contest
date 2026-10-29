@@ -43,6 +43,10 @@ def record(value, allowed, name):
 
 
 def canonical(raw: dict, meta: dict) -> dict:
+    from creation_model import CREATION_TARGETS, creation_case
+    if raw.get('target') in CREATION_TARGETS or (
+            type(raw.get('target')) is int and raw['target'] >= len(TARGETS)):
+        return creation_case(raw, meta)
     record(raw, ['target', 'hero', 'object', 'inventory', 'monster', 'seed',
                  'position', 'extra', 'attacks', 'method', 'armed'], 'case')
     types = meta['objects']

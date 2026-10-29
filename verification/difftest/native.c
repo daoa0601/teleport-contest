@@ -311,6 +311,8 @@ static void run_case(void)
     free_objects(gi.invent);
 }
 
+#include "creation.h"
+
 int main(void)
 {
     char *line = NULL;
@@ -319,7 +321,20 @@ int main(void)
         input = line; cursor = ntokens = 0;
         parse_value(); whitespace();
         if (input[cursor]) reject_input("trailing input");
-        run_case();
+        if (number(0, "target", 0, 11) >= 6) {
+            /* A fresh process gives private C caches, timers and heap owners
+               the same lifetime as a fresh JS game, with no reset model. */
+            int status;
+            pid_t child = fork();
+            if (child < 0) reject_input("fork failed");
+            if (!child) {
+                run_creation_case();
+                fflush(stdout);
+                _exit(0);
+            }
+            if (waitpid(child, &status, 0) != child || !WIFEXITED(status)
+                || WEXITSTATUS(status) != 0) exit(2);
+        } else run_case();
         fflush(stdout);
     }
     free(line);

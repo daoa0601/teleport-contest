@@ -10,12 +10,17 @@ import json
 import os
 from pathlib import Path
 import select
+import signal
 import subprocess
 import time
 
-from build import CACHE, ROOT, build
+from build import CACHE, build
 from model import LOCATIONS, OBJECT, TARGETS, canonical, edge_cases, generated_cases, metadata
 
+from creation_model import CREATION_TARGETS, CREATION_LOCATIONS, creation_edges, creation_generated
+
+ALL_TARGETS = TARGETS + CREATION_TARGETS
+ALL_LOCATIONS = LOCATIONS + CREATION_LOCATIONS
 HERE = Path(__file__).resolve().parent
 
 
@@ -29,7 +34,8 @@ class Worker:
         else:
             env.pop('DIFFTEST_MUTANT', None)
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        stderr=self.errors, text=True, bufsize=1, env=env, cwd=ROOT)
+                                        stderr=self.errors, text=True, bufsize=1, env=env, cwd=CACHE,
+                                        start_new_session=True)
 
     def call(self, state):
         try:
@@ -53,6 +59,14 @@ class Worker:
         self.errors.seek(0)
         raise RuntimeError(f'Child failed ({self.process.poll()}): {self.errors.read(4000)}')
 
+    def signal_group(self, sig):
+        # A native call forks to isolate C globals. Stop that child too if
+        # the target hangs, rather than leaving it after its parent exits.
+        try:
+            os.killpg(self.process.pid, sig)
+        except ProcessLookupError:
+            pass
+
     def __enter__(self):
         return self
 
@@ -61,11 +75,11 @@ class Worker:
         try:
             self.process.wait(timeout=5)
         except subprocess.TimeoutExpired:
-            self.process.terminate()
+            self.signal_group(signal.SIGTERM)
             try:
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                self.process.kill()
+                self.signal_group(signal.SIGKILL)
                 self.process.wait()
         self.process.stdout.close()
         self.errors.close()
@@ -108,7 +122,9 @@ def reductions(state, meta):
                 yield path, value[:index] + value[index + 1:]
             for index, child in enumerate(value):
                 if isinstance(child, dict):
-                    child_default = {**deepcopy(OBJECT), 'otyp': child['otyp']}
+                    child_default = ({'mnum': child['mnum'], 'flags': 0, 'born': 0}
+                                     if path == ('vitals',)
+                                     else {**deepcopy(OBJECT), 'otyp': child['otyp']})
                     yield from walk(child, child_default, (*path, index))
         elif value != default:
             yield path, default
@@ -178,8 +194,65 @@ def negative_checks(native, port, meta):
     print(f'Domain probes rejected: {count}; emitted-JS mutants killed: {len(mutants)}', flush=True)
 
 
+def creation_negative_checks(native, port, meta):
+    """Break one entry-state relation, then mutate each real JS target."""
+    controls = {
+        'create_object': dict(target='mksobj', init=0),
+        'create_class': dict(target='mkobj', oclass=4),
+        'random_range': dict(target='rnd_class'),
+        'random_monster': dict(target='rndmonst'),
+        'monster_class': dict(target='mkclass'),
+        'monster_weapons': dict(target='makemon_inventory', mnum='hobbit'),
+        'monster_inventory': dict(target='makemon_inventory', mnum='leprechaun'),
+    }
+    broken_relations = {
+        'create_object': ('init', 1),
+        'create_class': ('oclass', 2),
+        'random_range': ('first', meta['objects']['KNIFE']),
+        'random_monster': ('level.heroLevel', 30),
+        'monster_class': ('mclass', 2),
+        'monster_weapons': ('mnum', meta['monsters'].index('soldier')),
+        'monster_inventory': ('mnum', meta['monsters'].index('soldier')),
+    }
+    for name, raw in controls.items():
+        state = canonical(raw, meta)
+        observed = native.call(state)
+        if difference(observed, port.call(state)):
+            raise RuntimeError(f'Creation negative-check control diverges: {name}')
+        broken = deepcopy(state)
+        field, value = broken_relations[name]
+        if field.startswith('level.'):
+            broken['level'][field.split('.')[1]] = value
+        else:
+            broken[field] = value
+        broken = canonical(broken, meta)
+        found = difference(observed, port.call(broken))
+        if not found:
+            raise RuntimeError(f'Entry-correspondence probe failed to find a counterexample: {name}')
+        print(f'COUNTEREXAMPLE {name}: unequal {field}: {found}', flush=True)
+        with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as mutant:
+            found = difference(observed, mutant.call(state))
+        expected = 'objects' if name in ['create_object', 'create_class', 'monster_weapons', 'monster_inventory'] else 'result'
+        if not found or not found['path'].startswith(expected):
+            raise RuntimeError(f'Creation mutant survived or failed for the wrong reason: {name}: {found}')
+        print(f'KILLED {name}: {found}', flush=True)
+    invalid = [dict(target='mksobj', otyp=17), dict(target='mkobj', oclass=1),
+               dict(target='rnd_class', first=len(meta['names'])),
+               dict(target='rndmonst', level=dict(depth=0)), dict(target='mkclass', mclass=0),
+               dict(target='makemon_inventory', mnum=len(meta['monsters']))]
+    for raw in invalid:
+        try:
+            canonical(raw, meta)
+        except ValueError:
+            continue
+        raise RuntimeError(f'Creation domain accepted invalid input: {raw}')
+    print(f'Creation checks: {len(controls)} correspondence counterexamples, '
+          f'{len(controls)} killed mutants, {len(invalid)} rejected input probes', flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--creation', action='store_true', help='creation inputs instead of the six original targets')
     parser.add_argument('--count', type=int, default=600, help='random cases, in addition to edge cases')
     parser.add_argument('--seed', type=int, default=20261029, help='input generator seed, not gameplay seed')
     parser.add_argument('--input', type=Path, help='JSON case or JSONL cases; skips generated cases')
@@ -205,7 +278,8 @@ def main():
         else:
             cases = [canonical(raw, meta)]
     else:
-        cases = [*edge_cases(meta), *generated_cases(meta, args.count, args.seed)]
+        cases = ([*creation_edges(meta), *creation_generated(meta, args.count, args.seed)]
+                 if args.creation else [*edge_cases(meta), *generated_cases(meta, args.count, args.seed)])
     if not cases:
         parser.error('No input cases; an empty run cannot pass')
     started = time.monotonic()
@@ -216,8 +290,10 @@ def main():
         port = stack.enter_context(Worker(['node', str(HERE / 'port.mjs')], 'port'))
         if args.self_test:
             negative_checks(native, port, meta)
+            if args.creation:
+                creation_negative_checks(native, port, meta)
         for index, state in enumerate(cases):
-            target = TARGETS[state['target']]
+            target = ALL_TARGETS[state['target']]
             totals[target] += 1
             try:
                 c_result, js_result = native.call(state), port.call(state)
@@ -232,14 +308,16 @@ def main():
             reduced = state if args.no_minimize else minimize(state, native, port, meta, found['path'])
             native_after, port_after = native.call(reduced), port.call(reduced)
             record = dict(index=index, target=target, difference=difference(native_after, port_after),
-                          functions=dict(zip(['native', 'port'], LOCATIONS[state['target']])),
+                          functions=dict(zip(['native', 'port'], ALL_LOCATIONS[state['target']])),
                           input=reduced, native=native_after, port=port_after,
                           reduction='disabled' if args.no_minimize else 'one-minimal under deletion/default resets',
                           reachability='Not established by generated state; inspect the C callers before classifying')
             report.write(json.dumps(record) + '\n')
             report.flush()
             print(f'DIFF case {index} {target}: {found["path"]}; reproducer in {args.report}', flush=True)
-        for target in TARGETS:
+        for target in ALL_TARGETS:
+            if not totals[target]:
+                continue
             print(f'{target:<18} {totals[target]:5} cases {failures[target]:5} mismatches')
     elapsed = time.monotonic() - started
     print(f'{sum(totals.values())} cases; {sum(failures.values())} mismatches; {elapsed:.2f}s; {args.report}')
