@@ -331,7 +331,7 @@ export async function dosit({
     } else if (typ === DRAWBRIDGE_DOWN) {
         await pline('You sit on the drawbridge.');
     } else if (typ === THRONE) {
-        await pline('You sit on the throne.');
+        await pline('You sit on the opulent throne.');
         await throneSitEffect({ gotoLevel, chooseTeleportDestination });
     } else if (heroFormFlags(game) & M1_OVIPAROUS) {
         if (!await layEgg()) {

@@ -11,6 +11,7 @@ import { ROUND10_RECIPES, validateRound10Recipe } from './round10-recipes.mjs';
 import { ROUND11_RECIPES, validateRound11Recipe } from './round11-recipes.mjs';
 import { ROUND13_RECIPES, validateRound13Recipe } from './round13-recipes.mjs';
 import { ROUND9_RECIPES, validateRound9Recipe } from './round9-recipes.mjs';
+import { ROUND12_RECIPES, validateRound12Recipe } from './round12-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
 //
 // Exports:
@@ -108,6 +109,8 @@ export function acceptsCharacter(recipeName, character) {
     if (!isLegalCharacter(character))
         return false;
     if (recipe.roles && !recipe.roles.includes(character.role))
+        return false;
+    if (recipe.genders && !recipe.genders.includes(character.gender))
         return false;
     return true;
 }
@@ -427,6 +430,7 @@ addRecipes(ROUND10_RECIPES);
 addRecipes(ROUND11_RECIPES);
 addRecipes(ROUND13_RECIPES);
 addRecipes(ROUND9_RECIPES);
+addRecipes(ROUND12_RECIPES);
 export { RECIPES };
 export const RECIPE_NAMES = Object.keys(RECIPES);
 export const ROLES = Object.keys(ROLE_CONSTRAINTS);
@@ -666,6 +670,9 @@ for (const name of Object.keys(ROUND13_RECIPES)) {
 }
 for (const name of Object.keys(ROUND9_RECIPES)) {
     VALIDATORS[name] = recording => validateRound9Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND12_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound12Recipe(name, recording);
 }
 /**
  * Check a recorded session against its recipe's documented requirements.
