@@ -28,7 +28,7 @@ export async function nameFloorObject(): Promise<void> {
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
         prompt: game._pending_message,
     });
-    if (!selected) return;
+    if (!selected || selected.x < 0) return;
     const here = selected.x === game.u.ux && selected.y === game.u.uy;
     if (here) {
         const object = game.level.objects[selected.x]?.[selected.y]?.[0];

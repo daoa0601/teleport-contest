@@ -5208,9 +5208,8 @@ export async function askMonsterTeleportDestination(
         await plineWithContinuation("(For instructions type a '?')");
     if (firstUse) await plineWithContinuation(`Move cursor to ${goal}:`);
     const destination = await selectMapPosition({
-        start, prompt: game._pending_message, goal,
+        start, prompt: game._pending_message, goal, force: false,
     });
-    game._pending_message = '';
     return destination;
 }
 

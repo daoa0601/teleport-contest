@@ -35,7 +35,7 @@ export async function nameChosenMonster(): Promise<void> {
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
         prompt: game._pending_message,
     }) : queued;
-    if (!selected) return;
+    if (!selected || selected.x < 0) return;
     let monster: Monster | null;
     if (selected.x === game.u.ux && selected.y === game.u.uy) {
         const steed = game.u.usteed;

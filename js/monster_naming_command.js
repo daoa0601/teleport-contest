@@ -35,7 +35,7 @@ export async function nameChosenMonster() {
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
         prompt: game._pending_message,
     }) : queued;
-    if (!selected)
+    if (!selected || selected.x < 0)
         return;
     let monster;
     if (selected.x === game.u.ux && selected.y === game.u.uy) {

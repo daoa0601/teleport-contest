@@ -3310,6 +3310,16 @@ function replaceTopline(msg: string): void {
     game._retained_message = '';
     game._last_message = msg;
     game._promptOwnsTopline = false;
+    // tty message output continues while level arrival pauses map flushing.
+    // redotoplin() paints immediately; a later flush is not its display owner.
+    const display = game.nhDisplay;
+    if (display && game._mapFlushPaused) {
+        for (const [row, line] of toplineRows(msg, display.cols, { splitWords: false }).entries()) {
+            display.clearRow(row);
+            for (const [column, cell] of line.entries())
+                display.setCell(column, row, cell.ch, NO_COLOR, 0);
+        }
+    }
 }
 
 // tty_create_nhwindow(NHW_MESSAGE) sizes the recall ring: iflags.msg_history
