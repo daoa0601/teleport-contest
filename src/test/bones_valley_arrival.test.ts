@@ -23,6 +23,34 @@ function gehennomGames(storage: InMemoryStorage, heroDepth: {
     game.valley_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
 }
 
+for (const bones of [false, true]) {
+    void test(`a deaf hero entering ${bones ? 'a bones' : 'a new'} Valley does not hear groans`, async () => {
+        const storage = memoryStorage();
+        if (bones) {
+            gehennomGames(storage, { dnum: 1, dlevel: 1 });
+            assert.equal(saveBonesLevel(), true);
+        }
+        gehennomGames(storage, { dnum: 0, dlevel: 1 });
+        game.u.deafTurns = 100;
+        const seen: string[] = [];
+        const input = resetInputState();
+        let reads = 0;
+        input.beforeRead = () => {
+            seen.push(game._pending_message || game._retained_message || '');
+            input.feed(bones && ++reads <= 2 ? 'y' : ' ');
+        };
+
+        await gotoLevel({ dnum: 1, dlevel: 1 });
+        seen.push(game._pending_message || game._retained_message || '');
+
+        const messages = seen.join('\n');
+        assert.equal(messages.includes('You arrive at the Valley of the Dead...'), true);
+        assert.equal(messages.includes('odor of burnt flesh and decay'), true);
+        assert.equal(messages.includes('groans and moans'), false,
+            'Deafness must suppress the Valley sound while preserving the arrival and odor messages.');
+    });
+}
+
 // C do.c:goto_level() delivers the Valley lines (do.c:1859-1864), then
 // familiar_level_msg() (do.c:1875); only the "You materialize" line goes
 // earlier (maybe_lvltport_feedback(), do.c:2031).  A deferred message such
