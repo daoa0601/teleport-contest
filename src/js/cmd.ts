@@ -36,6 +36,7 @@ import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
+import { wizFlipLevel } from './wizard_flip_level.js';
 import { wizMakeMap } from './wizard_makemap.js';
 import { wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
@@ -3838,6 +3839,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
     ['wizmakemap', wizMakeMap],
+    ['wizfliplevel', wizFlipLevel],
     ['wizborn', doborn],
     ['timeout', wizTimeoutQueue],
     ['wizshownhuuid', wizShowNhuuid],

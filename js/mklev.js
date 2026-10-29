@@ -1,3 +1,4 @@
+import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { rotCorpse } from './corpse_rot.js';
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
@@ -75,7 +76,7 @@ import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
-import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
+import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, SPE_DIG, POT_SICKNESS, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, } from './monster_data.js';
 import { isReviver, isRider, zombieForm, } from './corpse_species.js';
@@ -113,7 +114,7 @@ import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
 import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, objectResistsDestruction, } from './object_state.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
-import { monsterEmitsLight, vision_note_blocker_change, vision_reset_new_level } from './vision.js';
+import { monsterEmitsLight, vision_note_blocker_change, vision_reset, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
 import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem, } from './muse.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionFillRect, specialSelectionMatch, } from './selvar.js';
@@ -4519,7 +4520,7 @@ function getSpecialLevelExtents() {
     maxy = Math.min(ROWNO - 1, maxy);
     return { minx, miny, maxx, maxy };
 }
-function flipSpecialLevel(flp) {
+export async function flipSpecialLevel(flp, extras = false) {
     if (!(flp & 3))
         return;
     const level = requireGameLevel();
@@ -4533,6 +4534,23 @@ function flipSpecialLevel(flp) {
             return { x, y };
         return { x: flp & 2 ? flipX(x) : x, y: flp & 1 ? flipY(y) : y };
     };
+    let replaceBallAndChain = false;
+    if (extras && heroIsPunished()) {
+        const ball = game.uball || game.u.uball;
+        const chain = game.uchain || game.u.uchain;
+        if (!ball || !chain)
+            throw new Error('Punishment requires a ball and chain.');
+        if (ball.where !== 'free') {
+            if (ball.where === 'inventory') {
+                ball.ox = game.u.ux;
+                ball.oy = game.u.uy;
+            }
+            replaceBallAndChain = inArea(ball.ox, ball.oy) !== inArea(chain.ox, chain.oy)
+                || inArea(ball.ox, ball.oy) !== inArea(game.u.ux, game.u.uy);
+            if (replaceBallAndChain)
+                await unplaceBallAndChain();
+        }
+    }
     // sp_lev.c flips wall glyph topology along with coordinates.  The raw
     // map has already been wallified, so corners and T-junctions must change
     // orientation before their location records move.
@@ -4569,6 +4587,13 @@ function flipSpecialLevel(flp) {
         const point = transform(trap.tx, trap.ty);
         trap.tx = point.x;
         trap.ty = point.y;
+        if (flipTrap && is_pit(trap.ttyp) && trap.conjoined) {
+            // C applies the full mask once in each selected axis branch.
+            if (flp & 1)
+                trap.conjoined = flipEncodedDirections(flp, trap.conjoined);
+            if (flp & 2)
+                trap.conjoined = flipEncodedDirections(flp, trap.conjoined);
+        }
         if (flipTrap && trap.ttyp === ROLLING_BOULDER_TRAP) {
             trap.launch = transform(trap.launch.x, trap.launch.y, false);
             if (!trap.launch2)
@@ -4592,6 +4617,11 @@ function flipSpecialLevel(flp) {
         }
     }
     level.objects = movedObjects;
+    for (const object of level.buriedObjects ?? []) {
+        const point = transform(object.ox, object.oy);
+        object.ox = point.x;
+        object.oy = point.y;
+    }
     const flipCoordinate = (coordinate) => {
         if (!coordinate?.x)
             return;
@@ -4599,12 +4629,32 @@ function flipSpecialLevel(flp) {
         coordinate.x = flipped.x;
         coordinate.y = flipped.y;
     };
+    const flipGuard = (monster) => {
+        const guard = monster._egd;
+        if (!guard)
+            return;
+        const goal = transform(guard.gdx, guard.gdy);
+        guard.gdx = goal.x;
+        guard.gdy = goal.y;
+        const origin = transform(guard.ogx, guard.ogy);
+        guard.ogx = origin.x;
+        guard.ogy = origin.y;
+        for (const cell of guard.fakecorr.slice(guard.fcbeg, guard.fcend))
+            flipCoordinate(cell);
+    };
     for (const monster of level.monsters || []) {
+        if (monster.isgd) {
+            if (extras)
+                flipGuard(monster);
+            if (monster.mx === 0)
+                continue;
+        }
         if (!inArea(monster.mx, monster.my))
             continue;
         const point = transform(monster.mx, monster.my);
         monster.mx = point.x;
         monster.my = point.y;
+        flipCoordinate(monster.mgoal);
         if (monster.ispriest) {
             flipCoordinate((monster.epri || monster.mextra?.epri)?.shrpos);
         }
@@ -4614,11 +4664,36 @@ function flipSpecialLevel(flp) {
             flipCoordinate(shop?.shd);
         }
         else if (monster.wormno) {
-            flipCoordinate(monster.wormHead);
+            if (monster.wormHead) {
+                const head = transform(monster.wormHead.x, monster.wormHead.y, false);
+                monster.wormHead.x = head.x;
+                monster.wormHead.y = head.y;
+            }
             if (!monster.wormSegments)
                 throw new Error('Long worm has no segment list.');
-            monster.wormSegments = monster.wormSegments.map(segment => transform(segment.x, segment.y));
+            monster.wormSegments = monster.wormSegments.map(segment => transform(segment.x, segment.y, false));
         }
+    }
+    if (extras) {
+        const heroLevel = game.u.uz;
+        if (!heroLevel)
+            throw new Error('Flipping a live level requires the hero dungeon location.');
+        const onLevel = (location) => location.dnum === heroLevel.dnum && location.dlevel === heroLevel.dlevel;
+        for (const monster of game._migratingMonsters ?? []) {
+            const priest = monster.epri || monster.mextra?.epri;
+            const shop = monster.eshk || monster.mextra?.eshk;
+            if (monster.isgd && monster._egd && onLevel(monster._egd.gdlevel))
+                flipGuard(monster);
+            else if (monster.ispriest && priest && onLevel(priest.shrlevel))
+                flipCoordinate(priest.shrpos);
+            else if (monster.isshk && shop && onLevel(shop.shoplevel)) {
+                flipCoordinate(shop.shk);
+                flipCoordinate(shop.shd);
+            }
+        }
+    }
+    for (const region of level.regions) {
+        region.cells = region.cells.map(cell => transform(cell.x, cell.y, false));
     }
     for (const engraving of level.engravings || []) {
         const point = transform(engraving.x, engraving.y, false);
@@ -4664,6 +4739,8 @@ function flipSpecialLevel(flp) {
                 const otherY = flipY(y);
                 const column = level.requireColumn(x);
                 const swap = level.requireAt(x, y);
+                flipDrawbridgeDirection(swap, false);
+                flipDrawbridgeDirection(level.requireAt(x, otherY), false);
                 column[y] = level.requireAt(x, otherY);
                 column[otherY] = swap;
             }
@@ -4676,20 +4753,101 @@ function flipSpecialLevel(flp) {
             const otherColumn = level.requireColumn(otherX);
             for (let y = miny; y <= maxy; y++) {
                 const swap = level.requireAt(x, y);
+                flipDrawbridgeDirection(swap, true);
+                flipDrawbridgeDirection(level.requireAt(otherX, y), true);
                 column[y] = level.requireAt(otherX, y);
                 otherColumn[y] = swap;
             }
         }
     }
+    for (const timer of level.levelTimers) {
+        const point = transform(timer.x, timer.y, false);
+        timer.x = point.x;
+        timer.y = point.y;
+    }
+    if (extras) {
+        if (inArea(game.u.ux, game.u.uy)) {
+            const hero = transform(game.u.ux, game.u.uy);
+            game.u.ux = game.u.ux0 = hero.x;
+            game.u.uy = game.u.uy0 = hero.y;
+        }
+        if (replaceBallAndChain)
+            await placeBallAndChain();
+        flipCoordinate(game.iflags.travelcc);
+        flipCoordinate(game.context.digging?.pos);
+    }
+    fix_wall_spines(1, 0, COLNO - 1, ROWNO - 1);
+    if (extras) {
+        setWallState();
+        flipRememberedVisuals(flp, minx, miny, maxx, maxy);
+    }
+    vision_reset();
+    game.vision_full_recalc = 1;
     level._flip = { flp, minx, miny, maxx, maxy };
 }
-function flipSpecialLevelRandom(allowed) {
+function flipDrawbridgeDirection(location, horizontal) {
+    if (location.typ !== DRAWBRIDGE_UP && location.typ !== DRAWBRIDGE_DOWN)
+        return;
+    const mask = location.drawbridgemask ?? location.flags;
+    const direction = mask & DB_DIR;
+    const first = horizontal ? DB_WEST : DB_NORTH;
+    const second = horizontal ? DB_EAST : DB_SOUTH;
+    if (direction !== first && direction !== second)
+        return;
+    location.flags = location.drawbridgemask = (mask & ~DB_DIR)
+        | (direction === first ? second : first);
+}
+function swapDirectionBits(value, first, second) {
+    const different = ((value >> first) ^ (value >> second)) & 1;
+    return value ^ ((different << first) | (different << second));
+}
+function flipEncodedDirections(flp, value) {
+    if (flp & 1) {
+        value = swapDirectionBits(value, 1, 7);
+        value = swapDirectionBits(value, 2, 6);
+        value = swapDirectionBits(value, 3, 5);
+    }
+    if (flp & 2) {
+        value = swapDirectionBits(value, 1, 3);
+        value = swapDirectionBits(value, 0, 4);
+        value = swapDirectionBits(value, 7, 5);
+    }
+    return value;
+}
+function flipRememberedVisuals(flp, minx, miny, maxx, maxy) {
+    const level = requireGameLevel();
+    for (let y = miny; y <= maxy; y++) {
+        for (let x = minx; x <= maxx; x++) {
+            const location = level.requireAt(x, y);
+            let seen = location.seenv & 255;
+            if (!seen)
+                continue;
+            if (flp & 1) {
+                seen = swapDirectionBits(seen, 2, 4);
+                seen = swapDirectionBits(seen, 1, 5);
+                seen = swapDirectionBits(seen, 0, 6);
+            }
+            if (flp & 2) {
+                seen = swapDirectionBits(seen, 2, 0);
+                seen = swapDirectionBits(seen, 3, 7);
+                seen = swapDirectionBits(seen, 4, 6);
+            }
+            location.seenv = seen;
+            if ((IS_WALL(location.typ) || location.typ === SDOOR)
+                && location.remembered_glyph?.kind === 'terrain') {
+                const glyph = terrain_glyph(location, x, y);
+                location.remembered_glyph = { ...glyph, decgfx: glyph.dec };
+            }
+        }
+    }
+}
+export async function flipSpecialLevelRandom(allowed, extras = false) {
     let flp = 0;
     if ((allowed & 1) && rn2(2))
         flp |= 1;
     if ((allowed & 2) && rn2(2))
         flp |= 2;
-    flipSpecialLevel(flp);
+    await flipSpecialLevel(flp, extras);
 }
 async function fillZooRoom(room) {
     const level = requireGameLevel();
@@ -7146,7 +7304,7 @@ function createLuaLevelSession() {
             const allowedFlips = currentLevel().allowFlips;
             if (allowedFlips === undefined)
                 throw new Error('Lua level flip flags are uninitialized');
-            flipSpecialLevelRandom(allowedFlips);
+            await flipSpecialLevelRandom(allowedFlips);
             countLevelFeatures();
             if (currentLevel().solidify)
                 solidifyLuaMap(mappedCells);
