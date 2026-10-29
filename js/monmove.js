@@ -6018,13 +6018,7 @@ async function movementSpellSelections(monster, state, random, calls) {
             continue;
         if (monster.mcan || monster.mspec_used) {
             await publishMonsterSpellFailure(monster, spell, state, random, calls);
-            return {
-                spell: spell.key,
-                cast: false,
-                blocked: true,
-                damageType,
-                directed: false,
-            };
+            continue;
         }
         monster.mspec_used = monsterLevel < 8 ? 10 - monsterLevel : 2;
         endVoluntaryMultiTurn(state);
@@ -6033,13 +6027,7 @@ async function movementSpellSelections(monster, state, random, calls) {
         if (fumble) {
             if (canSeeMonster(monster) && !heroIsDeaf(state))
                 await plineWithContinuation(`The air crackles around ${canonicalMonsterName(monster, { state })}.`);
-            return {
-                spell: spell.key,
-                cast: false,
-                fumbled: true,
-                damageType,
-                directed: false,
-            };
+            continue;
         }
         return {
             spell: spell.key,
