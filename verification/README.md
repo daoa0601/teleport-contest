@@ -219,7 +219,7 @@ NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v \
   test_executors test_queries test_proof_selection
 ```
 
-The post-rebase run passed all 51 tests in 10.550 s. They check table reads and
+The post-rebase run passed all 51 tests in 11.050 s. They check table reads and
 bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
 JS 32-bit coercion, imports, defaults, scopes, libc assertions, signed division safety and rejected constructs. C table
@@ -306,11 +306,11 @@ claim does not establish it; its domains and negative checks are unchanged.
 See `docs/formal-verification.md` for measured times and profiling limits.
 
 The final full command exited 0 with all 33 claims, 37 domain probes and 41
-mutant checks in 652.64 s. The final `--skip-slow` run exited 0 with 31 claims,
-34 probes and 39 mutant checks in 93.37 s. Table proof times were 383.5 s for
-experience and 173.8 s for movement; both remain above the 120-second target.
+mutant checks in 704.00 s. The final `--skip-slow` run exited 0 with 31 claims,
+34 probes and 39 mutant checks in 95.36 s. Table proof times were 429.3 s for
+experience and 178.3 s for movement; both remain above the 120-second target.
 The separate `--slow-only --check-ledger` job command passed both claims, three
-probes and two mutants in 567.39 s. The 33-row ledger was generated only after
+probes and two mutants in 582.70 s. The 33-row ledger was generated only after
 a complete `--write-ledger` run succeeded.
 
 Both executor families use `core.bit_operation`; their C-width, JS Number
@@ -338,7 +338,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 6.151 s on this post-rebase run):
+after it (two tests in 6.267 s on this post-rebase run):
 
 ```sh
 cd verification/equivalence
@@ -367,11 +367,13 @@ uv run ../callsites/check.py ../../.cache/rng-callsites.json \
   --json ../../.cache/rng-callsites-report.json
 ```
 
-The current inventory has 2,481 sites: 2,088 constant, 106 guarded, 50 invariant,
-237 unproved; 339 upper domains remain unproved. Thirty-six previously
+The current inventory has 2,483 sites: 2,090 constant, 106 guarded, 50 invariant,
+237 unproved; 339 upper domains remain unproved. The final integration tip
+adds two constant sites to the earlier 2,481-site audit; its checked ledger
+still has zero regressions. Thirty-six previously
 unproved sites classify successfully. Fifty-three old classifications were
 withdrawn, and 133 additional emitted calls are now included. Extraction took
-108.90 s and both classifier passes with ledger enforcement took 3.35 s on
+115.05 s and both classifier passes with ledger enforcement took 3.89 s on
 the shared machine.
 [`callsites/review.md`](callsites/review.md) records counts by group, native
 sources, limits and all 28 equivalence timings;
@@ -394,7 +396,7 @@ uv run ../callsites/native_calls.py eat.c:bounded_increase
 ```
 
 The ten analyzer tests passed, including domain probes and nine independent
-emitted-only mutants. The source-wide gate killed 2,243 classified-site mutants
+emitted-only mutants. The source-wide gate killed 2,245 classified-site mutants
 with zero failures. No reachable out-of-domain game divergence was established.
 Native auditing uses clang's typed JSON AST; its printed expressions and
 nested `if` conditions aid manual review and are never solver premises.
