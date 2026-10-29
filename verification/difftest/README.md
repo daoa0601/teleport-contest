@@ -361,13 +361,13 @@ The naming state relation extends the creation relation. Facts beyond it:
 
 ## Naming measured results
 
-Round-3 review rerun: native build, 140 objects in 15.30 s.
+Latest review rerun: native build, 140 objects in 15.84 s.
 `--naming --count 6000 --self-test`:
 17 domain probes rejected, 9 emitted-JS mutants killed (`makeplural` default
 suffix, an extra `rnd(1)` draw inside `makePlural`, `makesingular` ies→y,
 `an` single-letter x-rule, `the` insertion, lenses `pair of`, `greased`
 prefix, `invisible` adjective, and removal of `objectCombatName`'s own
-observation), 11,160 cases in 15.88 s with 0 mismatches. String targets
+observation), 11,168 cases in 22.02 s with 0 mismatches. String targets
 measure the real stream position and RNG log on both sides; the extra-draw
 mutant is killed through `rng.core`, not a constant zero. The `xname`
 pairing relies on `objectCombatName`'s internal observation (C `xname()`
@@ -379,20 +379,17 @@ observation to its caller, observes explicitly.
 | `makeplural` | 2,519 | 0 |
 | `makesingular` | 2,136 | 0 |
 | `articles` | 1,026 | 0 |
-| `xname` | 1,717 | 0 |
-| `doname` | 1,705 | 0 |
+| `xname` | 1,718 | 0 |
+| `doname` | 1,712 | 0 |
 | `x_monnam` | 2,057 | 0 |
 
-The naming batch includes 5,160 boundary and full type/species sweep cases.
+The naming batch includes 5,168 boundary and full type/species sweep cases.
 Hand-authored cases default to their type's initial knowledge, and only the
-documented domain exclusions are dropped. The round-3 run passed all 25
-harness tests in 14.624 s; the original six targets matched all 683 cases in
-3.84 s (5 rejected probes, 8 killed mutants).
-The creation rerun matched all 2,402 cases in 9.50 s, including 8
-correspondence counterexamples, 8 killed creation mutants and 10 rejected
-creation-domain probes.
+documented domain exclusions are dropped. All 30 harness tests passed in
+18.871 s, including the five new naming-domain tests. Four of those methods
+failed before the fixes; the class-matrix coverage test already passed.
 
-### Round-3 self-test findings
+### Quantity and reducer self-tests
 
 The quantity probe now uses `MACE` with `quan=2` and `nameKnown=1`.
 `include/objects.h:WEAPON` gives the mace `oc_merge=0` and initial
@@ -418,13 +415,28 @@ the normal reducer passes. No new game behavior or equivalence claim is
 introduced by either self-test change.
 
 `npm run compile` exited 0. The requested public replay used one worker and
-finished all 44 sessions in 30.264 s: 43 full matches, 11,396/11,405 screens,
+finished all 44 sessions in 30.703 s: 43 full matches, 11,396/11,405 screens,
 792,838/792,838 random calls and zero crashes. The public ledger check exited
 0, retaining every verified call for all 363 functions. The remaining
 screen difference is `seed2200-wizard-quaff-zap-read`, step 158: native option
 help prints the recorder host's configuration path. There is no RNG
 difference in that session. No full game suite, pool/eval run or new
 recording was run.
+
+### Naming-domain review findings
+
+| Finding | Result and native evidence |
+|---|---|
+| Generic rows inside containers | Fixed: every object in the tree must have `otyp >= FIRST_OBJECT` (`ARROW` in this table). `include/objects.h` places the dummy and generic rows before that boundary; `o_init.c:init_objects` starts the real class ranges at `MAXOCLASSES`, and `mkobj.c:mkobj` / `mkbox_cnts` create contents through those ranges. `{"target":"doname","object":{"otyp":"SACK","contents":[{"otyp":2}]}}` was accepted before and now raises `ValueError`. The test checks every excluded index at depths 0, 1 and 2, with real objects accepted at the same depths. |
+| First class members silently lost | Not reproduced. The metadata comes from emitted `object_knowledge.js:objectClassForType`, not the generic rows' native `oc_class` fields. It returns class 0 for all 17 pre-`ARROW` indices, so none was selected for the real-class matrix. The first-member coverage test passes both before and after. The class buckets now start explicitly at `ARROW`, and accidental generic edge inputs raise rather than being silently dropped. Initially known types still exclude `nameKnown=0` as documented. |
+| Missing hand-picked and generated type keys | Fixed: use `WAN_FIRE`, `WAN_COLD`, `SCR_IDENTIFY`, `SCR_ENCHANT_WEAPON` and `GAIN_STRENGTH`. Strict lookups also exposed nonexistent `ELVEN_RING_MAIL`; its armor case now uses `ELVEN_MITHRIL_COAT`. The unused `BLESSED_STATUETTE` alternative was removed. Required names now raise `KeyError` if missing instead of skipping a case or selecting a different type. These are the native wand, scroll, ring and armor names from `include/objects.h`. The restored cases include a known zero-charge fire wand and both `implicit_uncursed` settings for cold wands, identify scrolls and elven armor. Native `objnam.c:doname_base` controls charge suffixes and the `uncursed` prefix. |
+| Redundant expected RNG counts/log | Removed the assertions of native core count 0 and emitted `{core:0, display:0, log:[]}`. Tests retain native/emitted comparison and detection of the extra-draw mutant through the comparison result. They no longer read those RNG records directly. |
+
+The six restored `implicit_uncursed` cases are exercised through both real
+backends. The tested uncursed wand with known charges omits the prefix when
+the option is enabled; the tested scroll and armor still print it under native
+`doname_base`'s uncharged-item/armor conditions. Missing-metadata tests check
+the specific absent key, so an unrelated error cannot satisfy them.
 
 ### Candidate bugs
 
@@ -445,43 +457,43 @@ remains outside this comparison.
 
 ### Naming existing equivalence claims
 
-The round-3 `NETHACK_RECORDER=... uv run prove.py` run exited 0: all 33
-existing claims remain PROVED, including the two slow table claims and all
-configured domain probes and mutants. No proof claim was added or changed.
+The latest review's `NETHACK_RECORDER=... uv run prove.py` run exited 0:
+all 33 existing claims remain PROVED, including the two slow table claims and
+all configured domain probes and mutants. No proof claim was added or changed.
 Per-claim times exclude their negative checks:
 
 | Claim | Result | Time |
 |---|---|---:|
 | `rn2` | PROVED | 0.2 s |
 | `rnd` | PROVED | 0.1 s |
-| `rn1` | PROVED | 0.6 s |
-| `rnl` | PROVED | 1.5 s |
-| `d` | PROVED | 0.3 s |
-| `rne` | PROVED | 0.7 s |
-| `rnz` | PROVED | 2.4 s |
+| `rn1` | PROVED | 0.7 s |
+| `rnl` | PROVED | 1.6 s |
+| `d` | PROVED | 0.4 s |
+| `rne` | PROVED | 0.8 s |
+| `rnz` | PROVED | 2.8 s |
 | `rn2_on_display_rng` | PROVED | 0.1 s |
-| `distmin` | PROVED | 0.1 s |
-| `dist2` | PROVED | 0.3 s |
-| `enermod` | PROVED | 2.1 s |
-| `newuexp` | PROVED | 0.6 s |
-| `xlev_to_rank` | PROVED | 0.2 s |
-| `rounddiv` | PROVED | 0.4 s |
-| `Align2amask` | PROVED | 0.7 s |
-| `Amask2align` | PROVED | 0.9 s |
-| `acurr:StrDex` | PROVED | 1.0 s |
-| `acurrstr` | PROVED | 0.3 s |
+| `distmin` | PROVED | 0.2 s |
+| `dist2` | PROVED | 0.4 s |
+| `enermod` | PROVED | 2.5 s |
+| `newuexp` | PROVED | 0.9 s |
+| `xlev_to_rank` | PROVED | 0.3 s |
+| `rounddiv` | PROVED | 0.5 s |
+| `Align2amask` | PROVED | 0.8 s |
+| `Amask2align` | PROVED | 1.0 s |
+| `acurr:StrDex` | PROVED | 1.1 s |
+| `acurrstr` | PROVED | 0.4 s |
 | `dbon:human` | PROVED | 0.6 s |
-| `abon:human` | PROVED | 2.3 s |
-| `acurr:all` | PROVED | 5.9 s |
+| `abon:human` | PROVED | 2.4 s |
+| `acurr:all` | PROVED | 6.0 s |
 | `dbon:all` | PROVED | 0.3 s |
-| `abon:forms` | PROVED | 45.1 s |
-| `experience:tables` | PROVED | 409.1 s |
-| `mcalcmove:tables` | PROVED | 186.7 s |
-| `lower_bits` | PROVED | 0.0 s |
+| `abon:forms` | PROVED | 47.7 s |
+| `experience:tables` | PROVED | 407.0 s |
+| `mcalcmove:tables` | PROVED | 180.6 s |
+| `lower_bits` | PROVED | 0.1 s |
 | `upper_bits` | PROVED | 0.0 s |
 | `isaac64_mix` | PROVED | 0.1 s |
-| `isaac64_update` | PROVED | 0.4 s |
-| `isaac64_reseed` | PROVED | 4.8 s |
+| `isaac64_update` | PROVED | 0.3 s |
+| `isaac64_reseed` | PROVED | 4.7 s |
 | `isaac64_init` | PROVED | 0.1 s |
 | `isaac64_next_uint64` | PROVED | 0.1 s |
 | `isaac64_seed_packing` | PROVED | 0.1 s |

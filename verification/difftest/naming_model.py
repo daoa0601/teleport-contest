@@ -118,8 +118,7 @@ def naming_object_state(value, meta, depth=0, count=None):
     result['otyp'] = integer(otyp, 1, len(meta['names']) - 1, 'otyp')
     if not meta['names'][result['otyp']]:
         raise ValueError('Naming needs an object type with a real name (FIRST_OBJECT domain)')
-    if depth == 0 and 'objects' in meta and 'ARROW' in meta['objects'] \
-            and result['otyp'] < meta['objects']['ARROW']:
+    if result['otyp'] < types['ARROW']:
         raise ValueError('Generic class rows precede FIRST_OBJECT; mkobj never creates them')
     if otyp == types.get('SPE_NOVEL', -1):
         raise ValueError('Novels are named by construction, not by the naming layer (excluded)')
@@ -303,7 +302,6 @@ def naming_edges(meta):
         except ValueError as error:
             documented = ('Initially known types cannot be made unknown',
                           'Novels are named by construction',
-                          'Generic class rows precede FIRST_OBJECT',
                           'must contain a non-space character',
                           'needs a species (mkcorpstat callers)',
                           'leashmon must be 0',
@@ -354,7 +352,7 @@ def naming_edges(meta):
     # Object naming: one representative per interesting rule.
     types = meta['objects']
     by_class = {}
-    for index in range(1, len(meta['names'])):
+    for index in range(types['ARROW'], len(meta['names'])):
         if meta['names'][index]:
             by_class.setdefault(meta['classes'][index], []).append(index)
 
@@ -382,8 +380,7 @@ def naming_edges(meta):
                      'LEASH', 'BAG_OF_TRICKS', 'HORN_OF_PLENTY', 'SACK',
                      'LARGE_BOX', 'CHEST', 'GOLD_PIECE', 'SCR_ENCHANT_WEAPON',
                      'GAIN_STRENGTH', 'WISHING', 'CONE_OF_COLD']:
-            if name in types:
-                picks.append(types[name])
+            picks.append(types[name])
         for otyp in dict.fromkeys(picks):
             cases.append(case('xname', object=dict(otyp=otyp, dknown=dk,
                                                    bknown=1, known=1),
@@ -401,7 +398,7 @@ def naming_edges(meta):
             ('TOWEL', dict(spe=4, dknown=1)),
             ('CANDELABRUM_OF_INVOCATION', dict(spe=3, dknown=1, known=1)),
             ('CANDELABRUM_OF_INVOCATION', dict(spe=5, lamplit=1, dknown=1, known=1)),
-            ('WAND_OF_FIRE', dict(spe=0, dknown=1, known=1)),
+            ('WAN_FIRE', dict(spe=0, dknown=1, known=1)),
             ('HEAVY_IRON_BALL', dict(owt=2000)),
             ('HEAVY_IRON_BALL', dict(owt=30)),
             ('BOULDER', dict(corpsenm=1, dknown=1)),
@@ -422,10 +419,9 @@ def naming_edges(meta):
             ('GRAY_DRAGON_SCALES', dict(dknown=1, bknown=1, cursed=1)),
             ('ELVEN_BOOTS', dict(dknown=1, bknown=1, blessed=1)),
     ]:
-        if name in types:
-            changes = {k: v for k, v in changes.items() if v is not None}
-            cases.append(case('xname', object=dict(otyp=types[name], **changes)))
-            cases.append(case('doname', object=dict(otyp=types[name], **changes)))
+        changes = {k: v for k, v in changes.items() if v is not None}
+        cases.append(case('xname', object=dict(otyp=types[name], **changes)))
+        cases.append(case('doname', object=dict(otyp=types[name], **changes)))
     # Corpses, statues, figurines, tins and eggs with species and gender bits.
     for name in ['giant', 'newt', 'Medusa', 'Oracle', 'kobold']:
         index = meta['monsters'].index(name)
@@ -445,17 +441,15 @@ def naming_edges(meta):
         for blind in [0, 1]:
             cases.append(case('xname', object=dict(otyp=types['DAGGER'], dknown=0),
                               hero=dict(role=role, blind=blind)))
-            cases.append(case('doname', object=dict(otyp=types['BLESSED_STATUETTE']
-                                                    if 'BLESSED_STATUETTE' in types else 'STATUE',
+            cases.append(case('doname', object=dict(otyp=types['STATUE'],
                                                     corpsenm=meta['monsters'].index('orc'),
                                                     spe=5, dknown=1),
                               hero=dict(role=role, blind=blind)))
     for implicit in [0, 1]:
-        for otyp_name in ['MACE', 'WAND_OF_COLD', 'ELVEN_RING_MAIL', 'SCROLL_OF_IDENTIFY']:
-            if otyp_name in types:
-                cases.append(case('doname', object=dict(otyp=types[otyp_name], known=1,
-                                                        spe=1, bknown=1, dknown=1),
-                                  hero=dict(implicitUncursed=implicit)))
+        for otyp_name in ['MACE', 'WAN_COLD', 'ELVEN_MITHRIL_COAT', 'SCR_IDENTIFY']:
+            cases.append(case('doname', object=dict(otyp=types[otyp_name], known=1,
+                                                    spe=1, bknown=1, dknown=1),
+                              hero=dict(implicitUncursed=implicit)))
     cases.append(case('doname', object=dict(otyp=types['MACE'], known=1, spe=1,
                                             bknown=1, dknown=1, wornMask=256)))
     cases.append(case('doname', object=dict(otyp=types['AMULET_OF_LIFE_SAVING'],
@@ -562,16 +556,14 @@ def naming_edges(meta):
 def naming_generated(meta, count, seed):
     rng = random.Random(seed)
     types = meta['objects']
-    floor = meta['objects'].get('ARROW', 1)
-    named_types = [index for index, name in enumerate(meta['names'])
-                   if name and index >= floor and meta['classes'][index] != 7]
-    interesting = ['DAGGER', 'ELVEN_BOOTS', 'POT_OIL', 'WAND_OF_COLD',
-                   'SCROLL_OF_ENCHANT_WEAPON', 'SPE_FIREBALL', 'TIN', 'EGG',
+    interesting = [types[name] for name in [
+                   'DAGGER', 'ELVEN_BOOTS', 'POT_OIL', 'WAN_COLD',
+                   'SCR_ENCHANT_WEAPON', 'SPE_FIREBALL', 'TIN', 'EGG',
                    'CORPSE', 'STATUE', 'FIGURINE', 'SLIME_MOLD', 'SACK',
                    'LARGE_BOX', 'TOWEL', 'LENSES', 'GLOB_OF_GRAY_OOZE',
                    'HEAVY_IRON_BALL', 'BOULDER', 'AMULET_OF_YENDOR',
-                   'FAKE_AMULET_OF_YENDOR', 'RIN_GAIN_STRENGTH', 'FLINT',
-                   'RUBY', 'SCR_MAGIC_MAPPING', 'POT_WATER', 'LEASH']
+                   'FAKE_AMULET_OF_YENDOR', 'GAIN_STRENGTH', 'FLINT',
+                   'RUBY', 'SCR_MAGIC_MAPPING', 'POT_WATER', 'LEASH']]
     species = [name for name in ['newt', 'giant', 'Medusa', 'Oracle', 'wolf',
                'ghost', 'rogue', 'priest of Odin', 'shopkeeper', 'kitten',
                'air elemental', 'Wizard of Yendor', 'succubus', 'nurse',
@@ -592,10 +584,7 @@ def naming_generated(meta, count, seed):
                                    position=rng.choice([0, 1, 63, 255, 256])), meta)
             continue
         if target < NAMING_BASE + 5:
-            name = rng.choice(interesting)
-            otyp = types.get(name, rng.choice(named_types))
-            if otyp == types.get('SPE_NOVEL'):
-                otyp = rng.choice(named_types)  # novels are named at construction
+            otyp = rng.choice(interesting)
             oclass = meta['classes'][otyp]
             bounded = otyp in {types['CORPSE'], types['STATUE'], types['FIGURINE'],
                                types.get('CANDELABRUM_OF_INVOCATION', -1)}

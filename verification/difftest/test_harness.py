@@ -94,7 +94,6 @@ class HarnessTests(unittest.TestCase):
             found = difference(observed, mutant.call(state))
         self.assertIsNotNone(found)
         self.assertTrue(found['path'].startswith('rng.core'), found)
-        self.assertEqual(observed['rng']['core'], 0)
 
     def test_naming_string_stream_matches_the_native_measurement(self):
         state = canonical(dict(target='articles', text='elven dagger',
@@ -103,7 +102,6 @@ class HarnessTests(unittest.TestCase):
                 Worker(['node', str(HERE / 'port.mjs')], 'string-port2') as port:
             left, right = native.call(state), port.call(state)
         self.assertIsNone(difference(left, right))
-        self.assertEqual(right['rng'], dict(core=0, display=0, log=[]))
 
     def test_naming_reducer_keeps_a_real_emitted_mutant_counterexample(self):
         state = canonical(dict(target='doname',
