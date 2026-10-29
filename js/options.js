@@ -30,7 +30,7 @@ import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName, matchColorName, queryAttributeMenu, queryColorMenu } from './color_query.js';
-import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, STONE, } from './const.js';
 // C include/optlist.h, recorder build: every option table entry in file
 // order — [name, alias, isBool, negateok, valok, dupeok, prefix].  The
 // flags drive parseoptions()'s generic checks; options the port does not
@@ -2868,6 +2868,7 @@ async function editMenuHeadings() {
         return;
     game.iflags.menu_headings = { attr, color };
 }
+const NO_VISUAL_CHANGE = { redraw: false, customReset: false };
 // C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
@@ -2876,13 +2877,24 @@ function applyBooleanVisualChange(name) {
         classifyStatusTerrain(game);
     if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus', 'hitpointbar'].includes(name))
         reassessStatusFields();
+    if (name === 'mention_decor') {
+        // options.c:5422-5423: toggling forgets the remembered decoration.
+        game._prevDecorType = STONE;
+        return NO_VISUAL_CHANGE;
+    }
     if (name === 'dark_room' || name === 'lit_corridor') {
         vision_recalc(2);
         game.vision_full_recalc = 1;
-        return requestBooleanValue('color');
+        return { redraw: requestBooleanValue('color'), customReset: false };
     }
-    return ['color', 'customcolors', 'hilite_pet', 'hilite_pile',
-        'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
+    // options.c:5411-5415: custom colors and symbols queue only their own
+    // reset; reset_needed_visuals() serves those with docrt() alone and runs
+    // check_gold_symbol()/reglyph_darkroom() only for opt_need_redraw.
+    return {
+        redraw: ['color', 'hilite_pet', 'hilite_pile', 'hitpointbar', 'showrace', 'use_inverse']
+            .includes(name),
+        customReset: name === 'customcolors' || name === 'customsymbols',
+    };
 }
 const TOGGLE_WC_BOOLEANS = [
     ['ascii_map', 'wc_ascii_map', true],
@@ -2904,14 +2916,17 @@ const TOGGLE_BOOLEAN_NAMES = (() => {
         : left.toLowerCase() > right.toLowerCase() ? 1 : 0);
     return names;
 })();
-// options.c:reset_needed_visuals(), after the toggle message. A pending
-// status update must finish even when option messages have been silenced.
-async function resetBooleanVisuals(needsRedraw) {
-    if (needsRedraw) {
-        checkGoldSymbol();
-        reglyph_darkroom();
+// options.c:reset_needed_visuals(), after the toggle message. Both reset
+// kinds redraw; only opt_need_redraw re-probes the gold symbol and re-glyphs
+// dark rooms, and no toggle path flushes the screen. A pending status
+// update must finish even when option messages have been silenced.
+async function resetBooleanVisuals(pending) {
+    if (pending.redraw || pending.customReset) {
+        if (pending.redraw) {
+            checkGoldSymbol();
+            reglyph_darkroom();
+        }
         await docrt();
-        await flush_screen(1);
     }
     if (game.context.botl)
         await bot();
@@ -2931,7 +2946,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
         if (name === 'menu_tab_sep' || name === 'montelecontrol')
             continue;
         if (game.iflags.debug_fuzzer && (name === 'silent' || name === 'perm_invent')) {
-            await resetBooleanVisuals(false);
+            await resetBooleanVisuals(NO_VISUAL_CHANGE);
             toggled = true;
             continue;
         }
@@ -2939,7 +2954,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
             await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
             game.iflags.optionMessages = false;
             giveMessages = false;
-            await resetBooleanVisuals(false);
+            await resetBooleanVisuals(NO_VISUAL_CHANGE);
             toggled = true;
             continue;
         }
@@ -2949,7 +2964,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
             // can_set_perm_invent() refuses enabling it on the pinned tty
             // port, which is built without WC_PERM_INVENT.
             if (name === 'perm_invent' && value) {
-                await resetBooleanVisuals(false);
+                await resetBooleanVisuals(NO_VISUAL_CHANGE);
                 continue;
             }
             game.iflags[wcBoolean[1]] = value;
@@ -2959,7 +2974,8 @@ export async function toggleBooleanOptionPrefix(prefix) {
                 game.iflags.wc_ascii_map = !value;
             if (giveMessages)
                 await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
-            await resetBooleanVisuals(name === 'ascii_map' || name === 'tiled_map' || name === 'perm_invent');
+            await resetBooleanVisuals({ redraw: name === 'ascii_map' || name === 'tiled_map'
+                    || name === 'perm_invent', customReset: false });
             toggled = true;
             continue;
         }
@@ -2970,10 +2986,10 @@ export async function toggleBooleanOptionPrefix(prefix) {
         setRequestBoolean(option, value);
         if (option[0] === 'rest_on_space')
             game.commandBindings.setRestOnSpace(value);
-        const needsRedraw = applyBooleanVisualChange(option[0]);
+        const pending = applyBooleanVisualChange(option[0]);
         if (giveMessages)
             await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
-        await resetBooleanVisuals(needsRedraw);
+        await resetBooleanVisuals(pending);
         toggled = true;
     }
     return toggled;
@@ -2982,7 +2998,7 @@ export async function toggleBooleanOptionPrefix(prefix) {
 const OPTIONS_MENU_HELP = 'options_menu_help';
 async function doRequestMenuOptions() {
     let skipHelp = game.flags.cmdassist === false;
-    let needsRedraw = false;
+    let pending = NO_VISUAL_CHANGE;
     let giveBooleanMessage = game.iflags.optionMessages !== false;
     for (;;) {
         const sections = requestMenuSections().map(section => ({ items: [
@@ -3019,20 +3035,28 @@ async function doRequestMenuOptions() {
                 setRequestBoolean(option, value);
                 if (option[0] === 'rest_on_space')
                     game.commandBindings.setRestOnSpace(value);
-                needsRedraw = applyBooleanVisualChange(option[0]) || needsRedraw;
+                const change = applyBooleanVisualChange(option[0]);
+                pending = { redraw: pending.redraw || change.redraw,
+                    customReset: pending.customReset || change.customReset };
                 if (giveBooleanMessage)
                     await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
             }
-            else
-                needsRedraw = await editCompoundOption(name, true) || needsRedraw;
+            else {
+                const redraw = await editCompoundOption(name, true);
+                pending = { redraw: pending.redraw || redraw, customReset: pending.customReset };
+            }
         }
         if (selected.length !== 1 || selected[0] !== OPTIONS_MENU_HELP)
             break;
         skipHelp = true;
     }
-    if (needsRedraw) {
-        checkGoldSymbol();
-        reglyph_darkroom();
+    // options.c:8973-9002: reset_needed_visuals() after the whole menu; the
+    // customsymbols/customcolors resets redraw without the gold probe.
+    if (pending.redraw || pending.customReset) {
+        if (pending.redraw) {
+            checkGoldSymbol();
+            reglyph_darkroom();
+        }
         await docrt();
     }
     await bot();
@@ -3318,19 +3342,24 @@ export async function doOptions(menuRequested = false) {
             continue;
         }
         const option = requestBooleanByName.get(name.toLowerCase());
-        let needsRedraw = false;
+        let pending = NO_VISUAL_CHANGE;
         if (option) {
             setRequestBoolean(option, !requestBooleanValue(option[0]));
-            needsRedraw = applyBooleanVisualChange(option[0]);
+            pending = applyBooleanVisualChange(option[0]);
         }
         else
-            needsRedraw = await editCompoundOption(name, false);
-        if (needsRedraw) {
-            checkGoldSymbol();
-            reglyph_darkroom();
+            pending = { redraw: await editCompoundOption(name, false), customReset: false };
+        // options.c:8723-8731: reset_needed_visuals() runs for every pick;
+        // the extra flush_screen(1) happens only for opt_need_redraw.
+        if (pending.redraw || pending.customReset) {
+            if (pending.redraw) {
+                checkGoldSymbol();
+                reglyph_darkroom();
+            }
             await docrt();
-            await flush_screen(1);
         }
+        if (pending.redraw)
+            await flush_screen(1);
         await bot();
     }
     // doset_simple resets pending visuals after cancellation too. A full-screen

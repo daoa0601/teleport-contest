@@ -6,7 +6,7 @@ import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
 import { applyNethackrc, toggleBooleanOptionPrefix } from '../js/options.js';
-import { bot } from '../js/display.js';
+import { bot, flush_screen } from '../js/display.js';
 import { statusHiliteMenu } from '../js/status_hilites.js';
 import { cansee } from '../js/vision.js';
 import { BL_HP, BL_TH_ALWAYS_HILITE, HL_NONE, MAXBLSTATS, NO_LTEQGT } from '../js/const.js';
@@ -593,7 +593,13 @@ for (const mode of ['ascii_map', 'tiled_map']) {
             const firstState = mode === 'ascii_map' ? 'off' : 'on';
             assert.ok(pagedMessages.some(line => line.includes(`'${mode}' option toggled ${firstState}.`)
                 && line.includes('--More--')), 'The toggle message is acknowledged before the redraw');
-            assert.equal(game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@', 'The redraw displays the hero on the map');
+            // options.c:9278-9297: toggle_bool_option() runs
+            // reset_needed_visuals() with no flush_screen(), so the cls()
+            // inside docrt() leaves the physical map blank until the next
+            // end-of-command flush paints the refilled glyph buffer.
+            assert.notEqual(game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@', 'The redraw does not paint the hero before the next flush');
+            await flush_screen(1);
+            assert.equal(game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@', 'The buffered redraw displays the hero at the next flush');
             assert.equal(screen().split('\n')[0]?.trim(), '', 'The redraw clears the acknowledged message');
             pagedMessages.length = 0;
             assert.equal(await toggleBooleanOptionPrefix('tiled_map'), true);

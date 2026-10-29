@@ -27,7 +27,7 @@ import type { StatusLine2Fields } from './status_layout.js';
 import { armorStatus, weaponStatus } from './status_equipment.js';
 import { statusVersion } from './status_version.js';
 import { statusTerrain } from './status_terrain.js';
-import { hitpointBar } from './status_hitpoint_bar.js';
+import { hitpointBar, hitpointBarFill } from './status_hitpoint_bar.js';
 import { firstStatusLineSpans } from './status_highlighting.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
@@ -2807,10 +2807,14 @@ export function _statusLine1() {
         + `Ch:${currentAttribute(A_CHA)}`;
     const align = u.ualign?.type === -1 ? 'Chaotic' : u.ualign?.type === 0 ? 'Neutral' : 'Lawful';
     if (game.flags.hitpointbar) {
-        const hp = Upolyd(u) ? u.mh : u.uhp;
-        const maximum = Upolyd(u) ? u.mhmax : u.uhpmax;
-        const critical = !!game.level && !!game.urole && !!game.urace && criticallyLowHp(true, game);
-        return `${hitpointBar(title, hp ?? 0, maximum ?? 0, critical)} ${stats} ${align}`;
+        // wintty.c:4612 refreshes hpbar_crit_hp only when the HP field is
+        // updated, so the dashes follow the sticky state; without a display
+        // there is no sticky state yet.
+        const highlights = game.nhDisplay?.statusHighlights;
+        const critical = highlights
+            ? highlights.barCritical
+            : !!game.level && !!game.urole && !!game.urace && criticallyLowHp(true, game);
+        return `${hitpointBar(title, critical)} ${stats} ${align}`;
     }
     // C uses cursor-forward for gap between title and stats
     // C pads to align stats starting at a fixed column
@@ -2943,14 +2947,27 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
         }
         if (!game._statusUpdatesDisabled && display.statusVisible) {
             for (const span of display.statusHighlights.spans[index] ?? []) {
+                if (span.hitpointBar) {
+                    // wintty.c:5231-5253: the lit cells take the title
+                    // cell's colour and attribute; the unlit tail keeps only
+                    // the blink bit, and an empty bar (0 HP) keeps none.
+                    const bar = display.statusHighlights.barSpanStyle();
+                    const fill = span.fill ?? 0;
+                    const blink = fill > 0 && bar.attr & ATR_BLINK ? ATR_BLINK : 0;
+                    for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
+                        const cell = display.grid[row]?.[col];
+                        if (!cell) continue;
+                        const lit = col < span.start + fill;
+                        display.setCell(col, row, cell.ch,
+                            lit ? bar.color : NO_COLOR, lit ? bar.attr : blink);
+                    }
+                    continue;
+                }
                 const style = display.statusHighlights.style(span);
                 for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
                     const cell = display.grid[row]?.[col];
-                    if (!cell || span.hitpointBar && !(cell.attr & ATR_INVERSE)) continue;
-                    // Tty's hitpoint bar takes its color from HP, while the
-                    // filled segment keeps inverse and critical-HP blink.
-                    display.setCell(col, row, cell.ch, style.color,
-                        span.hitpointBar ? cell.attr : style.attr);
+                    if (!cell) continue;
+                    display.setCell(col, row, cell.ch, style.color, style.attr);
                 }
             }
         }
@@ -3197,9 +3214,17 @@ function refreshStatusLines(): void {
         ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank, levelPrefixChanged) : null;
     display.statusCapacityBlank = layout?.capacityBlank ?? false;
     display.statusLevelPrefixChanged = layout?.levelPrefixChanged ?? false;
+    // The tty stores the hitpoint bar style while processing status updates
+    // (wintty.c tty_status_update), so the title line is built afterwards.
+    if (fields) display.statusHighlights.update(game, fields,
+        objectClassSymbol(objectClassForType(GOLD_PIECE)));
     const firstLine = _statusLine1();
-    if (fields) display.statusHighlights.update(game, fields);
-    display.statusHighlights.spans = [firstStatusLineSpans(firstLine, !!game.flags.hitpointbar), layout?.spans ?? []];
+    const barFill = game.flags.hitpointbar
+        ? hitpointBarFill(Upolyd(game.u) ? game.u.mh ?? 0 : game.u.uhp ?? 0,
+            Upolyd(game.u) ? game.u.mhmax ?? 0 : game.u.uhpmax ?? 0)
+        : 0;
+    display.statusHighlights.spans = [firstStatusLineSpans(firstLine, !!game.flags.hitpointbar, barFill),
+        layout?.spans ?? []];
     display.statusLines = [firstLine, layout?.text ?? ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
