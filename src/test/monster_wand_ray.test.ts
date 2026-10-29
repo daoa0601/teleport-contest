@@ -12,9 +12,10 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { resolveMonsterImmediateWand } from '../js/monster_wand_ray.js';
 import {
-    AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, ROCK, WAN_STRIKING,
+    AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING,
     WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
 } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { roles } from '../js/roles.js';
 import { objectTypeKnown } from '../js/shk.js';
@@ -52,7 +53,7 @@ async function wandRoom(type = WAN_STRIKING, heroX = 18, heroY = 12) {
         },
     };
     installPagerInput(resetInputState(), {
-        expected: /wand|Boing|resist|orc|zombie|boulder|door|corpse|troll|resurrect|alive|reanimat|medallion|amulet|much better|But wait|You die|portcullis|drawbridge|shudder|frightened|stunned|mysterious force|disappears|appears/i,
+        expected: /wand|Boing|resist|orc|zombie|boulder|door|corpse|troll|resurrect|alive|reanimat|medallion|amulet|much better|But wait|You die|portcullis|drawbridge|shudder|frightened|stunned|mysterious force|disappears|appears|potion|shatter/i,
         limit: 40,
     });
     return { source, wand, options, messages, level: game.level };
@@ -253,6 +254,23 @@ void test('striking processes both boulders in a pile but shortens the ray only 
     assert.equal(floorObjectsAt(level, 9, 10).some(object => object.otyp === BOULDER), false);
     assert.ok(floorObjectsAt(level, 9, 10).some(object => object.otyp === ROCK));
 });
+
+void test('a striking ray shatters a potion beneath multiple boulders',
+    async () => {
+        const { source, wand, options, level } = await wandRoom();
+        await floorObject(BOULDER, 9, 10);
+        await floorObject(BOULDER, 9, 10);
+        const potion = await floorObject(POT_WATER, 9, 10);
+
+        initRng(40n);
+        await resolveMonsterImmediateWand(source, wand, options);
+
+        assert.equal(floorObjectsAt(level, 9, 10).some(object => object.otyp === BOULDER), false);
+        assert.ok(floorObjectsAt(level, 9, 10).some(object => object.otyp === ROCK));
+        // Fracturing moves rocks below the remaining boulder. The ray
+        // reaches those rocks again before testing the potion's resistance.
+        assert.equal(potion.where, 'gone');
+    });
 
 void test('striking opens a closed door and continues into the room', async () => {
     const { source, wand, options, level } = await wandRoom();
