@@ -6,6 +6,7 @@ import { explode } from './explosion.js';
 import { fireDamageObject } from './fire_damage.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { tryCallObjectType } from './object_call.js';
@@ -153,15 +154,20 @@ async function dipInWater(object, potion) {
         else
             await chargeAlteredUnpaidObject(object, action);
     }
-    if (action === 'bless')
-        blessObjectState(object);
-    else if (action === 'uncurse')
-        uncurseObjectState(object);
-    else if (action === 'unbless')
-        unblessObjectState(object);
-    else {
+    if (action === 'curse') {
         await curseObject(object);
         await dropCursedSecondaryWeapon(object);
+    }
+    else {
+        const oldRadius = objectLightRadius(object);
+        if (action === 'bless')
+            blessObjectState(object);
+        else if (action === 'uncurse')
+            uncurseObjectState(object);
+        else
+            unblessObjectState(object);
+        if (object.lamplit)
+            await adjustObjectLightAfterBlessing(object, oldRadius);
     }
     return true;
 }
