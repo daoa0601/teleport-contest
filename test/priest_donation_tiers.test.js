@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { moveloop_core } from '../js/allmain.js';
 import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
@@ -95,6 +96,18 @@ void test('a protective donation grants recoverable protection from outside', as
     assert.match(messages, /"Thou hast been rewarded for thy devotion\."/);
     assert.equal(hasPermanentIntrinsicProperty('protection', game), true);
     assert.ok((game.u.ublessed ?? 0) >= 2 && (game.u.ublessed ?? 0) <= 4, 'a fresh reward rolls two to four protection points');
+});
+void test('bought protection lowers armor class before the next command', async () => {
+    await donate(0, 19n, 800, (suggested, doubled) => doubled + Math.floor(suggested / 2));
+    const protection = game.u.ublessed ?? 0;
+    assert.ok(protection > 0, 'the priest must grant protection');
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const input = resetInputState();
+    input.feed('m.\x1b');
+    await moveloop_core();
+    await moveloop_core();
+    assert.equal(game.u.uac, 10 - protection, 'the next command must use the donated protection');
 });
 void test('a protective donation cannot exceed the protection cap', async () => {
     const priest = await donationTemple(0, 11n);
