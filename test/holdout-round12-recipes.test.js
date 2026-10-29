@@ -134,4 +134,8 @@ for (const name of Object.keys(ROUND12_RECIPES)) {
         }
     });
 }
+void test('egg-laying refuses to build a plan for a male character', () => {
+    assert.throws(() => makeRecipe('egg-laying', { seed: 13, datetime: '20000110090000',
+        character: characters.wizard }), /female/);
+});
 //# sourceMappingURL=holdout-round12-recipes.test.js.map

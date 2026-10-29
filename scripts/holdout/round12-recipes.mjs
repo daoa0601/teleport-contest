@@ -35,11 +35,18 @@ function femaleRecipe(description, success, actions) {
         roles: null,
         options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips', 'pettype:none'],
         description, success,
-        build: ({ seed, datetime, rc }) => [{
-                seed, datetime, nethackrc: rc(), driver: [
-                    keys('#levelchange\r20\r'), ...actions, keys('\x1b:\x1b'),
-                ],
-            }],
+        // sit.c:lay_an_egg() refuses male heroes ("Males can't lay
+        // eggs!"), so building a plan for one can never validate.
+        build: ({ seed, datetime, rc, character }) => {
+            if (character.gender !== 'female') {
+                throw new Error('egg-laying needs a female character');
+            }
+            return [{
+                    seed, datetime, nethackrc: rc(), driver: [
+                        keys('#levelchange\r20\r'), ...actions, keys('\x1b:\x1b'),
+                    ],
+                }];
+        },
     };
 }
 // hack.c:moverock(), moverock_core(), movobj(), cannot_push(), dopush().
@@ -84,24 +91,31 @@ export const ROUND12_RECIPES = {
         keys('#untrap\r.\r'), keys('#untrap\r.\r'), keys('#untrap\r.\r')]),
     // trap.c:disarm_squeaky_board() and unsqueak_ok(). The suggested
     // untrap-with letter is the grease slot, which each starting role
-    // owns at a fixed inventory position.
+    // owns at a fixed inventory position; the recipe therefore only
+    // accepts those three roles instead of guessing a letter.
     'squeaky-board-untrap': (() => {
         const greaseSlot = { wizard: 'o', rogue: 'g', barbarian: 'e' };
         return {
-            roles: null,
+            roles: ['wizard', 'rogue', 'barbarian'],
             options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips', 'pettype:none'],
             description: 'Wish a squeaky board, reveal it, and repair it with a can of grease.',
-            success: ['The squeaky board is repaired with grease, or the attempt backfires.'],
-            build: ({ seed, datetime, rc, character }) => [{
-                    seed, datetime, nethackrc: rc(), driver: [
-                        keys('#levelchange\r20\r'), keys('h'), keys('j'),
-                        ...wish('squeaky board', 'can of grease'), keys('\x05'),
-                        keys('#untrap\r.'), answer('What do you want to untrap with?', `${greaseSlot[character.role] ?? 'o'}\r`),
-                        keys('#untrap\r.'), answer('What do you want to untrap with?', `${greaseSlot[character.role] ?? 'o'}\r`),
-                        keys('#untrap\r.'), answer('What do you want to untrap with?', `${greaseSlot[character.role] ?? 'o'}\r`),
-                        keys('\x1b:\x1b'),
-                    ],
-                }],
+            success: ['The squeaky board is repaired with grease.'],
+            build: ({ seed, datetime, rc, character }) => {
+                if (!(character.role in greaseSlot)) {
+                    throw new Error(`squeaky-board-untrap has no grease slot for ${character.role}`);
+                }
+                return [{
+                        seed, datetime, nethackrc: rc(), driver: [
+                            keys('#levelchange\r20\r'), keys('h'), keys('j'),
+                            ...wish('squeaky board', 'can of grease'), keys('\x05'),
+                            ...Array.from({ length: 3 }, () => [
+                                keys('#untrap\r.'),
+                                answer('What do you want to untrap with?', `${greaseSlot[character.role]}\r`),
+                            ]).flat(),
+                            keys('\x1b:\x1b'),
+                        ],
+                    }];
+            },
         };
     })(),
     // teleport.c:level_tele_trap().
@@ -153,7 +167,7 @@ const EFFECTS = {
     'vampire-shapeshift': [['vampire shifted', /You transform into/]],
     'vibrating-square-step': [['square revealed', /There is a vibrating square here/]],
     'land-mine-untrap': [['mine handled', /(?:disarm the land mine|set it off|KAABLAMM)/]],
-    'squeaky-board-untrap': [['board handled', /(?:repair the squeaky board|squeak)/]],
+    'squeaky-board-untrap': [['board repaired', /You repair the squeaky board/]],
     'level-teleporter-step': [['level trap fired', /You step onto a level teleport trap/]],
     'drowning-crawl': [['sank and crawled out', /(?:sink like|crawled out|Pheew)/]],
     'floor-fire-damage': [['pile burned', /catch(?:es)? fire and burns?|boils? and explodes?|burns? up/]],
