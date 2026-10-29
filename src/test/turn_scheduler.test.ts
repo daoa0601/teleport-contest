@@ -735,7 +735,7 @@ for (const lifesaving of [false, true]) {
             assert.equal(game.inventory.length, 0);
             planInput(input, t, [
                 { prompt: /wraith touches.*Farvel level/, keys: ' ' },
-                { prompt: /You die\.\.\..*--More--/, keys: ' ' },
+                { prompt: /Do not pass Go.*--More--/, keys: ' ' },
                 { prompt: /see your attributes\?/, keys: 'n' },
                 { prompt: /see your conduct\?/, keys: 'n' },
                 { prompt: /dungeon overview\?/, keys: 'n' },
