@@ -199,7 +199,7 @@ export const ROUND12_RECIPES: Record<string, Recipe> = {
         ['disclose:all']),
     'death-polymorphed': dyingRecipe(
         'Polymorph into a silver dragon, then die by #wizkill and rest in the tombstone.',
-        ['The dragon hero dies; the game ends with the polymorphed killer text.'],
+        ['The hero dies in dragon form; the tombstone names the hero\'s own player as the killer.'],
         [keys('.'), keys('#polyself\rsilver dragon\r'), keys('#wizkill\r.'),
             answer('Commit suicide?', 'yes\r'), answer('Die?', 'y'),
             answer('Save bones?', 'y'), keys(' ', true)],
@@ -209,14 +209,19 @@ export const ROUND12_RECIPES: Record<string, Recipe> = {
         'Invoke #quit and decline the paranoid confirmation to keep playing.',
         ['The quit confirmation is answered with no and play continues.'],
         [keys('#quit\r'), answer('Really quit without saving?', 'n\r'), keys('.')]),
-    // mkmaze.c:fumaroles(), baalz_fixup(), maze_remove_deadends(), mazexy(),
-    // wizcmds.c:wiz_makemap(), cmd.c:makemap_prepost().
+    // mkmaze.c:baalz_fixup(), wizcmds.c:wiz_makemap(), cmd.c:makemap_prepost().
+    // Replacing the level discards its annotation through rm_mapseen().
     'gehennom-tour': recipe(
-        'Levelport to the Valley, Baalzebub\'s lair, and a deep maze, then regenerate the level.',
-        ['Gehennom levels load, fumaroles hiss, and the map is regenerated.'],
+        'Visit the Valley and Baalzebub\'s lair, annotate the lair, and regenerate it.',
+        ['The Valley and Baalzebub\'s lair load; replacing the lair discards its old annotation.'],
         [choose('valley', 'm\x16'), keys('.'.repeat(4)),
             choose('baalz', 'm\x16'), keys('.'.repeat(2)),
-            keys('\x1633\r'), keys('.'), keys('#wizmakemap\r'), keys('.'.repeat(3))]),
+            keys('#wizwhere\r'), keys(' '.repeat(4)),
+            keys('#annotate\r'), answer('What do you want to call this dungeon level?', 'old lair\r'),
+            keys('#annotate\r'), answer('Replace annotation "old lair" with?', '\x1b'),
+            keys('#wizmakemap\r'),
+            keys('#annotate\r'), answer('What do you want to call this dungeon level?', '\x1b'),
+            keys('.'.repeat(3))]),
     // topten.c:tt_doppel() and classmon().
     'doppelganger-players': recipe(
         'Create a doppelganger; its creation shape-change picks a player '
@@ -256,9 +261,16 @@ const EFFECTS: Record<string, readonly [string, RegExp][]> = {
     'floor-fire-damage': [['pile burned', /catch(?:es)? fire and burns?|boils? and explodes?|burns? up/]],
     'death-lifesaving': [['lifesaved', /(?:begins to glow|crumbles to dust)/]],
     'death-disclosure': [['disclosure shown', /Do you want your possessions/]],
-    'death-polymorphed': [['polymorphed death', /silver dragon/]],
+    'death-polymorphed': [
+        ['dragon form', /You turn into a silver dragon!/],
+        ['tombstone killer', /killed by (?:his|her)[\s|]*own player/],
+        ['death summary', /You died in The Dungeons of Doom on dungeon level/],
+    ],
     'quit-confirm': [['quit declined', /Really quit without saving/]],
-    'gehennom-tour': [['gehennom visited', /You materialize on a different level/]],
+    'gehennom-tour': [
+        ['Valley arrival', /You arrive at the Valley of the Dead/],
+        ['Baalzebub\'s lair visited', /\*\s+baalz:\s+\d+/],
+    ],
     'doppelganger-players': [['doppel created', /appears next to you/]],
     'wiz-telekinesis-self': [['hero hurtled', /(?:hurtle|whammed|Ouch)/i]],
     'wiz-where-report': [['layout shown', /(?:Dungeon|Branch|Level)/]],
@@ -276,5 +288,15 @@ export function validateRound12Recipe(name: string, session: RecipeRecording): R
         { check: 'gameplay consumed turns', ok: (turns.at(-1) ?? 0) > (turns[0] ?? Infinity), evidence: '' },
         ...effects.map(([check, effect]) => ({ check, ok: effect.test(text), evidence: '' })),
     ];
+    if (name === 'gehennom-tour') {
+        const lairDepth = text.match(/\*\s+baalz:\s+(\d+)/)?.[1];
+        const annotated = screens.findIndex(screen => screen.includes('Replace annotation "old lair" with?')
+            && lairDepth !== undefined && screen.match(/\bDlvl:\s*(\d+)/)?.[1] === lairDepth);
+        const replaced = screens.slice(annotated + 1).some(screen =>
+            screen.includes('What do you want to call this dungeon level?')
+            && lairDepth !== undefined && screen.match(/\bDlvl:\s*(\d+)/)?.[1] === lairDepth);
+        checks.push({ check: 'replacement lair forgot its old annotation',
+            ok: annotated >= 0 && replaced, evidence: '' });
+    }
     return checks;
 }
