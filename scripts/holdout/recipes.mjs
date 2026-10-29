@@ -110,6 +110,8 @@ export function acceptsCharacter(recipeName, character) {
         return false;
     if (recipe.roles && !recipe.roles.includes(character.role))
         return false;
+    if (recipe.genders && !recipe.genders.includes(character.gender))
+        return false;
     return true;
 }
 export function isLegalCharacter(character) {

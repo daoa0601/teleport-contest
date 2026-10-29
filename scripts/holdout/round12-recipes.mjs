@@ -33,6 +33,7 @@ function dyingRecipe(description, success, actions, options = []) {
 function femaleRecipe(description, success, actions) {
     return {
         roles: null,
+        genders: ['female'],
         options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips', 'pettype:none'],
         description, success,
         // sit.c:lay_an_egg() refuses male heroes ("Males can't lay

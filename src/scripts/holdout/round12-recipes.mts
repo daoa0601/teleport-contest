@@ -44,6 +44,7 @@ function dyingRecipe(description: string, success: string[], actions: SessionAct
 function femaleRecipe(description: string, success: string[], actions: SessionAction[]): Recipe {
     return {
         roles: null,
+        genders: ['female'],
         options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips', 'pettype:none'],
         description, success,
         // sit.c:lay_an_egg() refuses male heroes ("Males can't lay

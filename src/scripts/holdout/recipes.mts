@@ -37,6 +37,8 @@ export interface RecipePlanSegment extends SessionSegment { driver: SessionActio
 export interface RecipePlan extends Session { segments: RecipePlanSegment[]; }
 export interface Recipe {
     roles: string[] | null;
+    /** Restricts the hero's gender when a mechanic depends on it. */
+    genders?: string[];
     options: string[];
     description: string;
     success: string[];
@@ -157,6 +159,7 @@ export function acceptsCharacter(recipeName: string, character: Character) {
     if (!recipe) return false;
     if (!isLegalCharacter(character)) return false;
     if (recipe.roles && !recipe.roles.includes(character.role)) return false;
+    if (recipe.genders && !recipe.genders.includes(character.gender)) return false;
     return true;
 }
 
