@@ -21,7 +21,16 @@ export interface MenuAction {
     dismissMore?: boolean;
     expectExit?: boolean;
 }
-export type SessionAction = KeysAction | MenuAction;
+// Send an answer only when the displayed question starts with prompt;
+// otherwise skip this action without sending any input.
+export interface PromptAnswerAction {
+    type: 'answer-prompt';
+    prompt: string;
+    value: string;
+    dismissMore?: boolean;
+    expectExit?: boolean;
+}
+export type SessionAction = KeysAction | MenuAction | PromptAnswerAction;
 export interface PolicyConfig {
     kind: 'fuzz' | 'explore' | 'wide';
     seed: number;
@@ -145,6 +154,8 @@ export function decodeActions(value: unknown): SessionAction[] {
             ...(action.expectExit === undefined ? {} : { expectExit: booleanValue(action.expectExit, 'expectExit') }),
         };
         if (action.type === 'keys') return { type: 'keys', value: stringValue(action.value, 'keys value'), ...flags };
+        if (action.type === 'answer-prompt') return { type: 'answer-prompt',
+            prompt: stringValue(action.prompt, 'answer prompt'), value: stringValue(action.value, 'answer value'), ...flags };
         if (action.type === 'select-menu-entry') return { type: 'select-menu-entry', target: stringValue(action.target, 'menu target'),
             ...(action.openKeys === undefined ? {} : { openKeys: stringValue(action.openKeys, 'menu openKeys') }), ...flags };
         throw new Error(`unsupported driver action: ${String(action.type)}`);

@@ -8,6 +8,7 @@ import { ROUND5_RECIPES, validateRound5Recipe } from './round5-recipes.mjs';
 import { ROUND6_RECIPES, validateRound6Recipe } from './round6-recipes.mjs';
 import { ROUND7_RECIPES, validateRound7Recipe } from './round7-recipes.mjs';
 import { ROUND8_RECIPES, validateRound8Recipe } from './round8-recipes.mjs';
+import { ROUND10_RECIPES, validateRound10Recipe } from './round10-recipes.mjs';
 export interface Character {
     role: string;
     race: string;
@@ -484,14 +485,22 @@ RECIPES['throw-fight'] = {
     ],
 };
 
-for (const [name, recipe] of Object.entries(ITEM_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(GAMEPLAY_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(COVERAGE_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(ROUND4_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(ROUND5_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(ROUND6_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(ROUND7_RECIPES)) RECIPES[name] = recipe;
-for (const [name, recipe] of Object.entries(ROUND8_RECIPES)) RECIPES[name] = recipe;
+// Later groups must not silently replace an earlier recipe of the same name.
+function addRecipes(group: Record<string, Recipe>): void {
+    for (const [name, recipe] of Object.entries(group)) {
+        if (Object.hasOwn(RECIPES, name)) throw new Error(`duplicate recipe name: ${name}`);
+        RECIPES[name] = recipe;
+    }
+}
+addRecipes(ITEM_RECIPES);
+addRecipes(GAMEPLAY_RECIPES);
+addRecipes(COVERAGE_RECIPES);
+addRecipes(ROUND4_RECIPES);
+addRecipes(ROUND5_RECIPES);
+addRecipes(ROUND6_RECIPES);
+addRecipes(ROUND7_RECIPES);
+addRecipes(ROUND8_RECIPES);
+addRecipes(ROUND10_RECIPES);
 
 export { RECIPES };
 
@@ -774,6 +783,9 @@ for (const name of Object.keys(ROUND7_RECIPES)) {
 }
 for (const name of Object.keys(ROUND8_RECIPES)) {
     VALIDATORS[name] = recording => validateRound8Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND10_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound10Recipe(name, recording);
 }
 
 /**

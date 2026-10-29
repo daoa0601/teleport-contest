@@ -10,6 +10,7 @@
 //      their absence.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { decodeActions } from '../scripts/lib/session-types.mjs';
 import { LEGAL_CHARACTERS, RECIPE_NAMES, ROLES, RACES, DEPTH_TOUR_TARGETS, makeRecipe, acceptsCharacter, isLegalCharacter, validateRecipeRecording, } from '../scripts/holdout/recipes.mjs';
 const DT = '20000110090000';
 function has(combo) {
@@ -101,7 +102,7 @@ for (const name of RECIPE_NAMES) {
             assert.ok(Array.isArray(seg.driver) && seg.driver.length > 0, 'segment carries driver actions');
             assert.equal(seg.moves, undefined, 'driver segments carry no fixed moves');
             for (const action of seg.driver) {
-                assert.ok(['keys', 'select-menu-entry'].includes(action.type));
+                assert.doesNotThrow(() => decodeActions([action]), 'the recorder must accept each driver action');
                 if (action.type === 'keys') {
                     assert.equal(action.dismissMore, true, 'keys actions must dismiss pending --More-- prompts');
                 }

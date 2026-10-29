@@ -69,6 +69,9 @@ export function decodeActions(value) {
         };
         if (action.type === 'keys')
             return { type: 'keys', value: stringValue(action.value, 'keys value'), ...flags };
+        if (action.type === 'answer-prompt')
+            return { type: 'answer-prompt',
+                prompt: stringValue(action.prompt, 'answer prompt'), value: stringValue(action.value, 'answer value'), ...flags };
         if (action.type === 'select-menu-entry')
             return { type: 'select-menu-entry', target: stringValue(action.target, 'menu target'),
                 ...(action.openKeys === undefined ? {} : { openKeys: stringValue(action.openKeys, 'menu openKeys') }), ...flags };

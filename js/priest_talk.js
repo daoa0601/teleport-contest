@@ -109,6 +109,9 @@ export async function talkToPriest(priest, state) {
             else if (protection < 20 && (protection < 9 || !rn2(protection)))
                 state.u.ublessed = protection + 1;
         }
+        // C find_ac() applies the reward at the next command boundary,
+        // after the priest's reply has finished.
+        state._armorClassDirty = true;
         await speak((state.u.ublessed ?? 0) > previousProtection
             ? 'Thou hast been rewarded for thy devotion.' : 'Thy selfless generosity is deeply appreciated.');
     }
