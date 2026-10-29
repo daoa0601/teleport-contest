@@ -14,6 +14,7 @@ import { ROUND15_RECIPES, validateRound15Recipe } from './round15-recipes.mjs';
 import { ROUND14_RECIPES, validateRound14Recipe } from './round14-recipes.mjs';
 import { ROUND16_RECIPES, validateRound16Recipe } from './round16-recipes.mjs';
 import { ROUND18_RECIPES, validateRound18Recipe } from './round18-recipes.mjs';
+import { ROUND19_RECIPES, validateRound19Recipe } from './round19-recipes.mjs';
 import { ROUND9_RECIPES, validateRound9Recipe } from './round9-recipes.mjs';
 import { ROUND12_RECIPES, validateRound12Recipe } from './round12-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
@@ -436,6 +437,7 @@ addRecipes(ROUND13_RECIPES);
 addRecipes(ROUND15_RECIPES);
 addRecipes(ROUND16_RECIPES);
 addRecipes(ROUND18_RECIPES);
+addRecipes(ROUND19_RECIPES);
 addRecipes(ROUND9_RECIPES);
 addRecipes(ROUND12_RECIPES);
 addRecipes(ROUND14_RECIPES);
@@ -681,6 +683,9 @@ for (const name of Object.keys(ROUND16_RECIPES)) {
 }
 for (const name of Object.keys(ROUND18_RECIPES)) {
     VALIDATORS[name] = recording => validateRound18Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND19_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound19Recipe(name, recording);
 }
 for (const name of Object.keys(ROUND15_RECIPES)) {
     VALIDATORS[name] = recording => validateRound15Recipe(name, recording);
