@@ -348,27 +348,37 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         && game.valley_level
         && newDepth.dnum === game.valley_level.dnum
         && newDepth.dlevel === game.valley_level.dlevel;
-    // A bones level runs the same arrival block as any other level:
-    // do.c:goto_level() delivers the special-level message and the
-    // Valley lines (do.c:1856-1872) before familiar_level_msg()
-    // (do.c:1875) and the remaining branch messages.  The special-level
-    // message never applies here: gl.lev_message is transient, so C has
-    // none on a level reloaded from bones.
+    // A bones level runs the same arrival block as any other level, in
+    // do.c order: maybe_lvltport_feedback() (do.c:1854), the special-level
+    // message (deliver_splev_message(), do.c:1858), the Valley lines
+    // (do.c:1861-1872), familiar_level_msg() (do.c:1878), and only then
+    // the location branch chain ending in onquest() (do.c:1892).  The
+    // special-level message never applies to a bones load: gl.lev_message
+    // is transient, and the bones restore generates no level script.
     const bonesArrival = game._restoredBones;
+    // maybe_lvltport_feedback() (do.c:1854) delivers the "You materialize"
+    // line ahead of every message below, unless a glowing Sting already
+    // did during docrt().  Any other deferred message waits until
+    // goto_level() has returned (deferred_goto(), do.c:2085-2096), after
+    // every arrival line below.
+    await beforeGlow();
+    // deliver_splev_message() (do.c:1858): a special level announces
+    // itself before the Valley and quest lines, and the pending message is
+    // freed, so a later return to the level cannot repeat it.
+    await deliverSpecialLevelMessages(bonesArrival ? null : game._activeSpecialLevel);
+    if (enteredValley) {
+        // do.c:goto_level() announces the first crossing into Gehennom
+        // after the destination redraw.  Ordinary topline continuation
+        // owns the acknowledgement boundaries between these lines.
+        await plineWithContinuation('You arrive at the Valley of the Dead...');
+        await plineWithContinuation('The odor of burnt flesh and decay pervades the air.');
+        await publishHeardMessage('groans and moans everywhere.', plineWithContinuation, game);
+    }
     if (bonesArrival) {
-        // maybe_lvltport_feedback() (do.c:1854) delivers only the
-        // "You materialize" line this early, unless a glowing Sting
-        // already did during docrt().  Any other deferred message waits
-        // until goto_level() has returned (deferred_goto(),
-        // do.c:2085-2096), after every arrival line below.
-        await beforeGlow();
-        if (enteredValley) {
-            await plineWithContinuation('You arrive at the Valley of the Dead...');
-            await plineWithContinuation('The odor of burnt flesh and decay pervades the air.');
-            await publishHeardMessage('groans and moans everywhere.', plineWithContinuation, game);
-        }
+        // familiar_level_msg() (do.c:1878): bones_include_name() matches
+        // through the hero name's trailing hyphen, and its deja-vu choice
+        // is the first random call of the arrival.
         let familiarMessage = '';
-        // bones_include_name() matches through the hero name's trailing hyphen.
         if (game.level.bonesNames?.some(name => name.startsWith(`${game.plname}-`))) {
             const perception = heroIsBlind(game) ? 'seems' : 'looks';
             const familiarMessages = heroIsHallucinating(game) ? [
@@ -388,28 +398,18 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             await pline(familiarMessage);
         game._restoredBones = false;
     }
-    else {
-        // maybe_lvltport_feedback() (do.c:1854) delivers the
-        // "You materialize" line ahead of the special-level and Valley
-        // messages below on every arrival, not only bones ones.
-        await beforeGlow();
-    }
-    // do.c:goto_level() runs familiar_level_msg() (whose deja-vu choice is
-    // the first random call of the arrival) before onquest() and the quest
-    // leader's summons, so their quest.lua loads stay behind it.  Quest
-    // text preparation can run Lua, so finish it before a message pauses
-    // for player input.
+    // do.c:goto_level() runs the location branch chain (do.c:1881-1933)
+    // after every line above.  Quest text preparation loads quest.lua,
+    // exactly behind the arrival lines in C, so keep it behind them here
+    // too; the wizard forced-destination teleport suppresses the summons
+    // when the previous level was inside the Quest (In_quest(&u.uz0)).
     const questArrival = await prepareQuestArrival({
         fromDepth: oldDepth,
     });
-    // do.c suppresses the summons when the previous level was inside the
-    // Quest (In_quest(&u.uz0)); the wizard forced-destination teleport
-    // can leave the Quest without the portal.  Every other arrival
-    // delivers it, cached level or not.
     const questPortalCall = await prepareMainQuestPortalCall({
         fromDepth: oldDepth,
     });
-    if (questArrival?.page || questArrival?.line) {
+    if (questArrival) {
         await displayPreparedQuestArrival(questArrival);
         if (questArrival.page) {
             // A quest page replaces the earlier teleport message.
@@ -417,43 +417,27 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             game._retained_message = '';
         }
     }
-    else {
-        if (questArrival)
-            await displayPreparedQuestArrival(questArrival);
-        // do.c:goto_level() announces a newly generated Rogue floor after
-        // level-teleport feedback.  tty continuation therefore suspends on
-        // the materialization line and exposes the classic Rogue map before
-        // installing this second line.
-        if (!cached && Is_rogue_level(newDepth)) {
-            await plineWithContinuation('You enter what seems to be an older, more primitive world.');
-        }
-        const specialMessages = bonesArrival
-            ? []
-            : game._activeSpecialLevel?.specialMessages || [];
-        if (specialMessages.length) {
-            for (const line of specialMessages)
-                await plineWithContinuation(line);
-        }
-        if (!bonesArrival && enteredValley) {
-            // do.c:goto_level() announces the first crossing into Gehennom
-            // after the destination redraw.  Ordinary topline continuation
-            // owns the two acknowledgement boundaries between these lines.
-            await plineWithContinuation('You arrive at the Valley of the Dead...');
-            await plineWithContinuation('The odor of burnt flesh and decay pervades the air.');
-            await publishHeardMessage('groans and moans everywhere.', plineWithContinuation, game);
-        }
-        if (Is_knox_level(newDepth)
-            && (!cached || !monsterDeathCount(MONSTER_NAME.indexOf('Croesus')))) {
-            await plineWithContinuation('You have penetrated a high security area!');
-            await plineWithContinuation('An alarm sounds!');
-            for (const monster of game.level.monsters)
-                if (!monster.dead && monster.mhp > 0)
-                    monster.msleeping = 0;
-        }
-        if (questPortalCall) {
-            for (const line of questPortalCall)
-                await plineWithContinuation(line);
-        }
+    // do.c:1893-1904: the Knox alarm (the chain branch after In_quest()).
+    // The alarm stops working once Croesus has died.
+    if (Is_knox_level(newDepth)
+        && (!cached || !monsterDeathCount(MONSTER_NAME.indexOf('Croesus')))) {
+        await plineWithContinuation('You have penetrated a high security area!');
+        await plineWithContinuation('An alarm sounds!');
+        for (const monster of game.level.monsters)
+            if (!monster.dead && monster.mhp > 0)
+                monster.msleeping = 0;
+    }
+    // do.c:1912-1913: the chain's else branch announces a newly generated
+    // Rogue floor after level-teleport feedback.  tty continuation
+    // therefore suspends on the materialization line and exposes the
+    // classic Rogue map before installing this second line.
+    if (!cached && Is_rogue_level(newDepth)) {
+        await plineWithContinuation('You enter what seems to be an older, more primitive world.');
+    }
+    // do.c:1918-1931: the quest leader's summons at the Quest entrance.
+    if (questPortalCall) {
+        for (const line of questPortalCall)
+            await plineWithContinuation(line);
     }
     const enteredEndgame = oldDepth.dnum !== newDepth.dnum
         && In_endgame(newDepth);
@@ -511,6 +495,12 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     }
     if (!cached)
         await creditTouristNewLevel();
+    // do.c:1967: goto_level() resets u.uz0 to the arrival level before the
+    // annotation, room entry, object delivery, fall damage, and pickup, so
+    // a death during those steps still ends on the level the hero arrived
+    // on (stair-tumble deaths earlier in the arrival keep the old level,
+    // exactly as in C where they precede this reset).
+    game.u.uz0 = { ...game.u.uz };
     if (game.flags.checkpoint ?? true)
         rewindEngravingsForSave(game.level);
     const levelAnnotation = game._levelAnnotations?.get?.(`${newDepth.dnum}:${newDepth.dlevel}`);
@@ -549,8 +539,18 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         await plineWithContinuation(postMessage);
         postMessage = '';
     }
-    game.u.uz0 = { ...game.u.uz };
     return true;
+}
+// C questpgr.c:deliver_splev_message(): a special level's custom arrival
+// message prints once and is freed, so returning to the level later cannot
+// repeat it.  Bones loads generate no level script, so they carry none.
+export async function deliverSpecialLevelMessages(active = game._activeSpecialLevel) {
+    const messages = active?.specialMessages;
+    if (!active || !messages?.length)
+        return;
+    for (const line of messages)
+        await plineWithContinuation(line);
+    active.specialMessages = [];
 }
 // C do.c:final_level() and priest.c:reset_hostility().
 async function finishAstralArrival() {
