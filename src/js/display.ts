@@ -20,7 +20,7 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
-import { rankOf } from './quest_pager.js';
+import { statusTitle } from './status_title.js';
 import { statusConditions } from './status_conditions.js';
 import { renderStatusLine2 } from './status_layout.js';
 import type { StatusLine2Fields } from './status_layout.js';
@@ -28,6 +28,7 @@ import { armorStatus, weaponStatus } from './status_equipment.js';
 import { statusVersion } from './status_version.js';
 import { statusTerrain } from './status_terrain.js';
 import { hitpointBar } from './status_hitpoint_bar.js';
+import { firstStatusLineSpans } from './status_highlighting.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
@@ -49,7 +50,7 @@ import {
     In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
     MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum,
-    MAX_MSG_HISTORY,
+    MAX_MSG_HISTORY, BL_WEAPON, BL_ARMOR, BL_TERRAIN,
 } from './const.js';
 import {
     NO_COLOR, ATR_INVERSE, CLR_BLACK,
@@ -2799,17 +2800,7 @@ function render_map_row(y: number) {
 export function _statusLine1() {
     const u = game.u;
     if (!u) return '';
-    let name = game.plname || game.displayName || 'Hero';
-    name = name.charAt(0).toUpperCase() + name.slice(1);
-    const role = Upolyd(u)
-        ? monsterTypeName(u.umonnum ?? -1, u.mfemale)
-            .replace(/(^| )[a-z]/g, letter => letter.toUpperCase())
-        : rankOf(u.ulevel ?? 1, game);
-    // bot_via_windowport() keeps the rank intact and at least 16 name
-    // characters, even when a long monster title then exceeds 30 columns.
-    if (name.length + 5 + role.length > 30)
-        name = name.slice(0, Math.max(16, 30 - 5 - role.length));
-    const title = `${name} the ${role}`;
+    const title = statusTitle(game);
     const stats = `St:${formatStrength(currentAttribute(A_STR))} `
         + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
         + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
@@ -2876,14 +2867,17 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     return {
         location, gold: `${goldLabel}:${displayedGold}`,
-        health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
+        health: { hitpoints: displayedHp, maximumHitpoints: maximumHp,
+            power: displayedPower, maximumPower, armorClass: displayedAc },
         experience, moves: game.flags.time ? game.moves : null,
         hunger: hungerLabel ?? '',
         capacity,
         conditions: statusConditions(game),
-        equipment: [game.flags.weaponstatus ? weaponStatus(game) : '',
-            game.flags.armorstatus ? armorStatus(game) : '',
-            game.flags.terrainstatus ? statusTerrain(game) : ''].filter(text => text.length > 0),
+        equipment: [
+            { field: BL_WEAPON, text: game.flags.weaponstatus ? weaponStatus(game) : '' },
+            { field: BL_ARMOR, text: game.flags.armorstatus ? armorStatus(game) : '' },
+            { field: BL_TERRAIN, text: game.flags.terrainstatus ? statusTerrain(game) : '' },
+        ].filter(entry => entry.text.length > 0),
         version: game.flags.showvers ? statusVersion(game.flags.versinfo) : '',
     };
 }
@@ -2946,6 +2940,19 @@ export function writeStatusLines(display: GameDisplay, lines: readonly [string, 
             const visible = part.slice(0, Math.max(0, display.cols - 1 - column));
             display.putstr(column, row, visible, NO_COLOR, attr);
             column += visible.length;
+        }
+        if (!game._statusUpdatesDisabled && display.statusVisible) {
+            for (const span of display.statusHighlights.spans[index] ?? []) {
+                const style = display.statusHighlights.style(span);
+                for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
+                    const cell = display.grid[row]?.[col];
+                    if (!cell || span.hitpointBar && !(cell.attr & ATR_INVERSE)) continue;
+                    // Tty's hitpoint bar takes its color from HP, while the
+                    // filled segment keeps inverse and critical-HP blink.
+                    display.setCell(col, row, cell.ch, style.color,
+                        span.hitpointBar ? cell.attr : style.attr);
+                }
+            }
         }
     }
 }
@@ -3080,8 +3087,7 @@ export async function flush_screen(mode?: number) {
     // still write their own rows while the old map remains on screen.
     if (mode === -1) game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused) return;
-    if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
-    else if (game.context.time_botl) timebot();
+    updateStatusLines();
     const display = game.nhDisplay;
     const mapCursor: [number, number] | null = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -3163,6 +3169,7 @@ export function reassessStatusFields(): void {
         display.statusLine2Fields = null;
         display.statusCapacityBlank = false;
         display.statusLevelPrefixChanged = false;
+        display.statusHighlights.reset();
     }
     game.context.botl = true;
 }
@@ -3190,7 +3197,10 @@ function refreshStatusLines(): void {
         ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank, levelPrefixChanged) : null;
     display.statusCapacityBlank = layout?.capacityBlank ?? false;
     display.statusLevelPrefixChanged = layout?.levelPrefixChanged ?? false;
-    display.statusLines = [_statusLine1(), layout?.text ?? ''];
+    const firstLine = _statusLine1();
+    if (fields) display.statusHighlights.update(game, fields);
+    display.statusHighlights.spans = [firstStatusLineSpans(firstLine, !!game.flags.hitpointbar), layout?.spans ?? []];
+    display.statusLines = [firstLine, layout?.text ?? ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
     game.context.botl = false;
@@ -3202,6 +3212,13 @@ function refreshStatusLines(): void {
 export function updateStatusLines(): void {
     if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
     else if (game.context.time_botl) timebot();
+}
+
+// C calls this once per time-taking hero action, before the next bot().
+// Zero-time menus and message flushes must not extend temporary highlights.
+export function statusEvalNextUnhilite(): void {
+    if (game.iflags.hiliteDelta && game.nhDisplay?.statusHighlights.evaluateNextUnhilite(game))
+        game.context.botl = true;
 }
 
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
@@ -3219,6 +3236,8 @@ export function timebot(): void {
         display.statusCapacityBlank, display.statusLevelPrefixChanged);
     display.statusCapacityBlank = layout.capacityBlank;
     display.statusLevelPrefixChanged = layout.levelPrefixChanged;
+    display.statusHighlights.updateTime(game);
+    display.statusHighlights.spans = [display.statusHighlights.spans[0], layout.spans];
     display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);

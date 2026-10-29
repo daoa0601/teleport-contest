@@ -2930,6 +2930,11 @@ export async function toggleBooleanOptionPrefix(prefix) {
             continue;
         if (name === 'menu_tab_sep' || name === 'montelecontrol')
             continue;
+        if (game.iflags.debug_fuzzer && (name === 'silent' || name === 'perm_invent')) {
+            await resetBooleanVisuals(false);
+            toggled = true;
+            continue;
+        }
         if (name === 'idlecheckpoint') {
             await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
             game.iflags.optionMessages = false;

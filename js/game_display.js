@@ -9,6 +9,7 @@
 //   const display = new GameDisplay(terminal);
 //   // display.setCell, display.readKey etc. all delegate to terminal
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
+import { StatusHighlights } from './status_highlighting.js';
 export class GameDisplay {
     terminal;
     mapFrameCells = new Set();
@@ -18,6 +19,7 @@ export class GameDisplay {
     preserveEmptyMessageRow = false;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines = null;
+    statusHighlights = new StatusHighlights();
     statusLine2Fields = null;
     statusCapacityBlank = false;
     // Tty keeps the replacement prefix until BL_LEVELDESC changes.

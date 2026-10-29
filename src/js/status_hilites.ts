@@ -264,6 +264,7 @@ export function clearStatusHilites(): void {
 // botl.c reset_status_hilites(): display side only; the pending full status
 // repaint is disp.botlx in C.
 export function resetStatusHilites(): void {
+    game.nhDisplay?.statusHighlights.reset();
     game.context.botl = true;
 }
 
@@ -704,7 +705,6 @@ function statusHiliteRemove(id: number): boolean {
 async function statusHiliteMenuFld(fld: number): Promise<boolean> {
     const field = STATUS_FIELDS[fld];
     if (!field) return false;
-    linestrGather();
     let count = linestrCountField(fld);
     if (!count) {
         if (await statusHiliteMenuAdd(fld)) {
@@ -712,7 +712,6 @@ async function statusHiliteMenuFld(fld: number): Promise<boolean> {
             linestrGather();
             count = linestrCountField(fld);
         } else {
-            linestrDone();
             return false;
         }
     }
@@ -743,24 +742,21 @@ async function statusHiliteMenuFld(fld: number): Promise<boolean> {
             while (await statusHiliteMenuAdd(fld)) acted = true;
         }
     }
-    linestrDone();
     return acted;
 }
 
 // botl.c status_hilites_viewall(): every rule in config format.
 async function statusHilitesViewAll(): Promise<void> {
-    linestrGather();
     const lines = hiliteStrs.map(line => `OPTIONS=hilite_status: ${line.str}`);
-    linestrDone();
     await showTextWindow(lines);
 }
 
 // botl.c status_hilite_menu(): the "status highlight rules" handler.
 export async function statusHiliteMenu(): Promise<boolean> {
+    let countAll = 0;
     for (;;) {
         linestrGather();
-        const countAll = linestrCountField(BL_FLUSH);
-        const thresholds = fieldThresholds();
+        countAll = linestrCountField(BL_FLUSH);
         const items: ({ value: number; text: string } | { selectable: false; text: string })[] = [];
         if (countAll) {
             items.push({ value: 0, text: 'View all hilites in config format' });
@@ -788,13 +784,16 @@ export async function statusHiliteMenu(): Promise<boolean> {
             else if (await statusHiliteMenuFld(fld)) resetStatusHilites();
             redo = true;
         }
+        // The listing survives a field edit, including deleted rules. C
+        // uses that listing's count before destroying it, even for fuzzer exit.
+        countAll = linestrCountField(BL_FLUSH);
         linestrDone();
         // The native fuzzer gets one attempt at the nested field menus.
         if (!redo || game.iflags.debug_fuzzer) break;
     }
     // statushilites doubles as the on-switch for highlighting: enabling a
     // default duration when rules now exist.
-    if (countStatusHilites() > 0 && !game.iflags.hiliteDelta)
+    if (countAll > 0 && !game.iflags.hiliteDelta)
         game.iflags.hiliteDelta = 3;
     return true;
 }

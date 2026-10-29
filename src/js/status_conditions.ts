@@ -62,6 +62,11 @@ const definitions: readonly ConditionDefinition[] = [
 const defaultMask = definitions.reduce((mask, condition, index) =>
     condition.enabled ? mask | (1 << index) : mask, 0);
 
+export function statusConditionBit(text: ConditionText): number {
+    const index = definitions.findIndex(condition => condition.text[0] === text[0]);
+    return index >= 0 ? 1 << index : 0;
+}
+
 // parse_cond_option() accepts each option's first four letters (or its
 // complete name if shorter). Config parsing supplies the negation separately.
 export function setConditionOption(option: string, enabled: boolean, mask = defaultMask): number | null {

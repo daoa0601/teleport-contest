@@ -5,7 +5,7 @@
 
 export type TerminalColor = number | string;
 
-import { ATR_BLINK } from './terminal_attributes.js';
+import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
 
 export interface TerminalCell {
     ch: string;
@@ -488,6 +488,8 @@ span.terminal-cursor {
         }
 
         span.style.fontWeight = isBold ? 'bold' : '';
+        span.style.opacity = attr & TERMINAL_DIM ? '0.5' : '';
+        span.style.fontStyle = attr & TERMINAL_ITALIC ? 'italic' : '';
         span.style.textDecoration = isUnderline ? 'underline' : '';
         span.classList.toggle('terminal-blink', (attr & ATR_BLINK) !== 0);
     }
@@ -636,6 +638,8 @@ span.terminal-cursor {
                         span.style.backgroundColor = '';
                     }
                     span.style.fontWeight = (cell.attr & ATR_BOLD) ? 'bold' : '';
+                    span.style.opacity = cell.attr & TERMINAL_DIM ? '0.5' : '';
+                    span.style.fontStyle = cell.attr & TERMINAL_ITALIC ? 'italic' : '';
                     span.style.textDecoration = (cell.attr & ATR_UNDERLINE) ? 'underline' : '';
                     span.classList.toggle('terminal-blink', (cell.attr & ATR_BLINK) !== 0);
                 }

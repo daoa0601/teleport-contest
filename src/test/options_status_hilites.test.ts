@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
-import type { InputGate } from '../js/input.js';
+import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
 import { applyNethackrc, toggleBooleanOptionPrefix } from '../js/options.js';
 import { bot } from '../js/display.js';
 import { statusHiliteMenu } from '../js/status_hilites.js';
 import { cansee } from '../js/vision.js';
+import { BL_HP, BL_TH_ALWAYS_HILITE, HL_NONE, MAXBLSTATS, NO_LTEQGT } from '../js/const.js';
+import { CLR_RED, ATR_BOLD } from '../js/terminal.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -138,8 +139,79 @@ async function statusHiliteDurationRow(): Promise<string> {
     return row;
 }
 
+for (const key of ['X', '~']) {
+    void test(`rebinding '${key}' reports an empty required parameter before any binding confirmation`, async () => {
+        freshObjectRoom();
+        if (key === '~') game.commandBindings.remove(key.charCodeAt(0));
+        const [input, command] = openFullMenu();
+        await input.waitUntilBlocked();
+        input.feed('O');
+        const { views, prose } = await runScript(input, command, [
+            { at: / - /, pick: /bind keys/ },
+            { at: /bind keys/, keys: '\n' },
+            { at: /Do what\?/, pick: /bind key to a command/ },
+            { at: /Bind which key\?/, keys: key },
+            { at: / - /, pick: /^toggle: / },
+            { at: /Command toggle requires a parameter:/, keys: '\n' },
+            { at: /Do what\?/, keys: '\x1b' },
+        ]);
+        const transcript = `${prose.join('\n')}\n${views.join('\n')}\n${messages()}`;
+        assert.ok(transcript.includes('Required parameter cannot be empty.'), 'The empty parameter error is shown');
+        if (key === 'X') assert.doesNotMatch(transcript, /(?:Changed|Bound) key 'X'/);
+        else {
+            assert.match(transcript, /Bound key '~' to "toggle\(\)"\./);
+            const error = prose.join('\n').indexOf('Required parameter cannot be empty.');
+            const bound = prose.join('\n').indexOf("Bound key '~'");
+            assert.ok(error >= 0 && bound > error, 'The parameter error appears before the binding confirmation');
+        }
+    });
+}
+
+for (const name of ['silent', 'perm_invent']) {
+    void test(`the fuzzer accepts toggle(${name}) without changing it or printing a message`, async () => {
+        freshObjectRoom({ flags: { silent: true }, iflags: { debug_fuzzer: true, perm_invent: false } });
+        assert.equal(await toggleBooleanOptionPrefix(name), true);
+        assert.equal(game.flags.silent, true);
+        assert.equal(game.iflags.perm_invent, false);
+        assert.doesNotMatch(messages(), /option toggled/);
+    });
+}
+
+void test('a fuzzer deletion keeps the menu listing count when enabling status highlights', async () => {
+    const thresholds = Array.from({ length: MAXBLSTATS }, (_, fld) => fld === BL_HP ? [{
+        fld: BL_HP, set: true, anytype: 'int' as const, value: 0,
+        behavior: BL_TH_ALWAYS_HILITE, textmatch: '', rel: NO_LTEQGT, coloridx: 1 | (HL_NONE << 8),
+    }] : []);
+    freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 0, debug_fuzzer: true } });
+    // With the config-format row present, 's' is hitpoints. Select its
+    // only rule and the explicit remove action, then accept that menu.
+    bindInputGate(new HiliteFuzzerInput('saX\n'));
+    assert.equal(await statusHiliteMenu(), true);
+    game.iflags.debug_fuzzer = false;
+
+    const [input, command] = openSimpleMenu();
+    const { views } = await runScript(input, command, [{ at: /status highlight rules/, keys: '\x1b' }]);
+    assert.match(views.at(-1) ?? '', /status highlight rules\s+\[\(0 currently set\)\]/);
+    assert.match(await statusHiliteDurationRow(), /\[3 \(on: highlight status for 3 turns\)\]/);
+});
+
+class HiliteFuzzerInput extends InputGate {
+    private readonly keys: number[];
+
+    constructor(keys: string) {
+        super();
+        this.keys = [...keys].map(key => key.charCodeAt(0));
+    }
+
+    override readKey(): Promise<number> {
+        const key = this.keys.shift();
+        if (key === undefined) throw new Error(`Unexpected fuzzer menu input:\n${screen()}`);
+        return Promise.resolve(key);
+    }
+}
+
 void test('status highlight rules add, show and count a hitpoints threshold', async () => {
-    freshObjectRoom();
+    freshObjectRoom({ hero: { uhp: 50, uhpmax: 60 } });
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
@@ -178,6 +250,11 @@ void test('status highlight rules add, show and count a hitpoints threshold', as
         'The config-format listing shows the rule');
     assert.ok(views.some(view => /status highlight rules\s+\[\(1 currently set\)\]/.test(view)),
         'The simple options menu reports the live rule count');
+    const cells = game.nhDisplay?.grid[23] ?? [];
+    const hitpoints = cells[cells.map(cell => cell.ch).join('').indexOf('HP:50')];
+    assert.ok(hitpoints, 'The status shows the hero hitpoints after adding the rule');
+    assert.equal(hitpoints.color, CLR_RED);
+    assert.equal(hitpoints.attr, ATR_BOLD);
     assert.match(await statusHiliteDurationRow(), /\[3 \(on: highlight status for 3 turns\)\]/);
 });
 
@@ -236,7 +313,7 @@ void test('status highlight value entry rejects bad numbers and ranges', async (
 });
 
 void test('status highlight condition rules group the chosen conditions', async () => {
-    freshObjectRoom();
+    freshObjectRoom({ hero: { blindTurns: 5 } });
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
@@ -260,6 +337,11 @@ void test('status highlight condition rules group the chosen conditions', async 
     assert.ok(views.some(view => /Current condition hilites:/.test(view)
         && /condition\/Blind\+Stone\/red&bold/.test(view)),
         'The field list menu shows the config-format condition rule');
+    const cells = game.nhDisplay?.grid[23] ?? [];
+    const blind = cells[cells.map(cell => cell.ch).join('').indexOf('Blind')];
+    assert.ok(blind, 'The active condition appears on the status line');
+    assert.equal(blind.color, CLR_RED);
+    assert.equal(blind.attr, ATR_BOLD);
 });
 
 void test('the bind keys row binds a command and lists the change', async () => {

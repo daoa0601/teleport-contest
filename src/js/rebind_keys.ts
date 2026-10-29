@@ -104,10 +104,16 @@ async function handlerRebindKeysAdd(keyfirst: boolean): Promise<void> {
     }
 
     const previous = game.commandBindings.lookup(key);
-    if (game.commandBindings.bindKey(key, commandText, true).accepted) {
-        // bind_key()'s config_error_add() complaints never surface here; C's
-        // caller only reports the success lines below. Unbinding reports a
-        // change because C compares against a null command there.
+    const result = game.commandBindings.bindKey(key, commandText, true);
+    if (result.error) {
+        // cfgfiles.c:config_erradd() prints interactive errors immediately;
+        // tty_wait_synch() then displays the map without waiting for a key.
+        await pline(`${result.error}${/[.!?]$/.test(result.error) ? '' : '.'}`);
+        await flush_screen(1);
+    }
+    if (result.accepted) {
+        // cmdbind_add() updates an existing binding in place. Its caller
+        // therefore sees the new command through prevcmd too.
         if (previous?.command && previous.command !== command)
             await pline(`Changed key '${keyText(key)}' from "${previous.command.name}" to "${commandText}".`);
         else if (!previous?.command)
