@@ -21,7 +21,8 @@ import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 import { keyText } from './prevmsg.js';
 import { putMessageHistory } from './display.js';
 
-export type InventoryClassification = 0 | 1 | 2 | 3 | 4 | 5;
+export type InventoryClassification = typeof GETOBJ_EXCLUDE | typeof GETOBJ_EXCLUDE_NONINVENT
+    | typeof GETOBJ_EXCLUDE_INACCESS | typeof GETOBJ_EXCLUDE_SELECTABLE | typeof GETOBJ_DOWNPLAY | typeof GETOBJ_SUGGEST;
 
 export interface GetobjOptions {
     // GETOBJ_PROMPT: ask even when nothing is a likely candidate.

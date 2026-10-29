@@ -11,7 +11,7 @@ import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectNameIsPlural, definiteName, objectCombatName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
+import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -32,9 +32,9 @@ import {
     SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE,
 } from './object_data.js';
 import { erodeObject } from './object_erosion.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
 import { blankNovel } from './object_cancellation.js';
-import { displayLiquidName } from './display.js';
+import { displayColorName, displayLiquidName } from './display.js';
 import { objectResistsDestruction } from './object_state.js';
 import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
@@ -201,12 +201,11 @@ export async function destroyLavaInventory({
             continue;
         }
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
-            if (showMessages && !state.blind
-                && !((state.u.blindTurns ?? 0) > 0)) {
-                await publish(
-                    'The Book of the Dead glows a strange dark red, '
-                    + 'but remains intact.',
-                );
+            // C: The(xname(obj)) glows a strange hcolor("dark red").
+            if (showMessages && !heroIsBlind(state)) {
+                observeObject(object, state);
+                await publish(`The ${objectName(object, state)} glows a strange ${
+                    displayColorName('dark red', state)}, but remains intact.`);
             }
             continue;
         }

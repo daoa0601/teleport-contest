@@ -267,6 +267,23 @@ function readAliases(path: string): Map<string, string[]> {
     return aliases;
 }
 
+// `caller<TAB>callee<TAB>verdict<TAB>note` rows from c-edges-justified.tsv:
+// edges a reader confirmed the port covers without naming the callee
+// (`inlined`), or that cannot change what the player sees (`n/a`).
+function readJustified(path: string): Map<string, string> {
+    const justified = new Map<string, string>();
+    if (!existsSync(path)) return justified;
+    readFileSync(path, 'utf8').split('\n').forEach((line, index) => {
+        if (!line || line.startsWith('#')) return;
+        const [caller, callee, verdict, note] = line.split('\t');
+        if (!caller || !callee || (verdict !== 'inlined' && verdict !== 'n/a') || !note) {
+            throw new Error(`${path}:${index + 1}: expected caller, callee, inlined|n/a and a note`);
+        }
+        justified.set(`${caller}\t${callee}`, verdict);
+    });
+    return justified;
+}
+
 export interface EdgeRow {
     file: string;
     function: string;
@@ -279,6 +296,8 @@ export interface EdgeRow {
     // above the port's own teleport helper) or matched word by word
     // (`heal_legs` ~ `healHeroLegs`): probably renamed, so audited last.
     cited: string[];
+    // Not reached by name, but justified in c-edges-justified.tsv.
+    justified: string[];
     missing: string[];
     infrastructure: boolean;
 }
@@ -290,13 +309,18 @@ export async function compareEdges(root: string, tree: CSourceTree, cacheDir: st
     const graph = await cCallGraph(tree, cacheDir, definedIn);
     const index = portIndex(root);
     const aliases = readAliases(join(root, 'docs', 'ledger', 'c-ts-aliases.tsv'));
+    const justified = readJustified(join(root, 'docs', 'ledger', 'c-edges-justified.tsv'));
     const portNames = (cName: string): string[] => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
     const rows: EdgeRow[] = [];
     const unmapped: { file: string; function: string }[] = [];
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {
         const file = graph.fileOf.get(caller) ?? '?';
         const byName = [...new Set(portNames(caller).flatMap(name => index.byName.get(name) ?? []))];
-        const counterparts = byName.length ? byName : [...new Set(portNames(caller).flatMap(name => index.byCitation.get(name) ?? []))];
+        // A citation counts when the C name itself has no same-named port
+        // function; an alias adds counterparts but never hides a citation.
+        const ownName = index.byName.get(normalizedName(caller)) ?? [];
+        const counterparts = [...new Set([...byName,
+            ...(ownName.length ? [] : portNames(caller).flatMap(name => index.byCitation.get(name) ?? []))])];
         if (!counterparts.length) { unmapped.push({ file, function: caller }); continue; }
         const reached = new Set<string>(), cited = new Set<string>(), rawWords: string[][] = [];
         for (const fn of counterparts) {
@@ -306,11 +330,12 @@ export async function compareEdges(root: string, tree: CSourceTree, cacheDir: st
             for (const name of reach.raw) rawWords.push(words(name));
         }
         const row: EdgeRow = { file, function: caller, mapping: byName.length ? 'name' : 'citation',
-            port: counterparts.map(index.locate), present: [], cited: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
+            port: counterparts.map(index.locate), present: [], cited: [], justified: [], missing: [], infrastructure: INFRASTRUCTURE_FILES.has(file) };
         for (const callee of [...callees].sort()) {
             if (HELPER_CALLEES.has(callee)) continue;
             const names = portNames(callee);
             if (names.some(name => reached.has(name))) row.present.push(callee);
+            else if (justified.has(`${caller}\t${callee}`)) row.justified.push(callee);
             else if (names.some(name => cited.has(name)) || rawWords.some(portWords => wordMatch(words(callee), portWords))) {
                 row.cited.push(callee);
             }

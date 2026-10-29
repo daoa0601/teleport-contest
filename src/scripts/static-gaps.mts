@@ -418,16 +418,17 @@ async function edges(args: string[]): Promise<void> {
             console.log(`${row.file} ${row.function} → ${row.port.join(', ')} (by ${row.mapping})`);
             console.log(`  present: ${row.present.join(' ')}`);
             console.log(`  cited:   ${row.cited.join(' ')}`);
+            console.log(`  justified: ${row.justified.join(' ')}`);
             console.log(`  missing: ${row.missing.join(' ')}`);
         }
         if (unmapped.some(entry => entry.function === only)) console.log(`${only}: no port counterpart`);
         return;
     }
     const gameplay = rows.filter(row => !row.infrastructure);
-    const sum = (list: readonly EdgeRow[], key: 'present' | 'cited' | 'missing'): number =>
+    const sum = (list: readonly EdgeRow[], key: 'present' | 'cited' | 'justified' | 'missing'): number =>
         list.reduce((n, row) => n + row[key].length, 0);
     const line = (list: readonly EdgeRow[]): string => `${sum(list, 'missing')} missing, ${sum(list, 'cited')} only cited, `
-        + `${sum(list, 'present')} present`;
+        + `${sum(list, 'justified')} justified, ${sum(list, 'present')} present`;
     console.log('# C call edges the port counterpart does not reach\n');
     console.log(`${rows.length} C functions with a port counterpart `
         + `(${rows.filter(row => row.mapping === 'citation').length} found by comment citation); ${unmapped.length} without one`);
@@ -436,7 +437,7 @@ async function edges(args: string[]): Promise<void> {
     console.log('\n## Gameplay functions with the most missing edges (cited-only edges in brackets)\n');
     for (const row of [...gameplay].sort((a, b) => b.missing.length - a.missing.length).slice(0, 80)) {
         if (!row.missing.length) break;
-        const total = row.missing.length + row.cited.length + row.present.length;
+        const total = row.missing.length + row.cited.length + row.justified.length + row.present.length;
         console.log(`${row.file} ${row.function} (${row.missing.length} of ${total}): ${row.missing.join(' ')}`
             + (row.cited.length ? ` [${row.cited.join(' ')}]` : ''));
     }

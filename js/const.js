@@ -107,8 +107,8 @@ export const DIR_E = 4;
 export const DIR_SE = 5;
 export const DIR_S = 6;
 export const DIR_SW = 7;
-export const DIR_UP = 8;
-export const DIR_DOWN = 9;
+export const DIR_DOWN = 8;
+export const DIR_UP = 9;
 export const N_DIRS = 8;
 export const N_DIRS_Z = 10;
 export function DIR_180(dir) { return (dir + 4) % N_DIRS; }
@@ -261,8 +261,6 @@ export const PICK_ONE = 1;
 export const PICK_ANY = 2;
 export const MENU_BEHAVE_STANDARD = 0;
 export const MENU_BEHAVE_PERMINV = 1;
-export const ATR_ULINE = 1;
-export const ATR_BLINK = 4;
 export const ATR_URGENT = 16;
 export const ATR_NOHISTORY = 32;
 // Name formatting article selectors and suppression flags (src/do_name.c and include/flag.h)
@@ -281,7 +279,7 @@ export const SUPPRESS_MAPPEARANCE = 0x10;
 export const SUPPRESS_NAME = 0x20;
 export const AUGMENT_IT = 0x40;
 export const EXACT_NAME = (SUPPRESS_IT | SUPPRESS_INVISIBLE
-    | SUPPRESS_HALLUCINATION | SUPPRESS_NAME);
+    | SUPPRESS_HALLUCINATION | SUPPRESS_SADDLE | SUPPRESS_MAPPEARANCE);
 // Game end type constants (include/hack.h enum game_end_types; src/end.c)
 // Runtime fields:
 // - end.done(how) / end.really_done(how) `how` values
@@ -517,7 +515,6 @@ export const LE_VALUE = (LT_VALUE + 1);
 export const GE_VALUE = (LE_VALUE + 1);
 export const GT_VALUE = (GE_VALUE + 1);
 export const TXT_VALUE = (GT_VALUE + 1);
-export const CONDITION_COUNT = 0;
 export const HL_UNDEF = 0x00;
 export const HL_NONE = 0x01;
 export const HL_BOLD = 0x02;
@@ -581,17 +578,16 @@ export const MAXVALWIDTH = 80;
 export const NH_BASIC_COLOR = 0x1000000;
 export const NH_ALTPALETTE = 0x2000000;
 // ===== patchlevel.h =====
-export const EDITLEVEL = 134;
+export const EDITLEVEL = 0;
 export const NH_STATUS_RELEASED = 0;
 export const NH_STATUS_WIP = 1;
 export const NH_STATUS_BETA = 2;
 export const NH_STATUS_POSTRELEASE = 3;
-export const NH_DEVEL_STATUS = NH_STATUS_WIP;
+export const NH_DEVEL_STATUS = NH_STATUS_RELEASED;
 export const COPYRIGHT_BANNER_A = "NetHack, Copyright 1985-2026";
 export const COPYRIGHT_BANNER_B = "         By Stichting Mathematisch Centrum and M. Stephenson.";
 export const COPYRIGHT_BANNER_D = "         See license for details.";
 // ===== tradstdc.h =====
-export const NH_C = 202300;
 export const NH_PRAGMA_MESSAGE = 1;
 // ===== vmsconf.h =====
 export const O_RDONLY = 0;
@@ -820,7 +816,6 @@ export const GFILTER_NONE = 0;
 export const GFILTER_VIEW = 1;
 export const GFILTER_AREA = 2;
 export const NUM_GFILTER = (GFILTER_AREA + 1);
-export const WC_COUNT = 0;
 export const PLNMSG_UNKNOWN = 0;
 export const PLNMSG_ONE_ITEM_HERE = (PLNMSG_UNKNOWN + 1);
 export const PLNMSG_TOWER_OF_FLAME = (PLNMSG_ONE_ITEM_HERE + 1);
@@ -1329,7 +1324,9 @@ export const COST_CONTENTS = 1;
 export const COST_SINGLEOBJ = 2;
 export const ARG_DEBUG = 0;
 export const ARG_VERSION = (ARG_DEBUG + 1);
-export const ARG_DUMPGLYPHIDS = (ARG_VERSION + 1);
+export const ARG_SHOWPATHS = (ARG_VERSION + 1);
+export const ARG_DUMPENUMS = (ARG_SHOWPATHS + 1);
+export const ARG_DUMPGLYPHIDS = (ARG_DUMPENUMS + 1);
 export const ARG_DUMPMONGEN = (ARG_DUMPGLYPHIDS + 1);
 export const LOOK_TRADITIONAL = 0;
 export const LOOK_QUICK = 1;
@@ -1383,7 +1380,6 @@ export const VANQ_MCLS_LTOH = (VANQ_MCLS_HTOL + 1);
 export const VANQ_COUNT_H_L = (VANQ_MCLS_LTOH + 1);
 export const VANQ_COUNT_L_H = (VANQ_COUNT_H_L + 1);
 export const NUM_VANQ_ORDER_MODES = (VANQ_COUNT_L_H + 1);
-export const NUM_SAVEFORMATS = 0;
 export const TELL = 1;
 export const NOTELL = 0;
 export const ON = 1;
@@ -1758,21 +1754,23 @@ export const DIGTYP_STATUE = 2;
 export const DIGTYP_BOULDER = 3;
 export const DIGTYP_DOOR = 4;
 export const DIGTYP_TREE = 5;
-export const DIGCHECK_PASSED = 0;
-export const DIGCHECK_PASSED_PITONLY = 1;
+// C hack.h enum digcheck_result: every failure is >= DIGCHECK_FAILED, and
+// the stairs failure shares DIGCHECK_FAILED's value.
+export const DIGCHECK_PASSED = 1;
 export const DIGCHECK_PASSED_DESTROY_TRAP = 2;
-export const DIGCHECK_FAILED = 10;
-export const DIGCHECK_FAIL_ONLADDER = 11;
-export const DIGCHECK_FAIL_ONSTAIRS = 12;
-export const DIGCHECK_FAIL_THRONE = 13;
-export const DIGCHECK_FAIL_ALTAR = 14;
-export const DIGCHECK_FAIL_AIRLEVEL = 15;
-export const DIGCHECK_FAIL_WATERLEVEL = 16;
-export const DIGCHECK_FAIL_TOOHARD = 17;
-export const DIGCHECK_FAIL_UNDESTROYABLETRAP = 18;
-export const DIGCHECK_FAIL_CANTDIG = 19;
-export const DIGCHECK_FAIL_BOULDER = 20;
-export const DIGCHECK_FAIL_OBJ_POOL_OR_TRAP = 21;
+export const DIGCHECK_PASSED_PITONLY = 3;
+export const DIGCHECK_FAILED = 4;
+export const DIGCHECK_FAIL_ONSTAIRS = DIGCHECK_FAILED;
+export const DIGCHECK_FAIL_ONLADDER = 5;
+export const DIGCHECK_FAIL_THRONE = 6;
+export const DIGCHECK_FAIL_ALTAR = 7;
+export const DIGCHECK_FAIL_AIRLEVEL = 8;
+export const DIGCHECK_FAIL_WATERLEVEL = 9;
+export const DIGCHECK_FAIL_TOOHARD = 10;
+export const DIGCHECK_FAIL_UNDESTROYABLETRAP = 11;
+export const DIGCHECK_FAIL_CANTDIG = 12;
+export const DIGCHECK_FAIL_BOULDER = 13;
+export const DIGCHECK_FAIL_OBJ_POOL_OR_TRAP = 14;
 // Explosion type/source/flag constants (src/explode.c)
 // Runtime fields:
 // - explode(..., expltype/olet) rendering and source class
@@ -1785,14 +1783,15 @@ export const EXPL_MAGICAL = 4;
 export const EXPL_FIERY = 5;
 export const EXPL_FROSTY = 6;
 export const EXPL_MAX = 7;
-export const MON_EXPLODE = -1;
-export const BURNING_OIL = -2;
-export const TRAP_EXPLODE = -3;
-export const MAY_HITMON = 0x1;
-export const MAY_HITYOU = 0x2;
-export const MAY_HIT = (0x1 | 0x2);
-export const MAY_DESTROY = 0x4;
-export const MAY_FRACTURE = 0x8;
+// C objclass.h: explosion sources numbered just past the object classes.
+export const BURNING_OIL = 19;
+export const MON_EXPLODE = 20;
+export const TRAP_EXPLODE = 21;
+export const MAY_HITMON = 0x02;
+export const MAY_HITYOU = 0x04;
+export const MAY_HIT = (MAY_HITMON | MAY_HITYOU);
+export const MAY_DESTROY = 0x08;
+export const MAY_FRACTURE = 0x10;
 // Steed dismount reason enum (src/steed.c)
 // Runtime fields: dismount_steed(reason) reason selector.
 export const DISMOUNT_GENERIC = 0;
@@ -1825,16 +1824,18 @@ export const YLIM = 3;
 // Runtime fields:
 // - inventory BUC classification and filters
 // - getobj callback return categories and option flags
-export const BUC_BLESSED = 1;
-export const BUC_UNCURSED = 2;
-export const BUC_CURSED = 3;
-export const BUC_UNKNOWN = 4;
-export const GETOBJ_EXCLUDE = 0;
+export const BUC_BLESSED = 0x0100;
+export const BUC_UNCURSED = 0x0400;
+export const BUC_CURSED = 0x0200;
+export const BUC_UNKNOWN = 0x0800;
+// C hack.h enum getobj_callback_returns, ordered so that `<= GETOBJ_EXCLUDE`
+// and `< GETOBJ_EXCLUDE_SELECTABLE` test exclusion.
+export const GETOBJ_EXCLUDE = -3;
+export const GETOBJ_EXCLUDE_NONINVENT = -2;
+export const GETOBJ_EXCLUDE_INACCESS = -1;
+export const GETOBJ_EXCLUDE_SELECTABLE = 0;
 export const GETOBJ_DOWNPLAY = 1;
 export const GETOBJ_SUGGEST = 2;
-export const GETOBJ_EXCLUDE_INACCESS = 3;
-export const GETOBJ_EXCLUDE_SELECTABLE = 4;
-export const GETOBJ_EXCLUDE_NONINVENT = 5;
 export const GETOBJ_ALLOWCNT = 0x01;
 export const GETOBJ_PROMPT = 0x02;
 export const GETOBJ_NOFLAGS = 0;
@@ -1846,8 +1847,8 @@ export const XL_LEFT = 4;
 export const XL_RIGHT = 8;
 // Light-source type tags (src/light.c)
 // Runtime fields: light_base[] entry type and routing for object/monster lookups.
-export const LS_OBJECT = 0;
-export const LS_MONSTER = 1;
+export const LS_OBJECT = 1;
+export const LS_MONSTER = 2;
 // Timeout timer-kind and timer-function enums (src/timeout.c)
 // Runtime fields: timer queue kind/func selectors and timer dispatch.
 export const TIMER_KIND = Object.freeze({
@@ -1873,13 +1874,13 @@ export const TAINT_AGE = 50;
 // Artifact naming/origin flags (src/artifact.c)
 // Runtime fields: oname()/artifact_origin() provenance bits.
 export const ONAME_NO_FLAGS = 0;
-export const ONAME_VIA_NAMING = 0x0001;
-export const ONAME_WISH = 0x0002;
-export const ONAME_GIFT = 0x0004;
-export const ONAME_VIA_DIP = 0x0008;
-export const ONAME_LEVEL_DEF = 0x0010;
-export const ONAME_BONES = 0x0020;
-export const ONAME_RANDOM = 0x0040;
+export const ONAME_VIA_NAMING = 0x0002;
+export const ONAME_WISH = 0x0004;
+export const ONAME_GIFT = 0x0008;
+export const ONAME_VIA_DIP = 0x0010;
+export const ONAME_LEVEL_DEF = 0x0020;
+export const ONAME_BONES = 0x0040;
+export const ONAME_RANDOM = 0x0080;
 export const ONAME_KNOW_ARTI = 0x0100;
 // seenv octants and wall-info bits (include/rm.h)
 export const SV0 = 0x01;
