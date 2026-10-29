@@ -35,7 +35,7 @@ export NETHACK_RECORDER=/Users/anhdao/project/contest/nethack-c/recorder
 uv run verification/difftest/build.py
 uv run python -m unittest discover -s verification/difftest -p 'test_*.py' -v
 uv run verification/difftest/run.py --creation --count 6000 --self-test
-uv run verification/difftest/run.py --count 6000
+uv run verification/difftest/run.py --naming --count 6000 --self-test
 cd verification/equivalence && uv run prove.py
 ```
 
@@ -291,3 +291,256 @@ therefore coexist with an unobserved state difference. The real compiler, native
 libraries, unproved loaders, initial table relation, Node and comparison code
 remain in the trust base. Executed UBSan checks do not prove absence of undefined
 behavior on untested paths, and sampled equality is not universal equivalence.
+
+# Concrete naming checks
+
+`--naming` extends the same runner to the naming layer: the pure string
+plurals/articles and the object/monster name formatters over serialized state.
+Every case still runs the linked recorder C against the emitted JavaScript with
+the shared RNG stream and log comparison.
+
+## Naming entry points
+
+| Input target | Recorder entry | Emitted JavaScript entry |
+|---|---|---|
+| `makeplural` | `objnam.c:makeplural` | `object_grammar.js:makePlural` |
+| `makesingular` | `objnam.c:makesingular` | `object_grammar.js:makeSingular` |
+| `articles` | `objnam.c:an()` and `objnam.c:the()` | `object_grammar.js:withIndefiniteArticle`, `objnam.js:definiteName` |
+| `xname` | `objnam.c:xname_flags` (CXN_NORMAL) plus `an()`/`the()`/`aobjnam(obj, NULL)` wrappers | `objnam.js:objectCombatName`/`objectAction` (corpse species suppressed for the `xname` field, kept for `aobjnam`) |
+| `doname` | `objnam.c:doname_base(obj, 0)` | `object_description.js:objectDescription` |
+| `x_monnam` | `do_name.c:x_monnam` | `monster_name.js:monsterName`, or `namelessMonsterName` for `SUPPRESS_NAME` |
+
+String targets compare only the returned strings and the (empty) RNG
+consumption. `xname`/`doname` also compare the observed object projection
+(`known`, `dknown`, `bknown`, `corpsenm`), which `observe_object()` and the
+port's `observeObjectForNaming()` mutate. `xname` covers every object type at
+or after `FIRST_OBJECT`, all knowledge-flag combinations over representative
+types of every class, corpses/statues/figurines/tins/eggs with species and
+gender/historic bits, fruits, globs, worn masks, containers with contents,
+poisoned weapons, wet towels, candelabra, diluted potions, holy/unholy water,
+`next boulder`, and the samurai/priest/archeologist/monk role name effects,
+including `implicit_uncursed` and `partly_eaten_hack`. `makeplural`/
+`makesingular` run over every object and monster name plus the C special-case
+tables (`as_is[]`, `one_off[]`, `special_subjs[]`, `Japanese_items[]`) and
+generated compounds. `articles` also covers all 374 emitted bogus-name entries,
+with their classification prefixes removed as in `do_name.c:bogusmon`, and
+checks full-word, possessive and non-word boundaries for capitalized titles.
+`x_monnam` runs over every monster species with articles,
+adjectives, suppression bits, tame/peaceful/named/shopkeeper/priest/invisible
+states, mplayer ranks and ghosts.
+
+Unknown tin variety (`spe` 0, not spinach, not cursed) legitimately draws
+`rn2(TTSZ-1)` in `eat.c:tin_variety` through `tin_details`; those cases are
+compared with their RNG consumption and log like every other case.
+
+## Naming run
+
+```sh
+export NETHACK_RECORDER=/Users/anhdao/project/contest/nethack-c/recorder
+uv run verification/difftest/build.py
+uv run verification/difftest/run.py --naming --count 6000 --self-test
+```
+
+## Naming correspondence and assumed facts
+
+The naming state relation extends the creation relation. Facts beyond it:
+
+| Input restriction or assumed fact | Native source |
+|---|---|
+| Text inputs are printable ASCII without quote or backslash and contain a non-space character; `impossible()` needs windowprocs the harness cannot supply | `objnam.c:makeplural`, `makesingular`, `an`, `the` |
+| The configured recorder disables DLB, so `dlb_fopen` is `fopen`. The build copies generated `dat/bogusmon` into the native worker's working directory; article/object/monster cases fail if it cannot be opened. Native `CapitalMon` decodes the file itself. The correspondence between that data and emitted `random_text_data.js:BOGUS_MONSTERS` is assumed, not proved | `include/config.h` DLB setting; `include/dlb.h` non-DLB macros; `rumors.c:CapitalMon`, `init_CapMons` |
+| `oeroded`/`odiluted` and `otrapped`/`opoisoned` alias one C field; each pair is exclusive and potions use the shared field only as `odiluted` 0/1 | `obj.h` field aliases |
+| Generic class rows before `FIRST_OBJECT` and `SPE_NOVEL` (named at construction) are excluded | `mkobj.c:mksobj`, `o_init.c` |
+| Worn masks are 0 or one supported slot appropriate to the type, and contained objects have mask 0. Body armor uses suits, ring slots use rings or a meat ring, amulet slots use amulets, eyewear uses blindfold/lenses/towel, and punishment slots use their ball/chain types. `uarm*`/`uwep` slot owners stay null so `donning()`/`doffing()` stay false | `do_wear.c:canwearobj`, `accessory_or_armor_on`, `donning`, `doffing`; `read.c:punish` |
+| Armor-category metadata is read from emitted `armor.js:armorSlotFor`; its agreement with native `oc_armcat` is an assumed table correspondence. Slot bits come from emitted `const.js` | `obj.h:is_suit`, `objects.h` armor entries, `prop.h` worn masks |
+| Weapon/alternate slots accept non-weapons but exclude coins; the quiver permits gold and other non-ammunition | `wield.c:wield_ok`, `ready_ok`, `dowield`, `doquiver_core` |
+| `leashmon` (corpsenm alias) must be 0; the harness has no live leashed monster | `objnam.c:doname_base` leash branch |
+| `slime mold spe` must index a registered input fruit (`fruit_from_indx`) | `objnam.c:xname_flags` |
+| Monsters that are not invisible, or are observable with see invisible, require hero monster detection. Detection makes the naming visibility result independent of the uncomputed vision map. Undetected cases require `minvis=1` and `seeInvis=0`; this conservative domain applies when blind too | `display.h:_mon_visible`, `_canseemon`, `canspotmon`; `do_name.c:x_monnam` |
+| Hallucination is off; hallucinated names draw display RNG | `do_name.c:x_monnam` |
+| Minions of a god (emin/isminion) are excluded: unit fix-wide-misc31 owns that path; `ispriest` temple priests are covered | `do_name.c:x_monnam`, `priest.c:priestname` |
+| `SUPPRESS_MAPPEARANCE` alone, and `SUPPRESS_NAME` with an adjective or `called=TRUE`, have no C caller and no emitted entry point | `do_name.c:noname_monnam`, `l_monnam` |
+| Artifacts (`oartifact`) are not covered; `obj_is_pname` needs artifact discovery state | `objnam.c:obj_is_pname`, `find_artifact` |
+| Price quotes keep both defaults (`pricequotes` off on both sides) with an empty quote table | `options.c` optlist defaults, `shk.c:append_price_quote` |
+| Shapeshifter species (vampire, doppelganger, sandestin, chameleon) are restored to the requested species after construction; naming describes `mons[mnum]` | `makemon.c` shapeshifter creation |
+| The case `discovery` applies to the root object's type only; contained types keep their table knowledge on both sides | `objnam.c:xname_flags` reads `objects[otyp]`; `o_init.c:docall` writes one type |
+
+## Naming measured results
+
+Latest review rerun: native build, 140 objects in 16.30 s.
+`--naming --count 6000 --self-test`:
+17 domain probes rejected, 10 emitted-JS mutants killed (`makeplural` default
+suffix, an extra `rnd(1)` draw inside `makePlural`, `makesingular` ies→y,
+`an` single-letter x-rule, `the` insertion, removal of bogus titles, lenses `pair of`, `greased`
+prefix, `invisible` adjective, and removal of `objectCombatName`'s own
+observation), 11,548 cases in 16.09 s with 0 mismatches. String targets
+measure the real stream position and RNG log on both sides; the extra-draw
+mutant is killed through `rng.core`, not a constant zero. The `xname`
+pairing relies on `objectCombatName`'s internal observation (C `xname()`
+observes itself); only the `doname` path, whose formatter delegates
+observation to its caller, observes explicitly.
+
+| Target | Cases | Mismatches |
+|---|---:|---:|
+| `makeplural` | 2,519 | 0 |
+| `makesingular` | 2,136 | 0 |
+| `articles` | 1,406 | 0 |
+| `xname` | 1,718 | 0 |
+| `doname` | 1,712 | 0 |
+| `x_monnam` | 2,057 | 0 |
+
+The naming batch includes 5,548 boundary and full type/species sweep cases.
+Hand-authored cases default to their type's initial knowledge, and only the
+documented domain exclusions are dropped. All 37 harness tests passed in
+19.848 s. The earlier domain fixes added five tests: four rejection/generation
+tests failed before the fixes (14 failing subtests) and pass afterward;
+all 15 positive equipment cases match native/JS naming, including the meat
+ring, non-weapons in weapon slots and gold in the quiver.
+
+### Quantity and reducer self-tests
+
+The quantity probe now uses `MACE` with `quan=2` and `nameKnown=1`.
+`include/objects.h:WEAPON` gives the mace `oc_merge=0` and initial
+`oc_name_known=1`; `invent.c:mergable` rejects a type with `oc_merge=0`.
+The former `POTION_OF_BOOZE` input failed type lookup before quantity was
+checked. The actual `POT_BOOZE` has `oc_merge=1` through the `POTION` macro.
+The new domain test accepts a singleton mace and two booze potions, and
+rejects two maces specifically because the type does not stack.
+
+A second test changes only the mace's metadata merge flag to 1 and requires
+the naming self-test to reject that erroneous domain. It failed with the
+old probe (`RuntimeError not raised`) and passes with the corrected probe.
+The explicit discovery flag matters: without it, even a singleton mace
+fails the unrelated initial-knowledge restriction.
+
+The child-default test was removed. Canonicalization makes deletion and
+resetting to zero observationally equivalent for those fields, so it did not
+establish its stated distinction. Its replacement minimizes a real emitted
+`doname` mutant: quantity, erosion, blindness and RNG position simplify, the
+necessary grease remains, and the native/port result difference still
+reproduces. Disabling reduction in memory makes this test fail (`5 != 1`);
+the normal reducer passes. No new game behavior or equivalence claim is
+introduced by either self-test change.
+
+`npm run compile` exited 0. The requested public replay used one worker and
+finished all 44 sessions in 29.384 s: 43 full matches, 11,396/11,405 screens,
+792,838/792,838 random calls and zero crashes. The public ledger check exited
+0, retaining every verified call for all 363 functions. The remaining
+screen difference is `seed2200-wizard-quaff-zap-read`, step 158: native option
+help prints the recorder host's configuration path. There is no RNG
+difference in that session. No full game suite, pool/eval run or new
+recording was run.
+
+### Naming-domain review findings
+
+| Finding | Result and native evidence |
+|---|---|
+| Generic rows inside containers | Fixed: every object in the tree must have `otyp >= FIRST_OBJECT` (`ARROW` in this table). `include/objects.h` places the dummy and generic rows before that boundary; `o_init.c:init_objects` starts the real class ranges at `MAXOCLASSES`, and `mkobj.c:mkobj` / `mkbox_cnts` create contents through those ranges. `{"target":"doname","object":{"otyp":"SACK","contents":[{"otyp":2}]}}` was accepted before and now raises `ValueError`. The test checks every excluded index at depths 0, 1 and 2, with real objects accepted at the same depths. |
+| First class members silently lost | Not reproduced. The metadata comes from emitted `object_knowledge.js:objectClassForType`, not the generic rows' native `oc_class` fields. It returns class 0 for all 17 pre-`ARROW` indices, so none was selected for the real-class matrix. The first-member coverage test passes both before and after. The class buckets now start explicitly at `ARROW`, and accidental generic edge inputs raise rather than being silently dropped. Initially known types still exclude `nameKnown=0` as documented. |
+| Missing hand-picked and generated type keys | Fixed: use `WAN_FIRE`, `WAN_COLD`, `SCR_IDENTIFY`, `SCR_ENCHANT_WEAPON` and `GAIN_STRENGTH`. Strict lookups also exposed nonexistent `ELVEN_RING_MAIL`; its armor case now uses `ELVEN_MITHRIL_COAT`. The unused `BLESSED_STATUETTE` alternative was removed. Required names now raise `KeyError` if missing instead of skipping a case or selecting a different type. These are the native wand, scroll, ring and armor names from `include/objects.h`. The restored cases include a known zero-charge fire wand and both `implicit_uncursed` settings for cold wands, identify scrolls and elven armor. Native `objnam.c:doname_base` controls charge suffixes and the `uncursed` prefix. |
+| Redundant expected RNG counts/log | Removed the assertions of native core count 0 and emitted `{core:0, display:0, log:[]}`. Tests retain native/emitted comparison and detection of the extra-draw mutant through the comparison result. They no longer read those RNG records directly. |
+| See invisible without detection | Fixed: `{"target":"x_monnam","monster":{"mnum":"newt","minvis":1},"hero":{"detect":0,"seeInvis":1}}` was accepted and now raises `ValueError`. Native `display.h:_mon_visible` permits see invisible, so `do_name.c:x_monnam`'s `canspotmon` result would otherwise depend on uncomputed `cansee`. Generated see-invisible cases now enable detection; undetected invisible cases remain covered. |
+| Worn bits on incompatible types | Fixed: `{"target":"doname","object":{"otyp":"DAGGER","wornMask":131072},"discovery":{"nameKnown":1}}` was accepted and now raises `ValueError`. Validator and generator share the supported type/slot relation described above. Tests also reject amulet bits on boots, body-armor bits on wands/helmets, eyewear bits on daggers, swapped ball/chain bits, equipped contents and coins in weapon slots. Native `accessory_or_armor_on`'s meat-ring exception and `ready_ok`'s gold-quiver allowance remain valid. |
+| Missing bogus-name data for `the()` | Fixed: the native worker now receives generated `dat/bogusmon` and rejects missing data instead of silently using an incomplete `CapitalMon` table. The reported absence of `dlb_init()` is not the cause in this configured build: `include/dlb.h` maps `dlb_fopen` directly to `fopen` when DLB is off. The C naming functions remain unchanged. |
+
+The six restored `implicit_uncursed` cases are exercised through both real
+backends. The tested uncursed wand with known charges omits the prefix when
+the option is enabled; the tested scroll and armor still print it under native
+`doname_base`'s uncharged-item/armor conditions. Rejection tests check exception
+types without matching error-message wording. The quantity-domain self-test
+first completes a healthy native/JS control run, then rejects the altered domain.
+
+### Bogus-title review regression
+
+The new article test failed before the data setup change on three inputs:
+
+| Minimal input (`target=articles`) | Native before | Emitted JS | Both after |
+|---|---|---|---|
+| `Klingon` | `Klingon` | `the Klingon` | `the Klingon` |
+| `Ancient Multi-Hued Dragon` | `Ancient Multi-Hued Dragon` | `the Ancient Multi-Hued Dragon` | `the Ancient Multi-Hued Dragon` |
+| `Klingon's corpse` | `Klingon's corpse` | `the Klingon's corpse` | `the Klingon's corpse` |
+
+`objnam.c:the` calls `rumors.c:CapitalMon`; `init_CapMons` reads and decodes
+the native file, includes capitalized titles, and excludes personal names
+using `do_name.c:bogon_is_pname`. `CapitalMon` accepts a name followed by a
+space or apostrophe, but not a longer word. The test also preserves the
+unprefixed results `Klingonish`, `Godzilla` and `King Kong`. A second test
+runs the worker from an empty directory and checks that missing native data
+exits with status 2. No error-message wording is asserted.
+
+The new emitted-JS mutant removes the entire bogus-title contribution to
+`objnam.js:CAPITALIZED_MONSTER_TITLES`. The self-test kills it on `Klingon`
+(`the Klingon` versus `Klingon`) through the `the` result field, after a
+healthy native/JS control. The existing overlength `articles` domain probe
+still rejects inputs outside the string buffer bound. No game code changed
+and no new formal equivalence claim is made.
+
+### Candidate bugs
+
+None. Every difference observed during development reduced to a harness
+correspondence gap, not a port defect:
+
+| Difference | Cause | Resolution |
+|---|---|---|
+| JS `doname` showed no appearance ("ring", "potion") where C did | C `xname()` observes the object internally; the port splits observation into `observeObjectForNaming` | Harness calls `observeObjectForNaming` before `objectDescription` |
+| JS `xname` included corpse species ("the Oracle's corpse" vs C "corpse") | C `xname()` omits species; `cxname()` adds it | Harness passes `includeCorpseSpecies: false` for the `xname` field; `aobjnam` keeps it |
+| C dropped `oeroded`/`opoisoned` words | `obj.h` field aliases were loaded as separate C fields, later writes clobbering earlier ones | C loader folds aliased pairs; domain keeps them exclusive |
+| JS named priest/minion/ghost/shopkeeper monsters by constructor state | `createMonsterAt` sets `ispriest`/`isminion`, ghost names and shop data; the C struct only carries the input flags | Harness owns these flags: overrides after construction, epri/eshk/mgivenname from input |
+| C "generic iron chain" vs JS "iron chain" | generic rows before `FIRST_OBJECT` are never created by `mkobj` | Excluded from the domain |
+
+The `the air elemental of Ishtar` screen divergence that motivated this unit
+is the excluded minion path (emin/isminion) owned by fix-wide-misc31; it
+remains outside this comparison.
+
+### Naming existing equivalence claims
+
+The latest review's `NETHACK_RECORDER=... uv run prove.py` run exited 0:
+all 33 existing claims remain PROVED, including the two slow table claims and
+all configured domain probes and mutants. No proof claim was added or changed.
+Per-claim times exclude their negative checks:
+
+| Claim | Result | Time |
+|---|---|---:|
+| `rn2` | PROVED | 0.2 s |
+| `rnd` | PROVED | 0.1 s |
+| `rn1` | PROVED | 0.7 s |
+| `rnl` | PROVED | 1.8 s |
+| `d` | PROVED | 0.4 s |
+| `rne` | PROVED | 0.7 s |
+| `rnz` | PROVED | 2.6 s |
+| `rn2_on_display_rng` | PROVED | 0.1 s |
+| `distmin` | PROVED | 0.2 s |
+| `dist2` | PROVED | 0.4 s |
+| `enermod` | PROVED | 2.8 s |
+| `newuexp` | PROVED | 1.1 s |
+| `xlev_to_rank` | PROVED | 0.2 s |
+| `rounddiv` | PROVED | 0.4 s |
+| `Align2amask` | PROVED | 0.7 s |
+| `Amask2align` | PROVED | 0.9 s |
+| `acurr:StrDex` | PROVED | 1.0 s |
+| `acurrstr` | PROVED | 0.4 s |
+| `dbon:human` | PROVED | 0.6 s |
+| `abon:human` | PROVED | 2.1 s |
+| `acurr:all` | PROVED | 5.3 s |
+| `dbon:all` | PROVED | 0.3 s |
+| `abon:forms` | PROVED | 43.0 s |
+| `experience:tables` | PROVED | 399.7 s |
+| `mcalcmove:tables` | PROVED | 178.1 s |
+| `lower_bits` | PROVED | 0.1 s |
+| `upper_bits` | PROVED | 0.0 s |
+| `isaac64_mix` | PROVED | 0.1 s |
+| `isaac64_update` | PROVED | 0.4 s |
+| `isaac64_reseed` | PROVED | 4.8 s |
+| `isaac64_init` | PROVED | 0.1 s |
+| `isaac64_next_uint64` | PROVED | 0.1 s |
+| `isaac64_seed_packing` | PROVED | 0.1 s |
+
+## Naming remaining limits
+
+Hallucinated names, mimic `mappearance` monsters, minions of a god, artifacts
+with personal names, novel titles, price-quote suffixes, shop billing,
+`mshot_xname` ordinals, `distant_name` distance rules, end-of-game shirt and
+apron text, wizard-mode weight/gender suffixes, leash attachment text and the
+`override_ID` identification path are all outside the domain. Monster names
+cover the species table but not worm tails, steeds or swallowed states.
+Equality is sampled over the generated corpus, not proved for all states.

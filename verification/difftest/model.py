@@ -44,6 +44,10 @@ def record(value, allowed, name):
 
 def canonical(raw: dict, meta: dict) -> dict:
     from creation_model import CREATION_TARGETS, creation_case
+    from naming_model import NAMING_TARGETS, naming_case
+    if raw.get('target') in NAMING_TARGETS or (
+            type(raw.get('target')) is int and raw['target'] >= len(TARGETS) + 6):
+        return naming_case(raw, meta)
     if raw.get('target') in CREATION_TARGETS or (
             type(raw.get('target')) is int and raw['target'] >= len(TARGETS)):
         return creation_case(raw, meta)

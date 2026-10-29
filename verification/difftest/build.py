@@ -6,6 +6,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import subprocess
+from shutil import copyfile
 import time
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +57,9 @@ def build() -> Path:
     # Two compilers avoid competing with the other porting units on this host.
     with ThreadPoolExecutor(max_workers=2) as pool:
         objects = list(pool.map(compile_one, jobs))
+    # The configured recorder has DLB disabled: dlb_fopen() is fopen().
+    # CapitalMon() must read the native generated data in the worker's cwd.
+    copyfile(recorder / 'dat/bogusmon', CACHE / 'bogusmon')
     binary = CACHE / 'native'
     lua = recorder / 'lib/lua/liblua-5.4.8.a'
     subprocess.run(['clang', '-fsanitize=undefined', '-o', str(binary),

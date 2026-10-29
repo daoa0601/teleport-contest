@@ -35,6 +35,25 @@ const changes = {
         'rnd(1); return applyErosion(object, damage);'],
     log: ['weapon_damage.js', 'return applyErosion(object, damage);',
         'd(0, 4); return applyErosion(object, damage);'],
+    naming_plural: ['object_grammar.js', "return replacePluralSuffix(stem, '', 's') + excess;",
+        "return replacePluralSuffix(stem, '', 'es') + excess;"],
+    naming_singular: ['object_grammar.js', "return finish(replacePluralSuffix(stem, 'ies', 'y'));",
+        "return finish(replacePluralSuffix(stem, 'ies', 'ye'));"],
+    naming_an: ['object_grammar.js', "return 'aefhilmnosx'.includes(word.charAt(0)) ? 'an ' : 'a ';",
+        "return 'aefhilmnos'.includes(word.charAt(0)) ? 'an ' : 'a ';"],
+    naming_the: ['objnam.js', "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the ${name}`;",
+        "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the  ${name}`;"],
+    naming_bogus_titles: ['objnam.js', '...BOGUS_MONSTERS.flatMap(name => {',
+        '...[].flatMap(name => {'],
+    naming_xname: ['objnam.js', "noun = `pair of ${noun}`;", "noun = `two ${noun}`;"],
+    naming_doname: ['object_description.js', "if (object.greased)\n        prefix.push('greased');",
+        "if (object.greased)\n        prefix.push('sleazy');"],
+    naming_monnam: ['monster_name.js', "if (invisible)\n        adjectives += 'invisible ';",
+        "if (invisible)\n        adjectives += 'unseen ';"],
+    naming_string_draw: ['object_grammar.js', 'export function makePlural(value) {',
+        "import { rnd } from './rng.js';\nexport function makePlural(value) {\n    rnd(1);"],
+    naming_observe: ['objnam.js', 'observeObjectForNaming(object, { state });',
+        ';'],
 };
 const mutation = process.env.DIFFTEST_MUTANT;
 if (mutation) {
@@ -55,6 +74,8 @@ const monsters = await import('../../js/monster_data.js');
 const constants = await import('../../js/const.js');
 const methods = await import('../../js/monster_attack_types.js');
 const { objectClassForType } = await import('../../js/object_knowledge.js');
+const { armorSlotFor } = await import('../../js/armor.js');
+const { BOGUS_MONSTERS } = await import('../../js/random_text_data.js');
 if (process.argv.includes('--metadata')) {
     console.log(JSON.stringify({
         objects: {
@@ -63,9 +84,18 @@ if (process.argv.includes('--metadata')) {
             ...Object.fromEntries(Object.entries(data).filter(([, value]) => typeof value === 'number')),
         },
         weights: data.OBJECT_WEIGHT, nutrition: data.OBJECT_NUTRITION, merge: data.OBJECT_MERGE,
+        initialKnown: data.OBJECT_INITIAL_KNOWN,
+        wornSlots: Object.fromEntries([
+            'W_ARM', 'W_WEP', 'W_QUIVER', 'W_SWAPWEP', 'W_AMUL',
+            'W_RINGL', 'W_RINGR', 'W_TOOL', 'W_BALL', 'W_CHAIN',
+        ].map(name => [name, constants[name]])),
+        armorSlots: data.OBJECT_NAMES.map((_, index) => armorSlotFor(index)),
         classes: data.OBJECT_NAMES.map((_, index) => objectClassForType(index)), names: data.OBJECT_NAMES,
         monsterClasses: monsters.MONSTER_SYMBOL, specialPM: monsters.SPECIAL_PM,
         monsters: monsters.MONSTER_NAME, bodies: monsters.MONSTER_BODY_META,
+        // do_name.c:bogusmon removes the optional classification prefix.
+        bogusMonsters: BOGUS_MONSTERS.map(name =>
+            '-_+|='.includes(name.charAt(0)) ? name.slice(1) : name),
         ironBallIncrement: constants.WT_IRON_BALL_INCR,
         methods: { weapon: methods.AT_WEAP, kick: methods.AT_KICK, bite: methods.AT_BITE },
     }));
@@ -138,6 +168,10 @@ function position(context) {
 }
 
 async function runCase(input) {
+    if (input.target >= 12) {
+        const { runNaming } = await import('./naming.mjs');
+        return runNaming(input);
+    }
     if (input.target >= 6) {
         const { runCreation } = await import('./creation.mjs');
         return runCreation(input);

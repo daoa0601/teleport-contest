@@ -1,10 +1,13 @@
 """Tests of the comparison/reduction boundaries, outside the game test suite."""
 from copy import deepcopy
+import json
+import subprocess
+from tempfile import TemporaryDirectory
 import unittest
 
 from build import CACHE
 from model import canonical, metadata
-from run import HERE, Worker, difference, minimize
+from run import HERE, Worker, difference, minimize, naming_negative_checks
 
 
 class HarnessTests(unittest.TestCase):
@@ -82,6 +85,116 @@ class HarnessTests(unittest.TestCase):
         right['state']['object'][1]['spe'] = 4
         found = difference(left, right)
         self.assertEqual(found, dict(path='state.object[1].spe', native=3, port=4))
+
+    def test_naming_string_targets_measure_their_rng_stream(self):
+        # An extra draw in the string grammar must reach the rng comparison;
+        # a constant zero on the JS side would hide it.
+        state = canonical(dict(target='makeplural', text='newt'), self.meta)
+        with Worker([str(CACHE / 'native')], 'string-native') as native:
+            observed = native.call(state)
+        with Worker(['node', str(HERE / 'port.mjs')], 'string-mutant',
+                    'naming_string_draw') as mutant:
+            found = difference(observed, mutant.call(state))
+        self.assertIsNotNone(found)
+        self.assertTrue(found['path'].startswith('rng.core'), found)
+
+    def test_naming_string_stream_matches_the_native_measurement(self):
+        state = canonical(dict(target='articles', text='elven dagger',
+                               seed=1234, position=257), self.meta)
+        with Worker([str(CACHE / 'native')], 'string-native2') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'string-port2') as port:
+            left, right = native.call(state), port.call(state)
+        self.assertIsNone(difference(left, right))
+
+    def test_naming_articles_recognize_bogus_titles_and_personal_names(self):
+        with Worker([str(CACHE / 'native')], 'title-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'title-port') as port:
+            for text, expected in [
+                ('Klingon', 'the Klingon'),
+                ('Ancient Multi-Hued Dragon', 'the Ancient Multi-Hued Dragon'),
+                ("Klingon's corpse", "the Klingon's corpse"),
+                ('Klingonish', 'Klingonish'),
+                ('Godzilla', 'Godzilla'),
+                ('King Kong', 'King Kong'),
+            ]:
+                with self.subTest(text=text):
+                    state = canonical(dict(target='articles', text=text), self.meta)
+                    for worker in [native, port]:
+                        self.assertEqual(worker.call(state)['the'], expected)
+
+    def test_naming_worker_rejects_missing_native_data(self):
+        state = canonical(dict(target='articles', text='Klingon'), self.meta)
+        with TemporaryDirectory(dir=CACHE) as empty_directory:
+            result = subprocess.run([str(CACHE / 'native')], cwd=empty_directory,
+                                    input=json.dumps(state) + '\n', text=True,
+                                    capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 2)
+
+    def test_naming_reducer_keeps_a_real_emitted_mutant_counterexample(self):
+        state = canonical(dict(target='doname',
+            object=dict(otyp='ELVEN_ARROW', quan=5, greased=1, dknown=1,
+                        oeroded=2),
+            hero=dict(blind=1, role=3), seed=42, position=255,
+            discovery=dict(nameKnown=1)), self.meta)
+        with Worker([str(CACHE / 'native')], 'name-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'name-mutant',
+                       'naming_doname') as port:
+            reduced = minimize(state, native, port, self.meta, 'result')
+            self.assertEqual(reduced['object']['quan'], 1)
+            self.assertEqual(reduced['object']['oeroded'], 0)
+            self.assertEqual(reduced['hero']['blind'], 0)
+            self.assertEqual(reduced['position'], 0)
+            self.assertEqual(reduced['object']['greased'], 1)
+            found = difference(native.call(reduced), port.call(reduced))
+            self.assertEqual(found['path'], 'result')
+
+    def test_naming_quantity_domain_accepts_potions_but_rejects_stacked_maces(self):
+        potions = canonical(dict(target='xname',
+            object=dict(otyp='POT_BOOZE', quan=2)), self.meta)
+        self.assertEqual(potions['object']['quan'], 2)
+        mace = canonical(dict(target='xname', object=dict(otyp='MACE'),
+                              discovery=dict(nameKnown=1)), self.meta)
+        self.assertEqual(mace['object']['quan'], 1)
+        with self.assertRaises(ValueError):
+            canonical(dict(target='xname', object=dict(otyp='MACE', quan=2),
+                           discovery=dict(nameKnown=1)), self.meta)
+
+    def test_naming_self_test_detects_an_incorrect_quantity_domain(self):
+        # An erroneous merge flag admits stacked maces. The self-test must
+        # reject this domain before comparing any native and port results.
+        meta = deepcopy(self.meta)
+        meta['merge'][meta['objects']['MACE']] = 1
+        with Worker([str(CACHE / 'native')], 'quantity-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'quantity-port') as port:
+            naming_negative_checks(native, port, self.meta)
+            with self.assertRaises(RuntimeError):
+                naming_negative_checks(native, port, meta)
+
+    def test_naming_xname_observes_through_the_entry_point(self):
+        # xname's pairing must rely on objectCombatName's own observation:
+        # an unobserved ring shows its appearance, not the unseen noun.
+        state = canonical(dict(target='xname', object=dict(otyp='ADORNMENT',
+            dknown=0)), self.meta)
+        with Worker([str(CACHE / 'native')], 'obs-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'obs-port') as port:
+            left, right = native.call(state), port.call(state)
+        self.assertIsNone(difference(left, right))
+        self.assertNotEqual(left['result'], 'ring')
+        self.assertTrue(left['result'].endswith('ring'), left['result'])
+        self.assertEqual(left['state']['dknown'], 1)
+
+    def test_naming_container_child_keeps_table_knowledge(self):
+        # Root discovery applies to the root type only: a container with an
+        # initially-known child stays describable with nameKnown=0 roots.
+        state = canonical(dict(target='doname',
+            object=dict(otyp='SACK', cknown=1, dknown=1,
+                        contents=[dict(otyp='GOLD_PIECE', quan=1)]),
+            discovery=dict(nameKnown=0, callName='glork')), self.meta)
+        with Worker([str(CACHE / 'native')], 'child-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'child-port') as port:
+            left, right = native.call(state), port.call(state)
+        self.assertIsNone(difference(left, right))
+        self.assertIn('glork', right['result'])
 
     def test_domain_rejects_nonfood_eating_and_unknown_fields(self):
         for raw in [dict(object=dict(oeaten=1)), dict(hero=dict(str=True)),
