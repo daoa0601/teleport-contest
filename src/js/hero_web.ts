@@ -10,7 +10,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
-    HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST,
+    HOLE, IS_AIR, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST,
     MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP,
     RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS,
     TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
@@ -66,6 +66,13 @@ export async function chooseSpiderAbility(readKey = promptKey) {
 function trapAtHero(state: GameState) {
     return state.level?.traps?.find(trap =>
         trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
+}
+
+function heroIsOnStairway(state: GameState): boolean {
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === state.u.ux && stair.sy === state.u.uy) return true;
+    }
+    return false;
 }
 
 function engulfingAttack(monster: Monster) {
@@ -181,9 +188,10 @@ export async function useHeroWeb({
         return { used: true, spentTime: false, reason: 'unknown-trap' };
     }
 
-    if (location?.typ === STAIRS || location?.typ === LADDER) {
+    // C On_stairs() uses the stairway chain even after terrain changes.
+    if (heroIsOnStairway(state)) {
         await publish(`Your web fails to impede access to the ${
-            location.typ === STAIRS ? 'stairs' : 'ladder'
+            location?.typ === STAIRS ? 'stairs' : 'ladder'
         }.`);
         return { used: true, spentTime: true };
     }
