@@ -637,14 +637,14 @@ obj_ice_effects	obj_timer_checks	inlined	object timer attach/checks (floor_objec
 obj_is_local	mon_is_local	inlined	carrier lookup decides locality (light.ts, object_timers.ts)
 obj_typename	nextobuf	n/a	name buffers are strings
 obj_typename	xcalled	inlined	call-name substitution in type names (objnam.ts)
-occupied	invocation_pos	n/a	dead in C: occupied() runs during generation while inv_pos is 0; the vibrating square trap is placed directly
+occupied	invocation_pos	n/a	t_at() is evaluated first in the same expression and already true at inv_pos (vibrating square placed before populate_maze's mktrap)
 occupied	t_at	inlined	traps.some at the square (mkroom.ts)
 offer_different_alignment_altar	a_gname	inlined	altar god naming (sacrifice.ts)
 offer_different_alignment_altar	u_gname	inlined	own god naming (sacrifice.ts)
 ok_to_quest	is_pure	inlined	purity predicate inline in okToQuest (quest.ts)
 onquest	on_goal	inlined	quest delivery classification by dungeon position (quest.ts)
 onquest	on_locate	inlined	quest delivery classification by dungeon position (quest.ts)
-openholdingtrap	dist2	n/a	graph artifact: the C body contains no dist2() call
+openholdingtrap	dist2	inlined	m_next2u adjacency gates reward_untrap; Chebyshev <=1 test (trap_magic.ts)
 openholdingtrap	t_at	inlined	targetTrap resolves the trap square (trap_magic.ts)
 outrumor	is_fainted	inlined	FAINTED hero gets no cookie fortune (rumor.ts)
 pay	check_credit	inlined	credit applied to the payment (shop_payment.ts)
