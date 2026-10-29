@@ -24,7 +24,7 @@ jobs:
   equivalence:
     # Exercise glibc assert expansions as well as the typed NetHack AST.
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       NETHACK_RECORDER: ${{ github.workspace }}/nethack-c/recorder
       UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
