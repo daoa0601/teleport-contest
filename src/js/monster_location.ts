@@ -113,8 +113,11 @@ export function exposeEngulfedDefenderForDeath(
 ): void {
     const engulf = state._monsterEngulf;
     if (engulf?.attacker === attacker && engulf.defender === defender
-        && state.level && monsterAtPosition(state.level, defender.mx, defender.my) === attacker)
+        && state.level && monsterAtPosition(state.level, defender.mx, defender.my, state) === attacker) {
+        attacker.headOnMap = false;
+        defender.headOnMap = true;
         engulf.defenderExposed = true;
+    }
 }
 
 export function monsterOccupiesPosition(

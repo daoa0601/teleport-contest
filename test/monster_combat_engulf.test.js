@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DOOR, D_CLOSED, IRONBARS, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, POOL, STONE, W_AMUL, } from '../js/const.js';
+import { DOOR, D_CLOSED, IRONBARS, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PANICLOG, PIT, POOL, STONE, W_AMUL, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
@@ -15,6 +16,7 @@ import { AMULET_OF_LIFE_SAVING, OIL_LAMP } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -40,7 +42,7 @@ async function engulfRoom(attackerSpecies = 'fog cloud', defenderSpecies = 'orc'
             state: game, visible: true,
         }),
     });
-    return { level, attacker, defender, engulf, input };
+    return { level, attacker, defender, attack, engulf, input };
 }
 void test('a living engulf target is damaged, extinguished, and returned to its own square', async () => {
     const { level, attacker, defender, engulf } = await engulfRoom();
@@ -54,6 +56,43 @@ void test('a living engulf target is damaged, extinguished, and returned to its 
     assert.equal(lamp.ocarry, defender);
     assert.equal(monsterAtPosition(level, 11, 10), attacker);
     assert.equal(monsterAtPosition(level, 12, 10), defender);
+});
+void test('hero death during engulf ends combat without expulsion or placement errors', async () => {
+    const { level, attacker, defender, attack, input } = await engulfRoom();
+    requirePlayingGame(game);
+    game.u.uhp = 1;
+    game.flags.disclose = '-i -a -v -c -o';
+    game.storage = memoryStorage();
+    const pages = [];
+    installPagerInput(input, { expected: /engulfs|You die|REST|PEACE|points/, limit: 8, pages });
+    const result = await resolveMonsterCombatEngulf(attacker, defender, attack, {
+        visible: true,
+        resolveDamage: async (source, target, slot) => ({
+            ...await resolveMonsterCombatDamage(source, target, slot, { visible: true }),
+            heroDied: await loseHeroHp(1, 'an explosion'),
+        }),
+    });
+    assert.equal(result.heroDied, true);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(game.storage.getItem(PANICLOG), null, 'Ending combat must not report an impossible placement.');
+    assert.ok(defender.mhp > 0 && defender.mhp < 100);
+    assert.equal(monsterAtPosition(level, 11, 10), null);
+    assert.equal(monsterAtPosition(level, 12, 10), attacker);
+    assert.doesNotMatch(pages.join('\n'), /placing |Program in disorder|expelled/);
+});
+void test('interrupted engulf damage preserves the original error without requesting more input', async () => {
+    const { level, attacker, defender, attack } = await engulfRoom();
+    const interruption = new Error('Combat interrupted');
+    await assert.rejects(resolveMonsterCombatEngulf(attacker, defender, attack, {
+        visible: true,
+        resolveDamage: async (source, target, slot) => {
+            await resolveMonsterCombatDamage(source, target, slot, { visible: true });
+            throw interruption;
+        },
+    }), error => error === interruption);
+    assert.ok(defender.mhp > 0 && defender.mhp < 100);
+    assert.equal(monsterAtPosition(level, 11, 10), null);
+    assert.equal(monsterAtPosition(level, 12, 10), attacker);
 });
 for (const obstruction of ['huge defender', 'larger defender', 'trapped attacker', 'trapped defender',
     'defender in rock', 'defender in a closed door', 'defender behind bars', 'attacker behind bars']) {

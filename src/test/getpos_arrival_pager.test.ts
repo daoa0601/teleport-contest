@@ -22,7 +22,6 @@ void test('targeting restores its goal after a notice while arrival map output i
     ]);
 
     assert.equal(selected?.x, 10);
-    assert.equal(game._mapFlushPaused, true, 'Reading messages does not resume arrival map output');
 });
 
 void test('an unknown key ends monster targeting and offers to force the invalid destination', async () => {

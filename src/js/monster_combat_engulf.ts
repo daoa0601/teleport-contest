@@ -80,12 +80,13 @@ export async function resolveMonsterCombatEngulf(
     const target = { x: defender.mx, y: defender.my };
     const previousEngulf = state._monsterEngulf;
     const previousSwallower = state._monsterSwallower;
+    removeMonsterFromMapAt(target.x, target.y, state);
+    removeMonsterFromMapAt(origin.x, origin.y, state);
     state._monsterEngulf = { attacker, defender, defenderExposed: false };
-    await placeMonsterOnMap(attacker, target.x, target.y);
-    newsym(origin.x, origin.y);
-    newsym(target.x, target.y);
-    let recovered = false;
     try {
+        await placeMonsterOnMap(attacker, target.x, target.y, state);
+        newsym(origin.x, origin.y);
+        newsym(target.x, target.y);
         state._monsterSwallower = attacker;
         let result;
         try {
@@ -95,21 +96,16 @@ export async function resolveMonsterCombatEngulf(
         }
         const attackerDied = !!(result.nativeResult & M_ATTK_AGR_DIED);
         const defenderDied = !!(result.nativeResult & M_ATTK_DEF_DIED);
-        if (attackerDied && defenderDied) {
-            recovered = true;
-            return result;
-        }
-        if (result.heroDied) return result;
+        if (result.heroDied || attackerDied && defenderDied) return result;
         if (defenderDied) {
             const destination = goodPosition(target.x, target.y, { kind: 'monster', monster: attacker }, {
                 state, gpflags: MM_IGNOREWATER, random,
             }) ? target : origin;
             const alreadyPlaced = monsterAtPosition(state.level, destination.x, destination.y) === attacker;
-            if (!alreadyPlaced) await placeMonsterOnMap(attacker, destination.x, destination.y);
+            if (!alreadyPlaced) await placeMonsterOnMap(attacker, destination.x, destination.y, state);
             state._monsterEngulf = previousEngulf;
             if (destination !== target) newsym(target.x, target.y);
             if (!alreadyPlaced) newsym(destination.x, destination.y);
-            recovered = true;
             const liquid = await resolveMonsterLiquid(attacker, state, {
                 announce: publish, random, rollOne, rollDice,
                 finishDeath: (monster, death) => finishMonsterLiquidDeath(monster, {
@@ -128,7 +124,7 @@ export async function resolveMonsterCombatEngulf(
                 heroDied: !!state.program_state.gameover };
         }
         if (attackerDied) {
-            await placeMonsterOnMap(defender, target.x, target.y);
+            await placeMonsterOnMap(defender, target.x, target.y, state);
             state._monsterEngulf = previousEngulf;
             newsym(target.x, target.y);
         } else {
@@ -137,27 +133,16 @@ export async function resolveMonsterCombatEngulf(
                 await publish(`${monsterName(defender, { state, capitalized: true })} is ${verb}!`);
             }
             removeMonsterFromMapAt(target.x, target.y, state);
-            await placeMonsterOnMap(attacker, origin.x, origin.y);
-            await placeMonsterOnMap(defender, target.x, target.y);
+            await placeMonsterOnMap(attacker, origin.x, origin.y, state);
+            await placeMonsterOnMap(defender, target.x, target.y, state);
             state._monsterEngulf = previousEngulf;
             newsym(origin.x, origin.y);
             newsym(target.x, target.y);
         }
-        recovered = true;
         return result;
     } finally {
         state._monsterSwallower = previousSwallower;
         state._monsterEngulf = previousEngulf;
-        // Interrupted display/input must not leave two live actors occupying
-        // one square after the transient map context has been released.
-        if (!recovered) {
-            if (attacker.mhp > 0 && state.level.monsters.includes(attacker))
-                await placeMonsterOnMap(attacker, origin.x, origin.y);
-            if (defender.mhp > 0 && state.level.monsters.includes(defender))
-                await placeMonsterOnMap(defender, target.x, target.y);
-            newsym(origin.x, origin.y);
-            newsym(target.x, target.y);
-        }
     }
 }
 
