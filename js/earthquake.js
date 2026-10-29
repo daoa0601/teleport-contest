@@ -34,6 +34,7 @@ import { monsterName } from './monster_name.js';
 import { convertSecretDoor } from './detect.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SLITHY = 0x00080000;
@@ -86,7 +87,11 @@ async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
         await damageFloorObjectsWithWater(x, y);
     }
     if (game.u?.ux === x && game.u?.uy === y) {
-        const liquidEffect = await heroLiquidEffects();
+        const liquidEffect = await heroLiquidEffects({
+            applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
+                oldx: from.x, oldy: from.y, newx: to.x, newy: to.y, pick,
+            }),
+        });
         if (liquidEffect?.died)
             return;
     }

@@ -692,7 +692,12 @@ export async function liquidFlow(
     }
     // damage to the hero
     if (state.u?.ux === x && state.u?.uy === y) {
-        await heroLiquidEffects({ state });
+        await heroLiquidEffects({
+            state,
+            applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
+                oldx: from.x, oldy: from.y, newx: to.x, newy: to.y, pick,
+            }),
+        });
     } else {
         const monster = monsterAt(x, y, state);
         if (monster) {
