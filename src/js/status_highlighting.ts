@@ -33,11 +33,13 @@ export interface StatusFieldSpan {
 
 export interface StatusStyle { color: number; attr: number }
 interface FieldValue { value: number | string; raw: number | string; text: string; percent: number }
-interface FieldHistory extends FieldValue { rule: StatusHiliteRule | null; expires: number; changed: boolean }
+interface FieldHistory { raw: number | string; rule: StatusHiliteRule | null; expires: number; changed: boolean }
 
 export class StatusHighlights {
     private readonly fields = new Map<number, FieldHistory>();
     private readonly styles = new Map<number, StatusStyle>();
+    private currentPercentages = new Map<number, number>();
+    private previousPercentages = new Map<number, number>();
     private conditionMasks: readonly number[] = [];
     private enabled = false;
     private resetPending = true;
@@ -63,6 +65,11 @@ export class StatusHighlights {
     }
 
     update(state: GameState, fields: StatusLine2Fields): void {
+        // bot_via_windowport() alternates buffers even when values are unchanged.
+        // Each buffer keeps its percentage until that field recalculates it.
+        const previous = this.currentPercentages;
+        this.currentPercentages = this.previousPercentages;
+        this.previousPercentages = previous;
         this.moves ??= state.moves;
         this.enabled = !!state.iflags.hiliteDelta;
         this.conditionMasks = [...(state.iflags.condHilites ?? [])];
@@ -73,6 +80,18 @@ export class StatusHighlights {
     updateTime(state: GameState): void {
         this.enabled = !!state.iflags.hiliteDelta;
         this.updateField(state, BL_TIME, numberValue(state.moves));
+    }
+
+    // botl.c exp_percent_changing(): hidden points can change the level's rule.
+    experiencePercentChanging(state: GameState): boolean {
+        if (state.context.botl) return false;
+        const rules = state.iflags.statusThresholds?.[BL_XP] ?? [];
+        if (rules.length === 0) return false;
+        const percent = experiencePercentage(state);
+        if (percent === (this.currentPercentages.get(BL_XP) ?? 0)) return false;
+        const level = state.u.ulevel ?? 1;
+        const rule = chooseHilite(rules, numberValue(level, level, percent), 0, false, false);
+        return rule !== (this.fields.get(BL_XP)?.rule ?? null);
     }
 
     style(span: StatusFieldSpan): StatusStyle {
@@ -92,10 +111,11 @@ export class StatusHighlights {
         // C keeps the cached percentage but passes zero to get_hilite() when
         // this update does not calculate it, including temporary hilite expiry.
         const percent = calculatePercent ? current.percent : 0;
-        const cachedPercent = calculatePercent ? percent : previous?.percent ?? 0;
-        const percentChanged = calculatePercent && !reset && percent !== previous?.percent;
+        const previousPercent = this.previousPercentages.get(field) ?? 0;
+        if (calculatePercent) this.currentPercentages.set(field, percent);
+        const percentChanged = calculatePercent && !reset && percent !== previousPercent;
         if (percentChanged) {
-            change = compare(previous?.percent ?? 0, percent);
+            change = compare(previousPercent, percent);
             if (change === 1 && field === BL_XP && previous) change = compare(previous.raw, current.raw);
         }
         const expired = !!previous?.expires && !state.multi && previous.expires < (this.moves ?? state.moves);
@@ -103,7 +123,7 @@ export class StatusHighlights {
         const rule = chooseHilite(rules, { ...current, percent }, change,
             field === BL_HP && rules.some(entry => entry.behavior === BL_TH_CRITICALHP)
                 && criticallyLowHp(false, state), field === BL_TITLE && Upolyd(state.u));
-        this.fields.set(field, { ...current, percent: cachedPercent, rule, changed: true,
+        this.fields.set(field, { raw: current.raw, rule, changed: true,
             expires: reset || expired ? 0 : previous?.expires ?? 0 });
         this.styles.set(field, rule ? decodeStyle(rule.coloridx) : { color: NO_COLOR, attr: 0 });
     }
@@ -190,6 +210,16 @@ function percentage(value: number, maximum: number): number {
     return value && !percent ? 1 : percent;
 }
 
+// botl.c exp_percentage(): the final point before a new level counts as 100%.
+function experiencePercentage(state: GameState): number {
+    const level = state.u.ulevel ?? 1;
+    if (level >= 30) return 0;
+    const start = newExperienceThreshold(level - 1);
+    const range = newExperienceThreshold(level) - start;
+    const progress = (state.u.uexp ?? 0) - start;
+    return progress === range - 1 ? 100 : percentage(progress, range);
+}
+
 function fieldValues(state: GameState, fields: StatusLine2Fields): Map<number, FieldValue> {
     const hero = state.u;
     const hp = Math.max(0, (Upolyd(hero) ? hero.mh : hero.uhp) ?? 0);
@@ -213,11 +243,7 @@ function fieldValues(state: GameState, fields: StatusLine2Fields): Map<number, F
         [BL_GOLD, numberValue(Math.min(gold, 999999), gold)],
         [BL_LEVELDESC, textValue(fields.location)], [BL_VERS, textValue(fields.version)],
     ]);
-    const experienceStart = newExperienceThreshold(level - 1);
-    const experienceRange = newExperienceThreshold(level) - experienceStart;
-    const progress = experience - experienceStart;
-    const experiencePercent = level >= 30 ? 0 : progress === experienceRange - 1 ? 100
-        : percentage(progress, experienceRange);
+    const experiencePercent = experiencePercentage(state);
     values.set(BL_XP, numberValue(level, level, experiencePercent));
     values.set(BL_EXP, numberValue(experience, experience, experiencePercent));
     values.set(BL_HD, numberValue(Upolyd(hero) ? MONSTER_LEVEL[hero.umonnum ?? -1] ?? 0 : 0));

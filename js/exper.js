@@ -47,7 +47,8 @@ export function randomExperience({ gaining = false, state = game } = {}) {
 export function addExperience(experience, scoreBonus = 0, state = game) {
     requirePlayingGame(state);
     state.u.uexp = (state.u.uexp || 0) + experience;
-    if (experience && state.flags.showexp)
+    if (experience && (state.flags.showexp
+        || state.nhDisplay?.statusHighlights.experiencePercentChanging(state)))
         state.context.botl = true;
     state.u.urexp = (state.u.urexp || 0) + 4 * experience + scoreBonus;
     if (state.u.urexp >= (state.urole.key === 'wizard' ? 1000 : 2000))

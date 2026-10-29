@@ -3,7 +3,8 @@ import test from 'node:test';
 import { bot, flush_screen, timebot, updateStatusLines, statusEvalNextUnhilite } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetStatusHilites } from '../js/status_hilites.js';
-import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE, BL_TH_VAL_ABSOLUTE, BL_TH_UPDOWN, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, BL_MASK_BLIND, HL_BOLD, HL_INVERSE, HL_NONE, EQ_VALUE, LT_VALUE, GT_VALUE, TXT_VALUE, MAXBLSTATS, NO_LTEQGT, BL_ATTCLR_MAX, HL_ATTCLR_BOLD } from '../js/const.js';
+import { addExperience } from '../js/exper.js';
+import { BL_HP, BL_ENE, BL_TITLE, BL_TIME, BL_XP, BL_EXP, BL_TH_ALWAYS_HILITE, BL_TH_VAL_PERCENTAGE, BL_TH_VAL_ABSOLUTE, BL_TH_UPDOWN, BL_TH_TEXTMATCH, BL_TH_CRITICALHP, BL_MASK_BLIND, HL_BOLD, HL_INVERSE, HL_NONE, EQ_VALUE, LT_VALUE, GT_VALUE, TXT_VALUE, MAXBLSTATS, NO_LTEQGT, BL_ATTCLR_MAX, HL_ATTCLR_BOLD } from '../js/const.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, CLR_GREEN, CLR_BLUE, NO_COLOR } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
@@ -15,11 +16,11 @@ function roomWithRules(rules) {
     freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 2 }, flags: { time: true } });
     requirePlayingGame(game);
 }
-function fieldCell(text, row = 23) {
+function fieldCell(text, row = 23, offset = 0) {
     const cells = requireScreenRow(row);
     const column = cells.map(cell => cell.ch).join('').indexOf(text);
     assert.ok(column >= 0, `Expected '${text}' on status row ${row}: ${cells.map(cell => cell.ch).join('')}`);
-    const cell = cells[column];
+    const cell = cells[column + offset];
     assert.ok(cell);
     return cell;
 }
@@ -96,6 +97,81 @@ void test('experience percentage highlights change while the level stays the sam
     game.u.uexp = 12;
     await bot();
     assert.equal(fieldCell('Xp:1').color, CLR_GREEN);
+});
+for (const { field, hitpointbar, label } of [
+    { field: BL_HP, hitpointbar: false, label: 'HP' },
+    { field: BL_HP, hitpointbar: true, label: 'HP with its bar' },
+    { field: BL_ENE, hitpointbar: false, label: 'power' },
+    { field: BL_EXP, hitpointbar: false, label: 'experience points' },
+]) {
+    void test(`${label} highlight direction after an unchanged status repaint`, async () => {
+        roomWithRules([
+            rule(field, BL_TH_UPDOWN, 0, LT_VALUE, CLR_RED),
+            rule(field, BL_TH_UPDOWN, 0, GT_VALUE, CLR_GREEN),
+        ]);
+        game.flags.hitpointbar = hitpointbar;
+        game.flags.showexp = true;
+        game.u.ulevel = 1;
+        game.u.uhpmax = 20;
+        game.u.uenmax = 20;
+        function setValue(value) {
+            if (field === BL_HP)
+                game.u.uhp = value;
+            else if (field === BL_ENE)
+                game.u.uen = value;
+            else
+                game.u.uexp = value;
+        }
+        const prefix = field === BL_HP ? 'HP:' : field === BL_ENE ? 'Pw:' : '/';
+        const offset = field === BL_EXP ? 1 : 0; // The slash separator is uncolored.
+        setValue(16);
+        await bot();
+        resetStatusHilites();
+        await bot();
+        setValue(12);
+        await bot();
+        assert.equal(fieldCell(`${prefix}12`, 23, offset).color, CLR_RED);
+        await bot();
+        setValue(13);
+        await bot();
+        assert.equal(fieldCell(`${prefix}13`, 23, offset).color, hitpointbar ? CLR_GREEN : CLR_RED, 'Without the HP bar, the new 65% is compared with the older 80% after an unchanged repaint');
+    });
+}
+void test('a time-only status update preserves the percentage used for the next HP change', async () => {
+    roomWithRules([
+        rule(BL_HP, BL_TH_UPDOWN, 0, LT_VALUE, CLR_RED),
+        rule(BL_HP, BL_TH_UPDOWN, 0, GT_VALUE, CLR_GREEN),
+    ]);
+    await bot();
+    resetStatusHilites();
+    await bot();
+    game.u.uhp = 30;
+    await bot();
+    assert.equal(fieldCell('HP:30').color, CLR_RED);
+    game.moves++;
+    timebot();
+    assert.equal(fieldCell(`T:${game.moves}`).color, NO_COLOR);
+    game.u.uhp = 31;
+    await bot();
+    assert.equal(fieldCell('HP:31').color, CLR_GREEN);
+});
+void test('hidden experience points refresh the level highlight when a percentage rule changes', async () => {
+    roomWithRules([
+        rule(BL_XP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN),
+        rule(BL_XP, BL_TH_VAL_PERCENTAGE, 50, LT_VALUE, CLR_RED),
+    ]);
+    game.flags.showexp = false;
+    game.u.ulevel = 1;
+    game.u.uexp = 8;
+    await bot();
+    assert.equal(fieldCell('Xp:1').color, CLR_RED);
+    addExperience(1);
+    updateStatusLines();
+    assert.equal(fieldCell('Xp:1').color, CLR_RED);
+    addExperience(1);
+    updateStatusLines();
+    assert.equal(fieldCell('Xp:1').color, CLR_GREEN);
+    assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /Xp:1\//, 'Experience points remain hidden');
 });
 void test('the hitpoint bar uses the HP rule color only on its filled segment', async () => {
     roomWithRules([rule(BL_HP, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_RED)]);
