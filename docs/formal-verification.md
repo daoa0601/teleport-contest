@@ -450,9 +450,31 @@ any of these proof obligations.
    to the separate `fv-ci` unit. Next: collection ownership/non-emptiness,
    relational permonst/object data facts, callback invoker bounds, and upper
    arithmetic obligations. The 237 residual sites remain unproved.
-5. **Differential fuzzing of stateful functions (2–3 weeks).** Drive single C
-   functions in the probe build and their TS ports from serialized state, with
-   coverage guidance, for code where a state model is not worth writing.
+5. **Differential fuzzing of stateful functions (concrete prototype).**
+   `verification/difftest/` links the real patched recorder and imports the
+   emitted ports through the scoring adapters. Six entry points now run from
+   shared serialized hero, inventory/container and defender state:
+   `mkobj.c:weight`, `hack.c:inv_weight`/`calc_capacity`/`near_capacity`,
+   `weapon.c:dmgval`, and human-form `uhitm.c:find_roll_to_hit` (archeologist
+   and monk, basic skills, accuracy rings). It compares returns, a declared
+   successor-state projection, consumed core/display words and RNG entries.
+   The acceptance batch ran 6,077 cases with zero differences, five rejected
+   domain probes and seven killed emitted-JS mutants; six harness tests passed.
+   Native compilation took 15.34 s and the batch took 6.06 s on this macOS host.
+   The separate required proof run kept all 28 previous claims PROVED; the
+   full table and times are in `verification/README.md`.
+
+   This adds empirical evidence, not a new proved claim. The correspondence
+   is the shared JSON plus unproved loaders and table-ID relation. The native
+   loader calls `set_uasmon` to establish form properties; omitting it caused
+   false fog-cloud differences during development. No reachable port defect
+   was established. Input reduction retains each mismatch as a reproducing
+   state; callers still need to establish whether it can arise in play.
+   Messages, full heap/global state, arbitrary equipment/artifacts, polymorphed
+   accuracy and resumed input remain outside the comparison. No CI job, game
+   suite, corpus run or new recording was added. Coverage guidance is still
+   future work. See `verification/README.md` for domains, source assumptions,
+   exact commands, projection limits and runtime details.
 6. **Optional state relation.** A typed relation between `GameState` and C
    globals for monster, object, and hero records would extend refinement proofs
    to stateful functions. Expect diminishing returns. Whole-game equivalence
