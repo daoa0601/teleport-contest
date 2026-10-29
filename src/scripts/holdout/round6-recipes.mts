@@ -126,7 +126,7 @@ function castResolved(screens: readonly string[]): boolean {
     for (const screen of screens) {
         if (/Never mind\.|What do you want to /.test(screen)) aiming = false;
         if (/Where do you want to hit\?/.test(screen)) aiming = true;
-        if (aiming && /You hook yourself!|You are yanked toward the (?:floor|ground)!|Nothing happens\./.test(screen))
+        if (aiming && /You hook yourself!|You are yanked toward the [a-z ]+!|Nothing happens\./.test(screen))
             return true;
     }
     return false;

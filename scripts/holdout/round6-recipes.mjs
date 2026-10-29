@@ -105,7 +105,7 @@ function castResolved(screens) {
             aiming = false;
         if (/Where do you want to hit\?/.test(screen))
             aiming = true;
-        if (aiming && /You hook yourself!|You are yanked toward the (?:floor|ground)!|Nothing happens\./.test(screen))
+        if (aiming && /You hook yourself!|You are yanked toward the [a-z ]+!|Nothing happens\./.test(screen))
             return true;
     }
     return false;
