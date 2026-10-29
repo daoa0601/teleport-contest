@@ -98,7 +98,7 @@ export async function floatHeroUp(
         if (!hero.ustuck) throw new Error('A swallowed hero must have a swallowing monster.');
         await plineWithContinuation(monsterIsAnimal(hero.ustuck)
             ? `You float away from the ${surfaceName(hero.ux, hero.uy, state)}.`
-            : `You spiral up into ${holdingMonsterName(hero.ustuck)}.`);
+            : `You spiral up into ${holdingMonsterName(hero.ustuck, state)}.`);
     } else if (heroIsHallucinating(state)) {
         await plineWithContinuation("Up, up, and awaaaay!  You're walking on air!");
     } else if (Is_airlevel(hero.uz)) {
@@ -110,9 +110,9 @@ export async function floatHeroUp(
     if (steed && ![5, 25].includes(requireMonsterData(MONSTER_SYMBOL, steed.mnum))
         && !(requireMonsterData(MONSTER_FLAGS1, steed.mnum) & 0x01)) {
         if (levitationAtWill(state)) {
-            await plineWithContinuation(`${holdingMonsterSubject(steed)} magically floats up!`);
+            await plineWithContinuation(`${holdingMonsterSubject(steed, state)} magically floats up!`);
         } else {
-            await plineWithContinuation(`You cannot stay on ${holdingMonsterName(steed)}.`);
+            await plineWithContinuation(`You cannot stay on ${holdingMonsterName(steed, state)}.`);
             await dismountHero(DISMOUNT_GENERIC, { state });
         }
     }
@@ -224,10 +224,10 @@ export async function floatHeroDown(
             if (heroFormSticks(state)) {
                 await plineWithContinuation(
                     `You aren't able to maintain your hold on ${
-                        holdingMonsterName(hero.ustuck)}.`);
+                        holdingMonsterName(hero.ustuck, state)}.`);
             } else {
                 await plineWithContinuation(
-                    `Startled, ${holdingMonsterSubject(hero.ustuck)} can no longer hold you!`);
+                    `Startled, ${holdingMonsterSubject(hero.ustuck, state)} can no longer hold you!`);
             }
             setHeroGrip(null, state);
         }

@@ -12,10 +12,9 @@ import { impossible } from './diagnostics.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { heroFormSticks } from './hero_species.js';
 import { heroIsBlind } from './senses.js';
-import { MGIVENNAME, RLOC_NOMSG } from './const.js';
+import { RLOC_NOMSG } from './const.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS2, monsterDigests, monsterEnfolds, monsterIsWhirly,
-    monsterTypeName,
+    MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly,
     monsterHasNoHands,
 } from './monster_data.js';
 import {
@@ -64,15 +63,16 @@ export type ExpelHeroResult =
     | { expelled: false; died?: false }
     | { expelled: true; died: boolean };
 
-export function holdingMonsterName(monster: Monster) {
-    const givenName = MGIVENNAME(monster);
-    if (givenName) return givenName;
-    const name = monsterTypeName(monster.mnum, !!monster.female);
-    return (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x00080000 ? name : `the ${name}`;
+// C names the hero's holder with mon_nam() in every message that uses it
+// (do.c drop(), trap.c float_up()/float_down(), zap.c's slow-monster
+// disrupt), so engulfing priests and minions keep their "of <god>" title,
+// shopkeepers their names, and invisible holders their "invisible".
+export function holdingMonsterName(monster: Monster, state: GameState = game): string {
+    return monsterName(monster, { state });
 }
 
-export function holdingMonsterSubject(monster: Monster) {
-    const name = holdingMonsterName(monster);
+export function holdingMonsterSubject(monster: Monster, state: GameState = game): string {
+    const name = holdingMonsterName(monster, state);
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 

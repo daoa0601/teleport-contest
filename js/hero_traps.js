@@ -47,7 +47,6 @@ import { pitsAreConjoined } from './pit_connections.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { hitSteedWithTrapMissile } from './projectile_trap.js';
 import { dismountHero } from './steed.js';
-import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { specialPrototypeAt } from './dungeon.js';
@@ -150,7 +149,13 @@ async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recurs
         return;
     }
     const steed = hero.usteed;
-    const steedName = steed ? holdingMonsterName(steed) : '';
+    // C trap.c:1842-1847: suppress the article in steed messages when using
+    // its name (never chosen while hallucinating), and pass the "poor"
+    // adjective plus SUPPRESS_SADDLE through x_monnam().
+    const steedArticle = steed?.name && !heroIsHallucinating(game) ? 'none' : 'the';
+    const steedName = steed
+        ? monsterName(steed, { state: game, article: steedArticle, suppressSaddle: true })
+        : '';
     // C trap.c:1877: the careful descent is chosen by iflags.menu_requested
     // (the 'm' prefix), not context.nopick: travel sets nopick without it.
     const deliberate = !sokoban && !steed && !!game.iflags.menu_requested && alreadyKnown;
@@ -158,7 +163,10 @@ async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recurs
         if (steed) {
             await plineWithContinuation(recursiveTrap
                 ? `You and ${steedName} fall into ${trap.madeby_u ? 'your' : 'a'} pit!`
-                : `You lead ${steedName.replace(/^the /, 'the poor ')} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
+                : `You lead ${monsterName(steed, {
+                    state: game, article: steedArticle, adjective: 'poor',
+                    suppressSaddle: true,
+                })} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
         }
         else if (deliberate) {
             await plineWithContinuation(`You carefully ${heroLocomotion('lower yourself')} into the pit.`);
@@ -192,7 +200,10 @@ async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recurs
     }
     else if (spiked) {
         await plineWithContinuation(steed
-            ? `${holdingMonsterSubject(steed).replace(/^The /, 'The poor ')} ${conjoined ? 'steps' : 'lands'} on a set of sharp iron spikes!`
+            ? `${monsterName(steed, {
+                state: game, article: steedArticle, adjective: 'poor',
+                suppressSaddle: true, capitalized: true,
+            })} ${conjoined ? 'steps' : 'lands'} on a set of sharp iron spikes!`
             : `You ${conjoined ? 'step' : 'land'} on a set of sharp iron spikes!`);
     }
     setHeroTrap(rn2(6) + 2, TT_PIT);
