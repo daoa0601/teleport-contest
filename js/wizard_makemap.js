@@ -4,7 +4,7 @@ import { cls, docrt, flush_screen, plineWithContinuation } from './display.js';
 import { initOverviewRecord, insideWizardTower, levelIsWizardTower, specialPrototypeAt } from './dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { clearHeroTrap } from './hero_traps.js';
-import { placeHeroAtRandomArrival, resolveHeroArrivalCollision } from './level_change.js';
+import { deliverSpecialLevelMessages, placeHeroAtRandomArrival, resolveHeroArrivalCollision } from './level_change.js';
 import { maybeResetPick } from './lock_context.js';
 import { mklev } from './mklev.js';
 import { killGenocidedMonsters } from './mon.js';
@@ -193,8 +193,7 @@ async function returnToReplacementLevel(pets, wasInsideTower) {
     }
     await docrt();
     await flush_screen(1);
-    for (const message of game._activeSpecialLevel?.specialMessages ?? [])
-        await plineWithContinuation(message);
+    await deliverSpecialLevelMessages();
     await checkSpecialRoom();
 }
 //# sourceMappingURL=wizard_makemap.js.map
