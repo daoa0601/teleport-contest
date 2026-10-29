@@ -109,6 +109,25 @@ class ExecutorTests(unittest.TestCase):
                       'return x < 0 ? band + 1 : band + (band === 2 ? 1 : 0); }',
                       reason='last: outputs differ', **options)
 
+    def test_every_declared_partition_needs_a_satisfiable_domain(self):
+        native = 'int example(int species) { return species; }'
+        port = 'function example(species) { return species; }'
+        options = dict(params=[('species', INT)], partitions=lambda front: [
+            ('first species', {'species': 0}), ('last species', {'species': 1})])
+        self.equivalent(native, port, **options)
+
+        def exclude_last_species(world, front, modules):
+            species = next(value for name, value, _ in world.params if name == 'species')
+            world.pre.append(species == 0)
+
+        for restriction in (
+            dict(pre=lambda s: [s['species'] == 0]),
+            dict(configure=exclude_last_species),
+        ):
+            with self.subTest(restriction=next(iter(restriction))):
+                proved, report = self.compare(native, port, **options, **restriction)
+                self.assertFalse(proved, report)
+
     def test_nested_state_and_hero_attribute_arrays(self):
         self.equivalent(
             'struct { struct { int a[2]; } attr; } u; '

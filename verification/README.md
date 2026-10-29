@@ -200,7 +200,11 @@ There are 33 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, and eight ISAAC64/seed-packing claims. The monster
 claims check all 383 valid native species with symbolic state; movement uses
-arbitrary random streams.
+arbitrary random streams. Every declared partition must have a satisfiable
+entry domain in both logging modes, including state-constructor restrictions.
+An empty partition fails the claim and reports its label. The regression
+failed before the fix when either the precondition or constructor excluded
+one species, and passes after it.
 `abon:forms` assumes an equal, pure dungeon-difficulty result. Experience
 covers monsters with no inventory. Live table mutations and preservation of
 entry relations by initialization/equipment updates remain unproved.
@@ -211,7 +215,7 @@ The new claims require both a concrete failing domain probe and a concrete
 killed mutant. No game code or corpora were changed.
 
 Run the language, solver-isolation and command-selection tests
-(57 tests; no game sessions):
+(58 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
@@ -219,7 +223,7 @@ NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v \
   test_executors test_queries test_proof_selection
 ```
 
-The review-fix run passed all 57 tests in 9.894 s. They check table reads and
+The round-2 review run passed all 58 tests in 10.064 s. They check table reads and
 bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
 JS 32-bit coercion, imports, defaults, scopes, libc assertions, signed division safety and rejected constructs. C table
@@ -318,11 +322,11 @@ claim does not establish it; its domains and negative checks are unchanged.
 See `docs/formal-verification.md` for measured times and profiling limits.
 
 The final full command exited 0 with all 33 claims, 37 domain probes and 41
-mutant checks in 712.07 s. The final `--skip-slow` run exited 0 with 31 claims,
-34 probes and 39 mutant checks in 97.57 s. Table proof times were 432.7 s for
-experience and 179.5 s for movement; both remain above the 120-second target.
+mutant checks in 688.98 s. The final `--skip-slow` run exited 0 with 31 claims,
+34 probes and 39 mutant checks in 97.92 s. Table proof times were 415.6 s for
+experience and 175.5 s for movement; both remain above the 120-second target.
 The separate `--slow-only --check-ledger` job command passed both claims, three
-probes and two mutants in 584.16 s. The 33-row ledger was generated only after
+probes and two mutants in 593.84 s. The 33-row ledger was generated only after
 a complete `--write-ledger` run succeeded.
 
 Both executor families use `core.bit_operation`; their C-width, JS Number
@@ -350,7 +354,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 6.541 s on this review-fix run):
+after it (two tests in 6.448 s on this review-fix run):
 
 ```sh
 cd verification/equivalence
@@ -385,7 +389,7 @@ adds two constant sites to the earlier 2,481-site audit; its checked ledger
 still has zero regressions. Thirty-six previously
 unproved sites classify successfully. Fifty-three old classifications were
 withdrawn, and 133 additional emitted calls are now included. Extraction took
-115.51 s and both classifier passes with ledger enforcement took 4.08 s on
+115.52 s and both classifier passes with ledger enforcement took 5.28 s on
 the shared machine.
 [`callsites/review.md`](callsites/review.md) records counts by group, native
 sources, limits and all 28 equivalence timings;
@@ -450,7 +454,7 @@ change.
 
 Clang reads system headers through `hack.h`; those headers remain part of the
 C input. A local Ubuntu 24.04 arm64 container using glibc headers proved
-`acurr:all` in 5.6 s and `abon:forms` in 49.2 s, including their probes and
+`acurr:all` in 6.1 s and `abon:forms` in 49.5 s, including their probes and
 mutants. This checks Linux header handling; it is not a hosted Ubuntu x86-64
 measurement. The assertions are also exercised in explicit libc-form tests.
 

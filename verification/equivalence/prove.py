@@ -217,8 +217,6 @@ def check(spec, front, modules, pre_fn, *, pairwise_outputs=False) -> tuple[bool
         partition.unrelated_state = getattr(pre_fn, 'unrelated_state', ())
         partition.fixed_inputs = fixed
         proved, report = _check(spec, front, modules, partition, pairwise_outputs)
-        if report == 'domain is empty':
-            continue
         if not proved:
             return False, f'{label}: {report}'
         covered += 1

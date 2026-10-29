@@ -41,7 +41,7 @@ class Spec:
     references: list = field(default_factory=list) # [(C pointer, JS aliases)]
     configure: Callable = lambda world, front, modules: None
     arguments: Callable | None = None  # explicit C/JS API argument correspondence
-    partitions: Callable | None = None # finite, exhaustive subdomains
+    partitions: Callable | None = None # finite, exhaustive subdomains; each must be satisfiable
     require_counterexamples: bool = False
     slow: bool = False
     assumptions: tuple[str, ...] = ()
