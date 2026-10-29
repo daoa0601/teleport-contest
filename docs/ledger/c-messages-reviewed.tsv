@@ -84,7 +84,6 @@ do_wear.c	dotakeoff	dragon scale mail is	composed	src/js/cmd.ts:removeWornItem; 
 do_wear.c	dotakeoff	dragon scales are	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
 do_wear.c	unknown_type	Unknown type of	diagnostic	impossible() format for an unrecognized armor otyp; developer diagnostic.
 do_wear.c	wielding_corpse	wielding_corpse	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
-dog.c	pick_familiar_pm	pick_familiar_pm	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 dogmove.c	dog_invent	edog->apport > 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 dokick.c	really_kick_object	It comes loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
@@ -131,7 +130,6 @@ earlyarg.c	dump_enums	artifacts_nums	diagnostic	--dumpenums command-line dump of
 earlyarg.c	dump_enums	misc_object_nums	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
 earlyarg.c	dump_enums	objclass_classes	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
 earlyarg.c	dump_enums	objclass_defchars	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
-eat.c	adj_victual_nutrition	adj_victual_nutrition	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 eat.c	edibility_prompts	edibility_prompts	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
 eat.c	floorfood	; resume eating them?	composed	src/js/food_selection.ts:selectFoodToEat; Composes `There are iron bars here; ${resume ? 'resume eating' : 'eat'} them?` from the digging context like floorfood().
 eat.c	rottenfood	rather trippy.	composed	src/js/ordinary_food_effects.ts:applyRottenFood; Hallucination selects trippy in the felt-message template.
@@ -156,11 +154,9 @@ getpos.c	getpos_help	' to move the cursor to	composed	src/js/getpos.ts:getposHel
 getpos.c	getpos_help	(Reset 'whatis_coord' option to omit coordinates from '	dead	getpos.c:getpos_help() only writes this hint into sbuf, never putstr()s it, and overwrites sbuf with the Type a ... prompt before the next putstr().
 getpos.c	getpos_help	(Set 'whatis_coord' option to include coordinates with '	dead	getpos.c:getpos_help() only writes this hint into sbuf, never putstr()s it, and overwrites sbuf with the Type a ... prompt before the next putstr().
 hack.c	avoid_trap_andor_region	avoid_trap_andor_region	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
-hack.c	domove_fight_web	domove_fight_web	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 hack.c	domove_fight_web	uswapwep != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 hack.c	domove_swap_with_pet	can't move diagonally.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	doesn't want to swap places.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
-hack.c	domove_swap_with_pet	domove_swap_with_pet	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 hack.c	domove_swap_with_pet	won't fit into the same spot that you're at.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	won't fit through.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	still_chewing	chew through the door.	composed	src/js/iron_bars_meal.ts:continueChewingTerrain; Composes `You chew through the ${secret ? 'secret ' : ''}door.` for the SDOOR and DOOR outcomes.
@@ -205,7 +201,6 @@ invent.c	sync_perminvent	needs a terminal that is at least	dead	Same unreachable
 invent.c	sync_perminvent	tty perm_invent	dead	The could-not-be-enabled pline needs the window port to report prohibited/too_small, which tty_ctrl_nhwindow only does under TTY_PERM_INVENT; the pinned build leaves wri->tocore zeroed.
 light.c	restore_light_sources	lightsource-count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in light.c:restore_light_sources(); serialized metadata, not displayed text. The port validates its own storage format.
 light.c	save_light_sources	lightsource-count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in light.c:save_light_sources(); serialized metadata, not displayed text. The port validates its own storage format.
-light.c	show_transient_light	show_transient_light	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 light.c	wiz_light_sources	-------- ----- ------ ----  -------	diagnostic	#lightsources wizard dump separator; native-introspection output.
 light.c	wiz_light_sources	Mobile light sources: hero @ (	diagnostic	#lightsources wizard dump of light-source bookkeeping; native-introspection output.
 light.c	wiz_light_sources	location range flags  type    id	diagnostic	#lightsources wizard dump header; native-introspection output.
@@ -215,7 +210,6 @@ lock.c	lock_action	unlocking the chest	composed	src/js/lock_pick.ts:lockAction; 
 lock.c	pick_lock	no lock on the drawbridge.	composed	src/js/lock_pick.ts:pickDoorLock; Selects see or feel and lock on the drawbridge for the portcullis.
 mail.c	ckmailstatus	I have some mail for you	out-of-scope	Mail delivery requires host mailbox polling (MAIL, MAILCKFREQ); the browser runtime has no OS mailbox, per docs/c-js-semantics.md Operating-system features.
 mail.c	md_rush	This place's too crowded.  I'm outta here.	out-of-scope	The mail daemon requires host mailbox polling and delivery (MAIL without SIMPLE_MAIL); the browser runtime has no OS mailbox integration.
-mail.c	readmail	/usr/bin/mailx	out-of-scope	readmail() execs the host mail reader; no processes exist in the grader.
 makemon.c	clone_mon	has_edog(m2) && has_edog(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 makemon.c	clone_mon	has_emin(m2) && has_emin(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mhitm.c	passivemm	is jolted with electricity!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
@@ -235,10 +229,7 @@ mhitu.c	passiveum	is suddenly very cold!	composed	src/js/hero_form_passive.ts:ap
 mhitu.c	passiveum	is suddenly very hot!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
 mhitu.c	wildmiss	displaced image...	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
-mklev.c	find_branch_room	find_branch_room	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	generate_stairs	generate_stairs: failed to find a room! (	diagnostic	panic() when stair placement finds no room; developer diagnostic.
-mklev.c	mk_knox_portal	mk_knox_portal	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-mklev.c	mkinvk_check_wall	mkinvk_check_wall	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	mkinvk_check_wall	x > 0 && x < COLNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	mkinvk_check_wall	y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	mktrap	) are invalid	diagnostic	nh_snprintf into an impossible() when mktrap_victim gets invalid arguments; developer diagnostic.
@@ -320,7 +311,6 @@ monmove.c	postmov	opens a door.	composed	src/js/monster_door_passage.ts:resolveM
 monmove.c	postmov	smashes down a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	unlocks and opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 mthrowu.c	u_catch_thrown_obj	u_catch_thrown_obj	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
-muse.c	mloot_container	mloot_container	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 muse.c	mon_consume_unstone	just ruined a future piece of art!	composed	src/js/monster_stoning_cure.ts:consumeMonsterStoningCure; A hallucinating hero's stoning cure prints the pity line around the lowercase monster name instead of the limber line.
 muse.c	use_defensive	escapes down the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	escapes downstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
@@ -375,7 +365,6 @@ pager.c	mhidden_description	mhidden_description	diagnostic	__func__ argument tha
 pager.c	waterbody_name	waterbody_name	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
 pickup.c	query_category	*pick_list != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pickup.c	query_category	Auto-select every item being worn or wielded	dead	The only WORN_TYPES caller is menu_remarm(), which omits CHOOSE_ALL; the do_worn arm of the CHOOSE_ALL menu is unreachable.
-pickup.c	query_category	query_category	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pickup.c	query_objlist	pick yourself up!	dead	fake_hero_object is included only for look-here with PICK_NONE, so it cannot be returned as a selected object.
 pline.c	execplinehandler	Exec to message handler	out-of-scope	MSGHANDLER fork/exec failure text; no processes exist in the grader (docs/c-js-semantics.md lists execplinehandler explicitly).
 pline.c	execplinehandler	Fork to message handler failed.	dead	Native unreachable: execplinehandler returns before the fork when sysopt.msghandler is unset, and the recorder sysconf leaves MSGHANDLER commented out.
@@ -464,12 +453,10 @@ role.c	genl_player_setup	Incompatible role!	composed	src/js/character_selection.
 role.c	role_selection_prolog	IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	not yet specified	dead	role_selection_prolog() has no callers in the pinned tree (only the extern.h declaration); tty player selection builds its own menus.
-role.c	role_selection_prolog	role_selection_prolog	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	which == RS_RACE || c == ROLE_NONE || c == ROLE_RANDOM || IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	which == RS_ROLE || r == ROLE_NONE || r == ROLE_RANDOM || IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	roles	_Amaterasu Omikami	composed	src/js/roles.ts:nativeRoleAt; Returns the samurai role with lawful deity Amaterasu Omikami; align_gname() removes the native leading underscore before display.
 role.c	root_plselection_prompt	IndexOkT(rolenum, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-role.c	root_plselection_prompt	root_plselection_prompt	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 rumors.c	getrumor	Error reading "	out-of-scope	dlb read failure on the rumors data file; data-file seek errors are outside the port (docs/c-js-semantics.md Operating-system features).
 rumors.c	others_check	(no second entry)	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.
 rumors.c	others_check	(only two entries)	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.
@@ -495,7 +482,6 @@ shk.c	reject_purchase	reject_purchase	diagnostic	NHASSERT assertion condition te
 shk.c	sellobj	sold some items inside	composed	src/js/shop_sell.ts:sellHeroDroppedObject; The first explicit cash sale selects some items inside when only part of a container contents is owned by the hero and the container itself has no offer, as sellobj() does.
 shk.c	shk_chat	that business is bad.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
 shk.c	shk_chat	that business is good.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
-shk.c	stolen_container	stolen_container	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 shk.c	u_left_shop	!  Don't you leave without paying!	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
 shk.c	u_left_shop	!  Please pay before leaving.	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
 shknam.c	nameshk	has_eshk(mtmp)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
@@ -538,7 +524,6 @@ timeout.c	save_timers	timer-timer_count	diagnostic	Native save-stream field labe
 timeout.c	save_timers	timer-timer_id	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:save_timers(); serialized metadata, not displayed text. The port validates its own storage format.
 timeout.c	sickness_texts	Your illness feels worse.	composed	src/js/hero_illness.ts:sicknessMessage; Chooses illness or sickness per usick_type before " feels worse."; stage mapping matches sickness_texts[SIZE - i].
 timeout.c	sickness_texts	Your illness is severe.	composed	src/js/hero_illness.ts:sicknessMessage; Chooses illness or sickness per usick_type before " is severe."; stage mapping matches sickness_texts[SIZE - i].
-timeout.c	timer_sanity_check	timer_sanity_check	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 timeout.c	timer_sanity_check	x > 0 && x < COLNO && y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 topten.c	encode_extended_achievements	attained_the_rank_of_	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
 topten.c	encode_extended_achievements	consulted_the_oracle	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
@@ -578,7 +563,6 @@ topten.c	writexlentry	version=	out-of-scope	Record/log/extended-log file I/O (re
 topten.c	writexlentry	wish_cnt=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
 trap.c	chest_trap	trigger a trap!	composed	src/js/chest_trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
 trap.c	lava_effects	and are about to be immolated	dead	This else-if follows if (!Fire_resistance), so Fire_resistance is true and boil_away = !Fire_resistance is false.
-trap.c	openholdingtrap	openholdingtrap	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
 trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
 trap.c	untrap	are containers	composed	src/js/untrap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
