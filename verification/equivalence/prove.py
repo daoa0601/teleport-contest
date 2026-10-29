@@ -1,4 +1,7 @@
-"""Prove pinned NetHack C functions equivalent to the emitted JavaScript port.
+"""Prove pinned NetHack C functions equivalent to the JavaScript used in scoring.
+
+Leaf functions use emitted js/*.js; ISAAC64 uses frozen/isaac64.js, which
+score.sh installs over the emitted adapter before running the game.
 
 For every input in the stated domain, every random sequence, and both RNG-log
 settings, the C and JavaScript functions must return the same value, consume
@@ -24,6 +27,8 @@ from core import STREAMS, Machine, Unsupported, World
 from csym import CExec, CPtr, CVal, in_range
 from jssym import JSExec, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
+from isaac_specs import run as prove_isaac64
+from isaac_seed import run as prove_seed_packing
 
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
@@ -198,7 +203,7 @@ def main() -> int:
     recorder = recorder_dir()
     front = CFront(recorder, [recorder / 'src' / file for file in C_FILES] + list((HERE / 'harness').glob('*.c')))
     modules = load_modules()
-    print(f'C sources: {recorder}/src   JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
+    print(f'C sources: {recorder}/src   Leaf JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
     failures = 0
     for spec in SPECS:
         if args.only and spec.name not in args.only:
@@ -227,6 +232,8 @@ def main() -> int:
                     ('killed' if not proved else 'SURVIVED')
                 print(f'  {verdict} mutant {old!r} -> {new!r}: {first}')
                 failures += proved != equivalent
+    failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
+    failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
     print('all claims hold' if failures == 0 else f'{failures} claim(s) failed')
     return 1 if failures else 0
 

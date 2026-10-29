@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 import z3
 
-from core import STREAMS, Machine, Unsupported, Event, bit_int, select_int, seq
+from core import STREAMS, Machine, Unsupported, Event, bit_int, bit_operation, select_int, seq
 
 _TYPES = {
     'int': (32, True), 'unsigned int': (32, False),
@@ -525,9 +525,8 @@ class CExec:
                 if op == '<<' and signed:
                     self.m.oblige(path, z3.And(a >= 0, in_range(a * (2 ** b), t)),
                                   'C signed left shift of a negative or unrepresentable value', where)
-                result = av << bv if op == '<<' else (av >> bv if signed else z3.LShR(av, bv))
-            else:
-                result = {'&': lambda: av & bv, '|': lambda: av | bv, '^': lambda: av ^ bv}[op]()
+            operation = '>>>' if op == '>>' and not signed else op
+            result = bit_operation(operation, av, bv)
             return z3.simplify(bit_int(result, bits, signed))
         if op in ('/', '%'):
             self.m.oblige(path, b != 0, f'C division by zero ({op})', where)
@@ -637,7 +636,7 @@ class CExec:
             elif op == '!':
                 out.append((p, CVal(z3.If(self.truth(v), 0, 1), t)))
             elif op == '~':
-                out.append((p, CVal(bit_int(~z3.Int2BV(v.v, t[0]), *t), t)))
+                out.append((p, CVal(bit_int(bit_operation('~', z3.Int2BV(v.v, t[0])), *t), t)))
             else:
                 raise Unsupported(f'C unary {op}')
         return out
