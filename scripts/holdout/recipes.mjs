@@ -4,6 +4,7 @@ import { GAMEPLAY_RECIPES, validateGameplayRecipe } from './gameplay-recipes.mjs
 import { COVERAGE_RECIPES, validateCoverageRecipe } from './coverage-recipes.mjs';
 import { ROUND4_RECIPES, validateRound4Recipe } from './round4-recipes.mjs';
 import { ROUND5_RECIPES, validateRound5Recipe } from './round5-recipes.mjs';
+import { ROUND6_RECIPES, validateRound6Recipe } from './round6-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
 //
 // Exports:
@@ -410,6 +411,8 @@ for (const [name, recipe] of Object.entries(ROUND4_RECIPES))
     RECIPES[name] = recipe;
 for (const [name, recipe] of Object.entries(ROUND5_RECIPES))
     RECIPES[name] = recipe;
+for (const [name, recipe] of Object.entries(ROUND6_RECIPES))
+    RECIPES[name] = recipe;
 export { RECIPES };
 export const RECIPE_NAMES = Object.keys(RECIPES);
 export const ROLES = Object.keys(ROLE_CONSTRAINTS);
@@ -628,6 +631,9 @@ for (const name of Object.keys(ROUND4_RECIPES)) {
 }
 for (const name of Object.keys(ROUND5_RECIPES)) {
     VALIDATORS[name] = recording => validateRound5Recipe(name, recording);
+}
+for (const name of Object.keys(ROUND6_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound6Recipe(name, recording);
 }
 /**
  * Check a recorded session against its recipe's documented requirements.
