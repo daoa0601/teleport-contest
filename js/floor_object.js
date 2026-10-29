@@ -96,6 +96,27 @@ function linkFloorObject(object, x, y, state) {
     updateCorpseIceTimer(object, x, y, isIceAt(x, y, state), state);
     return object;
 }
+// C zap.c:bhitpile() and muse.c:fhito_loc() save each successor before
+// applying the effect. Fracturing can reinsert rocks below another boulder,
+// so the same ray may reach those rocks again. Returning false stops the sweep.
+export async function sweepFloorPile(x, y, state, visit) {
+    const level = requireGameLevel(state);
+    let current = level.objects[x]?.[y]?.[0];
+    while (current) {
+        const pile = level.objects[x]?.[y] ?? [];
+        const index = pile.indexOf(current);
+        // Extraction clears C's nexthere link, ending this traversal if
+        // an earlier effect also removed the saved successor.
+        if (index < 0)
+            return;
+        const next = pile[index + 1];
+        if (current.where === 'floor' && current.ox === x && current.oy === y) {
+            if (!await visit(current))
+                return;
+        }
+        current = next;
+    }
+}
 export async function stack_object(object, state = game) {
     if (!object)
         return object;

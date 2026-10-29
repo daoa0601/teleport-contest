@@ -4,6 +4,7 @@ import { requirePlayingGame } from './gstate.js';
 // choose those targets. C refs: zap.c bhito(), bhitpile(), zapsetup/wrapup().
 import { A_WIS } from './const.js';
 import { exerciseAttribute } from './attrib.js';
+import { sweepFloorPile } from './floor_object.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { reviveCorpseByMagic } from './corpse_revival.js';
 import { canSpotMonster, newsym, plineWithContinuation as pline } from './display.js';
@@ -62,22 +63,21 @@ export async function hitFloorPileWithWand(wand, x, y, { state = game, direction
     }
     state.context.poly_zapped = -1;
     let affected = 0;
-    for (const object of [...(column[y] || [])]) {
+    await sweepFloorPile(x, y, state, async (object) => {
         if (hiding) {
             if (first) {
                 first = false;
                 if (direction > 0)
-                    continue;
+                    return true;
             }
             else if (direction < 0)
-                continue;
+                return true;
         }
-        if (object.where !== 'floor' || object.ox !== x || object.oy !== y)
-            continue;
         affected += await hitObjectWithWand(object, wand, { state });
-        if (state.program_state?.gameover)
-            return affected;
-    }
+        return !state.program_state.gameover;
+    });
+    if (state.program_state.gameover)
+        return affected;
     if (state.context.poly_zapped >= 0)
         await createPolymorphMonsterFromPile(x, y, { state });
     const pile = column[y] || [];

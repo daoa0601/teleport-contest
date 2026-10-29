@@ -6,6 +6,7 @@ import { askTeleportDestination } from './cmd.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { D_BROKEN, D_CLOSED, D_LOCKED, DRAWBRIDGE_UP, IS_DOOR, M_SEEN_MAGR, RLOC_MSG, SDOOR, SHOPBASE, TEMPLE, ZAP_POS, isok, } from './const.js';
 import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
+import { sweepFloorPile } from './floor_object.js';
 import { canSpotMonster, map_invisible, plineWithContinuation, shieldeff } from './display.js';
 import { changeDoorByMagic } from './door_magic.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -97,14 +98,11 @@ export async function resolveMonsterImmediateWand(source, wand, { state, random 
 async function hitFloorObjects({ state, wand }) {
     const { x, y } = state.bhitpos;
     let affected = false;
-    for (const object of [...(state.level.objects[x]?.[y] ?? [])]) {
-        if (object.where !== 'floor' || object.ox !== x || object.oy !== y)
-            continue;
+    await sweepFloorPile(x, y, state, async (object) => {
         if (await hitObjectWithWand(object, wand, { state }))
             affected = true;
-        if (state.program_state.gameover)
-            break;
-    }
+        return !state.program_state.gameover;
+    });
     return affected;
 }
 async function hitHeroWithImmediateWand(context) {

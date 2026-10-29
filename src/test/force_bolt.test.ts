@@ -13,8 +13,8 @@ import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { createCorpstatAt } from '../js/mklev.js';
 import {
-    BOULDER, CLUB, EGG, MIRROR, POT_WATER, ROCK, SPE_FORCE_BOLT, STATUE,
-    WAN_STRIKING,
+    BOULDER, CLUB, EGG, MIRROR, OBJECT_NAMES, POT_WATER, ROCK, SPE_FORCE_BOLT,
+    STATUE, WAN_STRIKING,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
@@ -118,6 +118,26 @@ void test('force bolt fractures a boulder into rocks', async () => {
     assert.ok(boulder.quan >= 7 && boulder.quan <= 66);
     assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10).includes(boulder), true);
 });
+
+void test('force bolt cracks glass armor beneath multiple boulders',
+    async () => {
+        freshCasterRoom();
+        requireFixtureGame(game);
+        await learnSpell(SPE_FORCE_BOLT);
+        await floorObject(BOULDER, 12, 10);
+        await floorObject(BOULDER, 12, 10);
+        const armor = await floorObject(OBJECT_NAMES.indexOf('crystal plate mail'), 12, 10);
+        pushKeys(`l${' '.repeat(60)}`);
+        initRng(9n);
+
+        await castSpell(SPE_FORCE_BOLT);
+
+        assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10)
+            .some(object => object.otyp === BOULDER), false);
+        // Fracturing moves rocks below the remaining boulder. The bolt
+        // reaches those rocks again before testing the armor's resistance.
+        assert.equal(armor.oeroded, 1);
+    });
 
 void test('force bolt breaks fragile floor objects and continues past them',
     async () => {
