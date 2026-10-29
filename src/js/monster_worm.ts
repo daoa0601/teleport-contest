@@ -13,7 +13,7 @@ import { mcalcmove } from './monster_speed.js';
 import { d, rn2, rnd } from './rng.js';
 import { goodPosition } from './teleport_rules.js';
 import { isSavedRecord } from './saved_graph.js';
-import type { Monster } from './monster_types.js';
+import type { Monster, WormSegment } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 
@@ -21,7 +21,7 @@ const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 
 export interface WormMonster extends Monster {
     wormno: number;
-    wormSegments: Position[];
+    wormSegments: WormSegment[];
     wormHead: Position;
     wormGrowTime: number;
 }
@@ -400,17 +400,19 @@ export function validMonsterWormBodies(level: unknown): level is WormRestoreLeve
     return true;
 }
 
-function savedWormPoint(value: unknown): value is Position {
+function savedWormPoint(value: unknown): value is WormSegment {
     return isSavedRecord(value)
         && typeof value.x === 'number' && Number.isInteger(value.x)
-        && typeof value.y === 'number' && Number.isInteger(value.y);
+        && typeof value.y === 'number' && Number.isInteger(value.y)
+        && (value.onMap === undefined || typeof value.onMap === 'boolean');
 }
 
-// C restore.c calls place_wsegs(), which normalizes only the hidden head.
+// C restore.c rebuilds the monster grid and places the whole worm chain.
 export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
     for (const monster of level.monsters) {
         // The native monster grid is rebuilt from fmon when loading a level.
         delete monster.headOnMap;
+        for (const segment of monster.wormSegments ?? []) delete segment.onMap;
         if (monster.wormno) monster.wormHead = { x: monster.mx, y: monster.my };
     }
 }

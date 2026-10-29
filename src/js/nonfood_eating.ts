@@ -176,7 +176,7 @@ async function finishNonFoodMeal(object: GameObject, meal: NonfoodMeal, state: P
     if (state.program_state.gameover) return;
     if (object.oclass === COIN_CLASS) {
         await consumeFoodObject(object, { all: true, state });
-        const guard = findVaultGuard(state);
+        const guard = await findVaultGuard(state);
         if (guard?.mx && guard.mcansee && monsterHasLineOfSightToHero(guard, state)) {
             if (!guard._egd) throw new Error('A vault guard has no guard state');
             guard._egd.witness = GD_EATGOLD;

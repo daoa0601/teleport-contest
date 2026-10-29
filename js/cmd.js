@@ -5266,9 +5266,8 @@ export async function askMonsterTeleportDestination(monster, start) {
     if (firstUse)
         await plineWithContinuation(`Move cursor to ${goal}:`);
     const destination = await selectMapPosition({
-        start, prompt: game._pending_message, goal,
+        start, prompt: game._pending_message, goal, force: false,
     });
-    game._pending_message = '';
     return destination;
 }
 export async function askTeleportDestination({ onPrompt = null } = {}) {
@@ -5490,7 +5489,7 @@ async function doFarlook(quick = true) {
                 prompt: game._pending_message || game._retained_message,
                 goal: 'a monster, object or location',
             });
-            if (!cursor)
+            if (!cursor || cursor.x < 0)
                 break;
             position = { x: cursor.x, y: cursor.y };
             verbose = false;

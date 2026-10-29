@@ -21,7 +21,7 @@ export async function payVaultGuardOnExit({
     silent = false, publish = plineWithContinuation, random = rn2,
 }: { silent?: boolean; publish?: MessagePublisher; random?: typeof rn2 } = {}): Promise<void> {
     const state = requireInitializedGame();
-    const guard = findVaultGuard(state);
+    const guard = await findVaultGuard(state);
     const amount = heroGoldAmount(state);
     if (!amount || !guard) return;
 

@@ -59,7 +59,7 @@ async function blowOrdinaryWhistle(object, state) {
         : `You produce a ${object.cursed ? 'shrill' : 'high'} whistling sound.`);
     await callNearbyPets(state);
     if (object.cursed)
-        summonVaultGuardSoon(state);
+        await summonVaultGuardSoon(state);
 }
 async function callNearbyPets(state) {
     requireInitializedHero(state.u);

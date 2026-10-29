@@ -84,7 +84,7 @@ for (const segmentCount of [0, 3]) {
     void test(`level migration clears a ${segmentCount}-segment worm after departure briefly replaces its head`, async () => {
         const { worm, squares } = await placedWorm(segmentCount);
         requirePlayingGame(game);
-        prepareMonsterDeparture(worm, game);
+        await prepareMonsterDeparture(worm, game);
         assert.equal(monsterAtPosition(game.level, worm.mx, worm.my), worm,
             'mon_leave puts the head back before relmon removes it.');
 

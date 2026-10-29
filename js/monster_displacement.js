@@ -1,5 +1,5 @@
 // C mon.c:mm_displacement() and mhitm.c:mdisplacem().
-import { ALLOW_MDISP, M_AP_MONSTER, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, MON_OFFMAP, STRAT_WAITMASK, W_ARMG, } from './const.js';
+import { ALLOW_MDISP, M_AP_MONSTER, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, STRAT_WAITMASK, W_ARMG, } from './const.js';
 import { canSpotMonster, flush_screen, newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
@@ -7,7 +7,7 @@ import { MONSTER_NAME, MONSTER_SIZE, monsterIsDisplacer, monsterIsRider, require
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
@@ -73,10 +73,11 @@ export async function displaceMonster(aggressor, defender, state = game, { quiet
             await publish('You have a peculiarly sad feeling for a moment, then it passes.');
         return M_ATTK_AGR_DIED;
     }
-    aggressor.mstate = (aggressor.mstate ?? 0) | MON_OFFMAP;
+    removeMonsterFromMapAt(from.x, from.y, state);
+    removeMonsterFromMapAt(to.x, to.y, state);
     const segments = defender.wormno ? clearMonsterWormFromMap(defender) : 0;
-    placeMonsterAt(aggressor, to.x, to.y);
-    placeMonsterAt(defender, from.x, from.y);
+    await placeMonsterOnMap(aggressor, to.x, to.y);
+    await placeMonsterOnMap(defender, from.x, from.y);
     if (defender.wormno)
         placeMonsterWormTailRandomly(defender, segments, { state, random });
     updateMonsterRegions(aggressor, state);

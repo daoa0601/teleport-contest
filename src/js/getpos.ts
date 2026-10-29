@@ -771,12 +771,7 @@ export async function selectMapPosition({
                 clearMessageOnExit = true;
                 message = `Automatic description ${game.flags.verbose ? 'of features under cursor ' : ''}is ${autoDescription() ? 'on' : 'off'}.`;
                 await pline(message);
-                if (!autoDescription()) {
-                    await flush_screen(1);
-                    // show_goal_msg: the next loop pass pline()s the goal,
-                    // which tty pages when it cannot share the notice's line.
-                    await pline(movePrompt);
-                }
+                showGoal = !autoDescription();
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.filter')) {
@@ -852,7 +847,7 @@ export async function selectMapPosition({
                 if (force) continue;
                 await pline('Done.');
                 clearMessageOnExit = false;
-                return null;
+                return { x: -1, y: 0, pickType: LOOK_TRADITIONAL };
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
@@ -870,7 +865,7 @@ export async function selectMapPosition({
                 await pline(message.replace(/\(use .*\)/, '(aborted)'));
                 await plineWithContinuation('Done.');
                 clearMessageOnExit = false;
-                return null;
+                return { x: -1, y: 0, pickType: LOOK_TRADITIONAL };
             }
             await pline(message);
         }

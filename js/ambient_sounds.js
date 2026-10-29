@@ -63,7 +63,7 @@ export async function dosounds(state = requireInitializedGame()) {
             return;
         }
         const occupied = heroOccupies(VAULT, state);
-        const guard = !occupied && findVaultGuard(state);
+        const guard = !occupied && await findVaultGuard(state);
         if (!occupied && !guard) {
             const selection = rn2(2) + hallu;
             if (selection === 1) {

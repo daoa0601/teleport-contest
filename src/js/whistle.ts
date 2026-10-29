@@ -72,7 +72,7 @@ async function blowOrdinaryWhistle(object: GameObject, state: GameState) {
         ? formatFeltMessage(`rushing air tickle your ${heroNoseName(state)}.`, state)
         : `You produce a ${object.cursed ? 'shrill' : 'high'} whistling sound.`);
     await callNearbyPets(state);
-    if (object.cursed) summonVaultGuardSoon(state);
+    if (object.cursed) await summonVaultGuardSoon(state);
 }
 
 async function callNearbyPets(state: GameState) {

@@ -6,6 +6,7 @@ import { validSavedHeroAlignment } from './character_validation.js';
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity, } from './saved_validation.js';
 const flag = (value) => typeof value === 'boolean' || value === 0 || value === 1;
 const position = (value) => closedFieldsMatch(value, { x: integer, y: integer });
+const wormSegment = (value) => closedFieldsMatch(value, { x: integer, y: integer, onMap: optional(boolean) });
 const level = (value) => closedFieldsMatch(value, { dnum: integer, dlevel: integer });
 const pet = (value) => closedFieldsMatch(value, {
     parentmid: optional(integer),
@@ -134,7 +135,7 @@ function monsterFields(value, context) {
         my: integer,
         mstate: optional(integer),
         headOnMap: optional(boolean),
-        wormSegments: optional(arrayOf(position)),
+        wormSegments: optional(arrayOf(wormSegment)),
         // Saving is unavailable while cutworm is awaiting a message pager.
         wormDetachedSegments: (entry) => entry === undefined,
         m_id: integer,

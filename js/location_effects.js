@@ -31,7 +31,7 @@ export async function finishTeleportArrival(movement, { announceTeleport = true 
         await switchHeroTerrain(game);
     if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
         && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
-        const guard = findVaultGuard(game);
+        const guard = await findVaultGuard(game);
         if (guard)
             await noticeVaultEscape(guard, game);
     }

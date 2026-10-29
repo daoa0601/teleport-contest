@@ -6,16 +6,21 @@ import type { HeroAlignment } from './hero_types.js';
 // Multi-bit fields such as mstate, mstrategy and mtrapseen remain numbers.
 export type MonsterFlag = boolean | 0 | 1;
 
+export interface WormSegment extends Position {
+    // The physical chain survives another monster overwriting its map slot.
+    onMap?: boolean;
+}
+
 export interface MonsterPosition {
     mx: number;
     my: number;
     mstate?: number;
     // remove_monster() leaves mx/my intact; place_monster() maps the head again.
     headOnMap?: boolean;
-    wormSegments?: Position[];
+    wormSegments?: WormSegment[];
     // A cut detaches the segment chain before cloning or discarding it.
     // Its map cells still belong to this worm until that operation finishes.
-    wormDetachedSegments?: Position[];
+    wormDetachedSegments?: WormSegment[];
 }
 
 export interface MonsterLevel {

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MIGR_EXACT_XY, MIGR_RANDOM, MON_ARRIVE_BEFORE_YOU, NO_MINVENT, NON_PM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { migrateMonsterOffLevel, monsterArrive } from '../js/monster_migration.js';
@@ -14,8 +15,9 @@ import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
+import { answerPrompts } from './support/input-boundaries.js';
 
-void test('a migrating chameleon restored from worm form does not regain a worm body', async () => {
+void test('a migrating chameleon reports its off-map worm head before reverting and arriving without a tail', async () => {
     const { destination } = freshConnectedLevels();
     requirePlayingGame(game);
     const monster = await createMonsterAt('chameleon', 12, 10, NO_MINVENT);
@@ -30,7 +32,15 @@ void test('a migrating chameleon restored from worm form does not regain a worm 
     const ring = await addInventoryObject(RIN_PROTECTION_FROM_SHAPE_CHANGERS);
     await wearHeroAccessory(ring, 'uleft');
 
-    const arrived = await monsterArrive(monster, MON_ARRIVE_BEFORE_YOU, game);
+    // C dog.c:mon_arrive() restores shape before placement. In worm form,
+    // mon.c:newcham() replaces the discarded head even at <0,0>, which
+    // steed.c:place_monster() diagnoses before the arrival can continue.
+    const input = resetInputState();
+    const arrived = await answerPrompts(monsterArrive(monster, MON_ARRIVE_BEFORE_YOU, game), input, [
+        { prompt: /trying to place long worm <0,0>\{chameleon\} at <0,0>[\s\S]*--More--/, keys: ' ' },
+        { prompt: /Program in disorder![\s\S]*--More--/, keys: ' ' },
+        { prompt: /Please report these messages to devteam@nethack.org\.--More--/, keys: ' ' },
+    ]);
 
     assert.equal(arrived, true);
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('chameleon'));

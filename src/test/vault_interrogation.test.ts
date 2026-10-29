@@ -11,7 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
-function arrivingGuard() {
+async function arrivingGuard() {
     const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
@@ -20,12 +20,12 @@ function arrivingGuard() {
     level.requireAt(16, 10).typ = CORR;
     level.requireAt(11, 10).typ = VWALL;
     game.u.uinvault = 29;
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     return level;
 }
 
 void test('a guard calls a hiding mimic a whatcha-may-callit and leaves the vault closed', async () => {
-    const level = arrivingGuard();
+    const level = await arrivingGuard();
     installPolymorphedHero('small mimic');
     await runMonsterAbilityCommand();
     game._moveloopStarted = true;
@@ -49,7 +49,7 @@ void test('a guard calls a hiding mimic a whatcha-may-callit and leaves the vaul
 
 for (const name of ['Croesus', 'Kroisos', 'Creosote']) {
     void test(`a vault guard leaves an unopened wall when the hero claims to be ${name}`, async () => {
-        const level = arrivingGuard();
+        const level = await arrivingGuard();
         const input = resetInputState();
 
         await answerPrompts(continueVaultGuardArrival(), input, [
@@ -64,7 +64,7 @@ for (const name of ['Croesus', 'Kroisos', 'Creosote']) {
 }
 
 void test('a lawful hero loses alignment for lying to a vault guard', async () => {
-    arrivingGuard();
+    await arrivingGuard();
     requirePlayingGame(game);
     game.u.ualign = { type: 1, record: 5 };
     game.plname = 'TestHero';
@@ -79,7 +79,7 @@ void test('a lawful hero loses alignment for lying to a vault guard', async () =
 });
 
 void test('a nonbreaking space is part of a claimed name rather than ordinary padding', async () => {
-    const level = arrivingGuard();
+    const level = await arrivingGuard();
     const input = resetInputState();
 
     await answerPrompts(continueVaultGuardArrival(), input, [
@@ -92,7 +92,7 @@ void test('a nonbreaking space is part of a claimed name rather than ordinary pa
 });
 
 void test('a lawful hero cannot substitute an accented letter with different case in a claimed name', async () => {
-    arrivingGuard();
+    await arrivingGuard();
     requirePlayingGame(game);
     game.u.ualign = { type: 1, record: 5 };
     game.plname = '\u00c9clair';
@@ -107,7 +107,7 @@ void test('a lawful hero cannot substitute an accented letter with different cas
 });
 
 void test('a guard reports interrupted work before asking the hero name', async () => {
-    arrivingGuard();
+    await arrivingGuard();
     game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
     const messages: string[] = [];
     const input = resetInputState();
@@ -173,7 +173,7 @@ void test('a guard silently cancels a counted search repeat before asking the he
 });
 
 void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
-    const level = arrivingGuard();
+    const level = await arrivingGuard();
     game._vaultGuardArrivalPending = null;
     game.u.uinvault = 29;
     game.u.ux = 11;
@@ -182,7 +182,7 @@ void test('a hero in the vault doorway is questioned from a neighboring wall', a
     level.requireAt(11, 11).typ = VWALL;
     const input = resetInputState();
 
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     await answerPrompts(continueVaultGuardArrival(), input, [
         { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },

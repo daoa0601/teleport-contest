@@ -5,7 +5,7 @@ import { map_location, newsym, plineWithContinuation } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { releaseMonsterInventory } from './monster_drop.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -117,17 +117,19 @@ function blackout(x, y, state) {
         }
     }
 }
-export function parkVaultGuard(guard, state = game) {
+export async function parkVaultGuard(guard, state = game) {
     requireLiveGame(state);
     requireVaultGuard(guard);
     const polearm = state.context.polearm;
     if (polearm?.hitmonId === guard.m_id)
         polearm.hitmonId = null;
     const x = guard.mx, y = guard.my;
-    // The JS monster list also supplies occupancy; hide the old head before redraw.
-    placeMonsterAt(guard, 0, 0);
-    if (x)
+    if (x) {
+        removeMonsterFromMapAt(x, y, state);
         newsym(x, y);
+    }
+    if (monsterAtPosition(requireGameLevel(state), 0, 0, state) !== guard)
+        await placeMonsterOnMap(guard, 0, 0, state);
     guard._egd.ogx = guard._egd.ogy = 0;
 }
 export async function prepareVaultGuardDeath(guard, state = game) {
@@ -136,7 +138,7 @@ export async function prepareVaultGuardDeath(guard, state = game) {
     if (!dispose) {
         await releaseMonsterInventory(guard, state, { show: false });
         guard.mhp = 0;
-        parkVaultGuard(guard, state);
+        await parkVaultGuard(guard, state);
         dispose = await clearVaultCorridor(guard, true, state);
     }
     if (dispose)
@@ -144,7 +146,7 @@ export async function prepareVaultGuardDeath(guard, state = game) {
     return dispose;
 }
 // C vault.c:findgd(). Parked guards still own their unfinished corridor.
-export function findVaultGuard(state = game) {
+export async function findVaultGuard(state = game) {
     requireLiveGame(state);
     const heroLevel = state.u.uz;
     if (!heroLevel)
@@ -173,7 +175,7 @@ export function findVaultGuard(state = game) {
     returning.mux = state.u.ux;
     returning.muy = state.u.uy;
     returning.mx = returning.my = 0;
-    parkVaultGuard(returning, state);
+    await parkVaultGuard(returning, state);
     return returning;
 }
 //# sourceMappingURL=vault_guard.js.map

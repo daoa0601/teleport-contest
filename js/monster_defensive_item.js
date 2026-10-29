@@ -13,7 +13,7 @@ import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { consumeMonsterItem, prepareMonsterItemUse, presentMonsterQuaff, presentMonsterScrollRead, presentMonsterWandUse, } from './monster_item_use.js';
-import { monsterAtPosition, monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap } from './monster_location.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { monsterLocomotion } from './monster_locomotion.js';
@@ -478,7 +478,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             // when the monster was already standing on the trap.
             monster.mstate = (monster.mstate ?? 0) | MON_OFFMAP;
             newsym(monster.mx, monster.my);
-            placeMonsterAt(monster, trap.tx, trap.ty);
+            await placeMonsterOnMap(monster, trap.tx, trap.ty);
             if (monster.wormno)
                 advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
             maybeUnhideAt(monster.mx, monster.my, state);

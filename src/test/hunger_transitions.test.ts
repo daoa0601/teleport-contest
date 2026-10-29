@@ -400,7 +400,7 @@ void test('a real vault guard revives the fainted hero before asking for a name'
         }
     };
 
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     await continueVaultGuardArrival();
 
     assert.equal(hungerDuringName, FAINTING);

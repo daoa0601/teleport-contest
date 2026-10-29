@@ -15,7 +15,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { findMonsterArmorClass } from './monworn.js';
@@ -80,13 +80,13 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
             const eelStays = MONSTER_SYMBOL[monster.mnum] === S_EEL
                 && isPoolAt(oldx, oldy, state) && !isPoolAt(hero.ux, hero.uy, state);
             if (!spot || eelStays) {
-                placeMonsterAt(monster, oldx, oldy); /* put back */
+                await placeMonsterOnMap(monster, oldx, oldy); /* put back */
                 newsym(hero.ux, hero.uy);
                 await publish(`${monsterName(monster, { state, capitalized: true })} draws back as you drop!`);
                 return true;
             }
             newsym(oldx, oldy); /* finish removal; the square is empty now */
-            placeMonsterAt(monster, hero.ux, hero.uy);
+            await placeMonsterOnMap(monster, hero.ux, hero.uy);
             let landing = spot;
             if (monster.wormno) {
                 advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });

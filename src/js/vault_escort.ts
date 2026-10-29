@@ -19,7 +19,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { heroFormSticks } from './hero_species.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { linkObjectToMonsterInventory } from './monster_inventory.js';
@@ -224,7 +224,7 @@ export async function moveVaultGuard(
         await moveMonsterAside(guard, x, y, state, random);
         egd.ogx = guard.mx;
         egd.ogy = guard.my;
-        placeMonsterAt(guard, x, y);
+        await placeMonsterOnMap(guard, x, y);
         if (goldAt(x, y, state)) {
             await pickGoldAtGuard(guard, state);
             if (canSpotMonster(guard)) await pline(`${monsterName(guard, { state, capitalized: true })} picks up some gold.`);
@@ -282,7 +282,7 @@ async function restoreFakeCorridor(guard: VaultGuard, state: GameState) {
 
 async function finishEscort(guard: VaultGuard, semiDead: boolean, alreadyAnnounced: boolean, state: GameState) {
     const x = guard.mx, y = guard.my, spotted = canSpotMonster(guard);
-    parkVaultGuard(guard, state);
+    await parkVaultGuard(guard, state);
     await wallifyVault(guard, state);
     await restoreFakeCorridor(guard, state);
     if (!semiDead && (inVaultCorridor(guard, state.u.ux, state.u.uy) || cansee(x, y))) {
@@ -384,7 +384,7 @@ async function pickCorridorGold(guard: VaultGuard, x: number, y: number, state: 
                     best = point;
             }
             if (distance(best.x, best.y) < distance(oldx, oldy)) {
-                placeMonsterAt(guard, best.x, best.y);
+                await placeMonsterOnMap(guard, best.x, best.y);
                 newsym(oldx, oldy);
                 newsym(best.x, best.y);
             }
@@ -396,7 +396,7 @@ async function pickCorridorGold(guard: VaultGuard, x: number, y: number, state: 
         if (x !== oldx || y !== oldy) {
             await moveMonsterAside(guard, x, y, state, random);
             if (seen) {
-                placeMonsterAt(guard, x, y);
+                await placeMonsterOnMap(guard, x, y);
                 newsym(oldx, oldy);
             }
         }
@@ -408,7 +408,7 @@ async function pickCorridorGold(guard: VaultGuard, x: number, y: number, state: 
     }
     if (guard.mx !== oldx || guard.my !== oldy) {
         const x = guard.mx, y = guard.my;
-        placeMonsterAt(guard, oldx, oldy);
+        await placeMonsterOnMap(guard, oldx, oldy);
         newsym(x, y);
         newsym(oldx, oldy);
     }
