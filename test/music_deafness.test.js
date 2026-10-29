@@ -26,7 +26,7 @@ void test('a permanently deaf drummer feels the performance without gaining temp
 // C music.c LEATHER_DRUM scares an engulfing lurker awake; monflee() calls
 // expels(), which flags botl before its "unfolds" pline (mhitu.c). vpline()
 // then flushes that flag — redrawing the committed "Deaf" condition —
-// before update_topl() pages the still-unseen drum row (fb70ad53…, step 311).
+// before update_topl() pages the still-unseen drum row.
 void test('a deafening drum row pages with its Deaf condition already in the status line', async () => {
     const input = freshTurnRoom();
     const drum = await addInventoryObject(LEATHER_DRUM);
