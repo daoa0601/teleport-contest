@@ -232,18 +232,19 @@ async function triggerPit(
     const steed = hero.usteed;
     // C trap.c:1842-1847: suppress the article in steed messages when using
     // its name (never chosen while hallucinating), and pass the "poor"
-    // adjective plus SUPPRESS_SADDLE through x_monnam().
+    // adjective plus SUPPRESS_SADDLE through x_monnam().  Each branch names
+    // the steed only when it prints, so a hallucinating rider draws one
+    // random identity per message.
     const steedArticle = MGIVENNAME(steed) && !heroIsHallucinating(game) ? 'none' : 'the';
-    const steedName = steed
-        ? monsterName(steed, { state: game, article: steedArticle, suppressSaddle: true })
-        : '';
     // C trap.c:1877: the careful descent is chosen by iflags.menu_requested
     // (the 'm' prefix), not context.nopick: travel sets nopick without it.
     const deliberate = !sokoban && !steed && !!game.iflags.menu_requested && alreadyKnown;
     if (!sokoban) {
         if (steed) {
             await plineWithContinuation(recursiveTrap
-                ? `You and ${steedName} fall into ${trap.madeby_u ? 'your' : 'a'} pit!`
+                ? `You and ${monsterName(steed, {
+                    state: game, article: steedArticle, suppressSaddle: true,
+                })} fall into ${trap.madeby_u ? 'your' : 'a'} pit!`
                 : `You lead ${monsterName(steed, {
                     state: game, article: steedArticle, adjective: 'poor',
                     suppressSaddle: true,
