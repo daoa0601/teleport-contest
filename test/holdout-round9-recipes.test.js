@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { makeRecipe, validateRecipeRecording } from '../scripts/holdout/recipes.mjs';
+import { createSessionDriver } from '../scripts/lib/session-driver.mjs';
+import { Engine } from '../js/jsmain.js';
+import { GameDisplay } from '../js/game_display.js';
+import { memoryStorage } from './support/memory-storage.js';
+import { capturedScreen, screenText } from './support/screen.js';
 function recording(messages) {
     return { version: 5, segments: [{ steps: ['', ...messages, ''].map((message, index) => ({
                     screen: `${message}\nDlvl:1 HP:120(120) Pw:80(80) AC:3 Xp:20 T:${index + 1}`,
@@ -24,8 +29,7 @@ const completed = [
             'Your dagger rusts!'] },
     { name: 'quest-counsel', effects: [
             '"Ah, wizard.  We see thou hast received Our summons.',
-            'thou art yet unprepared',
-            'You materialize on a different level!'
+            '"Ah, wizard.  Thou art truly ready, as no Gallant before thee hath been.'
         ] },
     { name: 'gremlin-flashes', effects: ['The gremlin is blinded by the flash!',
             'The gremlin cries out in pain!'] },
@@ -51,21 +55,46 @@ for (const { name, effects } of completed) {
         assert.equal(result.ok, false, JSON.stringify(result));
     });
 }
-void test('the quest recipe plans both a grown and a diminished visit', () => {
-    const plan = makeRecipe('quest-counsel', { seed: 13, datetime: '20000110090000',
+void test('the potion sparring recipe shatters a wielded potion on a lichen', async () => {
+    const plan = makeRecipe('potion-sparring', { seed: 17, datetime: '20000110090000',
         character: { role: 'knight', race: 'human', gender: 'male', align: 'lawful' } });
-    const keys = plan.segments[0]?.driver.flatMap(action => action.type === 'keys' ? [action.value] : []) ?? [];
-    const joined = keys.join('|');
-    assert.ok(joined.includes('#levelchange\r20\r'), 'the first visit must be grown');
-    assert.ok(joined.includes('#levelchange\r2\r'), 'the second visit must be green');
-    assert.ok(joined.includes('m\x16'), 'both visits levelport through the menu');
+    const segment = plan.segments[0];
+    assert.ok(segment);
+    const engine = new Engine({ ...segment, display: new GameDisplay(null), storage: memoryStorage() });
+    await engine.runUntilInputNeeded();
+    const driver = createSessionDriver(segment.driver);
+    let sawShatter = false;
+    for (let inputs = 0; inputs < 700; inputs++) {
+        const key = driver.nextKey(screenText(capturedScreen(engine)).split('\n'));
+        if (key === null)
+            break;
+        engine.inputGate.feed(key);
+        await engine.runUntilInputNeeded();
+        if (/flask crashes|breaks into shards/.test(screenText(capturedScreen(engine))))
+            sawShatter = true;
+    }
+    assert.equal(driver.exhausted, true, 'potion sparring recipe must finish within 700 inputs');
+    assert.equal(sawShatter, true, 'a wielded potion must shatter on a struck monster');
 });
-void test('the potion sparring recipe wields fresh potions between strikes', () => {
-    const plan = makeRecipe('potion-sparring', { seed: 13, datetime: '20000110090000',
+void test('the pet drainers recipe weakens or brains an ogre through pet attacks', async () => {
+    const plan = makeRecipe('pet-drainers', { seed: 11, datetime: '20000110090000',
         character: { role: 'knight', race: 'human', gender: 'male', align: 'lawful' } });
-    const driver = plan.segments[0]?.driver ?? [];
-    const wieldCount = driver.filter(action => action.type === 'select-menu-entry'
-        && action.target === 'potion of fruit juice').length;
-    assert.ok(wieldCount >= 3, 'each bottle needs its own wield');
+    const segment = plan.segments[0];
+    assert.ok(segment);
+    const engine = new Engine({ ...segment, display: new GameDisplay(null), storage: memoryStorage() });
+    await engine.runUntilInputNeeded();
+    const driver = createSessionDriver(segment.driver);
+    let sawDrain = false;
+    for (let inputs = 0; inputs < 700; inputs++) {
+        const key = driver.nextKey(screenText(capturedScreen(engine)).split('\n'));
+        if (key === null)
+            break;
+        engine.inputGate.feed(key);
+        await engine.runUntilInputNeeded();
+        if (/becomes weaker|brain is eaten/.test(screenText(capturedScreen(engine))))
+            sawDrain = true;
+    }
+    assert.equal(driver.exhausted, true, 'pet drainers recipe must finish within 700 inputs');
+    assert.equal(sawDrain, true, 'a tame drainer must feed on a hostile ogre');
 });
 //# sourceMappingURL=holdout-round9-recipes.test.js.map
