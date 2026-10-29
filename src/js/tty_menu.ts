@@ -30,6 +30,8 @@ export interface MenuLayout<T extends TextMenuLine> {
     maxRows: number;
     width: number;
     endMarker: string;
+    /** C filled this window with putstr(), so display uses the text rules. */
+    putstrMeasured: boolean;
 }
 interface DisplayedMenuLayout<T extends TextMenuLine> extends MenuLayout<T> {
     boundary: number;
@@ -77,7 +79,7 @@ export function menuLayout<T extends TextMenuLine>(
         Math.max(widest, row.text.length + (putstrMeasured ? 1 : 2)),
         putstrMeasured ? 0 : Math.min(columns, pager.length));
     const maxRows = (pageCount > 1 ? pageSize : rows.length) + 1;
-    return { rows: clippedRows, pageSize, pageCount, maxRows, width, endMarker };
+    return { rows: clippedRows, pageSize, pageCount, maxRows, width, endMarker, putstrMeasured };
 }
 
 // The pinned tty build enables H2344_BROKEN: corner windows occupy at
@@ -116,7 +118,11 @@ export function paintMenuPage<T extends TextMenuLine>(
             }
         }
     }
-    const left = boundary + 1;
+    // A putstr()-filled window displays through process_text_window(): its
+    // rows start at the window origin with no padding until the origin is
+    // nonzero, when every row gains one leading space. tty_end_menu()-built
+    // menus instead render every row one column past the boundary.
+    const left = menu.putstrMeasured && boundary === 0 ? boundary : boundary + 1;
     for (const [row, line] of rows.entries()) {
         // tty_end_menu retains the row; process_menu_window also clips it to
         // the current terminal width when a retained menu is redisplayed.
@@ -127,8 +133,8 @@ export function paintMenuPage<T extends TextMenuLine>(
         }
     }
     const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : menu.endMarker;
-    putLine(left, rows.length, marker);
-    d.setCursor(left + marker.length, rows.length);
+    putLine(boundary + 1, rows.length, marker);
+    d.setCursor(boundary + 1 + marker.length, rows.length);
 }
 
 export function snapshotMenuUnderlay(): MenuUnderlay | null {
