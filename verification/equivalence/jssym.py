@@ -20,7 +20,7 @@ import tree_sitter_javascript as tsj
 import z3
 from tree_sitter import Language, Parser
 
-from core import STREAMS, Machine, Unsupported, Event, bit_int, select_int, seq
+from core import STREAMS, Machine, Unsupported, Event, bit_int, bit_operation, select_int, seq
 
 SAFE = 2 ** 53
 _PARSER = Parser(Language(tsj.language()))
@@ -583,10 +583,8 @@ class JSExec:
             return V('num', self.m.trem(path, a.v, b.v))
         if op in ('&', '|', '^', '<<', '>>', '>>>'):
             av, bv = z3.Int2BV(a.v, 32), z3.Int2BV(b.v, 32)
-            shift = bv & z3.BitVecVal(31, 32)
-            result = {'&': lambda: av & bv, '|': lambda: av | bv, '^': lambda: av ^ bv,
-                      '<<': lambda: av << shift, '>>': lambda: av >> shift,
-                      '>>>': lambda: z3.LShR(av, shift)}[op]()
+            operand = bit_operation('&', bv, z3.BitVecVal(31, 32)) if op in ('<<', '>>', '>>>') else bv
+            result = bit_operation(op, av, operand)
             return V('num', z3.simplify(bit_int(result, 32, op != '>>>')))
         if op == '**':
             # Integer powers of two are exact up to this boundary. General
@@ -642,7 +640,7 @@ class JSExec:
             elif op == '-' and v.kind == 'num':
                 out.append((p, V('num', -v.v)))
             elif op == '~' and v.kind == 'num':
-                out.append((p, V('num', bit_int(~z3.Int2BV(v.v, 32), 32, True))))
+                out.append((p, V('num', bit_int(bit_operation('~', z3.Int2BV(v.v, 32)), 32, True))))
             else:
                 raise Unsupported(f'unary {op}')
         return out

@@ -12,10 +12,10 @@ positions, and write the same RNG-log entries, for every input in a stated
 domain and every random sequence. C undefined behavior and JavaScript
 exceptions or inexact arithmetic are proof failures.
 
-Leaf functions and wrapper seed packing use emitted `js/rng.js` and
-`js/hacklib.js`. Generator claims read **`frozen/isaac64.js`**, the adapter
-that `frozen/score.sh` installs over `js/isaac64.js` before scoring. The
-emitted ISAAC64 copy is outside these claims.
+Leaf functions use the emitted modules listed in `specs.py`; wrapper seed
+packing uses emitted `js/rng.js`. Generator claims read
+**`frozen/isaac64.js`**, the adapter that `frozen/score.sh` installs over
+`js/isaac64.js` before scoring. The emitted ISAAC64 copy is outside these claims.
 
 Rerun (needs `clang` and `uv`; reads the pinned sources from
 `nethack-c/recorder`, or from the main checkout when run in a worktree, or from
@@ -46,7 +46,8 @@ cd verification/equivalence
 NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v test_executors
 ```
 
-They check table reads and bounds, nested global state and attribute arrays,
+The post-rebase run passed all 24 tests in 14.644 s. They check table reads and
+bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
 JS 32-bit coercion, imports, defaults, scopes, and rejected constructs. C table
 values come from clang initializers. JS constant arrays are read from emitted
@@ -58,7 +59,7 @@ game-table pair or writable heap state is claimed.
 | `cfront.py` | clang's typed JSON AST of the real C sources (macros, `#if`, conversions resolved by clang) |
 | `csym.py` | C symbolic executor: typed integers, UB obligations |
 | `jssym.py` | JavaScript symbolic executor (tree-sitter): exact-integer number model, BigInt |
-| `core.py` | paths, the abstract random streams, unrolling and invariant-plus-variant loop rules |
+| `core.py` | paths, abstract random streams, loop rules, and the shared bit-vector operations used by both executors |
 | `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant and variant |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
@@ -69,9 +70,12 @@ game-table pair or writable heap state is claimed.
 | `isaac_specs.py` | seven generator claims, explicit state relation, loop invariants and variants, proved-call summaries, probes and mutants |
 | `isaac_seed.py` | proof of the eight-byte packing loops in `rnd.c` and emitted `rng.js` |
 
-The combined command contains 28 claims, 31 domain probes, and 34 mutants
-(one intentionally equivalent); its verification after the rebase is pending. Eight claims are new
-for ISAAC64, with eight counterexample probes and ten killed mutants.
+The combined command passed all 28 claims after the rebase in 51.83 s,
+with 31 domain probes and 34 mutants (33 rejected, one intentionally
+equivalent). Eight claims cover ISAAC64 and seed packing, with eight
+counterexample probes and ten killed mutants.
+Both executor families use `core.bit_operation`; their C-width, JS Number
+coercion, and BigInt bounds remain explicit at the callers.
 `isaac64_reseed` covers all byte seeds with lengths 0..INT_MAX, capping at
 2048; `next_uint64` covers counts 0..256. The relation assumes initialized
 uint64/BigInt state arrays and equal input bytes. It does not prove that every
@@ -95,7 +99,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it:
+after it (two tests in 6.255 s on the post-rebase run):
 
 ```sh
 cd verification/equivalence

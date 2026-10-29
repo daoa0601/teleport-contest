@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 import z3
 
-from core import Unsupported
+from core import Unsupported, bit_operation
 
 WORD_MAX = 2**64 - 1
 INDEX = z3.BitVecSort(64)
@@ -150,11 +150,11 @@ def js_binary(op, a, b, checks):
         if op == '<<':
             lo, hi = a.lo << n, a.hi << n
             size = max(size, width(lo, hi))
-            bits = a.extend(size) << n
+            bits = bit_operation('<<', a.extend(size), n)
         else:
-            lo, hi, bits = a.lo >> n, a.hi >> n, x >> n
+            lo, hi, bits = a.lo >> n, a.hi >> n, bit_operation('>>', x, n)
     elif op in ('&', '|', '^'):
-        bits = {'&': lambda: x & y, '|': lambda: x | y, '^': lambda: x ^ y}[op]()
+        bits = bit_operation(op, x, y)
         if op == '&' and b.lo == b.hi and b.lo >= 0:
             lo, hi = 0, b.hi
         elif op == '&' and a.lo == a.hi and a.lo >= 0:

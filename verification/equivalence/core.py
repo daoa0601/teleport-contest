@@ -300,6 +300,29 @@ def bit_int(value, bits, signed):
     return z3.BV2Int(value, is_signed=signed)
 
 
+def bit_operation(op, left, right=None):
+    """Shared bit-vector operations after each language chooses its width.
+
+    `>>` extends the sign bit; `>>>` shifts in zeroes. Callers handle C
+    shift obligations, JS Number coercion, and BigInt intermediate widths.
+    """
+    if op == '~':
+        return ~left
+    if right is None:
+        raise Unsupported('missing right operand for ' + op)
+    operations = {
+        '&': lambda: left & right,
+        '|': lambda: left | right,
+        '^': lambda: left ^ right,
+        '<<': lambda: left << right,
+        '>>': lambda: left >> right,
+        '>>>': lambda: z3.LShR(left, right),
+    }
+    if op not in operations:
+        raise Unsupported('bit-vector operator ' + op)
+    return operations[op]()
+
+
 def select_int(values, index):
     """A finite array read. The caller separately obliges an in-bounds index."""
     if not values:

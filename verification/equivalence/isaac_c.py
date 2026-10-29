@@ -7,7 +7,7 @@ import z3
 
 from bv import (Integer, Memory, Pointer, c_binary, c_convert, integer,
                 predicate)
-from core import Unsupported
+from core import Unsupported, bit_operation
 from csym import ctype, c_sizeof
 
 
@@ -197,7 +197,7 @@ class CIsaac:
                 bits, signed = ctype(node['type'])
                 if signed:
                     raise Unsupported('signed C complement')
-                return Integer(~value.extend(bits), 0, 2**bits-1, 'c', False)
+                return Integer(bit_operation('~', value.extend(bits)), 0, 2**bits-1, 'c', False)
         if kind == 'CallExpr':
             name = self.eval(children[0])
             if name == '__builtin_object_size':
