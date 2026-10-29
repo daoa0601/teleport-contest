@@ -11,6 +11,7 @@ import { applyNethackrc, doOptions, parseNethackrc } from '../js/options.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_GREEN, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
+import { completeExtendedCommand } from '../js/extended_commands.js';
 import { PosixRegex } from '../js/posix_regex.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -344,4 +345,40 @@ void test('the status-conditions heading keeps its style under menucolor rules',
     for (const cell of condition.slice(conditionText.indexOf('cond_'), conditionText.indexOf('cond_') + 5))
         assert.equal(cell.color, CLR_RED);
 });
+void test('the autocomplete editor applies deselection and keeps cancellation unchanged', async () => {
+    freshObjectRoom();
+    applyNethackrc('AUTOCOMPLETE=dip');
+    assert.equal(completeExtendedCommand('dip'), 'dip');
+    await fullOptions(['autocompletions'], [
+        { match: 'Which commands autocomplete?', keys: '\x1b' },
+    ]);
+    assert.equal(completeExtendedCommand('dip'), 'dip');
+    await fullOptions(['autocompletions'], [
+        { match: 'Which commands autocomplete?', keys: '\\\n' },
+    ]);
+    assert.equal(completeExtendedCommand('dip'), null);
+    assert.match(await optionRow('autocompletions'), /\[\([1-9]\d* currently set\)\]/);
+    assert.equal(game.context.move, 0);
+});
+void test('the vanquished option displays its current order and reports a selected change', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=sortvanquished:A');
+    assert.match(await optionRow('sortvanquished'), /\[A: alphabetically, unique monsters intermixed\]/);
+    await fullOptions(['sortvanquished'], [
+        { match: 'Sort order for vanquished monster counts', keys: 'c' },
+    ]);
+    assert.equal(game.flags.vanqSortmode, 5);
+    assert.match(game._lastPlineMessage, /'sortvanquished' changed to "c: by monster class, low to high level in class"\./);
+    assert.match(await optionRow('sortvanquished'), /\[c: by monster class, low to high level in class\]/);
+});
+for (const [mode, description] of [
+    ['a', 'alphabetically, unique monsters separate'],
+    ['C', 'by monster class, high to low level in class'],
+]) {
+    void test(`sortvanquished:${mode} displays its configured ordering`, async () => {
+        freshObjectRoom();
+        applyNethackrc(`OPTIONS=sortvanquished:${mode}`);
+        assert.ok((await optionRow('sortvanquished')).includes(`[${mode}: ${description}]`));
+    });
+}
 //# sourceMappingURL=options_other_settings.test.js.map

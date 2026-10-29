@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
 import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
 import { NATIVE_COMMANDS } from './command_data.js';
-import { resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
+import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
@@ -27,7 +27,7 @@ import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectW
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
+import { DISCLOSURE_CATEGORIES, parseDisclosureSettings, setVanqOrder, vanquishedOptionValue } from './end.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName, matchColorName, queryAttributeMenu, queryColorMenu } from './color_query.js';
 import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, STONE, } from './const.js';
@@ -1505,6 +1505,21 @@ function parseConfiguration(rc, result, report, fromFile) {
                     changeInventoryOrder(optionValue, result);
                 continue;
             }
+            if (canonical === 'sortvanquished') {
+                const initial = optionValue?.charAt(0) ?? '';
+                const mode = 'tdaACcnz'.indexOf(initial);
+                if (negated)
+                    result.flags.vanqSortmode = 0;
+                else if (initial && mode >= 0)
+                    result.flags.vanqSortmode = mode;
+                else if (/^[0-7]$/.test(initial))
+                    result.flags.vanqSortmode = Number(initial);
+                else if (optionValue)
+                    addError(`Unknown sortvanquished parameter '${optionValue}'`);
+                else
+                    addError(`Missing parameter for '${stripped}'`);
+                continue;
+            }
             if (canonical === 'sortloot') {
                 // optfn_sortloot(): a value is mandatory
                 // (string_for_env_opt(FALSE)).
@@ -2649,7 +2664,7 @@ function requestMenuSections() {
                 choice('scores', `scores                  [${scoreDisplayDescription()}]`),
                 choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),
                 choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
-                choice('sortvanquished', 'sortvanquished          [t: traditional: by monster level]'),
+                choice('sortvanquished', `sortvanquished          [${vanquishedOptionValue()}]`),
                 choice('statushilites', `${'statushilites'.padEnd(24)}[${statusHilitesValue()}]`),
                 choice('statuslines', 'statuslines             [2]'),
                 choice('suppress_alert', 'suppress_alert          [(none)]'),
@@ -2660,7 +2675,7 @@ function requestMenuSections() {
                 label(''),
             ] },
         { heading: 'Other settings:', items: [
-                choice('autocompletions', 'autocompletions         [(0 currently set)]'),
+                choice('autocompletions', `autocompletions         [(${countCommandAutocompletions()} currently set)]`),
                 choice('autopickup_exceptions', `${'autopickup exceptions'.padEnd(24)}[(${game.iflags.autopickupExceptions?.length ?? 0} currently set)]`),
                 choice('bind_keys', `bind keys               [(${countBindKeys()} currently set)]`),
                 choice('menu_colors', `${'menu colors'.padEnd(24)}[(${game.iflags.menuColorings?.length ?? 0} currently set)]`),
@@ -3186,6 +3201,14 @@ async function editCompoundOption(name, fullMenu) {
         await statusHiliteMenu();
     else if (name === 'bind_keys')
         await handlerRebindKeys();
+    else if (name === 'autocompletions')
+        await changeCommandAutocompletions();
+    else if (name === 'sortvanquished') {
+        const previous = game.flags.vanqSortmode ?? 0;
+        await setVanqOrder(true);
+        await plineWithContinuation(`'sortvanquished' ${(game.flags.vanqSortmode ?? 0) === previous
+            ? 'not changed, still' : 'changed to'} "${vanquishedOptionValue()}".`);
+    }
     else if (name === 'sortloot')
         await editSortLoot();
     else if (name === 'sortdiscoveries')
