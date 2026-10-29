@@ -6,38 +6,43 @@ import { pline } from './display.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
 import { colorName, queryAttributeSet, queryAttributeMenu, queryColorMenu } from './color_query.js';
-import { BL_AC, BL_ALIGN, BL_CAP, BL_CONDITION, BL_ENEMAX, BL_EXP, BL_FLUSH, BL_HP, BL_HPMAX, BL_HUNGER, BL_MASK_BAREH, BL_MASK_BLIND, BL_MASK_BUSY, BL_MASK_CONF, BL_MASK_DEAF, BL_MASK_ELF_IRON, BL_MASK_FLY, BL_MASK_FOODPOIS, BL_MASK_GLOWHANDS, BL_MASK_GRAB, BL_MASK_HALLU, BL_MASK_HELD, BL_MASK_HOLDING, BL_MASK_ICY, BL_MASK_INLAVA, BL_MASK_LEV, BL_MASK_PARLYZ, BL_MASK_RIDE, BL_MASK_SLEEPING, BL_MASK_SLIME, BL_MASK_SLIPPERY, BL_MASK_STONE, BL_MASK_STRNGL, BL_MASK_STUN, BL_MASK_SUBMERGED, BL_MASK_TERMILL, BL_MASK_TETHERED, BL_MASK_TRAPPED, BL_MASK_UNCONSC, BL_MASK_WOUNDEDL, BL_SCORE, BL_TH_ALWAYS_HILITE, BL_TH_CONDITION, BL_TH_CRITICALHP, BL_TH_NONE, BL_TH_TEXTMATCH, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TIME, BL_TITLE, BL_VERS, CLR_MAX, EQ_VALUE, GE_VALUE, GT_VALUE, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, LE_VALUE, LT_VALUE, MAXBLSTATS, NO_LTEQGT, TXT_VALUE, } from './const.js';
+import { BL_AC, BL_ALIGN, BL_ARMOR, BL_CAP, BL_CONDITION, BL_ENE, BL_ENEMAX, BL_EXP, BL_FLUSH, BL_HP, BL_HPMAX, BL_HUNGER, BL_MASK_BAREH, BL_MASK_BLIND, BL_MASK_BUSY, BL_MASK_CONF, BL_TERRAIN, BL_WEAPON, BL_XP, BL_MASK_DEAF, BL_MASK_ELF_IRON, BL_MASK_FLY, BL_MASK_FOODPOIS, BL_MASK_GLOWHANDS, BL_MASK_GRAB, BL_MASK_HALLU, BL_MASK_HELD, BL_MASK_HOLDING, BL_MASK_ICY, BL_MASK_INLAVA, BL_MASK_LEV, BL_MASK_PARLYZ, BL_MASK_RIDE, BL_MASK_SLEEPING, BL_MASK_SLIME, BL_MASK_SLIPPERY, BL_MASK_STONE, BL_MASK_STRNGL, BL_MASK_STUN, BL_MASK_SUBMERGED, BL_MASK_TERMILL, BL_MASK_TETHERED, BL_MASK_TRAPPED, BL_MASK_UNCONSC, BL_MASK_WOUNDEDL, BL_SCORE, BL_TH_ALWAYS_HILITE, BL_TH_CONDITION, BL_TH_CRITICALHP, BL_TH_NONE, BL_TH_TEXTMATCH, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TIME, BL_TITLE, BL_VERS, CLR_MAX, EQ_VALUE, GE_VALUE, GT_VALUE, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, LE_VALUE, LT_VALUE, MAXBLSTATS, NO_LTEQGT, TXT_VALUE, } from './const.js';
 import { NO_COLOR } from './terminal.js';
-// botl.c initblstats[]: one row per statusfields value; idxmax is the field
-// a percentage is taken against (-1: no percentage rules).
+// botl.c initblstats[] in its own order: the menus index this table by
+// position, not by enum value. The last five rows are permuted — the table
+// runs condition, version, weapon, armor, terrain while the enum numbers
+// weapon, armor, terrain, vers — and `fld` below carries C's initblstats[].fld
+// (the enum value) exactly, so the main menu's identifiers pick the shifted
+// rows just as native does. idxmax is the field a percentage is taken
+// against (-1: no percentage rules).
 const STATUS_FIELDS = [
-    { name: 'title', anytype: 'str', idxmax: -1 },
-    { name: 'strength', anytype: 'int', idxmax: -1 },
-    { name: 'dexterity', anytype: 'int', idxmax: -1 },
-    { name: 'constitution', anytype: 'int', idxmax: -1 },
-    { name: 'intelligence', anytype: 'int', idxmax: -1 },
-    { name: 'wisdom', anytype: 'int', idxmax: -1 },
-    { name: 'charisma', anytype: 'int', idxmax: -1 },
-    { name: 'alignment', anytype: 'str', idxmax: -1 },
-    { name: 'score', anytype: 'long', idxmax: -1 },
-    { name: 'carrying-capacity', anytype: 'int', idxmax: -1 },
-    { name: 'gold', anytype: 'long', idxmax: -1 },
-    { name: 'power', anytype: 'int', idxmax: BL_ENEMAX },
-    { name: 'power-max', anytype: 'int', idxmax: -1 },
-    { name: 'experience-level', anytype: 'int', idxmax: BL_EXP },
-    { name: 'armor-class', anytype: 'int', idxmax: -1 },
-    { name: 'HD', anytype: 'int', idxmax: -1 },
-    { name: 'time', anytype: 'long', idxmax: -1 },
-    { name: 'hunger', anytype: 'int', idxmax: -1 },
-    { name: 'hitpoints', anytype: 'int', idxmax: BL_HPMAX },
-    { name: 'hitpoints-max', anytype: 'int', idxmax: -1 },
-    { name: 'dungeon-level', anytype: 'str', idxmax: -1 },
-    { name: 'experience', anytype: 'long', idxmax: BL_EXP },
-    { name: 'condition', anytype: 'mask32', idxmax: -1 },
-    { name: 'weapon', anytype: 'str', idxmax: -1 },
-    { name: 'armor', anytype: 'str', idxmax: -1 },
-    { name: 'terrain', anytype: 'str', idxmax: -1 },
-    { name: 'version', anytype: 'str', idxmax: -1 },
+    { fld: BL_TITLE, name: 'title', anytype: 'str', idxmax: -1 },
+    { fld: 1, name: 'strength', anytype: 'int', idxmax: -1 },
+    { fld: 2, name: 'dexterity', anytype: 'int', idxmax: -1 },
+    { fld: 3, name: 'constitution', anytype: 'int', idxmax: -1 },
+    { fld: 4, name: 'intelligence', anytype: 'int', idxmax: -1 },
+    { fld: 5, name: 'wisdom', anytype: 'int', idxmax: -1 },
+    { fld: 6, name: 'charisma', anytype: 'int', idxmax: -1 },
+    { fld: 7, name: 'alignment', anytype: 'str', idxmax: -1 },
+    { fld: BL_SCORE, name: 'score', anytype: 'long', idxmax: -1 },
+    { fld: 9, name: 'carrying-capacity', anytype: 'int', idxmax: -1 },
+    { fld: 10, name: 'gold', anytype: 'long', idxmax: -1 },
+    { fld: BL_ENE, name: 'power', anytype: 'int', idxmax: BL_ENEMAX },
+    { fld: BL_ENEMAX, name: 'power-max', anytype: 'int', idxmax: -1 },
+    { fld: BL_XP, name: 'experience-level', anytype: 'int', idxmax: BL_EXP },
+    { fld: BL_AC, name: 'armor-class', anytype: 'int', idxmax: -1 },
+    { fld: 15, name: 'HD', anytype: 'int', idxmax: -1 },
+    { fld: 16, name: 'time', anytype: 'long', idxmax: -1 },
+    { fld: BL_HUNGER, name: 'hunger', anytype: 'int', idxmax: -1 },
+    { fld: BL_HP, name: 'hitpoints', anytype: 'int', idxmax: BL_HPMAX },
+    { fld: BL_HPMAX, name: 'hitpoints-max', anytype: 'int', idxmax: -1 },
+    { fld: 20, name: 'dungeon-level', anytype: 'str', idxmax: -1 },
+    { fld: BL_EXP, name: 'experience', anytype: 'long', idxmax: BL_EXP },
+    { fld: BL_CONDITION, name: 'condition', anytype: 'mask32', idxmax: -1 },
+    { fld: BL_VERS, name: 'version', anytype: 'str', idxmax: -1 },
+    { fld: BL_WEAPON, name: 'weapon', anytype: 'str', idxmax: -1 },
+    { fld: BL_ARMOR, name: 'armor', anytype: 'str', idxmax: -1 },
+    { fld: BL_TERRAIN, name: 'terrain', anytype: 'str', idxmax: -1 },
 ];
 if (STATUS_FIELDS.length !== MAXBLSTATS)
     throw new Error('initblstats must list every status field');
@@ -428,7 +433,8 @@ async function statusHiliteMenuAdd(origfld) {
             }
             rule.behavior = behavior;
             chooseValue: for (;;) {
-                if (++retry > 5) {
+                // C's `retry++ > 5` blocks the seventh value prompt.
+                if (retry++ > 5) {
                     await pline("That's enough tries.");
                     return false;
                 }
@@ -752,6 +758,10 @@ async function statusHiliteMenuFld(fld) {
     for (const line of hiliteStrs)
         if (line.fld === fld)
             items.push({ value: line.id, text: line.str });
+    // A stored rule the gather step skips (a condition rule with "no color"
+    // and attribute none) leaves the list empty; native says so.
+    if (!count)
+        items.push({ selectable: false, text: `No current hilites for ${field.name}` });
     items.push({ selectable: false, text: '' });
     if (count)
         items.push({ key: 'X', value: -1, text: 'Remove selected hilites' });
@@ -798,15 +808,18 @@ export async function statusHiliteMenu() {
             items.push({ value: 0, text: 'View all hilites in config format' });
             items.push({ selectable: false, text: '' });
         }
-        for (let fld = 0; fld < MAXBLSTATS; fld++) {
-            const count = linestrCountField(fld);
-            // SCORE_ON_BOTL is not compiled in: hide 'score' without rules.
-            if (fld === BL_SCORE && !count)
+        for (let i = 0; i < MAXBLSTATS; i++) {
+            const row = STATUS_FIELDS[i];
+            if (!row)
                 continue;
-            let text = (STATUS_FIELDS[fld]?.name ?? '').padEnd(18);
+            const count = linestrCountField(row.fld);
+            // SCORE_ON_BOTL is not compiled in: hide 'score' without rules.
+            if (row.fld === BL_SCORE && !count)
+                continue;
+            let text = row.name.padEnd(18);
             if (count)
                 text += ` (${count} defined)`;
-            items.push({ value: fld + 1, text });
+            items.push({ value: row.fld + 1, text });
         }
         const picks = await showMultiSelectWindow({
             title: 'Status hilites:', omitHeadings: true, pickOne: true, signalEscape: true,
@@ -822,7 +835,6 @@ export async function statusHiliteMenu() {
                 resetStatusHilites();
             redo = true;
         }
-        const finalCount = linestrCountField(BL_FLUSH);
         linestrDone();
         if (!redo)
             break;

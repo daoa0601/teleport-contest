@@ -2503,11 +2503,6 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('mon_movement'),
             ...(game.flags.debug ? [boolean('monpolycontrol'), boolean('montelecontrol')] : []),
             boolean('null'),
-            // optlist.h gives perm_invent Term_Off, and the tty build
-            // cannot enable it (can_set_perm_invent() is false without
-            // TTY_PERM_INVENT), so parseoptions() rejects every mid-game
-            // attempt silently and the row stays [off].
-            choice('perm_invent', 'perm_invent            [off]'),
             boolean('pickup_stolen'),
             boolean('pickup_thrown'),
             boolean('price_quotes'),
@@ -2836,20 +2831,41 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
         'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
 }
 
-// options.c:toggle_bool_option() behind #toggle(<prefix>): every set-in-game
+// options.c:toggle_bool_option()'s allopt order: the request-menu list plus
+// idlecheckpoint (set_in_game, uncompiled) behind ignintr.
+const TOGGLE_BOOLEAN_NAMES: readonly string[] = (() => {
+    const names: string[] = [...REQUEST_MENU_BOOLEAN_OPTIONS.map(entry => entry[0])];
+    names.splice(names.indexOf('ignintr') + 1, 0, 'idlecheckpoint');
+    return names;
+})();
+
+// options.c:toggle_bool_option() behind #toggle(<prefix>): every set_in_game
 // boolean whose name starts with the text is toggled through the ordinary
 // option path (messages included; give_opt_msg is TRUE at command level),
-// with the menu's visual refresh after each one.
+// with the menu's visual refresh after each one. menu_tab_sep and
+// montelecontrol are set_wizonly in optlist.h, so toggle_bool_option()
+// never accepts them; optfn_boolean() reports the uncompiled idlecheckpoint
+// while silencing the later toggle messages.
 export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean> {
     let toggled = false;
-    for (const [name] of REQUEST_MENU_BOOLEAN_OPTIONS) {
+    let giveMessages = true;
+    for (const name of TOGGLE_BOOLEAN_NAMES) {
         if (!ciPrefixOf(name, prefix)) continue;
+        if (name === 'menu_tab_sep' || name === 'montelecontrol') continue;
+        if (name === 'idlecheckpoint') {
+            await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
+            game.iflags.optionMessages = false;
+            giveMessages = false;
+            toggled = true;
+            continue;
+        }
         const option = requestBooleanByName.get(name);
         if (!option) continue;
         const value = !requestBooleanValue(option[0]);
         setRequestBoolean(option, value);
         if (option[0] === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
-        await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
+        if (giveMessages)
+            await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
         if (applyBooleanVisualChange(option[0])) {
             checkGoldSymbol();
             reglyph_darkroom();
