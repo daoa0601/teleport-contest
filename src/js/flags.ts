@@ -126,4 +126,21 @@ export interface InterfaceFlags {
     warningSymbols?: string;
     menuColorings?: MenuColoringRule[];
     hiliteDelta?: number;
+    // botl.c gb.blstats[][].thresholds and gc.cond_hilites; rebuilt from the
+    // config file each game, so they stay transient here.
+    statusThresholds?: StatusHiliteRule[][];
+    condHilites?: number[];
+}
+
+// botl.c struct hilite_s as the interactive menus edit it. value holds the
+// numeric threshold (int or long) or the condition bitmask.
+export interface StatusHiliteRule {
+    fld: number;
+    set: boolean;
+    anytype: 'int' | 'long' | 'str' | 'mask32';
+    value: number;
+    behavior: number;
+    textmatch: string;
+    rel: number;
+    coloridx: number;
 }
