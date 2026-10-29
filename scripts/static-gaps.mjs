@@ -42,7 +42,7 @@ import { arrayValue, errorMessage, numberValue, objectValue, stringValue } from 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CACHE = join(ROOT, '.cache', 'static-gaps');
 // Bump when the extraction rules change, to invalidate cached per-file results.
-const EXTRACTOR_VERSION = 'facts-2';
+const EXTRACTOR_VERSION = 'facts-3';
 // The literal must be this long, and its longest fixed piece at least
 // MIN_PIECE characters, to identify a message rather than a word.
 const MIN_LITERAL = 14;
@@ -104,12 +104,17 @@ async function extractFile(tree, file) {
         const calls = [];
         // debugpline*() expands to `if (showdebug(__FILE__)) pline(...)`.
         const debugGuards = [];
+        // __func__ is a PredefinedExpr wrapping the function name; Apple's
+        // assert() passes it, glibc's does not, so it is no message text.
+        let predefinedDepth = 0;
         walkJson(decl, tracker, node => {
             const nodeKind = node['kind'];
             if (nodeKind === 'CallExpr')
                 calls.push(calleeName(node) ?? '?');
             else if (nodeKind === 'IfStmt')
                 debugGuards.push(conditionCalls(node, 'debugcore'));
+            else if (nodeKind === 'PredefinedExpr')
+                predefinedDepth++;
         }, node => {
             const nodeKind = node['kind'];
             if (node['id'] === decl['id']) {
@@ -131,7 +136,12 @@ async function extractFile(tree, file) {
                 debugGuards.pop();
                 return;
             }
-            if (nodeKind !== 'StringLiteral' || tracker.current !== file || debugGuards.includes(true))
+            if (nodeKind === 'PredefinedExpr') {
+                predefinedDepth--;
+                return;
+            }
+            if (nodeKind !== 'StringLiteral' || tracker.current !== file || debugGuards.includes(true)
+                || predefinedDepth > 0)
                 return;
             const value = node['value'];
             if (typeof value !== 'string')
