@@ -169,7 +169,7 @@ function compareLoot(left, right, mode, state) {
         return left.name < right.name ? -1 : 1;
     const condition = beatitudeRating(b) - beatitudeRating(a)
         || Number(!!b.greased) - Number(!!a.greased)
-        || Math.max(a.oeroded ?? 0, a.oeroded2 ?? 0) - Math.max(b.oeroded ?? 0, b.oeroded2 ?? 0)
+        || lootErosion(a) - lootErosion(b)
         || Number(!!(b.rknown && b.oerodeproof)) - Number(!!(a.rknown && a.oerodeproof));
     if (condition)
         return condition;
@@ -188,6 +188,10 @@ function normalizedLootName(object, state) {
 }
 function beatitudeRating(object) {
     return object.bknown ? object.blessed ? 3 : object.cursed ? 1 : 2 : 0;
+}
+// obj.h aliases these conditions to the fields read by greatest_erosion().
+function lootErosion(object) {
+    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0, Number(!!object.orotten), Number(!!object.odiluted), Number(!!object.norevive));
 }
 function inventoryLetterValue(letter) {
     if (!letter)
