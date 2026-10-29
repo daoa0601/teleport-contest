@@ -22,6 +22,9 @@ compares **the complete constructor call**, including HP/gender draws, fixed
 possessions, armor wearing and the saddle probe. It does not isolate the RNG
 or successor state of `m_initweap` and `m_initinv` individually. Native
 `makemon` calls `m_initweap` only for armed species; this caller guard remains.
+The inventory projection also calls `teleport.c:noteleport_level` and emitted
+`teleport_rules.js:monsterTeleportRestricted` to report the created monster's
+current teleport restriction directly.
 
 ## Run
 
@@ -111,7 +114,8 @@ interpretations are normalized to zero or the absent-species sentinel; poisoned
 weapons are not treated as trapped containers.
 
 The successor identity counter, all species' birth counts and generation flags,
-computed difficulty, core/display word counts and RNG operation/argument/result
+computed difficulty, the created monster's teleport restriction (null when absent),
+core/display word counts and RNG operation/argument/result
 entries are also compared. Missing optional JS scalar storage maps to its native
 zero default. Species absence maps to `-1`. No whole-memory comparison is made.
 
@@ -127,6 +131,7 @@ one entry-state correspondence, and an independently killed emitted-JS mutant:
 | `mkclass` | unequal monster classes: selected species differs | selected index increases by one |
 | inventory, weapons | hobbit vs soldier: created species differs | skip weapon initialization |
 | inventory, other gear | leprechaun vs soldier: created species differs | skip its gold initialization |
+| teleport restriction | stasis expiry 40 vs 39 on turn 40: teleport eligibility differs | inclusive expiry `>=` becomes `>` |
 
 Controls must match completely before a probe or mutant is accepted. The six
 creation schema probes reject an invalid object type, object class, range
@@ -142,11 +147,24 @@ seed or integer input. New tests exercise reduction of species-history entries.
 
 ## Measured results
 
-The final native build compiled 140 objects in 15.21 s. All 20 focused harness
-tests passed in 7.756 s; the creation batch, including negative checks, took
-20.62 s and exited 0. No game suite, session
-replay, public/pool/eval/fresh corpus, new recording or CI job was run or added.
-Game code, generated runtime files, shared documentation and ledgers are unchanged.
+The review rerun compiled all 140 native objects in 15.29 s. `npm run compile`
+exited 0. All 20 focused harness tests passed in 13.762 s; the creation batch,
+including negative checks, took 20.64 s and exited 0. No full game behavior suite,
+pool/eval/fresh corpus, new recording or CI job was run or added. Game code,
+generated runtime files, shared documentation and ledgers are unchanged.
+
+The explicitly requested public run used one worker and completed all 44
+sessions in 30.00 s: 43 full passes, zero errors, 11,396/11,405 matched screens
+and 792,838/792,838 matched RNG calls. The screen-only miss was
+`seed2200-wizard-quaff-zap-read` at step 158, the same session and position
+reported before this change. The public ledger check exited 0: all 363 functions
+retained every verified call. The exact commands were:
+
+```sh
+TRIAGE_JOBS=1 node scripts/triage-holdout.mjs public .cache/fv-difftest2-review1-public
+node scripts/rng-function-table.mjs .cache/fv-difftest2-review1-public \
+  --check-ledger docs/ledger/public-rng.tsv
+```
 
 | Target | Cases | Differences |
 |---|---:|---:|
@@ -169,10 +187,10 @@ guided; this is not a claim that every switch arm or rare branch executed.
 
 The original 6,083 cases also still matched: weight 1,031; inventory weight 1,019;
 capacity 1,006; near-capacity 1,006; damage 1,009; accuracy 1,012. That run took
-4.66 s. The focused tests cover the original eight behaviors plus twelve creation
-and loader behaviors. Creation negative checks found all seven deliberately broken
-correspondences and killed all seven new mutants; all eleven input-domain probes
-and all fourteen mutants across both sets behaved as expected.
+4.52 s. The focused tests cover the original eight behaviors plus twelve creation
+and loader behaviors. Creation negative checks found all eight deliberately broken
+correspondences and killed all eight new mutants; all eleven input-domain probes
+and all fifteen mutants across both sets behaved as expected.
 
 ### Reduced differences during development
 
@@ -193,9 +211,22 @@ With the incomplete loader, `objects[1].otyp` was C 329 (`SCR_CREATE_MONSTER`)
 and JS 424 (`WAN_TELEPORTATION`). The game initializers already agree:
 `mklev.c:clear_level_structures` and emitted `mklev.js:clear_level_structures`
 set stasis expiry to zero. Loading that field explicitly restored correspondence;
-all six reduced inputs then matched (6/6, 0.36 s). The focused regression was
-also run with that loader write removed: it failed on that inventory difference
-(exit 1, 0.636 s), and passes after restoration. No game source was changed.
+all six reduced inputs then matched (6/6, 0.36 s). No game source was changed.
+
+Review replaced the seed/position-specific stasis regression with direct
+teleport-eligibility assertions at `(moves, expiry)` pairs `(0,0)`, `(1,0)`,
+`(40,39)`, `(40,40)` and `(40,41)`. They assert the native
+`stasis_until >= moves` rule regardless of whether inventory generation reaches
+its defensive-item reroll. Removing the JS loader's stasis write made three
+boundary cases fail on `teleportRestricted` (exit 1, 1.960 s); restoring it passes.
+The emitted-only `>=` to `>` mutant is also rejected on `teleportRestricted`.
+
+The singleton-range and exhausted-reservoir tests now assert their return
+values without separate random-word-count assertions. The ice-box test checks
+16 seeds, permits empty contents, enforces the native maximum of 20 corpses,
+and checks age, ownership and removed rot/revival/glob timers for each corpse.
+These are the rules in `objnam.c:rnd_class`, `makemon.c:rndmonst_adj` and
+`mkobj.c:mkbox_cnts`.
 
 A separate invalid class input was removed from the schema: class 59 contains
 only the worm-tail placeholder at/after `SPECIAL_PM`, so C's `mkclass_aligned`
@@ -211,16 +242,16 @@ per-claim times; they exclude the negative checks following each claim.
 
 | Claim | Result | Time | Claim | Result | Time |
 |---|---|---:|---|---|---:|
-| `rn2` | PROVED | 0.6 s | `rnd` | PROVED | 0.2 s |
+| `rn2` | PROVED | 0.2 s | `rnd` | PROVED | 0.1 s |
 | `rn1` | PROVED | 0.5 s | `rnl` | PROVED | 1.0 s |
 | `d` | PROVED | 0.3 s | `rne` | PROVED | 1.2 s |
-| `rnz` | PROVED | 4.4 s | `rn2_on_display_rng` | PROVED | 0.1 s |
-| `distmin` | PROVED | 0.3 s | `dist2` | PROVED | 1.3 s |
-| `enermod` | PROVED | 4.6 s | `newuexp` | PROVED | 1.4 s |
+| `rnz` | PROVED | 4.5 s | `rn2_on_display_rng` | PROVED | 0.1 s |
+| `distmin` | PROVED | 0.4 s | `dist2` | PROVED | 1.5 s |
+| `enermod` | PROVED | 4.7 s | `newuexp` | PROVED | 1.6 s |
 | `xlev_to_rank` | PROVED | 0.3 s | `rounddiv` | PROVED | 0.6 s |
-| `Align2amask` | PROVED | 0.5 s | `Amask2align` | PROVED | 1.3 s |
-| `acurr:StrDex` | PROVED | 1.2 s | `acurrstr` | PROVED | 0.5 s |
-| `dbon:human` | PROVED | 0.9 s | `abon:human` | PROVED | 16.4 s |
+| `Align2amask` | PROVED | 0.6 s | `Amask2align` | PROVED | 1.3 s |
+| `acurr:StrDex` | PROVED | 1.3 s | `acurrstr` | PROVED | 0.5 s |
+| `dbon:human` | PROVED | 0.8 s | `abon:human` | PROVED | 16.3 s |
 | `lower_bits` | PROVED | 0.1 s | `upper_bits` | PROVED | 0.0 s |
 | `isaac64_mix` | PROVED | 0.1 s | `isaac64_update` | PROVED | 0.3 s |
 | `isaac64_reseed` | PROVED | 3.6 s | `isaac64_init` | PROVED | 0.1 s |

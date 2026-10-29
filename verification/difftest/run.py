@@ -204,6 +204,8 @@ def creation_negative_checks(native, port, meta):
         'monster_class': dict(target='mkclass'),
         'monster_weapons': dict(target='makemon_inventory', mnum='hobbit'),
         'monster_inventory': dict(target='makemon_inventory', mnum='leprechaun'),
+        'stasis': dict(target='makemon_inventory', mnum='hobbit',
+                       level=dict(moves=40, stasisUntil=40)),
     }
     broken_relations = {
         'create_object': ('init', 1),
@@ -213,6 +215,7 @@ def creation_negative_checks(native, port, meta):
         'monster_class': ('mclass', 2),
         'monster_weapons': ('mnum', meta['monsters'].index('soldier')),
         'monster_inventory': ('mnum', meta['monsters'].index('soldier')),
+        'stasis': ('level.stasisUntil', 39),
     }
     for name, raw in controls.items():
         state = canonical(raw, meta)
@@ -233,6 +236,8 @@ def creation_negative_checks(native, port, meta):
         with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as mutant:
             found = difference(observed, mutant.call(state))
         expected = 'objects' if name in ['create_object', 'create_class', 'monster_weapons', 'monster_inventory'] else 'result'
+        if name == 'stasis':
+            expected = 'teleportRestricted'
         if not found or not found['path'].startswith(expected):
             raise RuntimeError(f'Creation mutant survived or failed for the wrong reason: {name}: {found}')
         print(f'KILLED {name}: {found}', flush=True)

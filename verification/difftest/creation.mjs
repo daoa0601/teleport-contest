@@ -6,6 +6,7 @@ import { isaac64_next_uint64 } from '../../js/isaac64.js';
 import { grantIntrinsicProperty } from '../../js/properties.js';
 import { mksobj, mkobj, rndClass, rndmonstAdj, mkclassAligned, makemonAt, oinit } from '../../js/mklev.js';
 import { level_difficulty } from '../../js/dungeon.js';
+import { monsterTeleportRestricted } from '../../js/teleport_rules.js';
 import { GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, CORPSE, STATUE, FIGURINE,
     TIN, EGG, SPE_NOVEL } from '../../js/object_data.js';
 import { MM_NOGRP, MM_ANGRY, MM_NOMSG, MM_NONAME, MM_NOTAIL } from '../../js/const.js';
@@ -13,7 +14,7 @@ import { MM_NOGRP, MM_ANGRY, MM_NOMSG, MM_NONAME, MM_NOTAIL } from '../../js/con
 export async function runCreation(input) {
     setup(input);
     const before = [position(game.coreCtx), position(game.displayCtx)];
-    let result = 0, objects = [];
+    let result = 0, objects = [], teleportRestricted = null;
     switch (input.target) {
     case 6: objects = [await mksobj(input.otyp, !!input.init, !!input.artif)]; break;
     case 7: objects = [await mkobj(input.oclass, !!input.artif)]; break;
@@ -25,11 +26,13 @@ export async function runCreation(input) {
             MM_NOGRP | MM_ANGRY | MM_NOMSG | MM_NONAME | MM_NOTAIL);
         result = monster?.mnum ?? -1;
         objects = monster?.minvent ?? [];
+        if (monster) teleportRestricted = Number(monsterTeleportRestricted(monster, game));
         break;
     }
     default: throw new Error(`Unknown creation target ${input.target}`);
     }
-    return { result, objects: objects.map(saveObject), difficulty: level_difficulty(), nextIdent: game._nextIdent,
+    return { result, objects: objects.map(saveObject), teleportRestricted,
+        difficulty: level_difficulty(), nextIdent: game._nextIdent,
         vitals: game.mvitals.map(({ mvflags, born }) => [mvflags, born]),
         rng: { core: position(game.coreCtx) - before[0],
             display: position(game.displayCtx) - before[1], log: [...getRngLog()] } };

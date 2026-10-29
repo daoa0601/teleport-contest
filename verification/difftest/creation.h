@@ -41,6 +41,9 @@ static void run_creation_case(void)
     }
     printf("{\"result\":%d,\"objects\":", result);
     creation_objects(obj ? obj : monster ? monster->minvent : NULL);
+    printf(",\"teleportRestricted\":");
+    if (monster) printf("%d", !!noteleport_level(monster));
+    else printf("null");
     printf(",\"difficulty\":%d,\"nextIdent\":%u,\"vitals\":[",
            level_difficulty(), svc.context.ident);
     for (i = 0; i < NUMMONS; i++)

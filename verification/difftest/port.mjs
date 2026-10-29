@@ -19,6 +19,8 @@ const changes = {
         'if (true) {'],
     monster_inventory: ['mklev.js', 'if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 12) {',
         'if (false) {'],
+    stasis: ['teleport_rules.js', '&& stasisUntil >= (state?.moves ?? 1);',
+        '&& stasisUntil > (state?.moves ?? 1);'],
     weight: ['weight.js', 'return base * quantity(object);', 'return base * quantity(object) + 1;'],
     capacity: ['weight.js', 'return inventoryWeight(state) - weightCapacity(state);',
         'return inventoryWeight(state) - weightCapacity(state) + 1;'],
