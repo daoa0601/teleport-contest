@@ -189,9 +189,12 @@ export const ROUND14_RECIPES: Record<string, Recipe> = {
         ]),
     'monster-item-selfaid': recipe('Let ogres treat petrification with thrown acidic corpses and a hound burn off slime.',
         effectsFor('monster-item-selfaid'), [
-            ...wish('blessed +50 gray dragon scale mail', '3 blessed potions of full healing',
-                'lizard corpse', 'acid blob corpse', 'ochre jelly corpse',
-                'yellow mold corpse',
+            // objnam.c:readobjnam() can cut a wished stack to one (cnt < rnd(6)),
+            // so each of the four drinks is its own wish.
+            ...wish('blessed +50 gray dragon scale mail', 'blessed potion of full healing',
+                'blessed potion of full healing', 'blessed potion of full healing',
+                'blessed potion of full healing', 'lizard corpse', 'acid blob corpse', 'ochre jelly corpse',
+                'yellow mold corpse', 'lichen corpse',
                 'cockatrice corpse', 'uncursed gauntlets of power'),
             identify(),
             keys('T'), keys('m.'.repeat(5)),
