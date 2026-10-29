@@ -352,3 +352,58 @@ for (const { species, unseen, deaf, feedback } of [
         assert.notEqual(level.requireAt(11, 10).remembered_glyph?.kind, 'invisible');
     });
 }
+
+void test('accessiblemsg prefixes a displaced wild miss with the attacker square', async () => {
+    freshObjectRoom({ flags: { verbose: true }, hero: { displaced: true } });
+    requirePlayingGame(game);
+    game.flags.accessiblemsg = true;
+    const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    bug.mux = 12;
+    bug.muy = 10;
+    const messages = observeMessages(/grid bug/);
+
+    await performMonsterHeroAttack(bug, game);
+
+    assert.match(messages(), /\(east\): The grid bug strikes at your displaced image and misses you!/);
+});
+
+void test('accessiblemsg prefixes an ordinary miss with the attacker square', async () => {
+    freshObjectRoom({ flags: { verbose: true }, hero: { uac: 0 } });
+    requirePlayingGame(game);
+    game.flags.accessiblemsg = true;
+    const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    bug.m_lev = 1;
+    bug.mux = game.u.ux;
+    bug.muy = game.u.uy;
+    await startSearching();
+    const messages = observeMessages(/grid bug/);
+
+    await performMonsterHeroAttack(bug, game, { rollOne: () => 11 });
+
+    assert.match(messages(), /\(east\): The grid bug just misses!/);
+});
+
+for (const { unseen, feedback } of [
+    { unseen: false, feedback: '(east): The fog cloud lunges forward and recoils!' },
+    { unseen: true, feedback: 'You hear a rushing noise nearby.' },
+]) {
+    void test(`accessiblemsg locates a ${unseen ? 'heard' : 'seen'} engulf miss${unseen ? ' without a prefix' : ' at the attacker'}`, async () => {
+        freshObjectRoom({ flags: { verbose: false }, hero: { displaced: true } });
+        requirePlayingGame(game);
+        game.flags.accessiblemsg = true;
+        const cloud = await createMonsterAt('fog cloud', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        cloud.mux = 12;
+        cloud.muy = 10;
+        cloud.minvis = unseen;
+        const messages = observeMessages(/cloud|rushing noise/);
+
+        await performMonsterHeroAttack(cloud, game);
+
+        const text = messages();
+        if (unseen) {
+            assert.equal(text, feedback);
+        } else {
+            assert.match(text, new RegExp(feedback.replace('(', '\\(').replace(')', '\\)')));
+        }
+    });
+}

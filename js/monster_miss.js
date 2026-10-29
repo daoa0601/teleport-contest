@@ -2,7 +2,7 @@
 import { heroIsDisplaced } from './armor.js';
 import { IS_WATERWALL } from './const.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster } from './display.js';
+import { canSeeMonster, set_msg_xy } from './display.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { AD_SEDU, AD_SSEX, AT_BITE, AT_BUTT, AT_KICK, AT_STNG, } from './monster_attack_types.js';
@@ -16,6 +16,9 @@ export async function monsterMissMessage(monster, attack, state, random) {
         return wildMissMessage(monster, attack, state, random);
     if (attack.effect === 'engulf-unfound')
         return engulfMissMessage(monster, state);
+    // Native missmu() publishes both miss lines through pline_mon(), which
+    // anchors them at the attacker's square for accessiblemsg prefixes.
+    set_msg_xy(monster.mx, monster.my);
     const friendly = !monster.mcan && seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state);
     const subject = monsterName(monster, { state, capitalized: true });
     if (friendly)
@@ -40,6 +43,7 @@ async function wildMissMessage(monster, attack, state, random) {
     const compatibility = attack.damageType === AD_SEDU || attack.damageType === AD_SSEX
         ? seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) : 0;
     const subject = monsterName(monster, { state, capitalized: true });
+    set_msg_xy(monster.mx, monster.my);
     if (unseen) {
         if (compatibility)
             return `${subject} tries to touch you and misses!`;
@@ -70,10 +74,15 @@ async function wildMissMessage(monster, attack, state, random) {
         : `${subject} is fooled by water reflections and misses!`;
 }
 function engulfMissMessage(monster, state) {
-    if (monsterDigests(monster))
+    if (monsterDigests(monster)) {
+        set_msg_xy(monster.mx, monster.my);
         return `${monsterName(monster, { state, capitalized: true })} gulps some air!`;
-    if (canSeeMonster(monster))
+    }
+    if (canSeeMonster(monster)) {
+        set_msg_xy(monster.mx, monster.my);
         return `${monsterName(monster, { state, capitalized: true })} lunges forward and recoils!`;
+    }
+    // You_hear() has no monster anchor; the heard line stays unpositioned.
     return formatHeardMessage(`a ${monsterIsWhirly(monster) ? 'rushing noise' : 'splat'} nearby.`, state);
 }
 //# sourceMappingURL=monster_miss.js.map
