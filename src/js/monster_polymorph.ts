@@ -477,7 +477,11 @@ async function wizForceChamForm(monster: Monster, state: GameState): Promise<num
             mnum = match.mnum;
             if (monsterClass > 0 && mnum < 0) mnum = pickFormFromClass(monsterClass);
         }
-        if (mnum >= 0) {
+        // An answer that names nothing leaves NON_PM like native; the null
+        // keeps a later Escape or exhaustion meaning "pick at random"
+        // instead of a stale -1 that re-prompts.
+        if (mnum < 0) mnum = null;
+        if (mnum !== null) {
             const shifted = validVampForm(monster, mnum, monsterClass, state);
             if (shifted.valid) {
                 mnum = shifted.form;
@@ -677,7 +681,11 @@ export async function initialShapechangedBirth<T extends Monster>(monster: T): P
     monsterName(monster);
 
     let targetMnum: number | null = null;
-    if (baseMnum === PM_DOPPELGANGER) {
+    if (game.flags.debug && game._monPolycontrol) {
+        // makemon() births a shapechanger through newcham(mtmp, 0), so the
+        // wizard prompt owns the first form here as well.
+        targetMnum = await selectControlledForm(monster, baseMnum, game);
+    } else if (baseMnum === PM_DOPPELGANGER) {
         targetMnum = await selectDoppelgangerForm(monster);
         if (targetMnum === PM_DOPPELGANGER) targetMnum = null;
     } else if (baseMnum === PM_CHAMELEON) {

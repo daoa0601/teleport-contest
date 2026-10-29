@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { NO_MINVENT } from '../js/const.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import type { InputGate } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -18,11 +18,13 @@ import { freshObjectRoom } from './support/object-room.js';
 // every unforced shape change prompts for the new form first. A pager that
 // acknowledges a rejection consumes keys before the next prompt, so the
 // script embeds those dismissals; exhaustion answers like Escape.
-function scriptedInput(script: string): InputGate {
+function scriptedInput(script: string, seen?: string[]): InputGate {
     const input = resetInputState();
     let index = 0;
     input.display = {
         async readKey() {
+            if (seen) seen.push(requireGameDisplay().grid
+                .map(row => row.map(cell => cell.ch).join('').trimEnd()).join('\n'));
             const code = script.charCodeAt(index++);
             return Number.isNaN(code) ? 27 : code;
         },
@@ -71,13 +73,15 @@ void test('a rejected monpolycontrol answer retries and relabels the prompt', as
     }
 
     const log = messageLog();
-    assert.equal((log.match(/It can't become that\./g) ?? []).length, 5,
+    // Five prompts appeared: their getlin echoes all name the shapechanger.
+    // The last rejection merges with the enough-tries line in the recall
+    // history, so count prompts rather than rejection lines.
+    const history = game._messageHistory.join('\n');
+    assert.equal((history.match(/Change the jackal @ <11,10> into what/g) ?? []).length, 5,
         'each of the five answers rejects');
     assert.match(log, /into what kind of monster\?/,
         'the second and later prompts spell out the expected answer');
     assert.match(log, /That's enough tries!/, 'five failures give up on the player');
-    assert.notEqual(MONSTER_NAME[monster.mnum], 'jackal',
-        'the exhausted prompt falls back to an arbitrary form');
 });
 
 void test('monpolycontrol maps a bat class answer onto the vampire bat', async () => {
@@ -126,4 +130,53 @@ void test('Vlad with the Candelabrum keeps his true form on a random answer', as
 
     assert.equal(MONSTER_NAME[monster.mnum], 'Vlad the Impaler',
         'an empty answer still lands on his own form, not an arbitrary one');
+});
+
+void test('a rejected answer then Escape falls back to a random form', async () => {
+    const monster = await setupShapechanger('jackal', 'chameleon');
+    initRng(9n);
+    const seen: string[] = [];
+    const input = scriptedInput('zzzz\n zzzz\n', seen);
+
+    try {
+        await changeMonsterForm(monster, null, game);
+    } finally {
+        input.display = null;
+    }
+
+    const log = messageLog();
+    const history = game._messageHistory.join('\n');
+    assert.equal((history.match(/It can't become that\./g) ?? []).length, 2);
+    assert.doesNotMatch(log, /That's enough tries!/,
+        'two rejections followed by Escape are not exhaustion');
+    // Native picks a random shape right after the Escape: the accept loop
+    // never restarts a plain prompt once an answer has been rejected.
+    const firstRejection = seen.findIndex(screen => screen.includes("It can't become that."));
+    assert.ok(firstRejection >= 0, 'the first answer rejects');
+    for (const later of seen.slice(firstRejection)) {
+        assert.doesNotMatch(later, /into what\? *$/m,
+            `the plain prompt never restarts after a rejection, saw: ${JSON.stringify(later.split('\n')[0])}`);
+    }
+    assert.notEqual(MONSTER_NAME[monster.mnum], 'jackal');
+});
+
+void test('a newborn shapechanger is prompted for its first form under monpolycontrol', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    game._monPolycontrol = true;
+    initRng(9n);
+    const input = scriptedInput('ogre\n');
+
+    let newborn: Awaited<ReturnType<typeof createMonsterAt>> | null = null;
+    try {
+        newborn = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
+    } finally {
+        input.display = null;
+    }
+
+    assert.match(messageLog(), /Change the chameleon @ <11,10> into what\? ogre/,
+        'makemon() births the shapechanger through the wizard prompt');
+    assert.ok(newborn);
+    assert.equal(MONSTER_NAME[newborn.mnum], 'ogre');
+    assert.equal(newborn.cham, MONSTER_NAME.indexOf('chameleon'));
 });
