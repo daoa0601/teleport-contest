@@ -14,6 +14,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import z3
+
 HERE = Path(__file__).resolve().parent
 CACHE = HERE.parent / '.cache'
 sys.path.insert(0, str(HERE / 'equivalence'))
@@ -204,7 +206,7 @@ class ProofLedgerChecks(unittest.TestCase):
 
 
 class AssumptionLedgerChecks(unittest.TestCase):
-    def check_assumptions(self, change):
+    def check_assumptions(self, change, pre=lambda s: [s['n'] >= 0, s['n'] <= 3]):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             c_file = Path(directory) / 'example.c'
             js_file = Path(directory) / 'example.js'
@@ -219,7 +221,7 @@ class AssumptionLedgerChecks(unittest.TestCase):
                 variant=lambda v, e: e['n'] - v['i'],
                 facts=lambda v, e, pos, pos0: [e['n'] >= 0], streams=())
             spec = Spec('example', 'example', 'example', [('n', INT)],
-                        pre=lambda s: [s['n'] >= 0, s['n'] <= 3],
+                        pre=pre,
                         loops={('c', 'example', 0): loop, ('js', 'example', 0): loop},
                         js_file=str(js_file), js_args=[('num', 0)])
 
@@ -243,6 +245,16 @@ class AssumptionLedgerChecks(unittest.TestCase):
     def test_unchanged_loop_and_arguments_pass(self):
         status, report = self.check_assumptions(lambda spec: spec)
         self.assertEqual(status, 0, report)
+
+    def test_narrower_long_precondition_requires_review(self):
+        def domain(stop):
+            return lambda s: [s['n'] >= 0, s['n'] <= 3,
+                              z3.Or([s['n'] == value for value in range(-300, stop)])]
+
+        # Removing n == 3 changes the claim beyond Z3's display cutoff.
+        status, report = self.check_assumptions(
+            lambda spec: replace(spec, pre=domain(3)), pre=domain(4))
+        self.assertNotEqual(status, 0, report)
 
     def test_changed_proof_target_requires_review(self):
         for field in ('c', 'js', 'js_file'):

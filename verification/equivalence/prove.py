@@ -302,7 +302,7 @@ def domain_summary(spec) -> str:
     for name, js_paths in spec.nulls:
         summary.append(f'{name} == NULL')
         summary.extend(f'{js_path} == null' for js_path in js_paths)
-    summary.extend(' '.join(str(term).split()) for term in spec.pre(symbols))
+    summary.extend(' '.join(term.sexpr().split()) for term in spec.pre(symbols))
     if spec.js_args:
         summary.append('JS extra arguments: ' + json.dumps(spec.js_args))
     summary.extend(loop_summary(key, loop) for key, loop in sorted(spec.loops.items()))
