@@ -15,6 +15,7 @@ import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './a
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import type { NethackConfiguration } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
+import { rawPrint } from './display.js';
 import { parseCharacterName } from './character_name.js';
 import type { ParsedCharacterName } from './character_name.js';
 import { GameDisplay } from './game_display.js';
@@ -317,8 +318,10 @@ export class Engine {
         if (opts.configErrors.some(report => report.errors.length > 0)) this.display.clearScreen();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
-        let configuredName = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
+        let configuredName: ParsedCharacterName | null
+            = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
         for (;;) {
+            if (configuredName === null) return false;
             if (configuredName.role) opts.role = configuredName.role;
             if (configuredName.race) opts.race = configuredName.race;
             if (configuredName.gender) opts.gender = configuredName.gender;
@@ -388,6 +391,7 @@ export class Engine {
         };
         g.iflags = { ...opts.iflags };
         g._monTelecontrol = !!opts.monTelecontrol;
+        g._monPolycontrol = !!opts.monPolycontrol;
         // tty_create_nhwindow(NHW_MESSAGE) clamps the recall depth in place
         // once the window exists; msg_history is unsigned in C, so a
         // negative atoi() wraps before the 20..MAX_MSG_HISTORY clamp.
@@ -409,7 +413,11 @@ export class Engine {
         return display;
     }
 
-    async _readPlayerName(row = 12, showCopyright = true): Promise<ParsedCharacterName> {
+    // wintty.c tty_askname(). An empty answer or Escape re-asks: the hint
+    // lands one row above the prompt, the prompt row itself is cleared and
+    // redrawn in place, and ten failures give up. No fabricated default
+    // name exists natively.
+    async _readPlayerName(row = 12, showCopyright = true): Promise<ParsedCharacterName | null> {
         const display = this.requireDisplay();
         display.clearScreen();
         if (showCopyright) {
@@ -421,30 +429,53 @@ export class Engine {
             display.putstr(9, 7, 'See license for details.', NO_COLOR);
         }
         const prompt = 'Who are you? ';
-        display.putstr(0, row, prompt, NO_COLOR);
-
-        let name = '';
-        for (;;) {
-            display.setCursor(prompt.length + name.length, row);
-            const key = await nhgetch();
-            if (key === 10 || key === 13) break;
-            if (key === 8 || key === 127) {
-                if (name) {
-                    name = name.slice(0, -1);
-                    display.putstr(prompt.length + name.length, row, ' ', NO_COLOR);
+        for (let tryct = 1; ; tryct++) {
+            if (tryct > 1) {
+                if (tryct > 10) {
+                    // bail() clears the tty before raw_print() adds its newline.
+                    display.clearScreen();
+                    rawPrint('Giving up after 10 tries.\n');
+                    return null;
                 }
-            } else if (key >= 32 && key <= 126 && name.length < 31) {
-                const typed = String.fromCharCode(key);
-                // Unix tty_askname() normalizes before echoing or parsing
-                // suffixes; a leading digit would make save names ambiguous.
-                const allowed = /^[A-Za-z@-]$/.test(typed)
-                    || name.length > 0 && /^[0-9]$/.test(typed);
-                const character = allowed ? typed : '_';
-                name += character;
-                display.putstr(prompt.length + name.length - 1, row, character, NO_COLOR);
+                display.putstr(0, row - 1, 'Enter a name for your character...', NO_COLOR);
+                // cl_end() erases the previous prompt and any partial echo.
+                display.clearRow(row);
+            }
+            display.putstr(0, row, prompt, NO_COLOR);
+            let name = '';
+            let cancelled = false;
+            for (;;) {
+                display.setCursor(prompt.length + name.length, row);
+                const key = await nhgetch();
+                if (key === 10 || key === 13) break;
+                if (key === 27) {
+                    // Escape throws away a partial answer and re-asks.
+                    name = '';
+                    cancelled = true;
+                    break;
+                }
+                if (key === 8 || key === 127) {
+                    if (name) {
+                        name = name.slice(0, -1);
+                        display.putstr(prompt.length + name.length, row, ' ', NO_COLOR);
+                    }
+                } else if (key >= 32 && key <= 126 && name.length < 31) {
+                    const typed = String.fromCharCode(key);
+                    // Unix tty_askname() normalizes before echoing or parsing
+                    // suffixes; a leading digit would make save names ambiguous.
+                    const allowed = /^[A-Za-z@-]$/.test(typed)
+                        || name.length > 0 && /^[0-9]$/.test(typed);
+                    const character = allowed ? typed : '_';
+                    name += character;
+                    display.putstr(prompt.length + name.length - 1, row, character, NO_COLOR);
+                }
+            }
+            if (!cancelled && name) {
+                // tty_curs() steps past the line to echo the accepted return.
+                display.setCursor(0, row + 1);
+                return parseCharacterName(name);
             }
         }
-        return parseCharacterName(name || 'player');
     }
 
     run(): Promise<void> {

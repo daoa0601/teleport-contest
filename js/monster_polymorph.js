@@ -1,7 +1,7 @@
 // Monster shape-changing rules.
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
 import { bypassObject } from './object_bypass.js';
-import { BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, In_endgame, Is_rogue_level, MGIVENNAME, STRAT_WAITFORU, W_ARM, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, MON_FLOOR, NON_PM, ismnum, } from './const.js';
+import { BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, Is_rogue_level, MGIVENNAME, STRAT_WAITFORU, W_ARM, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, MON_FLOOR, NON_PM, thats_enough_tries, ismnum, } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, swallowed } from './display.js';
 import { dragonFormForArmor } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -9,13 +9,17 @@ import { placeMonsterAt } from './monster_location.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName, monsterFormChangeName, namelessMonsterName } from './monster_name.js';
+import { nameToMonster, resolveMonsterClass } from './mondata.js';
+import { coordinateDescription } from './pager_lists.js';
+import { getLine } from './query.js';
+import { pickFormFromClass } from './polyself.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import { hideMonsterUnder } from './monster_hiding.js';
 import { monsterCanBeLeashed, releaseMonsterLeashWithFeedback, } from './monster_leash.js';
 import { newMonsterHitPoints } from './monster_hit_points.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { landFloorObject } from './floor_effects.js';
-import { MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, monsterTypeName, monsterCanEngulf, monsterDigests, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterSpeciesSticks, requireMonsterData, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, monsterTypeName, monsterCanEngulf, monsterDigests, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterSpeciesSticks, monsterHasHead, requireMonsterData, } from './monster_data.js';
 import { setMonsterSpecies } from './monster_species.js';
 import { adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn, } from './monworn.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
@@ -41,6 +45,7 @@ import { relocateMonsterTo } from './teleport.js';
 import { initializeMonsterWormBody, removeMonsterWormBody, } from './monster_worm.js';
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
+const M1_NOTAKE = 0x00000800;
 const M2_NOPOLY = 0x00000001;
 const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
@@ -49,6 +54,9 @@ const M2_NEUTER = 0x00040000;
 const M2_ROCKTHROW = 0x08000000;
 const S_VAMPIRE = 48;
 const S_LIGHT = 25;
+const S_DOG = 4;
+const S_BAT = 28;
+const S_VORTEX = 22;
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_BLACK_LIGHT = MONSTER_NAME.indexOf('black light');
@@ -183,7 +191,9 @@ function selectOrdinaryPolymorphForm(monster) {
     }
     return null;
 }
-async function selectDoppelgangerFormOnce(monster) {
+// C select_newcham_form()'s doppelganger case alone; -1 falls through to
+// the shared random pick like native NON_PM.
+async function pickDoppelgangerChamForm(monster) {
     let targetMnum = -1;
     if (!rn2(7)) {
         targetMnum = pickNastyShape((MONSTER_DIFFICULTY[PM_JABBERWOCK] ?? 0) - 1);
@@ -207,6 +217,10 @@ async function selectDoppelgangerFormOnce(monster) {
             targetMnum = -1;
         } while (--triesLeft > 0);
     }
+    return targetMnum;
+}
+async function selectDoppelgangerFormOnce(monster) {
+    const targetMnum = await pickDoppelgangerChamForm(monster);
     return targetMnum < 0 ? randomShape(PM_DOPPELGANGER) : targetMnum;
 }
 async function selectDoppelgangerForm(monster) {
@@ -220,8 +234,7 @@ async function selectDoppelgangerForm(monster) {
     return null;
 }
 function selectChameleonForm() {
-    const animals = Array.from({ length: SPECIAL_PM }, (_, mnum) => mnum)
-        .filter(mnum => (MONSTER_FLAGS1[mnum] ?? 0) & M1_ANIMAL);
+    const animals = chameleonAnimals();
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = !rn2(3)
             ? pickAnimalShape(animals)
@@ -232,6 +245,10 @@ function selectChameleonForm() {
             return targetMnum;
     }
     return null;
+}
+function chameleonAnimals() {
+    return Array.from({ length: SPECIAL_PM }, (_, mnum) => mnum)
+        .filter(mnum => (MONSTER_FLAGS1[mnum] ?? 0) & M1_ANIMAL);
 }
 // C pick_animal() gives the Rogue level one extra animal draw. newcham()
 // then applies its usual first-five-attempt uppercase preference.
@@ -306,6 +323,152 @@ function shapechangerProtectionActive() {
 }
 function naturalShapechanger(mnum) {
     return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER);
+}
+// C mon.c:isspecmon(): shopkeepers, priests, vault guards and the quest
+// leader need a body that can handle objects and speech.
+function isSpeciallyHandledMonster(monster, state) {
+    return !!monster.isshk || !!monster.ispriest || !!monster.isgd
+        || monster.m_id === state.quest_status?.leader_m_id;
+}
+// C mon.c:validspecmon(): accept_newcham_form() plus the special-monster
+// notake/nohead restriction.
+function validSpecMon(monster, mnum, baseMnum, state) {
+    if (mnum < 0)
+        return true;
+    if (!acceptsShapechangerForm(baseMnum, mnum))
+        return false;
+    if (isSpeciallyHandledMonster(monster, state)
+        && (((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOTAKE) !== 0
+            || !monsterHasHead({ mnum })))
+        return false;
+    return true;
+}
+// C mon.c:validvamp(): a vampshifter accepts only its own alternate forms
+// (class answers are mapped onto them); anyone else reduces to
+// validspecmon(). The form may be rewritten in place, like the native
+// out-parameter.
+function validVampForm(monster, mnum, monsterClass, state) {
+    const baseMnum = monster.cham ?? -1;
+    if (!monsterIsVampireShifter(monster))
+        return { valid: validSpecMon(monster, mnum, baseMnum, state), form: mnum };
+    if (baseMnum === PM_VLAD_THE_IMPALER && monsterCarriesSpecialObject(monster, state))
+        return { valid: true, form: PM_VLAD_THE_IMPALER };
+    if (mnum >= 0 && naturalShapechanger(mnum))
+        return { valid: true, form: baseMnum };
+    if (mnum === PM_WOLF)
+        return { valid: baseMnum !== PM_VAMPIRE, form: mnum };
+    if (mnum === PM_FOG_CLOUD || mnum === PM_VAMPIRE_BAT)
+        return { valid: true, form: mnum };
+    switch (monsterClass) {
+        case S_VAMPIRE: return { valid: true, form: baseMnum };
+        case S_BAT: return { valid: true, form: PM_VAMPIRE_BAT };
+        case S_VORTEX: return { valid: true, form: PM_FOG_CLOUD };
+        case S_DOG:
+            if (baseMnum !== PM_VAMPIRE)
+                return { valid: true, form: PM_WOLF };
+            return { valid: false, form: NON_PM };
+        default: return { valid: false, form: NON_PM };
+    }
+}
+// C mon.c:wiz_force_cham_form(): the wizard-mode monpolycontrol prompt. The
+// player names the next form (or a class, or "random"); five tries, then
+// the caller falls back to an arbitrary shape.
+async function wizForceChamForm(monster, state) {
+    const coordinateMode = state.iflags.getpos_coords
+        && state.iflags.getpos_coords !== GPCOORDS_NONE
+        ? state.iflags.getpos_coords : GPCOORDS_MAP;
+    let prompt = `Change ${monsterName(monster, { state, article: 'your', suppressIt: true })}`
+        + ` @ ${coordinateDescription(monster.mx, monster.my, coordinateMode)} into what?`;
+    const TRY_LIMIT = 5;
+    let triesLeft = TRY_LIMIT;
+    let mnum = null;
+    let monsterClass = 0;
+    for (;;) {
+        if (triesLeft === TRY_LIMIT - 1)
+            prompt = `${prompt.slice(0, -1)} kind of monster?`;
+        monsterClass = 0;
+        const answer = await getLine(prompt, (_character, key) => key >= 32 && key < 127);
+        const text = answer === null ? null : answer.trim().replace(/\s+/g, ' ');
+        // Escape keeps whatever an earlier round left; only a valid answer
+        // ever survives one, so that is always "no form".
+        if (text === null)
+            break;
+        if (text === '*' || text.toLowerCase() === 'random') {
+            mnum = null;
+            break;
+        }
+        mnum = nameToMonster(text);
+        if (mnum < 0) {
+            const match = resolveMonsterClass(text);
+            monsterClass = match.monsterClass;
+            mnum = match.mnum;
+            if (monsterClass > 0 && mnum < 0)
+                mnum = pickFormFromClass(monsterClass);
+        }
+        // An answer that names nothing leaves NON_PM like native; the null
+        // keeps a later Escape or exhaustion meaning "pick at random"
+        // instead of a stale -1 that re-prompts.
+        if (mnum < 0)
+            mnum = null;
+        if (mnum !== null) {
+            const shifted = validVampForm(monster, mnum, monsterClass, state);
+            if (shifted.valid) {
+                mnum = shifted.form;
+                break;
+            }
+            mnum = null;
+        }
+        await plineWithContinuation("It can't become that.");
+        if (--triesLeft <= 0)
+            break;
+    }
+    if (triesLeft <= 0)
+        await plineWithContinuation(thats_enough_tries);
+    if (monsterIsVampireShifter(monster)) {
+        // validvamp() rewrites mndx even when it accepts: Vlad with the
+        // Candelabrum keeps his true form from an empty or random answer,
+        // and a class answer maps onto the shifter's own forms.
+        const shifted = validVampForm(monster, mnum ?? NON_PM, monsterClass, state);
+        mnum = shifted.valid ? shifted.form : pickVampireShape(monster);
+    }
+    return mnum;
+}
+// C select_newcham_form()'s switch under monpolycontrol: the cham-specific
+// draw still consumes its random calls, then the wizard answer overrides it.
+async function drawChamFormForControl(monster, baseMnum) {
+    if (baseMnum === PM_DOPPELGANGER) {
+        await pickDoppelgangerChamForm(monster);
+    }
+    else if (baseMnum === PM_SANDESTIN) {
+        if (rn2(7))
+            pickNastyShape((MONSTER_DIFFICULTY[PM_ARCHON] ?? 0) - 1);
+    }
+    else if (baseMnum === PM_CHAMELEON) {
+        if (!rn2(3))
+            pickAnimalShape(chameleonAnimals());
+    }
+    else if (baseMnum === PM_VAMPIRE || baseMnum === PM_VAMPIRE_LEADER
+        || baseMnum === PM_VLAD_THE_IMPALER) {
+        pickVampireShape(monster);
+    }
+    else {
+        dragonArmorForm(monster);
+    }
+}
+// C newcham()'s twenty-attempt accept loop around select_newcham_form(),
+// taken when the player runs monpolycontrol. A rejected answer re-prompts.
+async function selectControlledForm(monster, baseMnum, state) {
+    for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
+        await drawChamFormForControl(monster, baseMnum);
+        let mnum = await wizForceChamForm(monster, state);
+        if (mnum == null)
+            mnum = randomShape(baseMnum);
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(state.u.uz)
+            && !/^[A-Z]$/.test(monsterClassSymbol(mnum));
+        if (acceptsShapechangerForm(baseMnum, mnum) && !wantsUppercase)
+            return mnum;
+    }
+    return null;
 }
 // C mon.c:rescham()/normal_shape(). The level array reverses fmon's order;
 // the snapshot also preserves the next actor while polymorph changes state.
@@ -447,7 +610,12 @@ export async function initialShapechangedBirth(monster) {
     // hallucination must choose it before selecting the new body.
     monsterName(monster);
     let targetMnum = null;
-    if (baseMnum === PM_DOPPELGANGER) {
+    if (game.flags.debug && game._monPolycontrol) {
+        // makemon() births a shapechanger through newcham(mtmp, 0), so the
+        // wizard prompt owns the first form here as well.
+        targetMnum = await selectControlledForm(monster, baseMnum, game);
+    }
+    else if (baseMnum === PM_DOPPELGANGER) {
         targetMnum = await selectDoppelgangerForm(monster);
         if (targetMnum === PM_DOPPELGANGER)
             targetMnum = null;
@@ -495,7 +663,11 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     const oldName = monsterName(monster, { state });
     const oldWasFluid = monsterIsAmorphous(monster) || monsterIsWhirly(monster);
     let targetMnum = forcedTargetMnum;
-    if (targetMnum == null && baseMnum === PM_DOPPELGANGER) {
+    if (targetMnum == null && state.flags.debug && state._monPolycontrol) {
+        // select_newcham_form(): the wizard prompt overrides the cham pick.
+        targetMnum = await selectControlledForm(monster, baseMnum, state);
+    }
+    else if (targetMnum == null && baseMnum === PM_DOPPELGANGER) {
         targetMnum = await selectDoppelgangerForm(monster);
     }
     else if (targetMnum == null && baseMnum === PM_SANDESTIN) {

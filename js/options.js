@@ -627,6 +627,8 @@ export function applyNethackrc(rc, state = game) {
     result.configErrors.push(report);
     if (result.monTelecontrol !== undefined)
         state._monTelecontrol = result.monTelecontrol;
+    if (result.monPolycontrol !== undefined)
+        state._monPolycontrol = result.monPolycontrol;
     if (result.fruit !== undefined)
         state.fruitName = result.fruit;
     if (result.preferred_pet !== undefined)
@@ -1892,6 +1894,8 @@ function parseConfiguration(rc, result, report, fromFile) {
                     result.iflags[canonical] = value;
                 else if (canonical === 'montelecontrol')
                     result.monTelecontrol = value;
+                else if (canonical === 'monpolycontrol')
+                    result.monPolycontrol = value;
                 else if (canonical === 'pushweapon')
                     result.flags.pushweapon = value;
                 else if (canonical === 'showexp')
@@ -2250,6 +2254,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['menucolors', 'menucolors', false],
     ['mon_movement', 'mon_movement', false],
     ['montelecontrol', '_monTelecontrol', false],
+    ['monpolycontrol', '_monPolycontrol', false],
     ['null', 'null', true],
     ['pickup_stolen', 'pickup_stolen', true],
     ['pickup_thrown', 'pickup_thrown', true],
@@ -2405,6 +2410,8 @@ function requestBooleanValue(name) {
     const [, property, fallback] = option;
     if (property === '_monTelecontrol')
         return game._monTelecontrol ?? fallback;
+    if (property === '_monPolycontrol')
+        return game._monPolycontrol ?? fallback;
     if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
@@ -2415,6 +2422,8 @@ function setConfigurationBoolean(settings, option, value) {
     const [, property] = option;
     if (property === '_monTelecontrol')
         settings.monTelecontrol = value;
+    else if (property === '_monPolycontrol')
+        settings.monPolycontrol = value;
     else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
@@ -2426,6 +2435,8 @@ function setRequestBoolean(option, value) {
     const [, property] = option;
     if (property === '_monTelecontrol')
         game._monTelecontrol = value;
+    else if (property === '_monPolycontrol')
+        game._monPolycontrol = value;
     else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
@@ -2611,7 +2622,7 @@ function requestMenuSections() {
                 ...(game.flags.debug ? [boolean('menu_tab_sep')] : []),
                 boolean('menucolors'),
                 boolean('mon_movement'),
-                ...(game.flags.debug ? [boolean('montelecontrol')] : []),
+                ...(game.flags.debug ? [boolean('monpolycontrol'), boolean('montelecontrol')] : []),
                 boolean('null'),
                 boolean('pickup_stolen'),
                 boolean('pickup_thrown'),

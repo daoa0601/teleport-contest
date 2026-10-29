@@ -465,6 +465,7 @@ interface ConfigurationSettings {
     rogueBoulderSym?: string;
     preferred_pet?: PetPreference;
     monTelecontrol?: boolean;
+    monPolycontrol?: boolean;
     tutorial_set?: boolean;
 }
 
@@ -681,6 +682,7 @@ export function parseNethackOptions(options: string, result: NethackConfiguratio
 
 type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'commandBindings'> & {
     _monTelecontrol?: boolean;
+    _monPolycontrol?: boolean;
     fruitName?: string;
     preferred_pet?: string;
     boulderSym?: string;
@@ -699,6 +701,7 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     parseConfiguration(rc, result, report, true);
     result.configErrors.push(report);
     if (result.monTelecontrol !== undefined) state._monTelecontrol = result.monTelecontrol;
+    if (result.monPolycontrol !== undefined) state._monPolycontrol = result.monPolycontrol;
     if (result.fruit !== undefined) state.fruitName = result.fruit;
     if (result.preferred_pet !== undefined) state.preferred_pet = result.preferred_pet;
     // cnf_line_BOULDER() writes straight into the live symbol override.
@@ -1844,6 +1847,7 @@ function parseConfiguration(
                 else if (canonical === 'splash_screen') result.iflags.wc_splash_screen = value;
                 else if (canonical === 'wizmgender' || canonical === 'wizweight') result.iflags[canonical] = value;
                 else if (canonical === 'montelecontrol') result.monTelecontrol = value;
+                else if (canonical === 'monpolycontrol') result.monPolycontrol = value;
                 else if (canonical === 'pushweapon') result.flags.pushweapon = value;
                 else if (canonical === 'showexp') result.flags.showexp = value;
                 else if (canonical === 'time') result.flags.time = value;
@@ -2175,6 +2179,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['menucolors', 'menucolors', false],
     ['mon_movement', 'mon_movement', false],
     ['montelecontrol', '_monTelecontrol', false],
+    ['monpolycontrol', '_monPolycontrol', false],
     ['null', 'null', true],
     ['pickup_stolen', 'pickup_stolen', true],
     ['pickup_thrown', 'pickup_thrown', true],
@@ -2347,6 +2352,7 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
     if (!option) return false;
     const [, property, fallback] = option;
     if (property === '_monTelecontrol') return game._monTelecontrol ?? fallback;
+    if (property === '_monPolycontrol') return game._monPolycontrol ?? fallback;
     if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
@@ -2357,6 +2363,7 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
 function setConfigurationBoolean(settings: ConfigurationSettings, option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') settings.monTelecontrol = value;
+    else if (property === '_monPolycontrol') settings.monPolycontrol = value;
     else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
@@ -2367,6 +2374,7 @@ function setConfigurationBoolean(settings: ConfigurationSettings, option: Boolea
 function setRequestBoolean(option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') game._monTelecontrol = value;
+    else if (property === '_monPolycontrol') game._monPolycontrol = value;
     else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
@@ -2560,7 +2568,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             ...(game.flags.debug ? [boolean('menu_tab_sep')] : []),
             boolean('menucolors'),
             boolean('mon_movement'),
-            ...(game.flags.debug ? [boolean('montelecontrol')] : []),
+            ...(game.flags.debug ? [boolean('monpolycontrol'), boolean('montelecontrol')] : []),
             boolean('null'),
             boolean('pickup_stolen'),
             boolean('pickup_thrown'),

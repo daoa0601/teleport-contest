@@ -42,7 +42,7 @@ const TITLES: Record<Facet, string> = {
 const EMPTY_CHOICES: Choices = { role: null, race: null, gender: null, alignment: null };
 
 export async function selectCharacter(options: CharacterOptions,
-    readName: () => Promise<ParsedCharacterName>): Promise<SelectedCharacter | null> {
+    readName: () => Promise<ParsedCharacterName | null>): Promise<SelectedCharacter | null> {
     return new CharacterSelection(options, readName).choose();
 }
 
@@ -52,7 +52,7 @@ class CharacterSelection {
     private readonly filters: CharacterFilters;
     private name = game.plname;
 
-    constructor(options: CharacterOptions, private readonly readName: () => Promise<ParsedCharacterName>) {
+    constructor(options: CharacterOptions, private readonly readName: () => Promise<ParsedCharacterName | null>) {
         this.filters = options.characterFilters ?? createCharacterFilters();
         this.choices = {
             role: findRole(options.role) ?? null,
@@ -138,9 +138,13 @@ class CharacterSelection {
                 if (answer === 'quit') return null;
                 if (answer === 'yes') return this.result();
                 if (answer === 'rename') {
-                    do {
-                        this.name = (await this.readName()).name;
-                    } while (!this.name);
+                    for (;;) {
+                        const renamed = await this.readName();
+                        // tty_askname() gave up; the game ends with the player.
+                        if (renamed === null) return null;
+                        this.name = renamed.name;
+                        if (this.name) break;
+                    }
                     game.plname = this.name;
                     continue;
                 }
