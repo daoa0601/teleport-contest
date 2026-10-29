@@ -64,7 +64,7 @@ export const ROUND10_RECIPES: Record<string, Recipe> = {
         ['The monkey attempts theft.'], [create('hostile monkey'), wait(20)]),
     // mhitu.c:doseduce(), mayberem(). Remove body armor first so refusing
     // the optional helmet/glove removal cannot stop the encounter.
-    'demon-seduction': recipe('Accept a demon invitation and resolve its aftermath.',
+    'demon-invitation': recipe('Accept a demon invitation and resolve its aftermath.',
         ['The seducer approaches the hero.', 'Seduction reaches its aftermath.'], character => [
             ...(character.role === 'knight' ? [choose('ring mail', 'T*')] : [keys('T')]), wait(5),
             create(`peaceful ${character.gender === 'female' ? 'incubus' : 'succubus'}`),
@@ -165,7 +165,7 @@ const EFFECTS: Record<string, readonly [string, RegExp][]> = {
     'leprechaun-purse': [['gold stolen', /Your purse feels lighter\./]],
     'leprechaun-floor-gold': [['floor gold taken', /snatches some gold|picks up[^.\n]*gold pieces/]],
     'monkey-theft': [['theft attempted', /monkey (?:steals|tries to|gives up|snatches)/i]],
-    'demon-seduction': [['invitation', /murmurs[^.\n]*ear/], ['aftermath', /enjoyed it more/]],
+    'demon-invitation': [['invitation', /murmurs[^.\n]*ear/], ['aftermath', /enjoyed it more/]],
     'shade-slowing': [['intrinsic speed lost', /You slow down\.|Your quickness feels less natural\./]],
     'disease-sting': [['illness', /You feel (?:deathly )?sick\./], ['healing', /You feel completely healed\./]],
     'demon-bribery': [['bribe accepted', /vanishes, laughing about cowardly mortals\./]],

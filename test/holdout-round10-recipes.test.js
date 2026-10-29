@@ -68,7 +68,7 @@ const genders = ['male', 'female'];
 for (const gender of genders) {
     void test(`a ${gender} hero completes seduction with an opposite-gender demon`, async () => {
         let demonGender;
-        const { messages } = await playRecipe('demon-seduction', { gender, observe(engine) {
+        const { messages } = await playRecipe('demon-invitation', { gender, observe(engine) {
                 const demon = engine.state.level?.monsters.find(monster => monster.mnum === MONSTER_NAME.indexOf('amorous demon'));
                 if (demon)
                     demonGender = demon.female;
