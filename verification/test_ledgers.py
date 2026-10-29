@@ -77,6 +77,41 @@ class LedgerChecks(unittest.TestCase):
         result = self.run_callsites([site('constant')], [site('constant'), site('guarded')])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_callbacks_in_different_functions_keep_separate_claims(self):
+        with tempfile.TemporaryDirectory(dir=CACHE) as directory:
+            root = Path(directory)
+            (root / 'src/js').mkdir(parents=True)
+            (root / 'js').mkdir()
+            (root / 'tsconfig.json').write_text(json.dumps({
+                'compilerOptions': {'target': 'ES2022', 'module': 'NodeNext', 'strict': True},
+                'include': ['src/js/*.ts'],
+            }))
+            (root / 'src/js/rng.ts').write_text('export function rn2(x: number): number { return x; }')
+            (root / 'js/rng.js').write_text('export function rn2(x) { return x; }')
+            source = ("import { rn2 } from './rng.js';\n"
+                      'export function first() { const width = 2; return () => rn2(width); }\n'
+                      'export function second() { const width = 0; return () => rn2(width); }')
+            (root / 'src/js/sample.ts').write_text(source)
+            emitted = root / 'js/sample.js'
+            emitted.write_text(source)
+            sites = root / 'sites.json'
+            ledger = root / 'ledger.tsv'
+
+            def run(option):
+                extracted = subprocess.run(['node', str(HERE / 'callsites/extract.mjs'), '--root', str(root)],
+                                           capture_output=True, text=True)
+                self.assertEqual(extracted.returncode, 0, extracted.stderr)
+                sites.write_text(extracted.stdout)
+                return subprocess.run([sys.executable, str(HERE / 'callsites/check.py'), str(sites),
+                                       option, str(ledger)], capture_output=True, text=True)
+
+            baseline = run('--write-ledger')
+            self.assertEqual(baseline.returncode, 0, baseline.stdout + baseline.stderr)
+            # Swap which callback has a valid width. The first claim was lost.
+            emitted.write_text(source.replace('width = 2', 'width = -1').replace('width = 0', 'width = 2'))
+            result = run('--check-ledger')
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_proof_ledgers_require_complete_runs(self):
         with tempfile.TemporaryDirectory(dir=CACHE) as directory:
             ledger = Path(directory) / 'ledger.tsv'

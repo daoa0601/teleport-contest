@@ -5,9 +5,6 @@ src/js/alignment.ts	changeHeroAlignmentFromHelmet	rn2	"[""50""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
-src/js/allmain.ts	(anonymous)	d	"[""count"", ""sides""]"	unproved
-src/js/allmain.ts	(anonymous)	rn2	"[""range""]"	unproved
-src/js/allmain.ts	(anonymous)	rn2	"[""sides""]"	unproved
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""100""]"	constant
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""80 - (sessionIsNight(game.datetime) ? 20 : 0)""]"	constant
 src/js/allmain.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
@@ -19,7 +16,7 @@ src/js/allmain.ts	finishHeroTookTime	rn2	"[""31""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""generationRate""]"	constant
-src/js/allmain.ts	finishInitialTurnMaintenanceAfterRegions	rn2	"[""upper""]"	unproved
+src/js/allmain.ts	finishInitialTurnMaintenanceAfterRegions	rn2	"[""upper""]"	invariant
 src/js/allmain.ts	finishInitialTurnMaintenanceRng	rn2	"[""200""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceRng	rn2	"[""40 + currentAttribute(A_DEX) * 3""]"	invariant
 src/js/allmain.ts	finishInitialTurnMaintenanceRng	rn2	"[""6""]"	constant
@@ -28,7 +25,10 @@ src/js/allmain.ts	finishInitialTurnMaintenanceRng	rnd	"[""4""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""30""]"	constant
 src/js/allmain.ts	moveloopPreamble	rnd	"[""9000""]"	constant
 src/js/allmain.ts	presentMonsterAction	rn2	"[""5""]"	constant
+src/js/allmain.ts	presentMonsterAttackEffects/random	rn2	"[""range""]"	unproved
+src/js/allmain.ts	presentMonsterCuss/publishMonsterCuss argument 3	rn2	"[""sides""]"	unproved
 src/js/allmain.ts	resolveDeferredHeroDeathTouch	rn2	"[""sides""]"	constant
+src/js/allmain.ts	resolveDeferredHeroDeathTouch/touchHeroWithDeath argument 4	d	"[""count"", ""sides""]"	unproved
 src/js/allmain.ts	resolveDeferredHeroFirePillar	d	"[""8"", ""6""]"	constant
 src/js/allmain.ts	resolveDeferredHeroGeyser	d	"[""8"", ""6""]"	constant
 src/js/allmain.ts	resolveDeferredHeroLightningSpell	d	"[""8"", ""6""]"	constant
@@ -67,7 +67,7 @@ src/js/anti_magic_trap.ts	implosionDamage	rnd	"[""4""]"	constant
 src/js/anti_magic_trap.ts	implosionDamage	rnd	"[""4""]"	constant
 src/js/anti_magic_trap.ts	implosionDamage	rnd	"[""4""]"	constant
 src/js/anti_magic_trap.ts	triggerHeroAntiMagicTrap	d	"[""2"", ""6""]"	constant
-src/js/anti_magic_trap.ts	triggerHeroAntiMagicTrap	rnd	"[""Math.trunc(drain / 2)""]"	unproved
+src/js/anti_magic_trap.ts	triggerHeroAntiMagicTrap	rnd	"[""Math.trunc(drain / 2)""]"	constant
 src/js/apply_bell.ts	useBell	rn2	"[""3""]"	constant
 src/js/apply_bell.ts	useBell	rn2	"[""4""]"	constant
 src/js/apply_bell.ts	useBell	rnd	"[""2""]"	constant
@@ -76,9 +76,9 @@ src/js/apply_light.ts	useLamp	rn2	"[""2""]"	constant
 src/js/apply_light.ts	useLamp	rn2	"[""3""]"	constant
 src/js/armor.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
 src/js/armor.ts	erodeWornArmor	rn2	"[""4""]"	constant
-src/js/armor.ts	erodeWornArmor	rn2	"[""armors.length""]"	guarded
+src/js/armor.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
 src/js/armor.ts	someHeroArmor	rn2	"[""4""]"	constant
-src/js/artifact_hit.ts	applyArtifactHit	random	"[""inventoryDamageChance(damageType)""]"	constant
+src/js/artifact_hit.ts	applyArtifactHit	random	"[""inventoryDamageChance(damageType)""]"	guarded
 src/js/artifact_hit.ts	applyBeheading	random	"[""2""]"	constant
 src/js/artifact_hit.ts	applyBeheading	random	"[""2""]"	constant
 src/js/artifact_invoke.ts	invokeBanish	rn2	"[""chance""]"	guarded
@@ -86,7 +86,7 @@ src/js/artifact_invoke.ts	invokeBanish	rn2	"[""dungeon.num_dunlevs""]"	unproved
 src/js/artifact_invoke.ts	invokeBlindingRay	rnd	"[""damage""]"	constant
 src/js/artifact_invoke.ts	invokeFlingPoison	rn2	"[""2""]"	constant
 src/js/artifacts.ts	artifactDamageBonus	roll	"[""artifact.attack.damageDie""]"	guarded
-src/js/artifacts.ts	artifactToHitBonus	roll	"[""artifact.attack.toHitDie""]"	guarded
+src/js/artifacts.ts	artifactToHitBonus	roll	"[""artifact.attack.toHitDie""]"	unproved
 src/js/artifacts.ts	createArtifactGift	rn2	"[""2""]"	constant
 src/js/artifacts.ts	createArtifactGift	rn2	"[""3""]"	constant
 src/js/artifacts.ts	createArtifactGift	rn2	"[""4""]"	constant
@@ -97,12 +97,13 @@ src/js/artifacts.ts	rollHeroArtifactBlast	d	"[""antimagic ? 2 : 4"", ""artifact.
 src/js/artifacts.ts	rollHeroArtifactBlast	rnd	"[""10""]"	constant
 src/js/attrib.ts	accumulateAttributeExercise	rn2	"[""19""]"	constant
 src/js/attrib.ts	accumulateAttributeExercise	rn2	"[""2""]"	constant
-src/js/attrib.ts	adjustAttribute	rn2	"[""excess + 1""]"	guarded
+src/js/attrib.ts	adjustAttribute	rn2	"[""excess + 1""]"	unproved
 src/js/attrib.ts	checkAttributeExercise	rn2	"[""200""]"	constant
 src/js/attrib.ts	checkAttributeExercise	rn2	"[""MAX_EXERCISE""]"	constant
 src/js/attrib.ts	gainHeroStrength	rn2	"[""4""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""10""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""6""]"	constant
+src/js/attrib.ts	loseHeroStrength	random	"[""4""]"	constant
 src/js/attrib.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rn2	"[""23""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rnd	"[""7""]"	constant
@@ -123,12 +124,17 @@ src/js/ball.ts	reserveBallAndChainPlacement	rnd	"[""400""]"	constant
 src/js/ball.ts	scatterCarriedItems	rnd	"[""capacity""]"	guarded
 src/js/barehand_combat.ts	doublePunch	rn2	"[""5""]"	constant
 src/js/barehand_combat.ts	prepareHeroBarehandContact	rnd	"[""heroUsesMartialArts(state) ? 4 : 2""]"	constant
+src/js/bear_trap.ts	finishMonsterBearTrap	rollDice	"[""2"", ""4""]"	constant
+src/js/blinding_attack.ts	blindMonsterWithThrownObject	rollOne	"[""25""]"	constant
+src/js/blinding_attack.ts	prepareHeroThrownBlindness	rollOne	"[""25""]"	constant
 src/js/bones_admission.ts	canMakeBones	random	"[""1 + (dungeonDepth >> 2)""]"	unproved
 src/js/bones_death.ts	dropHeroInventoryForBones	rn2	"[""5""]"	constant
 src/js/bones_death.ts	dropHeroInventoryForBones	rn2	"[""8""]"	constant
 src/js/bones_death.ts	nearbyMonsterForDeathDrop	rn2	"[""candidateCount""]"	unproved
+src/js/booby_trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
 src/js/boomerang.ts	flyBoomerang	rn2	"[""20""]"	constant
 src/js/boulder_pool.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
+src/js/boulder_pool.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
 src/js/boulder_push.ts	pushIntoTrap	rn2	"[""10""]"	constant
 src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""5""]"	constant
 src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""directions.length""]"	unproved
@@ -152,6 +158,7 @@ src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length * 100""]"	unp
 src/js/character_selection.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/character_selection.ts	rigidChecks	rn2	"[""1""]"	constant
 src/js/character_selection.ts	rigidChecks	rn2	"[""candidates.length""]"	unproved
+src/js/chest_trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
 src/js/cmd.ts	blessedFountainDraught	rn2	"[""A_MAX""]"	constant
 src/js/cmd.ts	dipFountain	rn2	"[""2""]"	constant
 src/js/cmd.ts	dipFountain	rnd	"[""30""]"	constant
@@ -206,15 +213,15 @@ src/js/container_loot.ts	lootMonster	rnd	"[""3""]"	constant
 src/js/container_tip.ts	tipContainer	rn2	"[""13""]"	constant
 src/js/corpse_eating.ts	applyCorpsePostEffects	rn2	"[""2""]"	constant
 src/js/corpse_eating.ts	eatStalker	rn1	"[""100"", ""50""]"	constant
-src/js/corpse_intrinsics.ts	chooseCorpseIntrinsic	rn2	"[""++count""]"	unproved
+src/js/corpse_intrinsics.ts	chooseCorpseIntrinsic	rn2	"[""++count""]"	guarded
 src/js/corpse_intrinsics.ts	chooseCorpseIntrinsic	rn2	"[""2""]"	constant
 src/js/corpse_intrinsics.ts	corpseEnergyBuzz	rn2	"[""3""]"	constant
 src/js/corpse_intrinsics.ts	corpseEnergyBuzz	rn2	"[""3""]"	constant
 src/js/corpse_intrinsics.ts	corpseEnergyBuzz	rnd	"[""3""]"	constant
 src/js/corpse_intrinsics.ts	grantCorpseIntrinsic	d	"[""3"", ""6""]"	constant
 src/js/corpse_intrinsics.ts	shouldGiveIntrinsic	rn2	"[""4""]"	constant
-src/js/corpse_intrinsics.ts	shouldGiveIntrinsic	rn2	"[""chance""]"	unproved
-src/js/corpse_intrinsics.ts	shouldGiveTemporaryResistance	rn2	"[""chance""]"	unproved
+src/js/corpse_intrinsics.ts	shouldGiveIntrinsic	rn2	"[""chance""]"	guarded
+src/js/corpse_intrinsics.ts	shouldGiveTemporaryResistance	rn2	"[""chance""]"	guarded
 src/js/corpse_meal.ts	describeCorpseTaste	rn2	"[""10""]"	constant
 src/js/corpse_meal.ts	describeCorpseTaste	rn2	"[""choices.length""]"	constant
 src/js/corpse_meal.ts	describeCorpseTaste	rn2	"[""rotted + 1""]"	guarded
@@ -285,6 +292,10 @@ src/js/divine_wrath.ts	curseHero	rn2	"[""2""]"	constant
 src/js/divine_wrath.ts	godVoice	rn2	"[""GOD_VOICES.length""]"	constant
 src/js/dog.ts	abusePet	rn2	"[""monster.mtame""]"	guarded
 src/js/dog.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
+src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved
+src/js/dog.ts	makePetWary	random	"[""2""]"	constant
+src/js/dog.ts	makePetWary	random	"[""monster.mtame + 1""]"	unproved
+src/js/dogmove.ts	selectPetRangedTarget	random	"[""5""]"	constant
 src/js/draft_message.ts	formatDraftMessage	random	"[""2""]"	constant
 src/js/draft_message.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
@@ -292,7 +303,6 @@ src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""6""]"	constant
 src/js/drawbridge_occupants.ts	entityJumps	rnd	"[""10""]"	constant
 src/js/drawbridge_occupants.ts	entityMissed	rnd	"[""8""]"	constant
-src/js/dungeon.ts	(anonymous)	rn2	"[""100""]"	constant
 src/js/dungeon.ts	branchLevel	rn2	"[""count""]"	unproved
 src/js/dungeon.ts	inducedAlignment	rn2	"[""100""]"	constant
 src/js/dungeon.ts	inducedAlignment	rn2	"[""100""]"	constant
@@ -300,7 +310,8 @@ src/js/dungeon.ts	inducedAlignment	rn2	"[""3""]"	constant
 src/js/dungeon.ts	init_dungeons	rn2	"[""100""]"	constant
 src/js/dungeon.ts	init_dungeons	rn2	"[""7""]"	constant
 src/js/dungeon.ts	init_dungeons	rn2	"[""definition.range""]"	unproved
-src/js/dungeon.ts	placeLevels	rn2	"[""places.length""]"	unproved
+src/js/dungeon.ts	init_dungeons/definition.levels.map argument 1	rn2	"[""100""]"	constant
+src/js/dungeon.ts	placeLevels	rn2	"[""places.length""]"	guarded
 src/js/earthquake.ts	createEarthquake	rn2	"[""14 - force""]"	constant
 src/js/earthquake.ts	dropHeroIntoChasm	rn2	"[""5""]"	constant
 src/js/earthquake.ts	dropHeroIntoChasm	rn2	"[""5""]"	constant
@@ -310,7 +321,7 @@ src/js/earthquake.ts	dropHeroIntoChasm	rnl	"[""roleRange""]"	constant
 src/js/earthquake.ts	dropMonsterIntoChasm	rnd	"[""wasTrapped ? 4 : 6""]"	constant
 src/js/earthquake.ts	trapHeroInChasm	rn2	"[""6""]"	constant
 src/js/eat.ts	ordinaryFoodIsRotten	rn2	"[""7""]"	constant
-src/js/eaten_accessory.ts	boundedIncrease	rn2	"[""Math.abs(amount)""]"	guarded
+src/js/eaten_accessory.ts	boundedIncrease	rn2	"[""Math.abs(amount)""]"	unproved
 src/js/eaten_accessory.ts	boundedIncrease	rnd	"[""20 - Math.abs(old)""]"	unproved
 src/js/eaten_accessory.ts	boundedIncrease	rnd	"[""Math.abs(amount)""]"	guarded
 src/js/eaten_accessory.ts	digestAccessory	d	"[""10"", ""20""]"	constant
@@ -318,7 +329,8 @@ src/js/eaten_accessory.ts	digestAccessory	rn2	"[""object.oclass === 4 ? 3 : 5""]
 src/js/eaten_accessory.ts	digestAccessory	rnd	"[""100""]"	constant
 src/js/egg.ts	finishEggHatchTimer	rnd	"[""12""]"	constant
 src/js/egg.ts	runClaimedEggHatchTimer	rn2	"[""2""]"	constant
-src/js/egg.ts	runClaimedEggHatchTimer	rnd	"[""quantity""]"	guarded
+src/js/egg.ts	runClaimedEggHatchTimer	rnd	"[""quantity""]"	unproved
+src/js/egg_impact.ts	explodePyroliskEggAt	rollDice	"[""3"", ""6""]"	constant
 src/js/egg_species.ts	hatchableEggSpecies	rn2	"[""77""]"	constant
 src/js/elemental.ts	changeBubbleDirection	rn2	"[""3""]"	constant
 src/js/elemental.ts	changeBubbleDirection	rn2	"[""3""]"	constant
@@ -347,7 +359,7 @@ src/js/engrave.ts	maybeSmudgeEngravings	rnd	"[""5""]"	constant
 src/js/engrave.ts	wipeEngravingAt	rn2	"[""2""]"	constant
 src/js/engrave.ts	wipeEngravingAt	rn2	"[""range""]"	unproved
 src/js/engrave.ts	wipeoutText	rn2	"[""4""]"	constant
-src/js/engrave.ts	wipeoutText	rn2	"[""length""]"	unproved
+src/js/engrave.ts	wipeoutText	rn2	"[""length""]"	guarded
 src/js/engrave.ts	wipeoutText	rn2	"[""replacements.length""]"	unproved
 src/js/engrave_command.ts	blindEngraving	rn2	"[""BLIND_WRITINGS.length""]"	constant
 src/js/engrave_command.ts	doengrave	rn2	"[""11""]"	constant
@@ -362,8 +374,8 @@ src/js/engrave_command.ts	relocateEngraving	rn2	"[""COLNO - 3""]"	constant
 src/js/engrave_command.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
 src/js/engulf_blindness.ts	gulpBlindnessCheck	d	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/exper.ts	levelEnergyIncrease	rn2	"[""range""]"	unproved
-src/js/exper.ts	levelHpIncrease	rnd	"[""race[random]""]"	guarded
-src/js/exper.ts	levelHpIncrease	rnd	"[""role[random]""]"	guarded
+src/js/exper.ts	levelHpIncrease	rnd	"[""race[random]""]"	unproved
+src/js/exper.ts	levelHpIncrease	rnd	"[""role[random]""]"	unproved
 src/js/exper.ts	randomExperience	rn2	"[""range""]"	unproved
 src/js/extversion.ts	doextversion	rn2	"[""2""]"	constant
 src/js/extversion.ts	doextversion	rn2	"[""3""]"	constant
@@ -378,6 +390,8 @@ src/js/fire_damage.ts	fireDamageObject	random	"[""20""]"	constant
 src/js/fire_explosion.ts	explodeLitOilPotion	rollDice	"[""diluted ? 3 : 4"", ""4""]"	constant
 src/js/fire_trap.ts	beginMonsterFireTrap	rollDice	"[""2"", ""4""]"	constant
 src/js/fire_trap.ts	burnHeroAndPossessions	rn2	"[""3""]"	constant
+src/js/fire_trap.ts	finishMonsterFireTrap	random	"[""3""]"	constant
+src/js/fire_trap.ts	finishMonsterFireTrap	random	"[""event.damage + 1""]"	unproved
 src/js/fire_trap.ts	reduceHeroMaximumHitPoints	rn2	"[""range""]"	unproved
 src/js/fire_trap.ts	reduceMonsterFormMaximumHitPoints	rn2	"[""range""]"	unproved
 src/js/fire_trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
@@ -387,13 +401,17 @@ src/js/fire_trap.ts	triggerHeroFireTrap	rnd	"[""3""]"	constant
 src/js/flash.ts	flashHitsMonster	d	"[""1 + object.spe"", ""4""]"	unproved
 src/js/flash.ts	flashHitsMonster	rn2	"[""4""]"	constant
 src/js/flash.ts	flashHitsMonster	rn2	"[""4""]"	constant
-src/js/flash.ts	flashHitsMonster	rnd	"[""1 + Math.trunc(50 / distance)""]"	constant
+src/js/flash.ts	flashHitsMonster	rnd	"[""1 + Math.trunc(50 / distance)""]"	guarded
 src/js/flash.ts	flashHitsMonster	rnd	"[""100""]"	constant
 src/js/flash.ts	flashHitsMonster	rnd	"[""Math.min(monster.mhp, 4)""]"	unproved
 src/js/floor_naming.ts	nameFloorType	rn2Display	"[""30""]"	constant
 src/js/floor_naming.ts	nameFloorType	rn2Display	"[""choices.length""]"	constant
 src/js/force_bolt.ts	hitMonsterWithForce	options.rollDice	"[""2"", ""12""]"	constant
+src/js/fountain.ts	dryFountainAt	random	"[""3""]"	constant
 src/js/fountain.ts	gushForthFromFountain	rn2	"[""1 + distmin(ux, uy, x, y)""]"	guarded
+src/js/fountain_effects.ts	applyFountainDemonActor	random	"[""100""]"	constant
+src/js/fountain_effects.ts	applyFountainSnakeActors	random	"[""5""]"	constant
+src/js/fountain_effects.ts	resolveDippedCoinFate	random	"[""amountRange""]"	unproved
 src/js/fountain_sword.ts	dipFountainSword	rn2	"[""3""]"	constant
 src/js/fountain_sword.ts	dipFountainSword	rn2	"[""game.urole.key === 'knight' ? 6 : 30""]"	constant
 src/js/fruit.ts	addFruit	rnd	"[""127""]"	constant
@@ -405,6 +423,7 @@ src/js/fumbling.ts	slipOrTrip	rn2	"[""3""]"	constant
 src/js/fumbling.ts	slipOrTrip	rn2	"[""4""]"	constant
 src/js/fumbling.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
 src/js/genocide.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
+src/js/glob.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
 src/js/glob.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
 src/js/gold_throw.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
 src/js/gold_throw.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
@@ -430,6 +449,9 @@ src/js/guardian_angel.ts	loseGuardianAngel	rn1	"[""3"", ""2""]"	constant
 src/js/hack.ts	escapeFromStickyMonster	rn2	"[""frozen ? 8 : 40""]"	constant
 src/js/hack.ts	heroLiquidEffects	random	"[""3""]"	constant
 src/js/hack.ts	heroLiquidEffects	random	"[""5""]"	constant
+src/js/hack.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
+src/js/hack.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
+src/js/hero_attack_accuracy.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
 src/js/hero_beast_displacement.ts	beastChoosesHeroDisplacement	rn2	"[""2""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""3""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""6""]"	constant
@@ -448,6 +470,7 @@ src/js/hero_breath.ts	hitWithSleep	rollDice	"[""attack[2]"", ""25""]"	invariant
 src/js/hero_combat_engulf.ts	engulfDamage	random	"[""2""]"	constant
 src/js/hero_combat_engulf.ts	engulfDamage	random	"[""4""]"	constant
 src/js/hero_combat_engulf.ts	resolveHeroCombatEngulf	rollDice	"[""dice"", ""sides""]"	unproved
+src/js/hero_combat_explosion.ts	resolveHeroCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/hero_digging.ts	continueHeroDigging	rn2	"[""2""]"	constant
 src/js/hero_digging.ts	continueHeroDigging	rn2	"[""3""]"	constant
 src/js/hero_digging.ts	continueHeroDigging	rn2	"[""3""]"	constant
@@ -461,18 +484,32 @@ src/js/hero_digging.ts	continueHeroDigging	rnd	"[""5""]"	constant
 src/js/hero_digging.ts	continueHeroDigging	rnl	"[""7""]"	constant
 src/js/hero_digging.ts	placeTreeFruit	random	"[""TREE_FRUITS.length""]"	constant
 src/js/hero_displacement.ts	gainCorpseDisplacement	d	"[""6"", ""6""]"	constant
-src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	guarded
+src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	unproved
 src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""amount""]"	unproved
+src/js/hero_engulf.ts	beginHeroEngulf	random	"[""20""]"	constant
+src/js/hero_engulf.ts	beginHeroEngulf	rollOne	"[""level + 5""]"	invariant
+src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""2""]"	constant
+src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""4""]"	constant
+src/js/hero_engulf.ts	resolveHeroEngulf	rollOne	"[""-hero.uac""]"	guarded
+src/js/hero_expulsion.ts	releaseHeroFromMonster	rollOne	"[""2""]"	constant
 src/js/hero_form_combat.ts	performFormWeaponAttack	rnd	"[""20""]"	constant
 src/js/hero_form_combat.ts	performHeroEngulf	rn2	"[""5""]"	constant
-src/js/hero_form_combat.ts	performHeroEngulf	rnd	"[""20 + index""]"	unproved
+src/js/hero_form_combat.ts	performHeroEngulf	rnd	"[""20 + index""]"	guarded
 src/js/hero_form_combat.ts	performHeroEngulf	rnd	"[""8""]"	constant
 src/js/hero_form_combat.ts	performNaturalContact	rnd	"[""20""]"	constant
 src/js/hero_form_kick.ts	kickWithMonsterForm	rnd	"[""20""]"	constant
+src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
+src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
+src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""3""]"	constant
+src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""30""]"	constant
+src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""6""]"	constant
 src/js/hero_gaze.ts	applyFieryGaze	random	"[""20""]"	constant
 src/js/hero_gaze.ts	applyFieryGaze	rollDice	"[""2"", ""6""]"	constant
 src/js/hero_gaze.ts	floatingEyeFreezeDuration	random	"[""4""]"	constant
 src/js/hero_gaze.ts	floatingEyeFreezeDuration	rollDice	"[""(monster.m_lev ?? 0) + 1"", ""attack[3] ?? 1""]"	unproved
+src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6""]"	constant
+src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
+src/js/hero_hit_aftermath.ts	finishHeroHitAftermath	random	"[""2""]"	constant
 src/js/hero_hurtle.ts	hitObstacle	rnd	"[""2 + remaining""]"	unproved
 src/js/hero_illness.ts	advanceHeroSickness	random	"[""100""]"	constant
 src/js/hero_illness.ts	sicknessDialogue	rn2	"[""4""]"	constant
@@ -502,6 +539,8 @@ src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""3""]"	constant
 src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""hero.dx ? 5 : 3""]"	constant
 src/js/hero_movement_turbulence.ts	applyWaterFriction	rn2	"[""hero.dy ? 6 : 3""]"	constant
 src/js/hero_movement_turbulence.ts	waterTurbulenceStopsHero	rn2	"[""4""]"	constant
+src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
+src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/hero_natural_brain.ts	applyHeroNaturalBrain	random	"[""8""]"	constant
 src/js/hero_natural_brain.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
 src/js/hero_natural_brain.ts	eatMonsterBrain	rollOne	"[""30""]"	constant
@@ -509,7 +548,7 @@ src/js/hero_natural_brain.ts	eatMonsterBrain	rollOne	"[""4""]"	constant
 src/js/hero_natural_damage.ts	applyNaturalEffect	random	"[""3""]"	constant
 src/js/hero_natural_damage.ts	applyNaturalEffect	random	"[""4""]"	constant
 src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""10""]"	constant
-src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""Math.trunc(damage / 2)""]"	guarded
+src/js/hero_natural_damage.ts	applyNaturalEffect	rollOne	"[""Math.trunc(damage / 2)""]"	unproved
 src/js/hero_natural_damage.ts	curseNaturalTarget	random	"[""10""]"	constant
 src/js/hero_natural_damage.ts	drainLife	random	"[""3""]"	constant
 src/js/hero_natural_damage.ts	drainLife	rollDice	"[""2"", ""6""]"	constant
@@ -526,12 +565,13 @@ src/js/hero_natural_grip.ts	wrapMonster	random	"[""10""]"	constant
 src/js/hero_natural_polymorph.ts	applyHeroNaturalPolymorph	random	"[""25""]"	constant
 src/js/hero_natural_sliming.ts	applyHeroNaturalSliming	random	"[""4""]"	constant
 src/js/hero_object_contact.ts	resolveHeroObjectContact	random	"[""25""]"	constant
-src/js/hero_object_contact.ts	resolveHeroObjectContact	random	"[""object.spe + 1""]"	guarded
+src/js/hero_object_contact.ts	resolveHeroObjectContact	random	"[""object.spe + 1""]"	unproved
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollDice	"[""2"", ""4""]"	constant
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""20""]"	constant
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""4""]"	constant
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""contact.damage""]"	unproved
 src/js/hero_object_contact.ts	resolveHeroObjectContact	rollOne	"[""range""]"	guarded
+src/js/hero_object_hit.ts	hitHeroWithObject	rollOne	"[""20""]"	constant
 src/js/hero_pet_displacement.ts	settlePetHeroDisplacement	rn2	"[""4""]"	constant
 src/js/hero_potion_hit.ts	applyDirectHeroPotion	rollDice	"[""potion.cursed ? 2 : 1"", ""potion.blessed ? 4 : 8""]"	constant
 src/js/hero_potion_hit.ts	hitHeroWithThrownPotion	rollOne	"[""2""]"	constant
@@ -607,8 +647,11 @@ src/js/hero_weapon_hit.ts	resolveHeroWeaponHit	rnd	"[""100""]"	constant
 src/js/hero_weapon_impact.ts	resolveHeroJoust	d	"[""2"", ""weapon === (state.uwep || state.u.uwep) ? 10 : 2""]"	constant
 src/js/hero_weapon_impact.ts	rollHeroJoust	rn2	"[""5""]"	constant
 src/js/hero_weapon_impact.ts	rollHeroJoust	rnl	"[""50""]"	constant
+src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""10""]"	constant
+src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""wearOffChance""]"	constant
+src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	rollOne	"[""6""]"	constant
 src/js/hero_web_fight.ts	fightSeenWebWithForce	rn2	"[""weapon ? 20 : 45 - 5 * skillMinus2""]"	unproved
-src/js/hole.ts	liquidForHole	random	"[""lava + 1""]"	unproved
+src/js/hole.ts	liquidForHole	random	"[""lava + 1""]"	guarded
 src/js/hole.ts	liquidForHole	random	"[""moats + 1""]"	guarded
 src/js/hole.ts	liquidForHole	random	"[""pools + 1""]"	guarded
 src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""13""]"	constant
@@ -668,9 +711,16 @@ src/js/kick_terrain.ts	kickTree	rn2	"[""6""]"	constant
 src/js/kick_terrain.ts	kickTree	rn2	"[""fruits.length""]"	constant
 src/js/kick_terrain.ts	kickTree	rnl	"[""4""]"	constant
 src/js/kick_terrain.ts	kickTree	rnl	"[""7""]"	constant
+src/js/knockback.ts	tryKnockback	random	"[""2""]"	constant
+src/js/knockback.ts	tryKnockback	random	"[""2""]"	constant
+src/js/knockback.ts	tryKnockback	random	"[""3""]"	constant
+src/js/knockback.ts	tryKnockback	random	"[""4""]"	constant
+src/js/knockback.ts	tryKnockback	random	"[""4""]"	constant
+src/js/knockback.ts	tryKnockback	random	"[""chance""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	random	"[""3""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	random	"[""Math.max(1, bodyWeight + 1)""]"	constant
 src/js/landmine_trap.ts	beginMonsterLandMine	rollOne	"[""16""]"	constant
+src/js/landmine_trap.ts	finishMonsterLandMine	random	"[""3""]"	constant
 src/js/leash_apply.ts	checkHeroLeashes	rn2	"[""3""]"	constant
 src/js/leash_apply.ts	checkHeroLeashes	rn2	"[""monster.mtame""]"	unproved
 src/js/leash_apply.ts	checkHeroLeashes	rnd	"[""2""]"	constant
@@ -681,7 +731,7 @@ src/js/level_change.ts	gotoLevel	d	"[""Math.max(distance, 1)"", ""6""]"	constant
 src/js/level_change.ts	gotoLevel	rn2	"[""4 + (game.context.mysteryforce ?? 0)""]"	unproved
 src/js/level_change.ts	gotoLevel	rn2	"[""4""]"	constant
 src/js/level_change.ts	gotoLevel	rn2	"[""diff + 2""]"	unproved
-src/js/level_change.ts	gotoLevel	rn2	"[""odds""]"	constant
+src/js/level_change.ts	gotoLevel	rn2	"[""odds""]"	guarded
 src/js/level_change.ts	gotoLevel	rnd	"[""diff""]"	unproved
 src/js/level_change.ts	resolveHeroArrivalCollision	rn2	"[""2""]"	constant
 src/js/level_change.ts	restoreCachedMonsterState	rnd	"[""10""]"	constant
@@ -697,8 +747,8 @@ src/js/levitation_potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	consta
 src/js/levitation_potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
 src/js/levitation_potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelmet(helmet) ? 6 : 3""]"	constant
 src/js/light.ts	createConfusedLightPets	rn2	"[""2""]"	constant
-src/js/light.ts	lightDamage	rnd	"[""amount""]"	guarded
-src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	guarded
+src/js/light.ts	lightDamage	rnd	"[""amount""]"	unproved
+src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
 src/js/light.ts	lightRoom	rnd	"[""5""]"	constant
 src/js/location_effects.ts	finishDestinationSpotEffects	rn2	"[""2""]"	constant
 src/js/lock.ts	bladeBreaks	rn2	"[""1000 - enchantment""]"	unproved
@@ -706,9 +756,9 @@ src/js/lock.ts	breakChestLock	rn2	"[""3""]"	constant
 src/js/lock.ts	continueForceLock	rn2	"[""100""]"	constant
 src/js/lock.ts	continueForceLock	rn2	"[""3""]"	constant
 src/js/lock_pick.ts	continuePicking	rn2	"[""100""]"	constant
-src/js/lua/lifecycle.ts	(anonymous)	rn2	"[""luaInteger(args[0])""]"	unproved
-src/js/lua/lifecycle.ts	(anonymous)	rn2	"[""luaInteger(args[0])""]"	unproved
-src/js/lua/lifecycle.ts	(anonymous)	rn2	"[""luaInteger(args[1])""]"	unproved
+src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[0])""]"	unproved
+src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[1])""]"	unproved
+src/js/lua/lifecycle.ts	bindingsFor/rn2	rn2	"[""luaInteger(args[0])""]"	unproved
 src/js/magic_detection.ts	detectedCoins	rnd	"[""10""]"	constant
 src/js/magic_negation.ts	specialAttackNegated	random	"[""10""]"	constant
 src/js/maze_terrain.ts	carveMazeFrom	rn2	"[""available.length""]"	guarded
@@ -717,9 +767,10 @@ src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved
 src/js/maze_terrain.ts	createMaze	rnd	"[""4""]"	constant
 src/js/maze_terrain.ts	createMaze	rnd	"[""4""]"	constant
 src/js/maze_terrain.ts	openDeadEnds	rn2	"[""openings.length""]"	guarded
-src/js/minion.ts	demonLord	rn1	"[""PM_YEENOGHU + 1 - PM_JUIBLEX"", ""PM_JUIBLEX""]"	unproved
-src/js/minion.ts	demonPrince	rn1	"[""PM_DEMOGORGON + 1 - PM_ORCUS"", ""PM_ORCUS""]"	unproved
+src/js/minion.ts	demonLord	rn1	"[""PM_YEENOGHU + 1 - PM_JUIBLEX"", ""PM_JUIBLEX""]"	constant
+src/js/minion.ts	demonPrince	rn1	"[""PM_DEMOGORGON + 1 - PM_ORCUS"", ""PM_ORCUS""]"	constant
 src/js/minion.ts	msummon	rn2	"[""4""]"	constant
+src/js/minion.ts	summonMonsterAttackHelp	random	"[""inHell ? 10 : 16""]"	constant
 src/js/minion.ts	summonedElemental	rn2	"[""ELEMENTALS.length""]"	unproved
 src/js/minion.ts	summonedType	rn2	"[""20""]"	constant
 src/js/minion.ts	summonedType	rn2	"[""20""]"	constant
@@ -738,18 +789,12 @@ src/js/mirror.ts	showMonsterReflection	d	"[""monster.m_lev"", ""gaze[3]""]"	unpr
 src/js/mirror.ts	showMonsterReflection	rn2	"[""4""]"	constant
 src/js/mirror.ts	showMonsterReflection	rn2	"[""5""]"	constant
 src/js/mirror.ts	useMirror	rn2	"[""2""]"	constant
-src/js/mklev.ts	(anonymous)	rn2	"[""100""]"	constant
-src/js/mklev.ts	(anonymous)	rn2	"[""3""]"	constant
-src/js/mklev.ts	(anonymous)	rn2	"[""75""]"	constant
-src/js/mklev.ts	(anonymous)	rn2	"[""directions.length""]"	constant
-src/js/mklev.ts	(anonymous)	rn2	"[""oquan""]"	guarded
-src/js/mklev.ts	(anonymous)	rnd	"[""14 - 2 * bias""]"	constant
 src/js/mklev.ts	addWayOut	rn2	"[""2""]"	constant
 src/js/mklev.ts	addWayOut	rn2	"[""escapeItems.length""]"	constant
 src/js/mklev.ts	applyMinesSameRaceMonsterGate	rn2	"[""3""]"	constant
 src/js/mklev.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
 src/js/mklev.ts	assignShopkeeperIdentity	rn2	"[""names.length""]"	unproved
-src/js/mklev.ts	attachEggHatchTimer	rnd	"[""age""]"	unproved
+src/js/mklev.ts	attachEggHatchTimer	rnd	"[""age""]"	guarded
 src/js/mklev.ts	barracksMonsterType	rn2	"[""probabilities.length""]"	constant
 src/js/mklev.ts	barracksMonsterType	rnd	"[""80 + level_difficulty()""]"	invariant
 src/js/mklev.ts	blessorcurse	rn2	"[""2""]"	constant
@@ -763,11 +808,12 @@ src/js/mklev.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
 src/js/mklev.ts	chooseMimicAppearance	rn2	"[""8""]"	constant
 src/js/mklev.ts	chooseMimicAppearance	rn2	"[""classes.length - 2""]"	constant
 src/js/mklev.ts	chooseMimicAppearance	rn2	"[""classes.length""]"	constant
-src/js/mklev.ts	collectShuffledMonsterCoordinates	rn2	"[""remaining""]"	guarded
+src/js/mklev.ts	collectShuffledMonsterCoordinates	rn2	"[""remaining""]"	unproved
 src/js/mklev.ts	courtMonsterType	rn2	"[""3 * level_difficulty()""]"	invariant
 src/js/mklev.ts	courtMonsterType	rn2	"[""60""]"	constant
 src/js/mklev.ts	createLuaDrawbridge	rn2	"[""2""]"	constant
 src/js/mklev.ts	createLuaGold	rnd	"[""200""]"	constant
+src/js/mklev.ts	createLuaLevelSession/mazeWalk	rn2	"[""directions.length""]"	constant
 src/js/mklev.ts	createLuaObjectPiece	rn2	"[""1""]"	constant
 src/js/mklev.ts	createLuaObjectPiece	rn2	"[""2""]"	constant
 src/js/mklev.ts	createSpecialRoomDoor	rn2	"[""1 + room.hx - room.lx""]"	invariant
@@ -780,7 +826,7 @@ src/js/mklev.ts	createSpecialRoomDoor	rn2	"[""4""]"	constant
 src/js/mklev.ts	createSpecialRoomDoor	rn2	"[""5""]"	constant
 src/js/mklev.ts	createSpecialRoomDoor	rn2	"[""5""]"	constant
 src/js/mklev.ts	createSpecialRoomDoor	rn2	"[""6""]"	constant
-src/js/mklev.ts	createToptenObject	rn1	"[""lastRole - firstRole + 1"", ""firstRole""]"	unproved
+src/js/mklev.ts	createToptenObject	rn1	"[""lastRole - firstRole + 1"", ""firstRole""]"	constant
 src/js/mklev.ts	create_room	rn1	"[""15"", ""3""]"	constant
 src/js/mklev.ts	create_room	rn1	"[""3"", ""2""]"	constant
 src/js/mklev.ts	create_room	rn1	"[""8"", ""2""]"	constant
@@ -788,7 +834,7 @@ src/js/mklev.ts	create_room	rn2	"[""(hx - lx > 28) ? 12 : 8""]"	constant
 src/js/mklev.ts	create_room	rn2	"[""4""]"	constant
 src/js/mklev.ts	create_room	rn2	"[""hx - (lx > 0 ? lx : 3) - dx - xborder + 1""]"	unproved
 src/js/mklev.ts	create_room	rn2	"[""hy - (ly > 0 ? ly : 2) - dy - yborder + 1""]"	unproved
-src/js/mklev.ts	create_room	rn2	"[""level.nroom""]"	invariant
+src/js/mklev.ts	create_room	rn2	"[""level.nroom""]"	unproved
 src/js/mklev.ts	create_room	rnd	"[""3""]"	constant
 src/js/mklev.ts	create_room	rnd	"[""3""]"	constant
 src/js/mklev.ts	create_room	rnd	"[""5""]"	constant
@@ -815,11 +861,11 @@ src/js/mklev.ts	fillCourtRoom	rn1	"[""50 * difficulty"", ""10""]"	invariant
 src/js/mklev.ts	fillCourtRoom	rnd	"[""difficulty""]"	invariant
 src/js/mklev.ts	fillEmptySpecialMaze	rn2	"[""2""]"	constant
 src/js/mklev.ts	fillEmptySpecialMaze	rn2	"[""2""]"	constant
-src/js/mklev.ts	fillEmptySpecialMaze	rn2	"[""Math.trunc(15 * mapfact / 100)""]"	constant
-src/js/mklev.ts	fillEmptySpecialMaze	rn2	"[""Math.trunc(15 * mapfact / 100)""]"	constant
-src/js/mklev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(12 * mapfact / 100)""]"	constant
-src/js/mklev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(12 * mapfact / 100)""]"	constant
-src/js/mklev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(20 * mapfact / 100)""]"	constant
+src/js/mklev.ts	fillEmptySpecialMaze	rn2	"[""Math.trunc(15 * mapfact / 100)""]"	unproved
+src/js/mklev.ts	fillEmptySpecialMaze	rn2	"[""Math.trunc(15 * mapfact / 100)""]"	unproved
+src/js/mklev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(12 * mapfact / 100)""]"	unproved
+src/js/mklev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(12 * mapfact / 100)""]"	unproved
+src/js/mklev.ts	fillEmptySpecialMaze	rnd	"[""Math.trunc(20 * mapfact / 100)""]"	unproved
 src/js/mklev.ts	fillMorgueRoom	rn2	"[""10""]"	constant
 src/js/mklev.ts	fillMorgueRoom	rn2	"[""3""]"	constant
 src/js/mklev.ts	fillMorgueRoom	rn2	"[""5""]"	constant
@@ -869,7 +915,7 @@ src/js/mklev.ts	generateRandomMaze	rn2	"[""2""]"	constant
 src/js/mklev.ts	generateRandomMaze	rn2	"[""3""]"	constant
 src/js/mklev.ts	generateRandomMaze	rn2	"[""5""]"	constant
 src/js/mklev.ts	generate_stairs_find_room	rn2	"[""candidates.length""]"	guarded
-src/js/mklev.ts	generate_stairs_find_room	rn2	"[""level.nroom""]"	invariant
+src/js/mklev.ts	generate_stairs_find_room	rn2	"[""level.nroom""]"	unproved
 src/js/mklev.ts	getRandomTextLine	rn2	"[""fileSize""]"	unproved
 src/js/mklev.ts	getRumor	rn2	"[""2""]"	constant
 src/js/mklev.ts	getShopItem	rnd	"[""100""]"	constant
@@ -896,14 +942,15 @@ src/js/mklev.ts	make_niches	rn2	"[""6""]"	constant
 src/js/mklev.ts	make_niches	rn2	"[""6""]"	constant
 src/js/mklev.ts	make_niches	rnd	"[""Math.trunc(level.nroom / 2) + 1""]"	invariant
 src/js/mklev.ts	makecorridors	rn2	"[""50""]"	constant
-src/js/mklev.ts	makecorridors	rn2	"[""level.nroom - 2""]"	guarded
+src/js/mklev.ts	makecorridors	rn2	"[""level.nroom - 2""]"	unproved
 src/js/mklev.ts	makecorridors	rn2	"[""level.nroom""]"	guarded
-src/js/mklev.ts	makecorridors	rn2	"[""level.nroom""]"	guarded
+src/js/mklev.ts	makecorridors	rn2	"[""level.nroom""]"	unproved
 src/js/mklev.ts	makelevel	rn2	"[""2""]"	constant
 src/js/mklev.ts	makelevel	rn2	"[""5""]"	constant
-src/js/mklev.ts	makelevel	rn2	"[""fillableRooms.length""]"	guarded
-src/js/mklev.ts	makelevel	rn2	"[""i""]"	guarded
+src/js/mklev.ts	makelevel	rn2	"[""fillableRooms.length""]"	unproved
+src/js/mklev.ts	makelevel	rn2	"[""i""]"	unproved
 src/js/mklev.ts	makelevel	rnd	"[""variants""]"	constant
+src/js/mklev.ts	makelevel/finishVault	rn2	"[""3""]"	constant
 src/js/mklev.ts	makemon	d	"[""level_difficulty()"", ""30""]"	invariant
 src/js/mklev.ts	makemon	d	"[""level_difficulty()"", ""hasMonsterInventory ? 5 : 10""]"	invariant
 src/js/mklev.ts	makemon	rn1	"[""10"", ""20""]"	constant
@@ -1054,6 +1101,9 @@ src/js/mklev.ts	makemon	rn2	"[""range""]"	constant
 src/js/mklev.ts	makemon	rnd	"[""14 - (2 * bias)""]"	constant
 src/js/mklev.ts	makemon	rnd	"[""3""]"	constant
 src/js/mklev.ts	makemon	rnd	"[""3""]"	constant
+src/js/mklev.ts	makemon/giveGeneralMonsterWeapon	rnd	"[""14 - 2 * bias""]"	constant
+src/js/mklev.ts	makemon/giveOffensiveMonsterItem	rn2	"[""75""]"	constant
+src/js/mklev.ts	makemon/mInitthrow	rn2	"[""oquan""]"	guarded
 src/js/mklev.ts	makeniche	rn2	"[""3""]"	constant
 src/js/mklev.ts	makeniche	rn2	"[""3""]"	constant
 src/js/mklev.ts	makeniche	rn2	"[""4""]"	constant
@@ -1076,7 +1126,7 @@ src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
 src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
 src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
 src/js/mklev.ts	makerogueghost	rn2	"[""4""]"	constant
-src/js/mklev.ts	makerogueghost	rn2	"[""level.nroom""]"	invariant
+src/js/mklev.ts	makerogueghost	rn2	"[""level.nroom""]"	unproved
 src/js/mklev.ts	makerogueghost	rnd	"[""3""]"	constant
 src/js/mklev.ts	makerogueghost	rnd	"[""5""]"	constant
 src/js/mklev.ts	makerogueghost	rnd	"[""5""]"	constant
@@ -1110,16 +1160,16 @@ src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""8""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""uDepth""]"	guarded
 src/js/mklev.ts	maybePlaceKnoxPortal	rn2	"[""3""]"	constant
 src/js/mklev.ts	maybe_sdoor	rn2	"[""Math.max(2, chance)""]"	constant
-src/js/mklev.ts	mazeFloorPoint	rnd	"[""maxX""]"	unproved
-src/js/mklev.ts	mazeFloorPoint	rnd	"[""maxY""]"	unproved
-src/js/mklev.ts	medusaRoomPoint	rn2	"[""room.hx - room.lx + 1""]"	invariant
-src/js/mklev.ts	medusaRoomPoint	rn2	"[""room.hy - room.ly + 1""]"	invariant
+src/js/mklev.ts	mazeFloorPoint	rnd	"[""maxX""]"	constant
+src/js/mklev.ts	mazeFloorPoint	rnd	"[""maxY""]"	constant
+src/js/mklev.ts	medusaRoomPoint	rn2	"[""room.hx - room.lx + 1""]"	unproved
+src/js/mklev.ts	medusaRoomPoint	rn2	"[""room.hy - room.ly + 1""]"	unproved
 src/js/mklev.ts	mineralize	rn2	"[""1000""]"	constant
 src/js/mklev.ts	mineralize	rn2	"[""1000""]"	constant
 src/js/mklev.ts	mineralize	rn2	"[""3""]"	constant
 src/js/mklev.ts	mineralize	rn2	"[""3""]"	constant
 src/js/mklev.ts	mineralize	rnd	"[""2 + Math.trunc(dunLevel / 3)""]"	unproved
-src/js/mklev.ts	mineralize	rnd	"[""goldprob * 3""]"	guarded
+src/js/mklev.ts	mineralize	rnd	"[""goldprob * 3""]"	unproved
 src/js/mklev.ts	mkaltar	rn2	"[""A_LAWFUL + 2""]"	constant
 src/js/mklev.ts	mkboxCnts	rn2	"[""maximum + 1""]"	unproved
 src/js/mklev.ts	mkboxCnts	rnd	"[""100""]"	constant
@@ -1127,7 +1177,7 @@ src/js/mklev.ts	mkboxCnts	rnd	"[""75""]"	constant
 src/js/mklev.ts	mkboxCnts	rnd	"[""level_difficulty() + 2""]"	invariant
 src/js/mklev.ts	mkclassAligned	rn2	"[""2""]"	constant
 src/js/mklev.ts	mkclassAligned	rn2	"[""9""]"	constant
-src/js/mklev.ts	mkclassAligned	rnd	"[""totalWeight""]"	unproved
+src/js/mklev.ts	mkclassAligned	rnd	"[""totalWeight""]"	guarded
 src/js/mklev.ts	mkfount	rn2	"[""7""]"	constant
 src/js/mklev.ts	mkgold	rnd	"[""Math.trunc(30 / Math.max(12 - depthVal, 2))""]"	unproved
 src/js/mklev.ts	mkgold	rnd	"[""level_difficulty() + 2""]"	invariant
@@ -1201,7 +1251,7 @@ src/js/mklev.ts	peaceMinded	rn2	"[""16 + record""]"	constant
 src/js/mklev.ts	peaceMinded	rn2	"[""2 + Math.abs(monsterAlignment)""]"	constant
 src/js/mklev.ts	pickSpecialRoom	rn2	"[""3""]"	constant
 src/js/mklev.ts	pickSpecialRoom	rn2	"[""5""]"	constant
-src/js/mklev.ts	pickSpecialRoom	rn2	"[""rooms.length""]"	guarded
+src/js/mklev.ts	pickSpecialRoom	rn2	"[""rooms.length""]"	unproved
 src/js/mklev.ts	placeThemedMap	rn2	"[""COLNO - 1 - width""]"	unproved
 src/js/mklev.ts	placeThemedMap	rn2	"[""ROWNO - height""]"	unproved
 src/js/mklev.ts	place_lregion	rn1	"[""(hx - lx) + 1"", ""lx""]"	unproved
@@ -1222,6 +1272,7 @@ src/js/mklev.ts	randomMonsterPosition	rn2	"[""2""]"	constant
 src/js/mklev.ts	randomMonsterPosition	rn2	"[""ROWNO""]"	constant
 src/js/mklev.ts	randomSpecialDoorMask	rn2	"[""states.length""]"	constant
 src/js/mklev.ts	randomSpecialTrapType	rnd	"[""TRAPNUM - 1""]"	constant
+src/js/mklev.ts	replaceLuaTerrain/selection.forEachXMajor argument 1	rn2	"[""100""]"	constant
 src/js/mklev.ts	riderRevivalTime	rn2	"[""3""]"	constant
 src/js/mklev.ts	rndClass	rn2	"[""last - first + 1""]"	guarded
 src/js/mklev.ts	rndClass	rnd	"[""total""]"	unproved
@@ -1247,8 +1298,8 @@ src/js/mklev.ts	setMimicAppearance	rn2	"[""3""]"	constant
 src/js/mklev.ts	shrinePosition	rn2	"[""2""]"	constant
 src/js/mklev.ts	shrinePosition	rn2	"[""2""]"	constant
 src/js/mklev.ts	specialExplicitMonster	rn2	"[""2""]"	constant
-src/js/mklev.ts	specialMazeStockPoint	rn1	"[""((COLNO - 1) & ~1) - 3"", ""3""]"	unproved
-src/js/mklev.ts	specialMazeStockPoint	rn1	"[""((ROWNO - 1) & ~1) - 3"", ""3""]"	unproved
+src/js/mklev.ts	specialMazeStockPoint	rn1	"[""((COLNO - 1) & ~1) - 3"", ""3""]"	constant
+src/js/mklev.ts	specialMazeStockPoint	rn1	"[""((ROWNO - 1) & ~1) - 3"", ""3""]"	constant
 src/js/mklev.ts	specialMonsterAt	rn2	"[""2""]"	constant
 src/js/mklev.ts	specialShrinePriest	rn2	"[""2""]"	constant
 src/js/mklev.ts	specialShrinePriest	rn2	"[""3""]"	constant
@@ -1264,12 +1315,12 @@ src/js/mklev.ts	stockShopRoom	rnd	"[""stockPositions.length""]"	guarded
 src/js/mklev.ts	summonNastyMonsters	rn2	"[""10""]"	constant
 src/js/mklev.ts	summonNastyMonsters	rn2	"[""In_endgame(game.u.uz) ? 3 : 7""]"	constant
 src/js/mklev.ts	summonNastyMonsters	rnd	"[""4""]"	constant
-src/js/mklev.ts	summonNastyMonsters	rnd	"[""outerLimit""]"	constant
+src/js/mklev.ts	summonNastyMonsters	rnd	"[""outerLimit""]"	unproved
 src/js/mklev.ts	trapVictimObjectBreaks	rn2	"[""100""]"	constant
 src/js/mklev.ts	traptype_rnd	rn2	"[""7""]"	constant
 src/js/mklev.ts	traptype_rnd	rnd	"[""TRAPNUM - 1""]"	constant
-src/js/mklev.ts	vibratingSquarePoint	rn1	"[""xRange"", ""minimum + xMargin + 1""]"	unproved
-src/js/mklev.ts	vibratingSquarePoint	rn1	"[""yRange"", ""minimum + yMargin + 1""]"	unproved
+src/js/mklev.ts	vibratingSquarePoint	rn1	"[""xRange"", ""minimum + xMargin + 1""]"	constant
+src/js/mklev.ts	vibratingSquarePoint	rn1	"[""yRange"", ""minimum + yMargin + 1""]"	constant
 src/js/mklev.ts	water_has_kelp	rn2	"[""kelp_moat""]"	unproved
 src/js/mklev.ts	water_has_kelp	rn2	"[""kelp_pool""]"	unproved
 src/js/mkmap.ts	litstate_rnd	rn2	"[""77""]"	constant
@@ -1277,18 +1328,34 @@ src/js/mkmap.ts	litstate_rnd	rnd	"[""1 + Math.abs(depth(game.u.uz))""]"	constant
 src/js/mkmap.ts	mkmap	rn2	"[""3""]"	constant
 src/js/mkmap.ts	mkmap	rn2	"[""width - 1""]"	constant
 src/js/mkmap.ts	mkmap	rnd	"[""height - 1""]"	constant
-src/js/mkroom.ts	somex	rn1	"[""room.hx - room.lx + 1"", ""room.lx""]"	invariant
-src/js/mkroom.ts	somey	rn1	"[""room.hy - room.ly + 1"", ""room.ly""]"	invariant
+src/js/mkroom.ts	somex	rn1	"[""room.hx - room.lx + 1"", ""room.lx""]"	unproved
+src/js/mkroom.ts	somey	rn1	"[""room.hy - room.ly + 1"", ""room.ly""]"	unproved
+src/js/mon.ts	resolveMonsterLiquid	random	"[""3""]"	constant
+src/js/mon.ts	resolveMonsterLiquid	random	"[""8""]"	constant
+src/js/mon.ts	resolveMonsterLiquid	random	"[""monster.mhp""]"	guarded
 src/js/mon.ts	rollMonsterPoolReaction	random	"[""5""]"	constant
 src/js/mon.ts	rollMonsterPoolReaction	rollDice	"[""2"", ""6""]"	constant
+src/js/monmove.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
+src/js/monmove.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
 src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""10""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""3""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""COLNO - 4""]"	constant
 src/js/monmove.ts	fumaroles	rn2	"[""ROWNO - 4""]"	constant
-src/js/monmove.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	unproved
+src/js/monmove.ts	performPetRangedAttack/rollOne	rollOne	"[""sides""]"	unproved
+src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""18""]"	constant
+src/js/monmove.ts	resolveDeferredMonsterBreath	random	"[""3""]"	constant
+src/js/monmove.ts	resolveDeferredMonsterBreath	rollOne	"[""20""]"	constant
+src/js/monmove.ts	resumeDeferredHeroEngulf/rollOne	rollOne	"[""sides""]"	unproved
+src/js/monmove.ts	resumeDeferredHeroLegs	rnd	"[""durationSides""]"	invariant
 src/js/monmove.ts	resumeDeferredHeroSpell	d	"[""3"", ""6""]"	constant
 src/js/monmove.ts	resumeDeferredHeroSpell	d	"[""dice"", ""4""]"	constant
+src/js/monmove.ts	resumeDeferredHeroSpell	rollOne	"[""lossSides""]"	guarded
+src/js/monmove.ts	resumeDeferredMonsterTrap/recordedRollOne	rollOne	"[""range""]"	unproved
+src/js/monmove.ts	resumeDeferredMovementSpell	rollDice	"[""3"", ""6""]"	constant
+src/js/monmove.ts	rollDeferredHeroSpellDamage	rollDice	"[""attack.spellDice"", ""attack.spellSides""]"	unproved
+src/js/monmove.ts	takeMonsterTurn/rollOne	rollOne	"[""sides""]"	unproved
+src/js/monmove.ts	takeMonsterTurn/talkToDemon argument 4	rollOne	"[""sides""]"	unproved
 src/js/monmove.ts	triggerMonsterTrap	rnl	"[""5""]"	constant
 src/js/monster_anger.ts	aggravateMonsters	random	"[""5""]"	constant
 src/js/monster_anger.ts	angerMonster	rnd	"[""5""]"	constant
@@ -1303,22 +1370,27 @@ src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""25""]"	constant
 src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""3""]"	constant
 src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""4""]"	constant
 src/js/monster_anger.ts	reactPeacefulBystanders	rn2	"[""6""]"	constant
+src/js/monster_boulder.ts	breakMonsterBoulder	random	"[""20""]"	constant
 src/js/monster_brain_attack.ts	eatMonsterBrain	rollOne	"[""10""]"	constant
 src/js/monster_brain_attack.ts	eatMonsterBrain	rollOne	"[""60""]"	constant
 src/js/monster_brain_attack.ts	resolveMonsterBrainAttack	random	"[""8""]"	constant
 src/js/monster_carry.ts	monsterCarryAmount	random	"[""LARGEST_INT - 20000 + 1""]"	constant
+src/js/monster_clone.ts	cloneMonster	random	"[""attitudeRange""]"	constant
+src/js/monster_clone.ts	cloneMonster	random	"[""attitudeRange""]"	constant
 src/js/monster_combat_breath.ts	resolveMonsterCombatBreath	random	"[""18""]"	constant
 src/js/monster_combat_breath.ts	resolveMonsterCombatBreath	random	"[""3""]"	constant
 src/js/monster_combat_breath.ts	resolveMonsterCombatBreath	random	"[""8""]"	constant
 src/js/monster_combat_damage.ts	applyMonsterCombatEffect	context.random	"[""8""]"	constant
 src/js/monster_combat_damage.ts	resolveMonsterCombatDamage	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
-src/js/monster_combat_drain.ts	applyMonsterDrainEffect	context.rollOne	"[""Math.trunc(result.damage / 2)""]"	guarded
+src/js/monster_combat_drain.ts	applyMonsterDrainEffect	context.rollOne	"[""Math.trunc(result.damage / 2)""]"	unproved
 src/js/monster_combat_drain.ts	curseDefender	random	"[""10""]"	constant
 src/js/monster_combat_drain.ts	drainEnergy	random	"[""4""]"	constant
 src/js/monster_combat_drain.ts	drainLife	random	"[""3""]"	constant
 src/js/monster_combat_drain.ts	drainLife	rollDice	"[""2"", ""6""]"	constant
 src/js/monster_combat_elements.ts	acidContact	random	"[""30""]"	constant
 src/js/monster_combat_elements.ts	acidContact	random	"[""6""]"	constant
+src/js/monster_combat_explosion.ts	resolveMonsterCombatExplosion	rollDice	"[""(MONSTER_LEVEL[attacker.mnum] ?? 0) + 1"", ""sides""]"	unproved
+src/js/monster_combat_explosion.ts	resolveMonsterCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/monster_combat_gaze.ts	resolveMonsterCombatGaze	random	"[""2""]"	constant
 src/js/monster_combat_status.ts	applyMonsterCombatBlindness	rollDice	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/monster_combat_status.ts	applyMonsterStatusEffect	random	"[""3""]"	constant
@@ -1341,9 +1413,13 @@ src/js/monster_contact_effects.ts	resolveMonsterContactEffect	random	"[""6""]"	c
 src/js/monster_contact_effects.ts	sleepHero	random	"[""5""]"	constant
 src/js/monster_contact_effects.ts	sleepHero	rollOne	"[""10""]"	constant
 src/js/monster_contact_effects.ts	splashHeroWithAcid	random	"[""3""]"	constant
+src/js/monster_contact_passive.ts	applyMonsterContactPassive	random	"[""2""]"	constant
+src/js/monster_contact_passive.ts	applyMonsterContactPassive	random	"[""3""]"	constant
+src/js/monster_contact_passive.ts	applyMonsterContactPassive	random	"[""30""]"	constant
+src/js/monster_contact_passive.ts	applyMonsterContactPassive	random	"[""6""]"	constant
 src/js/monster_container_loot.ts	lootMonsterContainer	random	"[""10""]"	constant
 src/js/monster_container_loot.ts	lootMonsterContainer	random	"[""contents.length + 1""]"	constant
-src/js/monster_container_loot.ts	lootMonsterContainer	random	"[""contents.length""]"	guarded
+src/js/monster_container_loot.ts	lootMonsterContainer	random	"[""contents.length""]"	unproved
 src/js/monster_conversation.ts	deathReply	rn2	"[""10""]"	constant
 src/js/monster_conversation.ts	deathReply	rn2	"[""3""]"	constant
 src/js/monster_conversation.ts	humanoidReply	rn2	"[""2""]"	constant
@@ -1400,10 +1476,16 @@ src/js/monster_defensive_item.ts	useMonsterDefensiveItem	random	"[""73""]"	const
 src/js/monster_defensive_item.ts	useMonsterDefensiveItem	rollDice	"[""6 + 2 * sign"", ""choice.kind === 'healing' ? 4 : 8""]"	constant
 src/js/monster_defensive_item.ts	useMonsterDefensiveItem	rollOne	"[""4""]"	constant
 src/js/monster_disease.ts	infectHeroWithMonsterDisease	random	"[""currentAttribute(A_CON, state)""]"	invariant
+src/js/monster_displacement.ts	displaceMonster	random	"[""7""]"	constant
 src/js/monster_door_passage.ts	resolveMonsterDoorPassage	random	"[""2""]"	constant
+src/js/monster_door_trap.ts	triggerMonsterDoorTrap	rollOne	"[""15""]"	constant
 src/js/monster_energy.ts	drainMonsterEnergy	rollDice	"[""2"", ""2""]"	constant
 src/js/monster_explosion.ts	rollAttackDamage	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/monster_explosion.ts	rollAttackDamage	rollDice	"[""level + 1"", ""sides""]"	invariant
+src/js/monster_flee.ts	checkMonsterHeroRange	random	"[""5""]"	constant
+src/js/monster_flee.ts	checkMonsterHeroRange	random	"[""7""]"	constant
+src/js/monster_flee.ts	checkMonsterHeroRange	rollOne	"[""random(7) ? 10 : 100""]"	constant
+src/js/monster_flee.ts	makeMonsterFlee	random	"[""25""]"	constant
 src/js/monster_floor_consumption.ts	eatMetal	rollOne	"[""25""]"	constant
 src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
 src/js/monster_gaze.ts	resolveMonsterGaze	random	"[""2""]"	constant
@@ -1441,6 +1523,11 @@ src/js/monster_hero_brain.ts	drainHeroBrain	rollOne	"[""2""]"	constant
 src/js/monster_hero_brain.ts	drainHeroBrain	rollOne	"[""2""]"	constant
 src/js/monster_hero_brain.ts	eatHeroBrain	rollOne	"[""10""]"	constant
 src/js/monster_hero_brain.ts	eatHeroBrain	rollOne	"[""60""]"	constant
+src/js/monster_hiding.ts	attemptMonsterRestrap	random	"[""3""]"	constant
+src/js/monster_hit_points.ts	monsterHitPointsPerLevel	randomBelow	"[""5""]"	constant
+src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
+src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""4""]"	constant
+src/js/monster_hit_points.ts	monsterHitPointsPerLevel	rollOne	"[""8""]"	constant
 src/js/monster_hit_points.ts	newMonsterHitPoints	d	"[""10"", ""8""]"	constant
 src/js/monster_hit_points.ts	newMonsterHitPoints	d	"[""level"", ""4""]"	unproved
 src/js/monster_hit_points.ts	newMonsterHitPoints	d	"[""level"", ""8""]"	unproved
@@ -1456,7 +1543,7 @@ src/js/monster_kick.ts	prepareKick	rn2	"[""noDamageRange""]"	constant
 src/js/monster_kick.ts	prepareKick	rn2	"[""unusedCapacity < Math.trunc(capacity / 5) ? 2 : 3""]"	constant
 src/js/monster_kick.ts	prepareKick	rnd	"[""25""]"	constant
 src/js/monster_kick.ts	rollKickDamage	rn2	"[""Math.trunc(currentAttribute(A_DEX, state) / 2) + 1""]"	invariant
-src/js/monster_kick.ts	rollKickDamage	rnd	"[""damage""]"	guarded
+src/js/monster_kick.ts	rollKickDamage	rnd	"[""damage""]"	unproved
 src/js/monster_kick.ts	tryKickEvasion	rn2	"[""clumsy ? 3 : 4""]"	constant
 src/js/monster_kick.ts	tryKickEvasion	rn2	"[""martial ? 5 : 3""]"	constant
 src/js/monster_kick.ts	tryKickReel	rn2	"[""3""]"	constant
@@ -1482,6 +1569,7 @@ src/js/monster_mind_blast.ts	useMonsterMindBlast	random	"[""2""]"	constant
 src/js/monster_mind_blast.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
 src/js/monster_mind_blast.ts	useMonsterMindBlast	rollOne	"[""15""]"	constant
 src/js/monster_name.ts	formatMonsterName	rn2	"[""2""]"	constant
+src/js/monster_name.ts	monsterPronounGender	random	"[""4""]"	constant
 src/js/monster_name.ts	shopkeeperName	rn2	"[""RANDOM_SHOP_TYPES.length""]"	unproved
 src/js/monster_name.ts	shopkeeperName	rn2	"[""shop.names.length""]"	unproved
 src/js/monster_nurse_contact.ts	resolveNurseContact	random	"[""13""]"	constant
@@ -1499,11 +1587,15 @@ src/js/monster_offensive_item.ts	photographHero	rollOne	"[""51""]"	constant
 src/js/monster_offensive_item.ts	useMonsterOffensiveItem	random	"[""6""]"	constant
 src/js/monster_offensive_selection.ts	selectMonsterOffensiveItem	random	"[""10""]"	constant
 src/js/monster_offensive_selection.ts	selectMonsterOffensiveItem	random	"[""6""]"	constant
+src/js/monster_passive.ts	applyHeroContactPassive	random	"[""3""]"	constant
 src/js/monster_passive.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
 src/js/monster_passive.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
 src/js/monster_passive.ts	objectTouchedByEnchantment	random	"[""2""]"	constant
 src/js/monster_physical_damage.ts	resolveMonsterPhysicalDamage	random	"[""4""]"	constant
+src/js/monster_pickup.ts	pickUpMonsterFloorObject	random	"[""25""]"	constant
+src/js/monster_pit_trap.ts	finishMonsterPitTrap	rollOne	"[""event.damageSides""]"	unproved
 src/js/monster_poison.ts	poisonHeroFromMonster	random	"[""chance""]"	guarded
+src/js/monster_poison.ts	poisonMonsterFromAttack	random	"[""10""]"	constant
 src/js/monster_polymorph.ts	decideMonsterShapeChange	random	"[""10""]"	constant
 src/js/monster_polymorph.ts	decideMonsterShapeChange	random	"[""4""]"	constant
 src/js/monster_polymorph.ts	decideMonsterShapeChange	random	"[""4""]"	constant
@@ -1518,7 +1610,7 @@ src/js/monster_polymorph.ts	pickVampireShape	rn2	"[""wolfChance""]"	constant
 src/js/monster_polymorph.ts	randomShape	rn2	"[""SPECIAL_PM""]"	constant
 src/js/monster_polymorph.ts	refreshNewMonsterFormPerception	rn1	"[""9"", ""2""]"	constant
 src/js/monster_polymorph.ts	selectChameleonForm	rn2	"[""3""]"	constant
-src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn1	"[""PM_APPRENTICE - PM_STUDENT + 1"", ""PM_STUDENT""]"	unproved
+src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn1	"[""PM_APPRENTICE - PM_STUDENT + 1"", ""PM_STUDENT""]"	constant
 src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn2	"[""3""]"	constant
 src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn2	"[""3""]"	constant
 src/js/monster_polymorph.ts	selectDoppelgangerFormOnce	rn2	"[""7""]"	constant
@@ -1527,10 +1619,14 @@ src/js/monster_polymorph.ts	selectSandestinForm	rn2	"[""7""]"	constant
 src/js/monster_polymorph.ts	shapechangerGender	rn2	"[""10""]"	constant
 src/js/monster_polymorph_attack.ts	polymorphMonsterFromMagic	rn2	"[""25""]"	constant
 src/js/monster_quest_theft.ts	chooseQuestTheftTarget	rollOne	"[""candidates.length""]"	guarded
-src/js/monster_ranged_alignment.ts	linedUp	random	"[""2 + boulderSquares""]"	unproved
+src/js/monster_ranged_alignment.ts	linedUp	random	"[""2 + boulderSquares""]"	guarded
 src/js/monster_ranged_alignment.ts	monsterLinedUpWithHero	random	"[""25""]"	constant
 src/js/monster_resistance.ts	monsterResistsEffect	random	"[""100 + attackLevel - defenseLevel""]"	unproved
 src/js/monster_return.ts	returnDeadKop	rollOne	"[""5""]"	constant
+src/js/monster_returning_weapon.ts	returnMonsterWeapon	random	"[""100""]"	constant
+src/js/monster_returning_weapon.ts	returnMonsterWeapon	random	"[""100""]"	constant
+src/js/monster_returning_weapon.ts	returnMonsterWeapon	random	"[""2""]"	constant
+src/js/monster_returning_weapon.ts	returnMonsterWeapon	rollOne	"[""3""]"	constant
 src/js/monster_seduction.ts	exchangeAdornmentRings	random	"[""20""]"	constant
 src/js/monster_seduction.ts	maybeRemoveArmor	random	"[""2""]"	constant
 src/js/monster_seduction.ts	maybeRemoveArmor	random	"[""2""]"	constant
@@ -1556,9 +1652,10 @@ src/js/monster_spell_insects.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 
 src/js/monster_spit.ts	spitAtTarget	random	"[""BOLT_LIM - distance""]"	unproved
 src/js/monster_starting_inventory.ts	giveMonsterStartingObject	rn2	"[""4""]"	constant
 src/js/monster_stoning.ts	createStoneRemains	rn2	"[""2 + Number(frequency > 2)""]"	constant
+src/js/monster_stoning_cure.ts	consumeMonsterStoningCure	rollOne	"[""15""]"	constant
 src/js/monster_taming.ts	tameMonster	rn2	"[""6""]"	constant
 src/js/monster_taming.ts	tameMonster	rnd	"[""10""]"	constant
-src/js/monster_throw.ts	catchThrownObject	random	"[""chance""]"	unproved
+src/js/monster_throw.ts	catchThrownObject	random	"[""chance""]"	invariant
 src/js/monster_throw.ts	hitMonsterWithProjectile	random	"[""30""]"	constant
 src/js/monster_throw.ts	hitMonsterWithProjectile	rollOne	"[""20""]"	constant
 src/js/monster_throw.ts	hitMonsterWithProjectile	rollOne	"[""25""]"	constant
@@ -1569,10 +1666,13 @@ src/js/monster_throw.ts	throwMonsterProjectile	random	"[""3""]"	constant
 src/js/monster_throw.ts	throwMonsterProjectile	random	"[""5""]"	constant
 src/js/monster_throw.ts	throwMonsterProjectile	random	"[""7""]"	constant
 src/js/monster_throw.ts	throwMonsterWeaponAtMonster	(options.random ?? rn2)	"[""chance""]"	constant
+src/js/monster_traits.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
+src/js/monster_trap_escape.ts	tryMonsterTrapEscape	random	"[""2""]"	constant
+src/js/monster_trap_escape.ts	tryMonsterTrapEscape	random	"[""40""]"	constant
 src/js/monster_tunnel.ts	digMonsterTunnel	random	"[""3""]"	constant
 src/js/monster_tunnel.ts	digMonsterTunnel	random	"[""5""]"	constant
 src/js/monster_tunnel.ts	digMonsterTunnel	rollOne	"[""12""]"	constant
-src/js/monster_unslime.ts	selectSlimeCure	random	"[""nearby.length - index""]"	guarded
+src/js/monster_unslime.ts	selectSlimeCure	random	"[""nearby.length - index""]"	unproved
 src/js/monster_unslime.ts	tryMonsterUnslime	random	"[""10""]"	constant
 src/js/monster_unslime.ts	tryMonsterUnslime	random	"[""3""]"	constant
 src/js/monster_unslime.ts	tryMonsterUnslime	random	"[""3""]"	constant
@@ -1592,7 +1692,7 @@ src/js/monster_worm.ts	cutWorm	rollDice	"[""clone.m_lev"", ""8""]"	invariant
 src/js/monster_worm.ts	cutWorm	rollDice	"[""monster.m_lev"", ""8""]"	invariant
 src/js/monster_worm.ts	cutWorm	rollOne	"[""20""]"	constant
 src/js/monster_worm.ts	initializeMonsterWormBody	random	"[""5""]"	constant
-src/js/monster_worm.ts	placeMonsterWormTailRandomly	random	"[""remaining""]"	guarded
+src/js/monster_worm.ts	placeMonsterWormTailRandomly	random	"[""remaining""]"	unproved
 src/js/monster_worm.ts	shrinkStationaryMonsterWorm	rollDice	"[""2"", ""2""]"	constant
 src/js/monster_wrapping_contact.ts	heroSlipsFromWrapping	random	"[""2""]"	constant
 src/js/monster_wrapping_contact.ts	heroSlipsFromWrapping	random	"[""3""]"	constant
@@ -1606,7 +1706,7 @@ src/js/mplayer.ts	createPlayerMonster	rnd	"[""3""]"	constant
 src/js/mplayer.ts	createPlayerMonster	rnd	"[""3""]"	constant
 src/js/mplayer.ts	createPlayerMonster	rnd	"[""30""]"	constant
 src/js/mplayer.ts	createPlayerMonsters	rn1	"[""COLNO - 4"", ""2""]"	constant
-src/js/mplayer.ts	createPlayerMonsters	rn1	"[""PM_WIZARD - PM_ARCHEOLOGIST + 1"", ""PM_ARCHEOLOGIST""]"	unproved
+src/js/mplayer.ts	createPlayerMonsters	rn1	"[""PM_WIZARD - PM_ARCHEOLOGIST + 1"", ""PM_ARCHEOLOGIST""]"	constant
 src/js/mplayer.ts	createPlayerMonsters	rnd	"[""ROWNO - 2""]"	constant
 src/js/mplayer.ts	equipSpecialPlayer	rn2	"[""10""]"	constant
 src/js/mplayer.ts	equipSpecialPlayer	rn2	"[""10""]"	constant
@@ -1685,7 +1785,7 @@ src/js/muse.ts	randomOffensiveMonsterItem	rn2	"[""35""]"	constant
 src/js/muse.ts	randomOffensiveMonsterItem	rn2	"[""9 - Number(difficulty < 4) + 4 * Number(difficulty > 6)""]"	constant
 src/js/music.ts	announceImprovisation	rn2	"[""2""]"	constant
 src/js/music.ts	announceImprovisation	rn2	"[""2""]"	constant
-src/js/music.ts	improvisedNotes	rn2	"[""noteNames.length""]"	unproved
+src/js/music.ts	improvisedNotes	rn2	"[""noteNames.length""]"	constant
 src/js/music.ts	improvisedNotes	rnd	"[""5""]"	constant
 src/js/music.ts	playLeatherDrum	rn2	"[""2""]"	constant
 src/js/music.ts	playLeatherDrum	rn2	"[""2""]"	constant
@@ -1704,7 +1804,7 @@ src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""4""]"	constant
-src/js/o_init.ts	shuffle	rn2	"[""high - current + 1""]"	guarded
+src/js/o_init.ts	initializeObjectDescriptions/shuffle	rn2	"[""high - current + 1""]"	unproved
 src/js/object_erosion.ts	erodeArmor	random	"[""5""]"	constant
 src/js/object_erosion.ts	erodeAttackingWeapon	random	"[""kind === 'burn' ? 6 : 1""]"	constant
 src/js/object_erosion.ts	erodeObject	luckRandom	"[""4""]"	constant
@@ -1725,12 +1825,14 @@ src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
 src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
 src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
 src/js/object_kick.ts	kickRange	rollOne	"[""3""]"	constant
+src/js/object_migration.ts	impactDrop	random	"[""object.otyp === BOULDER ? 30 : 3""]"	constant
+src/js/object_migration.ts	shipObject	random	"[""3""]"	constant
 src/js/object_polymorph.ts	createPolymorphMonsterFromPile	rn2	"[""remaining + 1""]"	guarded
 src/js/object_polymorph.ts	do_osshock	rn2	"[""luck + 45""]"	unproved
 src/js/object_polymorph.ts	do_osshock	rnd	"[""quantity > LARGEST_INT ? 30000 : quantity - 1""]"	guarded
 src/js/object_polymorph.ts	finishReplacementType	rn2	"[""1000""]"	constant
 src/js/object_polymorph.ts	finishReplacementType	rn2	"[""7""]"	constant
-src/js/object_polymorph.ts	finishReplacementType	rn2	"[""target.spestudied""]"	guarded
+src/js/object_polymorph.ts	finishReplacementType	rn2	"[""target.spestudied""]"	unproved
 src/js/object_polymorph.ts	finishReplacementType	rnd	"[""4""]"	constant
 src/js/object_polymorph.ts	golemForMaterial	rn2	"[""2""]"	constant
 src/js/object_polymorph.ts	makeHeroLaidEgg	rn2	"[""MONSTER_NAME.length""]"	constant
@@ -1743,13 +1845,13 @@ src/js/objnam.ts	applyWishQuantity	rn2	"[""5""]"	constant
 src/js/objnam.ts	applyWishQuantity	rnd	"[""6""]"	constant
 src/js/objnam.ts	readObjectName	rn2	"[""artifactExistCount()""]"	unproved
 src/js/objnam.ts	readObjectName	rn2	"[""wishClasses.length""]"	constant
-src/js/options.ts	chooseRandomPart	rn2	"[""parts""]"	unproved
+src/js/options.ts	chooseRandomPart	rn2	"[""parts""]"	guarded
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""10""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""10""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""2""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""4""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES + 1""]"	unproved
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""PM_ORC_SHAMAN - PM_ORC + 1""]"	unproved
+src/js/orc_raid.ts	createOrcRaid	rn2	"[""PM_ORC_SHAMAN - PM_ORC + 1""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rn2	"[""TIN - TRIPE_RATION + 1""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rnd	"[""10""]"	constant
 src/js/orc_raid.ts	createOrcRaid	rnd	"[""3""]"	constant
@@ -1809,15 +1911,15 @@ src/js/polyself.ts	changeVampireForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	chooseHeroForm	rn2	"[""3""]"	constant
 src/js/polyself.ts	chooseHeroForm	rn2	"[""3""]"	constant
 src/js/polyself.ts	finishHumanFormChange	rn1	"[""6"", ""2""]"	constant
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""race.inrnd""]"	guarded
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""race[randomKey]""]"	guarded
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""role.inrnd""]"	guarded
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""role[randomKey]""]"	guarded
+src/js/polyself.ts	newmanHpIncrement	rnd	"[""race.inrnd""]"	unproved
+src/js/polyself.ts	newmanHpIncrement	rnd	"[""race[randomKey]""]"	unproved
+src/js/polyself.ts	newmanHpIncrement	rnd	"[""role.inrnd""]"	unproved
+src/js/polyself.ts	newmanHpIncrement	rnd	"[""role[randomKey]""]"	unproved
 src/js/polyself.ts	newmanPowerIncrement	rn2	"[""range""]"	unproved
-src/js/polyself.ts	newmanPowerIncrement	rnd	"[""race.inrnd""]"	guarded
+src/js/polyself.ts	newmanPowerIncrement	rnd	"[""race.inrnd""]"	unproved
 src/js/polyself.ts	newmanPowerIncrement	rnd	"[""roleRange""]"	guarded
 src/js/polyself.ts	pickFormFromClass	rn2	"[""9""]"	constant
-src/js/polyself.ts	pickFormFromClass	rnd	"[""total""]"	unproved
+src/js/polyself.ts	pickFormFromClass	rnd	"[""total""]"	guarded
 src/js/polyself.ts	polymonHero	rn1	"[""6"", ""2""]"	constant
 src/js/polyself.ts	redistributeActiveAttributes	rn2	"[""5""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""10""]"	constant
@@ -1863,6 +1965,7 @@ src/js/potion_hit.ts	potionHitsSaddle	rn2	"[""10""]"	constant
 src/js/potion_hit.ts	potionHitsSaddle	rn2	"[""3""]"	constant
 src/js/potion_hit.ts	potionHitsSaddle	rnl	"[""10""]"	constant
 src/js/potion_hit.ts	potionHitsSaddle	rnl	"[""10""]"	constant
+src/js/potion_hit.ts	randomBottleName	select	"[""names.length""]"	unproved
 src/js/potion_hit.ts	restoreBaseAttributes	rn2	"[""6""]"	constant
 src/js/potion_item_dip.ts	dipInOil	d	"[""2"", ""10""]"	constant
 src/js/potion_item_dip.ts	fillLamp	d	"[""6"", ""6""]"	constant
@@ -1878,7 +1981,7 @@ src/js/potion_mental_effects.ts	paralysisEffect	rn1	"[""10"", ""25 - 12 * blessi
 src/js/potion_mental_effects.ts	sleepingEffect	rn1	"[""10"", ""25 - 12 * blessing(source)""]"	constant
 src/js/potion_mixing.ts	mixPotions	rnd	"[""8""]"	constant
 src/js/potion_mixing.ts	mixPotions	rnd	"[""9""]"	constant
-src/js/potion_mixing.ts	mixPotions	rnd	"[""Math.min(count, 8) - 2""]"	unproved
+src/js/potion_mixing.ts	mixPotions	rnd	"[""Math.min(count, 8) - 2""]"	guarded
 src/js/potion_mixing.ts	mixPotions	rnd	"[""count - 6""]"	unproved
 src/js/potion_mixing.ts	mixtureExplodes	rn2	"[""game.uarmc?.otyp === ALCHEMY_SMOCK ? 30 : 10""]"	constant
 src/js/potion_mixing.ts	mixtureType	rn2	"[""3""]"	constant
@@ -1960,7 +2063,7 @@ src/js/ray_name.ts	displayRayName	random	"[""hallucinationBlasts.length""]"	cons
 src/js/recharge.ts	explodeWand	d	"[""Math.max(2, wand.spe + (extraCharges || 2))"", ""sides""]"	unproved
 src/js/recharge.ts	rechargeRing	random	"[""7""]"	constant
 src/js/recharge.ts	rechargeRing	rollOne	"[""2""]"	constant
-src/js/recharge.ts	rechargeRing	rollOne	"[""3 * Math.abs(ring.spe)""]"	guarded
+src/js/recharge.ts	rechargeRing	rollOne	"[""3 * Math.abs(ring.spe)""]"	unproved
 src/js/recharge.ts	rechargeRing	rollOne	"[""3""]"	constant
 src/js/recharge.ts	rechargeTool	d	"[""2"", ""4""]"	constant
 src/js/recharge.ts	rechargeTool	rn1	"[""11"", ""10""]"	constant
@@ -1990,10 +2093,10 @@ src/js/ring_sink.ts	teleportSink	rnd	"[""(COLNO - 1) - 2""]"	constant
 src/js/rock_breakage.ts	fractureRock	random	"[""60""]"	constant
 src/js/rock_trap.ts	beginMonsterRockTrap	random	"[""15""]"	constant
 src/js/rock_trap.ts	beginMonsterRockTrap	rollDice	"[""2"", ""6""]"	constant
-src/js/rolling_boulder.ts	hitMonster	rollOne	"[""20""]"	constant
 src/js/rolling_boulder.ts	launchRollingBoulder	random	"[""10""]"	constant
 src/js/rolling_boulder.ts	launchRollingBoulder	random	"[""20""]"	constant
 src/js/rolling_boulder.ts	launchRollingBoulder	random	"[""3""]"	constant
+src/js/rolling_boulder.ts	launchRollingBoulder/hitMonster	rollOne	"[""20""]"	constant
 src/js/royal_jelly.ts	eatRoyalJelly	rn2	"[""17""]"	constant
 src/js/royal_jelly.ts	eatRoyalJelly	rn2	"[""17""]"	constant
 src/js/royal_jelly.ts	eatRoyalJelly	rnd	"[""20""]"	constant
@@ -2001,6 +2104,7 @@ src/js/rumor.ts	outOracle	rnd	"[""remaining.length - 1""]"	guarded
 src/js/rumor.ts	outRumor	rn2	"[""2""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""3""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""4""]"	constant
+src/js/rust_trap.ts	finishMonsterRustTrap	random	"[""3""]"	constant
 src/js/sacrifice.ts	bestowArtifact	rn2	"[""6 + 2 * (hero.ugifts || 0) * count""]"	unproved
 src/js/sacrifice.ts	bestowArtifact	rnz	"[""300 + 50 * count""]"	constant
 src/js/sacrifice.ts	consumeOffering	rn2	"[""messages.length""]"	constant
@@ -2016,7 +2120,7 @@ src/js/scroll_armor_effects.ts	destroyArmor	rn1	"[""10"", ""10""]"	constant
 src/js/scroll_armor_effects.ts	destroyArmor	rn2	"[""cursed.length""]"	guarded
 src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""7""]"	constant
 src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""armor.spe""]"	guarded
-src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""power""]"	unproved
+src/js/scroll_armor_effects.ts	enchantArmor	rn2	"[""power""]"	guarded
 src/js/scroll_armor_effects.ts	enchantArmor	rnd	"[""power""]"	guarded
 src/js/scroll_effects.ts	chargingEffect	d	"[""source.blessed ? 6 : 4"", ""4""]"	constant
 src/js/scroll_effects.ts	confuseMonsterEffect	rn1	"[""8"", ""2""]"	constant
@@ -2036,7 +2140,7 @@ src/js/selvar.ts	selection_do_randline	rn2	"[""roughness""]"	guarded
 src/js/selvar.ts	selection_do_randline	rn2	"[""roughness""]"	guarded
 src/js/selvar.ts	selection_filter_mapchar	rn2	"[""2""]"	constant
 src/js/selvar.ts	selection_filter_percent	rn2	"[""100""]"	constant
-src/js/selvar.ts	selection_rndcoord	rn2	"[""count""]"	unproved
+src/js/selvar.ts	selection_rndcoord	rn2	"[""count""]"	guarded
 src/js/shk.ts	chargeUnpaidUsage	rn2	"[""2""]"	constant
 src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
 src/js/shk.ts	chargeUnpaidUsage	rn2	"[""3""]"	constant
@@ -2049,7 +2153,7 @@ src/js/shop_chat.ts	chatWithShopkeeper	rn2	"[""IZCHAK_SPEAKS.length""]"	constant
 src/js/shop_damage.ts	getcad	rn2	"[""3""]"	constant
 src/js/shop_damage.ts	getcad	rn2	"[""3""]"	constant
 src/js/shop_damage.ts	litterScatter	rn2	"[""9""]"	constant
-src/js/shop_damage.ts	payForShopDamage	rn2	"[""++picks""]"	unproved
+src/js/shop_damage.ts	payForShopDamage	rn2	"[""++picks""]"	guarded
 src/js/shop_damage.ts	payForShopDamage	rn2	"[""50""]"	constant
 src/js/shop_damage.ts	repairShopDamage	rn2	"[""10""]"	constant
 src/js/shop_departure.ts	makeKops	rnd	"[""5""]"	constant
@@ -2058,7 +2162,7 @@ src/js/shop_pay_command.ts	settleEmptyBill	rn2	"[""3""]"	constant
 src/js/shop_price_quote.ts	embellish	rn2	"[""3""]"	constant
 src/js/shop_price_quote.ts	embellish	rn2	"[""5""]"	constant
 src/js/sink_dipping.ts	dipSink	rn2	"[""looted ? 15 : 25""]"	constant
-src/js/sink_drinking.ts	drinkSink	rn1	"[""30 - currentAttribute(A_CON, state)"", ""11""]"	unproved
+src/js/sink_drinking.ts	drinkSink	rn1	"[""30 - currentAttribute(A_CON, state)"", ""11""]"	invariant
 src/js/sink_drinking.ts	drinkSink	rn2	"[""20""]"	constant
 src/js/sink_drinking.ts	drinkSink	rnd	"[""6""]"	constant
 src/js/sink_drinking.ts	ordinarySip	rn2	"[""2""]"	constant
@@ -2075,7 +2179,7 @@ src/js/sit.ts	sitWhileTrapped	rn2	"[""2""]"	constant
 src/js/sit.ts	sitWhileTrapped	rn2	"[""5""]"	constant
 src/js/sit.ts	sitWhileTrapped	rnd	"[""4""]"	constant
 src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""current - previous""]"	unproved
-src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""record.length""]"	guarded
+src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""record.length""]"	unproved
 src/js/sleep_gas_trap.ts	beginMonsterSleepGasTrap	rollOne	"[""25""]"	constant
 src/js/special_location.ts	getLocation	rn2	"[""sx""]"	unproved
 src/js/special_location.ts	getLocation	rn2	"[""sy""]"	unproved
@@ -2094,7 +2198,7 @@ src/js/spell_casting_rules.ts	checkSpellCast	rnd	"[""energy""]"	unproved
 src/js/spell_memory.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
 src/js/spell_memory.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
 src/js/spell_memory.ts	loseHeroSpellMemory	rn2	"[""spells.length - index""]"	unproved
-src/js/spell_memory.ts	loseHeroSpellMemory	rnd	"[""forgotten""]"	guarded
+src/js/spell_memory.ts	loseHeroSpellMemory	rnd	"[""forgotten""]"	unproved
 src/js/spell_memory.ts	loseHeroSpellMemory	rnl	"[""7""]"	constant
 src/js/spellbook_study.ts	confusedBook	rn2	"[""3""]"	constant
 src/js/spellbook_study.ts	continueSpellbookStudy	rn2	"[""2""]"	constant
@@ -2123,10 +2227,15 @@ src/js/steed.ts	handleRidingAfterFormChange	rnl	"[""3""]"	constant
 src/js/steed.ts	maybeGiveDomesticSaddle	rn2	"[""100""]"	constant
 src/js/steed.ts	mountSteed	rn1	"[""5"", ""10""]"	constant
 src/js/steed.ts	mountSteed	rnd	"[""20""]"	constant
+src/js/steed.ts	strikeSteed	random	"[""2""]"	constant
+src/js/steed.ts	strikeSteed	random	"[""20""]"	constant
+src/js/steed.ts	strikeSteed	roll	"[""20""]"	constant
 src/js/steed.ts	useSaddle	rn2	"[""100""]"	constant
 src/js/steed.ts	wakeSteedForRiding	rn2	"[""remaining""]"	unproved
 src/js/stethoscope.ts	useStethoscope	rn2	"[""2""]"	constant
 src/js/stethoscope.ts	useStethoscope	rn2	"[""game.urole.key === 'healer' ? 10 : 3""]"	constant
+src/js/stoning.ts	applyMonsterStoningAttack	random	"[""10""]"	constant
+src/js/stoning.ts	applyMonsterStoningAttack	random	"[""3""]"	constant
 src/js/storms.ts	doStorms	rn1	"[""20"", ""30""]"	constant
 src/js/storms.ts	doStorms	rn2	"[""3""]"	constant
 src/js/storms.ts	doStorms	rn2	"[""3""]"	constant
@@ -2138,13 +2247,19 @@ src/js/swallowed_throw.ts	resolveGenericSwallowedThrow	rnd	"[""20""]"	constant
 src/js/swallowed_throw.ts	resolveSwallowedFoodThrow	rnd	"[""20""]"	constant
 src/js/swallowed_throw.ts	resolveSwallowedPotionThrow	rnd	"[""20""]"	constant
 src/js/teleport.ts	dealWithMonsterOvercrowding	rn2	"[""2""]"	constant
+src/js/teleport.ts	randomMonsterRelocation	random	"[""ROWNO""]"	constant
+src/js/teleport.ts	randomMonsterRelocation	random	"[""remaining""]"	unproved
+src/js/teleport.ts	randomMonsterRelocation	rollOne	"[""COLNO - 1""]"	constant
 src/js/teleport.ts	safeTeleportDestination	random	"[""ROWNO""]"	constant
 src/js/teleport.ts	safeTeleportDestination	rollOne	"[""COLNO - 1""]"	constant
-src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""++count""]"	unproved
+src/js/teleport.ts	teleportHero	random	"[""3""]"	constant
+src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""++count""]"	guarded
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
+src/js/teleport.ts	teleportMonsterThroughPortal	random	"[""7""]"	constant
+src/js/teleport_rules.ts	goodPosition	random	"[""13""]"	constant
 src/js/terrain_movement.ts	floatHeroDown	rnd	"[""2""]"	constant
-src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	constant
+src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
 src/js/throne.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
 src/js/throne.ts	normalThroneEffect	rn1	"[""4"", ""3""]"	constant
 src/js/throne.ts	normalThroneEffect	rn1	"[""7"", ""16""]"	constant
@@ -2160,7 +2275,7 @@ src/js/throne.ts	normalThroneEffect	rnd	"[""6""]"	constant
 src/js/throne.ts	rndcurse	rn2	"[""10""]"	constant
 src/js/throne.ts	rndcurse	rn2	"[""20""]"	constant
 src/js/throne.ts	rndcurse	rn2	"[""4""]"	constant
-src/js/throne.ts	rndcurse	rnd	"[""inventoryCount""]"	guarded
+src/js/throne.ts	rndcurse	rnd	"[""inventoryCount""]"	unproved
 src/js/throne.ts	rndcurse	rnd	"[""sides""]"	constant
 src/js/throne.ts	specialThroneEffect	rn1	"[""101"", ""100""]"	constant
 src/js/throne.ts	specialThroneEffect	rn2	"[""5""]"	constant
@@ -2179,7 +2294,7 @@ src/js/thrown_object.ts	flyPhysicalObject	random	"[""5""]"	constant
 src/js/thrown_object.ts	prepareHeroThrownTarget	random	"[""10""]"	constant
 src/js/thrown_object.ts	rockSkipRange	rnd	"[""3""]"	constant
 src/js/thrown_object.ts	rockSkipRange	rnd	"[""quarter""]"	guarded
-src/js/timeout_body.ts	advanceBodyTimeouts	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	invariant
+src/js/timeout_body.ts	advanceBodyTimeouts	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	unproved
 src/js/tin.ts	consumeSpinach	rnd	"[""200""]"	constant
 src/js/tin.ts	consumeSpinach	rnd	"[""400""]"	constant
 src/js/tin.ts	consumeTin	rn1	"[""11"", ""5""]"	constant
@@ -2197,6 +2312,9 @@ src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
 src/js/tip_hat.ts	acknowledgeHelmetTip	rn1	"[""2"", ""1""]"	constant
 src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
 src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
+src/js/topten.ts	randomToptenEntry	rollOne	"[""TOP_NAME_RANK""]"	constant
+src/js/topten.ts	toptenMonsterForm	random	"[""13""]"	constant
+src/js/topten.ts	toptenMonsterForm	random	"[""LAST_PLAYER_MONSTER - FIRST_PLAYER_MONSTER + 1""]"	constant
 src/js/toss_up.ts	tossObjectUp	random	"[""18""]"	constant
 src/js/toss_up.ts	tossObjectUp	random	"[""5""]"	constant
 src/js/toss_up.ts	tossObjectUp	rollOne	"[""20""]"	constant
@@ -2207,8 +2325,13 @@ src/js/towel.ts	useTowel	rn1	"[""10"", ""3""]"	constant
 src/js/towel.ts	useTowel	rn1	"[""10"", ""3""]"	constant
 src/js/towel.ts	useTowel	rn2	"[""2""]"	constant
 src/js/towel.ts	useTowel	rn2	"[""3""]"	constant
-src/js/trap.ts	(anonymous)	rnl	"[""range""]"	unproved
-src/js/trap.ts	waterDamageObject	rollOne	"[""7 - spe""]"	guarded
+src/js/trap.ts	applyMonsterRustTrap	roll	"[""5""]"	constant
+src/js/trap.ts	burnArmorByFire/luckRandom	rnl	"[""range""]"	unproved
+src/js/trap.ts	waterDamageObject	random	"[""2""]"	constant
+src/js/trap.ts	waterDamageObject	random	"[""20""]"	constant
+src/js/trap.ts	waterDamageObject	random	"[""3""]"	constant
+src/js/trap.ts	waterDamageObject	random	"[""object.spestudied""]"	unproved
+src/js/trap.ts	waterDamageObject	rollOne	"[""7 - spe""]"	unproved
 src/js/trap_detection.ts	senseTrap	rn2	"[""MONSTER_NAME.length""]"	constant
 src/js/trap_detection.ts	senseTrap	rn2	"[""OBJECT_NAMES.length - firstObject""]"	unproved
 src/js/trap_detection.ts	senseTrap	rnd	"[""10""]"	constant
@@ -2223,6 +2346,7 @@ src/js/tty_prompts.ts	confusePromptDirection	rn2	"[""count""]"	constant
 src/js/two_weapon.ts	toggleTwoWeaponCombat	rnd	"[""20""]"	constant
 src/js/u_init.ts	adjustStartingItem	rn2	"[""4""]"	constant
 src/js/u_init.ts	adjustStartingItem	rne	"[""3""]"	constant
+src/js/u_init.ts	collectNearbyCoords	random	"[""n""]"	guarded
 src/js/u_init.ts	initAttributes	rn2	"[""20""]"	constant
 src/js/u_init.ts	initAttributes	rn2	"[""7""]"	constant
 src/js/u_init.ts	initialRoll	rnd	"[""adv.inrnd""]"	guarded
@@ -2262,9 +2386,12 @@ src/js/unicorn_gift.ts	offerUnicornGem	rn2	"[""7""]"	constant
 src/js/unicorn_horn.ts	causeHornTrouble	random	"[""13""]"	constant
 src/js/unicorn_horn.ts	causeHornTrouble	random	"[""90""]"	constant
 src/js/unicorn_horn.ts	causeHornTrouble	random	"[""constitution""]"	invariant
-src/js/unicorn_horn.ts	shuffle	random	"[""index + 1""]"	guarded
+src/js/unicorn_horn.ts	shuffle	random	"[""index + 1""]"	unproved
 src/js/unicorn_horn.ts	useUnicornHorn	random	"[""maximum""]"	constant
 src/js/unicorn_horn.ts	useUnicornHorn	rollDice	"[""2"", ""object?.blessed ? 4 : 2""]"	constant
+src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""10""]"	constant
+src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""8""]"	constant
+src/js/untrap.ts	rewardMonsterRescue	random	"[""3""]"	constant
 src/js/vault.ts	maintainVaultResidence	rn2	"[""deaths * deaths""]"	guarded
 src/js/vault_exit.ts	payVaultGuardOnExit	random	"[""2""]"	constant
 src/js/vault_exit.ts	payVaultGuardOnExit	random	"[""2""]"	constant
@@ -2287,7 +2414,13 @@ src/js/wand_terrain_magic.ts	relocateEngraving	rn2	"[""COLNO - 3""]"	constant
 src/js/wand_terrain_magic.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
 src/js/wand_terrain_magic.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/wand_terrain_magic.ts	zapEngraving	d	"[""2"", ""4""]"	constant
+src/js/weapon_accuracy.ts	rangedTargetHitBonus	random	"[""10""]"	constant
 src/js/weapon_damage.ts	monsterWeaponStrengthBonus	random	"[""4""]"	constant
+src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""4""]"	constant
+src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""6""]"	constant
+src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollOne	"[""4""]"	constant
+src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollOne	"[""6""]"	constant
+src/js/weapon_damage.ts	rollPhysicalWeaponDamage	rollOne	"[""profile.range""]"	guarded
 src/js/weapon_type.ts	monsterWeaponSwingVerb	random	"[""2""]"	constant
 src/js/were.ts	revertHeroWereForm	rn2	"[""200""]"	constant
 src/js/were.ts	summonWereAttackHelp	random	"[""10""]"	constant
@@ -2320,10 +2453,10 @@ src/js/wish_terrain.ts	tryWizardTerrainWish	rn2	"[""3""]"	constant
 src/js/wish_terrain.ts	tryWizardTerrainWish	rn2	"[""6""]"	constant
 src/js/wizard.ts	amuletTurn	rn2	"[""15""]"	constant
 src/js/wizard.ts	amuletTurn	rn2	"[""40""]"	constant
-src/js/wizard.ts	recallMigratingWizard	rn2	"[""elapsed + 1""]"	guarded
+src/js/wizard.ts	recallMigratingWizard	rn2	"[""elapsed + 1""]"	unproved
 src/js/wizard.ts	wizardDeadOrGone	random	"[""250""]"	constant
 src/js/wizard_intrinsics.ts	increaseIntrinsic	rn2	"[""2""]"	constant
-src/js/write.ts	findWritingType	rn2	"[""++matches""]"	unproved
+src/js/write.ts	findWritingType	rn2	"[""++matches""]"	guarded
 src/js/write.ts	tryWritingNovel	rn2	"[""3""]"	constant
 src/js/write.ts	tryWritingNovel	rn2	"[""3""]"	constant
 src/js/write.ts	useMagicMarker	rn1	"[""basecost / 2"", ""basecost / 2""]"	unproved

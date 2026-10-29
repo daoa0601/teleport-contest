@@ -88,6 +88,9 @@ jobs:
       - name: Test ledger acceptance and rejection
         working-directory: verification/equivalence
         run: uv run --locked ../test_ledgers.py
+      - name: Test RNG call-site analysis
+        working-directory: verification/equivalence
+        run: uv run --locked python ../callsites/test_callsites.py
       - name: Prove every claim, probe, and mutant
         working-directory: verification/equivalence
         run: |
@@ -97,13 +100,18 @@ jobs:
           /usr/bin/time -p node --max-old-space-size=2048 verification/callsites/extract.mjs > .cache/equivalence/rng-callsites.json 2> .cache/equivalence/extract-time.txt
           cd verification/equivalence
           /usr/bin/time -p uv run --locked ../callsites/check.py ../../.cache/equivalence/rng-callsites.json --check-ledger ../../docs/ledger/rng-callsites.tsv 2>&1 | tee ../../.cache/equivalence/callsites.txt
+      - name: Reject invalid-domain mutants at classified call sites
+        run: |
+          /usr/bin/time -p node --max-old-space-size=2048 verification/callsites/extract.mjs --mutate-domains > .cache/equivalence/rng-mutants.json 2> .cache/equivalence/mutant-extract-time.txt
+          cd verification/equivalence
+          /usr/bin/time -p uv run --locked python ../callsites/test_domains.py ../../.cache/equivalence/rng-callsites.json ../../.cache/equivalence/rng-mutants.json 2>&1 | tee ../../.cache/equivalence/callsite-mutants.txt
       - name: Report runtime and results
         if: always()
         run: |
           echo "Elapsed since checkout: $(($(date +%s) - VERIFICATION_STARTED)) seconds" >> "$GITHUB_STEP_SUMMARY"
           {
             echo '```'
-            for report in .cache/equivalence/proofs.txt .cache/equivalence/isaac64-crosscheck.txt .cache/equivalence/extract-time.txt .cache/equivalence/callsites.txt; do
+            for report in .cache/equivalence/proofs.txt .cache/equivalence/isaac64-crosscheck.txt .cache/equivalence/extract-time.txt .cache/equivalence/callsites.txt .cache/equivalence/mutant-extract-time.txt .cache/equivalence/callsite-mutants.txt; do
               if [ -f "$report" ]; then cat "$report"; fi
             done
             echo '```'
