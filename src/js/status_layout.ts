@@ -1,22 +1,27 @@
 import type { ConditionText } from './status_conditions.js';
+import { statusConditionBit } from './status_conditions.js';
+import type { StatusFieldSpan } from './status_highlighting.js';
+import { BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC,
+    BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS } from './const.js';
 
 // Retain full field values so a time-only flush can restore or shorten the
 // same fields again, without reading health or conditions from live state.
 export interface StatusLine2Fields {
     location: string;
     gold: string;
-    health: string;
+    health: { hitpoints: number; maximumHitpoints: number; power: number; maximumPower: number; armorClass: number };
     experience: string;
     moves: number | null;
     hunger: string;
     capacity: number;
     conditions: readonly ConditionText[];
-    equipment: readonly string[];
+    equipment: readonly { field: number; text: string }[];
     version: string;
 }
 
 export interface StatusLine2Layout {
     text: string;
+    spans: readonly StatusFieldSpan[];
     capacityBlank: boolean;
     levelPrefixChanged: boolean;
 }
@@ -40,6 +45,7 @@ export function renderStatusLine2(
         [2, 1, false], [2, 2, false], [2, 2, true],
     ];
     let line = '';
+    let spans: StatusFieldSpan[] = [];
     let emptyCapacitySpace = fields.capacity === 0 && capacityBlank;
     // shrink_dlvl(0) restores Dlvl, even when the original label was Tutorial.
     const fullLocation = levelPrefixChanged
@@ -48,27 +54,50 @@ export function renderStatusLine2(
     for (const [conditionSize, capacitySize, shortLevel] of attempts) {
         const location = shortLevel ? fullLocation.replace(/^[^:]+:/, 'Dl:') : fullLocation;
         if (location !== fullLocation) prefixChanged = true;
-        line = `${location} ${fields.gold} ${fields.health} ${fields.experience}`;
-        if (fields.moves !== null) line += ` T:${fields.moves}`;
-        if (fields.hunger) line += ` ${fields.hunger}`;
+        line = '';
+        spans = [];
+        const append = (text: string, field: number, condition?: number) => {
+            const start = line.length;
+            line += text;
+            spans.push({ field, start, end: line.length, ...(condition !== undefined ? { condition } : {}) });
+        };
+        const appendSeparated = (text: string, field: number) => { line += ' '; append(text, field); };
+        append(location, BL_LEVELDESC);
+        appendSeparated(fields.gold, BL_GOLD);
+        line += ' ';
+        append(`HP:${fields.health.hitpoints}`, BL_HP);
+        append(`(${fields.health.maximumHitpoints})`, BL_HPMAX);
+        appendSeparated(`Pw:${fields.health.power}`, BL_ENE);
+        append(`(${fields.health.maximumPower})`, BL_ENEMAX);
+        appendSeparated(`AC:${fields.health.armorClass}`, BL_AC);
+        const [level, experience] = fields.experience.split('/');
+        appendSeparated(level ?? '', fields.experience.startsWith('HD:') ? BL_HD : BL_XP);
+        if (experience !== undefined) { line += '/'; append(experience, BL_EXP); }
+        if (fields.moves !== null) appendSeparated(`T:${fields.moves}`, BL_TIME);
+        if (fields.hunger) appendSeparated(fields.hunger, BL_HUNGER);
         const load = capacityText[capacitySize]?.[fields.capacity] ?? '';
         // shrink_enc() leaves a blank even for an unencumbered hero.
         // Restoring the full label on later flushes preserves that blank.
         if (fields.capacity === 0 && capacitySize > 0) emptyCapacitySpace = true;
-        if (load || emptyCapacitySpace) line += ` ${load}`;
-        for (const condition of fields.conditions) line += ` ${condition[conditionSize]}`;
-        for (const equipment of fields.equipment) line += ` ${equipment}`;
+        if (load || emptyCapacitySpace) appendSeparated(load, BL_CAP);
+        for (const condition of fields.conditions) {
+            line += ' ';
+            append(condition[conditionSize], BL_CONDITION, statusConditionBit(condition));
+        }
+        for (const equipment of fields.equipment) appendSeparated(equipment.text, equipment.field);
         if (fields.version) {
             // The last field is right justified, with its leading separator
             // still counted by make_things_fit().
             const gap = Math.max(1, columns - 1 - line.length - fields.version.length);
-            line += ' '.repeat(gap) + fields.version;
+            line += ' '.repeat(gap);
+            append(fields.version, BL_VERS);
         }
         if (line.length <= columns - 1)
-            return { text: line, capacityBlank: emptyCapacitySpace, levelPrefixChanged: prefixChanged };
+            return { text: line, spans, capacityBlank: emptyCapacitySpace, levelPrefixChanged: prefixChanged };
     }
     return {
         text: line.slice(0, Math.max(0, columns - 1)),
+        spans,
         capacityBlank: emptyCapacitySpace,
         levelPrefixChanged: prefixChanged,
     };

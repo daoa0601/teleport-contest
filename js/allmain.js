@@ -111,7 +111,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, rememberToplines, appendSuppressedTopline, resetToplineClip, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, statusEvalNextUnhilite, pline, rememberToplines, appendSuppressedTopline, resetToplineClip, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -619,6 +619,7 @@ async function interruptCountedActivity(message) {
 // one, against the final `moves` value.
 async function finishHeroTookTime(sourceTurn) {
     const game = requireInitializedGame();
+    statusEvalNextUnhilite();
     if (sourceTurn >= (game.seer_turn ?? Infinity)) {
         if ((game.u.uhave.amulet || propertyIsActive('clairvoyant', game))
             && !In_endgame(game.u.uz) && !propertyIsBlocked('clairvoyant', game))

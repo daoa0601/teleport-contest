@@ -17,16 +17,17 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
-import { rankOf } from './quest_pager.js';
+import { statusTitle } from './status_title.js';
 import { statusConditions } from './status_conditions.js';
 import { renderStatusLine2 } from './status_layout.js';
 import { armorStatus, weaponStatus } from './status_equipment.js';
 import { statusVersion } from './status_version.js';
 import { statusTerrain } from './status_terrain.js';
 import { hitpointBar } from './status_hitpoint_bar.js';
+import { firstStatusLineSpans } from './status_highlighting.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, MAX_MSG_HISTORY, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, xdir, ydir, isok, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, MAX_MSG_HISTORY, BL_WEAPON, BL_ARMOR, BL_TERRAIN, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -2734,17 +2735,7 @@ export function _statusLine1() {
     const u = game.u;
     if (!u)
         return '';
-    let name = game.plname || game.displayName || 'Hero';
-    name = name.charAt(0).toUpperCase() + name.slice(1);
-    const role = Upolyd(u)
-        ? monsterTypeName(u.umonnum ?? -1, u.mfemale)
-            .replace(/(^| )[a-z]/g, letter => letter.toUpperCase())
-        : rankOf(u.ulevel ?? 1, game);
-    // bot_via_windowport() keeps the rank intact and at least 16 name
-    // characters, even when a long monster title then exceeds 30 columns.
-    if (name.length + 5 + role.length > 30)
-        name = name.slice(0, Math.max(16, 30 - 5 - role.length));
-    const title = `${name} the ${role}`;
+    const title = statusTitle(game);
     const stats = `St:${formatStrength(currentAttribute(A_STR))} `
         + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
         + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
@@ -2812,14 +2803,17 @@ function statusLine2Fields(capacity) {
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
     return {
         location, gold: `${goldLabel}:${displayedGold}`,
-        health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
+        health: { hitpoints: displayedHp, maximumHitpoints: maximumHp,
+            power: displayedPower, maximumPower, armorClass: displayedAc },
         experience, moves: game.flags.time ? game.moves : null,
         hunger: hungerLabel ?? '',
         capacity,
         conditions: statusConditions(game),
-        equipment: [game.flags.weaponstatus ? weaponStatus(game) : '',
-            game.flags.armorstatus ? armorStatus(game) : '',
-            game.flags.terrainstatus ? statusTerrain(game) : ''].filter(text => text.length > 0),
+        equipment: [
+            { field: BL_WEAPON, text: game.flags.weaponstatus ? weaponStatus(game) : '' },
+            { field: BL_ARMOR, text: game.flags.armorstatus ? armorStatus(game) : '' },
+            { field: BL_TERRAIN, text: game.flags.terrainstatus ? statusTerrain(game) : '' },
+        ].filter(entry => entry.text.length > 0),
         version: game.flags.showvers ? statusVersion(game.flags.versinfo) : '',
     };
 }
@@ -2899,6 +2893,19 @@ export function writeStatusLines(display, lines) {
             const visible = part.slice(0, Math.max(0, display.cols - 1 - column));
             display.putstr(column, row, visible, NO_COLOR, attr);
             column += visible.length;
+        }
+        if (!game._statusUpdatesDisabled && display.statusVisible) {
+            for (const span of display.statusHighlights.spans[index] ?? []) {
+                const style = display.statusHighlights.style(span);
+                for (let col = span.start; col < Math.min(span.end, display.cols - 1); col++) {
+                    const cell = display.grid[row]?.[col];
+                    if (!cell || span.hitpointBar && !(cell.attr & ATR_INVERSE))
+                        continue;
+                    // Tty's hitpoint bar takes its color from HP, while the
+                    // filled segment keeps inverse and critical-HP blink.
+                    display.setCell(col, row, cell.ch, style.color, span.hitpointBar ? cell.attr : style.attr);
+                }
+            }
         }
     }
 }
@@ -3032,10 +3039,7 @@ export async function flush_screen(mode) {
         game._mapFlushPaused = !game._mapFlushPaused;
     if (game._mapFlushPaused)
         return;
-    if (game.context.botl || game.nhDisplay?.statusLines === null)
-        refreshStatusLines();
-    else if (game.context.time_botl)
-        timebot();
+    updateStatusLines();
     const display = game.nhDisplay;
     const mapCursor = mode === 0 && display
         ? lastDirtyMapCursor() ?? [display.cursorCol, display.cursorRow] : null;
@@ -3120,6 +3124,7 @@ export function reassessStatusFields() {
         display.statusLine2Fields = null;
         display.statusCapacityBlank = false;
         display.statusLevelPrefixChanged = false;
+        display.statusHighlights.reset();
     }
     game.context.botl = true;
 }
@@ -3147,7 +3152,11 @@ function refreshStatusLines() {
         ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank, levelPrefixChanged) : null;
     display.statusCapacityBlank = layout?.capacityBlank ?? false;
     display.statusLevelPrefixChanged = layout?.levelPrefixChanged ?? false;
-    display.statusLines = [_statusLine1(), layout?.text ?? ''];
+    const firstLine = _statusLine1();
+    if (fields)
+        display.statusHighlights.update(game, fields);
+    display.statusHighlights.spans = [firstStatusLineSpans(firstLine, !!game.flags.hitpointbar), layout?.spans ?? []];
+    display.statusLines = [firstLine, layout?.text ?? ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
     game.context.botl = false;
@@ -3160,6 +3169,12 @@ export function updateStatusLines() {
         refreshStatusLines();
     else if (game.context.time_botl)
         timebot();
+}
+// C calls this once per time-taking hero action, before the next bot().
+// Zero-time menus and message flushes must not extend temporary highlights.
+export function statusEvalNextUnhilite() {
+    if (game.iflags.hiliteDelta && game.nhDisplay?.statusHighlights.evaluateNextUnhilite(game))
+        game.context.botl = true;
 }
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
 // values from the last bot(), even if game state changed during an occupation.
@@ -3177,6 +3192,8 @@ export function timebot() {
     const layout = renderStatusLine2(display.statusLine2Fields, display.cols, display.statusCapacityBlank, display.statusLevelPrefixChanged);
     display.statusCapacityBlank = layout.capacityBlank;
     display.statusLevelPrefixChanged = layout.levelPrefixChanged;
+    display.statusHighlights.updateTime(game);
+    display.statusHighlights.spans = [display.statusHighlights.spans[0], layout.spans];
     display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);

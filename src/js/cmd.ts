@@ -156,7 +156,7 @@ import { tipCommand } from './container_tip.js';
 import { lootCommand } from './container_loot.js';
 import { dolookaround } from './lookaround.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { doOptions, option_help } from './options.js';
+import { doOptions, option_help, toggleBooleanOptionPrefix } from './options.js';
 import {
     blocksDiagonalDoor, blocksMove, crawlDestinationAllowed, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects,
     heroShouldAvoidLiquid,
@@ -1651,6 +1651,18 @@ async function doPermanentInventory(): Promise<void> {
     await pline("Persistent inventory display is not supported by 'tty'.");
 }
 
+
+// C cmd.c:dotoggleoption(): without a binding parameter the command only
+// points the player at the options menu; with one it is
+// toggle_bool_option(param).
+async function doToggleOption(parameter: string | null): Promise<void> {
+    game.context.move = 0;
+    if (parameter === null) {
+        await pline('Use #optionsfull to set any option instead.');
+        return;
+    }
+    if (!await toggleBooleanOptionPrefix(parameter)) commandResultFailed();
+}
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
 async function runCommandHandler(binding: CommandBinding, {
@@ -1659,6 +1671,12 @@ async function runCommandHandler(binding: CommandBinding, {
     const { key, command } = binding;
     const ch = key === null ? '' : String.fromCharCode(key);
     if (!cannedCommand && key === null && command) {
+        // cmd.c:dotoggleoption() reads gc.cmd_bind->param; a parameter only
+        // arrives through a key binding like BIND=x:toggle(silent).
+        if (command.name === 'toggle') {
+            await doToggleOption(binding.parameter);
+            return;
+        }
         const handler = command.name === null ? undefined : EXTENDED_COMMAND_HANDLERS.get(command.name);
         if (handler) {
             await handler();

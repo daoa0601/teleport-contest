@@ -249,6 +249,13 @@ export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() treats NUL as Escape, including a typed Ctrl-@.
     return key === 0 ? 27 : key;
 }
+// C cmd.c:pgetchar(): one unprompted character, without readchar()'s
+// Escape-prefix or EOF translation and without a command-queue entry.
+export async function pgetchar() {
+    const key = game.iflags.debug_fuzzer
+        ? await activeInputGate.readKey() : await nhgetch();
+    return nativeChar(key);
+}
 export async function readchar(inputState = 'other') {
     return (await readcharCore(inputState)).key;
 }

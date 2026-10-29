@@ -11,6 +11,7 @@
 
 import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 import type { StatusLine2Fields } from './status_layout.js';
+import { StatusHighlights } from './status_highlighting.js';
 import type { EmptyQueueHandler, KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 
 export class GameDisplay {
@@ -22,6 +23,7 @@ export class GameDisplay {
     preserveEmptyMessageRow = false;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines: readonly [string, string] | null = null;
+    readonly statusHighlights = new StatusHighlights();
     statusLine2Fields: StatusLine2Fields | null = null;
     statusCapacityBlank = false;
     // Tty keeps the replacement prefix until BL_LEVELDESC changes.

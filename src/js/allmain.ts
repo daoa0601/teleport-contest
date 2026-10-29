@@ -145,7 +145,7 @@ import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
     canSpotMonster, clearMessageWindow, displayColorName, displayMessageWindow, docrt, redrawMap,
     bot,
-    flush_screen, flushPendingTopline, updateStatusLines,
+    flush_screen, flushPendingTopline, updateStatusLines, statusEvalNextUnhilite,
     pline,
     rememberToplines,
     appendSuppressedTopline,
@@ -798,6 +798,7 @@ async function interruptCountedActivity(message: string): Promise<void> {
 // one, against the final `moves` value.
 async function finishHeroTookTime(sourceTurn: number): Promise<void> {
     const game = requireInitializedGame();
+    statusEvalNextUnhilite();
     if (sourceTurn >= (game.seer_turn ?? Infinity)) {
         if ((game.u.uhave.amulet || propertyIsActive('clairvoyant', game))
             && !In_endgame(game.u.uz) && !propertyIsBlocked('clairvoyant', game))

@@ -125,5 +125,31 @@ export interface InterfaceFlags {
     wc_splash_screen?: boolean;
     warningSymbols?: string;
     menuColorings?: MenuColoringRule[];
+    // Window-capability booleans the tty port does not support; only
+    // toggle_bool_option() (#toggle) reaches them, with optlist.h's tty
+    // defaults (ascii_map and guicolor default on).
+    wc_ascii_map?: boolean;
+    wc2_guicolor?: boolean;
+    perm_invent?: boolean;
+    wc_popup_dialog?: boolean;
+    wc_tiled_map?: boolean;
+    wc2_wraptext?: boolean;
     hiliteDelta?: number;
+    // botl.c gb.blstats[][].thresholds and gc.cond_hilites; rebuilt from the
+    // config file each game, so they stay transient here.
+    statusThresholds?: StatusHiliteRule[][];
+    condHilites?: number[];
+}
+
+// botl.c struct hilite_s as the interactive menus edit it. value holds the
+// numeric threshold (int or long) or the condition bitmask.
+export interface StatusHiliteRule {
+    fld: number;
+    set: boolean;
+    anytype: 'int' | 'long' | 'str' | 'mask32';
+    value: number;
+    behavior: number;
+    textmatch: string;
+    rel: number;
+    coloridx: number;
 }
