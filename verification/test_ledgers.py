@@ -2,16 +2,25 @@
 
     cd verification/equivalence && uv run ../test_ledgers.py
 """
+from contextlib import redirect_stdout
 import csv
+from dataclasses import replace
+import io
 import json
+from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 CACHE = HERE.parent / '.cache'
+sys.path.insert(0, str(HERE / 'equivalence'))
+
+import prove
+from core import LoopSpec
+from specs import INT, Spec
 
 
 class LedgerChecks(unittest.TestCase):
@@ -161,6 +170,70 @@ class ProofLedgerChecks(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('enermod', result.stdout)
         self.assertIn('domain changed', result.stdout)
+
+
+class AssumptionLedgerChecks(unittest.TestCase):
+    def check_assumptions(self, change):
+        with tempfile.TemporaryDirectory(dir=CACHE) as directory:
+            c_file = Path(directory) / 'example.c'
+            js_file = Path(directory) / 'example.js'
+            ledger = Path(directory) / 'claims.tsv'
+            c_file.write_text('int example(int n) { int i = 0; while (i < n) ++i; return i; }')
+            js_file.write_text('function example(n, bonus = 0) { '
+                               'let i = 0; while (i < n) ++i; return i + bonus; }')
+            loop = LoopSpec(
+                invariant=lambda v, e, pos, pos0: [v['i'] >= 0, v['i'] <= e['n']],
+                variant=lambda v, e: e['n'] - v['i'],
+                facts=lambda v, e, pos, pos0: [e['n'] >= 0], streams=())
+            spec = Spec('example', 'example', 'example', [('n', INT)],
+                        pre=lambda s: [s['n'] >= 0, s['n'] <= 3],
+                        loops={('c', 'example', 0): loop, ('js', 'example', 0): loop},
+                        js_file=str(js_file), js_args=[('num', 0)])
+
+            def run(current, option):
+                output = io.StringIO()
+                with (
+                    patch.multiple(prove, SPECS=[current], C_FILES=[str(c_file)], JS_FILES=[str(js_file)]),
+                    patch.object(sys, 'argv', ['prove.py', option, str(ledger)]),
+                    redirect_stdout(output),
+                ):
+                    status = prove.main()
+                return status, output.getvalue()
+
+            status, report = run(spec, '--write-ledger')
+            self.assertEqual(status, 0, report)
+            return run(change(spec), '--check-ledger')
+
+    def test_unchanged_loop_and_arguments_pass(self):
+        status, report = self.check_assumptions(lambda spec: spec)
+        self.assertEqual(status, 0, report)
+
+    def test_narrower_loop_facts_require_review_on_either_side(self):
+        for side in ('c', 'js'):
+            with self.subTest(side=side):
+                def narrow(spec):
+                    key = (side, 'example', 0)
+                    loop = replace(spec.loops[key], facts=lambda v, e, pos, pos0: [e['n'] > 0])
+                    return replace(spec, loops={**spec.loops, key: loop})
+
+                status, report = self.check_assumptions(narrow)
+                self.assertNotEqual(status, 0, report)
+                self.assertIn('example', report)
+                self.assertIn('domain changed', report)
+                self.assertNotIn('PROVED', report)
+
+    def test_changed_fixed_js_argument_requires_review(self):
+        status, report = self.check_assumptions(lambda spec: replace(spec, js_args=[('num', 1)]))
+        self.assertNotEqual(status, 0, report)
+        self.assertIn('example', report)
+        self.assertIn('domain changed', report)
+        self.assertNotIn('PROVED', report)
+
+    def test_removed_fixed_js_argument_requires_review(self):
+        status, report = self.check_assumptions(lambda spec: replace(spec, js_args=[]))
+        self.assertNotEqual(status, 0, report)
+        self.assertIn('domain changed', report)
+        self.assertNotIn('PROVED', report)
 
 
 def site(kind, line=10):

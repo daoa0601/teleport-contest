@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import csv
 import functools
+import json
 import os
 import subprocess
 import sys
@@ -293,7 +294,36 @@ def domain_summary(spec) -> str:
         summary.append(f'{name} == NULL')
         summary.extend(f'{js_path} == null' for js_path in js_paths)
     summary.extend(' '.join(str(term).split()) for term in spec.pre(symbols))
+    if spec.js_args:
+        summary.append('JS extra arguments: ' + json.dumps(spec.js_args))
+    summary.extend(loop_summary(key, loop) for key, loop in sorted(spec.loops.items()))
     return '; '.join(summary)
+
+
+class LoopSymbols:
+    """Name arbitrary loop locals without specializing their symbolic values."""
+    def __init__(self, prefix: str):
+        self.prefix = prefix
+
+    def __getitem__(self, name: str):
+        if not isinstance(name, str):
+            raise Unsupported('ledger loop annotations must read values by name, not iterate over them')
+        return z3.Int(f'{self.prefix}.{name}')
+
+
+def loop_summary(key, loop) -> str:
+    current, entry = LoopSymbols('current'), LoopSymbols('entry')
+    pos = {stream: z3.Int(f'position.{stream}') for stream in STREAMS}
+    pos0 = {stream: z3.Int(f'entry_position.{stream}') for stream in STREAMS}
+    formulas = [('facts', loop.facts(current, entry, pos, pos0)),
+                ('invariant', loop.invariant(current, entry, pos, pos0)),
+                ('variant', [loop.variant(current, entry)])]
+    details = {'streams': list(loop.streams)}
+    for label, terms in formulas:
+        details[label] = [term.sexpr() if isinstance(term, z3.ExprRef) else term for term in terms]
+    side, function, ordinal = key
+    # JSON preserves complete SMT expressions, including quoted names and newlines.
+    return f'loop {side}:{function}[{ordinal}]: ' + json.dumps(details)
 
 
 def claim_changes(recorded: ClaimSummary, current: ClaimSummary) -> list[str]:
