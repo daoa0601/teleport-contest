@@ -2,11 +2,12 @@
 import { PosixRegex } from './posix_regex.js';
 import { MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP } from './const.js';
 
-type MessageType = typeof MSGTYP_NORMAL | typeof MSGTYP_NOREP
+export type MessageType = typeof MSGTYP_NORMAL | typeof MSGTYP_NOREP
     | typeof MSGTYP_NOSHOW | typeof MSGTYP_STOP;
 
 export interface MessageTypeRule {
     type: MessageType;
+    patternText: string;
     pattern: PosixRegex;
     disabled: boolean;
 }
@@ -25,7 +26,7 @@ export function addMessageTypeRule(value: string, rules: MessageTypeRule[]): str
     const entry = MESSAGE_TYPES.find(([type]) => type.startsWith(name.toLowerCase()));
     if (!entry) return `Unknown message type '${name}'`;
     try {
-        rules.unshift({ type: entry[1], pattern: new PosixRegex(match[2]), disabled: false });
+        rules.unshift({ type: entry[1], patternText: match[2], pattern: new PosixRegex(match[2]), disabled: false });
     } catch (error) {
         if (!(error instanceof SyntaxError)) throw error;
         return `MSGTYPE regex error: ${error.message}`;

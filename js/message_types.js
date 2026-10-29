@@ -16,7 +16,7 @@ export function addMessageTypeRule(value, rules) {
     if (!entry)
         return `Unknown message type '${name}'`;
     try {
-        rules.unshift({ type: entry[1], pattern: new PosixRegex(match[2]), disabled: false });
+        rules.unshift({ type: entry[1], patternText: match[2], pattern: new PosixRegex(match[2]), disabled: false });
     }
     catch (error) {
         if (!(error instanceof SyntaxError))

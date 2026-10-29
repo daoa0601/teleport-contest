@@ -9,6 +9,7 @@ import { findAlignment, findGender, findRace, findRole, randomCharacterOption } 
 import { NATIVE_COMMANDS } from './command_data.js';
 import { resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
+import type { MessageType, MessageTypeRule } from './message_types.js';
 import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuColoringRule, MenuStyle } from './flags.js';
 import type { ConfigurationErrorReport } from './config_errors.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
@@ -39,7 +40,8 @@ import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeNam
     matchColorName, queryAttributeMenu, queryColorMenu } from './color_query.js';
 import {
     BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT,
-    MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
+    MENU_ITEMFLAGS_SKIPMENUCOLORS, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP,
+    PICK_NONE, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -2613,7 +2615,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('autopickup_exceptions', `${'autopickup exceptions'.padEnd(24)}[(${game.iflags.autopickupExceptions?.length ?? 0} currently set)]`),
             choice('bind_keys', `bind keys               [(${countBindKeys()} currently set)]`),
             choice('menu_colors', `${'menu colors'.padEnd(24)}[(${game.iflags.menuColorings?.length ?? 0} currently set)]`),
-            choice('message_types', 'message types           [(0 currently set)]'),
+            choice('message_types', `message types           [(${game.iflags.messageTypes?.length ?? 0} currently set)]`),
             choice('status_conditions', `status condition fields [${compoundMenuValue('status_conditions')}]`),
             choice('status_highlights', `status highlight rules  [(${countStatusHilites()} currently set)]`),
         ] }
@@ -2706,6 +2708,69 @@ async function chooseAddListRemove(kind: string, count: number): Promise<'add' |
     // PICK_ONE may return the preselected exit together with the new choice.
     const [first = 'done', second] = picks ?? [];
     return second !== undefined && first === 'done' ? second : first;
+}
+
+const MESSAGE_TYPE_CHOICES = [
+    ['show', MSGTYP_NORMAL, 'Show message normally'],
+    ['hide', MSGTYP_NOSHOW, 'Hide message'],
+    ['stop', MSGTYP_STOP, 'Prompt for more after the message'],
+    ['norep', MSGTYP_NOREP, 'Do not repeat the message'],
+] as const;
+
+// options.c:handler_msgtype(), query_msgtype(). Rules take effect immediately;
+// every completed action returns to the add/list/remove chooser.
+async function editMessageTypes(): Promise<void> {
+    for (;;) {
+        const rules = game.iflags.messageTypes ?? [];
+        const action = await chooseAddListRemove('message type', rules.length);
+        if (action === 'done') return;
+        if (action === 'add') {
+            const patternText = await getLine('What new message pattern?',
+                (_character: string, key: number) => key >= 32 && key < 127);
+            if (patternText === null) return;
+            if (!patternText) continue;
+            let pattern: PosixRegex;
+            try {
+                pattern = new PosixRegex(patternText);
+            } catch (error) {
+                if (!(error instanceof SyntaxError)) throw error;
+                await optionError(`MSGTYPE regex: ${error.message}`);
+                continue;
+            }
+            const selected = await showInventoryWindow<MessageType>([{ items:
+                MESSAGE_TYPE_CHOICES.map(([, value, text]) => ({ value, text })),
+            }], { title: 'How to show the message', pickMode: PICK_ONE });
+            if (selected.value !== undefined)
+                (game.iflags.messageTypes ??= []).unshift({ type: selected.value, patternText, pattern, disabled: false });
+            continue;
+        }
+        const items = rules.map(rule => ({ value: rule, text: messageTypeRow(rule) }));
+        if (action === 'list') {
+            const answer = await showInventoryWindow([{ items }], { title: 'List of message types', pickMode: PICK_NONE });
+            if (answer.key === 27) return;
+        } else {
+            const selected = await showMultiSelectWindow<MessageTypeRule>({
+                title: 'Remove which message types', omitHeadings: true,
+                pageLocalKeys: true, signalEscape: true, sections: [{ items }],
+            });
+            if (selected === null) return;
+            for (const rule of selected) {
+                const index = rules.indexOf(rule);
+                if (index >= 0) rules.splice(index, 1);
+            }
+        }
+    }
+}
+
+function messageTypeRow(rule: MessageTypeRule): string {
+    const choice = MESSAGE_TYPE_CHOICES.find(([, type]) => type === rule.type);
+    if (!choice) throw new Error(`Unknown message type ${rule.type}`);
+    const prefix = `${choice[0].padEnd(5)} "`;
+    // handler_msgtype() reserves the closing quote and NUL in its BUFSZ buffer.
+    const limit = BUFSZ - prefix.length - 2;
+    const pattern = new TextEncoder().encode(rule.patternText).length > limit
+        ? `${cutConfigBytes(rule.patternText, limit - 3)}...` : rule.patternText;
+    return `${prefix}${pattern}"`;
 }
 
 // options.c:handler_autopickup_exception().
@@ -3058,6 +3123,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'autopickup_exceptions') await editAutopickupExceptions();
     else if (name === 'menu_colors') await editMenuColors();
+    else if (name === 'message_types') await editMessageTypes();
     else if (name === 'menu_headings') await editMenuHeadings();
     else if (name === 'petattr') return await editPetAttribute();
     // OthrOpt handlers: options.c o_status_hilites and o_bind_keys do_handler.
