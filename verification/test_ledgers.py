@@ -171,6 +171,54 @@ class ProofLedgerChecks(unittest.TestCase):
         self.assertIn('enermod', result.stdout)
         self.assertIn('domain changed', result.stdout)
 
+    def test_missing_isaac_claim_fails_before_proving(self):
+        claims = prove.isaac_claims(prove.REPO)
+        del claims['lower_bits']
+        output = io.StringIO()
+        ledger = Path(self.directory.name) / 'claims.tsv'
+        with (
+            patch.object(prove, 'isaac_claims', return_value=claims),
+            patch.object(sys, 'argv', ['prove.py', '--check-ledger', str(ledger)]),
+            redirect_stdout(output),
+        ):
+            status = prove.main()
+        self.assertNotEqual(status, 0, output.getvalue())
+        self.assertIn('lower_bits', output.getvalue())
+        self.assertIn('missing spec', output.getvalue())
+        self.assertNotIn('PROVED', output.getvalue())
+
+    def test_narrower_isaac_input_requires_review(self):
+        from bv import integer, predicate
+        from isaac_specs import Pair
+
+        original = Pair.inputs
+
+        def narrow(pair, probe):
+            c_args, js_args = original(pair, probe)
+            if pair.name == 'lower_bits':
+                pair.checks.pre.append(predicate('>=', js_args[0], integer(1)))
+            return c_args, js_args
+
+        output = io.StringIO()
+        ledger = Path(self.directory.name) / 'claims.tsv'
+        with (
+            patch.object(Pair, 'inputs', narrow),
+            patch.object(sys, 'argv', ['prove.py', '--check-ledger', str(ledger)]),
+            redirect_stdout(output),
+        ):
+            status = prove.main()
+        self.assertNotEqual(status, 0, output.getvalue())
+        self.assertIn('lower_bits', output.getvalue())
+        self.assertIn('domain changed', output.getvalue())
+        self.assertNotIn('PROVED', output.getvalue())
+
+    def test_removed_isaac_mutant_requires_review(self):
+        claim = next(claim for claim in self.claims if claim['spec'] == 'isaac64_update')
+        result = self.check_changed_claim('isaac64_update', 'mutants', str(int(claim['mutants']) + 1))
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('isaac64_update', result.stdout)
+        self.assertIn('mutant count changed', result.stdout)
+
 
 class AssumptionLedgerChecks(unittest.TestCase):
     def check_assumptions(self, change):
@@ -178,9 +226,11 @@ class AssumptionLedgerChecks(unittest.TestCase):
             c_file = Path(directory) / 'example.c'
             js_file = Path(directory) / 'example.js'
             ledger = Path(directory) / 'claims.tsv'
-            c_file.write_text('int example(int n) { int i = 0; while (i < n) ++i; return i; }')
+            c_file.write_text('int example(int n) { int i = 0; while (i < n) ++i; return i; }\n'
+                              'int replacement(int n) { return n; }')
             js_file.write_text('function example(n, bonus = 0) { '
-                               'let i = 0; while (i < n) ++i; return i + bonus; }')
+                               'let i = 0; while (i < n) ++i; return i + bonus; }\n'
+                               'function replacement(n, bonus = 0) { return n + bonus; }')
             loop = LoopSpec(
                 invariant=lambda v, e, pos, pos0: [v['i'] >= 0, v['i'] <= e['n']],
                 variant=lambda v, e: e['n'] - v['i'],
@@ -193,7 +243,10 @@ class AssumptionLedgerChecks(unittest.TestCase):
             def run(current, option):
                 output = io.StringIO()
                 with (
-                    patch.multiple(prove, SPECS=[current], C_FILES=[str(c_file)], JS_FILES=[str(js_file)]),
+                    patch.multiple(prove, SPECS=[current], C_FILES=[str(c_file)], JS_FILES=[current.js_file]),
+                    patch.object(prove, 'isaac_claims', return_value={}),
+                    patch.object(prove, 'prove_isaac64', return_value=0),
+                    patch.object(prove, 'prove_seed_packing', return_value=0),
                     patch.object(sys, 'argv', ['prove.py', option, str(ledger)]),
                     redirect_stdout(output),
                 ):
@@ -207,6 +260,22 @@ class AssumptionLedgerChecks(unittest.TestCase):
     def test_unchanged_loop_and_arguments_pass(self):
         status, report = self.check_assumptions(lambda spec: spec)
         self.assertEqual(status, 0, report)
+
+    def test_changed_proof_target_requires_review(self):
+        for field in ('c', 'js', 'js_file'):
+            with self.subTest(field=field):
+                def redirect(spec):
+                    target = 'replacement'
+                    if field == 'js_file':
+                        file = Path(spec.js_file).with_name('replacement.js')
+                        file.write_text('function example(n, bonus = 0) { return n + bonus; }')
+                        target = str(file)
+                    return replace(spec, **{field: target})
+
+                status, report = self.check_assumptions(redirect)
+                self.assertNotEqual(status, 0, report)
+                self.assertIn('domain changed', report)
+                self.assertNotIn('PROVED', report)
 
     def test_narrower_loop_facts_require_review_on_either_side(self):
         for side in ('c', 'js'):

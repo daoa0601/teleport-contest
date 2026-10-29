@@ -32,6 +32,7 @@ from jssym import JSExec, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
 from isaac_specs import run as prove_isaac64
 from isaac_seed import run as prove_seed_packing
+from isaac_ledger import claims as isaac_claims
 
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
@@ -217,6 +218,10 @@ def main() -> int:
     claims = {spec.name: ClaimSummary(domain_summary(spec), len(spec.probes), len(spec.mutants)) for spec in SPECS}
     if len(claims) != len(SPECS):
         parser.error('spec names must be unique')
+    for name, (domain, probes, mutants) in isaac_claims(REPO).items():
+        if name in claims:
+            parser.error(f'duplicate spec name: {name}')
+        claims[name] = ClaimSummary(domain, probes, mutants)
     if args.check_ledger:
         try:
             recorded = read_ledger(args.check_ledger)
@@ -285,7 +290,8 @@ def domain_summary(spec) -> str:
     symbols.update({name: z3.Int(name) for name, _, _, _ in spec.enum_state})
     types = [(name, t) for name, t in spec.params] + [(name, t) for name, t, _ in spec.state]
     types.extend((name, t) for name, t, _, _ in spec.enum_state)
-    summary = [f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types]
+    summary = [f'C function: {spec.c}', f'JS function: {spec.js_file}:{spec.js}']
+    summary.extend(f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types)
     summary.extend(f'{name} == {js_path}' for name, _, js_path in spec.state)
     for name, _, js_path, choices in spec.enum_state:
         mapping = ', '.join(f'{native}={js}' for native, js in choices)

@@ -56,7 +56,7 @@ jobs:
           path: |
             nethack-c/recorder
             .cache/uv
-          key: equivalence-${{ runner.os }}-${{ runner.arch }}-${{ env.NETHACK_SHA }}-${{ hashFiles('nethack-c/patches/**', 'nethack-c/build-recorder.sh', 'nethack-c/macosx-minimal', 'verification/**/*.py', 'verification/**/*.mjs', 'verification/equivalence/harness/**', 'verification/equivalence/uv.lock', 'verification/equivalence/pyproject.toml', '.github/workflows/equivalence.yml') }}
+          key: equivalence-${{ runner.os }}-${{ runner.arch }}-${{ env.NETHACK_SHA }}-${{ hashFiles('nethack-c/patches/**', 'nethack-c/build-recorder.sh', 'nethack-c/macosx-minimal', 'verification/**/*.py', 'verification/**/*.mjs', 'verification/**/*.c', 'verification/equivalence/uv.lock', 'verification/equivalence/pyproject.toml', '.github/workflows/equivalence.yml') }}
       - name: Prepare patched recorder sources and Lua headers
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -78,6 +78,13 @@ jobs:
       - name: Test C and JavaScript executor behavior
         working-directory: verification/equivalence
         run: uv run --locked python -m unittest -v test_executors
+      - name: Test ISAAC64 scoring target selection
+        working-directory: verification/equivalence
+        run: uv run --locked python ../isaac64/test_scoring_target.py
+      - name: Cross-check native and scoring ISAAC64 outputs
+        working-directory: verification/equivalence
+        run: |
+          /usr/bin/time -p uv run --locked ../isaac64/crosscheck.py 2>&1 | tee ../../.cache/equivalence/isaac64-crosscheck.txt
       - name: Test ledger acceptance and rejection
         working-directory: verification/equivalence
         run: uv run --locked ../test_ledgers.py
@@ -96,7 +103,7 @@ jobs:
           echo "Elapsed since checkout: $(($(date +%s) - VERIFICATION_STARTED)) seconds" >> "$GITHUB_STEP_SUMMARY"
           {
             echo '```'
-            for report in .cache/equivalence/proofs.txt .cache/equivalence/extract-time.txt .cache/equivalence/callsites.txt; do
+            for report in .cache/equivalence/proofs.txt .cache/equivalence/isaac64-crosscheck.txt .cache/equivalence/extract-time.txt .cache/equivalence/callsites.txt; do
               if [ -f "$report" ]; then cat "$report"; fi
             done
             echo '```'
