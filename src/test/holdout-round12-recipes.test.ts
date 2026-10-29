@@ -5,7 +5,7 @@ import type { RecipePlanSegment } from '../scripts/holdout/recipes.mjs';
 import { createSessionDriver } from '../scripts/lib/session-driver.mjs';
 import { Engine } from '../js/jsmain.js';
 import { GameDisplay } from '../js/game_display.js';
-import { IRONBARS, POOL, W_NONDIGGABLE } from '../js/const.js';
+import { IRONBARS, LANDMINE, POOL, W_NONDIGGABLE } from '../js/const.js';
 import { specialPrototypeAt } from '../js/dungeon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG, GOLD_PIECE, LAND_MINE } from '../js/object_data.js';
@@ -62,8 +62,11 @@ const finalStates: Record<string, FinalState> = {
         const form = engine.state.u.umonnum;
         return form !== initial.umonnum && form !== MONSTER_NAME.indexOf('vampire');
     },
-    // cnv_trap_obj() turns the disarmed trap into a pickable object.
-    'land-mine-untrap': engine => floorObjectCount(engine, LAND_MINE) > 0,
+    // trap.c:try_disarm() either disarms the mine (cnv_trap_obj() leaves a
+    // land mine object) or sets it off (blow_up_landmine() leaves a pit);
+    // both outcomes remove the land-mine trap.
+    'land-mine-untrap': engine => floorObjectCount(engine, LAND_MINE) > 0
+        || !(engine.state.level?.traps.some(trap => trap.ttyp === LANDMINE) ?? true),
     // done() counts the survived death in umortality.
     'death-lifesaving': engine => (engine.state.u.umortality ?? 0) > 0,
     'death-polymorphed': engine => engine.state.program_state.gameover === true
