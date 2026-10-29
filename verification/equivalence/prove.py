@@ -13,11 +13,14 @@ undefined behavior and no JavaScript exception or inexact arithmetic.
 from __future__ import annotations
 
 import argparse
+import csv
 import functools
+import json
 import os
 import subprocess
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 import z3
@@ -29,10 +32,19 @@ from jssym import JSExec, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
 from isaac_specs import run as prove_isaac64
 from isaac_seed import run as prove_seed_packing
+from isaac_ledger import claims as isaac_claims
 
 print = functools.partial(print, flush=True)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
+LEDGER_COLUMNS = ('spec', 'domain', 'probes', 'mutants')
+
+
+@dataclass(frozen=True)
+class ClaimSummary:
+    domain: str
+    probes: int
+    mutants: int
 
 
 def recorder_dir() -> Path:
@@ -198,7 +210,37 @@ def main() -> int:
     parser.add_argument('--only', action='append')
     parser.add_argument('--no-probes', action='store_true')
     parser.add_argument('--no-mutants', action='store_true')
+    parser.add_argument('--check-ledger', type=Path, help='require recorded domains, check counts, and successful proofs')
+    parser.add_argument('--write-ledger', type=Path, help='record all claims after a successful complete run')
     args = parser.parse_args()
+    if (args.check_ledger or args.write_ledger) and (args.only or args.no_probes or args.no_mutants):
+        parser.error('ledger checks require every spec, probe, and mutant')
+    claims = {spec.name: ClaimSummary(domain_summary(spec), len(spec.probes), len(spec.mutants)) for spec in SPECS}
+    if len(claims) != len(SPECS):
+        parser.error('spec names must be unique')
+    for name, (domain, probes, mutants) in isaac_claims(REPO).items():
+        if name in claims:
+            parser.error(f'duplicate spec name: {name}')
+        claims[name] = ClaimSummary(domain, probes, mutants)
+    if args.check_ledger:
+        try:
+            recorded = read_ledger(args.check_ledger)
+        except (OSError, ValueError) as error:
+            parser.error(str(error))
+        failures = 0
+        for name, expected in sorted(recorded.items()):
+            current = claims.get(name)
+            changes = ['missing spec'] if current is None else claim_changes(expected, current)
+            if changes:
+                print(f'FAILED  {name:<20} {"; ".join(changes)}')
+                failures += 1
+        for name in sorted(claims.keys() - recorded.keys()):
+            print(f'FAILED  {name:<20} unrecorded spec')
+            failures += 1
+        if failures:
+            print('Review claim changes before using --write-ledger to accept them.')
+            print(f'{failures} claim(s) failed')
+            return 1
 
     recorder = recorder_dir()
     front = CFront(recorder, [recorder / 'src' / file for file in C_FILES] + list((HERE / 'harness').glob('*.c')))
@@ -234,8 +276,94 @@ def main() -> int:
                 failures += proved != equivalent
     failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
     failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)
+    if failures == 0 and args.write_ledger:
+        with args.write_ledger.open('w', newline='') as output:
+            writer = csv.writer(output, delimiter='\t', lineterminator='\n')
+            writer.writerow(LEDGER_COLUMNS)
+            writer.writerows((name, claim.domain, claim.probes, claim.mutants)
+                             for name, claim in sorted(claims.items()))
     print('all claims hold' if failures == 0 else f'{failures} claim(s) failed')
     return 1 if failures else 0
+
+
+def domain_summary(spec) -> str:
+    """Keep the ledger's reviewable domain derived from the actual spec."""
+    symbols = {name: z3.Int(name) for name, _ in spec.params}
+    symbols.update({name: z3.Int(name) for name, _, _ in spec.state})
+    symbols.update({name: z3.Int(name) for name, _, _, _ in spec.enum_state})
+    types = [(name, t) for name, t in spec.params] + [(name, t) for name, t, _ in spec.state]
+    types.extend((name, t) for name, t, _, _ in spec.enum_state)
+    summary = [f'C function: {spec.c}', f'JS function: {spec.js_file}:{spec.js}']
+    summary.extend(f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types)
+    summary.extend(f'{name} == {js_path}' for name, _, js_path in spec.state)
+    for name, _, js_path, choices in spec.enum_state:
+        mapping = ', '.join(f'{native}={js}' for native, js in choices)
+        summary.append(f'{name} corresponds to {js_path} in {{{mapping}}}')
+    for name, js_paths in spec.nulls:
+        summary.append(f'{name} == NULL')
+        summary.extend(f'{js_path} == null' for js_path in js_paths)
+    summary.extend(' '.join(term.sexpr().split()) for term in spec.pre(symbols))
+    if spec.js_args:
+        summary.append('JS extra arguments: ' + json.dumps(spec.js_args))
+    summary.extend(loop_summary(key, loop) for key, loop in sorted(spec.loops.items()))
+    return '; '.join(summary)
+
+
+class LoopSymbols:
+    """Name arbitrary loop locals without specializing their symbolic values."""
+    def __init__(self, prefix: str):
+        self.prefix = prefix
+
+    def __getitem__(self, name: str):
+        if not isinstance(name, str):
+            raise Unsupported('ledger loop annotations must read values by name, not iterate over them')
+        return z3.Int(f'{self.prefix}.{name}')
+
+
+def loop_summary(key, loop) -> str:
+    current, entry = LoopSymbols('current'), LoopSymbols('entry')
+    pos = {stream: z3.Int(f'position.{stream}') for stream in STREAMS}
+    pos0 = {stream: z3.Int(f'entry_position.{stream}') for stream in STREAMS}
+    formulas = [('facts', loop.facts(current, entry, pos, pos0)),
+                ('invariant', loop.invariant(current, entry, pos, pos0)),
+                ('variant', [loop.variant(current, entry)])]
+    details = {'streams': list(loop.streams)}
+    for label, terms in formulas:
+        details[label] = [term.sexpr() if isinstance(term, z3.ExprRef) else term for term in terms]
+    side, function, ordinal = key
+    # JSON preserves complete SMT expressions, including quoted names and newlines.
+    return f'loop {side}:{function}[{ordinal}]: ' + json.dumps(details)
+
+
+def claim_changes(recorded: ClaimSummary, current: ClaimSummary) -> list[str]:
+    changes = []
+    if recorded.domain != current.domain:
+        changes.append(f'domain changed (ledger: {recorded.domain}; current: {current.domain})')
+    if recorded.probes != current.probes:
+        changes.append(f'probe count changed (ledger: {recorded.probes}; current: {current.probes})')
+    if recorded.mutants != current.mutants:
+        changes.append(f'mutant count changed (ledger: {recorded.mutants}; current: {current.mutants})')
+    return changes
+
+
+def read_ledger(path: Path) -> dict[str, ClaimSummary]:
+    with path.open(newline='') as source:
+        rows = csv.reader(source, delimiter='\t')
+        if next(rows, None) != list(LEDGER_COLUMNS):
+            raise ValueError(f'{path}: expected {", ".join(LEDGER_COLUMNS)} columns')
+        claims = {}
+        for line, row in enumerate(rows, 2):
+            if len(row) != len(LEDGER_COLUMNS) or not all(row) or row[0] in claims:
+                raise ValueError(f'{path}:{line}: invalid or duplicate claim')
+            name, domain, probes, mutants = row
+            try:
+                counts = (int(probes), int(mutants))
+            except ValueError as error:
+                raise ValueError(f'{path}:{line}: probe and mutant counts must be nonnegative integers') from error
+            if min(counts) < 0:
+                raise ValueError(f'{path}:{line}: probe and mutant counts must be nonnegative integers')
+            claims[name] = ClaimSummary(domain, *counts)
+    return claims
 
 
 if __name__ == '__main__':

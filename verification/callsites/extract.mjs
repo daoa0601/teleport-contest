@@ -137,6 +137,22 @@ function enclosingFunction(n) {
     return null;
 }
 
+// Callback claims belong to their lexical scope, not a file-wide anonymous pool.
+function functionScope(n) {
+    const names = [];
+    for (let p = n.parent; p; p = p.parent) {
+        if (!ts.isFunctionLike(p)) continue;
+        const parent = p.parent;
+        if (p.name) names.unshift(text(p.name));
+        else if (ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent) || ts.isParameter(parent)) {
+            names.unshift(text(parent.name));
+        } else if (ts.isCallExpression(parent) && parent.arguments.includes(p)) {
+            names.unshift(`${text(parent.expression)} argument ${parent.arguments.indexOf(p) + 1}`);
+        } else names.unshift('(anonymous)');
+    }
+    return names.join('/') || '(module)';
+}
+
 // A variable is stable when it is const, or a let/var/parameter never assigned
 // after its declaration. Only stable identifiers may be inlined or unified.
 const stableCache = new Map();
@@ -723,14 +739,12 @@ for (const file of program.getSourceFiles()) {
             const draw = drawName(n);
             if (draw) {
                 checkingCall = n;
-                const fn = enclosingFunction(n);
-                const fnName = fn && fn.name ? fn.name.getText() : '(anonymous)';
                 const authored = typedCalls.get(n);
                 sites.push({
                     file: path.relative(repo, authored.getSourceFile().fileName),
                     line: authored.getSourceFile().getLineAndCharacterOfPosition(authored.getStart()).line + 1,
                     emitted: { file: rel, line: file.getLineAndCharacterOfPosition(n.getStart()).line + 1 },
-                    fn: fnName, draw, callee: text(n.expression), args: n.arguments.map((a) => text(a)),
+                    fn: functionScope(n), draw, callee: text(n.expression), args: n.arguments.map((a) => text(a)),
                     terms: n.arguments.map((a) => term(a)), guards: guards(n),
                 });
             }

@@ -26,6 +26,7 @@ from isaac_js import JSIsaac
 
 NAMES = ('lower_bits', 'upper_bits', 'isaac64_mix', 'isaac64_update',
          'isaac64_reseed', 'isaac64_init', 'isaac64_next_uint64')
+PROBES = {name: (True,) for name in NAMES}
 
 
 def same_integer(a, b):
@@ -384,11 +385,14 @@ class Pair:
         return self.checks.count
 
 
-def check(front, source, name, proved, probe=False):
-    cases = range(9) if name in ('isaac64_init', 'isaac64_reseed') else \
+def cases(name):
+    return range(9) if name in ('isaac64_init', 'isaac64_reseed') else \
         range(2) if name == 'isaac64_next_uint64' else range(1)
+
+
+def check(front, source, name, proved, probe=False):
     count = 0
-    for case in cases:
+    for case in cases(name):
         pair = Pair(front, source, name, proved, case, probe)
         count += pair.run()
     return count
@@ -403,6 +407,14 @@ MUTANTS = {
     'isaac64_init': (b'return ctx;', b'ctx.n--; return ctx;'),
     'isaac64_next_uint64': (b'_ctx.r[--_ctx.n]', b'_ctx.r[_ctx.n--]'),
 }
+
+
+def mutations(name):
+    changes = [MUTANTS[name]]
+    if name == 'isaac64_update':
+        changes += [(b'0xFFFFFFFFFFFFFFFFn', b'0x7FFFFFFFFFFFFFFFn'),
+                    (b'a << 21n', b'a << 20n')]
+    return changes
 
 
 def run(recorder, repo, only=None, probes=True, mutants=True):
@@ -426,9 +438,9 @@ def run(recorder, repo, only=None, probes=True, mutants=True):
             return failures + 1
         if name not in selected:
             continue
-        if probes:
+        for probe in PROBES[name] if probes else ():
             try:
-                check(front, source, name, proved - {name}, probe=True)
+                check(front, source, name, proved - {name}, probe=probe)
                 print('  SURVIVED domain probe', flush=True)
                 failures += 1
             except Counterexample as error:
@@ -437,11 +449,7 @@ def run(recorder, repo, only=None, probes=True, mutants=True):
                 print(f'  FAILED domain probe (no counterexample): {error}', flush=True)
                 failures += 1
         if mutants:
-            changes = [MUTANTS[name]]
-            if name == 'isaac64_update':
-                changes += [(b'0xFFFFFFFFFFFFFFFFn', b'0x7FFFFFFFFFFFFFFFn'),
-                            (b'a << 21n', b'a << 20n')]
-            for old, new in changes:
+            for old, new in mutations(name):
                 if old not in source:
                     print(f'  FAILED absent mutant target {old!r}', flush=True)
                     failures += 1

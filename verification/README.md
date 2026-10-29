@@ -39,20 +39,53 @@ claims assume no gauntlets; equipment effects and other attribute cases are
 not covered. `enermod` relates C's role enumerator to each of the 13 JS role
 keys. Every new claim has a concrete failing probe and a killed mutant.
 
-Run the executor's language tests separately (24 tests; no game sessions):
+Run the executor's language tests separately (31 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
 NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v test_executors
 ```
 
-The post-rebase run passed all 24 tests in 14.644 s. They check table reads and
-bounds, nested global state and attribute arrays,
+They check table reads and bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
-JS 32-bit coercion, imports, defaults, scopes, and rejected constructs. C table
-values come from clang initializers. JS constant arrays are read from emitted
-modules; this assumes their initial values have not been mutated. No new
-game-table pair or writable heap state is claimed.
+JS 32-bit coercion, imports, defaults, scopes, assertions, and rejected
+constructs. C table values come from clang initializers. JS constant arrays
+are read from emitted modules; this assumes their initial values have not been
+mutated. No new game-table pair or writable heap state is claimed.
+
+CI runs the complete check against `docs/ledger/equivalence.tsv`:
+
+```sh
+cd verification/equivalence
+uv run --locked prove.py --check-ledger ../../docs/ledger/equivalence.tsv
+```
+
+The ledger records each spec name, its C function and JS function/file, and
+its domain (parameter and state types,
+state correspondence, role mappings, null-pointer assumptions, and
+preconditions), supplied JS arguments (kind, value, and order), loop
+annotations (facts, invariant, variant, and streams), and probe and mutant
+counts. Preconditions and loop formulas use complete SMT expressions rather
+than Z3's display strings, which can truncate long terms. Loop formulas use
+independent symbols for current locals, entry locals, and RNG positions. The
+ledger records the complete formula rather than a few concrete iterations. Annotation locals must be read by name.
+A missing or unrecorded spec, changed domain summary, changed check count, or
+failed claim, probe, or mutant fails the job. The recorded and current claim
+names must match, so adding a claim requires a reviewed ledger entry. Domain
+summaries are compared as text: even a logically equivalent rewrite requires
+review and a ledger refresh. Domain and count failures show the recorded and
+current values before starting any proofs.
+Recording loop facts does not prove that they are valid definitions; they
+remain part of the reviewed, hand-written loop argument.
+ISAAC64 rows also record the actual modeled argument types, ranges, memory
+sizes, initialization flags, state correspondence, case preconditions, and
+loop plans. The probe and mutant counts come from the runners' declarations.
+
+Ledger commands reject `--only`,
+`--no-probes`, and `--no-mutants`. To record a reviewed set of claims, use
+`--write-ledger ../../docs/ledger/equivalence.tsv`; it writes only after the
+complete run succeeds. To accept reviewed changes, run `--write-ledger` alone;
+combining it with `--check-ledger` preserves the existing baseline on a mismatch.
 
 | File | Role |
 |---|---|
@@ -69,8 +102,9 @@ game-table pair or writable heap state is claimed.
 | `isaac_c.py`, `isaac_js.py` | separate AST executors for the ISAAC64 array/state subset |
 | `isaac_specs.py` | seven generator claims, explicit state relation, loop invariants and variants, proved-call summaries, probes and mutants |
 | `isaac_seed.py` | proof of the eight-byte packing loops in `rnd.c` and emitted `rng.js` |
+| `isaac_ledger.py` | ledger domains from the ISAAC64 runners' symbolic inputs and loop plans |
 
-The call-site unit's acceptance command passed all 28 claims in 52.59 s,
+The latest ledger check passed all 28 claims in 47.8 s,
 with 31 domain probes and 34 mutants (33 rejected, one intentionally
 equivalent). Eight claims cover ISAAC64 and seed packing, with eight
 counterexample probes and ten killed mutants.
@@ -99,7 +133,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 6.255 s on the post-rebase run):
+after it (two tests in 4.9 s on the latest run):
 
 ```sh
 cd verification/equivalence
@@ -132,7 +166,8 @@ The current inventory has 2,481 sites: 2,088 constant, 106 guarded, 50 invariant
 237 unproved; 339 upper domains remain unproved. Thirty-six previously
 unproved sites classify successfully. Fifty-three old classifications were
 withdrawn, and 133 additional emitted calls are now included. Extraction took
-110.70 s and both classifier passes took 3.57 s on the shared machine.
+108.90 s and both classifier passes with ledger enforcement took 3.35 s on
+the shared machine.
 [`callsites/review.md`](callsites/review.md) records counts by group, native
 sources, limits and all 28 equivalence timings;
 [`callsites/review.tsv`](callsites/review.tsv) lists every residual site.
@@ -158,3 +193,53 @@ emitted-only mutants. The source-wide gate killed 2,243 classified-site mutants
 with zero failures. No reachable out-of-domain game divergence was established.
 Native auditing uses clang's typed JSON AST; its printed expressions and
 nested `if` conditions aid manual review and are never solver premises.
+
+Add `--check-ledger ../../docs/ledger/rng-callsites.tsv` to enforce the current
+lower-bound and integer classifications. Each row identifies a call by file,
+enclosing function, callee text, and the JSON array of argument texts. Line
+numbers appear only in diagnostics, so moving a call does not change its key.
+Callback scopes include enclosing functions and assigned callback names (or
+call argument positions), so distinct callbacks do not share a file-wide
+anonymous key. Repeated identical calls in the same scope retain separate
+rows: an extra unproved copy fails.
+
+Classes run from strongest to weakest: constant, guarded, invariant, unproved.
+Losing a class fails with the site and reason. A new site must be constant,
+guarded, or invariant; existing unproved calls are grandfathered. Deleting a
+call or strengthening its class is allowed. Upper bounds remain a separate
+summary, outside this ledger. Use `--write-ledger` with the same path to record
+a reviewed baseline; combining it with `--check-ledger` writes only on success.
+
+The 28 ledger CLI behavior tests assert exit status, with reports used only
+for failure diagnostics. They run with:
+
+```sh
+cd verification/equivalence && uv run --locked ../test_ledgers.py
+```
+
+`.github/workflows/equivalence.yml` runs on every pull request and on pushes to
+`daoa/recovery-architecture` and `main`. It uses `macos-latest` and Apple clang,
+matching the native recorder job in `fresh-batches.yml`. Clang reads system
+headers through `hack.h`, including `assert.h`, `stdint.h`, `limits.h`, and
+`ctype.h`; the SDK is therefore part of the C input. The job selects Apple
+clang and its SDK with `xcrun`. It prepares the pinned upstream C tree with the
+recorder patches and generates `nhlua.h` using the recorder's Lua build rules.
+Those patches change the RNG functions, logging macros, and `hacklib.c`, so
+using upstream alone would check different code. It installs uv, compiles the
+TypeScript, runs the executor, target-selection, analyzer, and ledger tests,
+cross-checks the C and scoring generators, and reruns both analyses and the
+source-wide call-site mutant gate. The job summary and retained reports
+include wall-clock times.
+
+Assertions are proof obligations. The executor recognizes Apple's conditional
+`__assert_rtn` expansion and glibc's `__assert_fail` statement expression from
+clang's typed AST. A reachable failing condition produces a counterexample.
+The condition runs once; only successful paths continue. Disabled `NDEBUG`
+assertions evaluate nothing. Other GNU statement expressions remain
+unsupported. The tests compile both libc forms explicitly, so the glibc case
+also runs on macOS.
+
+Only the prepared C tree and uv's package cache are cached, using an exact key
+including the C submodule revision, recorder patches, prover and extractor
+files, dependency lock, and workflow. Proof results, classifications, emitted
+JavaScript, and Node dependencies are rebuilt on every run.

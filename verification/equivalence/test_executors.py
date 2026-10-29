@@ -12,6 +12,13 @@ from jssym import parse_module
 from prove import REPO, check, recorder_dir
 from specs import INT, LONG, Spec
 
+GLIBC_ASSERT = '''
+    extern void __assert_fail(const char *, const char *, unsigned, const char *)
+        __attribute__((noreturn));
+    #define assert(e) ((void) sizeof ((e) ? 1 : 0), __extension__ ({ \
+        if (e) ; else __assert_fail(#e, __FILE__, __LINE__, __func__); }))
+'''
+
 
 class ExecutorTests(unittest.TestCase):
     def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None):
@@ -34,6 +41,57 @@ class ExecutorTests(unittest.TestCase):
         proved, report = self.compare(*args, **kwargs)
         self.assertFalse(proved, report)
         self.assertIn(reason, report)
+
+    def test_glibc_assert_is_a_proof_obligation(self):
+        source = GLIBC_ASSERT + 'int example(int x) { assert(x > 0); return x; }'
+        self.equivalent(source, 'function example(x) { return x; }',
+                        params=[('x', INT)], pre=lambda s: [s['x'] > 0])
+        proved, report = self.compare(source, 'function example(x) { return x; }', params=[('x', INT)])
+        self.assertFalse(proved, report)
+        self.assertIn('C assertion failed', report)
+        self.assertRegex(report, r'\bx=-?\d+\b')
+
+    def test_apple_assert_is_a_proof_obligation(self):
+        source = '''
+            extern void __assert_rtn(const char *, const char *, int, const char *)
+                __attribute__((noreturn));
+            #define assert(e) (__builtin_expect(!(e), 0) \
+                ? __assert_rtn(__func__, __FILE__, __LINE__, #e) : (void)0)
+            int example(int x) { assert(x > 0); return x; }
+        '''
+        self.equivalent(source, 'function example(x) { return x; }',
+                        params=[('x', INT)], pre=lambda s: [s['x'] > 0])
+        self.rejected(source, 'function example(x) { return x; }',
+                      params=[('x', INT)], reason='C assertion failed')
+
+    def test_system_assert_is_a_proof_obligation(self):
+        source = '#include <assert.h>\nint example(int x) { assert(x > 0); return x; }'
+        self.rejected(source, 'function example(x) { return x; }',
+                      params=[('x', INT)], reason='C assertion failed')
+
+    def test_assert_condition_runs_once(self):
+        source = GLIBC_ASSERT + 'int example(int x) { assert(x++ >= 0); return x; }'
+        self.equivalent(source, 'function example(x) { return x + 1; }',
+                        params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] < 10])
+
+    def test_unreached_assert_does_not_fail_a_claim(self):
+        source = GLIBC_ASSERT + 'int example(int x) { if (x) assert(x < 0); return x; }'
+        self.equivalent(source, 'function example(x) { return x; }',
+                        params=[('x', INT)], pre=lambda s: [s['x'] == 0])
+
+    def test_ndebug_assert_does_not_evaluate_its_condition(self):
+        source = '#define NDEBUG\n#include <assert.h>\n' \
+                 'int example(int x) { assert(++x > 0); return x; }'
+        self.equivalent(source, 'function example(x) { return x; }', params=[('x', INT)])
+
+    def test_other_statement_expressions_remain_unsupported(self):
+        sources = ['int example(int x) { return __extension__ ({ x + 1; }); }',
+                   GLIBC_ASSERT + 'int example(int x) { return __extension__ ({ '
+                   'if (x > 0) ; else __assert_fail("x", "test", 1, "example"); x; }); }']
+        for source in sources:
+            with self.subTest(source=source):
+                self.rejected(source, 'function example(x) { return x; }',
+                              params=[('x', INT)], reason='C expression StmtExpr')
 
     def test_nested_state_and_hero_attribute_arrays(self):
         self.equivalent(

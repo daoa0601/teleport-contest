@@ -14,14 +14,23 @@ from isaac_c import CIsaac
 from isaac_js import JSIsaac
 from isaac_specs import same_integer, same_memory, Summaries
 
+NAME = 'isaac64_seed_packing'
+PROBES = (True,)
+MUTANT = (b's >>= 8n;', b's >>= 7n;')
 
-def check(front, source, probe=False, number=False):
-    checks = Obligations()
+
+def input_seed(checks, number):
     word = fresh('wrapper_seed', 0, WORD_MAX, 'num' if number else 'big')
     if number:
         # This sufficient subdomain avoids relying on inexact Number literals.
         # BigInt inputs separately cover the full uint64 range.
         checks.pre.append(predicate('<=', word, integer(2**53-1)))
+    return word
+
+
+def check(front, source, probe=False, number=False):
+    checks = Obligations()
+    word = input_seed(checks, number)
     if probe:
         checks.pre.append(predicate('==', word, integer(0)))
     c, j = CIsaac(front, checks, {}), JSIsaac(source, checks, {})
@@ -54,7 +63,7 @@ def check(front, source, probe=False, number=False):
 
 
 def run(front, repo, only=None, probes=True, mutants=True):
-    name = 'isaac64_seed_packing'
+    name = NAME
     if only and name not in only and 'isaac64' not in only:
         return 0
     source = (repo / 'js' / 'rng.js').read_bytes()
@@ -66,9 +75,9 @@ def run(front, repo, only=None, probes=True, mutants=True):
     except (Counterexample, Unsupported) as error:
         print(f'FAILED  {name}: {error}', flush=True)
         return 1
-    if probes:
+    for probe in PROBES if probes else ():
         try:
-            check(front, source, probe=True)
+            check(front, source, probe=probe)
             print('  SURVIVED undefined seed probe', flush=True)
             failures += 1
         except Counterexample as error:
@@ -77,7 +86,7 @@ def run(front, repo, only=None, probes=True, mutants=True):
             print(f'  FAILED probe: {error}', flush=True)
             failures += 1
     if mutants:
-        old, new = b's >>= 8n;', b's >>= 7n;'
+        old, new = MUTANT
         if source.count(old) != 1:
             print('  FAILED seed shift mutant target is not unique', flush=True)
             return failures + 1

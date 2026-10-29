@@ -8,10 +8,9 @@ functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
 `verification/equivalence/` proves 28 scoped claims: 20 arithmetic/read-only
 state claims plus eight ISAAC64 and seed-packing claims. The combined run,
-including all probes and mutants, took 52.59 seconds in the call-site unit
-acceptance run. Use it as a CI check on leaf functions, add function-level differential fuzzing for
-stateful code, and keep whole-game equivalence empirical: session replay,
-ledgers, and the state oracle.
+including all probes and mutants, runs in CI with both ledgers enforced. Add
+function-level differential fuzzing for stateful code, and keep whole-game
+equivalence empirical: session replay, ledgers, and the state oracle.
 
 ## What "verified" can mean
 
@@ -43,7 +42,7 @@ over rank 4.
 
 ## The proof of concept
 
-`cd verification/equivalence && uv run prove.py` (clang and uv; about 52 s).
+`cd verification/equivalence && uv run prove.py` (clang and uv; about 48 s).
 In a worktree, set `NETHACK_RECORDER` to the main checkout's pinned recorder.
 
 **Claim.** For every input in the domain, every random sequence (core and
@@ -62,34 +61,50 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 
 | Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
 |---|---|---|---|---|
-| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.3 s |
+| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.2 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
-| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.5 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 0.9 s |
+| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.4 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 0.8 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.3 s |
-| `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 1.1 s |
+| `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 1.0 s |
 | `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 4.1 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
 | `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 8×1 | 0.3 s |
-| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 1.3 s |
-| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 7×13 | 4.4 s |
-| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.3 s |
-| `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.3 s |
-| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.6 s |
+| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 1.4 s |
+| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 7×13 | 3.8 s |
+| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.4 s |
+| `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.2 s |
+| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.5 s |
 | `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.5 s |
 | `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.2 s |
 | `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.1 s |
-| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.5 s |
-| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.8 s |
-| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 15.2 s |
+| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.4 s |
+| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.7 s |
+| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 13.7 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
-| `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | 0.0 s |
+| `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
 | `isaac64_update` | `isaac64.c:isaac64_update` ↔ frozen same name | 256 initialized words in m/r; arbitrary uint64 a/b/c | Two loop invariants cover all 256 updates | 0.3 s |
-| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 3.5 s |
+| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 3.2 s |
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
-| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
+| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | <0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
+
+The final `--check-ledger` run used the main checkout's pinned recorder and
+passed all 28 claims, 31 domain probes, and 34 mutant checks in 47.8 seconds.
+One mutant is intentionally equivalent; the other 33 were killed. The
+latest checks also passed compilation (13.6 seconds), 31 executor tests
+(16.7 seconds), two target-selection tests (4.9 seconds), ten analyzer tests
+(1.6 seconds), and 28 ledger tests (57.8 seconds, including their full proof
+baseline). The ledger tests reject
+redirected C/JS functions and files, missing ISAAC64 claims, narrowed input
+relations, and lost mutants before running proofs. All three target redirects
+were accepted before the target-identity fix and rejected afterward.
+Two further tests omit the row for a current leaf or ISAAC64 claim. Both
+failed before the unrecorded-spec check and pass afterward; the CLI now
+rejects those omissions before proving. A long-precondition regression test
+removes a valid input beyond Z3's display cutoff: the CLI accepted it before
+complete SMT serialization and rejects it afterward.
 
 The byte-seed relation comes from `isaac64.h`: C reads unsigned bytes and
 the supplied length equals the JS array length. Both arrays contain at least
@@ -155,19 +170,23 @@ For example, the mask mutant gives working `b = 9223372036854775808` in C and
 `b = 0` in JS when initial `b = 9223372036854775807` and `c = 0`.
 One original mutant is genuinely equivalent (`ulevel < 15` →
 `ulevel < 16`, since 15/3 = 5), and the tool proves it.
+The existing prototype lacks dedicated mutants for `rn2` and `rn1`, and
+dedicated domain probes for `d` and `rne`. This CI work adds no claims and does
+not fill those gaps. New claims still require both a counterexample probe and
+a killed mutant; the current CLI runs every check supplied by the specs.
 
 | New leaf claim | Domain probe | Killed mutant |
 |---|---|---|
-| `enermod` | `en = INT_MAX` overflows C's multiplication | 4.4 s |
-| `newuexp` | arbitrary `int` level can leave the JS exact-integer range | 1.3 s |
-| `xlev_to_rank` | input 4294967297 narrows to C `int` 1: C 0, JS 8 | 0.3 s |
-| `rounddiv` | `(2, -3)`: C -1, JS 0 | 0.6 s |
-| `Align2amask` | alignment -3: C 4294967295, JS 255 | 0.5 s |
-| `Amask2align` | input 9007199254740993 violates the exact JS input obligation | 1.2 s |
-| `acurr:StrDex` | remove base Strength correspondence: returned attributes differ | 1.1 s |
-| `acurrstr` | remove base Strength correspondence: condensed Strength differs | 0.5 s |
-| `dbon:human` | remove base Strength correspondence: damage bonuses differ | 0.8 s |
-| `abon:human` | remove base Dexterity correspondence: hit bonuses differ | 15.2 s |
+| `enermod` | `en = INT_MAX` overflows C's multiplication | wizard/priest multiplier 2 → 3 |
+| `newuexp` | arbitrary `int` level can leave the JS exact-integer range | first multiplier 10 → 11 |
+| `xlev_to_rank` | input 4294967297 narrows to C `int` 1: C 0, JS 8 | rank numerator `level + 2` → `level + 1` |
+| `rounddiv` | `(2, -3)`: C -1, JS 0 | denominator half → third |
+| `Align2amask` | alignment -3: C 4294967295, JS 255 | alignment offset 2 → 1 |
+| `Amask2align` | input 9007199254740993 violates the exact JS input obligation | normal alignment mask → shrine bit |
+| `acurr:StrDex` | remove base Strength correspondence: returned attributes differ | add 1 to the attribute sum |
+| `acurrstr` | remove base Strength correspondence: condensed Strength differs | Strength divisor 50 → 51 |
+| `dbon:human` | remove base Strength correspondence: damage bonuses differ | 18/75 endpoint inclusive → exclusive |
+| `abon:human` | remove base Dexterity correspondence: hit bonuses differ | Dexterity offset 14 → 13 |
 
 The mask probe is a counterexample to the numeric input obligation, not an
 observed C/JS result difference. The model accepts only exact integer Numbers;
@@ -197,7 +216,7 @@ callers. `enermod` is called with a small level-energy increment from
 **Concrete generator cross-check.** With `NETHACK_RECORDER` set, run
 `cd verification/equivalence && uv run ../isaac64/crosscheck.py`. A tiny
 harness compiles the real `isaac64.c`; Node imports `frozen/isaac64.js` directly.
-The run passed 17 cases and 17,000 draws in 1.81 s: seven uint64 seeds,
+The latest run passed 17 cases and 17,000 draws in 0.8 s: seven uint64 seeds,
 seven byte lengths including zero, partial words, 2048, and over-cap, plus
 three midstream reseeds. Each case checks 1,000 numeric outputs and stops at
 the first mismatch. This is a concrete cross-check, not the universal proof.
@@ -205,9 +224,8 @@ Two target-selection regression tests exercise both verification entry points
 with intentionally disagreeing frozen/emitted copies. A healthy frozen copy
 must pass even when the emitted copy differs; a divergent frozen copy must
 fail even when the emitted copy is healthy. Both tests failed before the
-target correction and pass after it, including the rerun after this rebase
-(two tests in 6.255 s). The 24 leaf-executor tests also passed after the rebase
-in 14.644 s. Run them with
+target correction and pass after it, including the final rerun after this
+rebase and the latest ledger fix (two tests in 4.9 s). Run them with
 `uv run python ../isaac64/test_scoring_target.py` from `verification/equivalence`.
 
 **Divergences found outside the domains.** The game should never reach these,
@@ -235,6 +253,12 @@ but none is checked yet:
 - The trust base is the Python executors and loop annotations (unverified), clang's
   AST, tree-sitter, and Z3. Mutants and probes reduce the risk; replaying
   counterexamples concretely through compiled C and Node would reduce it more.
+- Loop annotation facts are trusted. For `d`, they state the recursive sum
+  for `rnd.c:d`'s `while (n--) tmp += RND(x)` and the uint64 range of each
+  abstract draw (`isaac64.h:isaac64_next_uint64`). The executor checks the
+  invariant and decreasing variant, but does not establish that arbitrary
+  supplied facts are valid definitions.
+  The ledger records those formulas so changes require review.
 - State correspondence is assumed, not proved: JS `game.u.uluck` holds the
   same integer as C `u.uluck`, `game.u` exists, the contexts are
   initialized, and JS numeric arguments are integers equal to the C
@@ -252,13 +276,20 @@ but none is checked yet:
   and JS array holes are rejected. Imported constants and functions resolve
   in their defining module. Module table reads assume their initial values
   have not been mutated; no new game-table equivalence claim is made yet.
-  The 24 executor tests cover these operations and rejection boundaries using
+  The 31 executor tests cover these operations and rejection boundaries using
   small C and JS programs, rather than copies of game functions.
 - Leaf and ISAAC64 executors use `core.bit_operation` for bit-vector operations. The
   leaf executor keeps C's promoted widths and JS Number coercions; the ISAAC64
   executor chooses widths large enough for exact BigInt intermediates before
   applying source masks. There is one bit-operation implementation; width
   selection and language-specific safety obligations remain at each caller.
+- `assert` is a proof obligation, independent of its libc expansion. The
+  typed AST recognizer accepts Apple's `__assert_rtn` conditional (including
+  its `__builtin_expect` hint) and glibc's single-if `__assert_fail` statement
+  expression. The condition is evaluated once; failure yields a counterexample
+  and only successful paths continue. These failure routines have the aborting
+  contract declared by `<assert.h>`. With `NDEBUG`, `(void)0` evaluates nothing.
+  Other GNU statement expressions are rejected.
 - Bitwise `&`, `|`, `^`, `~`, `<<`, and `>>` use C's typed widths and JS's
   32-bit coercions; JS `>>>` is unsigned and shift counts are masked modulo
   32. C shift counts must fit the promoted left operand's width; signed left
@@ -307,9 +338,9 @@ uv run ../callsites/check.py ../../.cache/rng-callsites.json \
   --json ../../.cache/rng-callsites-report.json
 ```
 
-Extraction took 110.70 s; both lower and upper checks took 3.57 s. The baseline
-here was rerun on this branch, rather than copied from the older 2,353-site
-measurement.
+The post-rebase extraction took 108.90 s; both lower and upper checks with
+ledger enforcement took 3.35 s. The class counts match the strengthened
+analyzer's baseline below.
 
 | Class | Before (2,348 sites) | After, original inventory | Additional emitted sites | After (2,481 sites) |
 |---|---:|---:|---:|---:|
@@ -382,15 +413,16 @@ no C/JS table-equivalence theorem is added.
 Nested RNG result bounds are conditional on that draw's own domain; an invalid
 nested draw cannot create contradictory facts and prove an enclosing call.
 Nonzero divisors are obligations, not assumptions. Ten analyzer tests passed
-in 1.330 s, including concrete invalid-domain probes, stale snapshots,
+in 1.374 s, including concrete invalid-domain probes, stale snapshots,
 mutating callbacks, shadowed bindings, destructuring, builtin shadowing,
 ordered increment reads, and nine independent emitted-JS mutants.
 
 A second pass mutates emitted RNG arguments in memory, preserving nested
 calls. Widths become zero; dice counts become negative; `rnz` receives an
 out-of-bound upper argument. It changes no game files. The gate must reject
-every previously classified site; see `review.md` for the measured result and
-timings. Both passes still operate on emitted JavaScript.
+every previously classified site. The post-rebase mutant extraction took
+116.33 s; its gate killed 2,243 mutants with zero failures in 7.46 s. Both
+passes still operate on emitted JavaScript.
 
 ```sh
 node verification/callsites/extract.mjs --mutate-domains > .cache/rng-mutants.json
@@ -424,11 +456,67 @@ widths consume a C draw while the JS wrapper returns zero without drawing.
 No corpus was run by this unit; earlier corpus observations do not discharge
 any of these proof obligations.
 
+The CI ledger now records all 2,481 sites in this inventory. Its four-part
+key uses file, enclosing function, callee, and argument text, without line numbers,
+and preserves repeated occurrences. CI rejects a weaker class or a new
+unproved occurrence and prints the site and reason. The 237 existing unproved
+sites are grandfathered. Removed calls and stronger classes are allowed.
+Callback scopes include enclosing functions and assigned names or call
+argument positions. The key audit found 2,008 distinct keys: 238 keys repeat,
+accounting for 473 additional occurrences. Every repeated key belongs to one
+actual enclosing function; none combines distinct callbacks. A regression
+test swaps valid and invalid widths between callbacks in different functions.
+The lost claim passed before scoped names and is rejected afterward.
+The ledger covers the lower-bound/integer classification above; upper bounds
+remain reported separately. The proof ledger records 28 claim names, the
+C function and JS function/file being compared, their domain summaries
+(including state correspondence, role mappings, and null
+assumptions), supplied JS argument kinds and values in order, and their probe
+and mutant counts. It also records each annotated loop's key, streams, facts,
+invariant, and variant. Preconditions and loop formulas use complete SMT
+expressions rather than Z3's truncated display strings. The loop formulas use
+independent symbolic current and entry locals and RNG positions, with named
+local reads. Full expressions include recurrence definitions and draw bounds;
+this does not validate those definitions. ISAAC64 rows derive their argument
+types, ranges, array sizes, initialization, state correspondence, case
+preconditions, and loop plans from the runners' symbolic inputs. Probe and
+mutant counts use the same declarations as the proof runners. The current
+and recorded claim names must match: new leaf, generator, and seed-packing
+claims require a reviewed ledger entry. A missing or unrecorded spec, changed
+domain summary, changed check count, or failed proof, probe, or mutant fails
+CI. The metadata comparison runs before the proofs and prints both recorded
+and current values. Comparing domain summaries as text is conservative: even
+a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
+
 ## Staged plan
 
-1. **CI (days).** Build the recorder sources in a GitHub Actions job (as
-   `fresh-batches.yml` already does) and run `prove.py`. Fail on any lost claim,
-   like the ledger check.
+1. **CI (implemented; local commands exercised).** `equivalence.yml` runs on
+   every pull request and pushes to `daoa/recovery-architecture` and `main`.
+   Its `macos-latest` runner and Apple clang match `fresh-batches.yml`'s native
+   recorder. The C input includes SDK headers (`cstd.h` includes `assert.h`,
+   `ctype.h`, and `limits.h`; `integer.h` includes `stdint.h`), so matching the
+   recorder platform matters beyond assertion syntax.
+   It prepares the recorder-patched C and Lua headers, compiles the port,
+   runs the executor, target-selection, analyzer, and ledger regression tests,
+   cross-checks C and scoring ISAAC64, and checks every claim, probe, and
+   mutant against `equivalence.tsv`. The call-site steps also run
+   the source-wide invalid-domain mutant gate. Only prepared
+   C sources and downloaded uv packages are cached, under an exact key with
+   the C revision, patches, and prover files. Results are recomputed. The job
+   reports elapsed time and retains proof and call-site output. Hosted run
+   40795045814 failed on Ubuntu because glibc's assert statement expression
+   was unsupported. The executor now handles both libc forms as obligations.
+   The initial local dry run exercised every workflow shell step, including
+   C preparation and dependency installation, in 171.5 seconds with the older
+   caller analyzer. After rebasing onto `009d96985`, the updated verification
+   steps have a measured component wall-time sum of 379.1 seconds: compilation,
+   all executor/target/analyzer/ledger tests, generator cross-check, complete
+   proof ledger check, healthy extraction and call-site ledger check, mutant
+   extraction and the source-wide mutant gate. This sum excludes C preparation,
+   dependency installation, and checkout/cache/artifact actions; it is not a
+   hosted-job measurement. The updated hosted job has not run yet. Extraction
+   has an explicit 2 GiB V8 heap because the original roughly 1 GiB default
+   exhausted memory in an earlier local run.
 2. **Read-only state and more leaves (partly done).** Nested declared state
    reads, bounded arrays, constant tables, switches and bit operations are in;
    ten new claims above pass with probes and mutants. Next: equipment and form
@@ -444,11 +532,12 @@ any of these proof obligations.
    command includes twenty leaf claims and eight ISAAC64 claims, with domain probes,
    shift/mask/index mutants, and a compiled-C/Node cross-check. Caller state
    correspondence and context routing remain outside these proofs.
-4. **Call-site domains (emitted-source prototype strengthened).** Stable
+4. **Call-site domains (strengthened analyzer and CI implemented).** Stable
    guards, inductive scalar bounds, constant table/name arithmetic, per-site
-   JS mutants and a native residual audit are in. CI/ledger integration belongs
-   to the separate `fv-ci` unit. Next: collection ownership/non-emptiness,
-   relational permonst/object data facts, callback invoker bounds, and upper
+   JS mutants and the native residual audit are in. CI runs analyzer behavior
+   and source-wide mutant checks, and checks `rng-callsites.tsv` for weaker
+   classes and new unproved occurrences. Next: collection ownership and
+   non-emptiness, relational data facts, callback invoker bounds, and upper
    arithmetic obligations. The 237 residual sites remain unproved.
 5. **Differential fuzzing of stateful functions (2–3 weeks).** Drive single C
    functions in the probe build and their TS ports from serialized state, with

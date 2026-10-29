@@ -1,0 +1,124 @@
+name: Equivalence
+# Always rerun the proofs and caller analysis. Only prepared C sources and
+# downloaded Python packages are cached, never proof or classification results.
+on:
+  push:
+    branches: [daoa/recovery-architecture, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: equivalence-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  equivalence:
+    # The native recorder uses macos-latest; keep its SDK headers and Apple clang.
+    runs-on: macos-latest
+    timeout-minutes: 15
+    env:
+      NETHACK_RECORDER: ${{ github.workspace }}/nethack-c/recorder
+      UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start runtime measurement
+        run: |
+          echo "VERIFICATION_STARTED=$(date +%s)" >> "$GITHUB_ENV"
+          mkdir -p .cache/equivalence
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          check-latest: true
+      - name: Use Apple clang and install uv
+        run: |
+          echo "$(dirname "$(xcrun --find clang)")" >> "$GITHUB_PATH"
+          echo "SDKROOT=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+          xcrun clang --version
+          python3 -m venv .cache/uv-bootstrap
+          .cache/uv-bootstrap/bin/pip install uv==0.13.5
+          echo "$PWD/.cache/uv-bootstrap/bin" >> "$GITHUB_PATH"
+      - name: Fetch the pinned C sources
+        run: |
+          git submodule update --init --depth 1 nethack-c/upstream
+          echo "NETHACK_SHA=$(git rev-parse HEAD:nethack-c/upstream)" >> "$GITHUB_ENV"
+      - id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            nethack-c/recorder
+            .cache/uv
+          key: equivalence-${{ runner.os }}-${{ runner.arch }}-${{ env.NETHACK_SHA }}-${{ hashFiles('nethack-c/patches/**', 'nethack-c/build-recorder.sh', 'nethack-c/macosx-minimal', 'verification/**/*.py', 'verification/**/*.mjs', 'verification/**/*.c', 'verification/equivalence/uv.lock', 'verification/equivalence/pyproject.toml', '.github/workflows/equivalence.yml') }}
+      - name: Prepare patched recorder sources and Lua headers
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # Same source preparation as build-recorder.sh; only Lua needs building.
+          rsync -a --exclude='.git' nethack-c/upstream/ nethack-c/recorder/
+          cd nethack-c/recorder
+          git init -q
+          git -c gc.auto=0 add -A
+          git -c user.email=build@local -c user.name=build commit -q -m baseline
+          for patch in ../patches/*.patch; do git apply --recount "$patch"; done
+          python3 -c 'import shutil; shutil.rmtree(".git")'
+          cp ../macosx-minimal sys/unix/hints/macosx-minimal
+          sed -i.bak "s|__NETHACK_PREFIX__|$PWD/install|g" sys/unix/hints/macosx-minimal
+          sh sys/unix/setup.sh sys/unix/hints/macosx-minimal
+          make fetch-lua
+          make CC=clang SYSCFLAGS=-DLUA_USE_MACOSX include/nhlua.h
+      - run: npm ci --ignore-scripts
+      - run: npm run compile
+      - name: Test C and JavaScript executor behavior
+        working-directory: verification/equivalence
+        run: uv run --locked python -m unittest -v test_executors
+      - name: Test ISAAC64 scoring target selection
+        working-directory: verification/equivalence
+        run: uv run --locked python ../isaac64/test_scoring_target.py
+      - name: Cross-check native and scoring ISAAC64 outputs
+        working-directory: verification/equivalence
+        run: |
+          /usr/bin/time -p uv run --locked ../isaac64/crosscheck.py 2>&1 | tee ../../.cache/equivalence/isaac64-crosscheck.txt
+      - name: Test ledger acceptance and rejection
+        working-directory: verification/equivalence
+        run: uv run --locked ../test_ledgers.py
+      - name: Test RNG call-site analysis
+        working-directory: verification/equivalence
+        run: uv run --locked python ../callsites/test_callsites.py
+      - name: Prove every claim, probe, and mutant
+        working-directory: verification/equivalence
+        run: |
+          /usr/bin/time -p uv run --locked prove.py --check-ledger ../../docs/ledger/equivalence.tsv 2>&1 | tee ../../.cache/equivalence/proofs.txt
+      - name: Check RNG caller domains
+        run: |
+          /usr/bin/time -p node --max-old-space-size=2048 verification/callsites/extract.mjs > .cache/equivalence/rng-callsites.json 2> .cache/equivalence/extract-time.txt
+          cd verification/equivalence
+          /usr/bin/time -p uv run --locked ../callsites/check.py ../../.cache/equivalence/rng-callsites.json --check-ledger ../../docs/ledger/rng-callsites.tsv 2>&1 | tee ../../.cache/equivalence/callsites.txt
+      - name: Reject invalid-domain mutants at classified call sites
+        run: |
+          /usr/bin/time -p node --max-old-space-size=2048 verification/callsites/extract.mjs --mutate-domains > .cache/equivalence/rng-mutants.json 2> .cache/equivalence/mutant-extract-time.txt
+          cd verification/equivalence
+          /usr/bin/time -p uv run --locked python ../callsites/test_domains.py ../../.cache/equivalence/rng-callsites.json ../../.cache/equivalence/rng-mutants.json 2>&1 | tee ../../.cache/equivalence/callsite-mutants.txt
+      - name: Report runtime and results
+        if: always()
+        run: |
+          echo "Elapsed since checkout: $(($(date +%s) - VERIFICATION_STARTED)) seconds" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '```'
+            for report in .cache/equivalence/proofs.txt .cache/equivalence/isaac64-crosscheck.txt .cache/equivalence/extract-time.txt .cache/equivalence/callsites.txt .cache/equivalence/mutant-extract-time.txt .cache/equivalence/callsite-mutants.txt; do
+              if [ -f "$report" ]; then cat "$report"; fi
+            done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: equivalence
+          path: .cache/equivalence
+          retention-days: 30
