@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 import z3
+from queries import QueryContext
 
 STREAMS = ('core', 'display')
 U64 = 2 ** 64
@@ -89,10 +90,19 @@ class World:
     js_state: dict                     # 'game.u.uluck' -> z3 Int
     c_globals: dict                    # name -> executor value
     js_choices: dict = field(default_factory=dict)  # path -> [(condition, literal string)]
+    js_values: dict = field(default_factory=dict)   # explicitly related pointers and finite maps
+    c_calls: dict = field(default_factory=dict)     # explicit read-only call contracts
+    js_calls: dict = field(default_factory=dict)
     loops: dict = field(default_factory=dict)   # (side, function, ordinal) -> LoopSpec
     unroll: int = 12
     streams: dict = field(default_factory=lambda: {s: stream_fn(s) for s in STREAMS})
     _fresh: int = 0
+    _queries: QueryContext | None = field(default=None, init=False, repr=False)
+
+    def query(self, constraints, timeout):
+        if self._queries is None or not self._queries.matches(self.pre):
+            self._queries = QueryContext(self.pre)
+        return self._queries.check(constraints, timeout)
 
     def fresh(self, name: str) -> z3.ArithRef:
         self._fresh += 1
@@ -111,10 +121,7 @@ class Machine:
         return Path([], [{}], {s: z3.IntVal(0) for s in STREAMS}, [])
 
     def feasible(self, pc: list) -> bool:
-        s = z3.Solver()
-        s.set('timeout', 5000)
-        s.add(*self.world.pre, *pc)
-        return s.check() != z3.unsat
+        return self.world.query(pc, 5000) != z3.unsat
 
     def branch(self, path: Path, cond) -> list[tuple[Path, bool]]:
         cond = z3.simplify(cond)
@@ -136,10 +143,7 @@ class Machine:
         cond = z3.simplify(cond)
         if z3.is_true(cond) or z3.is_false(cond):
             return z3.is_true(cond)
-        s = z3.Solver()
-        s.set('timeout', 2000)
-        s.add(*self.world.pre, *path.pc, z3.Not(cond))
-        return s.check() == z3.unsat
+        return self.world.query(path.pc + [z3.Not(cond)], 2000) == z3.unsat
 
     def tdiv(self, path: Path, a, b):
         return a / b if self.proves(path, z3.And(a >= 0, b > 0)) else tdiv(a, b)

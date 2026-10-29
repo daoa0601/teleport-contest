@@ -34,6 +34,7 @@ class CFront:
         self._dumps: dict[tuple[Path, str], list] = {}
         self.sources: dict[str, bytes] = {}
         self._enum_values: dict[tuple[Path, str], int] = {}
+        self.initializers = {}
 
     def _dump(self, file: Path, name: str) -> list:
         key = (file, name)
@@ -96,6 +97,27 @@ class CFront:
             if 'const ' in qual and qual.endswith(']') and obj.get('init'):
                 return obj
         raise Unsupported(f'no constant C array {name} in {file.name}')
+
+    def initialized_array(self, name: str, file: Path) -> dict:
+        """A spec may explicitly assume an initialized table has not changed."""
+        matches = [obj for obj in self._dump(file, name)
+                   if obj.get('kind') == 'VarDecl' and obj.get('name') == name and obj.get('init')]
+        if len(matches) != 1 or not matches[0]['type']['qualType'].endswith(']'):
+            raise Unsupported(f'no unique initialized C array {name} in {file.name}')
+        self.sources.setdefault(str(file), file.read_bytes())
+        return matches[0]
+
+    def record_fields(self, qual: str, file: Path) -> list[str]:
+        if not qual.startswith('struct '):
+            raise Unsupported(f'C aggregate {qual}')
+        name = qual.removeprefix('struct ')
+        matches = [obj for obj in self._dump(file, name)
+                   if obj.get('kind') == 'RecordDecl' and obj.get('name') == name
+                   and obj.get('completeDefinition')]
+        if len(matches) != 1:
+            raise Unsupported(f'no unique C record definition {qual}')
+        fields = [node['name'] for node in matches[0]['inner'] if node['kind'] == 'FieldDecl']
+        return fields
 
     def line(self, file: Path, node: dict) -> str:
         loc = node.get('range', {}).get('begin', node.get('loc', {}))

@@ -45,6 +45,21 @@ class V:
 UNDEF = V('undef')
 
 
+class Modules(dict):
+    """One parsed source set, with a cache only for pure literal data."""
+    def __init__(self):
+        super().__init__()
+        self.literal_values = {}
+
+
+def _literal_data(node):
+    if node.type in ('number', 'string', 'true', 'false', 'null'):
+        return True
+    if node.type not in ('array', 'object', 'pair', 'property_identifier', 'unary_expression'):
+        return False
+    return all(_literal_data(child) for child in node.named_children)
+
+
 def parse_module(source: bytes):
     tree = _PARSER.parse(source)
     if tree.root_node.has_error:
@@ -107,6 +122,7 @@ class JSExec:
         self.stack = []
         self.local_names = []
         self.resolving = set()
+        self.literal_values = modules.literal_values if isinstance(modules, Modules) else {}
 
     def where(self, node) -> str:
         return f'{self.stack[-1][1]}:{node.start_point[0] + 1}'
@@ -124,6 +140,11 @@ class JSExec:
 
     def call(self, path, name, args):
         label, name = name
+        if (label, name) in self.m.world.js_calls:
+            expected, result = self.m.world.js_calls[(label, name)]
+            if args != expected:
+                raise Unsupported(f'JavaScript call contract argument mismatch for {label}:{name}')
+            return [(path, result)]
         decl = self.modules[label][1][name]
         if decl.type == 'generator_function_declaration' or any(c.type == 'async' for c in decl.children):
             raise Unsupported(f'async or generator function {name}')
@@ -162,17 +183,36 @@ class JSExec:
         if node.type == 'identifier':
             path.env[node.text.decode()] = value
             return [path]
-        if node.type == 'assignment_pattern' and node.child_by_field_name('left').type == 'identifier':
-            name = node.child_by_field_name('left').text.decode()
+        if node.type == 'assignment_pattern':
+            target = node.child_by_field_name('left')
             if value.kind != 'undef':
-                path.env[name] = value
-                return [path]
+                return self._parameter(path, target, value)
             out = []
             for p, v in self.eval(path, node.child_by_field_name('right')):
-                p.env[name] = v
-                out.append(p)
+                out.extend(self._parameter(p, target, v))
             return out
+        if node.type == 'object_pattern' and value.kind == 'record':
+            paths = [path]
+            for field in node.named_children:
+                target = field.child_by_field_name('left') if field.type == 'object_assignment_pattern' else field
+                if target.type != 'shorthand_property_identifier_pattern':
+                    raise Unsupported('JavaScript object parameter with renaming or rest')
+                name = target.text.decode()
+                item = value.v.get(name, UNDEF)
+                if item.kind == 'undef' and field.type == 'object_assignment_pattern':
+                    paths = seq(paths, lambda p, field=field, name=name: self._bind_default(p, name, field))
+                else:
+                    for p in paths:
+                        p.env[name] = item
+            return paths
         raise Unsupported('JavaScript parameter pattern')
+
+    def _bind_default(self, path, name, field):
+        results = []
+        for p, value in self.eval(path, field.child_by_field_name('right')):
+            p.env[name] = value
+            results.append(p)
+        return results
 
     # ---- statements --------------------------------------------------------
 
@@ -234,17 +274,26 @@ class JSExec:
     def _declare(self, path, d):
         pattern = d.child_by_field_name('name')
         if pattern.type == 'array_pattern':
-            names = [child.text.decode() for child in pattern.named_children]
-            if any(child.type != 'identifier' for child in pattern.named_children) or pattern.text.count(b',') != len(names) - 1:
+            items = pattern.named_children
+            targets = [child.child_by_field_name('left') if child.type == 'assignment_pattern' else child for child in items]
+            names = [child.text.decode() for child in targets]
+            if any(child.type != 'identifier' for child in targets) or pattern.text.count(b',') != len(names) - 1:
                 raise Unsupported('non-simple JavaScript array binding')
             if any(name in path.env for name in names):
                 raise Unsupported('JavaScript array binding shadows a local')
             out = []
             for p, value in self.eval(path, d.child_by_field_name('value')):
-                if value.kind != 'array' or len(value.v) != len(names):
+                if value.kind != 'array' or len(value.v) > len(names):
                     raise Unsupported('JavaScript array binding length or type')
-                p.env.update(zip(names, value.v))
-                out.append(p)
+                paths = [p]
+                for i, (name, item) in enumerate(zip(names, items)):
+                    entry = value.v[i] if i < len(value.v) else UNDEF
+                    if entry.kind == 'undef' and item.type == 'assignment_pattern':
+                        paths = seq(paths, lambda q, name=name, item=item: self._bind_default(q, name, item))
+                    else:
+                        for q in paths:
+                            q.env[name] = entry
+                out.extend(paths)
             return out
         if pattern.type != 'identifier':
             raise Unsupported('JavaScript declaration pattern')
@@ -329,7 +378,7 @@ class JSExec:
             return v.v != 0
         if v.kind == 'bool':
             return v.v
-        if v.kind in ('ctx', 'obj', 'fn', 'ext', 'array'):
+        if v.kind in ('ctx', 'obj', 'fn', 'ext', 'array', 'record', 'map'):
             return z3.BoolVal(True)
         if v.kind in ('undef', 'null'):
             return z3.BoolVal(False)
@@ -371,6 +420,8 @@ class JSExec:
             if constants[name] is None:
                 raise Unsupported(f'mutable JavaScript module binding {name} in {label}')
             key = (label, name)
+            if key in self.literal_values:
+                return self.literal_values[key]
             if key in self.resolving:
                 raise Unsupported(f'recursive JavaScript constant {key}')
             self.resolving.add(key)
@@ -378,6 +429,7 @@ class JSExec:
             path.frames.append({})
             self.stack.append(('<constant>', label, {}))
             self.local_names.append(set())
+            obligations_before = len(self.m.obligations)
             try:
                 results = self.eval(path, constants[name])
             finally:
@@ -390,6 +442,8 @@ class JSExec:
             value = results[0][1]
             if not self._constant(value):
                 raise Unsupported(f'JavaScript module initializer {key} is not constant data')
+            if _literal_data(constants[name]) and len(self.m.obligations) == obligations_before:
+                self.literal_values[key] = value
             return value
         raise Unsupported(f'unmodeled JavaScript name {name} in {label}')
 
@@ -401,6 +455,8 @@ class JSExec:
             return z3.is_true(z3.simplify(value.v)) or z3.is_false(z3.simplify(value.v))
         if value.kind in ('str', 'fn', 'null', 'undef'):
             return True
+        if value.kind == 'record':
+            return all(JSExec._constant(item) for item in value.v.values())
         return value.kind == 'array' and all(JSExec._constant(item) for item in value.v)
 
     def num(self, path, value, where, what):
@@ -439,6 +495,20 @@ class JSExec:
             return self._subscript(path, n)
         if t == 'null':
             return [(path, V('null'))]
+        if t == 'undefined':
+            return [(path, UNDEF)]
+        if t == 'object':
+            results = [(path, {})]
+            for pair in n.named_children:
+                if pair.type != 'pair':
+                    raise Unsupported('JavaScript object spread or method')
+                key = pair.child_by_field_name('key')
+                if key.type not in ('property_identifier', 'string'):
+                    raise Unsupported('computed JavaScript object key')
+                name = key.text.decode() if key.type == 'property_identifier' else key.text.decode()[1:-1]
+                results = [(q, {**fields, name: value}) for p, fields in results
+                           for q, value in self.eval(p, pair.child_by_field_name('value'))]
+            return [(p, V('record', fields)) for p, fields in results]
         if t == 'array':
             elements = n.named_children
             if any(child.type in ('spread_element', 'comment') for child in elements):
@@ -508,16 +578,22 @@ class JSExec:
             if obj.kind == 'array' and prop == 'length':
                 out.append((p, V('num', z3.IntVal(len(obj.v)))))
                 continue
+            if obj.kind == 'record':
+                out.append((p, obj.v.get(prop, UNDEF)))
+                continue
             if obj.kind != 'obj':
                 raise Unsupported(f'member .{prop} of {obj.kind}')
             key = f'{obj.v}.{prop}'
             world = self.m.world
             if key in world.js_state:
-                out.append((p, V('num', world.js_state[key])))
+                out.append((p, self.num(p, world.js_state[key], self.where(n), 'state read')))
             elif key in world.js_choices:
                 out.extend(self._choices(p, world.js_choices[key]))
             elif key in self.module_env:
                 out.append((p, self.module_env[key]))
+            elif key in world.js_values:
+                value = world.js_values[key]
+                out.extend(self._choices(p, value.v) if value.kind == 'choice' else [(p, value)])
             elif any(k.startswith(key + '.') or k.startswith(key + '[') for k in world.js_state) or key == 'game.u':
                 out.append((p, V('obj', key)))
             else:
@@ -529,7 +605,7 @@ class JSExec:
         for condition, value in choices:
             for p, taken in self.m.branch(path, condition):
                 if taken:
-                    out.append((p, V('str', value)))
+                    out.append((p, value if isinstance(value, V) else V('str', value)))
         return out
 
     def _subscript(self, path, n):
@@ -541,9 +617,10 @@ class JSExec:
             for q, index in self.eval(p, n.child_by_field_name('index')):
                 if obj.kind == 'obj' and index.kind == 'str':
                     key = f'{obj.v}.{index.v}'
-                    if key not in self.module_env:
+                    value = self.module_env.get(key, self.m.world.js_values.get(key))
+                    if value is None:
                         raise Unsupported(f'unmodeled JavaScript state {key}')
-                    out.append((q, self.module_env[key]))
+                    out.extend(self._choices(q, value.v) if value.kind == 'choice' else [(q, value)])
                     continue
                 array = obj
                 if obj.kind == 'obj':
@@ -555,10 +632,22 @@ class JSExec:
                 if array.kind != 'array' or index.kind != 'num':
                     raise Unsupported('JavaScript subscript needs an array and integer index')
                 self.m.array_bounds(q, index.v, len(array.v), self.where(n))
-                if not array.v or any(v.kind != 'num' for v in array.v):
-                    raise Unsupported('JavaScript symbolic array read needs numeric elements')
-                out.append((q, V('num', select_int([v.v for v in array.v], index.v))))
+                out.append((q, self._select_values(array.v, index.v)))
         return out
+
+    def _select_values(self, values, index):
+        number = z3.simplify(index)
+        if z3.is_int_value(number) and 0 <= number.as_long() < len(values):
+            return values[number.as_long()]
+        if values and all(v.kind == 'num' for v in values):
+            return V('num', select_int([v.v for v in values], index))
+        if values and all(v.kind == 'array' and len(v.v) == len(values[0].v) for v in values):
+            return V('array', tuple(self._select_values(tuple(v.v[i] for v in values), index)
+                                    for i in range(len(values[0].v))))
+        if values and all(v.kind == 'record' and v.v.keys() == values[0].v.keys() for v in values):
+            return V('record', {key: self._select_values(tuple(v.v[key] for v in values), index)
+                                for key in values[0].v})
+        raise Unsupported('JavaScript symbolic array read needs numeric or rectangular array elements')
 
     def _arith(self, path, op, a: V, b: V, node):
         where = self.where(node)
@@ -578,6 +667,11 @@ class JSExec:
             return self.num(path, a.v - b.v, where, '-')
         if op == '*':
             return self.num(path, a.v * b.v, where, '*')
+        if op == '/':
+            self.m.oblige(path, b.v != 0, 'JavaScript division by zero', where)
+            self.m.oblige(path, self.m.trem(path, a.v, b.v) == 0,
+                          'JavaScript untruncated division is not an integer', where)
+            return self.num(path, self.m.tdiv(path, a.v, b.v), where, '/')
         if op == '%':
             self.m.oblige(path, b.v != 0, 'JavaScript number remainder by zero produces NaN', where)
             return V('num', self.m.trem(path, a.v, b.v))
@@ -598,6 +692,8 @@ class JSExec:
     def _binary(self, path, n):
         op = n.child_by_field_name('operator').text.decode()
         left, right = n.child_by_field_name('left'), n.child_by_field_name('right')
+        if op == 'instanceof' and right.type == 'identifier' and right.text == b'Map':
+            return [(p, V('bool', z3.BoolVal(v.kind == 'map'))) for p, v in self.eval(path, left)]
         if op in ('||', '&&', '??'):
             out = []
             for p, a in self.eval(path, left):
@@ -610,7 +706,12 @@ class JSExec:
             return out
         out = []
         for p, (a, b) in self.eval_list(path, [left, right]):
-            if op in ('===', '!=='):
+            if op in ('==', '!='):
+                if b.kind not in ('null', 'undef'):
+                    raise Unsupported('JavaScript coercive equality except nullish comparison')
+                equal = z3.BoolVal(a.kind in ('null', 'undef'))
+                out.append((p, V('bool', equal if op == '==' else z3.Not(equal))))
+            elif op in ('===', '!=='):
                 equal = self._equal(a, b)
                 out.append((p, V('bool', equal if op == '===' else z3.Not(equal))))
             elif op in ('<', '<=', '>', '>=', '===', '!==') and a.kind == b.kind and a.kind in ('num', 'big'):
@@ -654,7 +755,7 @@ class JSExec:
             prop = fn.child_by_field_name('property').text.decode()
             if obj == 'Math':
                 return self._math(path, prop, arg_nodes, where)
-            if obj == 'Number' and prop == 'isInteger':
+            if obj == 'Number' and prop in ('isInteger', 'isFinite'):
                 if len(arg_nodes) != 1:
                     raise Unsupported('Number.isInteger arity')
                 return [(p, V('bool', z3.BoolVal(v.kind == 'num')))
@@ -668,6 +769,27 @@ class JSExec:
                         raise Unsupported('JavaScript includes on a non-array')
                     for q, value in self.eval(p, arg_nodes[0]):
                         out.append((q, V('bool', z3.Or(*(self._equal(item, value) for item in array.v)))))
+                return out
+            if prop == 'indexOf' and len(arg_nodes) == 1:
+                out = []
+                for p, array in self.eval(path, fn.child_by_field_name('object')):
+                    if array.kind != 'array':
+                        raise Unsupported('JavaScript indexOf on a non-array')
+                    for q, value in self.eval(p, arg_nodes[0]):
+                        index = z3.IntVal(-1)
+                        for i in reversed(range(len(array.v))):
+                            index = z3.If(self._equal(array.v[i], value), i, index)
+                        out.append((q, V('num', z3.simplify(index))))
+                return out
+            if prop == 'get' and len(arg_nodes) == 1:
+                out = []
+                for p, mapping in self.eval(path, fn.child_by_field_name('object')):
+                    if mapping.kind != 'map':
+                        raise Unsupported('JavaScript get on a non-map')
+                    for q, key in self.eval(p, arg_nodes[0]):
+                        choices = [(self._equal(key, k), v) for k, v in mapping.v]
+                        missing = z3.Not(z3.Or(*(condition for condition, _ in choices)))
+                        out.extend(self._choices(q, choices + [(missing, UNDEF)]))
                 return out
             raise Unsupported(f'call {obj}.{prop} at {where}')
         name = fn.text.decode()

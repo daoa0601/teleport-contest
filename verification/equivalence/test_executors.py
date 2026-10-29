@@ -21,7 +21,9 @@ GLIBC_ASSERT = '''
 
 
 class ExecutorTests(unittest.TestCase):
-    def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None):
+    def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None,
+                references=(), configure=lambda world, front, modules: None,
+                partitions=None, pairwise_outputs=False):
         with TemporaryDirectory(prefix='fv-language-', dir=REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             c_file.write_text(c)
@@ -30,8 +32,10 @@ class ExecutorTests(unittest.TestCase):
                 raw = source.encode()
                 parsed[label] = (raw, *parse_module(raw))
             spec = Spec('example', 'example', 'example', list(params), pre=pre,
-                        state=list(state), js_file='js/example.js')
-            return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre)
+                        state=list(state), js_file='js/example.js',
+                        references=list(references), configure=configure, partitions=partitions)
+            return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre,
+                         pairwise_outputs=pairwise_outputs)
 
     def equivalent(self, *args, **kwargs):
         proved, report = self.compare(*args, **kwargs)
@@ -93,6 +97,37 @@ class ExecutorTests(unittest.TestCase):
                 self.rejected(source, 'function example(x) { return x; }',
                               params=[('x', INT)], reason='C expression StmtExpr')
 
+    def test_pairwise_output_queries_cover_later_partitions_and_every_branch(self):
+        native = 'int example(int band, int x) { return x < 0 ? band + 1 : band; }'
+        options = dict(params=[('band', INT), ('x', INT)],
+                       pre=lambda s: [s['x'] >= -3, s['x'] <= 3],
+                       partitions=lambda front: [('first', {'band': 0}), ('last', {'band': 2})],
+                       pairwise_outputs=True)
+        self.equivalent(native, 'function example(band, x) { return x < 0 ? band + 1 : band; }',
+                        **options)
+        self.rejected(native, 'function example(band, x) { '
+                      'return x < 0 ? band + 1 : band + (band === 2 ? 1 : 0); }',
+                      reason='last: outputs differ', **options)
+
+    def test_every_declared_partition_needs_a_satisfiable_domain(self):
+        native = 'int example(int species) { return species; }'
+        port = 'function example(species) { return species; }'
+        options = dict(params=[('species', INT)], partitions=lambda front: [
+            ('first species', {'species': 0}), ('last species', {'species': 1})])
+        self.equivalent(native, port, **options)
+
+        def exclude_last_species(world, front, modules):
+            species = next(value for name, value, _ in world.params if name == 'species')
+            world.pre.append(species == 0)
+
+        for restriction in (
+            dict(pre=lambda s: [s['species'] == 0]),
+            dict(configure=exclude_last_species),
+        ):
+            with self.subTest(restriction=next(iter(restriction))):
+                proved, report = self.compare(native, port, **options, **restriction)
+                self.assertFalse(proved, report)
+
     def test_nested_state_and_hero_attribute_arrays(self):
         self.equivalent(
             'struct { struct { int a[2]; } attr; } u; '
@@ -137,6 +172,39 @@ class ExecutorTests(unittest.TestCase):
             'case 2: r = 7; break; default: r = 3; } break; } return r; }',
             'function example(x) { let r = 0; while (x > 0) { switch (x) { '
             'case 2: r = 7; break; default: r = 3; } break; } return r; }', params=[('x', INT)])
+
+    def test_reachable_minimum_divided_by_minus_one_is_rejected(self):
+        self.rejected('int example(int x, int y) { return x / y; }',
+                      'function example(x, y) { return Math.trunc(x / y); }',
+                      params=[('x', INT), ('y', INT)],
+                      pre=lambda s: [s['x'] == -(2 ** 31), s['y'] == -1],
+                      reason='C signed overflow in /')
+
+    def test_reachable_minimum_remainder_by_minus_one_is_rejected(self):
+        self.rejected('int example(int x, int y) { return x % y; }',
+                      'function example(x, y) { return x % y; }',
+                      params=[('x', INT), ('y', INT)],
+                      pre=lambda s: [s['x'] == -(2 ** 31), s['y'] == -1],
+                      reason='C signed overflow in %')
+
+    def test_overflow_before_division_is_not_hidden_by_a_fitting_quotient(self):
+        self.rejected('int example(int x) { return (x + 1) / 2; }',
+                      'function example(x) { return Math.trunc((x + 1) / 2); }',
+                      params=[('x', INT)], pre=lambda s: [s['x'] == 2 ** 31 - 1],
+                      reason='C signed overflow in +')
+
+    def test_positive_composite_divisor_preserves_truncation_towards_zero(self):
+        self.equivalent('long example(int x, int y, long n) { '
+                        'long divisor = (1000L + x) * y; return n / divisor; }',
+                        'function example(x, y, n) { return Math.trunc(n / ((1000 + x) * y)); }',
+                        params=[('x', INT), ('y', INT), ('n', LONG)],
+                        pre=lambda s: [s['x'] >= 0, s['x'] <= 999, s['y'] >= 1, s['y'] <= 10,
+                                       s['n'] >= -(2 ** 40), s['n'] <= 2 ** 40])
+
+    def test_long_to_int_return_narrows_where_javascript_preserves_the_number(self):
+        self.rejected('int example(long x) { return x; }',
+                      'function example(x) { return x; }', params=[('x', LONG)],
+                      pre=lambda s: [s['x'] == 2 ** 31], reason='outputs differ')
 
     def test_signed_bit_operations_and_right_shift(self):
         self.equivalent('int example(int x) { return ((x & 255) | 16) ^ ((~x) >> 3); }',
@@ -230,6 +298,107 @@ class ExecutorTests(unittest.TestCase):
                       'function example() { return [, 2][1]; }', reason='JavaScript array holes')
         self.rejected('int example(void) { return 0; }',
                       'function example() { return [,].length; }', reason='JavaScript array holes')
+
+    def test_nullable_pointer_reads_and_shared_js_slot_aliases(self):
+        self.equivalent(
+            'struct item { short value; }; struct item *worn; '
+            'int example(void) { return worn ? worn->value : 0; }',
+            "function example() { const item = game.worn || game.u.worn; return item?.value ?? 0; }",
+            state=[('worn.value', (16, True), 'game.worn.value')],
+            references=[('worn', ('game.worn', 'game.u.worn'))])
+
+    def test_null_pointer_dereference_is_an_obligation(self):
+        self.rejected(
+            'struct item { int value; }; struct item *worn; '
+            'int example(void) { return worn->value; }',
+            'function example() { return game.worn?.value ?? 0; }',
+            state=[('worn.value', INT, 'game.worn.value')],
+            references=[('worn', ('game.worn',))], reason='C null pointer dereference')
+
+    def test_pointer_fields_require_an_explicit_pointer_model(self):
+        for declaration, pointer in (
+            ('struct item *worn;', 'worn'),
+            ('struct holder { struct item *worn; } hero;', 'hero.worn'),
+        ):
+            with self.subTest(pointer=pointer):
+                proved, report = self.compare(
+                    'struct item { int value; }; ' + declaration
+                    + f'int example(void) {{ return {pointer}->value; }}',
+                    'function example() { return game.worn.value; }',
+                    state=[(pointer + '.value', INT, 'game.worn.value')])
+                self.assertFalse(proved, report)
+
+    def test_record_table_fields_and_nested_attack_arrays(self):
+        self.equivalent(
+            'struct attack { unsigned char damage; }; '
+            'struct species { short speed; struct attack attacks[2]; }; '
+            'static const struct species table[2] = {{3, {{2}, {5}}}, {7, {{11}, {13}}}}; '
+            'int example(int i, int a) { return table[i].speed + table[i].attacks[a].damage; }',
+            'const speed = [3, 7]; const attacks = [[2, 5], [11, 13]]; '
+            'function example(i, a) { return speed[i] + attacks[i][a]; }',
+            params=[('i', INT), ('a', INT)],
+            pre=lambda s: [s['i'] >= 0, s['i'] < 2, s['a'] >= 0, s['a'] < 2])
+
+    def test_c_for_update_and_break(self):
+        self.equivalent(
+            'int example(int stop) { int i, sum = 0; for (i = 0; i < 4; ++i) '
+            '{ if (i == stop) break; sum += i; } return sum; }',
+            'function example(stop) { let sum = 0; for (let i = 0; i < 4; ++i) '
+            '{ if (i === stop) break; sum += i; } return sum; }', params=[('stop', INT)])
+
+    def test_object_options_and_array_defaults(self):
+        self.equivalent(
+            'int example(void) { return 11; }',
+            'function add({ value = 3, bonus = 8 } = {}) { '
+            'const [a = 99, b = 8] = [value]; return a + b; } '
+            'function example() { return add({value: 3}); }')
+
+    def test_finite_map_get_and_missing_key(self):
+        from jssym import V
+        import z3
+
+        def configure(world, front, modules):
+            key = V('num', z3.IntVal(2))
+            item = V('record', {'value': V('num', z3.IntVal(7))})
+            world.js_values['game.items'] = V('map', ((key, item),))
+        self.equivalent('int example(int id) { return id == 2 ? 7 : 0; }',
+                        'function example(id) { return game.items instanceof Map '
+                        '? (game.items.get(id)?.value ?? 0) : 99; }',
+                        params=[('id', INT)], configure=configure)
+
+    def test_integer_division_rejects_fractional_number_results(self):
+        self.equivalent('int example(void) { return 36 / 2; }',
+                        'function example() { return 36 / 2; }')
+        self.rejected('int example(void) { return 3 / 2; }',
+                      'function example() { return 3 / 2; }', reason='not an integer')
+
+    def test_state_number_read_must_be_representable(self):
+        self.rejected('struct { long value; } state; long example(void) { return state.value; }',
+                      'function example() { return game.value; }',
+                      state=[('state.value', LONG, 'game.value')],
+                      pre=lambda s: [s['state.value'] == 2 ** 53 + 1], reason='state read leaves')
+
+    def test_pointer_identity_distinguishes_missing_same_and_other_object(self):
+        import z3
+        from csym import CPtr
+        from jssym import V
+
+        def configure(world, front, modules):
+            values = {name: value for name, value, _ in world.params}
+            same, present = values['same'] != 0, values['present'] != 0
+            world.c_globals['first'] = CPtr(True, 'first', z3.IntVal(1))
+            world.c_globals['second'] = CPtr(present, 'second', z3.If(same, 1, 2))
+            world.js_values['game.first'] = V('obj', 'first')
+            world.js_values['game.second'] = V('choice', [
+                (same, V('obj', 'first')),
+                (z3.And(present, z3.Not(same)), V('obj', 'second')),
+                (z3.Not(present), V('null'))])
+        self.equivalent(
+            'struct item { int value; }; struct item *first, *second; '
+            'int example(int same, int present) { return first == second; }',
+            'function example(same, present) { return game.first === game.second ? 1 : 0; }',
+            params=[('same', INT), ('present', INT)], configure=configure,
+            pre=lambda s: [s['same'] >= 0, s['same'] <= s['present'], s['present'] <= 1])
 
 
 if __name__ == '__main__':

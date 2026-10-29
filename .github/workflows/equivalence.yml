@@ -6,6 +6,8 @@ on:
     branches: [daoa/recovery-architecture, main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
 
 concurrency:
   group: equivalence-${{ github.event_name }}-${{ github.ref }}
@@ -20,9 +22,9 @@ defaults:
 
 jobs:
   equivalence:
-    # The native recorder uses macos-latest; keep its SDK headers and Apple clang.
-    runs-on: macos-latest
-    timeout-minutes: 15
+    # Exercise glibc assert expansions as well as the typed NetHack AST.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       NETHACK_RECORDER: ${{ github.workspace }}/nethack-c/recorder
       UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
@@ -38,11 +40,11 @@ jobs:
         with:
           node-version: '22'
           check-latest: true
-      - name: Use Apple clang and install uv
+      - name: Install clang, build tools, and uv
         run: |
-          echo "$(dirname "$(xcrun --find clang)")" >> "$GITHUB_PATH"
-          echo "SDKROOT=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
-          xcrun clang --version
+          sudo apt-get update -qq
+          sudo apt-get install -y clang bison flex build-essential rsync python3-venv
+          clang --version
           python3 -m venv .cache/uv-bootstrap
           .cache/uv-bootstrap/bin/pip install uv==0.13.5
           echo "$PWD/.cache/uv-bootstrap/bin" >> "$GITHUB_PATH"
@@ -68,16 +70,15 @@ jobs:
           git -c user.email=build@local -c user.name=build commit -q -m baseline
           for patch in ../patches/*.patch; do git apply --recount "$patch"; done
           python3 -c 'import shutil; shutil.rmtree(".git")'
-          cp ../macosx-minimal sys/unix/hints/macosx-minimal
-          sed -i.bak "s|__NETHACK_PREFIX__|$PWD/install|g" sys/unix/hints/macosx-minimal
-          sh sys/unix/setup.sh sys/unix/hints/macosx-minimal
+          sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
+          sh sys/unix/setup.sh sys/unix/hints/linux-minimal
           make fetch-lua
-          make CC=clang SYSCFLAGS=-DLUA_USE_MACOSX include/nhlua.h
+          make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
       - run: npm ci --ignore-scripts
       - run: npm run compile
       - name: Test C and JavaScript executor behavior
         working-directory: verification/equivalence
-        run: uv run --locked python -m unittest -v test_executors
+        run: uv run --locked python -m unittest -v test_executors test_queries test_proof_selection
       - name: Test ISAAC64 scoring target selection
         working-directory: verification/equivalence
         run: uv run --locked python ../isaac64/test_scoring_target.py
@@ -91,10 +92,10 @@ jobs:
       - name: Test RNG call-site analysis
         working-directory: verification/equivalence
         run: uv run --locked python ../callsites/test_callsites.py
-      - name: Prove every claim, probe, and mutant
+      - name: Prove fast claims, probes, and mutants
         working-directory: verification/equivalence
         run: |
-          /usr/bin/time -p uv run --locked prove.py --check-ledger ../../docs/ledger/equivalence.tsv 2>&1 | tee ../../.cache/equivalence/proofs.txt
+          /usr/bin/time -p uv run --locked prove.py --skip-slow --check-ledger ../../docs/ledger/equivalence.tsv 2>&1 | tee ../../.cache/equivalence/proofs.txt
       - name: Check RNG caller domains
         run: |
           /usr/bin/time -p node --max-old-space-size=2048 verification/callsites/extract.mjs > .cache/equivalence/rng-callsites.json 2> .cache/equivalence/extract-time.txt
@@ -120,5 +121,79 @@ jobs:
         if: always()
         with:
           name: equivalence
+          path: .cache/equivalence
+          retention-days: 30
+
+  slow-equivalence:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: equivalence
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NETHACK_RECORDER: ${{ github.workspace }}/nethack-c/recorder
+      UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Start runtime measurement
+        run: |
+          echo "VERIFICATION_STARTED=$(date +%s)" >> "$GITHUB_ENV"
+          mkdir -p .cache/equivalence
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          check-latest: true
+      - name: Install clang, build tools, and uv
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clang bison flex build-essential rsync python3-venv
+          clang --version
+          python3 -m venv .cache/uv-bootstrap
+          .cache/uv-bootstrap/bin/pip install uv==0.13.5
+          echo "$PWD/.cache/uv-bootstrap/bin" >> "$GITHUB_PATH"
+      - name: Fetch the pinned C sources
+        run: |
+          git submodule update --init --depth 1 nethack-c/upstream
+          echo "NETHACK_SHA=$(git rev-parse HEAD:nethack-c/upstream)" >> "$GITHUB_ENV"
+      - id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            nethack-c/recorder
+            .cache/uv
+          key: equivalence-${{ runner.os }}-${{ runner.arch }}-${{ env.NETHACK_SHA }}-${{ hashFiles('nethack-c/patches/**', 'nethack-c/build-recorder.sh', 'nethack-c/macosx-minimal', 'verification/**/*.py', 'verification/**/*.mjs', 'verification/**/*.c', 'verification/equivalence/uv.lock', 'verification/equivalence/pyproject.toml', '.github/workflows/equivalence.yml') }}
+      - name: Prepare patched recorder sources and Lua headers
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          # Same source preparation as build-recorder.sh; only Lua needs building.
+          rsync -a --exclude='.git' nethack-c/upstream/ nethack-c/recorder/
+          cd nethack-c/recorder
+          git init -q
+          git -c gc.auto=0 add -A
+          git -c user.email=build@local -c user.name=build commit -q -m baseline
+          for patch in ../patches/*.patch; do git apply --recount "$patch"; done
+          python3 -c 'import shutil; shutil.rmtree(".git")'
+          sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
+          sh sys/unix/setup.sh sys/unix/hints/linux-minimal
+          make fetch-lua
+          make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
+      - run: npm ci --ignore-scripts
+      - run: npm run compile
+      - name: Prove slow claims, probes, and mutants
+        working-directory: verification/equivalence
+        run: |
+          /usr/bin/time -p uv run --locked prove.py --slow-only --check-ledger ../../docs/ledger/equivalence.tsv 2>&1 | tee ../../.cache/equivalence/slow-proofs.txt
+      - name: Report slow proof runtime and results
+        if: always()
+        run: |
+          echo "Slow-job elapsed since checkout: $(($(date +%s) - VERIFICATION_STARTED)) seconds" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f .cache/equivalence/slow-proofs.txt ]; then
+            cat .cache/equivalence/slow-proofs.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: equivalence-slow
           path: .cache/equivalence
           retention-days: 30

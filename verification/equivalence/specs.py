@@ -30,7 +30,7 @@ class Spec:
     js: str
     params: list                                  # [(name, C type)]
     pre: Callable = lambda s: []
-    state: list = field(default_factory=list)     # [(C key, C type, JavaScript path)]
+    state: list = field(default_factory=list)     # [(C key, C type, JS path or None for derived API inputs)]
     loops: dict = field(default_factory=dict)
     probes: list = field(default_factory=list)    # [(label, weaker pre)]
     mutants: list = field(default_factory=list)   # [(file, old, new[, 'equivalent'])]
@@ -38,6 +38,13 @@ class Spec:
     js_args: list = field(default_factory=list)   # additional (kind, value) arguments
     nulls: list = field(default_factory=list)     # [(C global pointer, JS paths)]
     enum_state: list = field(default_factory=list)  # [(C key, type, JS path, [(C enumerator, JS string)])]
+    references: list = field(default_factory=list) # [(C pointer, JS aliases)]
+    configure: Callable = lambda world, front, modules: None
+    arguments: Callable | None = None  # explicit C/JS API argument correspondence
+    partitions: Callable | None = None # finite, exhaustive subdomains; each must be satisfiable
+    require_counterexamples: bool = False
+    slow: bool = False
+    assumptions: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -140,10 +147,13 @@ SPECS = [
          pre=lambda s: [s['x'] >= 1, s['u.ulevel'] >= 0, s['u.ulevel'] <= 30],
          mutants=[(RNG, 'ulevel < 15 ? 5', 'ulevel < 16 ? 5', 'equivalent'),   # 15 / 3 == 5
                   (RNG, 'Math.trunc(ulevel / 3)', 'Math.trunc(ulevel / 4)')]),
-    Spec('rnz', 'rnz', 'rnz', [('i', INT)], state=ULEVEL,
+    # rnd.c:rnz returns (int)x. Fix only the excluded input boundary so the
+    # negative check finds that narrowing with a fully symbolic random stream.
+    Spec('rnz', 'rnz', 'rnz', [('i', INT)], state=ULEVEL, require_counterexamples=True,
          pre=lambda s: [s['i'] >= -10 ** 8, s['i'] <= 10 ** 8,
                         s['u.ulevel'] >= 0, s['u.ulevel'] <= 30],
-         probes=[('any int i', lambda s: [s['u.ulevel'] >= 0, s['u.ulevel'] <= 30])],
+         probes=[('INT_MAX narrows on return', lambda s: [s['i'] == INT_MAX,
+                                                        s['u.ulevel'] >= 0, s['u.ulevel'] <= 30])],
          mutants=[(RNG, 'tmp *= rne(4);', 'tmp *= rne(5);')]),
     Spec('rn2_on_display_rng', 'rn2_on_display_rng', 'rn2Display', [('x', INT)],
          pre=lambda s: [s['x'] >= 1],
@@ -248,3 +258,9 @@ SPECS += [
              lambda s: human(s) + [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30], ('u.acurr.a[3]',)))],
          mutants=[(HIT_BONUS, 'dexterity - 14);', 'dexterity - 13);')]),
 ]
+
+# Keep the stateful extension separate so the integer/RNG specs stay readable.
+from state_specs import STATE_C_FILES, STATE_JS_FILES, STATE_SPECS
+C_FILES += STATE_C_FILES
+JS_FILES += STATE_JS_FILES
+SPECS += STATE_SPECS

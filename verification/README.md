@@ -196,33 +196,61 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 20 scoped leaf claims: the original ten RNG/geometry claims plus
-`enermod`, `newuexp`, `xlev_to_rank`, `rounddiv`, both alignment-mask macros,
-Strength/Dexterity `acurr`, `acurrstr`, and human-form `abon`/`dbon`.
-The exact domains, assumed state correspondence, probes and mutants live in
-`specs.py` and are described in `docs/formal-verification.md`. The attribute
-claims assume no gauntlets; equipment effects and other attribute cases are
-not covered. `enermod` relates C's role enumerator to each of the 13 JS role
-keys. Every new claim has a concrete failing probe and a killed mutant.
+There are 33 scoped claims: the original 20 plus all-attribute `acurr`,
+human/polymorphed `dbon` and `abon`, initial-table monster experience,
+initialized monster movement, and eight ISAAC64/seed-packing claims. The monster
+claims check all 383 valid native species with symbolic state; movement uses
+arbitrary random streams. Every declared partition must have a satisfiable
+entry domain in both logging modes, including state-constructor restrictions.
+An empty partition fails the claim and reports its label. The regression
+failed before the fix when either the precondition or constructor excluded
+one species, and passes after it.
+`abon:forms` assumes an equal, pure dungeon-difficulty result. Experience
+covers monsters with no inventory. Live table mutations and preservation of
+entry relations by initialization/equipment updates remain unproved.
 
-Run the executor's language tests separately (31 tests; no game sessions):
+`specs.py`, `state_specs.py` and `state_world.py` declare the domains and
+correspondences; `docs/formal-verification.md` gives their native sources.
+The new claims require both a concrete failing domain probe and a concrete
+killed mutant. No game code or corpora were changed.
+
+Run the language, solver-isolation and command-selection tests
+(58 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
-NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v test_executors
+NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v \
+  test_executors test_queries test_proof_selection
 ```
 
-They check table reads and bounds, nested global state and attribute arrays,
+The round-2 review run passed all 58 tests in 10.064 s. They check table reads and
+bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
-JS 32-bit coercion, imports, defaults, scopes, assertions, and rejected
-constructs. C table values come from clang initializers. JS constant arrays
-are read from emitted modules; this assumes their initial values have not been
-mutated. No new game-table pair or writable heap state is claimed.
+JS 32-bit coercion, imports, defaults, scopes, libc assertions, signed division safety and rejected constructs. C table
+values come from clang initializers. JS constant arrays are read from emitted
+modules; this assumes the fields read still have their initial values. The
+game-table claims include native record and attack fields. Writable heap state
+is not modeled; movement's initializer performs no writes in its entry domain.
 
-CI runs the complete check against `docs/ledger/equivalence.tsv`:
+Pointer member reads from global state require a pointer declared through
+`references` or a `CPtr` in `c_globals`; declaring only a flattened pointee
+field does not establish a non-null pointer. The new rejection test failed
+before the guard was restored for both global and nested pointers, and passes
+after it.
+
+Selection tests use real C/JS snippets and assert exit status only: selected
+body mismatches, probes that incorrectly prove and surviving mutants fail the
+command; excluded runtime classes do not run those checks. Report text is
+used only for failure diagnostics.
+
+CI checks the complete ledger metadata, then proves the selected runtime class:
 
 ```sh
 cd verification/equivalence
+uv run --locked prove.py --skip-slow --check-ledger ../../docs/ledger/equivalence.tsv
+# Nightly and workflow_dispatch slow job:
+uv run --locked prove.py --slow-only --check-ledger ../../docs/ledger/equivalence.tsv
+# Complete local check:
 uv run --locked prove.py --check-ledger ../../docs/ledger/equivalence.tsv
 ```
 
@@ -230,8 +258,9 @@ The ledger records each spec name, its C function and JS function/file, and
 its domain (parameter and state types,
 state correspondence, role mappings, null-pointer assumptions, and
 preconditions), supplied JS arguments (kind, value, and order), loop
-annotations (facts, invariant, variant, and streams), and probe and mutant
-counts. Preconditions and loop formulas use complete SMT expressions rather
+annotations (facts, invariant, variant, and streams), probe/mutant counts, and
+a `runtime` value of `fast` or `slow`. Stateful rows also record item aliases,
+state/argument/partition constructor identities, and explicit native assumptions. Preconditions and loop formulas use complete SMT expressions rather
 than Z3's display strings, which can truncate long terms. Loop formulas use
 independent symbols for current locals, entry locals, and RNG positions. The
 ledger records the complete formula rather than a few concrete iterations. Annotation locals must be read by name.
@@ -259,21 +288,47 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 | `csym.py` | C symbolic executor: typed integers, UB obligations |
 | `jssym.py` | JavaScript symbolic executor (tree-sitter): exact-integer number model, BigInt |
 | `core.py` | paths, abstract random streams, loop rules, and the shared bit-vector operations used by both executors |
-| `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant and variant |
+| `specs.py` | common spec declarations, original function pairs, probes, mutants and the loop invariant/variant |
+| `state_specs.py`, `state_world.py` | stateful leaf domains, pointer/API correspondences and the explicit difficulty contract |
+| `queries.py` | incremental per-domain solvers with isolated path conditions, and bounded reuse of complete UNSAT queries |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
 | `harness/alignment.c` | wrappers so clang expands the two real `align.h` macros |
+| `harness/hero_properties.c` | expands the actual `Amphibious` property for the experience API relation |
+| `rounddiv_witness.py` | checks the native/emitted expressions in the wizard-glob counterexample |
 | `test_executors.py` | language behavior and rejection checks, run through both AST front ends |
+| `test_queries.py`, `test_proof_selection.py` | path/domain isolation and fast-command selection behavior |
 | `bv.py` | typed C wraparound, unbounded BigInt intermediates with checked widths, bit-vector arrays and safety obligations |
 | `isaac_c.py`, `isaac_js.py` | separate AST executors for the ISAAC64 array/state subset |
 | `isaac_specs.py` | seven generator claims, explicit state relation, loop invariants and variants, proved-call summaries, probes and mutants |
 | `isaac_seed.py` | proof of the eight-byte packing loops in `rnd.c` and emitted `rng.js` |
 | `isaac_ledger.py` | ledger domains from the ISAAC64 runners' symbolic inputs and loop plans |
 
-The latest ledger check passed all 28 claims in 47.8 s,
-with 31 domain probes and 34 mutants (33 rejected, one intentionally
-equivalent). Eight claims cover ISAAC64 and seed packing, with eight
-counterexample probes and ten killed mutants.
+`experience:tables` and `mcalcmove:tables` are marked `slow` in their specs.
+The default command includes them, all probes and all mutants. Use
+`uv run prove.py --skip-slow` for pull-request checks: it reports each excluded
+claim and checks the other 31. The separate scheduled job uses `--slow-only --check-ledger`.
+Run just the slow claims with:
+
+```sh
+uv run prove.py --slow-only --check-ledger ../../docs/ledger/equivalence.tsv
+```
+
+Both claims remain in the ledger with `runtime=slow`. Both proof selectors
+check every recorded row and the complete current claim inventory before
+proving their selection. Missing fast claims and changes to runtime markers
+fail even with `--skip-slow`. A partial run cannot write a ledger. Skipping a
+claim does not establish it; its domains and negative checks are unchanged.
+See `docs/formal-verification.md` for measured times and profiling limits.
+
+The final full command exited 0 with all 33 claims, 37 domain probes and 41
+mutant checks in 688.98 s. The final `--skip-slow` run exited 0 with 31 claims,
+34 probes and 39 mutant checks in 97.92 s. Table proof times were 415.6 s for
+experience and 175.5 s for movement; both remain above the 120-second target.
+The separate `--slow-only --check-ledger` job command passed both claims, three
+probes and two mutants in 593.84 s. The 33-row ledger was generated only after
+a complete `--write-ledger` run succeeded.
+
 Both executor families use `core.bit_operation`; their C-width, JS Number
 coercion, and BigInt bounds remain explicit at the callers.
 `isaac64_reseed` covers all byte seeds with lengths 0..INT_MAX, capping at
@@ -299,7 +354,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 4.9 s on the latest run):
+after it (two tests in 6.448 s on this review-fix run):
 
 ```sh
 cd verification/equivalence
@@ -328,11 +383,13 @@ uv run ../callsites/check.py ../../.cache/rng-callsites.json \
   --json ../../.cache/rng-callsites-report.json
 ```
 
-The current inventory has 2,481 sites: 2,088 constant, 106 guarded, 50 invariant,
-237 unproved; 339 upper domains remain unproved. Thirty-six previously
+The current inventory has 2,483 sites: 2,090 constant, 106 guarded, 50 invariant,
+237 unproved; 339 upper domains remain unproved. The final integration tip
+adds two constant sites to the earlier 2,481-site audit; its checked ledger
+still has zero regressions. Thirty-six previously
 unproved sites classify successfully. Fifty-three old classifications were
 withdrawn, and 133 additional emitted calls are now included. Extraction took
-108.90 s and both classifier passes with ledger enforcement took 3.35 s on
+115.52 s and both classifier passes with ledger enforcement took 5.28 s on
 the shared machine.
 [`callsites/review.md`](callsites/review.md) records counts by group, native
 sources, limits and all 28 equivalence timings;
@@ -355,7 +412,7 @@ uv run ../callsites/native_calls.py eat.c:bounded_increase
 ```
 
 The ten analyzer tests passed, including domain probes and nine independent
-emitted-only mutants. The source-wide gate killed 2,243 classified-site mutants
+emitted-only mutants. The source-wide gate killed 2,245 classified-site mutants
 with zero failures. No reachable out-of-domain game divergence was established.
 Native auditing uses clang's typed JSON AST; its printed expressions and
 nested `if` conditions aid manual review and are never solver premises.
@@ -376,26 +433,30 @@ call or strengthening its class is allowed. Upper bounds remain a separate
 summary, outside this ledger. Use `--write-ledger` with the same path to record
 a reviewed baseline; combining it with `--check-ledger` writes only on success.
 
-The 28 ledger CLI behavior tests assert exit status, with reports used only
+The 37 ledger CLI behavior tests assert exit status, with reports used only
 for failure diagnostics. They run with:
 
 ```sh
 cd verification/equivalence && uv run --locked ../test_ledgers.py
 ```
 
-`.github/workflows/equivalence.yml` runs on every pull request and on pushes to
-`daoa/recovery-architecture` and `main`. It uses `macos-latest` and Apple clang,
-matching the native recorder job in `fresh-batches.yml`. Clang reads system
-headers through `hack.h`, including `assert.h`, `stdint.h`, `limits.h`, and
-`ctype.h`; the SDK is therefore part of the C input. The job selects Apple
-clang and its SDK with `xcrun`. It prepares the pinned upstream C tree with the
-recorder patches and generates `nhlua.h` using the recorder's Lua build rules.
-Those patches change the RNG functions, logging macros, and `hacklib.c`, so
-using upstream alone would check different code. It installs uv, compiles the
-TypeScript, runs the executor, target-selection, analyzer, and ledger tests,
-cross-checks the C and scoring generators, and reruns both analyses and the
-source-wide call-site mutant gate. The job summary and retained reports
-include wall-clock times.
+`.github/workflows/equivalence.yml` runs the fast job on every pull request,
+on pushes to `daoa/recovery-architecture` and `main`, nightly at 02:17 UTC, and
+on `workflow_dispatch`. The separate `slow-equivalence` job runs after it only
+on schedule or manual dispatch, using `--slow-only` with the same ledger.
+Both jobs use `ubuntu-latest`, install clang and prepare the recorder-patched
+C sources and Lua headers with `linux-minimal` / `LUA_USE_POSIX`. Each job
+compiles the TypeScript before proving emitted JavaScript. The fast job also
+runs executor, target-selection, analyzer and ledger tests, the generator
+cross-check and both call-site gates. The slow job retains a separate proof
+report and runtime. Hosted Actions results have not been observed for this
+change.
+
+Clang reads system headers through `hack.h`; those headers remain part of the
+C input. A local Ubuntu 24.04 arm64 container using glibc headers proved
+`acurr:all` in 6.1 s and `abon:forms` in 49.5 s, including their probes and
+mutants. This checks Linux header handling; it is not a hosted Ubuntu x86-64
+measurement. The assertions are also exercised in explicit libc-form tests.
 
 Assertions are proof obligations. The executor recognizes Apple's conditional
 `__assert_rtn` expansion and glibc's `__assert_fail` statement expression from
@@ -409,3 +470,24 @@ Only the prepared C tree and uv's package cache are cached, using an exact key
 including the C submodule revision, recorder patches, prover and extractor
 files, dependency lock, and workflow. Proof results, classifications, emitted
 JavaScript, and Node dependencies are rebuilt on every run.
+
+## `rounddiv` caller audit and reachable debug-mode gap
+
+From the repo root:
+
+```sh
+NETHACK_RECORDER=/path/to/recorder node verification/callsites/rounddiv.mjs
+cd verification/equivalence
+NETHACK_RECORDER=/path/to/recorder uv run rounddiv_witness.py
+```
+
+The audit resolves all six native calls through clang and rejects escaping
+function references that would require indirect-call analysis. It lists the
+six corresponding emitted calculations. `doeat` can receive a negative
+`rounddiv` denominator after a wizard overrides the glob weight limit:
+`107374336` small globs produce weight/nutrition `2147486720`, narrowed to
+`-2147480576`. The AST witness also finds an earlier delay difference:
+C `33554483`, JS `-33554381`, from the emitted signed right shift.
+The witness discharges native arithmetic obligations; the wish/meal path is
+a source audit, not a session replay. Game code is unchanged. See the full
+caller table and limitations in `docs/formal-verification.md`.
