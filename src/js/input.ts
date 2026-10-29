@@ -271,6 +271,14 @@ export async function nhgetch(inputState: InputState = 'other') {
     return key === 0 ? 27 : key;
 }
 
+// C cmd.c:pgetchar(): one unprompted character, without readchar()'s
+// Escape-prefix or EOF translation and without a command-queue entry.
+export async function pgetchar(): Promise<number> {
+    const key = game.iflags.debug_fuzzer
+        ? await activeInputGate.readKey() : await nhgetch();
+    return nativeChar(key);
+}
+
 export async function readchar(inputState: InputState = 'other'): Promise<number> {
     return (await readcharCore(inputState)).key;
 }

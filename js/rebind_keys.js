@@ -1,25 +1,13 @@
 // cmd.c handler_rebind_keys()/handler_rebind_keys_add(): the interactive
 // key-binding menus behind the full options menu's "bind keys" row.
 import { game } from './gstate.js';
-import { flushPendingTopline, pline } from './display.js';
+import { flush_screen, pline } from './display.js';
+import { pgetchar } from './input.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
 import { NATIVE_COMMANDS, NATIVE_COMMAND_FLAGS } from './command_data.js';
 import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { keyText } from './command_help.js';
-import { promptKey } from './tty_prompts.js';
-import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
-// cmd.c pgetchar() after pline("Bind which key? "): the queued repeat answer
-// or one fresh key over the prompt line.
-async function readBindKey() {
-    const queued = takeRepeatCommand();
-    if (queued)
-        return queued.kind === 'key' ? queued.key : 27;
-    await flushPendingTopline();
-    const key = await promptKey('Bind which key? ');
-    rememberCommandKey(key);
-    return key;
-}
 // cmd.c count_bind_keys(): user rebinds plus default keys that no longer
 // have their command bound.
 export function countBindKeys() {
@@ -55,7 +43,8 @@ async function handlerRebindKeysAdd(keyfirst) {
     let key = 0;
     if (keyfirst) {
         await pline('Bind which key? ');
-        key = await readBindKey();
+        await flush_screen(1);
+        key = (await pgetchar()) & 255;
         if (!key || key === 27)
             return;
     }
@@ -110,7 +99,8 @@ async function handlerRebindKeysAdd(keyfirst) {
     }
     if (!key) {
         await pline('Bind which key? ');
-        key = await readBindKey();
+        await flush_screen(1);
+        key = (await pgetchar()) & 255;
         if (!key || key === 27)
             return;
     }

@@ -480,6 +480,84 @@ void test('#toggle also flips the window-capability booleans', async () => {
     }
 });
 
+void test('#toggle refuses to enable permanent inventory on tty without a message', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+
+    assert.equal(await toggleBooleanOptionPrefix('perm_invent'), false);
+    assert.equal(game.iflags.perm_invent ?? false, false);
+    assert.doesNotMatch(messages(), /perm_invent/);
+});
+
+for (const mode of ['ascii_map', 'tiled_map']) {
+    void test(`#toggle(${mode}) switches map modes and pages its message before redrawing`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const input = resetInputState();
+        const pagedMessages: string[] = [];
+        input.beforeRead = () => {
+            pagedMessages.push(screen().split('\n')[0] ?? '');
+            input.feed(' ');
+        };
+        try {
+            assert.equal(await toggleBooleanOptionPrefix(mode), true);
+            assert.equal(game.iflags.wc_ascii_map, false);
+            assert.equal(game.iflags.wc_tiled_map, true);
+            const firstState = mode === 'ascii_map' ? 'off' : 'on';
+            assert.ok(pagedMessages.some(line => line.includes(`'${mode}' option toggled ${firstState}.`)
+                && line.includes('--More--')), 'The toggle message is acknowledged before the redraw');
+            assert.equal(game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@',
+                'The redraw displays the hero on the map');
+            assert.equal(screen().split('\n')[0]?.trim(), '', 'The redraw clears the acknowledged message');
+
+            pagedMessages.length = 0;
+            assert.equal(await toggleBooleanOptionPrefix('tiled_map'), true);
+            assert.equal(game.iflags.wc_ascii_map, true);
+            assert.equal(game.iflags.wc_tiled_map, false);
+            assert.ok(pagedMessages.some(line => /'tiled_map' option toggled off\..*--More--/.test(line)),
+                'The next toggle reads the updated tiled-map value and redraws again');
+        } finally {
+            input.beforeRead = null;
+        }
+    });
+}
+
+for (const keyfirst of [true, false]) {
+    void test(`rebinding ${keyfirst ? 'a key' : 'a command'} reads the key without adding it to the prompt history`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const [input, command] = openFullMenu();
+        await input.waitUntilBlocked();
+        input.feed('O');
+        const steps: Step[] = [
+            { at: / - /, pick: /bind keys/ },
+            { at: /bind keys/, keys: '\n' },
+            { at: /Do what\?/, pick: keyfirst ? /bind key to a command/ : /bind command to a key/ },
+        ];
+        if (keyfirst) {
+            steps.push(
+                { at: /Bind which key\?/, keys: 'X' },
+                { at: /Bind 'X' to what command\?/, keys: '\x1b' },
+            );
+        } else {
+            steps.push(
+                { at: /Bind what command\?/, pick: /^adjust: / },
+                { at: /Bind which key\?/, keys: 'X' },
+            );
+        }
+        steps.push({ at: /Do what\?/, keys: '\x1b' });
+        const { views, prose } = await runScript(input, command, steps);
+
+        const transcript = `${messages()}\n${prose.join('\n')}`;
+        assert.match(transcript, /Bind which key\?/);
+        assert.doesNotMatch(transcript, /Bind which key\? X/);
+        assert.ok(views.every(view => !/Bind which key\?.*--More--/.test(view.split('\n')[0] ?? '')),
+            'The key prompt reads a key directly without asking for acknowledgement');
+        assert.equal(game.commandBindings.lookup('X'.charCodeAt(0))?.command?.name,
+            keyfirst ? 'twoweapon' : 'adjust');
+    });
+}
+
 void test('typed leading blanks survive into the threshold value rows', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

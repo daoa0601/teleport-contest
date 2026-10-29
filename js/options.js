@@ -2928,9 +2928,23 @@ export async function toggleBooleanOptionPrefix(prefix) {
         const wcBoolean = TOGGLE_WC_BOOLEANS.find(entry => entry[0] === name);
         if (wcBoolean) {
             const value = !(game.iflags[wcBoolean[1]] ?? wcBoolean[2]);
+            // can_set_perm_invent() refuses enabling it on the pinned tty
+            // port, which is built without WC_PERM_INVENT.
+            if (name === 'perm_invent' && value)
+                continue;
             game.iflags[wcBoolean[1]] = value;
+            if (name === 'ascii_map')
+                game.iflags.wc_tiled_map = !value;
+            if (name === 'tiled_map')
+                game.iflags.wc_ascii_map = !value;
             if (giveMessages)
                 await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
+            if (name === 'ascii_map' || name === 'tiled_map' || name === 'perm_invent') {
+                checkGoldSymbol();
+                reglyph_darkroom();
+                await docrt();
+                await flush_screen(1);
+            }
             toggled = true;
             continue;
         }
