@@ -432,7 +432,9 @@ export class Engine {
         for (let tryct = 1; ; tryct++) {
             if (tryct > 1) {
                 if (tryct > 10) {
-                    rawPrint('Giving up after 10 tries.');
+                    // bail() clears the tty before raw_print() adds its newline.
+                    display.clearScreen();
+                    rawPrint('Giving up after 10 tries.\n');
                     return null;
                 }
                 display.putstr(0, row - 1, 'Enter a name for your character...', NO_COLOR);

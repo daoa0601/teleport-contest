@@ -57,7 +57,7 @@ void test('a long partial answer is erased when Escape re-asks', async () => {
     requirePlayingGame(game);
     assert.equal(game.plname, 'Ada');
 });
-void test('ten empty name answers give up on the player', async () => {
+void test('ten empty name answers clear the startup screen before giving up', async () => {
     const engine = await runSegment({
         seed: 31,
         datetime: '20260831120000',
@@ -65,9 +65,15 @@ void test('ten empty name answers give up on the player', async () => {
         moves: '\n'.repeat(10),
         storage: memoryStorage(),
     });
-    const rows = requireGameDisplay().grid
+    const display = requireGameDisplay();
+    const rows = display.grid
         .map(cells => cells.map(cell => cell.ch).join('').trimEnd());
-    assert.ok(rows.some(row => row.includes('Giving up after 10 tries.')), 'the tenth failure abandons startup through a raw line');
+    assert.equal(rows[0], 'Giving up after 10 tries.', 'the exit message starts at the top-left after clearing the screen');
+    for (let row = 1; row < rows.length; row++) {
+        assert.equal(rows[row], '', `startup text is cleared from row ${row}`);
+    }
+    assert.equal(display.cursorCol, 0);
+    assert.equal(display.cursorRow, 2, 'the message newline and raw-print newline leave a blank line before the cursor');
     assert.equal(engine.lastRunResult?.kind, 'stopped');
     assert.equal(game.urole, null, 'no character is created after the bail');
 });
