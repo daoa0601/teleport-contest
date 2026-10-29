@@ -1,4 +1,4 @@
-"""Execute the emitted ISAAC64 JavaScript AST with exact BigInt bounds."""
+"""Execute the scoring ISAAC64 JavaScript AST with exact BigInt bounds."""
 from __future__ import annotations
 
 import z3
@@ -120,6 +120,8 @@ class JSIsaac:
             return predicate('!=', value, integer(0))
         if value is None:
             return False
+        if isinstance(value, (Memory, dict)):
+            return True
         return value
 
     def address(self, node):
@@ -180,12 +182,17 @@ class JSIsaac:
                     raise Unsupported('JavaScript object property')
                 result[pair.child_by_field_name('key').text.decode()] = self.eval(pair.child_by_field_name('value'))
             return result
+        if kind == 'ternary_expression':
+            condition = self.truth(self.eval(node.child_by_field_name('condition')))
+            field = 'consequence' if self.checks.decide(condition) else 'alternative'
+            return self.eval(node.child_by_field_name(field))
         if kind in ('assignment_expression', 'augmented_assignment_expression'):
             address = self.address(node.child_by_field_name('left'))
+            old = self.read(address) if kind == 'augmented_assignment_expression' else None
             value = self.eval(node.child_by_field_name('right'))
             if kind == 'augmented_assignment_expression':
                 op = node.child_by_field_name('operator').text.decode()[:-1]
-                value = js_binary(op, self.read(address), value, self.checks)
+                value = js_binary(op, old, value, self.checks)
             self.write(address, value)
             return value
         if kind == 'binary_expression':
@@ -213,7 +220,13 @@ class JSIsaac:
             args = [self.eval(n) for n in node.child_by_field_name('arguments').named_children]
             if function.type == 'member_expression' and function.child_by_field_name('property').text == b'fill':
                 call = function.child_by_field_name('object')
-                if call.type != 'call_expression' or call.child_by_field_name('function').text != b'Array':
+                if call.type == 'call_expression':
+                    constructor = call.child_by_field_name('function')
+                elif call.type == 'new_expression':
+                    constructor = call.child_by_field_name('constructor')
+                else:
+                    raise Unsupported('JavaScript fill receiver')
+                if constructor.text != b'Array':
                     raise Unsupported('JavaScript fill receiver')
                 length = self.eval(call.child_by_field_name('arguments').named_children[0]).constant()
                 return Memory.filled(length, args[0])

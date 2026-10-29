@@ -1,4 +1,4 @@
-"""Compare 1,000 real C/JS draws per seed, stopping at the first mismatch.
+"""Compare 1,000 C/scoring-adapter draws per seed, stopping at the first mismatch.
 
 Run from equivalence/: uv run ../isaac64/crosscheck.py
 Only compiles the standalone ISAAC64 C file; never runs the game or a corpus.
@@ -31,7 +31,7 @@ def main():
     for label, seed, extra in cases:
         args = [seed.hex()] + ([] if extra is None else [extra.hex()])
         c = subprocess.run([str(binary), *args], capture_output=True, text=True, check=True, timeout=20)
-        js = subprocess.run(['node', str(HERE / 'stream.mjs'), str(REPO / 'js' / 'isaac64.js'), *args],
+        js = subprocess.run(['node', str(HERE / 'stream.mjs'), *args],
                             capture_output=True, text=True, check=True, timeout=20)
         left, right = c.stdout.splitlines(), js.stdout.splitlines()
         if len(left) != 1000 or len(right) != 1000:

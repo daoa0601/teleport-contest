@@ -1,4 +1,7 @@
-"""Prove pinned NetHack C functions equivalent to the emitted JavaScript port.
+"""Prove pinned NetHack C functions equivalent to the JavaScript used in scoring.
+
+Leaf functions use emitted js/*.js; ISAAC64 uses frozen/isaac64.js, which
+score.sh installs over the emitted adapter before running the game.
 
 For every input in the stated domain, every random sequence, and both RNG-log
 settings, the C and JavaScript functions must return the same value, consume
@@ -200,7 +203,7 @@ def main() -> int:
     recorder = recorder_dir()
     front = CFront(recorder, [recorder / 'src' / file for file in C_FILES] + list((HERE / 'harness').glob('*.c')))
     modules = load_modules()
-    print(f'C sources: {recorder}/src   JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
+    print(f'C sources: {recorder}/src   Leaf JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
     failures = 0
     for spec in SPECS:
         if args.only and spec.name not in args.only:

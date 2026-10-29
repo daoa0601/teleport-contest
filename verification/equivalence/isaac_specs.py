@@ -397,11 +397,11 @@ def check(front, source, name, proved, probe=False):
 MUTANTS = {
     'lower_bits': (b'x >> 3n', b'x >> 4n'),
     'upper_bits': (b'y >> 11n', b'y >> 10n'),
-    'isaac64_mix': (b'[9n, 9n,', b'[8n, 9n,'),
-    'isaac64_update': (b'wordAt(m, i + SZ / 2)', b'wordAt(m, i + SZ / 2 - 1)'),
-    'isaac64_reseed': (b'0x9e3779b97f4a7c13n', b'0x9e3779b97f4a7c12n'),
+    'isaac64_mix': (b'[9, 9,', b'[8, 9,'),
+    'isaac64_update': (b'm[i + SZ / 2]', b'm[i + SZ / 2 - 1]'),
+    'isaac64_reseed': (b'0x9E3779B97F4A7C13n', b'0x9E3779B97F4A7C12n'),
     'isaac64_init': (b'return ctx;', b'ctx.n--; return ctx;'),
-    'isaac64_next_uint64': (b'wordAt(_ctx.r, --_ctx.n)', b'wordAt(_ctx.r, _ctx.n--)'),
+    'isaac64_next_uint64': (b'_ctx.r[--_ctx.n]', b'_ctx.r[_ctx.n--]'),
 }
 
 
@@ -410,7 +410,9 @@ def run(recorder, repo, only=None, probes=True, mutants=True):
     if not selected:
         return 0
     front = CFront(recorder, [recorder / 'src' / 'isaac64.c'])
-    source = (repo / 'js' / 'isaac64.js').read_bytes()
+    target = repo / 'frozen' / 'isaac64.js'
+    source = target.read_bytes()
+    print(f'ISAAC64 JavaScript: {target}', flush=True)
     proved, failures = set(), 0
     for name in NAMES:
         # Dependencies are proved even when --only selects a composed claim.
@@ -437,7 +439,7 @@ def run(recorder, repo, only=None, probes=True, mutants=True):
         if mutants:
             changes = [MUTANTS[name]]
             if name == 'isaac64_update':
-                changes += [(b'0xffffffffffffffffn', b'0x7fffffffffffffffn'),
+                changes += [(b'0xFFFFFFFFFFFFFFFFn', b'0x7FFFFFFFFFFFFFFFn'),
                             (b'a << 21n', b'a << 20n')]
             for old, new in changes:
                 if old not in source:
