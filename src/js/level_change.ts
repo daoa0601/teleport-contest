@@ -445,6 +445,11 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         }
         if (familiarMessage) await pline(familiarMessage);
         game._restoredBones = false;
+    } else {
+        // maybe_lvltport_feedback() (do.c:1854) delivers the
+        // "You materialize" line ahead of the special-level and Valley
+        // messages below on every arrival, not only bones ones.
+        await beforeGlow();
     }
     // do.c:goto_level() runs familiar_level_msg() (whose deja-vu choice is
     // the first random call of the arrival) before onquest() and the quest
@@ -462,10 +467,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         fromDepth: oldDepth,
     });
     if (questArrival?.page || questArrival?.line) {
-        if (!bonesArrival && postMessage) {
-            await plineWithContinuation(postMessage);
-            await flushPendingTopline();
-        }
         await displayPreparedQuestArrival(questArrival);
         if (questArrival.page) {
             // A quest page replaces the earlier teleport message.
@@ -474,7 +475,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         }
     } else {
         if (questArrival) await displayPreparedQuestArrival(questArrival);
-        if (!bonesArrival && postMessage) await plineWithContinuation(postMessage);
         // do.c:goto_level() announces a newly generated Rogue floor after
         // level-teleport feedback.  tty continuation therefore suspends on
         // the materialization line and exposes the classic Rogue map before
@@ -595,8 +595,9 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     await autopickupAtHero();
     // deferred_goto() prints a deferred message that is not the
     // materialization line only after goto_level() has finished
-    // (do.c:2096); bones arrivals hold it until here.
-    if (bonesArrival && postMessage) {
+    // (do.c:2096), so it lands after the arrival, temperature, and
+    // annotation messages above.
+    if (postMessage) {
         await plineWithContinuation(postMessage);
         postMessage = '';
     }

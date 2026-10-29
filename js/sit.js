@@ -320,7 +320,7 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
         await pline('You sit on the drawbridge.');
     }
     else if (typ === THRONE) {
-        await pline('You sit on the throne.');
+        await pline('You sit on the opulent throne.');
         await throneSitEffect({ gotoLevel, chooseTeleportDestination });
     }
     else if (heroFormFlags(game) & M1_OVIPAROUS) {
