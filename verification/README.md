@@ -70,7 +70,7 @@ game-table pair or writable heap state is claimed.
 | `isaac_specs.py` | seven generator claims, explicit state relation, loop invariants and variants, proved-call summaries, probes and mutants |
 | `isaac_seed.py` | proof of the eight-byte packing loops in `rnd.c` and emitted `rng.js` |
 
-The combined command passed all 28 claims after the rebase in 51.83 s,
+The call-site unit's acceptance command passed all 28 claims in 52.59 s,
 with 31 domain probes and 34 mutants (33 rejected, one intentionally
 equivalent). Eight claims cover ISAAC64 and seed packing, with eight
 counterexample probes and ten killed mutants.
@@ -108,13 +108,53 @@ NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python ../isaac64/test_scori
 
 ## `callsites/`: do callers stay inside the proved domains?
 
-`extract.mjs` finds every call that resolves to an `rng.ts` draw function
-through the TypeScript checker, including aliases and injected
-`random: typeof rn2` fields. `check.py` classifies each site as constant,
-guarded, invariant, or unproved, and prints each unproved site with a
-counterexample.
+`extract.mjs` reads the emitted JavaScript. Authored types identify injected
+`random: typeof rn2` fields and collection/record shapes; emitted bindings
+also identify RNG calls, including callback defaults missed by the authored
+signature scan. Runtime call inventories pair the modules, while argument
+expressions, guards, writes and table contents come from emitted code.
+
+`check.py` classifies lower-domain evidence as constant, guarded, invariant,
+or unproved. It checks guard lifetimes/binding identities, inductive local
+bounds and explicit division integrality. Upper domains are reported
+separately. Unknown numeric leaves still assume integer C/JS correspondence;
+readonly table ranges assume valid indices and their declared initial-state
+relation. These labels do not prove all reachable callers safe.
 
 ```sh
 node verification/callsites/extract.mjs > .cache/rng-callsites.json
-cd verification/equivalence && uv run ../callsites/check.py ../../.cache/rng-callsites.json
+cd verification/equivalence
+uv run ../callsites/check.py ../../.cache/rng-callsites.json \
+  --json ../../.cache/rng-callsites-report.json
 ```
+
+The current inventory has 2,481 sites: 2,088 constant, 106 guarded, 50 invariant,
+237 unproved; 339 upper domains remain unproved. Thirty-six previously
+unproved sites classify successfully. Fifty-three old classifications were
+withdrawn, and 133 additional emitted calls are now included. Extraction took
+110.70 s and both classifier passes took 3.57 s on the shared machine.
+[`callsites/review.md`](callsites/review.md) records counts by group, native
+sources, limits and all 28 equivalence timings;
+[`callsites/review.tsv`](callsites/review.tsv) lists every residual site.
+
+Negative checks use actual JavaScript mutants held in memory. Widths become
+zero, dice counts negative, and `rnz` receives an out-of-bound upper argument.
+Nested calls remain in the inventory; game files are never rewritten.
+
+```sh
+# From the repository root:
+node verification/callsites/extract.mjs --mutate-domains > .cache/rng-mutants.json
+cd verification/equivalence
+uv run python ../callsites/test_callsites.py
+uv run python ../callsites/test_domains.py \
+  ../../.cache/rng-callsites.json ../../.cache/rng-mutants.json
+
+# Optional native audit aid (requires NETHACK_RECORDER in a worktree):
+uv run ../callsites/native_calls.py eat.c:bounded_increase
+```
+
+The ten analyzer tests passed, including domain probes and nine independent
+emitted-only mutants. The source-wide gate killed 2,243 classified-site mutants
+with zero failures. No reachable out-of-domain game divergence was established.
+Native auditing uses clang's typed JSON AST; its printed expressions and
+nested `if` conditions aid manual review and are never solver premises.

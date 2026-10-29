@@ -8,8 +8,8 @@ functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
 `verification/equivalence/` proves 28 scoped claims: 20 arithmetic/read-only
 state claims plus eight ISAAC64 and seed-packing claims. The combined run,
-including all probes and mutants, took 51.83 seconds after the rebase. Use it
-as a CI check on leaf functions, add function-level differential fuzzing for
+including all probes and mutants, took 52.59 seconds in the call-site unit
+acceptance run. Use it as a CI check on leaf functions, add function-level differential fuzzing for
 stateful code, and keep whole-game equivalence empirical: session replay,
 ledgers, and the state oracle.
 
@@ -62,33 +62,33 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 
 | Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
 |---|---|---|---|---|
-| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.2 s |
+| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.3 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
-| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.4 s |
+| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.5 s |
 | `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 0.9 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.3 s |
 | `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 1.1 s |
-| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 4.0 s |
+| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 4.1 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
 | `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 8×1 | 0.3 s |
-| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 1.0 s |
-| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 7×13 | 4.2 s |
-| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.5 s |
+| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 1.3 s |
+| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 7×13 | 4.4 s |
+| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.3 s |
 | `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.3 s |
 | `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.6 s |
-| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.6 s |
+| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.5 s |
 | `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.2 s |
-| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.2 s |
+| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.1 s |
 | `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.5 s |
 | `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.8 s |
-| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 15.5 s |
-| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
-| `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
+| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 15.2 s |
+| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
+| `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | 0.0 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
 | `isaac64_update` | `isaac64.c:isaac64_update` ↔ frozen same name | 256 initialized words in m/r; arbitrary uint64 a/b/c | Two loop invariants cover all 256 updates | 0.3 s |
-| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 3.4 s |
+| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 3.5 s |
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
-| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | <0.1 s |
+| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
 
 The byte-seed relation comes from `isaac64.h`: C reads unsigned bytes and
@@ -158,16 +158,16 @@ One original mutant is genuinely equivalent (`ulevel < 15` →
 
 | New leaf claim | Domain probe | Killed mutant |
 |---|---|---|
-| `enermod` | `en = INT_MAX` overflows C's multiplication | wizard/priest multiplier 2 → 3 |
-| `newuexp` | arbitrary `int` level can leave the JS exact-integer range | first multiplier 10 → 11 |
-| `xlev_to_rank` | input 4294967297 narrows to C `int` 1: C 0, JS 8 | rank numerator `level + 2` → `level + 1` |
-| `rounddiv` | `(2, -3)`: C -1, JS 0 | denominator half → third |
-| `Align2amask` | alignment -3: C 4294967295, JS 255 | alignment offset 2 → 1 |
-| `Amask2align` | input 9007199254740993 violates the exact JS input obligation | normal alignment mask → shrine bit |
-| `acurr:StrDex` | remove base Strength correspondence: returned attributes differ | add 1 to the attribute sum |
-| `acurrstr` | remove base Strength correspondence: condensed Strength differs | Strength divisor 50 → 51 |
-| `dbon:human` | remove base Strength correspondence: damage bonuses differ | 18/75 endpoint inclusive → exclusive |
-| `abon:human` | remove base Dexterity correspondence: hit bonuses differ | Dexterity offset 14 → 13 |
+| `enermod` | `en = INT_MAX` overflows C's multiplication | 4.4 s |
+| `newuexp` | arbitrary `int` level can leave the JS exact-integer range | 1.3 s |
+| `xlev_to_rank` | input 4294967297 narrows to C `int` 1: C 0, JS 8 | 0.3 s |
+| `rounddiv` | `(2, -3)`: C -1, JS 0 | 0.6 s |
+| `Align2amask` | alignment -3: C 4294967295, JS 255 | 0.5 s |
+| `Amask2align` | input 9007199254740993 violates the exact JS input obligation | 1.2 s |
+| `acurr:StrDex` | remove base Strength correspondence: returned attributes differ | 1.1 s |
+| `acurrstr` | remove base Strength correspondence: condensed Strength differs | 0.5 s |
+| `dbon:human` | remove base Strength correspondence: damage bonuses differ | 0.8 s |
+| `abon:human` | remove base Dexterity correspondence: hit bonuses differ | 15.2 s |
 
 The mask probe is a counterexample to the numeric input obligation, not an
 observed C/JS result difference. The model accepts only exact integer Numbers;
@@ -285,73 +285,144 @@ but none is checked yet:
 
 ## Call-site domains
 
-`verification/callsites/` checks whether every caller stays inside the proved
-domains. `extract.mjs` uses the TypeScript checker to find every call whose
-signature resolves to an `rng.ts` draw function. That includes aliases and
-injected `random: typeof rn2` fields, which account for 430 sites. For each
-call it records the argument terms and the conditions that dominate the call
-in its function. `check.py` asks Z3 whether the lower bound holds (`x >= 1`;
-for `d`, `n >= 0` and `x >= 1` unless `n = 0`) and whether the argument is an
-integer, since a fraction reaches `BigInt()` and throws.
+`verification/callsites/` checks emitted `js/*.js` arguments against the RNG
+leaf domains. Authored types identify injected callbacks and record/array
+shapes; arguments, guards, initializers, writes and table contents come from
+the emitted JavaScript. Runtime call inventories pair the two modules; a
+missing or reordered callee stops extraction. Both the emitted checker and
+authored signatures identify RNG bindings. This finds 133 calls that the
+previous authored-signature-only scan missed, including callback defaults.
+
+The classifications below concern **lower bounds and explicit division
+integrality**, under the numeric/state correspondence assumptions below.
+They do not establish the full caller domain: upper bounds are reported
+separately. For `d`, the lower domain matches `specs.py`: `n >= 0`, `x >= 0`,
+and `x >= 1` unless `n = 0`. Zero dice with zero sides is allowed; negative
+sides remain outside the stated leaf proof even when the count is zero.
 
 ```sh
-node verification/callsites/extract.mjs > .cache/rng-callsites.json   # ~12 s
-cd verification/equivalence && uv run ../callsites/check.py ../../.cache/rng-callsites.json   # ~7 s
+node verification/callsites/extract.mjs > .cache/rng-callsites.json
+cd verification/equivalence
+uv run ../callsites/check.py ../../.cache/rng-callsites.json \
+  --json ../../.cache/rng-callsites-report.json
 ```
 
-| Class | Sites | Meaning |
-|---|---|---|
-| constant | 1,985 | The argument alone is in the domain: literals, folded constants (including imported ones), lengths of readonly tables, draw results |
-| guarded | 115 | In the domain given dominating guards, helper return bounds, or the bounds of every direct caller of a non-escaping function |
-| invariant | 51 | In the domain only given a listed C invariant (below) or an in-bounds read of a readonly data table |
-| unproved | 202 | Depends on state the analysis cannot see |
+Extraction took 110.70 s; both lower and upper checks took 3.57 s. The baseline
+here was rerun on this branch, rather than copied from the older 2,353-site
+measurement.
 
-The invariants are C facts the checker assumes, not ones it proves:
+| Class | Before (2,348 sites) | After, original inventory | Additional emitted sites | After (2,481 sites) |
+|---|---:|---:|---:|---:|
+| constant | 1,981 | 1,985 | 103 | 2,088 |
+| guarded | 115 | 98 | 8 | 106 |
+| invariant | 51 | 47 | 3 | 50 |
+| unproved | 201 | 218 | 19 | 237 |
 
-| Invariant | C source |
+`constant` needs no caller guard. `guarded` may use stable dominating guards,
+helper return bounds, every direct caller of a non-escaping helper, or an
+inductive local bound. For a local bound, the initializer establishes it and
+every syntactic write preserves it; unsupported writes discard the summary.
+An initializer can also be used before its first write when its declaration
+dominates the read and no loop back edge carries a write past it.
+
+Guard identities include bindings, including array-index bindings. Writes,
+unknown calls, captured mutable scalars, `await`, and loop back edges can
+invalidate a guard. A stored value is distinguished from a later live field
+read. Entire `++count` arguments use a distinct pre-increment value; compound
+side-effecting expressions and incremented loop conditions stay unproved.
+No new guarded classification rests on matching text alone.
+
+The run closes 36 of the original 201 unproved sites and withdraws 53 old
+classifications. The withdrawals reflect unavailable emitted-only facts or
+unjustified guard lifetimes/identities. They are not game-code regressions.
+The successful sites and their C sources are listed in
+[`verification/callsites/review.md`](../verification/callsites/review.md).
+
+| Residual group | Before | After |
+|---|---:|---:|
+| possibly-empty collection | 25 | 37 |
+| count or weight | 27 | 25 |
+| dice from data | 21 | 23 |
+| spe charges | 11 | 19 |
+| hit points | 4 | 6 |
+| other | 113 | 127 |
+
+Groups use argument terms and recovered local origins, with charge/HP/dice
+cases taking precedence over collection/count names. They are triage labels,
+never proof premises. Better origin recovery can move a site between groups.
+Every residual site has a native owner and a remaining obligation in
+[`review.tsv`](../verification/callsites/review.tsv). The review distinguishes
+matching formulas, C-to-array representations, unchanged callback forwarding,
+and the input fuzzer. No reachable out-of-domain divergence was established;
+this manual comparison is not a proof of state correspondence.
+
+The `invariant` class additionally assumes the following C facts. It does
+not prove that initialization, restoration, every caller, or a suspended
+continuation establishes them.
+
+| Assumed fact | C source |
 |---|---|
-| attributes 3..125 | `attrib.h` ATTRMIN..ATTRMAX (STR encodes 18/xx up to 125) |
-| `ulevel` 1..30 | `global.h` MAXULEV |
-| `level_difficulty() >= 1` | `dungeon.c` |
-| monster level 0..49 | `monst.c`; `grow_up()` caps at 49 |
-| attack dice 0..255 | `monst.c` dice are `uchar` |
+| attributes 3..125 | `attrib.h` ATTRMIN..ATTRMAX; `attrib.c:acurr` (Strength encodes 18/xx up to 125) |
+| non-Strength attributes 3..25 | `attrib.c:1199 acurr`, including all equipment/form branches; only calls resolving to emitted `attrib.js:currentAttribute` with a folded non-Strength index get this narrower fact |
+| `ulevel` 1..30 | `global.h` MAXULEV; `you.h` level field; this also supplies the state domain of `rne`/`rnz` |
+| `level_difficulty() >= 1` | `dungeon.c:level_difficulty` |
+| monster level 0..255 | `monst.h:104 m_lev`, resolved by clang to 8-bit unsigned char; this replaces the invalid general cap of 49 (special creation can exceed it) |
+| attack dice 0..255 | `monattk.h` attack dice are `uchar`; this does **not** imply positive sides when a positive count reaches a draw |
 | `nroom` 0..40 | `mkroom.h` MAXNROFROOMS |
-| live room: `0 <= lx <= hx <= 79`, `0 <= ly <= hy <= 20` | `struct mkroom`, built by `create_room()` from `lowx <= hix` |
-| table element in [min, max] of its entries | literal arrays typed readonly (lint forbids the casts that could write them) or never written, such as `MONSTER_LEVEL` |
+| live room: `0 <= lx <= hx <= 79`, `0 <= ly <= hy <= 20` | `struct mkroom`, `sp_lev.c:create_room`, `mklev.c:add_room` |
+| in-bounds table element lies in the min/max of its initial entries | declared readonly or non-escaping emitted literal arrays, with the corresponding C data-table relation assumed |
 
-Room facts apply only to fields whose owner has the TypeScript type `Room`, or
-a parameter that every direct caller passes a `Room` (`somex()` is declared
-over `Rectangle`). The sentinel after the last room is typed `RoomSentinel`,
-so it gets none. Lua exclusion areas and level regions share the field names
-but not the invariant. Moving from the first run (239 unproved) to this one
-closed 37 sites: 22 became constant once imported constants and readonly table
-lengths resolved (`A_MAX`, `MONSTER_COLOR.length`), and 15 rest on the new
-invariants. The twelve unproved sites still touching rooms or `nroom`
-(`mkswamp`, `makeniche`, the chest check, `create_subroom`, `rnd_rect`
-placement, vault gold, the endgame portal region, `get_location`) all use the
-same expression as their C counterparts (`mkroom.c:538`, `mklev.c:749`,
-`mklev.c:1137`, `sp_lev.c:1560`, `:1690`, `:1213`, `:2763`, `dog.c:548`).
-They rely on C's own unstated preconditions, such as `nroom >= 1` once
-rooms exist. Of the rest, the largest groups are collections that may be
-empty, counts and weights, dice from data, `spe` charges, and hit points. Nine
-sites are in the browser fuzzer harness, not the game. One site may receive a fraction: `write.ts`
-`rn1(basecost / 2, basecost / 2)`, where C divides integers. It is safe only
-because every ink cost in `writingCost()` is even.
+Room facts apply only to `Room` owners, or a non-escaping parameter for which
+all direct callers supply a `Room`. `RoomSentinel`, Lua rectangles and level
+regions do not acquire them. Readonly array contents are assumed to remain in
+the stated range. Literal string-name lookups use the emitted table entries;
+no C/JS table-equivalence theorem is added.
 
-Triage so far finds no divergence. Each unproved site inspected (`zap.c`
-`rn2(elig_stacks)`, `pray.c` `rn2((Luck + 6) >> 1)`, the `engrave` and
-`hunger` formulas) passes C's own expression under C's own guard. These sites
-therefore inherit C's unstated invariants rather than adding risk. Across the
-15,010 sessions of the native development corpus, the C RNG log contains no
-call with a non-positive argument to `rn2`, `rnd`, `rnl`, or `rne`, and no `d`
-with a negative count or zero sides. A violation would desynchronize the
-stream: C draws, while JavaScript returns 0 without drawing.
+**Non-vacuity.** Each successful solver query has a satisfiable modeled input.
+Nested RNG result bounds are conditional on that draw's own domain; an invalid
+nested draw cannot create contradictory facts and prove an enclosing call.
+Nonzero divisors are obligations, not assumptions. Ten analyzer tests passed
+in 1.330 s, including concrete invalid-domain probes, stale snapshots,
+mutating callbacks, shadowed bindings, destructuring, builtin shadowing,
+ordered increment reads, and nine independent emitted-JS mutants.
 
-Guards are matched by source text, so a "guarded" proof assumes the guarded
-value does not change between the guard and the call. Interprocedural facts go
-three calls deep. Upper bounds (`n*x <= INT_MAX`, `abs(i) <= 1e8` for `rnz`) are
-reported in the summary line only; 300 sites are not proved bounded above,
-nearly all because their inputs have no stated maximum.
+A second pass mutates emitted RNG arguments in memory, preserving nested
+calls. Widths become zero; dice counts become negative; `rnz` receives an
+out-of-bound upper argument. It changes no game files. The gate must reject
+every previously classified site; see `review.md` for the measured result and
+timings. Both passes still operate on emitted JavaScript.
+
+```sh
+node verification/callsites/extract.mjs --mutate-domains > .cache/rng-mutants.json
+cd verification/equivalence
+uv run python ../callsites/test_callsites.py
+uv run python ../callsites/test_domains.py \
+  ../../.cache/rng-callsites.json ../../.cache/rng-mutants.json
+```
+
+**Limits.** This is conditional caller evidence, not a theorem about all
+reachable game states. Unknown numeric leaves are modeled as integers equal
+to corresponding C values. The checker does not establish their integrality
+or rule out arbitrary `undefined`, NaN, proxies or effectful getters at game
+boundaries. Record/collection shapes come from the authored type contract.
+Raw table-index validity and the initial readonly-table relation remain
+assumptions. RNG-typed callbacks assume the corresponding leaf contract.
+Caller summaries use a closed inventory of emitted game modules; external
+JavaScript consumers are outside this scope. Helper summaries stop after
+three calls; callback invokers,
+relational attack-table facts, late scalar clamps and general side-effecting
+expression order are not modeled. Unknown calls can therefore leave a safe
+site unproved.
+
+There are 339 sites with unproved upper bounds. Native caller overflow and
+exact Number arithmetic are not established by a lower-bound label. The
+`write.ts` division remains unproved: C divides integers, while the emitted
+code divides Numbers; current ink costs are even, but that parity relation is
+not modeled. Zero-width C modulo is undefined behavior in the released
+recorder, rather than an ordinary draw with a well-defined result. Negative
+widths consume a C draw while the JS wrapper returns zero without drawing.
+No corpus was run by this unit; earlier corpus observations do not discharge
+any of these proof obligations.
 
 ## Staged plan
 
@@ -373,10 +444,12 @@ nearly all because their inputs have no stated maximum.
    command includes twenty leaf claims and eight ISAAC64 claims, with domain probes,
    shift/mask/index mutants, and a compiled-C/Node cross-check. Caller state
    correspondence and context routing remain outside these proofs.
-4. **Call-site domains (prototype done; see above).** Room, `nroom`, and
-   data-table invariants are in. Next: a CI check that new call sites land in
-   the proved classes, and the residual "may be empty" collections, which need
-   a non-emptiness fact from the caller.
+4. **Call-site domains (emitted-source prototype strengthened).** Stable
+   guards, inductive scalar bounds, constant table/name arithmetic, per-site
+   JS mutants and a native residual audit are in. CI/ledger integration belongs
+   to the separate `fv-ci` unit. Next: collection ownership/non-emptiness,
+   relational permonst/object data facts, callback invoker bounds, and upper
+   arithmetic obligations. The 237 residual sites remain unproved.
 5. **Differential fuzzing of stateful functions (2–3 weeks).** Drive single C
    functions in the probe build and their TS ports from serialized state, with
    coverage guidance, for code where a state model is not worth writing.
