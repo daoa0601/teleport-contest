@@ -241,7 +241,7 @@ const EFFECTS: Record<string, readonly [string, RegExp][]> = {
     'boulder-giant-lift': [['giant maneuvers', /However, you (?:easily pick it up|maneuver over it)/]],
     'boulder-plug-hole': [['hole plugged', /plugs a hole/]],
     'boulder-mine-blast': [['mine explodes', /KAABLAMM|Gadzooks/]],
-    'oracle-minor': [['minor consultation', /(?:oracle|Oracle meditates)/]],
+    'oracle-minor': [['minor consultation', /True to her word, the Oracle (?:\w+ )?says:/]],
     'oracle-major': [['major consultation', /(?:meditates for a moment|scornfully takes)/]],
     'medusa-gaze-reflection': [['gaze reflection', /gaze is reflected|is turned to stone/]],
     'throne-gold-sit': [['gold removed', /You notice you have no gold!/]],
