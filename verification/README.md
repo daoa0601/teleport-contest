@@ -211,7 +211,7 @@ The new claims require both a concrete failing domain probe and a concrete
 killed mutant. No game code or corpora were changed.
 
 Run the language, solver-isolation and command-selection tests
-(51 tests; no game sessions):
+(57 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
@@ -219,7 +219,7 @@ NETHACK_RECORDER=/path/to/nethack-c/recorder uv run python -m unittest -v \
   test_executors test_queries test_proof_selection
 ```
 
-The post-rebase run passed all 51 tests in 11.050 s. They check table reads and
+The review-fix run passed all 57 tests in 9.894 s. They check table reads and
 bounds, nested global state and attribute arrays,
 switch fallthrough/break/return behavior, C signed and unsigned bit operations,
 JS 32-bit coercion, imports, defaults, scopes, libc assertions, signed division safety and rejected constructs. C table
@@ -227,6 +227,18 @@ values come from clang initializers. JS constant arrays are read from emitted
 modules; this assumes the fields read still have their initial values. The
 game-table claims include native record and attack fields. Writable heap state
 is not modeled; movement's initializer performs no writes in its entry domain.
+
+Pointer member reads from global state require a pointer declared through
+`references` or a `CPtr` in `c_globals`; declaring only a flattened pointee
+field does not establish a non-null pointer. The new rejection test failed
+before the guard was restored for both global and nested pointers, and passes
+after it.
+
+Selection tests use real C/JS snippets and assert exit status only: selected
+body mismatches, probes that incorrectly prove and surviving mutants fail the
+command; excluded runtime classes do not run those checks. Report text is
+used only for failure diagnostics.
+
 CI checks the complete ledger metadata, then proves the selected runtime class:
 
 ```sh
@@ -306,11 +318,11 @@ claim does not establish it; its domains and negative checks are unchanged.
 See `docs/formal-verification.md` for measured times and profiling limits.
 
 The final full command exited 0 with all 33 claims, 37 domain probes and 41
-mutant checks in 704.00 s. The final `--skip-slow` run exited 0 with 31 claims,
-34 probes and 39 mutant checks in 95.36 s. Table proof times were 429.3 s for
-experience and 178.3 s for movement; both remain above the 120-second target.
+mutant checks in 712.07 s. The final `--skip-slow` run exited 0 with 31 claims,
+34 probes and 39 mutant checks in 97.57 s. Table proof times were 432.7 s for
+experience and 179.5 s for movement; both remain above the 120-second target.
 The separate `--slow-only --check-ledger` job command passed both claims, three
-probes and two mutants in 582.70 s. The 33-row ledger was generated only after
+probes and two mutants in 584.16 s. The 33-row ledger was generated only after
 a complete `--write-ledger` run succeeded.
 
 Both executor families use `core.bit_operation`; their C-width, JS Number
@@ -338,7 +350,7 @@ The two target-selection regression tests give the frozen and emitted copies
 different behavior. Both entry points must accept the healthy frozen adapter
 when the emitted copy differs, and reject a divergent frozen adapter when the
 emitted copy is healthy. They failed before the target correction and pass
-after it (two tests in 6.267 s on this post-rebase run):
+after it (two tests in 6.541 s on this review-fix run):
 
 ```sh
 cd verification/equivalence
@@ -373,7 +385,7 @@ adds two constant sites to the earlier 2,481-site audit; its checked ledger
 still has zero regressions. Thirty-six previously
 unproved sites classify successfully. Fifty-three old classifications were
 withdrawn, and 133 additional emitted calls are now included. Extraction took
-115.05 s and both classifier passes with ledger enforcement took 3.89 s on
+115.51 s and both classifier passes with ledger enforcement took 4.08 s on
 the shared machine.
 [`callsites/review.md`](callsites/review.md) records counts by group, native
 sources, limits and all 28 equivalence timings;
@@ -438,7 +450,7 @@ change.
 
 Clang reads system headers through `hack.h`; those headers remain part of the
 C input. A local Ubuntu 24.04 arm64 container using glibc headers proved
-`acurr:all` in 5.7 s and `abon:forms` in 48.9 s, including their probes and
+`acurr:all` in 5.6 s and `abon:forms` in 49.2 s, including their probes and
 mutants. This checks Linux header handling; it is not a hosted Ubuntu x86-64
 measurement. The assertions are also exercised in explicit libc-form tests.
 

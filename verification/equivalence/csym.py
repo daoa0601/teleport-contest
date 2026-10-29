@@ -505,6 +505,8 @@ class CExec:
         if k == 'MemberExpr':
             out = []
             for p, base in self.eval(path, n['inner'][0]):
+                if isinstance(base, CState) and n.get('isArrow'):
+                    raise Unsupported('C pointer member access without modeled reference')
                 if isinstance(base, CPtr) and n.get('isArrow'):
                     self.m.oblige(p, self.truth(base), 'C null pointer dereference', self.where(n))
                     if isinstance(base.key, CElement):

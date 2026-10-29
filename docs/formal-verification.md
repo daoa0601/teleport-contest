@@ -63,36 +63,36 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 
 | Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
 |---|---|---|---|---|
-| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.2 s |
+| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.3 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
-| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.7 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 1.6 s |
+| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 1.1 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 1.5 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.4 s |
 | `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 0.7 s |
-| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 2.5 s |
+| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 2.4 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
-| `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 4×1 | 0.1 s |
+| `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 4×1 | 0.2 s |
 | `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 0.4 s |
-| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 4×4 | 2.3 s |
+| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 4×4 | 3.5 s |
 | `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 0.8 s |
 | `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.2 s |
-| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.5 s |
-| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.8 s |
-| `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.1 s |
-| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 4×2 | 1.1 s |
-| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.4 s |
-| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 8×8 | 0.6 s |
-| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 24×17 | 2.1 s |
-| `acurr:all` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 5.7 s |
+| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.4 s |
+| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.7 s |
+| `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.0 s |
+| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 4×2 | 0.9 s |
+| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.3 s |
+| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 8×8 | 0.5 s |
+| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 24×17 | 2.0 s |
+| `acurr:all` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 5.9 s |
 | `dbon:all` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | corresponding arrays/items; human and polymorphed forms | 8×8 | 0.3 s |
-| `abon:forms` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 42.8 s |
-| `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 429.3 s |
-| `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `monster_speed.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 178.3 s |
+| `abon:forms` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 44.2 s |
+| `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 432.7 s |
+| `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `monster_speed.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 179.5 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
 | `isaac64_update` | `isaac64.c:isaac64_update` ↔ frozen same name | 256 initialized words in m/r; arbitrary uint64 a/b/c | Two loop invariants cover all 256 updates | 0.4 s |
-| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 4.1 s |
+| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 4.9 s |
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
 | `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
@@ -118,19 +118,19 @@ each path pair; the experience mutant then produced a concrete C 135 / JS 136
 witness in 3.25 s. Equivalence proofs retain the grouped table query. A
 regression test covers both branches and a mismatch in a later partition.
 
-The final full command exited 0 in **704.00 s**, with all **33 claims**, **37
+The final full command exited 0 in **712.07 s**, with all **33 claims**, **37
 domain probes**, and **41 mutant checks** behaving as specified. Of the mutant
 checks, 39 have concrete counterexamples, one is the retained unsupported
 shadowing-language rejection, and one is proved equivalent. The full table
 above reports that run's per-claim times, excluding probes and mutants.
-Experience took **429.3 s** (previously 1212.9 s); movement took **178.3 s**
+Experience took **432.7 s** (previously 1212.9 s); movement took **179.5 s**
 (previously 341.8 s). Neither met the approximately 120-second target, so both
-remain `slow`. The final fast command exited 0 in **95.36 s**, proving 31 claims
+remain `slow`. The final fast command exited 0 in **97.57 s**, proving 31 claims
 with 34 domain probes and 39 mutant checks, while explicitly skipping both
 slow claims. `npm run compile` passed. No game tests or corpora were run; no game source
 was changed. The separate `--slow-only --check-ledger` command passed both
-slow claims, three domain probes and two mutants in **582.70 s** (experience
-403.1 s; movement 178.5 s). The ledger was generated with `--write-ledger` after
+slow claims, three domain probes and two mutants in **584.16 s** (experience
+404.2 s; movement 179.0 s). The ledger was generated with `--write-ledger` after
 a complete 33-claim run, then checked in all three selection modes.
 
 The byte-seed relation comes from `isaac64.h`: C reads unsigned bytes and
@@ -269,7 +269,7 @@ callers. `enermod` is called with a small level-energy increment from
 **Concrete generator cross-check.** With `NETHACK_RECORDER` set, run
 `cd verification/equivalence && uv run ../isaac64/crosscheck.py`. A tiny
 harness compiles the real `isaac64.c`; Node imports `frozen/isaac64.js` directly.
-The run passed 17 cases and 17,000 draws in 1.89 s: seven uint64 seeds,
+The run passed 17 cases and 17,000 draws in 2.14 s: seven uint64 seeds,
 seven byte lengths including zero, partial words, 2048, and over-cap, plus
 three midstream reseeds. Each case checks 1,000 numeric outputs and stops at
 the first mismatch. This is a concrete cross-check, not the universal proof.
@@ -277,9 +277,9 @@ Two target-selection regression tests exercise both verification entry points
 with intentionally disagreeing frozen/emitted copies. A healthy frozen copy
 must pass even when the emitted copy differs; a divergent frozen copy must
 fail even when the emitted copy is healthy. Both tests failed before the
-target correction and pass after it, including the rerun after this rebase
-(two tests in 6.267 s). The 51 language, solver and selection tests also
-passed after the rebase in 11.050 s. Run them with
+target correction and pass after it, including the review-fix rerun
+(two tests in 6.541 s). The 57 language, solver and selection tests also
+passed after the review fix in 9.894 s. Run them with
 `uv run python ../isaac64/test_scoring_target.py` from `verification/equivalence`.
 
 **Divergences found outside the earlier numeric domains.** These boundaries
@@ -334,8 +334,18 @@ that a negative `rounddiv` denominator can be reached through a debug option:
   in their defining module. Module table reads assume their initial values
   have not been mutated. The two new game-table claims assume the native and
   emitted fields still have their initial values, including Erinys.
-  The 46 language tests cover these operations and rejection boundaries using
+  The 47 language tests cover these operations and rejection boundaries using
   small C and JS programs, rather than copies of game functions.
+- C pointer access in global state requires an explicit `references` entry
+  or `CPtr` in `c_globals`. A flattened state field such as `worn.value` models
+  only the pointee field; it cannot establish a non-null `worn`. The executor
+  rejects `->` on such a state aggregate. Both global and nested pointer
+  regression cases incorrectly proved before this review fix and reject
+  after it. Modeled nullable pointers retain null-dereference obligations.
+- Proof-selection tests assert exit status, with report text used only for
+  failure diagnostics. Real C/JS snippets check that selected body mismatches,
+  probes that incorrectly prove and surviving mutants fail, while
+  excluded runtime classes skip their bodies and negative checks.
 - Leaf and ISAAC64 executors use `core.bit_operation` for bit-vector operations. The
   leaf executor keeps C's promoted widths and JS Number coercions; the ISAAC64
   executor chooses widths large enough for exact BigInt intermediates before
@@ -518,7 +528,7 @@ The final fv-leaves2 integration check contains 2,483 sites: 2,090 constant,
 106 guarded, 50 invariant and 237 unproved. The two additions are constant
 sites. Checking this inventory against the 2,481-site ledger reported zero
 regressions; new proved sites are allowed by that ledger contract. Extraction
-took 115.05 s and ledger checking took 3.89 s. The historical comparison below
+took 115.51 s and ledger checking took 4.08 s. The historical comparison below
 is the fv-callsites audit baseline.
 
 The post-rebase extraction took 108.90 s; both lower and upper checks with
@@ -596,15 +606,15 @@ no C/JS table-equivalence theorem is added.
 Nested RNG result bounds are conditional on that draw's own domain; an invalid
 nested draw cannot create contradictory facts and prove an enclosing call.
 Nonzero divisors are obligations, not assumptions. Ten analyzer tests passed
-in 1.369 s, including concrete invalid-domain probes, stale snapshots,
+in 1.412 s, including concrete invalid-domain probes, stale snapshots,
 mutating callbacks, shadowed bindings, destructuring, builtin shadowing,
 ordered increment reads, and nine independent emitted-JS mutants.
 
 A second pass mutates emitted RNG arguments in memory, preserving nested
 calls. Widths become zero; dice counts become negative; `rnz` receives an
 out-of-bound upper argument. It changes no game files. The gate must reject
-every previously classified site. The post-rebase mutant extraction took
-117.29 s; its gate killed 2,245 mutants with zero failures in 7.14 s. Both
+every previously classified site. The review-fix mutant extraction took
+122.06 s; its gate killed 2,245 mutants with zero failures in 7.08 s. Both
 passes still operate on emitted JavaScript.
 
 ```sh
@@ -682,16 +692,16 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
    Both jobs prepare recorder-patched C/Lua headers using Linux build rules and
    compile the port. The fast job runs all verification test commands and
    call-site gates. Hosted results are not yet observed for this change.
-   Local Ubuntu 24.04 arm64/glibc proofs passed for `acurr:all` (5.7 s) and
-   `abon:forms` (48.9 s), including probes and mutants. This exercises Linux
+   Local Ubuntu 24.04 arm64/glibc proofs passed for `acurr:all` (5.6 s) and
+   `abon:forms` (49.2 s), including probes and mutants. This exercises Linux
    headers and assertion expansion; hosted runners may have different clang
    and header versions. The native scoring recorder still uses macOS.
-   Local gates passed: 51 executor/query/selection tests (11.050 s), 37 ledger
-   CLI tests (100.248 s), two target tests (6.267 s), ten analyzer tests
-   (1.369 s), and all 17,000 generator cross-check draws (1.89 s). Healthy
-   extraction took 115.05 s and its ledger check took 3.89 s with zero
-   regressions. Mutant extraction took 117.29 s; all 2,245 classified-site
-   mutants were killed with zero failures in 7.14 s. The full, fast and
+   Local gates passed: 57 executor/query/selection tests (9.894 s), 37 ledger
+   CLI tests (101.317 s), two target tests (6.541 s), ten analyzer tests
+   (1.412 s), and all 17,000 generator cross-check draws (2.14 s). Healthy
+   extraction took 115.51 s and its ledger check took 4.08 s with zero
+   regressions. Mutant extraction took 122.06 s; all 2,245 classified-site
+   mutants were killed with zero failures in 7.08 s. The full, fast and
    slow-only proof commands all checked the generated 33-row ledger. Ledger
    tests assert exit status; reports are failure diagnostics only.
 2. **Read-only state and more leaves (scoped claims done).** All six

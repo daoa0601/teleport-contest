@@ -296,6 +296,19 @@ class ExecutorTests(unittest.TestCase):
             state=[('worn.value', INT, 'game.worn.value')],
             references=[('worn', ('game.worn',))], reason='C null pointer dereference')
 
+    def test_pointer_fields_require_an_explicit_pointer_model(self):
+        for declaration, pointer in (
+            ('struct item *worn;', 'worn'),
+            ('struct holder { struct item *worn; } hero;', 'hero.worn'),
+        ):
+            with self.subTest(pointer=pointer):
+                proved, report = self.compare(
+                    'struct item { int value; }; ' + declaration
+                    + f'int example(void) {{ return {pointer}->value; }}',
+                    'function example() { return game.worn.value; }',
+                    state=[(pointer + '.value', INT, 'game.worn.value')])
+                self.assertFalse(proved, report)
+
     def test_record_table_fields_and_nested_attack_arrays(self):
         self.equivalent(
             'struct attack { unsigned char damage; }; '
