@@ -2831,24 +2831,43 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
         'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
 }
 
-// options.c:toggle_bool_option()'s allopt order: the request-menu list plus
-// idlecheckpoint (set_in_game, uncompiled) behind ignintr.
+// The window-capability booleans toggle_bool_option() accepts even though
+// the doset() menus drop them for the tty port (options.c:9283 has no
+// wc_supported() filter). Field names and tty defaults from optlist.h:
+// ascii_map defaults On (no TILES_IN_GLYPHMAP), guicolor is opt_out On.
+type WcBooleanField = 'wc_ascii_map' | 'wc2_guicolor' | 'perm_invent'
+    | 'wc_popup_dialog' | 'wc_tiled_map' | 'wc2_wraptext';
+const TOGGLE_WC_BOOLEANS: readonly (readonly [name: string, field: WcBooleanField, initial: boolean])[] = [
+    ['ascii_map', 'wc_ascii_map', true],
+    ['guicolor', 'wc2_guicolor', true],
+    ['perm_invent', 'perm_invent', false],
+    ['popup_dialog', 'wc_popup_dialog', false],
+    ['tiled_map', 'wc_tiled_map', false],
+    ['wraptext', 'wc2_wraptext', false],
+];
+
+// options.c:toggle_bool_option()'s allopt walk: every set_in_game boolean
+// in allopt order (idlecheckpoint inserted behind ignintr; the six
+// window-capability booleans merged in), minus the set_wizonly entries
+// menu_tab_sep and montelecontrol.
 const TOGGLE_BOOLEAN_NAMES: readonly string[] = (() => {
     const names: string[] = [...REQUEST_MENU_BOOLEAN_OPTIONS.map(entry => entry[0])];
     names.splice(names.indexOf('ignintr') + 1, 0, 'idlecheckpoint');
+    names.push(...TOGGLE_WC_BOOLEANS.map(entry => entry[0]));
+    names.sort((left, right) => left.toLowerCase() < right.toLowerCase() ? -1
+        : left.toLowerCase() > right.toLowerCase() ? 1 : 0);
     return names;
 })();
 
 // options.c:toggle_bool_option() behind #toggle(<prefix>): every set_in_game
 // boolean whose name starts with the text is toggled through the ordinary
-// option path (messages included; give_opt_msg is TRUE at command level),
-// with the menu's visual refresh after each one. menu_tab_sep and
-// montelecontrol are set_wizonly in optlist.h, so toggle_bool_option()
-// never accepts them; optfn_boolean() reports the uncompiled idlecheckpoint
-// while silencing the later toggle messages.
+// option path, with the menu's visual refresh after each one. give_opt_msg
+// is the file static options.c carries across commands: once
+// idlecheckpoint (or the options menu) has silenced it, later toggles print
+// nothing until doset_simple() resets it.
 export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean> {
     let toggled = false;
-    let giveMessages = true;
+    let giveMessages = game.iflags.optionMessages !== false;
     for (const name of TOGGLE_BOOLEAN_NAMES) {
         if (!ciPrefixOf(name, prefix)) continue;
         if (name === 'menu_tab_sep' || name === 'montelecontrol') continue;
@@ -2856,6 +2875,15 @@ export async function toggleBooleanOptionPrefix(prefix: string): Promise<boolean
             await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
             game.iflags.optionMessages = false;
             giveMessages = false;
+            toggled = true;
+            continue;
+        }
+        const wcBoolean = TOGGLE_WC_BOOLEANS.find(entry => entry[0] === name);
+        if (wcBoolean) {
+            const value = !(game.iflags[wcBoolean[1]] ?? wcBoolean[2]);
+            game.iflags[wcBoolean[1]] = value;
+            if (giveMessages)
+                await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
             toggled = true;
             continue;
         }
@@ -2941,6 +2969,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'autopickup_exceptions') await editAutopickupExceptions();
     else if (name === 'menu_colors') await editMenuColors();
+    else if (name === 'menu_headings') await editMenuHeadings();
     // OthrOpt handlers: options.c o_status_hilites and o_bind_keys do_handler.
     else if (name === 'status_highlights') await statusHiliteMenu();
     else if (name === 'bind_keys') await handlerRebindKeys();

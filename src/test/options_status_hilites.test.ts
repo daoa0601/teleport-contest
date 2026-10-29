@@ -309,16 +309,196 @@ void test('toggle with a parameter flips every matching boolean', async () => {
     assert.equal(game.flags.verbose, true);
 });
 
-void test('the full options menu offers perm_invent but cannot enable it', async () => {
+void test('the full options menu omits the unsupported perm_invent row', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openFullMenu();
     await input.waitUntilBlocked();
     input.feed('O');
-    await runScript(input, command, [
-        { at: / - /, pick: /perm_invent\s+\[off\]/ },
-        // Confirming the selection is a silent no-op and the pass ends.
-        { at: /perm_invent/, keys: '\n' },
+    // No steps: page the whole menu until it closes.
+    const { views } = await runScript(input, command, []);
+    assert.ok(views.length > 12, 'The full options menu was paged through');
+    // perm_invent is a window-capability option the tty port does not
+    // support (TTY_PERM_INVENT is off), so doset() never lists it.
+    assert.ok(views.every(view => !/perm_invent/.test(view)),
+        `perm_invent must not be offered: ${views.find(view => /perm_invent/.test(view))}`);
+});
+
+void test('the hilite field table follows initblstats order, not the enum', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openSimpleMenu();
+    const { views } = await runScript(input, command, [
+        { at: /status highlight rules/, pick: /status highlight rules/ },
+        // initblstats runs condition, version, weapon, armor, terrain; the
+        // "version" row carries enum BL_VERS, so menu_fld(26) reads the
+        // table's terrain row.
+        { at: / - (?:title|strength|dexterity|constitution|condition|version|weapon|armor|terrain)/, pick: /^version\s*$/ },
+        { at: /Select terrain field hilite behavior:/, keys: '\x1b' },
+        { at: /Status hilites:/, keys: '\x1b' },
+        { at: /Options/, keys: '\x1b' },
     ]);
-    assert.doesNotMatch(messages(), /perm_invent/);
+    const fieldPage = views.find(view => / - condition/.test(view));
+    assert.ok(fieldPage, 'The field list paged to the last five fields');
+    assert.ok(fieldPage.indexOf('version') < fieldPage.indexOf('weapon'),
+        'initblstats lists version before weapon');
+    assert.ok(views.some(view => /Select terrain field hilite behavior:/.test(view)),
+        'The version row opens the terrain behavior menu');
+});
+
+void test("a sixth bad value is still prompted; the seventh draws the line", async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openSimpleMenu();
+    const { views, prose } = await runScript(input, command, [
+        { at: /status highlight rules/, pick: /status highlight rules/ },
+        { at: /Status hilites:/, pick: /^strength\s*$/ },
+        { at: /Select strength field hilite behavior:/, pick: /Number threshold/ },
+        { at: /Enter value for strength threshold:/, keys: 'abc\n' },
+        { at: /Enter value for strength threshold:/, keys: 'abc\n' },
+        { at: /Enter value for strength threshold:/, keys: 'abc\n' },
+        { at: /Enter value for strength threshold:/, keys: 'abc\n' },
+        { at: /Enter value for strength threshold:/, keys: 'abc\n' },
+        { at: /Enter value for strength threshold:/, keys: 'abc\n' },
+        { at: /Status hilites:/, keys: '\x1b' },
+        { at: /Options/, keys: '\x1b' },
+    ]);
+    const transcript = `${messages()}\n${views.join('\n')}\n${prose.join('\n')}`;
+    assert.match(transcript, /"abc" is not a recognized number\./);
+    assert.match(transcript, /That's enough tries\./);
+    // Six submissions drew six fresh prompts; the seventh was refused
+    // before prompting again.
+    const prompts = views.filter(view =>
+        /^Enter value for strength threshold:\s*$/.test(view.split('\n')[0] ?? '')).length;
+    assert.equal(prompts, 6);
+});
+
+void test('a condition rule the gather skips leaves "No current hilites"', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openSimpleMenu();
+    const { views, prose } = await runScript(input, command, [
+        { at: /status highlight rules/, pick: /status highlight rules/ },
+        { at: / - (?:title|strength|dexterity|constitution|condition|version|weapon|armor|terrain)/, pick: /^condition\s*$/ },
+        { at: / - /, pick: /^Blind$/ },
+        { at: / - /, keys: '\n' },
+        // Accept the preselected "no color" and "none": the stored rule has
+        // no visible color or attribute, so the gather drops it again.
+        { at: /Choose a color for conditions Blind:/, keys: '\n' },
+        { at: /Choose attribute for conditions Blind:/, keys: '\n' },
+        { at: /Current condition hilites:/, keys: '\x1b' },
+        { at: /Status hilites:/, keys: '\x1b' },
+        { at: /Options/, keys: '\x1b' },
+    ]);
+    assert.match(`${messages()}\n${prose.join('\n')}`,
+        /Added hilite condition\/Blind\/no-color&normal/);
+    const empty = views.find(view => /Current condition hilites:/.test(view));
+    assert.ok(empty);
+    assert.match(empty, /No current hilites for condition/);
+    assert.doesNotMatch(empty, /Remove selected hilites/);
+    assert.match(empty, /Add new hilites/);
+    // The invisible rule does not enable highlighting.
+    assert.equal(game.iflags.hiliteDelta, undefined);
+});
+
+void test('toggle skips wizard-only booleans and reports uncompiled idlecheckpoint', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+
+    // menu_tab_sep and montelecontrol are set_wizonly: no match at all.
+    assert.equal(await toggleBooleanOptionPrefix('menu_tab_s'), false);
+    assert.equal(await toggleBooleanOptionPrefix('montele'), false);
+    assert.doesNotMatch(messages(), /option toggled/);
+
+    // idlecheckpoint is set_in_game but uncompiled: the complaint, and the
+    // option messages go quiet for the rest of the command.
+    assert.equal(await toggleBooleanOptionPrefix('idle'), true);
+    assert.match(messages(), /There is no underlying support for 'idlecheckpoint' compiled in\./);
+    assert.equal(game.iflags.optionMessages, false);
+});
+
+void test('the full menu still edits menu_headings through its handler', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openFullMenu();
+    await input.waitUntilBlocked();
+    input.feed('O');
+    const { views } = await runScript(input, command, [
+        { at: / - /, pick: /^menu_headings\s+/ },
+        { at: /menu_headings/, keys: '\n' },
+        { at: /How to highlight menu headings:/, pick: /^red$/ },
+        { at: /How to highlight menu headings:/, pick: /^bold$/ },
+    ]);
+    assert.ok(views.some(view => /How to highlight menu headings:/.test(view)),
+        'The menu_headings row opens its color and attribute prompts');
+    assert.deepEqual(game.iflags.menu_headings, { attr: 1, color: 1 });
+});
+
+void test('a silenced option-message flag quiets later toggles', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    requirePlayingGame(game);
+
+    // An earlier command (or full-menu idlecheckpoint pick) left
+    // give_opt_msg FALSE; #toggle flips quietly until 'O' resets it.
+    game.iflags.optionMessages = false;
+    assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
+    assert.equal(game.flags.verbose, false);
+    assert.doesNotMatch(messages(), /option toggled/);
+
+    // The simple options menu resets the flag on exit.
+    const [input, command] = openSimpleMenu();
+    input.feed('\x1b');
+    await command;
+    assert.equal(game.iflags.optionMessages, true);
+    assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
+    assert.match(messages(), /'verbose' option toggled on\./);
+});
+
+void test('#toggle also flips the window-capability booleans', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    // Direct calls page their own toggle messages; acknowledge them.
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    try {
+        // optlist.h: popup_dialog and wraptext default off, ascii_map on.
+        assert.equal(await toggleBooleanOptionPrefix('popup'), true);
+        assert.equal(game.iflags.wc_popup_dialog, true);
+        assert.match(messages(), /'popup_dialog' option toggled on\./);
+        assert.equal(await toggleBooleanOptionPrefix('wraptext'), true);
+        assert.equal(game.iflags.wc2_wraptext, true);
+        assert.match(messages(), /'wraptext' option toggled on\./);
+        assert.equal(await toggleBooleanOptionPrefix('ascii_map'), true);
+        assert.equal(game.iflags.wc_ascii_map, false);
+        assert.match(messages(), /'ascii_map' option toggled off\./);
+
+        // Null-address and set_gameview entries never match.
+        assert.equal(await toggleBooleanOptionPrefix('showscore'), false);
+        assert.equal(await toggleBooleanOptionPrefix('voices'), false);
+    } finally {
+        input.beforeRead = null;
+    }
+});
+
+void test('typed leading blanks survive into the threshold value rows', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openSimpleMenu();
+    const { views } = await runScript(input, command, [
+        { at: /status highlight rules/, pick: /status highlight rules/ },
+        { at: /Status hilites:/, pick: /^hitpoints\s*$/ },
+        { at: /Select hitpoints field hilite behavior:/, pick: /Number threshold/ },
+        { at: /Enter value for hitpoints threshold:/, keys: '  50\n' },
+        { at: /Select field hitpoints value:/, keys: '\x1b' },
+        // Cancelling the value menu re-prompts; an empty answer leaves.
+        { at: /Enter value for hitpoints threshold:/, keys: '\x1b' },
+        { at: /Select hitpoints field hilite behavior:/, keys: '\x1b' },
+        { at: /Status hilites:/, keys: '\x1b' },
+        { at: /Options/, keys: '\x1b' },
+    ]);
+    // trimspaces() skips the blanks in place; inbuf keeps them, so the
+    // "Exactly …" row shows them.
+    assert.ok(views.some(view => /Select field hitpoints value:/.test(view)
+        && /Exactly {3}50/.test(view) && /Less than {3}50/.test(view)),
+        'The value rows keep the typed leading blanks');
 });

@@ -373,4 +373,82 @@ void test('toggle skips wizard-only booleans and reports uncompiled idlecheckpoi
     assert.match(messages(), /There is no underlying support for 'idlecheckpoint' compiled in\./);
     assert.equal(game.iflags.optionMessages, false);
 });
+void test('the full menu still edits menu_headings through its handler', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openFullMenu();
+    await input.waitUntilBlocked();
+    input.feed('O');
+    const { views } = await runScript(input, command, [
+        { at: / - /, pick: /^menu_headings\s+/ },
+        { at: /menu_headings/, keys: '\n' },
+        { at: /How to highlight menu headings:/, pick: /^red$/ },
+        { at: /How to highlight menu headings:/, pick: /^bold$/ },
+    ]);
+    assert.ok(views.some(view => /How to highlight menu headings:/.test(view)), 'The menu_headings row opens its color and attribute prompts');
+    assert.deepEqual(game.iflags.menu_headings, { attr: 1, color: 1 });
+});
+void test('a silenced option-message flag quiets later toggles', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    requirePlayingGame(game);
+    // An earlier command (or full-menu idlecheckpoint pick) left
+    // give_opt_msg FALSE; #toggle flips quietly until 'O' resets it.
+    game.iflags.optionMessages = false;
+    assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
+    assert.equal(game.flags.verbose, false);
+    assert.doesNotMatch(messages(), /option toggled/);
+    // The simple options menu resets the flag on exit.
+    const [input, command] = openSimpleMenu();
+    input.feed('\x1b');
+    await command;
+    assert.equal(game.iflags.optionMessages, true);
+    assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
+    assert.match(messages(), /'verbose' option toggled on\./);
+});
+void test('#toggle also flips the window-capability booleans', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    // Direct calls page their own toggle messages; acknowledge them.
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    try {
+        // optlist.h: popup_dialog and wraptext default off, ascii_map on.
+        assert.equal(await toggleBooleanOptionPrefix('popup'), true);
+        assert.equal(game.iflags.wc_popup_dialog, true);
+        assert.match(messages(), /'popup_dialog' option toggled on\./);
+        assert.equal(await toggleBooleanOptionPrefix('wraptext'), true);
+        assert.equal(game.iflags.wc2_wraptext, true);
+        assert.match(messages(), /'wraptext' option toggled on\./);
+        assert.equal(await toggleBooleanOptionPrefix('ascii_map'), true);
+        assert.equal(game.iflags.wc_ascii_map, false);
+        assert.match(messages(), /'ascii_map' option toggled off\./);
+        // Null-address and set_gameview entries never match.
+        assert.equal(await toggleBooleanOptionPrefix('showscore'), false);
+        assert.equal(await toggleBooleanOptionPrefix('voices'), false);
+    }
+    finally {
+        input.beforeRead = null;
+    }
+});
+void test('typed leading blanks survive into the threshold value rows', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const [input, command] = openSimpleMenu();
+    const { views } = await runScript(input, command, [
+        { at: /status highlight rules/, pick: /status highlight rules/ },
+        { at: /Status hilites:/, pick: /^hitpoints\s*$/ },
+        { at: /Select hitpoints field hilite behavior:/, pick: /Number threshold/ },
+        { at: /Enter value for hitpoints threshold:/, keys: '  50\n' },
+        { at: /Select field hitpoints value:/, keys: '\x1b' },
+        // Cancelling the value menu re-prompts; an empty answer leaves.
+        { at: /Enter value for hitpoints threshold:/, keys: '\x1b' },
+        { at: /Select hitpoints field hilite behavior:/, keys: '\x1b' },
+        { at: /Status hilites:/, keys: '\x1b' },
+        { at: /Options/, keys: '\x1b' },
+    ]);
+    // trimspaces() skips the blanks in place; inbuf keeps them, so the
+    // "Exactly …" row shows them.
+    assert.ok(views.some(view => /Select field hitpoints value:/.test(view)
+        && /Exactly {3}50/.test(view) && /Less than {3}50/.test(view)), 'The value rows keep the typed leading blanks');
+});
 //# sourceMappingURL=options_status_hilites.test.js.map

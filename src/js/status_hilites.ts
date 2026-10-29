@@ -436,15 +436,22 @@ async function statusHiliteMenuAdd(origfld: number): Promise<boolean> {
                         `Enter ${percent ? 'percentage ' : ''}value for ${field.name} threshold:`,
                         printable);
                     if (answer === null || answer.trim() === '') continue chooseBehavior;
-                    // C walks and mangles the response buffer in place.
-                    const chars = [...answer.trim()];
-                    let position = 0;
-                    let numstart = 0;
+                    // C walks and mangles the response buffer in place;
+                    // trimspaces() only skips the leading blanks in it, so
+                    // they stay in the buffer and reach the value rows.
+                    const raw = [...answer];
+                    let start = 0;
+                    let cut = raw.length;
+                    while (/\s/.test(raw[start] ?? '')) start++;
+                    while (cut > start && /\s/.test(raw[cut - 1] ?? '')) cut--;
+                    const chars = raw.slice(0, cut);
+                    let position = start;
+                    let numstart = start;
                     let gotnum = false;
                     ltGtEq = NO_LTEQGT;
-                    const first = chars[0];
+                    const first = chars[start];
                     if (first === '>' || first === '<' || first === '=') {
-                        const second = chars[1];
+                        const second = chars[start + 1];
                         ltGtEq = first === '>' ? (second === '=' ? GE_VALUE : GT_VALUE)
                             : first === '<' ? (second === '=' ? LE_VALUE : LT_VALUE)
                             : EQ_VALUE;
