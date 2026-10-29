@@ -458,13 +458,12 @@ clang and lists what the port lacks. It does this without playing a game, and
 its output feeds the existing audits, tests, ledgers and proofs. At this
 commit:
 
-- **messages**: 217 of 4,118 printed C messages are absent verbatim (183 in
-  gameplay files); 154 have no near match. Real clusters: `#exploremode`
-  (`enter_explore_mode`), key rebinding and status-hilite menus, double
-  rush/run prefixes, monster door messages in `postmov()`, monster escapes
-  and digging in `use_defensive()`, `wildmiss()` displaced-image misses,
-  `doseduce()` ring placement, `passivemm()`/`passiveum()` minor effects,
-  `dohide()` refusals, and `really_kick_object()` refusals.
+- **messages**: no unreviewed gameplay messages or other gameplay text
+  remain. Across all files, 34 of 4,119 printed literals and 363 of 3,607
+  other-text literals remain unreviewed; all are infrastructure text.
+  `c-messages-reviewed.tsv` holds 625 verdicts: 173 composed, 361 diagnostic,
+  50 out of scope and 41 dead. Source citations identify composed text and
+  explain each native exclusion.
 - **constants**: 2,009 port constants share a C name and 2,006 match. The
   57 differing values were triaged: each was compared only within the port's
   own encoding, so none changed play. They now take the C values, and the
@@ -498,10 +497,56 @@ commit:
 Ledgers `docs/ledger/c-{messages,constants,edges}.tsv` are checked by the
 `static-gaps` CI job. The busiest functions turned up no common-play gaps,
 so the remaining missing edges sit mostly in code the corpus rarely runs.
-Use them as audit checklists alongside the 154 no-match messages, and give
-each finding a native recipe. Next measurement change: widen the state
+Use the remaining edges and unexecuted branches as audit checklists, and
+give each finding a native recipe. Next measurement change: widen the state
 digest (`mtame` values, `mundetected`, traps, timers), with `MEASUREMENT_HASH`
 approved out of band.
+
+### Gameplay text audit
+
+The 396 supplied other-text rows, including three repeated rows, resolve to
+64 composed, 260 diagnostic, 47 out of scope, 18 dead and 7 missing literals
+now ported. The gameplay other-text count fell from 549 to 0. The audit adds
+481 review keys and retains every previous ledger entry. Composed citations were
+checked against port text and callers. Save-field labels and malformed-Lua
+errors are diagnostics; the port does execute Lua. Both local-support
+variants of `pager.c:docontact()` are dead with SUPPORT unset and WIZARDS=*.
+The coordinate hints in `getpos_help()` are assembled but overwritten before
+C displays them.
+
+The seven missing literals belong to four mechanics:
+
+- `cmd.c:handler_change_autocompletions()` and
+  `options.c:optfn_o_autocomplete()`: the editor, changed-command markers and
+  counts, cancellation and command completion.
+- `insight.c:vanqorders` and `options.c:optfn_sortvanquished()`: four short
+  order descriptions, configuration parsing, the existing sort picker and
+  change notices. A missing value is diagnosed before a negated option
+  resets the order, matching `string_for_env_opt()`/`string_for_opt()`.
+- `shk.c:sellobj()`: the explicit partial-container sale receipt uses
+  “sold some items inside”; remembered answers retain the ordinary wording.
+- `wizcmds.c:wiz_flip_level()` and `sp_lev.c:flip_level()` with its helpers:
+  the prompt, cancellation and live-map transposition without taking time,
+  including the hero, punishment placement, buried objects, monster goals
+  and role data, worm segments, pits, drawbridges, regions, timers and vision.
+
+The sickness, propelled-potion and self-inflicted death-ray killers, sink
+and iron-bar prompts, and container disarm descriptions were already composed
+correctly. Native live-flip limitations remain: level arrival regions,
+monster tracking history and migrating-monster destinations are not repaired.
+
+Behavior coverage adds 13 cases across `options_other_settings`, `shop_sell`,
+`wizard_flip_level` and `options_parse_errors`. The original 10 failed before
+their ports; all three missing-value cases failed before the validation fix.
+Current verification passes compilation, 208/208 focused tests and all three
+static ledger checks. A public run with one worker completes 43/44 sessions,
+matching 792,838/792,838 random calls and 11,396/11,405 screens with no crashes;
+its only failure remains the configuration-path screen difference in
+`seed2200-wizard-quaff-zap-read`. All 363 public RNG
+ledger functions retain their verified calls. The two individual examples
+remain unchanged: seed0106 matches 4,194 calls and 267 screens, and seed0700 matches
+3,230 calls and 51 screens; neither has a first RNG or screen difference.
+The full behavior suite and eval/pool/fresh corpora remain for CI.
 
 ## Next work
 
