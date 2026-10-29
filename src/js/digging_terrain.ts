@@ -22,10 +22,10 @@ import {
     DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE,
     IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED,
     IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel,
-    Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL,
+    Is_earthlevel, Is_stronghold, Is_waterlevel, LANDMINE, LAVAPOOL, MAGIC_PORTAL,
     MIGR_RANDOM, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE,
     SHOP_PIT_COST, SINK,
-    STAIRS, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE,
+    TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE,
     W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok,
 } from './const.js';
 import {
@@ -41,7 +41,7 @@ import { depth } from './hacklib.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { Position, Trap } from './map_types.js';
+import type { Position, Stairway, Trap } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 
 export type DiggingActor = 'you' | 'object' | Monster | null;
@@ -166,16 +166,26 @@ function monsterSubject(monster: Monster, state: GameState = game): string {
     return monsterName(monster, { state, capitalized: true });
 }
 
+// C hack.h On_stairs(): the stairway chain, which survives terrain wishes.
+function stairwayAt(x: number, y: number, state: GameState): Stairway | null {
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === x && stair.sy === y) return stair;
+    }
+    return null;
+}
+
 // C dig.c:dig_check().  Pure classification; no messages, no randomness.
 export function digCheck(madeBy: DiggingActor, x: number, y: number, state: GameState = game) {
     const location = state.level?.at?.(x, y);
     if (!location) return DIGCHECK_FAIL_TOOHARD;
     const trap = trapAt(x, y, state);
 
-    if (location.typ === LADDER) {
-        return DIGCHECK_FAIL_ONLADDER;
-    } else if (location.typ === STAIRS) {
-        return DIGCHECK_FAIL_ONSTAIRS;
+    // C tests On_stairs(x, y), i.e. the stairway structure, not levl.typ:
+    // a debug terrain wish can overwrite the displayed terrain while the
+    // stairway itself remains, and digging must still refuse there.
+    const stair = stairwayAt(x, y, state);
+    if (stair) {
+        return stair.isladder ? DIGCHECK_FAIL_ONLADDER : DIGCHECK_FAIL_ONSTAIRS;
     } else if (IS_THRONE(location.typ) && madeBy !== 'object') {
         return DIGCHECK_FAIL_THRONE;
     } else if (IS_ALTAR(location.typ)

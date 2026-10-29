@@ -57,8 +57,15 @@ void test('dig_check rejects boulders, nondiggable walls, stairs and portals',
         level.requireAt(11, 10).wall_info = W_NONDIGGABLE;
         assert.equal(digCheck('you', 11, 10), DIGCHECK_FAIL_TOOHARD);
 
+        // C On_stairs() consults the stairway chain, not the terrain type.
+        const stair = {
+            sx: 12, sy: 10, up: false, isladder: true, u_traversed: false,
+            tolev: { dnum: 0, dlevel: 2 }, next: null,
+        };
+        game.stairs = stair;
         level.requireAt(12, 10).typ = LADDER;
         assert.equal(digCheck('you', 12, 10), DIGCHECK_FAIL_ONLADDER);
+        stair.isladder = false;
         level.requireAt(12, 10).typ = STAIRS;
         assert.equal(digCheck('you', 12, 10), DIGCHECK_FAIL_ONSTAIRS);
 
