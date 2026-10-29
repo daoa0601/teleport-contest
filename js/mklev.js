@@ -3321,6 +3321,7 @@ export async function maketrap(x, y, typ) {
             placeCreatedObject(boulder, launch.x, launch.y);
             await stack_object(boulder);
             trap.launch = launch;
+            newsym(launch.x, launch.y);
             trap.launch2 = {
                 x: x - (launch.x - x), y: y - (launch.y - y),
             };

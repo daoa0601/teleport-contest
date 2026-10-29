@@ -369,7 +369,7 @@ async function offerOwnRace(corpse, highAltar, alignment) {
             await pline('You are terrified, and unable to move.');
             nomul(-3);
             game._helplessReason = 'being terrified of a demon';
-            game._helplessDoneMessage = '';
+            game._helplessDoneMessage = null;
         }
         else
             await pline(failure);
