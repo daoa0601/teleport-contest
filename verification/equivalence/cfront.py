@@ -33,6 +33,7 @@ class CFront:
         self.files = files
         self._dumps: dict[tuple[Path, str], list] = {}
         self.sources: dict[str, bytes] = {}
+        self._enum_values: dict[tuple[Path, str], int] = {}
 
     def _dump(self, file: Path, name: str) -> list:
         key = (file, name)
@@ -53,13 +54,48 @@ class CFront:
                     return obj, file
         raise Unsupported(f'no C definition of {name} in {[str(f) for f in self.files]}')
 
-    def enum_value(self, name: str) -> int:
-        for file in self.files:
-            for obj in self._dump(file, name):
+    def enum_value(self, name: str, file: Path | None = None) -> int:
+        for file in [file] if file is not None else self.files:
+            key = (file, name)
+            if key in self._enum_values:
+                return self._enum_values[key]
+            matches = [obj for obj in self._dump(file, name)
+                       if obj.get('kind') == 'EnumConstantDecl' and obj.get('name') == name]
+            if len(matches) > 1:
+                raise Unsupported(f'ambiguous scoped C enumerator {name} in {file.name}')
+            for obj in matches:
                 found = _find_enum(obj, name)
                 if found is not None:
+                    self._enum_values[key] = found
                     return found
+                if obj.get('kind') == 'EnumConstantDecl' and obj.get('name') == name:
+                    # A filtered implicit enumerator omits its preceding
+                    # siblings. Ask clang to evaluate a new constant expression
+                    # in the original translation unit instead of guessing it.
+                    cmd = ['clang', '-fsyntax-only', f'-I{self.include}', *CFLAGS,
+                           '-x', 'c', '-Xclang', '-ast-dump=json', '-Xclang',
+                           '-ast-dump-filter=verification_enum_value', '-']
+                    source = f'#include "{file}"\nenum {{ verification_enum_value = {name} }};\n'
+                    output = subprocess.run(cmd, input=source, capture_output=True,
+                                            text=True, check=True).stdout
+                    for decl in _objects(output):
+                        value = _find_enum(decl, 'verification_enum_value')
+                        if value is not None:
+                            self._enum_values[key] = value
+                            return value
         raise Unsupported(f'no enumerator {name}')
+
+    def constant_array(self, name: str, file: Path) -> dict:
+        """Only immutable array definitions; initializers are interpreted by CExec."""
+        matches = [obj for obj in self._dump(file, name)
+                   if obj.get('kind') == 'VarDecl' and obj.get('name') == name]
+        if len(matches) > 1:
+            raise Unsupported(f'ambiguous scoped C array {name} in {file.name}')
+        for obj in matches:
+            qual = obj['type']['qualType']
+            if 'const ' in qual and qual.endswith(']') and obj.get('init'):
+                return obj
+        raise Unsupported(f'no constant C array {name} in {file.name}')
 
     def line(self, file: Path, node: dict) -> str:
         loc = node.get('range', {}).get('begin', node.get('loc', {}))

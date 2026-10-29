@@ -6,10 +6,12 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` proves 10 C/JavaScript function pairs in 19
-seconds. Use it as a CI check on leaf functions, add function-level
-differential fuzzing for stateful code, and keep whole-game equivalence
-empirical: session replay, ledgers, and the state oracle.
+`verification/equivalence/` proves 28 scoped claims: 20 arithmetic/read-only
+state claims plus eight ISAAC64 and seed-packing claims. The combined run,
+including all probes and mutants, took 51.83 seconds after the rebase. Use it
+as a CI check on leaf functions, add function-level differential fuzzing for
+stateful code, and keep whole-game equivalence empirical: session replay,
+ledgers, and the state oracle.
 
 ## What "verified" can mean
 
@@ -41,26 +43,95 @@ over rank 4.
 
 ## The proof of concept
 
-`cd verification/equivalence && uv run prove.py` (clang and uv; about 20 s).
+`cd verification/equivalence && uv run prove.py` (clang and uv; about 52 s).
+In a worktree, set `NETHACK_RECORDER` to the main checkout's pinned recorder.
 
-**Claim.** For every input in the domain, every random sequence (the core and
-display streams as arbitrary `uint64` sequences), and RNG logging both on and
-off: the pinned C function and the emitted JavaScript (`js/*.js`, which the
-grader runs) return the same value, consume the same positions of each stream,
-and emit the same RNG-log entries (`f(args)=result`). The C side has no
-undefined behavior. The JavaScript never throws and stays exact.
+**Claim.** For every input in the domain, every random sequence (core and
+display streams as arbitrary uint64 sequences), and RNG logging both on and
+off: each leaf pair returns the same value, consumes the same stream
+positions, and emits the same RNG-log entries. Leaf functions use the emitted
+JavaScript modules listed in `specs.py`. C undefined behavior and JS
+exceptions or inexact arithmetic are proof failures.
 
-| C ↔ JS | Domain (beyond C parameter types) | Paths C×JS | Time |
-|---|---|---|---|
-| `rn2`, `rnd`, `rn2_on_display_rng` ↔ `rn2`, `rnd`, `rn2Display` | `x >= 1` | 1×1 | <0.3 s |
-| `rn1` macro (expanded by clang through `hack.h`, caller-log wrapper included) ↔ `rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.2 s |
-| `rnl` ↔ `rnl` | `1 <= x <= INT_MAX-256`; any `schar` `uluck` and `moreluck` | 13×18 | 1.3 s |
-| `d` ↔ `d` | `n >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX`; unbounded `n`, by induction | 1×1 | 0.3 s |
-| `rne` ↔ `rne` | `x >= 1`, `0 <= ulevel <= 30` (complete unrolling, checked) | 20×25 | 1.5 s |
-| `rnz` ↔ `rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 5.3 s |
-| `distmin`, `dist2` ↔ `distmin`, `dist2` | coordinates in [-16384, 16383] | 8×1, 1×1 | 0.3 s, 1.9 s |
+ISAAC64 compares return values and all in-bounds array cells and context
+fields after each call. Generator claims read **`frozen/isaac64.js`**:
+`frozen/score.sh` installs it over `js/isaac64.js` before scoring. The emitted
+ISAAC64 copy is outside these claims. Wrapper seed packing reads emitted
+`js/rng.js`. Times below exclude probes and mutants. Path counts are C×JS for
+each logging setting; ISAAC64 rows state their loop proof instead.
 
-**How it works.** Clang's typed JSON AST supplies the C side, so macros,
+| Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
+|---|---|---|---|---|
+| `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.2 s |
+| `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
+| `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.4 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 0.9 s |
+| `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.3 s |
+| `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 1.1 s |
+| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 4.0 s |
+| `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
+| `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 8×1 | 0.3 s |
+| `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 1.0 s |
+| `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 7×13 | 4.2 s |
+| `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 1.5 s |
+| `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.3 s |
+| `rounddiv` | `hack.c:rounddiv` ↔ `polyself.js:roundDiv` | `abs(x) <= 100000000`, `1 <= y <= 1000000` | 4×1 | 0.6 s |
+| `Align2amask` | `align.h:Align2amask` ↔ `const.js:Align2amask` | Alignment in {-128, -1, 0, 1} | 3×3 | 0.6 s |
+| `Amask2align` | `align.h:Amask2align` ↔ `const.js:Amask2align` | Every C int mask | 3×3 | 1.2 s |
+| `acurr:StrDex` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | Strength or Dexterity; corresponding six-element schar arrays; no gauntlets | 6×2 | 1.2 s |
+| `acurrstr` | `attrib.c:acurrstr` ↔ `attrib.js:currentStrength` | Corresponding attribute arrays; no gauntlets | 5×3 | 0.5 s |
+| `dbon:human` | `weapon.c:dbon` ↔ `weapon_damage.js:heroStrengthDamageBonus` | Corresponding attribute arrays; no gauntlets; original human form | 10×8 | 0.8 s |
+| `abon:human` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 96×60 | 15.5 s |
+| `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
+| `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
+| `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
+| `isaac64_update` | `isaac64.c:isaac64_update` ↔ frozen same name | 256 initialized words in m/r; arbitrary uint64 a/b/c | Two loop invariants cover all 256 updates | 0.3 s |
+| `isaac64_reseed` | `isaac64.c:isaac64_reseed` ↔ frozen same name | Initialized r and a/b/c; byte seed length 0..INT_MAX capped at 2048; m/n initially unconstrained | Loop invariants; all eight residues and over-cap case | 3.4 s |
+| `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
+| `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | <0.1 s |
+| `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
+
+The byte-seed relation comes from `isaac64.h`: C reads unsigned bytes and
+the supplied length equals the JS array length. Both arrays contain at least
+the first `min(length, 2048)` bytes. The JS state words are BigInts in
+0..2^64-1. These representation facts and corresponding input state are
+assumptions; they are not inferred from arbitrary callers or saved games.
+`isaac64.h` gives C disjoint `m` and `r` fields; the corresponding JS arrays
+must also be distinct.
+
+`bv.py` keeps Z3 bit-vector arrays for memory. C operations use clang's
+resolved integer types and wrap only at unsigned conversions; signed overflow,
+invalid shifts, uninitialized reads, and array bounds are obligations. JS
+BigInt intermediates get enough signed bits for their entire mathematical
+range, including negative subtraction results and left shifts above 64 bits.
+Only a mask actually present in the JS source may narrow a word; every array
+store must prove that the stored word fits its modeled width. Number index
+arithmetic must remain exact, and Number bit operations must fit int32.
+
+For `update`, the invariant equates `m`, `r`, `a`, `b`, `c`, and the working
+accumulators at an arbitrary aligned loop index in each 128-word half. One
+four-word body preserves it and advances the index by four. Reseeding uses
+analogous array invariants; during its first memory pass, only the written
+prefix of `m` corresponds and is initialized. Each loop proves initialization,
+guard agreement, preservation, and a bounded decreasing variant. Untracked
+locals and arrays must remain unchanged; scratch locals must be assigned
+before use. Inner loops and `mix` are fully unrolled with an unwinding check.
+Eight seed-length residue classes and an over-cap case cover every stated
+seed length, without enumerating seeds.
+
+Calls to `mix`, `update`, and `reseed` use shared uninterpreted summaries only
+after their source proofs succeed in the same run. Summary inputs include all
+read-before-write state; their contracts check array shape, initialization,
+seed allocation, and the postcondition `n = 256`. Reseeding is proved with
+unrelated initial `m` and `n`, which justifies initialization's use of the
+summary before those fields have values.
+
+These are isolated function claims, including private emitted JS functions.
+The two alignment wrappers only include `hack.h` and invoke its actual macros;
+they do not copy their definitions. There is no claim about all callers or
+about equipment effects, polymorphed attack bonuses, or other attributes.
+
+**Leaf proof method.** Clang's typed JSON AST supplies the C side, so macros,
 `#if`, typedefs, and implicit conversions come from the compiler. tree-sitter
 parses the emitted JavaScript. Two path-forking symbolic executors produce Z3
 terms over mathematical integers. C signed overflow, division by zero, and
@@ -71,13 +142,73 @@ quotient's rounding error is below 1/(2|b|) and cannot cross an integer. BigInt
 is exact. Random draws read an uninterpreted `R_stream(position)`, shared by
 both sides. Loops are unrolled with an unwinding check, or, for `d`, proved
 by a hand-written relational invariant over a recursively defined sum (the
-only manual proof step, about 30 lines in `specs.py`).
+leaf executor's manual proof step, about 30 lines in `specs.py`).
 
 **Non-vacuity.** Every function has negative checks, and all behave as
-expected: 13 domain probes and 10 mutants. Each probe weakens the domain and
-must fail with a concrete counterexample. Each mutant edits the JavaScript and
-must fail. One mutant is genuinely equivalent (`ulevel < 15` →
+expected: the 23 leaf domain probes and 24 leaf mutants, plus eight ISAAC64
+domain probes and ten ISAAC64 mutants. The new probes violate input types,
+array allocation, seed allocation, or the available-count bound, and must
+produce a solver counterexample; unsupported translation and solver unknown
+do not count. All ten new mutants are killed, including shift `21 → 20`, mask
+`0xffffffffffffffff → 0x7fffffffffffffff`, and a memory index changed by one.
+For example, the mask mutant gives working `b = 9223372036854775808` in C and
+`b = 0` in JS when initial `b = 9223372036854775807` and `c = 0`.
+One original mutant is genuinely equivalent (`ulevel < 15` →
 `ulevel < 16`, since 15/3 = 5), and the tool proves it.
+
+| New leaf claim | Domain probe | Killed mutant |
+|---|---|---|
+| `enermod` | `en = INT_MAX` overflows C's multiplication | wizard/priest multiplier 2 → 3 |
+| `newuexp` | arbitrary `int` level can leave the JS exact-integer range | first multiplier 10 → 11 |
+| `xlev_to_rank` | input 4294967297 narrows to C `int` 1: C 0, JS 8 | rank numerator `level + 2` → `level + 1` |
+| `rounddiv` | `(2, -3)`: C -1, JS 0 | denominator half → third |
+| `Align2amask` | alignment -3: C 4294967295, JS 255 | alignment offset 2 → 1 |
+| `Amask2align` | input 9007199254740993 violates the exact JS input obligation | normal alignment mask → shrine bit |
+| `acurr:StrDex` | remove base Strength correspondence: returned attributes differ | add 1 to the attribute sum |
+| `acurrstr` | remove base Strength correspondence: condensed Strength differs | Strength divisor 50 → 51 |
+| `dbon:human` | remove base Strength correspondence: damage bonuses differ | 18/75 endpoint inclusive → exclusive |
+| `abon:human` | remove base Dexterity correspondence: hit bonuses differ | Dexterity offset 14 → 13 |
+
+The mask probe is a counterexample to the numeric input obligation, not an
+observed C/JS result difference. The model accepts only exact integer Numbers;
+it does not pretend that 9007199254740993 is a representable JS Number.
+
+The new state assumptions are explicit in `specs.py`: `attrib.h` declares
+`u.acurr.a`, `u.abon.a`, and `u.atemp.a` as six signed-char fields; each
+corresponds to the matching `game.u` element. C `uarmg` and both JS gauntlet
+slot aliases are null. `you.h:Upolyd` supplies the human-form assumption
+`u.umonnum == u.umonster`, with both fields corresponding to JS. `you.h`'s
+`Role_switch` reads `gu.urole.mnum`; the 13 role enumerators are read through
+clang and related to the role keys used by `exper.js`. These are assumed
+relations at entry, not proofs of character initialization or restoration.
+
+The new numeric counterexamples are outside ordinary caller inputs:
+`exper.c` and `botl.c` call `newuexp` with levels 0..30;
+`xlev_to_rank` receives native `int` levels; `polyself.c:newman` calls
+`rounddiv` with denominator 10, positive maximum HP, or energy maximum
+clamped to at least 1. Its JS counterpart also clamps those maxima.
+`dungeon.c:induced_align`, `mklev.c:mkaltar`, and the mimic altar branch of
+`makemon.c:set_mimic_sym` generate alignment -1, 0, or 1; hero alignment
+fields use the named alignment constants in `align.h`. This caller inspection
+does not discharge the upper bounds on `rounddiv` inputs or all alignment
+callers. `enermod` is called with a small level-energy increment from
+`newpw`; the INT_MAX probe does not describe that path.
+
+**Concrete generator cross-check.** With `NETHACK_RECORDER` set, run
+`cd verification/equivalence && uv run ../isaac64/crosscheck.py`. A tiny
+harness compiles the real `isaac64.c`; Node imports `frozen/isaac64.js` directly.
+The run passed 17 cases and 17,000 draws in 1.81 s: seven uint64 seeds,
+seven byte lengths including zero, partial words, 2048, and over-cap, plus
+three midstream reseeds. Each case checks 1,000 numeric outputs and stops at
+the first mismatch. This is a concrete cross-check, not the universal proof.
+Two target-selection regression tests exercise both verification entry points
+with intentionally disagreeing frozen/emitted copies. A healthy frozen copy
+must pass even when the emitted copy differs; a divergent frozen copy must
+fail even when the emitted copy is healthy. Both tests failed before the
+target correction and pass after it, including the rerun after this rebase
+(two tests in 6.255 s). The 24 leaf-executor tests also passed after the rebase
+in 14.644 s. Run them with
+`uv run python ../isaac64/test_scoring_target.py` from `verification/equivalence`.
 
 **Divergences found outside the domains.** The game should never reach these,
 but none is checked yet:
@@ -98,25 +229,57 @@ but none is checked yet:
 
 **Trust base and limits.**
 
-- ISAAC64 is abstracted. The proof holds for every random sequence, so it is
-  sound for any generator, but `isaac64.ts` ≡ `isaac64.c` is unproved.
-- The trust base is the Python executors (~1,600 lines, unverified), clang's
+- The leaf proofs still use arbitrary random streams. The separate proofs of
+  `frozen/isaac64.js` now establish equal generator outputs and successor states on their
+  stated domains; the algorithm itself is no longer assumed equivalent.
+- The trust base is the Python executors and loop annotations (unverified), clang's
   AST, tree-sitter, and Z3. Mutants and probes reduce the risk; replaying
   counterexamples concretely through compiled C and Node would reduce it more.
 - State correspondence is assumed, not proved: JS `game.u.uluck` holds the
   same integer as C `u.uluck`, `game.u` exists, the contexts are
   initialized, and JS numeric arguments are integers equal to the C
   arguments. Negative zero is identified with zero.
-- What is verified is the emitted JavaScript, not the TypeScript; `npm run
-  compile` keeps them in step.
-- Supported subset: integer C with locals, struct reads from globals, calls,
-  and `while`; JS with numbers, BigInt, `Math`, calls, and `for`/`while`. Not
-  yet: pointers and heap writes, arrays, `switch`, Lua, `async`/`await`,
-  exceptions as control flow, loops that log inside their bodies under
+- What is verified is the emitted leaf JavaScript and the frozen scoring
+  generator, not the TypeScript. `npm run compile` keeps emitted leaves in
+  step with their sources; it does not produce the frozen adapter.
+- Leaf executor subset: integer C with locals, nested declared global-field reads,
+  fixed state arrays, constant integer tables from clang initializers, calls,
+  `switch` and `while`; JS with numbers, BigInt, `Math`, constant arrays,
+  default parameters, simple array bindings, optional state reads, calls,
+  literal-label `switch`, and `for`/`while`. Switches preserve fallthrough,
+  default placement, breaks, and early returns. Both sides support ternaries.
+  Out-of-bounds array reads are obligations; partially initialized C arrays
+  and JS array holes are rejected. Imported constants and functions resolve
+  in their defining module. Module table reads assume their initial values
+  have not been mutated; no new game-table equivalence claim is made yet.
+  The 24 executor tests cover these operations and rejection boundaries using
+  small C and JS programs, rather than copies of game functions.
+- Leaf and ISAAC64 executors use `core.bit_operation` for bit-vector operations. The
+  leaf executor keeps C's promoted widths and JS Number coercions; the ISAAC64
+  executor chooses widths large enough for exact BigInt intermediates before
+  applying source masks. There is one bit-operation implementation; width
+  selection and language-specific safety obligations remain at each caller.
+- Bitwise `&`, `|`, `^`, `~`, `<<`, and `>>` use C's typed widths and JS's
+  32-bit coercions; JS `>>>` is unsigned and shift counts are masked modulo
+  32. C shift counts must fit the promoted left operand's width; signed left
+  shifts require a nonnegative representable result. Negative signed right
+  shifts use clang's arithmetic shift on the recorder target. Unsigned
+  operations wrap. JS powers of two are supported only for exponents 0..53.
+- Outside the leaf executor: pointers and heap writes, general C `for`, Lua, `async`/`await`,
+  escaped JS string literals, exceptions as control flow, loops that log inside their bodies under
   induction, and JS declarations that shadow an outer binding (rejected, not
   modeled). An induction loop needs a variant as well as an invariant, so
   equivalence includes termination. `sizeof` is evaluated for the LP64
   target, and other type traits are rejected.
+- The separate ISAAC64 executor supports its fixed arrays, context writes,
+  non-rebound aliases, full zero `memset`, whole-word `memcpy`, and explicit
+  relational loops. It is not a general C heap or JavaScript engine model.
+  Negative C seed lengths, malformed JS states, optional absent JS seed
+  arguments, the unused bounded-draw `isaac64_next_uint`, and JS-only peek
+  are outside the claims. The wrapper claim covers the packing loops only;
+  context routing, wrapper global writes, and correspondence at arbitrary
+  callers remain assumed. Compilation, JS runtime semantics, clang, and Z3
+  remain in the trust base. No whole-game equivalence is claimed.
 - Log comparison uses structured entries. C's `@ caller` annotation and
   number prefix are ignored, as in scoring.
 
@@ -195,13 +358,21 @@ nearly all because their inputs have no stated maximum.
 1. **CI (days).** Build the recorder sources in a GitHub Actions job (as
    `fresh-batches.yml` already does) and run `prove.py`. Fail on any lost claim,
    like the ledger check.
-2. **Read-only state and more leaves (1–2 weeks).** Add symbolic reads of
-   struct fields and constant tables, `switch`, and bit operations. Target
-   `hacklib.c` helpers, attribute and experience formulas, `mcalcmove`, and
-   to-hit and damage arithmetic. Choose targets from ledger blame.
-3. **ISAAC64 (1–2 weeks).** Prove `isaac64.ts` (BigInt) ≡ `isaac64.c`
-   (`uint64_t`) with bit-vectors and a per-round loop invariant. This removes
-   the generator from the trust base.
+2. **Read-only state and more leaves (partly done).** Nested declared state
+   reads, bounded arrays, constant tables, switches and bit operations are in;
+   ten new claims above pass with probes and mutants. Next: equipment and form
+   branches of `acurr`/`abon`/`dbon`, monster experience's permonst reads, and
+   `mcalcmove`. The latter is hot in both RNG ledgers, but its JS entry also
+   initializes mutable monster fields, outside the read-only model. `sgn`,
+   `isqrt`, `online2`, and `rank_to_xlev` have no matching standalone emitted
+   JS function in the inspected modules, so none was invented for a claim.
+   Constant-table support is tested, but a game-table pair remains future work.
+3. **ISAAC64 (done for the stated domains).** The frozen BigInt generator
+   and C uint64 generator have equal outputs and successor states for init,
+   reseed, mix, update, and next; wrapper seed packing also proves. The full
+   command includes twenty leaf claims and eight ISAAC64 claims, with domain probes,
+   shift/mask/index mutants, and a compiled-C/Node cross-check. Caller state
+   correspondence and context routing remain outside these proofs.
 4. **Call-site domains (prototype done; see above).** Room, `nroom`, and
    data-table invariants are in. Next: a CI check that new call sites land in
    the proved classes, and the residual "may be empty" collections, which need

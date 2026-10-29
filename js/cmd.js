@@ -13,7 +13,7 @@ import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displa
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
-import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME } from './const.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
@@ -416,6 +416,11 @@ async function rejectHeroDiagonalDoorExit(dx, dy) {
 // boulder pushing, or the hero's eventual movement.
 export function heroTestMove(x, y, g = game) {
     return testHeroMove(g.u.ux, g.u.uy, x, y, 'move', g).passes;
+}
+// C test_move(TEST_MOVE) from an arbitrary origin square. zap.c bhit()
+// checks the chain's next step from a thrown iron ball's previous square.
+export function heroMoveBlockedBetween(fromX, fromY, x, y, g = game) {
+    return !testHeroMove(fromX, fromY, x, y, 'move', g).passes;
 }
 // Shop doorway checks print even during a path search, so publish them at
 // the awaited boundary while the shared movement decision remains pure.
@@ -3759,6 +3764,30 @@ async function lootLockedContainer(container) {
     else
         game.context.move = 0;
 }
+// C cmd.c:enter_explore_mode(). The pinned build's sysconf ships
+// EXPLORERS=*, so authorize_explore_mode() always grants access; the
+// "cannot access explore mode" and "Note: normally..." refusals stay
+// unreachable for this environment.
+async function enterExploreMode() {
+    if (game.flags.explore) {
+        await pline('You are already in explore mode.');
+    }
+    else {
+        const oldMode = game.flags.debug ? 'debug mode' : 'normal game';
+        await pline(`Beware!  From explore mode there will be no return to ${oldMode},`);
+        if (await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Do you want to enter explore mode?')) {
+            game.flags.explore = true;
+            game.flags.debug = false;
+            clearMessageWindow();
+            await pline('You are now in non-scoring explore mode.');
+        }
+        else {
+            clearMessageWindow();
+            await pline(`Continuing with ${oldMode}.`);
+        }
+    }
+    game.context.move = 0;
+}
 const EXTENDED_COMMAND_HANDLERS = new Map([
     ['?', showExtendedCommandList],
     ['whatdoes', whatDoesCommand],
@@ -3797,6 +3826,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['loot', doloot],
     ['tip', tipCommand],
     ['force', doforce],
+    ['exploremode', enterExploreMode],
     ['jump', dojump],
     ['overview', doDungeonOverview],
     ['offer', dosacrifice],

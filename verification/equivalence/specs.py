@@ -17,6 +17,7 @@ import z3
 from core import LoopSpec, U64, stream_fn
 
 INT = (32, True)
+LONG = (64, True)
 SCHAR = (8, True)
 COORDXY = (16, True)          # global.h: typedef int16_t coordxy
 INT_MAX = 2 ** 31 - 1
@@ -33,6 +34,20 @@ class Spec:
     loops: dict = field(default_factory=dict)
     probes: list = field(default_factory=list)    # [(label, weaker pre)]
     mutants: list = field(default_factory=list)   # [(file, old, new[, 'equivalent'])]
+    js_file: str = 'js/rng.js'
+    js_args: list = field(default_factory=list)   # additional (kind, value) arguments
+    nulls: list = field(default_factory=list)     # [(C global pointer, JS paths)]
+    enum_state: list = field(default_factory=list)  # [(C key, type, JS path, [(C enumerator, JS string)])]
+
+
+@dataclass(frozen=True)
+class UnrelatedState:
+    """Weaken one state-correspondence equality, keeping the numeric domain."""
+    pre: Callable
+    unrelated_state: tuple
+
+    def __call__(self, symbols):
+        return self.pre(symbols)
 
 
 class Recurrence:
@@ -93,6 +108,10 @@ ULEVEL = [('u.ulevel', INT, 'game.u.ulevel')]
 RNG = 'js/rng.js'
 HACKLIB = 'js/hacklib.js'
 
+C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c')
+JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon_damage.js',
+            'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js')
+
 SPECS = [
     Spec('rn2', 'rn2', 'rn2', [('x', INT)], pre=lambda s: [s['x'] >= 1],
          probes=[('x == 0', lambda s: [s['x'] == 0]), ('x < 0', lambda s: [s['x'] < 0])]),
@@ -131,15 +150,101 @@ SPECS = [
          probes=[('x == 0', lambda s: [s['x'] == 0]), ('x < 0', lambda s: [s['x'] < 0])],
          mutants=[(RNG, "initializedContext('display')", "initializedContext('core')")]),
     Spec('distmin', 'distmin', 'distmin', [(v, COORDXY) for v in ('x0', 'y0', 'x1', 'y1')],
+         js_file=HACKLIB,
          pre=lambda s: [z3.And(s[v] >= -2 ** 14, s[v] < 2 ** 14) for v in ('x0', 'y0', 'x1', 'y1')],
          probes=[('any coordxy', lambda s: [])],
          mutants=[(HACKLIB, 'return Math.max(Math.abs(x1 - x2)', 'return Math.min(Math.abs(x1 - x2)'),
                   (HACKLIB, 'Math.abs(y1 - y2));', 'Math.abs(y1 - y2), 1);')]),
     Spec('dist2', 'dist2', 'dist2', [(v, COORDXY) for v in ('x0', 'y0', 'x1', 'y1')],
+         js_file=HACKLIB,
          pre=lambda s: [z3.And(s[v] >= -2 ** 14, s[v] < 2 ** 14) for v in ('x0', 'y0', 'x1', 'y1')],
          probes=[('any coordxy', lambda s: [])],
          mutants=[(HACKLIB, '(y1 - y2) * (y1 - y2);', '(y1 - y2) * (y2 - y1);'),
                   # a block-local binding must not escape or overwrite the outer one
                   (HACKLIB, 'return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);',
                    'let r = 0; { let r = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2); } return r;')]),
+]
+
+# Stage 2: the global attribute arrays have six signed-char elements
+# (attrib.h: struct attribs). These claims cover Strength and Dexterity with
+# no gauntlets; other attributes and equipment effects are not assumed proved.
+ATTRIBUTES = [(f'u.{field}.a[{i}]', SCHAR, f'game.u.{field}.a[{i}]')
+              for field in ('acurr', 'abon', 'atemp') for i in range(6)]
+NO_GAUNTLETS = [('uarmg', ('game.uarmg', 'game.u.uarmg'))]
+ATTRIB = 'js/attrib.js'
+EXPER = 'js/exper.js'
+CONST = 'js/const.js'
+WEAPON_DAMAGE = 'js/weapon_damage.js'
+HIT_BONUS = 'js/hero_attack_accuracy.js'
+POLYSELF = 'js/polyself.js'
+
+
+def int_argument(s, name):
+    return [s[name] >= -2 ** 31, s[name] <= INT_MAX]
+
+
+def human(s):
+    # you.h: Upolyd compares the current and original monster numbers.
+    return [s['u.umonnum'] == s['u.umonster']]
+
+
+HUMAN_FORM = [('u.umonnum', INT, 'game.u.umonnum'),
+              ('u.umonster', INT, 'game.u.umonster')]
+
+SPECS += [
+    Spec('enermod', 'enermod', 'energyModifier', [('en', INT)], js_file=EXPER,
+         js_args=[('state', 'game.urole.key')],
+         enum_state=[('gu.urole.mnum', (16, True), 'game.urole.key', [
+             ('PM_ARCHEOLOGIST', 'archeologist'), ('PM_BARBARIAN', 'barbarian'),
+             ('PM_CAVE_DWELLER', 'caveman'), ('PM_HEALER', 'healer'), ('PM_KNIGHT', 'knight'),
+             ('PM_MONK', 'monk'), ('PM_CLERIC', 'priest'), ('PM_RANGER', 'ranger'),
+             ('PM_ROGUE', 'rogue'), ('PM_SAMURAI', 'samurai'), ('PM_TOURIST', 'tourist'),
+             ('PM_VALKYRIE', 'valkyrie'), ('PM_WIZARD', 'wizard')])],
+         pre=lambda s: [s['en'] >= -(INT_MAX // 3), s['en'] <= INT_MAX // 3],
+         probes=[('energy overflows C multiplication', lambda s: [s['en'] == INT_MAX])],
+         mutants=[(EXPER, 'return 2 * energy;', 'return 3 * energy;')]),
+    Spec('newuexp', 'newuexp', 'newExperienceThreshold', [('lev', INT)],
+         js_file=EXPER, pre=lambda s: [s['lev'] >= 0, s['lev'] <= 30],
+         probes=[('any int level', lambda s: [])],
+         mutants=[(EXPER, 'return 10 * (2 ** level);', 'return 11 * (2 ** level);')]),
+    Spec('xlev_to_rank', 'xlev_to_rank', 'experienceRankIndex', [('xlev', LONG)],
+         js_file=EXPER, pre=lambda s: int_argument(s, 'xlev'),
+         probes=[('level outside C int', lambda s: [s['xlev'] == 2 ** 32 + 1])],
+         mutants=[(EXPER, 'Math.trunc((level + 2) / 4)', 'Math.trunc((level + 1) / 4)')]),
+    Spec('rounddiv', 'rounddiv', 'roundDiv', [('x', LONG), ('y', INT)],
+         js_file=POLYSELF,
+         pre=lambda s: [s['x'] >= -10 ** 8, s['x'] <= 10 ** 8, s['y'] >= 1, s['y'] <= 10 ** 6],
+         probes=[('negative denominator', lambda s: [s['x'] == 2, s['y'] == -3])],
+         mutants=[(POLYSELF, 'Math.trunc(denominator / 2)', 'Math.trunc(denominator / 3)')]),
+    Spec('Align2amask', 'align_to_mask', 'Align2amask', [('alignment', INT)],
+         js_file=CONST,
+         pre=lambda s: [z3.Or(*(s['alignment'] == v for v in (-128, -1, 0, 1)))],
+         probes=[('alignment outside enum', lambda s: [s['alignment'] == -3])],
+         mutants=[(CONST, 'return (x + 2) & 0xff;', 'return (x + 1) & 0xff;')]),
+    Spec('Amask2align', 'mask_to_align', 'Amask2align', [('mask', LONG)],
+         js_file=CONST, pre=lambda s: int_argument(s, 'mask'),
+         probes=[('mask outside C int', lambda s: [s['mask'] == 2 ** 53 + 1])],
+         mutants=[(CONST, 'const masked = x & AM_MASK;', 'const masked = x & AM_SHRINE;')]),
+    Spec('acurr:StrDex', 'acurr', 'currentAttribute', [('chridx', INT)],
+         js_file=ATTRIB, state=ATTRIBUTES, nulls=NO_GAUNTLETS,
+         pre=lambda s: [z3.Or(s['chridx'] == 0, s['chridx'] == 3)],
+         probes=[('one base attribute does not correspond', UnrelatedState(
+             lambda s: [s['chridx'] == 0], ('u.acurr.a[0]',)))],
+         mutants=[(ATTRIB, '+ (hero.abon?.a?.[attribute] ?? 0)', '+ (hero.abon?.a?.[attribute] ?? 1) + 1')]),
+    Spec('acurrstr', 'acurrstr', 'currentStrength', [],
+         js_file=ATTRIB, state=ATTRIBUTES, nulls=NO_GAUNTLETS,
+         probes=[('base Strength does not correspond', UnrelatedState(lambda s: [], ('u.acurr.a[0]',)))],
+         mutants=[(ATTRIB, '19 + Math.trunc(strength / 50)', '19 + Math.trunc(strength / 51)')]),
+    Spec('dbon:human', 'dbon', 'heroStrengthDamageBonus', [],
+         js_file=WEAPON_DAMAGE, js_args=[('obj', 'game')],
+         state=ATTRIBUTES + HUMAN_FORM, nulls=NO_GAUNTLETS, pre=human,
+         probes=[('base Strength does not correspond', UnrelatedState(human, ('u.acurr.a[0]',)))],
+         mutants=[(WEAPON_DAMAGE, 'if (strength <= 93)', 'if (strength < 93)')]),
+    Spec('abon:human', 'abon', 'heroAttributeHitBonus', [],
+         js_file=HIT_BONUS, js_args=[('obj', 'game')],
+         state=ATTRIBUTES + HUMAN_FORM + ULEVEL, nulls=NO_GAUNTLETS,
+         pre=lambda s: human(s) + [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30],
+         probes=[('base Dexterity does not correspond', UnrelatedState(
+             lambda s: human(s) + [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30], ('u.acurr.a[3]',)))],
+         mutants=[(HIT_BONUS, 'dexterity - 14);', 'dexterity - 13);')]),
 ]

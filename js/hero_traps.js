@@ -183,8 +183,11 @@ async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recurs
         await plineWithContinuation("How pitiful.  Isn't that the pits?");
     }
     let spiked = trap.ttyp === SPIKED_PIT;
-    if (spiked && heroWearsIronShoes()) {
-        await plineWithContinuation('Your boots protect you from the sharp iron spikes.');
+    const ironShoes = heroIronShoes();
+    if (spiked && ironShoes) {
+        // C trap.c:1902: Yname2(uarmf) names the worn footgear ("iron
+        // shoes", "kicking boots"); the verb stays singular.
+        await plineWithContinuation(`${ownedObjectName(ironShoes, game)} protects you from the sharp iron spikes.`);
         spiked = false;
     }
     else if (spiked) {

@@ -287,6 +287,30 @@ void test('equal names and beatitude prefer grease, less erosion, known proofing
         [greased, proofed, enchanted, ordinary, damaged]);
 });
 
+void test('fresh rations sort before rotten rations with the same loot name', async () => {
+    const rotten = await knownObject(FOOD_RATION, { orotten: true, oeaten: 400 });
+    const fresh = await knownObject(FOOD_RATION);
+
+    assert.equal(sortObjects([rotten, fresh], { mode: lootSortMode() })[0], fresh);
+    assert.equal(rotten.orotten, true);
+});
+
+void test('undiluted potions sort before diluted potions after normalizing their loot names', async () => {
+    const diluted = await knownObject(POT_WATER, { odiluted: true });
+    const undiluted = await knownObject(POT_WATER);
+
+    assert.equal(sortObjects([diluted, undiluted], { mode: lootSortMode() })[0], undiluted);
+    assert.equal(diluted.odiluted, true);
+});
+
+void test('revivable corpses sort before nonreviving corpses of the same species', async () => {
+    const nonreviving = await knownObject(CORPSE, { norevive: true, corpsenm: MONSTER_NAME.indexOf('troll') });
+    const revivable = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('troll') });
+
+    assert.equal(sortObjects([nonreviving, revivable], { mode: lootSortMode() })[0], revivable);
+    assert.equal(nonreviving.norevive, true);
+});
+
 void test('identical loot remains in its original order and food spe does not act as enchantment', async () => {
     const first = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('jackal'), spe: 1 });
     const second = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('jackal'), spe: 2 });

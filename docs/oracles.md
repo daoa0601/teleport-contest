@@ -111,12 +111,15 @@ above a port function. For each C callee, the edge is:
   (`inlined` or `n/a`);
 - **missing** otherwise.
 
-Missing edges are audit leads, not verdicts. Inlined helpers and renames
-show up as missing until they are recorded. When an audit confirms a
-rename, add an alias line to `c-ts-aliases.tsv`. An alias adds a
-counterpart and never hides a comment citation. When an audit confirms an
-inlined or unobservable edge, add a justification line. `--function NAME`
-prints one function's lists.
+Missing edges are audit leads, not verdicts. `docs/c-js-semantics.md` lists the
+false-alarm classes audits have found (composed messages, dead C branches,
+recorder instrumentation, renames) and the C behavior JavaScript needs an
+explicit alternative for. Inlined helpers and renames show up as missing
+until they are recorded. When an audit confirms a rename, add an alias line
+to `c-ts-aliases.tsv`. An alias adds a counterpart and never hides a comment
+citation. When an audit confirms an inlined or unobservable edge, or a dead C
+branch, add a justification line. `--function NAME` prints one function's
+lists.
 
 `screens RUN_DIR` reads a finished `triage-holdout` run. It charges each
 screen-only first difference to the C function whose literal appears on the

@@ -1,20 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { A_STR, STR19, TT_INFLOOR } from '../js/const.js';
+import { A_STR, PIT, STONE, STR19, TT_INFLOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { remove_object } from '../js/floor_object.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { HEAVY_IRON_BALL } from '../js/object_data.js';
+import { BOULDER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
+import { maketrap } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
 import type { GameObject } from '../js/object_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { throwInventoryObject } from './support/commands.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 
 // A punished hero carrying the attached ball: unlink the floor ball and hold
 // it, the state pickup leaves behind when the ball is picked up.
@@ -113,3 +115,73 @@ void test('a hero stuck in the floor throws the chained ball one square', async 
     assert.equal(trappedBall.oy, 10);
 });
 
+void test('a chained ball thrown through a tight Sokoban diagonal jerks to a halt', async () => {
+    const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = STR19(25);
+    level.flags.sokoban_rules = true;
+    const ball = await holdAttachedBall();
+    for (const [x, y] of [[10, 9], [11, 10]] as const) {
+        level.requireAt(x, y).typ = STONE;
+        vision_note_blocker_change(x, y);
+    }
+    vision_recalc(0);
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    initRng(917n);
+
+    await throwInventoryObject(ball, 'u', ' '.repeat(8));
+
+    const text = [...messages, game._pending_message].join('\n');
+    assert.match(text, /The heavy iron ball jerks to an abrupt halt\./);
+    assert.equal(ball.where, 'floor');
+    assert.equal(ball.ox, 11);
+    assert.equal(ball.oy, 9);
+});
+
+void test('a thrown iron ball stops on a boulder square and reports the hit', async () => {
+    freshObjectRoom({ right: 35, flags: { pickup: false } });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = STR19(25);
+    await floorObject(BOULDER, 13, 10);
+    const ball = await addInventoryObject(HEAVY_IRON_BALL);
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    initRng(915n);
+
+    await throwInventoryObject(ball, 'l', ' '.repeat(8));
+
+    const text = [...messages, game._pending_message].join('\n');
+    assert.match(text, /The heavy iron ball hits a boulder\./);
+    assert.equal(ball.where, 'floor');
+    assert.equal(ball.ox, 13);
+    assert.equal(ball.oy, 10);
+});
+
+void test('a chained ball thrown across a Sokoban pit stops on the pit', async () => {
+    const level = freshObjectRoom({ right: 35, flags: { pickup: false } });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = STR19(25);
+    level.flags.sokoban_rules = true;
+    const ball = await holdAttachedBall();
+    await maketrap(14, 10, PIT);
+    const blocker = await createMonsterAt('orc', 15, 10);
+    blocker.mhp = blocker.mhpmax = 100;
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    initRng(916n);
+
+    await throwInventoryObject(ball, 'l', ' '.repeat(8));
+
+    const text = [...messages, game._pending_message].join('\n');
+    assert.doesNotMatch(text, /abrupt halt/);
+    assert.doesNotMatch(text, /heavy iron ball (hits|misses)/,
+        'the pit stops the flight before the chained ball reaches the orc');
+    assert.equal(blocker.mhp, 100);
+    assert.equal(ball.where, 'floor');
+    assert.equal(ball.ox, 14);
+    assert.equal(ball.oy, 10);
+});

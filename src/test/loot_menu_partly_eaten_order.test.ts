@@ -42,3 +42,32 @@ for (const partlyFirst of [true, false]) {
             `both rations sort under food ration before fortune cookie:\n${menu}`);
     });
 }
+
+for (const partlyFirst of [true, false]) {
+    void test(`loot lists fresh rations before rotten rations when ${partlyFirst ? 'rotten' : 'fresh'} rations were stashed last`, async () => {
+        freshObjectRoom();
+        const sack = await floorObject(SACK, 10, 10, { cknown: true });
+        const rotten = await knownObject(FOOD_RATION, { where: 'free', oeaten: 400, orotten: true });
+        const fresh = await knownObject(FOOD_RATION, { where: 'free', quan: 2, quantity: 2 });
+        await addObjectToContainer(sack, partlyFirst ? fresh : rotten);
+        await addObjectToContainer(sack, partlyFirst ? rotten : fresh);
+
+        const input = resetInputState();
+        pushKeys('loot\n');
+        const looting = rhack('#'.charCodeAt(0));
+        await input.waitUntilBlocked();
+        input.feed('o');
+        await input.waitUntilBlocked();
+
+        const rows = requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join(''));
+        input.feed('\x1b');
+        await looting;
+
+        const rottenRow = rows.findIndex(row => /an uncursed partly eaten food ration/.test(row));
+        const freshRow = rows.findIndex(row => /2 uncursed food rations/.test(row));
+        const menu = rows.slice(0, 10).join('\n');
+        assert.ok(rottenRow >= 0 && freshRow >= 0, `both ration stacks must be listed:\n${menu}`);
+        assert.ok(freshRow < rottenRow, `fresh rations must precede rotten rations:\n${menu}`);
+        assert.equal(rotten.orotten, true, 'sorting preserves the food condition');
+    });
+}
