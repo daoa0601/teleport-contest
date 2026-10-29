@@ -1,3 +1,4 @@
+import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { rotCorpse } from './corpse_rot.js';
 // mklev.js — Level generation.
 // C ref: mklev.c — makelevel, makerooms, makecorridors, generate_stairs.
@@ -128,7 +129,7 @@ import {
     DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL,
     ICED_POOL, ICED_MOAT,
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
-    DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
+    DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
     TREE, AIR, CLOUD,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
@@ -256,7 +257,7 @@ import {
     isMultiGeneratedWeapon, isPoisonableObject,
 } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
-import { monsterEmitsLight, vision_note_blocker_change, vision_reset_new_level } from './vision.js';
+import { monsterEmitsLight, vision_note_blocker_change, vision_reset, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
 import {
     randomDefensiveMonsterItem, randomMiscMonsterItem,
@@ -4553,7 +4554,7 @@ function getSpecialLevelExtents(): { minx: number; miny: number; maxx: number; m
     return { minx, miny, maxx, maxy };
 }
 
-function flipSpecialLevel(flp: number): void {
+export async function flipSpecialLevel(flp: number, extras = false): Promise<void> {
     if (!(flp & 3)) return;
     const level = requireGameLevel();
     const { minx, miny, maxx, maxy } = getSpecialLevelExtents();
@@ -4565,6 +4566,19 @@ function flipSpecialLevel(flp: number): void {
         if (requireArea && !inArea(x, y)) return { x, y };
         return { x: flp & 2 ? flipX(x) : x, y: flp & 1 ? flipY(y) : y };
     };
+
+    let replaceBallAndChain = false;
+    if (extras && heroIsPunished()) {
+        const ball = game.uball || game.u.uball;
+        const chain = game.uchain || game.u.uchain;
+        if (!ball || !chain) throw new Error('Punishment requires a ball and chain.');
+        if (ball.where !== 'free') {
+            if (ball.where === 'inventory') { ball.ox = game.u.ux; ball.oy = game.u.uy; }
+            replaceBallAndChain = inArea(ball.ox, ball.oy) !== inArea(chain.ox, chain.oy)
+                || inArea(ball.ox, ball.oy) !== inArea(game.u.ux, game.u.uy);
+            if (replaceBallAndChain) await unplaceBallAndChain();
+        }
+    }
 
     // sp_lev.c flips wall glyph topology along with coordinates.  The raw
     // map has already been wallified, so corners and T-junctions must change
@@ -4599,6 +4613,11 @@ function flipSpecialLevel(flp: number): void {
         const flipTrap = inArea(trap.tx, trap.ty);
         const point = transform(trap.tx, trap.ty);
         trap.tx = point.x; trap.ty = point.y;
+        if (flipTrap && is_pit(trap.ttyp) && trap.conjoined) {
+            // C applies the full mask once in each selected axis branch.
+            if (flp & 1) trap.conjoined = flipEncodedDirections(flp, trap.conjoined);
+            if (flp & 2) trap.conjoined = flipEncodedDirections(flp, trap.conjoined);
+        }
         if (flipTrap && trap.ttyp === ROLLING_BOULDER_TRAP) {
             trap.launch = transform(trap.launch.x, trap.launch.y, false);
             if (!trap.launch2) throw new Error('Rolling boulder trap has no second launch location.');
@@ -4619,16 +4638,34 @@ function flipSpecialLevel(flp: number): void {
         }
     }
     level.objects = movedObjects;
+    for (const object of level.buriedObjects ?? []) {
+        const point = transform(object.ox, object.oy);
+        object.ox = point.x; object.oy = point.y;
+    }
     const flipCoordinate = (coordinate: Position | null | undefined): void => {
         if (!coordinate?.x) return;
         const flipped = transform(coordinate.x, coordinate.y);
         coordinate.x = flipped.x;
         coordinate.y = flipped.y;
     };
+    const flipGuard = (monster: Monster): void => {
+        const guard = monster._egd;
+        if (!guard) return;
+        const goal = transform(guard.gdx, guard.gdy);
+        guard.gdx = goal.x; guard.gdy = goal.y;
+        const origin = transform(guard.ogx, guard.ogy);
+        guard.ogx = origin.x; guard.ogy = origin.y;
+        for (const cell of guard.fakecorr.slice(guard.fcbeg, guard.fcend)) flipCoordinate(cell);
+    };
     for (const monster of level.monsters || []) {
+        if (monster.isgd) {
+            if (extras) flipGuard(monster);
+            if (monster.mx === 0) continue;
+        }
         if (!inArea(monster.mx, monster.my)) continue;
         const point = transform(monster.mx, monster.my);
         monster.mx = point.x; monster.my = point.y;
+        flipCoordinate(monster.mgoal);
         if (monster.ispriest) {
             flipCoordinate((monster.epri || monster.mextra?.epri)?.shrpos);
         } else if (monster.isshk) {
@@ -4636,11 +4673,32 @@ function flipSpecialLevel(flp: number): void {
             flipCoordinate(shop?.shk);
             flipCoordinate(shop?.shd);
         } else if (monster.wormno) {
-            flipCoordinate(monster.wormHead);
+            if (monster.wormHead) {
+                const head = transform(monster.wormHead.x, monster.wormHead.y, false);
+                monster.wormHead.x = head.x; monster.wormHead.y = head.y;
+            }
             if (!monster.wormSegments) throw new Error('Long worm has no segment list.');
             monster.wormSegments = monster.wormSegments.map(segment =>
-                transform(segment.x, segment.y));
+                transform(segment.x, segment.y, false));
         }
+    }
+    if (extras) {
+        const heroLevel = game.u.uz;
+        if (!heroLevel) throw new Error('Flipping a live level requires the hero dungeon location.');
+        const onLevel = (location: DungeonLocation): boolean =>
+            location.dnum === heroLevel.dnum && location.dlevel === heroLevel.dlevel;
+        for (const monster of game._migratingMonsters ?? []) {
+            const priest = monster.epri || monster.mextra?.epri;
+            const shop = monster.eshk || monster.mextra?.eshk;
+            if (monster.isgd && monster._egd && onLevel(monster._egd.gdlevel)) flipGuard(monster);
+            else if (monster.ispriest && priest && onLevel(priest.shrlevel)) flipCoordinate(priest.shrpos);
+            else if (monster.isshk && shop && onLevel(shop.shoplevel)) {
+                flipCoordinate(shop.shk); flipCoordinate(shop.shd);
+            }
+        }
+    }
+    for (const region of level.regions) {
+        region.cells = region.cells.map(cell => transform(cell.x, cell.y, false));
     }
     for (const engraving of level.engravings || []) {
         const point = transform(engraving.x, engraving.y, false);
@@ -4678,6 +4736,8 @@ function flipSpecialLevel(flp: number): void {
                 const otherY = flipY(y);
                 const column = level.requireColumn(x);
                 const swap = level.requireAt(x, y);
+                flipDrawbridgeDirection(swap, false);
+                flipDrawbridgeDirection(level.requireAt(x, otherY), false);
                 column[y] = level.requireAt(x, otherY);
                 column[otherY] = swap;
             }
@@ -4690,19 +4750,99 @@ function flipSpecialLevel(flp: number): void {
             const otherColumn = level.requireColumn(otherX);
             for (let y = miny; y <= maxy; y++) {
                 const swap = level.requireAt(x, y);
+                flipDrawbridgeDirection(swap, true);
+                flipDrawbridgeDirection(level.requireAt(otherX, y), true);
                 column[y] = level.requireAt(otherX, y);
                 otherColumn[y] = swap;
             }
         }
     }
+    for (const timer of level.levelTimers) {
+        const point = transform(timer.x, timer.y, false);
+        timer.x = point.x; timer.y = point.y;
+    }
+    if (extras) {
+        if (inArea(game.u.ux, game.u.uy)) {
+            const hero = transform(game.u.ux, game.u.uy);
+            game.u.ux = game.u.ux0 = hero.x;
+            game.u.uy = game.u.uy0 = hero.y;
+        }
+        if (replaceBallAndChain) await placeBallAndChain();
+        flipCoordinate(game._travelTarget); // C iflags.travelcc
+        flipCoordinate(game.context.digging?.pos);
+    }
+    fix_wall_spines(1, 0, COLNO - 1, ROWNO - 1);
+    if (extras) {
+        setWallState();
+        flipRememberedVisuals(flp, minx, miny, maxx, maxy);
+    }
+    vision_reset();
+    game.vision_full_recalc = 1;
     level._flip = { flp, minx, miny, maxx, maxy };
 }
 
-function flipSpecialLevelRandom(allowed: number): void {
+function flipDrawbridgeDirection(location: MapLocation, horizontal: boolean): void {
+    if (location.typ !== DRAWBRIDGE_UP && location.typ !== DRAWBRIDGE_DOWN) return;
+    const mask = location.drawbridgemask ?? location.flags;
+    const direction = mask & DB_DIR;
+    const first = horizontal ? DB_WEST : DB_NORTH;
+    const second = horizontal ? DB_EAST : DB_SOUTH;
+    if (direction !== first && direction !== second) return;
+    location.flags = location.drawbridgemask = (mask & ~DB_DIR)
+        | (direction === first ? second : first);
+}
+
+function swapDirectionBits(value: number, first: number, second: number): number {
+    const different = ((value >> first) ^ (value >> second)) & 1;
+    return value ^ ((different << first) | (different << second));
+}
+
+function flipEncodedDirections(flp: number, value: number): number {
+    if (flp & 1) {
+        value = swapDirectionBits(value, 1, 7);
+        value = swapDirectionBits(value, 2, 6);
+        value = swapDirectionBits(value, 3, 5);
+    }
+    if (flp & 2) {
+        value = swapDirectionBits(value, 1, 3);
+        value = swapDirectionBits(value, 0, 4);
+        value = swapDirectionBits(value, 7, 5);
+    }
+    return value;
+}
+
+function flipRememberedVisuals(flp: number, minx: number, miny: number, maxx: number, maxy: number): void {
+    const level = requireGameLevel();
+    for (let y = miny; y <= maxy; y++) {
+        for (let x = minx; x <= maxx; x++) {
+            const location = level.requireAt(x, y);
+            let seen = location.seenv & 255;
+            if (!seen) continue;
+            if (flp & 1) {
+                seen = swapDirectionBits(seen, 2, 4);
+                seen = swapDirectionBits(seen, 1, 5);
+                seen = swapDirectionBits(seen, 0, 6);
+            }
+            if (flp & 2) {
+                seen = swapDirectionBits(seen, 2, 0);
+                seen = swapDirectionBits(seen, 3, 7);
+                seen = swapDirectionBits(seen, 4, 6);
+            }
+            location.seenv = seen;
+            if ((IS_WALL(location.typ) || location.typ === SDOOR)
+                && location.remembered_glyph?.kind === 'terrain') {
+                const glyph = terrain_glyph(location, x, y);
+                location.remembered_glyph = { ...glyph, decgfx: glyph.dec };
+            }
+        }
+    }
+}
+
+export async function flipSpecialLevelRandom(allowed: number, extras = false): Promise<void> {
     let flp = 0;
     if ((allowed & 1) && rn2(2)) flp |= 1;
     if ((allowed & 2) && rn2(2)) flp |= 2;
-    flipSpecialLevel(flp);
+    await flipSpecialLevel(flp, extras);
 }
 
 async function fillZooRoom(room: Room): Promise<void> {
@@ -7229,7 +7369,7 @@ function createLuaLevelSession() {
                 wallification(1, 0, COLNO - 1, ROWNO - 1);
             const allowedFlips = currentLevel().allowFlips;
             if (allowedFlips === undefined) throw new Error('Lua level flip flags are uninitialized');
-            flipSpecialLevelRandom(allowedFlips);
+            await flipSpecialLevelRandom(allowedFlips);
             countLevelFeatures();
             if (currentLevel().solidify) solidifyLuaMap(mappedCells);
             flipLuaRegions(currentLevel());

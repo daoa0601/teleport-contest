@@ -1,5 +1,5 @@
 // C cmd.c:extcmds_match(), extcmd_via_menu(), doextlist().
-import { COLNO, NHW_MENU, PICK_ONE, ROWNO } from './const.js';
+import { COLNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY, PICK_ONE, ROWNO } from './const.js';
 import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { NATIVE_COMMAND_FLAGS as flags, NATIVE_COMMANDS } from './command_data.js';
 import { visibleCommandKey } from './command_keys.js';
@@ -12,7 +12,11 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, 
 // so configuration adjustments live in this overlay.
 const autocompleteOverrides = new Map();
 export function setCommandAutocomplete(name, enabled) {
-    autocompleteOverrides.set(name, enabled);
+    const command = NATIVE_COMMANDS.find(entry => entry.name === name);
+    if (command && enabled === !!(command.flags & flags.AUTOCOMPLETE))
+        autocompleteOverrides.delete(name);
+    else
+        autocompleteOverrides.set(name, enabled);
 }
 // One native process parses one rc file; the overrides must not outlive an
 // engine start in this port.
@@ -22,6 +26,33 @@ export function resetCommandAutocomplete() {
 export function commandAutocompletes(command) {
     const override = command.name !== null ? autocompleteOverrides.get(command.name) : undefined;
     return override !== undefined ? override : !!(command.flags & flags.AUTOCOMPLETE);
+}
+// C cmd.c:count_autocompletions() counts changes from the compiled defaults.
+export function countCommandAutocompletions() {
+    return autocompleteOverrides.size;
+}
+// This editor includes wizard commands even during ordinary play, as C does.
+export async function changeCommandAutocompletions() {
+    const commands = NATIVE_COMMANDS.filter(command => command.name !== null
+        && command.name.length >= 2
+        && !(command.flags & (flags.CMD_NOT_AVAILABLE | flags.INTERNALCMD)));
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (const command of commands) {
+        tty_add_menu(window, { identifier: command,
+            text: `${autocompleteOverrides.has(command.name ?? '') ? '*' : ' '} ${command.name}: ${commandDescription(command)}`,
+            itemflags: commandAutocompletes(command) ? MENU_ITEMFLAGS_SELECTED : 0 });
+    }
+    tty_end_menu(window, 'Which commands autocomplete?');
+    const result = await tty_select_menu(window, PICK_ANY);
+    await tty_destroy_nhwindow(window);
+    if (result.cancelled)
+        return;
+    const selected = new Set(result.selections.map(item => item.identifier));
+    for (const command of commands) {
+        if (command.name !== null)
+            setCommandAutocomplete(command.name, selected.has(command));
+    }
 }
 export function availableExtendedCommands() {
     return NATIVE_COMMANDS.filter(command => command.name !== null

@@ -1,7 +1,9 @@
 # file	owner	piece	verdict	reason
 # Keys and piece escapes match c-messages.tsv. A shared key covers every native literal with that file, owner and longest fixed piece.
 # Composed reasons start with src/js/FILE.ts:FUNCTION (preferred) or :LINE; every such location is checked.
+apply.c	do_break_wand	self by breaking a wand	composed	src/js/wand_break.ts:breakWand; Selects himself or herself before " by breaking a wand"; the killer reaches the tombstone through loseHeroHp.
 apply.c	flip_through_book	ink in this spellbook is	composed	src/js/book_flip.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
+apply.c	magic_whistled	magic_whistled	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
 apply.c	use_leash	from inside.	composed	src/js/leash_apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
 artifact.c	artifact_hit	blade drains your	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
 artifact.c	artifact_hit	blade draws the	composed	src/js/artifact_hit.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
@@ -11,36 +13,205 @@ cfgfiles.c	do_write_config_file	An error occurred, wrote only partial data (	out
 cfgfiles.c	do_write_config_file	Some settings are not saved!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
 cfgfiles.c	do_write_config_file	Strange, could not figure out config file name.	dead	The recorder initializes configfile while reading its rc file, and #saveoptions is NOFUZZERCMD, rejected by rhack() during recorded debug_fuzzer games.
 cfgfiles.c	do_write_config_file	Warning: saveoptions is highly experimental!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
+artifact.c	dump_artifact_info	dump_artifact_info	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+attrib.c	acurr	chridx >= 0 && chridx < A_MAX	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+bones.c	getbones	This is bones level '	out-of-scope	Wizard-mode pline for a mismatched bones file being read back (bones file I/O); the port rebuilds level contents from the session, never parsing bones files.
+bones.c	getbones	ancestor-nhuuid	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in bones.c:getbones(); serialized metadata, not displayed text. The port validates its own storage format.
+bones.c	savebones	ancestor-nhuuid	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in bones.c:savebones(); serialized metadata, not displayed text. The port validates its own storage format.
+botl.c	do_statusline2	do_statusline2	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+botl.c	fieldids_alias	experience-points	composed	src/js/option_values.ts:rejectInvalidStatusField; The alias table is normalized by stripping - and _ before matching experiencepoints, like fieldids_alias for BL_EXP.
+botl.c	has_ltgt_percentnumber	<>=-+0123456789%	diagnostic	Character set for status-hilite percent-number bounds parsing, not a message.
+botl.c	parse_cond_option	parse_cond_option	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+botl.c	status_hilite2str	status_hilite2str	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+botl.c	status_hilite_linestr_gather_conditions	status_hilite_linestr_gather_conditions	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+botl.c	status_hilite_menu_add	status_hilite_menu_add	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+calendar.c	yyyymmddhhmmss	yyyymmddhhmmss	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+cmd.c	all_options_autocomplete	AUTOCOMPLETE=	out-of-scope	build_options() regenerates config-file text for writing the rc file or dump; host file output is outside the browser runtime.
+cmd.c	cmdname_from_func	cmdname_from_func	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+cmd.c	cmdnotavail	' command not available.	dead	The pinned unix build defines SHELL and SUSPEND (unixconf.h:291,322) and tty can suspend, so #suspend and #shell run their OS paths; the two remaining uses sit in #if 0 blocks (cmd.c:2644-2653, 2713-2720).
 cmd.c	do_run	Double run prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
 cmd.c	do_rush	Double rush prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
 cmd.c	enter_explore_mode	Note: normally you wouldn't be allowed into explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
 cmd.c	enter_explore_mode	cannot access explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
+cmd.c	extcmd_via_menu	extcmd_via_menu	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+cmd.c	handler_rebind_keys_add	handler_rebind_keys_add	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+cmd.c	there_cmd_menu_self	Go down the	composed	src/js/context_menu.ts:selfEntries; Composes `Go ${up or down} the ${ladder or stairs}` for the self context menu, like there_cmd_menu_self().
+decl.c	hexdd	00112233445566778899aAbBcCdDeEfF	diagnostic	Hex-digit lookup table, not a message; used by hex parsing helpers.
+dig.c	adj_pit_checks	The rock glows then fades.	dead	adj_pit_checks() zeroes rm.flags (wall_info aliases flags, rm.h:211) at its top, so the STONE/SCORR W_NONDIGGABLE re-test can never be true; the port's clearTerrainFlags models the same clearing.
 dig.c	use_pick_axe2	merely scratches the	composed	src/js/pick_axe.ts:applyPickAxeDirection; ownedObjectAction supplies the singular scratches verb before the named surface.
 dig.c	zap_dig	rock glows then fades.	composed	src/js/digging_magic.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
 dig.c	zap_dig	wall glows then fades.	composed	src/js/digging_magic.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
+display.c	show_glyph	body at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	dark explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	detected female monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	detected male monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	fiery explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	frosty explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	gehennom dungeon walls	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	generic object	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	generic object at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	gnomish mines dungeon walls	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	knox dungeon walls	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	main dungeon walls	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	muddy explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	noxious explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	object at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	ridden female monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	ridden male monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	sokoban dungeon walls	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	statue of a female monster at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	statue of a male monster at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	statue of female monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	statue of male monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	show_glyph	warning explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
+display.c	t_warn	: seenv = 0x	diagnostic	wall_angle() impossible() format for an unhandled seenv case; developer diagnostic.
+do.c	better_not_try_to_drop_that	better_not_try_to_drop_that	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+do.c	dodown	Try to squeeze	dead	The squeeze block requires trap != NULL after the no-stairs branch, but a seen hole or trapdoor always returns through uescaped_shaft() -> dotrap() and every other trap returns at "can't go down here"; stairs leave trap NULL.
+do.c	dodown	contusion from a small passage	dead	The contusion killer sits in the !rn2(3) arm of the same unreachable squeeze block.
 do.c	dodown	go down here	composed	src/js/cmd.ts:travelStairs; Composes up or down and the vibrating-square yet suffix.
+do.c	dodown	manage to squeeze	dead	Same unreachable squeeze block as the Try to squeeze prompt: only trap != NULL reaches it and every such path returns earlier.
 do.c	dodown	were unable to fit	dead	The squeeze block requires trap != NULL; seen holes return through uescaped_shaft(), all other traps return in the following else-if, and stairs leave trap NULL.
 do.c	dosinkring	faucet flashes brightly for a moment.	composed	src/js/ring_sink.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
 do.c	dosinkring	got lost in the sink, but there it is!	composed	src/js/ring_sink.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
+do_name.c	lookup_novel	The Color of Magic	composed	src/js/novel_titles.ts:lookupNovelTitle; Recognizes the lowercase American spelling the color of magic and returns the canonical The Colour of Magic, as lookup_novel() does.
+do_name.c	minimal_monnam	[Invalid mon->data	diagnostic	Defensive fallbacks of minimal_monnam() for an out-of-range data pointer; not reachable with valid monster state.
+do_name.c	minimal_monnam	[Null mon->data]	diagnostic	Defensive fallbacks of minimal_monnam() for a null monster or data pointer; not reachable with valid monster state.
+do_name.c	minimal_monnam	[Null monster]	diagnostic	Defensive fallbacks of minimal_monnam() for a null monster or data pointer; not reachable with valid monster state.
+do_name.c	obj_pmname	two-legged glorkum-seeker	diagnostic	Return value after impossible("obj_pmname otyp:..."); the fallback never names a real corpse.
+do_wear.c	armor_or_accessory_off	armor_or_accessory_off	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+do_wear.c	better_not_take_that_off	better_not_take_that_off	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
 do_wear.c	dotakeoff	dragon scale mail is	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
 do_wear.c	dotakeoff	dragon scales are	composed	src/js/cmd.ts:removeWornItem; Selects scales are or scale mail is before merged with your skin.
+do_wear.c	unknown_type	Unknown type of	diagnostic	impossible() format for an unrecognized armor otyp; developer diagnostic.
+do_wear.c	wielding_corpse	wielding_corpse	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+dogmove.c	dog_invent	edog->apport > 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 dokick.c	really_kick_object	It comes loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dokick.c	really_kick_object	n't come loose.	composed	src/js/object_kick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dothrow.c	thitmonst	catches and drops	composed	src/js/unicorn_gift.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
+dungeon.c	br_string2	One way stairs down	composed	src/js/cmd.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
+dungeon.c	br_string2	One way stairs up	composed	src/js/cmd.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
+dungeon.c	dumpit	, dunlev_ureached	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
+dungeon.c	dumpit	, ledger_start	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
+dungeon.c	dumpit	Special levels:	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
+dungeon.c	init_dungeons	Cannot open dungeon description - "	out-of-scope	Fatal error when the dungeon.lua dlb resource cannot be opened; a data-file open error outside the port, which embeds the generated dungeon graph.
+dungeon.c	lev_by_name	to Vlad's tower	composed	src/js/level_teleport.ts:destinationAtDepth; The gehennom alias resolves to " to vlad's tower" while inside the tower branch, matching lev_by_name()'s special case.
+dungeon.c	load_exclusions	exclusion-zonetype	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_exclusions(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	load_exclusions	exclusion_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_exclusions(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	load_mapseen	mapseen-branch_index	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	load_mapseen	mapseen-custom	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	load_mapseen	mapseen-custom_lth	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	load_mapseen	mapseen-d_level	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	load_mapseen	mapseen-msrooms	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:load_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	overview_stats	annotations, text	diagnostic	Annotation-bytes statistics row for the #stats memory report; native-introspection output.
+dungeon.c	overview_stats	cemetery, size	diagnostic	sizeof(struct cemetery) statistics rows for the #stats memory report; native-introspection output.
+dungeon.c	overview_stats	general, size	diagnostic	sizeof(mapseen) statistics rows for the #stats memory report; native-introspection output.
+dungeon.c	print_mapseen	: levels	composed	src/js/cmd.ts:dungeonOverviewHeading; Composes `levels ${from} up to ${to}` or `levels ${from} to ${to}` per the reached-versus-full-range case.
+dungeon.c	query_annotation	query_annotation	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+dungeon.c	restore_dungeon	level_info_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:restore_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	restore_dungeon	svd.dungeon_topology	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:restore_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	restore_dungeon	svl.level_info	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:restore_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_dungeon	level_info_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_dungeon	svd.dungeon_topology	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_dungeon	svl.level_info	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_dungeon(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_exclusions	exclusion-zonetype	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_exclusions(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_exclusions	exclusion_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_exclusions(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_mapseen	mapseen-branch_index	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_mapseen	mapseen-custom	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_mapseen	mapseen-custom_lth	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_mapseen	mapseen-d_level	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+dungeon.c	save_mapseen	mapseen-msrooms	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in dungeon.c:save_mapseen(); serialized metadata, not displayed text. The port validates its own storage format.
+earlyarg.c	arti_enum_dump	AFTER_LAST_ARTIFACT	diagnostic	--dumpenums artifact enum dump at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	FIRST_GLASS_GEM	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	FIRST_REAL_GEM	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	LAST_GLASS_GEM	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	NUM_GLASS_GEMS	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	artifacts_nums	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	misc_object_nums	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	objclass_classes	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+earlyarg.c	dump_enums	objclass_defchars	diagnostic	--dumpenums command-line dump of enum tables at startup; host CLI output outside the recorded game.
+eat.c	edibility_prompts	edibility_prompts	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+eat.c	floorfood	; resume eating them?	composed	src/js/food_selection.ts:selectFoodToEat; Composes `There are iron bars here; ${resume ? 'resume eating' : 'eat'} them?` from the digging context like floorfood().
 eat.c	rottenfood	rather trippy.	composed	src/js/ordinary_food_effects.ts:applyRottenFood; Hallucination selects trippy in the felt-message template.
+end.c	done	are a very tricky wizard, it seems.	dead	Pinned recorder comments the wizard-mode TRICKED line out for deterministic replay (end.c:1031); the port's finishHeroDeath returns silently for TRICKED with debug set, like the native branch without the message.
+end.c	done_in_by	, the shopkeeper	composed	src/js/shk.ts:shopkeeperKillerName; Composes honorific plus shop name before the shopkeeper title; formatkiller()'s comma-to-semicolon rewrite is applied there too.
+end.c	really_done	and Schroedinger's cat	composed	src/js/end.ts:finishLivingGame; Pushes Schroedinger's cat into the pet names joined with " and " for the closing company line.
+engrave.c	rest_engravings	engraving-actual_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:rest_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	rest_engravings	engraving-engr_alloc	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:rest_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	rest_engravings	engraving-pristine_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:rest_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	rest_engravings	engraving-remembered_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:rest_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	save_engravings	engraving-actual_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:save_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	save_engravings	engraving-engr_alloc	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:save_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	save_engravings	engraving-pristine_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:save_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+engrave.c	save_engravings	engraving-remembered_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:save_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
+exper.c	losexp	u.ulevel >= 0 && u.ulevel < MAXULEV	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 explode.c	engulfer_explosion_msg	gets slightly	composed	src/js/explosion.ts:engulferMessage; A nondigesting engulfer inserts slightly and selects the native damage-type adjective.
 files.c	commit_bonesfile	couldn't rename	out-of-scope	Requires the host rename() or link()/unlink() of a temporary bones file to fail; the browser bones store does not use native file renames.
 files.c	livelog_add	Cannot open live log file!	out-of-scope	Reports fopen_datafile(LIVELOGFILE) failure after acquiring a native logfile lock; host livelog files and locking are outside the browser runtime.
 files.c	read_tribute	too overwhelmed to continue!	out-of-scope	Only dlb_fopen(TRIBUTEFILE) failure prints this line; the pinned tribute passages are bundled resources, and missing host data files are outside the browser runtime.
+getpos.c	getpos_help	' to fast-move the cursor,	composed	src/js/getpos.ts:getposHelpUntilDismissed; Composes `Use ${directions} to fast-move the cursor, ${fastModes}.` with the moveskip mode text.
+getpos.c	getpos_help	' to move the cursor to	composed	src/js/getpos.ts:getposHelpUntilDismissed; Composes `Use ${directions} to move the cursor to ${goal}.` with the configured direction keys.
+getpos.c	getpos_help	(Reset 'whatis_coord' option to omit coordinates from '	dead	getpos.c:getpos_help() only writes this hint into sbuf, never putstr()s it, and overwrites sbuf with the Type a ... prompt before the next putstr().
+getpos.c	getpos_help	(Set 'whatis_coord' option to include coordinates with '	dead	getpos.c:getpos_help() only writes this hint into sbuf, never putstr()s it, and overwrites sbuf with the Type a ... prompt before the next putstr().
+hack.c	avoid_trap_andor_region	avoid_trap_andor_region	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+hack.c	domove_fight_web	uswapwep != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 hack.c	domove_swap_with_pet	can't move diagonally.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	doesn't want to swap places.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	won't fit into the same spot that you're at.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	domove_swap_with_pet	won't fit through.	composed	src/js/hero_pet_displacement.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	still_chewing	chew through the door.	composed	src/js/iron_bars_meal.ts:continueChewingTerrain; Composes `You chew through the ${secret ? 'secret ' : ''}door.` for the SDOOR and DOOR outcomes.
+hack.c	still_chewing	chew through the secret door.	composed	src/js/iron_bars_meal.ts:continueChewingTerrain; Composes `You chew through the ${secret ? 'secret ' : ''}door.` for the SDOOR and DOOR outcomes.
+hack.c	test_move	impossible [background glyph=	diagnostic	impossible() while computing travel moves for a background glyph; developer diagnostic.
+insight.c	attributes_enlightenment	Final Attributes:	composed	src/js/enlightenment_attributes.ts:attributeEnlightenmentLines; Heading composes ` ${final ? 'Final ' : ''}Attributes:` for the enlght_out() header.
+insight.c	attributes_enlightenment	have changed shape	composed	src/js/enlightenment_attributes.ts:attributeEnlightenmentLines; The would-have text composes `would have ${change === 'polymorph' ? 'polymorphed' : 'changed shape'}`.
+insight.c	attributes_enlightenment	invisible if not blind	composed	src/js/enlightenment_attributes.ts:attributeEnlightenmentLines; Chooses if or when for permanent blindness in ` invisible ${...} not blind`.
+insight.c	attributes_enlightenment	invisible when not blind	composed	src/js/enlightenment_attributes.ts:attributeEnlightenmentLines; Chooses if or when for permanent blindness in ` invisible ${...} not blind`.
+insight.c	attributes_enlightenment	protected from acid	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
+insight.c	attributes_enlightenment	protected from cold	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
+insight.c	attributes_enlightenment	protected from disintegration	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
+insight.c	attributes_enlightenment	protected from electric shocks	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
+insight.c	attributes_enlightenment	protected from fire	composed	src/js/enlightenment_attributes.ts:itemResistanceLines; Composes `  Your items ... protected from ${damage}${cause}.` with damage fire/cold/disintegration/electric shocks/acid from the callers.
+insight.c	background_enlightenment	background_enlightenment	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+insight.c	list_vanquished	list_vanquished	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+insight.c	mstatusline	, carrying you	composed	src/js/monster_status.ts:monsterStatusLine; The steed case pushes carrying you plus the wounded-leg detail into the comma-joined conditions.
+insight.c	mstatusline	, digesting you	composed	src/js/monster_status.ts:monsterStatusLine; The swallowed-hero case pushes digesting you / swallowing you / engulfing you into the comma-joined conditions.
+insight.c	mstatusline	, shapechanger	composed	src/js/monster_status.ts:monsterStatusLine; The cham-not-form case pushes shapechanger into the comma-joined conditions.
+insight.c	mstatusline	, single segment	composed	src/js/monster_status.ts:monsterStatusLine; Worm feedback pushes single segment or `${index}${suffix} of ${count} segments` into the comma-joined conditions.
+insight.c	show_conduct	have not violated	composed	src/js/insight.ts:currentConductLines; Native enlght_line() contracts have not to haven't; the port displays You haven't violated any of the special Sokoban rules.
+insight.c	show_conduct	have not wished	composed	src/js/insight.ts:wishConductLines; Native enlght_line() contracts have not to haven't; the port displays You haven't wished for any artifacts in current conduct and did not wish in final conduct.
+insight.c	size_str	unknown size (	dead	Every mons[] entry uses MZ_TINY..MZ_GIGANTIC (monsters.h), all covered by size_str()'s switch; the default row cannot print for any real monster or the hero's form.
+insight.c	status_enlightenment	status_enlightenment	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+insight.c	status_enlightenment	u.ustuck != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+insight.c	ustatusline	, becoming slimy	composed	src/js/hero_status.ts:heroStatusLine; Self-probe conditions push becoming slimy, being strangled, digested-by/engulfed-by and the sticky-goop blindness into the comma-joined list.
+insight.c	ustatusline	, being digested by	composed	src/js/hero_status.ts:heroStatusLine; Self-probe conditions push becoming slimy, being strangled, digested-by/engulfed-by and the sticky-goop blindness into the comma-joined list.
+insight.c	ustatusline	, being strangled	composed	src/js/hero_status.ts:heroStatusLine; Self-probe conditions push becoming slimy, being strangled, digested-by/engulfed-by and the sticky-goop blindness into the comma-joined list.
+insight.c	ustatusline	, engulfed by	composed	src/js/hero_status.ts:heroStatusLine; Self-probe conditions push becoming slimy, being strangled, digested-by/engulfed-by and the sticky-goop blindness into the comma-joined list.
+insight.c	ustatusline	ed by sticky goop	composed	src/js/hero_status.ts:heroStatusLine; Covered/blinded by sticky goop is appended to the blind condition exactly as the native ", cover" + "ed by sticky goop" split composes it.
+insight.c	vanqorders	alphabetically, unique monsters and others intermixed	dead	set_vanq_order() skips the VANQ_ALPHA_MIX row (insight.c:2732-2733) and nothing else displays column 2 of that mode.
+insight.c	vanqorders	by monster class, high to low level within class	dead	set_vanq_order() skips the VANQ_MCLS_HTOL row (insight.c:2732-2733) and nothing else displays column 2 of that mode.
+insight.c	weapon_insight	weapon_insight	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
 invent.c	adjust_split	at least 1.	composed	src/js/cmd.ts:adjustSplit; A count below one selects at least 1 before the period.
+invent.c	display_pickinv	Not using any items	dead	Only the doing_perm_invent branch adds these strings; it needs display_inventory(NULL, FALSE) without override_ID, and the pinned tty build has no TTY_PERM_INVENT (sync_perminvent returns at maxslot==0; wiz_identify sets override_ID).
+invent.c	display_pickinv	Only carrying gold	dead	Only the doing_perm_invent branch adds these strings; it needs display_inventory(NULL, FALSE) without override_ID, and the pinned tty build has no TTY_PERM_INVENT (sync_perminvent returns at maxslot==0; wiz_identify sets override_ID).
+invent.c	doperminv	Persistent inventory ('perm_invent' option) is not presently enabled.	dead	The pinned tty window port has no WC_PERM_INVENT (config.h leaves TTY_PERM_INVENT commented out), so doperminv() always reports the unsupported window first and never reaches this branch.
+invent.c	doperminv	Persistent inventory display is empty.	dead	Same unreachable branch: without WC_PERM_INVENT the recorder's doperminv() stops at the unsupported-window message.
+invent.c	getobj	LRS would be very interested to know you have that much.	dead	Native unreachable: cntgiven with a negative count cannot happen. get_count() clamps typed counts to [0,LARGEST_INT] and getobj() only sets cntgiven for a nonzero count, menu counts arrive as -1-or-positive through the ctmp >= 0L gate, and the only cmdq_add_int() producer is guarded by cnt > 0L.
+invent.c	sync_perminvent	could not be enabled.	dead	sync_perminvent() only prints this when a tty perm_invent window was requested and refused; TTY_PERM_INVENT is not compiled in, so the request path never runs.
+invent.c	sync_perminvent	needs a terminal that is at least	dead	Same unreachable branch: without TTY_PERM_INVENT the window-port settings request never reports a too-small terminal.
+invent.c	sync_perminvent	tty perm_invent	dead	The could-not-be-enabled pline needs the window port to report prohibited/too_small, which tty_ctrl_nhwindow only does under TTY_PERM_INVENT; the pinned build leaves wri->tocore zeroed.
+light.c	restore_light_sources	lightsource-count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in light.c:restore_light_sources(); serialized metadata, not displayed text. The port validates its own storage format.
+light.c	save_light_sources	lightsource-count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in light.c:save_light_sources(); serialized metadata, not displayed text. The port validates its own storage format.
+light.c	wiz_light_sources	-------- ----- ------ ----  -------	diagnostic	#lightsources wizard dump separator; native-introspection output.
+light.c	wiz_light_sources	Mobile light sources: hero @ (	diagnostic	#lightsources wizard dump of light-source bookkeeping; native-introspection output.
+light.c	wiz_light_sources	location range flags  type    id	diagnostic	#lightsources wizard dump header; native-introspection output.
 lock.c	doforce	here, but its lock is already	composed	src/js/lock.ts:doforce; Joins the box description with already and the broken or unlocked state.
+lock.c	lock_action	unlocking the box	composed	src/js/lock_pick.ts:lockAction; Chooses chest or box and drops the un- prefix for a currently unlocked target, as the native actions[] + 2 trick does.
+lock.c	lock_action	unlocking the chest	composed	src/js/lock_pick.ts:lockAction; Chooses chest or box and drops the un- prefix for a currently unlocked target, as the native actions[] + 2 trick does.
 lock.c	pick_lock	no lock on the drawbridge.	composed	src/js/lock_pick.ts:pickDoorLock; Selects see or feel and lock on the drawbridge for the portcullis.
+mail.c	ckmailstatus	I have some mail for you	out-of-scope	Mail delivery requires host mailbox polling (MAIL, MAILCKFREQ); the browser runtime has no OS mailbox, per docs/c-js-semantics.md Operating-system features.
 mail.c	md_rush	This place's too crowded.  I'm outta here.	out-of-scope	The mail daemon requires host mailbox polling and delivery (MAIL without SIMPLE_MAIL); the browser runtime has no OS mailbox integration.
+makemon.c	clone_mon	has_edog(m2) && has_edog(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+makemon.c	clone_mon	has_emin(m2) && has_emin(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mhitm.c	passivemm	is jolted with electricity!	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
 mhitm.c	passivemm	is mildly chilly.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
 mhitm.c	passivemm	is mildly tingled.	composed	src/js/monster_contact_passive.ts:applyMonsterContactPassive; Selects the cold, fire or electric resistance and damage phrases around the attacker name.
@@ -58,26 +229,99 @@ mhitu.c	passiveum	is suddenly very cold!	composed	src/js/hero_form_passive.ts:ap
 mhitu.c	passiveum	is suddenly very hot!	composed	src/js/hero_form_passive.ts:applyHeroFormPassive; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
 mhitu.c	wildmiss	displaced image...	composed	src/js/monster_miss.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mklev.c	generate_stairs	generate_stairs: failed to find a room! (	diagnostic	panic() when stair placement finds no room; developer diagnostic.
+mklev.c	mkinvk_check_wall	x > 0 && x < COLNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mklev.c	mkinvk_check_wall	y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mklev.c	mktrap	) are invalid	diagnostic	nh_snprintf into an impossible() when mktrap_victim gets invalid arguments; developer diagnostic.
+mklev.c	mktrap_victim	x > 0 && x < COLNO && y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mkmaze.c	migr_booty_item	migr_booty_item	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
 mkmaze.c	mv_bubble	bubble xmax: x =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
 mkmaze.c	mv_bubble	bubble xmin: x =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
 mkmaze.c	mv_bubble	bubble ymax: y =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
 mkmaze.c	mv_bubble	bubble ymin: y =	diagnostic	Bubble-boundary sanity diagnostic before clamping an out-of-bounds bubble coordinate in mkmaze.c:mv_bubble().
+mkmaze.c	restore_waterlevel	waterlevel-bubble	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:restore_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	restore_waterlevel	waterlevel-bubble_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:restore_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	restore_waterlevel	waterlevel-xmax	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:restore_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	restore_waterlevel	waterlevel-xmin	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:restore_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	restore_waterlevel	waterlevel-ymax	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:restore_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	restore_waterlevel	waterlevel-ymin	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:restore_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	save_waterlevel	waterlevel-bubble	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:save_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	save_waterlevel	waterlevel-bubble_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:save_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	save_waterlevel	waterlevel-xmax	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:save_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	save_waterlevel	waterlevel-xmin	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:save_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	save_waterlevel	waterlevel-ymax	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:save_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkmaze.c	save_waterlevel	waterlevel-ymin	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in mkmaze.c:save_waterlevel(); serialized metadata, not displayed text. The port validates its own storage format.
+mkobj.c	copy_oextra	has_omonst(obj2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mkobj.c	insane_object	held by mon	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	: not on top	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	boulder sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	boulder@<	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	current_wand sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	deleted object sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	kickedobj sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	location sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	migrating minvent sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	migrating sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	minvent sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	mydogs minvent sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	returning_missile sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	obj_sanity_check	thrownobj sanity	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	leashed by	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	leashmon=	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	no monst for	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	not leashed,	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	obj contains something!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	obj in inventory!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	objlist_sanity	worn mask 0x	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	ofmt3	[not null]	diagnostic	Formatting helper for obj_sanity_check()/insane_object() reports; sanity-check output.
+mkobj.c	place_object	place_object: "	diagnostic	panic()/impossible() (chosen by coordinate range) for an object placed off the map; developer diagnostic.
+mkobj.c	place_object	x >= 0 && x < COLNO && y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mkobj.c	sanity_check_worn	monst alt weapon?	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	sanity_check_worn	worn mask (bogus)) 0x	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	sanity_check_worn	worn mask (multiple) 0x	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	sanity_check_worn	worn mask 0x	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	no_charge obj inside untended shop!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	no_charge obj not inside tended shop!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	no_charge obj not on floor!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	no_charge obj on shop bill!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	obj both unpaid and no_charge!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	unpaid obj inside untended shop!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	unpaid obj not carried!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	unpaid obj not inside tended shop!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mkobj.c	shop_obj_sanity	unpaid obj not on shop bill!	diagnostic	Object-sanity complaint text of the obj_sanity_check()/insane_object() family; wizard-mode sanity output, developer diagnostic.
+mon.c	copy_mextra	has_ebones(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mon.c	copy_mextra	has_edog(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mon.c	copy_mextra	has_egd(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mon.c	copy_mextra	has_emin(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mon.c	copy_mextra	has_epri(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mon.c	copy_mextra	has_eshk(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mon.c	lifesaved_monster	looks much better!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
 mon.c	lifesaved_monster	reconstitutes!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
 mon.c	make_corpse	recently regrown horn crumbles to dust.	composed	src/js/monster_death.ts:createMonsterPart; Appends crumbles to dust to the possessive unicorn name and recently regrown horn.
 mon.c	minliquid_core	burns slightly.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
 mon.c	minliquid_core	surrenders to the fire.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
+mon.c	pick_animal	ga.animal_list != 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+mon.c	sanity_check_single_mon	saddle not worn	diagnostic	Sanity-check complaint text (mon_sanity_check family); developer diagnostic.
+mon.c	sanity_check_single_mon	something strange	diagnostic	Sanity-check complaint text (mon_sanity_check family); developer diagnostic.
+monmove.c	m_move	IndexOk(chi, mfp.info)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+monmove.c	monflee	[its imagination?]	dead	flees_light() (monmove.c:450) requires artifact light on uwep or uarm, so the lsrc fallback can never print; the port throws an invariant error on the same impossible combination.
 monmove.c	postmov	a door crash open.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	a door unlock and open.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	smashes down a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
 monmove.c	postmov	unlocks and opens a door.	composed	src/js/monster_door_passage.ts:resolveMonsterDoorPassage; Selects all three actor actions and visible or heard door actions; heard messages retain the caller deafness guard.
+mthrowu.c	u_catch_thrown_obj	u_catch_thrown_obj	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+muse.c	mon_consume_unstone	just ruined a future piece of art!	composed	src/js/monster_stoning_cure.ts:consumeMonsterStoningCure; A hallucinating hero's stoning cure prints the pity line around the lowercase monster name instead of the limber line.
 muse.c	use_defensive	escapes down the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	escapes downstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	escapes up the ladder!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	escapes upstairs!	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	has made a hole in the	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
 muse.c	use_defensive	has made a pit in the	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; Selects pit or hole and the surface; staircase escape selects up or down and stairs or the ladder.
+muse.c	use_defensive	looks completely healed.	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
+muse.c	use_defensive	looks much better.	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
+muse.c	use_defensive	use_defensive: no	diagnostic	impossible() format when a monster uses an unknown defensive item; developer diagnostic.
+muse.c	use_misc	use_misc: no	diagnostic	impossible() format when a monster uses an unknown miscellaneous item; developer diagnostic.
 music.c	do_earthquake	throne falls	composed	src/js/earthquake.ts:shakeTerrain; Selects throne and falls before the fixed into a chasm suffix.
 music.c	do_improvisation	produces a familiar, lilting melody	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
 music.c	do_improvisation	produces a lilting melody	composed	src/js/music.ts:playWoodenHarp; Selects familiar or unfamiliar lilting melodies and familiar or plain twangs.
@@ -91,23 +335,61 @@ options.c	handler_perminv_mode	'perminv_mode'	dead	The pinned tty build leaves T
 options.c	handler_versinfo	development branch	dead	The pinned build defines no NETHACK_GIT_BRANCH, so date.c leaves nomakedefs.git_branch null and have_branch is false; NH_DEVEL_STATUS is NH_STATUS_RELEASED, selecting (not applicable).
 options.c	handler_whatis_coord	screen: row is offset to accommodate tty interface's use of top line	dead	The explanatory row is guarded by strcmp(windowprocs.name, "tty"); the pinned recorder only uses tty.
 options.c	rejectoption	can be set only from NETHACKOPTIONS or	dead	doset() makes set_gameview options read-only and omits set_in_config options. Every selectable string_for_env_opt() owner has a do_handler that avoids do_set; cnf_line_OPTIONS() uses initial=TRUE, including Lua parse_config().
+o_init.c	restnames	names-objclass	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in o_init.c:restnames(); serialized metadata, not displayed text. The port validates its own storage format.
+o_init.c	restnames	names-oc_uname	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in o_init.c:restnames(); serialized metadata, not displayed text. The port validates its own storage format.
+o_init.c	savenames	names-objclass	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in o_init.c:savenames(); serialized metadata, not displayed text. The port validates its own storage format.
+o_init.c	savenames	names-oc_uname	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in o_init.c:savenames(); serialized metadata, not displayed text. The port validates its own storage format.
+objnam.c	doname_base	(being doffed)	composed	src/js/object_equipment_description.ts:wornArmorDescription; Selects embedded in your skin, being doffed, being donned or being worn for the worn-equipment suffix; uskin, doffing() and donning() cases match doname_base().
+objnam.c	doname_base	(being donned)	composed	src/js/object_equipment_description.ts:wornArmorDescription; Selects embedded in your skin, being doffed, being donned or being worn for the worn-equipment suffix; uskin, doffing() and donning() cases match doname_base().
+objnam.c	doname_base	(embedded in your skin)	composed	src/js/object_equipment_description.ts:wornArmorDescription; Selects embedded in your skin, being doffed, being donned or being worn for the worn-equipment suffix; uskin, doffing() and donning() cases match doname_base().
+objnam.c	doname_base	bp_end >= bp_eos	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+objnam.c	doname_base	long object description	diagnostic	paniclog("doname", ...) text when a description reaches BUFSZ; developer diagnostic.
+objnam.c	doname_base	truncated for menu use	diagnostic	paniclog("doname", ...) suffix for a truncated menu description; developer diagnostic.
+objnam.c	fruit_from_name	fruit_from_name	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+objnam.c	readobjnam_postparse1	readobjnam_postparse1	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+objnam.c	singplur_lookup	singplur_lookup	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+pager.c	add_quoted_engraving	add_quoted_engraving	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+pager.c	checkfile	? Seek error on 'data' file!	dead	Native unreachable with an intact install: the branch needs a dlb_fseek failure on the readable data file. The port embeds the data file.
+pager.c	checkfile	Cannot open 'data' file!	dead	Native unreachable with an intact install: the branch needs dlb_fopen(DATAFILE) to fail, and the recorder ships a readable nhdat. The port embeds the data file.
+pager.c	do_screen_description	do_screen_description	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+pager.c	docontact	To contact local support,	dead	pager.c:docontact() needs sysopt.support for this variant; pinned install/games/lib/nethackdir/sysconf leaves SUPPORT commented out.
+pager.c	docontact	To contact local support, contact	dead	pager.c:docontact() needs sysopt.fmtd_wizard_list for this variant; cfgfiles.c:cnf_line_WIZARDS() only formats a list when WIZARDS is nonempty and not *, while the pinned sysconf sets WIZARDS=*.
 pager.c	doidtrap	That is a trapped	composed	src/js/pager_traps.ts:identifyTrap; detectedTrapDisguise supplies trapped chest or trapped door after That is a.
+pager.c	look_at_object	look_at_object	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+pager.c	look_engrs	(engraving with	composed	src/js/pager_lists.ts:lookListEntries; The engraving rows strip the quoted prefix the way strsubst()("(engraving with ", "") does; suffix.slice(6) removes the same " with ".
 pager.c	look_engrs	No engravings seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects engravings and the optional nearby suffix.
 pager.c	look_traps	No traps seen or remembered	composed	src/js/pager_lists.ts:showLookList; Selects traps and the optional nearby suffix.
+pager.c	mhidden_description	, masquerading as	composed	src/js/monster_status.ts:monsterHiddenConditions; The M_AP_MONSTER disguise is described as masquerading as plus the indefinite species name, joined with the leading comma.
+pager.c	mhidden_description	mhidden_description	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+pager.c	waterbody_name	waterbody_name	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+pickup.c	query_category	*pick_list != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pickup.c	query_category	Auto-select every item being worn or wielded	dead	The only WORN_TYPES caller is menu_remarm(), which omits CHOOSE_ALL; the do_worn arm of the CHOOSE_ALL menu is unreachable.
 pickup.c	query_objlist	pick yourself up!	dead	fake_hero_object is included only for look-here with PICK_NONE, so it cannot be returned as a selected object.
+pline.c	execplinehandler	Exec to message handler	out-of-scope	MSGHANDLER fork/exec failure text; no processes exist in the grader (docs/c-js-semantics.md lists execplinehandler explicitly).
+pline.c	execplinehandler	Fork to message handler failed.	dead	Native unreachable: execplinehandler returns before the fork when sysopt.msghandler is unset, and the recorder sysconf leaves MSGHANDLER commented out.
+pline.c	impossible	Alternatively, contact local support:	dead	Native unreachable: sysopt.support stays null because the recorder sysconf leaves SUPPORT commented out, so impossible() never prints the local support line.
 polyself.c	break_armor	is pulled apart!	composed	src/js/polyself.ts:changeArmorForHeroForm; An alchemy smock selects knot and is pulled apart around the simple armor name.
 polyself.c	dohide	fountain is not deep enough to hide in.	dead	The only caller domonability() requires is_hider() or hides_under(); every S_EEL species lacks both M1_HIDE and M1_CONCEAL.
 polyself.c	dohide	to hide in here.	dead	The only caller domonability() requires is_hider() or hides_under(); every S_EEL species lacks both M1_HIDE and M1_CONCEAL.
+potion.c	dodip	What do you want to dip into? [abdeghjkmnpqstvwyzBCEFHIKLNOQRTUWXZ#-# or ?*]	dead	sizeof operand that only reserves short_oname() room for the object name; never printed. The port encodes the same reserve as DIP_PROMPT_RESERVE in src/js/potion_dip.ts:184.
+potion.c	dodip	into the sink?	composed	src/js/potion_dip.ts:dip; Composes `Dip ${target} into the ${source}?` with source 'sink', like the native Sprintf before y_n().
 potion.c	dodrink	Drink from the fountain?	composed	src/js/quaff.ts:quaff; Selects fountain or sink inside the drinking prompt.
 potion.c	dodrink	Drink from the sink?	composed	src/js/quaff.ts:quaff; Selects fountain or sink inside the drinking prompt.
+potion.c	peffect_sickness	contaminated tap water	composed	src/js/potion_body_effects.ts:drinkSickness; Template `contaminated ${fromsink ? 'tap water' : 'potion'}` with the mildly prefix; the killer buffer is passed to loseHeroHp.
 potion.c	potion_dip	Something happens.	dead	The whole message block is guarded by !Blind; newbuf is always filled by clears or turns plus the color before its empty-buffer fallback.
 potion.c	potion_dip	with an oily sheen.	composed	src/js/potion_item_dip.ts:dipInOil; Visible undamaged gear selects gleam or gleams with an oily sheen.
+potion.c	potionhit	propelled potion	composed	src/js/hero_potion_hit.ts:hitHeroWithThrownPotion; src/js/hero_object_hit.ts:hitHeroWithObject passes source propelled for scattered potions; the hit helper formats the killer as `${source} potion`.
+potion.c	split_mon	mon->mhpmax >= mon->mhp	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 pray.c	god_zaps_you	disintegrates into a pile of dust!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
 pray.c	god_zaps_you	fries to a crisp!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
+pray.c	offer_real_amulet	ascend to the status of Demigod	composed	src/js/sacrifice.ts:offerAmulet; The winning altar branch appends dess for a female hero to Demigod before the ellipsis.
+priest.c	angry_priest	has_emin(priest)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 priest.c	priest_talk	Begone!  Thou desecratest this holy place with thy presence.	dead	The earlier !inhistemple(priest) branch returns, and inhistemple() requires has_shrine(); the later !has_shrine branch cannot run.
 priest.c	priest_talk	asks you for a contribution for the temple (base	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
 priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
+read.c	do_class_genocide	What class of monsters do you want to genocide?	composed	src/js/genocide.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'class of monsters' plus the cmdassist suffix.
+read.c	do_class_genocide	do_class_genocide	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+read.c	do_genocide	What type of monster do you want to genocide?	composed	src/js/genocide.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'type of monster' plus the cmdassist suffix.
 read.c	recharge	clockwise for a moment.	composed	src/js/recharge.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.
 read.c	seffect_enchant_armor	for a while, then	composed	src/js/scroll_armor_effects.ts:enchantArmor; armorGlow supplies violent vibration or colored glow; armorVerb supplies evaporate or evaporates.
 report.c	dobugreport	Unable to send bug report.  Please visit	out-of-scope	Requires submit_web_report() to launch a host reporting process and fail; #bugreport is also NOFUZZERCMD, rejected during recorded debug_fuzzer games.
@@ -120,26 +402,175 @@ restore.c	trickery	Strange, this map is not as I remember it.	out-of-scope	trick
 restore.c	trickery	This game is void.	out-of-scope	trickery() diagnoses tampered native level/bones files, including process, level and bones identifiers; host save-file tampering is outside the browser runtime.
 save.c	dosave0	Cannot open save file.	out-of-scope	Requires create_savefile() to fail while opening a native save file; native filesystem permissions and file-descriptor failures are outside the browser runtime.
 save.c	tricked_fileremoved	Probably someone removed it.	out-of-scope	Requires a native level/save file to disappear before it is reopened; host concurrent file removal and its TRICKED death are outside the browser runtime.
+region.c	rest_regions	region-attach_2_m	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-attach_2_u	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-bounding box	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-can_enter_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-can_leave_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-enter_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-enter_msg	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-enter_msg_length	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-expire_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-inside_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-leave_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-leave_msg	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-leave_msg_length	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-monster	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-monster_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-player_flags	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-region_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-tmstamp	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	rest_regions	region-visible	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:rest_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-attach_2_m	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-attach_2_u	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-bounding_box	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-can_enter_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-can_leave_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-enter_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-enter_msg	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-enter_msg_length	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-expire_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-inside_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-leave_f	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-leave_msg	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-leave_msg_length	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-monster	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-monster_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-player_flags	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-region_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-tmstamp	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+region.c	save_regions	region-visible	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
+rip.c	rip_txt	_________)/\\\\_//(\\/(/\\)/\\//\\/|_)_______	composed	src/js/end.ts:deathSummaryLines; The bottom art row is spelled with a replace() that restores the native character sequence exactly.
+rip.c	rip_txt	|       1001       |	composed	src/js/end.ts:deathSummaryLines; The 1001 placeholder row is built as `|       ${year}       |` with the same column padding.
+role.c	build_plselection_prompt	Shall I pick a character for you? [ynaq]	composed	src/js/character_choices.ts:characterSelectionQuestion; Composes `Shall I pick ${owner} ${description} for you? [ynaq]` including the a/your and pick character rewrites.
+role.c	build_plselection_prompt	build_plselection_prompt	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+role.c	build_plselection_prompt	priest/priestess'	composed	src/js/character_choices.ts:characterSelectionQuestion; The combined male/female role name and the bare-apostrophe exception are built by the same prompt builder (strstri call and literal share this key).
+role.c	genl_player_setup	Incompatible alignment!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
+role.c	genl_player_setup	Incompatible gender!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
+role.c	genl_player_setup	Incompatible race!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrace().
+role.c	genl_player_setup	Incompatible role!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrole().
+role.c	role_selection_prolog	IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+role.c	role_selection_prolog	IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+role.c	role_selection_prolog	not yet specified	dead	role_selection_prolog() has no callers in the pinned tree (only the extern.h declaration); tty player selection builds its own menus.
+role.c	role_selection_prolog	which == RS_RACE || c == ROLE_NONE || c == ROLE_RANDOM || IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+role.c	role_selection_prolog	which == RS_ROLE || r == ROLE_NONE || r == ROLE_RANDOM || IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+role.c	roles	_Amaterasu Omikami	composed	src/js/roles.ts:nativeRoleAt; Returns the samurai role with lawful deity Amaterasu Omikami; align_gname() removes the native leading underscore before display.
+role.c	root_plselection_prompt	IndexOkT(rolenum, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+rumors.c	getrumor	Error reading "	out-of-scope	dlb read failure on the rumors data file; data-file seek errors are outside the port (docs/c-js-semantics.md Operating-system features).
+rumors.c	others_check	(no second entry)	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.
+rumors.c	others_check	(only two entries)	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.
+rumors.c	others_check	- first line, as is	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.
+rumors.c	others_check	- xcrypt of first line	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.
+rumors.c	others_check	can't read first non-comment line	diagnostic	#wizrumorcheck data-file audit error text; wizard-mode verification output.
+rumors.c	others_check	error; can't read comment line	diagnostic	#wizrumorcheck data-file audit error text; wizard-mode verification output.
+rumors.c	others_check	first non-comment line is empty	diagnostic	#wizrumorcheck data-file audit error text; wizard-mode verification output.
+rumors.c	others_check	malformed; first line is not a comment line:	diagnostic	#wizrumorcheck data-file audit error text; wizard-mode verification output.
+rumors.c	others_check	others_check("	diagnostic	#wizrumorcheck data-file audit formatting; wizard-mode verification output.
+rumors.c	restore_oracles	oracle-oracle_cnt	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in rumors.c:restore_oracles(); serialized metadata, not displayed text. The port validates its own storage format.
+rumors.c	restore_oracles	oracle-oracle_loc	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in rumors.c:restore_oracles(); serialized metadata, not displayed text. The port validates its own storage format.
+rumors.c	rumor_check	Bogus monsters:	diagnostic	#wizrumorcheck data-file audit heading; wizard-mode verification output.
+rumors.c	rumor_check	F start=	diagnostic	#wizrumorcheck wizard-mode audit of the true/false rumor offsets; data-file verification output.
+rumors.c	rumor_check	T start=	diagnostic	#wizrumorcheck wizard-mode audit of the true/false rumor offsets; data-file verification output.
+rumors.c	rumor_check	rumors not accessible.	dead	Native unreachable with an intact install: the line needs the rumors dlb file to be missing or rejected by init_rumors, and the recorder ships readable rumor data. The port embeds the rumors.
+rumors.c	save_oracles	oracle-oracle_cnt	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in rumors.c:save_oracles(); serialized metadata, not displayed text. The port validates its own storage format.
+rumors.c	save_oracles	oracle-oracle_loc	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in rumors.c:save_oracles(); serialized metadata, not displayed text. The port validates its own storage format.
+shk.c	menu_pick_pay_items	Used up item	composed	src/js/shop_pay_command.ts:paymentMenu; Heading `${group === used ? 'Used up' : 'Unpaid'} item${group.length > 1 ? 's' : ''}:` matches the ibill plural rule.
+shk.c	menu_pick_pay_items	menu_pick_pay_items	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+shk.c	reject_purchase	intact_quan < billed_quan	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+shk.c	reject_purchase	reject_purchase	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+shk.c	sellobj	sold some items inside	composed	src/js/shop_sell.ts:sellHeroDroppedObject; The first explicit cash sale selects some items inside when only part of a container contents is owned by the hero and the container itself has no offer, as sellobj() does.
 shk.c	shk_chat	that business is bad.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
 shk.c	shk_chat	that business is good.	composed	src/js/shop_chat.ts:chatWithShopkeeper; Selects business bad or good and says, complains or indicates for speech and deafness.
 shk.c	u_left_shop	!  Don't you leave without paying!	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
 shk.c	u_left_shop	!  Please pay before leaving.	composed	src/js/shop_departure.ts:leaveHeroShop; Selects the calm or angry quoted payment warning after the player name and two spaces.
+shknam.c	nameshk	has_eshk(mtmp)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+shknam.c	nameshk	names_avail > 0	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 shknam.c	shkinit	Room at (	diagnostic	DEBUG-only shop-door failure dump after impossible("Where is shopdoor?"), guarded by wizard in shknam.c:shkinit().
 shknam.c	shkinit	doormax=	diagnostic	DEBUG-only shop-door failure dump after impossible("Where is shopdoor?"), guarded by wizard in shknam.c:shkinit().
+sounds.c	activate_chosen_soundlib	assigning a new sound library	out-of-scope	Passed to the previous soundlib's exit callback when switching libraries; the browser runtime has no sound library device.
+sounds.c	base_soundname_to_filename	base_soundname_to_filename	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+sp_lev.c	create_object	multiple prizes on	diagnostic	impossible() complaint in sp_lev.c:create_object() when a malformed level places multiple prizes; a loader diagnostic, not gameplay text.
+sp_lev.c	find_objtype	Unknown object id	diagnostic	Lua des API argument-error text in sp_lev.c:find_objtype(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	get_coord	non-table coord specified	diagnostic	Lua des API argument-error text in sp_lev.c:get_coord(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	get_table_int_or_random	Expected integer or "random" for "	diagnostic	Lua des API argument-error text in sp_lev.c:get_table_int_or_random(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_drawbridge	drawbridge coord not ok	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_drawbridge(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_engraving	Wrong parameters	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_engraving(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_gold	Wrong parameters	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_gold(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_level_flags	Unknown level flag	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_level_flags(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_level_flags	expected string params	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_level_flags(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_map	Map data error	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_map(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_map	Map requires either x,y or halign,valign params	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_map(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_message	Wrong parameters	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_message(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_monster	Unknown appear_as type	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_monster(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_region	Wrong parameters	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_region(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_room	Room must have both w and h	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_room(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	lspo_trap	Unknown trap type	diagnostic	Lua des API argument-error text in sp_lev.c:lspo_trap(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	nhl_abs_coord	nhl_abs_coord: Wrong args	diagnostic	Lua des API argument-error text in sp_lev.c:nhl_abs_coord(); raised through nhl_error() for malformed scripts, not gameplay text. The port executes Lua and validates arguments at its des boundary.
+sp_lev.c	nhl_functions	finalize_level	diagnostic	Internal Lua des API registration name for finalize_level(); not displayed game text. The port builds its des operations in src/js/mklev.ts:createLuaLevelSession.
 spell.c	show_spells	You didn't know any spells.	out-of-scope	Only dump_everything() calls show_spells(), under DUMPLOG in end.c; host dumplog file output is outside the browser runtime.
+spell.c	spelleffects	self with a spell	composed	src/js/spell.ts:applyDirectedSpell; Selects himself or herself before " with a spell"; spell.c has the same zapped-self killer in two branches, covered by src/js/spell_attack_effects.ts:castSkilledElementalSpell for the other one.
+stairs.c	stairs_description	to the Elemental Planes	composed	src/js/dungeon_feature.ts:stairwayDescription; Level-one up stairs pick out of the dungeon or branch to the Elemental Planes / the end game by Amulet ownership.
+stairs.c	stairs_description	to the end game	composed	src/js/dungeon_feature.ts:stairwayDescription; Level-one up stairs pick out of the dungeon or branch to the Elemental Planes / the end game by Amulet ownership.
+steal.c	steal	uball != NULL && uball->where == OBJ_FLOOR	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 steed.c	mount_steed	are already riding	dead	The only caller doride() dismounts when u.usteed is set and calls mount_steed() only from its else branch.
 symbols.c	do_symset	Unable to access "	out-of-scope	Requires read_sym_file() to fail opening the host symbols data file; bundled symbol sets do not depend on a mutable native file.
 symbols.c	do_symset	symbol sets available.	dead	The pinned dat/symbols always supplies appropriate unrestricted sets (plain, Blank and IBMgraphics) for both primary and rogue pickers, so setcount cannot be zero.
 symbols.c	do_symset	were no symbol sets found in "	out-of-scope	Requires the host symbols file to be empty or contain no start entries; the bundled pinned symbols resource contains named sets.
 timeout.c	burn_object	flicker low!	composed	src/js/light.ts:announceCandleBurn; Composes ownership, candle count, possessive and flicker agreement for carried and floor candles and candelabra.
+timeout.c	restore_timers	timer-timer_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:restore_timers(); serialized metadata, not displayed text. The port validates its own storage format.
+timeout.c	restore_timers	timer-timer_id	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:restore_timers(); serialized metadata, not displayed text. The port validates its own storage format.
+timeout.c	save_timers	timer-timer_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:save_timers(); serialized metadata, not displayed text. The port validates its own storage format.
+timeout.c	save_timers	timer-timer_id	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:save_timers(); serialized metadata, not displayed text. The port validates its own storage format.
+timeout.c	sickness_texts	Your illness feels worse.	composed	src/js/hero_illness.ts:sicknessMessage; Chooses illness or sickness per usick_type before " feels worse."; stage mapping matches sickness_texts[SIZE - i].
+timeout.c	sickness_texts	Your illness is severe.	composed	src/js/hero_illness.ts:sicknessMessage; Chooses illness or sickness per usick_type before " is severe."; stage mapping matches sickness_texts[SIZE - i].
+timeout.c	timer_sanity_check	x > 0 && x < COLNO && y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+topten.c	encode_extended_achievements	attained_the_rank_of_	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	consulted_the_oracle	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	defeated_medusa	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_a_shop	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_a_temple	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_astral_plane	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_bigroom	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_elemental_planes	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_gehennom	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_mine_town	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_sokoban	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	entered_the_gnomish_mines	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	learned_castle_drawbridge_tune	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	obtained_the_amulet_of_yendor	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	obtained_the_bell_of_opening	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	obtained_the_book_of_the_dead	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	obtained_the_candelabrum_of_invocation	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	obtained_the_luckstone_from_the_mines	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	obtained_the_sokoban_prize	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	performed_the_invocation_ritual	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	encode_extended_achievements	read_a_discworld_novel	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
+topten.c	prscore	Cannot find any	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	prscore	Cannot open record file!	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	readentry	%[^,],%[^\n]	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	topten	Cannot open extended log file!	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	topten	Cannot open log file!	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	topten	Cannot open record file!	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	topten	Cannot write record file	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	arti_wish_cnt=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	conduct=0x	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	deathdate=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	deathdnum=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	gender0=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	starttime=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	version=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
+topten.c	writexlentry	wish_cnt=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
 trap.c	chest_trap	trigger a trap!	composed	src/js/chest_trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
 trap.c	lava_effects	and are about to be immolated	dead	This else-if follows if (!Fire_resistance), so Fire_resistance is true and boil_away = !Fire_resistance is false.
 trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
 trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
+trap.c	untrap	are containers	composed	src/js/untrap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
+trap.c	untrap	is a container	composed	src/js/untrap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
 uhitm.c	gulpum	is burning to a crisp!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	is freezing to death!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	seems mildly chilly.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	seems mildly hot.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
+uhitm.c	hmon_hitmon_msg_silver	hmon_hitmon_msg_silver	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
 uhitm.c	mhitm_ad_cold	frost doesn't chill	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
 uhitm.c	mhitm_ad_cold	frost doesn't seem to chill	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
 uhitm.c	mhitm_ad_cold	is covered in frost!	composed	src/js/hero_natural_damage.ts:elementalDamage; Hero attacks compose frost and chill; src/js/monster_combat_elements.ts:elementalContact also prints covered in frost and the monster-to-monster seem to chill variant.
@@ -150,30 +581,63 @@ uhitm.c	mhitm_ad_wrap	brushes against you.	composed	src/js/monster_wrapping_cont
 uhitm.c	mhitm_ad_wrap	brushes against your	composed	src/js/monster_wrapping_contact.ts:resolveMonsterWrapping; Selects you or your body-part name for coils or ordinary wrapping attacks.
 version.c	check_version	Configuration incompatibility for file "	out-of-scope	Checks native feature bits and entity-count metadata in binary save/bones/data headers; native binary file compatibility is outside the browser runtime.
 version.c	check_version	Version mismatch for file "	out-of-scope	Checks the binary incarnation header of native save/bones/data files; the browser validates its own saved-state format and does not load native binary files.
+uhitm.c	mhitm_knockback	mhitm_knockback	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+uhitm.c	that_is_a_mimic	mndx >= LOW_PM && mndx <= HIGH_PM	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+uhitm.c	that_is_a_mimic	that_is_a_mimic	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+vision.c	left_side	row_max != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+vision.c	left_side	row_min != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+vision.c	right_side	row_max != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+vision.c	right_side	row_min != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
+weapon.c	add_skills_to_menu	add_skills_to_menu	diagnostic	__func__ argument of the Strlen_() length guard (global.h:288); developer diagnostic.
+weapon.c	weapon_hit_bonus	weapon_hit_bonus: bad skill	diagnostic	impossible() format for an out-of-range skill; developer diagnostic.
 wield.c	ready_weapon	dominant left	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
 wield.c	ready_weapon	dominant right	composed	src/js/weapon_feedback.ts:announceWeaponWeld; Selects dominant left or right before the hero hand name for a one-handed weapon.
+wintty.c	resize_tty	Press a key to continue:	out-of-scope	SIGWINCH terminal-resize continuation prompt; the grader's tty emulation receives no OS signals.
+wintty.c	tty_askname	Until next time then...	out-of-scope	bail() after quitting the SELECTSAVED restore menu; choosing a saved game to restore is save-file I/O the port performs through its storage backend.
+wintty.c	tty_curs	[corner window]	diagnostic	Window-type names for tty_curs()'s panic path; window-port panic.
+wintty.c	tty_curs	[status window]	diagnostic	Window-type names for tty_curs()'s panic path; window-port panic.
+wintty.c	tty_curs	[unknown type]	diagnostic	Window-type names for tty_curs()'s panic path; window-port panic.
+wintty.c	winpanicstr	Bad window Id	diagnostic	winpanic() format for an invalid window id; window-port panic.
+wizcmds.c	misc_stats	bones history, size	diagnostic	#stats sizeof() row for bones history; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	engravings, size	diagnostic	#stats sizeof() row for engravings; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	light sources, size	diagnostic	#stats sizeof() row for light sources; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	object type names, text	diagnostic	#stats accounting of native object-name storage; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	regions, size	diagnostic	#stats sizeof() row for regions; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	shop damage, size	diagnostic	#stats sizeof() row for shop damage; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	timers, size	diagnostic	#stats sizeof() row for timers; C memory sizes have no JS counterpart.
+wizcmds.c	misc_stats	traps, size	diagnostic	#stats sizeof() row for trap structures; C memory sizes have no JS counterpart.
+wizcmds.c	stats_hdr	count  bytes	diagnostic	#stats memory-report table header; native-introspection output of C process memory.
+wizcmds.c	stats_sep	---------------------------  ----- -------	diagnostic	#stats memory-report table separator; native-introspection output of C process memory.
+wizcmds.c	wiz_custom	: colorcount=	diagnostic	Read-only #wizcustom dump of native glyph identifiers, symbol colors and custom Unicode encodings; window-port introspection text, not a gameplay message.
+wizcmds.c	wiz_custom	glyph  glyph identifier                             sym   clr customcolor unicode utf8	diagnostic	Read-only #wizcustom dump of native glyph identifiers, symbol colors and custom Unicode encodings; window-port introspection text, not a gameplay message.
+wizcmds.c	wiz_display_macros	Display macro issues:	diagnostic	#displaymacros glyph-macro bounds audit; native-introspection output over glyph macros.
+wizcmds.c	wiz_display_macros	No display macro issues detected.	diagnostic	#displaymacros result line; native-introspection output over glyph macros.
+wizcmds.c	wiz_display_macros	] bounds (MAX_GLYPH =	diagnostic	#displaymacros glyph-macro bounds audit; native-introspection output over glyph macros.
+wizcmds.c	wiz_display_macros	glyph_is_cmap() / glyph_to_cmap(glyph=	diagnostic	#displaymacros glyph-macro bounds audit; native-introspection output over glyph macros.
+wizcmds.c	wiz_display_macros	glyph_is_cmap_zap(glyph=	diagnostic	#displaymacros glyph-macro bounds audit; native-introspection output over glyph macros.
+wizcmds.c	wiz_display_macros	glyph_to_mon(glyph=	diagnostic	#displaymacros glyph-macro bounds audit; native-introspection output over glyph macros.
+wizcmds.c	wiz_display_macros	glyph_to_obj(glyph=	diagnostic	#displaymacros glyph-macro bounds audit; native-introspection output over glyph macros.
+wizcmds.c	wiz_load_lua	Load which lua file?	out-of-scope	The wizard branch reads an arbitrary lua file through dlb, a host filesystem boundary the port cannot serve; the command is also NOFUZZERCMD, so every recorded (debug_fuzzer) session rejects it before the prompt and the non-wizard refusal already exists through commandAllowed.
+wizcmds.c	wiz_load_splua	Load which des lua file?	out-of-scope	The wizard branch loads a des-file lua script from dlb, a host filesystem boundary the port cannot serve; the command is also NOFUZZERCMD, so every recorded (debug_fuzzer) session rejects it before the prompt and the non-wizard refusal already exists through commandAllowed.
+wizcmds.c	wiz_mon_diff	No monster difficulty discrepancies were detected.	diagnostic	#mondiff data-consistency audit comparing computed and hardcoded difficulty; no game-state effect.
+wizcmds.c	wiz_mon_diff	Review of monster difficulty ratings [index:level]:	diagnostic	#mondiff data-consistency audit comparing computed and hardcoded difficulty; no game-state effect.
+wizcmds.c	wiz_mon_diff	]: calculated:	diagnostic	Formatted #mondiff data-consistency row comparing computed and hardcoded monster difficulty ratings; diagnostic output.
+wizcmds.c	wiz_show_stats	Current memory statistics:	diagnostic	#stats heading of the native memory report; C memory sizes have no JS counterpart.
+wizcmds.c	wiz_show_stats	Monsters, base size	diagnostic	#stats sizeof(struct monst) row; C memory sizes have no JS counterpart.
+wizcmds.c	wiz_show_stats	Objects, base size	diagnostic	#stats sizeof(struct obj) row; C memory sizes have no JS counterpart.
+wizcmds.c	wiz_show_stats	migrating minvent	diagnostic	#stats chain label for migrating monster inventories; native-introspection output.
+wizcmds.c	wiz_show_vision	could see, 0x	diagnostic	#showvision dump of vision bookkeeping flags; native-introspection output.
+wizcmds.c	wizcustom_callback	wizcustom_callback	diagnostic	__func__ argument that nh_snprintf() reports on buffer truncation; developer diagnostic.
+worm.c	rest_worm	worm-segment_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in worm.c:rest_worm(); serialized metadata, not displayed text. The port validates its own storage format.
+worm.c	rest_worm	worm-wgrowtime	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in worm.c:rest_worm(); serialized metadata, not displayed text. The port validates its own storage format.
+worm.c	save_worm	worm-segment_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in worm.c:save_worm(); serialized metadata, not displayed text. The port validates its own storage format.
+worm.c	save_worm	worm-wgrowtime	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in worm.c:save_worm(); serialized metadata, not displayed text. The port validates its own storage format.
+worn.c	check_wornmask_slots	) not found in invent	diagnostic	owornmask consistency complaint of check_wornmask_slots(); wizard-mode sanity output, developer diagnostic.
+worn.c	check_wornmask_slots	bit not set in owornmask [0x	diagnostic	owornmask consistency complaint of check_wornmask_slots(); wizard-mode sanity output, developer diagnostic.
+worn.c	check_wornmask_slots	wrong bit set in owornmask [0x	diagnostic	owornmask consistency complaint of check_wornmask_slots(); wizard-mode sanity output, developer diagnostic.
 worn.c	mon_break_armor	a cracking sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
 worn.c	mon_break_armor	a ripping sound.	composed	src/js/monworn.ts:adjustMonsterClothingAfterPolymorph; The local hear helper adds the period to cracking and ripping sounds for broken suits, cloaks and shirts.
 zap.c	bhito	a defibrillator.	composed	src/js/immediate_zap.ts:reviveFloorCorpse; An unseen revival heard by a nondeaf hallucinating Healer selects a defibrillator and appends the period.
+zap.c	blank_novel	obj->otyp == SPE_BLANK_PAPER	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 zap.c	poly_obj	is furious!	composed	src/js/object_polymorph.ts:angerObjectOwner; An already angry owner selects is furious with no-repeat; src/js/shop_damage.ts:makeAngryShopkeeper prints the same phrase on the other shop-owner path.
-end.c	done	are a very tricky wizard, it seems.	dead	Pinned recorder comments the wizard-mode TRICKED line out for deterministic replay (end.c:1031); the port's finishHeroDeath returns silently for TRICKED with debug set, like the native branch without the message.
-invent.c	getobj	LRS would be very interested to know you have that much.	dead	Native unreachable: cntgiven with a negative count cannot happen. get_count() clamps typed counts to [0,LARGEST_INT] and getobj() only sets cntgiven for a nonzero count, menu counts arrive as -1-or-positive through the ctmp >= 0L gate, and the only cmdq_add_int() producer is guarded by cnt > 0L.
-muse.c	use_defensive	looks much better.	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
-muse.c	use_defensive	looks completely healed.	composed	src/js/monster_defensive_item.ts:useMonsterDefensiveItem; The healing branch selects better, much better or completely healed after the monster quaffs its potion.
-muse.c	mon_consume_unstone	just ruined a future piece of art!	composed	src/js/monster_stoning_cure.ts:consumeMonsterStoningCure; A hallucinating hero's stoning cure prints the pity line around the lowercase monster name instead of the limber line.
-pager.c	checkfile	Cannot open 'data' file!	dead	Native unreachable with an intact install: the branch needs dlb_fopen(DATAFILE) to fail, and the recorder ships a readable nhdat. The port embeds the data file.
-pager.c	checkfile	? Seek error on 'data' file!	dead	Native unreachable with an intact install: the branch needs a dlb_fseek failure on the readable data file. The port embeds the data file.
-pline.c	impossible	Alternatively, contact local support:	dead	Native unreachable: sysopt.support stays null because the recorder sysconf leaves SUPPORT commented out, so impossible() never prints the local support line.
-pline.c	execplinehandler	Fork to message handler failed.	dead	Native unreachable: execplinehandler returns before the fork when sysopt.msghandler is unset, and the recorder sysconf leaves MSGHANDLER commented out.
-pray.c	offer_real_amulet	ascend to the status of Demigod	composed	src/js/sacrifice.ts:offerAmulet; The winning altar branch appends dess for a female hero to Demigod before the ellipsis.
-role.c	genl_player_setup	Incompatible role!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrole().
-role.c	genl_player_setup	Incompatible race!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrace().
-role.c	genl_player_setup	Incompatible gender!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
-role.c	genl_player_setup	Incompatible alignment!	composed	src/js/character_selection.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
-rumors.c	rumor_check	rumors not accessible.	dead	Native unreachable with an intact install: the line needs the rumors dlb file to be missing or rejected by init_rumors, and the recorder ships readable rumor data. The port embeds the rumors.
-wizcmds.c	wiz_load_lua	Load which lua file?	out-of-scope	The wizard branch reads an arbitrary lua file through dlb, a host filesystem boundary the port cannot serve; the command is also NOFUZZERCMD, so every recorded (debug_fuzzer) session rejects it before the prompt and the non-wizard refusal already exists through commandAllowed.
-wizcmds.c	wiz_load_splua	Load which des lua file?	out-of-scope	The wizard branch loads a des-file lua script from dlb, a host filesystem boundary the port cannot serve; the command is also NOFUZZERCMD, so every recorded (debug_fuzzer) session rejects it before the prompt and the non-wizard refusal already exists through commandAllowed.
-invent.c	doperminv	Persistent inventory ('perm_invent' option) is not presently enabled.	dead	The pinned tty window port has no WC_PERM_INVENT (config.h leaves TTY_PERM_INVENT commented out), so doperminv() always reports the unsupported window first and never reaches this branch.
-invent.c	doperminv	Persistent inventory display is empty.	dead	Same unreachable branch: without WC_PERM_INVENT the recorder's doperminv() stops at the unsupported-window message.
-invent.c	sync_perminvent	could not be enabled.	dead	sync_perminvent() only prints this when a tty perm_invent window was requested and refused; TTY_PERM_INVENT is not compiled in, so the request path never runs.
-invent.c	sync_perminvent	needs a terminal that is at least	dead	Same unreachable branch: without TTY_PERM_INVENT the window-port settings request never reports a too-small terminal.
+zap.c	zapyourself	self with a death ray	composed	src/js/hero_self_zap.ts:zapHeroWithObject; Selects himself or herself before " with a death ray"; killer format NO_KILLER_PREFIX as in native.

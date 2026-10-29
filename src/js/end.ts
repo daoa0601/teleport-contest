@@ -1225,6 +1225,21 @@ const VANQ_ORDER_CHOICES: ReadonlyArray<readonly [number, string]> = [
     [VANQ_COUNT_H_L, 'n'], [VANQ_COUNT_L_H, 'z'],
 ];
 
+// Short descriptions in options.c use column 1 of C's vanqorders table.
+export function vanquishedOptionValue(mode = vanqSortMode()): string {
+    const key = 'tdaACcnz'.charAt(mode);
+    switch (mode) {
+    case VANQ_MLVL_MNDX: return `${key}: traditional: by monster level`;
+    case VANQ_MSTR_MNDX: return `${key}: by monster difficulty rating`;
+    case VANQ_ALPHA_SEP: return `${key}: alphabetically, unique monsters separate`;
+    case VANQ_ALPHA_MIX: return `${key}: alphabetically, unique monsters intermixed`;
+    case VANQ_MCLS_HTOL: return `${key}: by monster class, high to low level in class`;
+    case VANQ_MCLS_LTOH: return `${key}: by monster class, low to high level in class`;
+    case VANQ_COUNT_H_L: return `${key}: by count, high to low`;
+    default: return `${key}: by count, low to high`;
+    }
+}
+
 function vanqOrderDescription(mode: number, forVanquished: boolean): string {
     switch (mode) {
     case VANQ_MLVL_MNDX:
@@ -1245,7 +1260,7 @@ function vanqOrderDescription(mode: number, forVanquished: boolean): string {
     }
 }
 
-async function setVanqOrder(forVanquished: boolean): Promise<number> {
+export async function setVanqOrder(forVanquished: boolean): Promise<number> {
     const current = vanqSortMode();
     const items: InventoryMenuItem<number>[] = [];
     let preselectedKey: string | null = null;

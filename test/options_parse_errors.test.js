@@ -121,6 +121,15 @@ void test('number_pad validates its mode digits', () => {
     assert.deepEqual(errorMessages('OPTIONS=numb:'), []);
     assert.equal(abbreviated.iflags.num_pad, true);
 });
+for (const option of ['!sortvanquished', '!sortvanquished:', '!sortvanquished=']) {
+    void test(`a negated ${option} reports its missing value and resets the sort order`, () => {
+        const configuration = parseNethackrc('OPTIONS=sortvanquished:c');
+        assert.equal(configuration.flags.vanqSortmode, 5);
+        const report = parseNethackOptions(option, configuration);
+        assert.deepEqual(report.errors.map(error => error.message), [`Missing parameter for '${option.slice(1)}'`]);
+        assert.equal(configuration.flags.vanqSortmode, 0);
+    });
+}
 void test('sortloot, scores, and pickup_burden report their parameter errors', () => {
     assert.deepEqual(errorMessages('OPTIONS=sortloot:x'), ["Unknown sortloot parameter 'x'"]);
     assert.deepEqual(errorMessages('OPTIONS=sortloot:'), ["Missing parameter for 'sortloot:'"]);

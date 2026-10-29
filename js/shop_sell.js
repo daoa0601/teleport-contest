@@ -610,8 +610,9 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
                 object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
             await moneyToHero(resident, offer, state);
+            const partialContents = !ltmp && cltmp > 0 && onlyPartially;
             await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
-                ? `sold ${it} for ${goldPieces(offer)}.`
+                ? `sold ${partialContents ? 'some items inside ' : ''}${it} for ${goldPieces(offer)}.`
                 : `relinquish ${it} and receive ${goldPieces(offer)} in compensation.`, { publish, state });
             return { sold: true, offer };
         }

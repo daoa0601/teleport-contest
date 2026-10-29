@@ -7,7 +7,7 @@ import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from
 import type { CharacterFilters } from './character_filters.js';
 import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
 import { NATIVE_COMMANDS } from './command_data.js';
-import { resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
+import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
 import type { MessageType, MessageTypeRule } from './message_types.js';
 import type { AutopickupExceptionRule, GameFlags, InterfaceFlags, LootSortMode, MenuColoringRule, MenuStyle } from './flags.js';
@@ -34,7 +34,7 @@ import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectW
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
+import { DISCLOSURE_CATEGORIES, parseDisclosureSettings, setVanqOrder, vanquishedOptionValue } from './end.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName,
     matchColorName, queryAttributeMenu, queryColorMenu } from './color_query.js';
@@ -1525,6 +1525,16 @@ function parseConfiguration(
                 if (optionValue) changeInventoryOrder(optionValue, result);
                 continue;
             }
+            if (canonical === 'sortvanquished') {
+                const initial = optionValue?.charAt(0) ?? '';
+                const mode = 'tdaACcnz'.indexOf(initial);
+                if (!optionValue) addError(`Missing parameter for '${stripped}'`);
+                if (negated) result.flags.vanqSortmode = 0;
+                else if (initial && mode >= 0) result.flags.vanqSortmode = mode;
+                else if (/^[0-7]$/.test(initial)) result.flags.vanqSortmode = Number(initial);
+                else if (optionValue) addError(`Unknown sortvanquished parameter '${optionValue}'`);
+                continue;
+            }
             if (canonical === 'sortloot') {
                 // optfn_sortloot(): a value is mandatory
                 // (string_for_env_opt(FALSE)).
@@ -2602,7 +2612,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('scores', `scores                  [${scoreDisplayDescription()}]`),
             choice('sortdiscoveries', `sortdiscoveries         [${discoverySortDescription()}]`),
             choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
-            choice('sortvanquished', 'sortvanquished          [t: traditional: by monster level]'),
+            choice('sortvanquished', `sortvanquished          [${vanquishedOptionValue()}]`),
             choice('statushilites', `${'statushilites'.padEnd(24)}[${statusHilitesValue()}]`),
             choice('statuslines', 'statuslines             [2]'),
             choice('suppress_alert', 'suppress_alert          [(none)]'),
@@ -2613,7 +2623,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             label(''),
         ] },
         { heading: 'Other settings:', items: [
-            choice('autocompletions', 'autocompletions         [(0 currently set)]'),
+            choice('autocompletions', `autocompletions         [(${countCommandAutocompletions()} currently set)]`),
             choice('autopickup_exceptions', `${'autopickup exceptions'.padEnd(24)}[(${game.iflags.autopickupExceptions?.length ?? 0} currently set)]`),
             choice('bind_keys', `bind keys               [(${countBindKeys()} currently set)]`),
             choice('menu_colors', `${'menu colors'.padEnd(24)}[(${game.iflags.menuColorings?.length ?? 0} currently set)]`),
@@ -3131,6 +3141,13 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
     // OthrOpt handlers: options.c o_status_hilites and o_bind_keys do_handler.
     else if (name === 'status_highlights') await statusHiliteMenu();
     else if (name === 'bind_keys') await handlerRebindKeys();
+    else if (name === 'autocompletions') await changeCommandAutocompletions();
+    else if (name === 'sortvanquished') {
+        const previous = game.flags.vanqSortmode ?? 0;
+        await setVanqOrder(true);
+        await plineWithContinuation(`'sortvanquished' ${(game.flags.vanqSortmode ?? 0) === previous
+            ? 'not changed, still' : 'changed to'} "${vanquishedOptionValue()}".`);
+    }
     else if (name === 'sortloot') await editSortLoot();
     else if (name === 'sortdiscoveries') await chooseDiscoverySort(0);
     else if (name === 'symset') return await editSymset(false);
