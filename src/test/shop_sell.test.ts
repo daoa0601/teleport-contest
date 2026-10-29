@@ -398,3 +398,30 @@ void test('a short keeper offers only what it can pay', async t => {
     assert.equal(heroGoldAmount(game), 1);
     assert.equal(monsterGoldAmount(shopkeeper), 0);
 });
+
+void test('selling part of the contents of a shop-owned container describes only the items sold', async t => {
+    const { shopkeeper } = await sellShop(t, [
+        { prompt: /your item in the sack.*Sell it\?/, keys: 'y' },
+        { prompt: /sold some items inside.*--More--/s, keys: ' ' },
+    ]);
+    requirePlayingGame(game);
+    const sack = placeCreatedObject(await uninitializedObject(SACK,
+        { dknown: true, cknown: true }), 10, 10);
+    const stock = await knownObject(DAGGER);
+    const own = await knownObject(POT_FRUIT_JUICE);
+    await addCreatedObjectToContainer(sack, stock);
+    await addCreatedObjectToContainer(sack, own);
+    sack.unpaid = stock.unpaid = true;
+    shopkeeper.eshk.bill = [sack, stock].map(object =>
+        ({ bo_id: object.o_id, bquan: 1, useup: false, price: 40 }));
+    shopkeeper.eshk.billct = 2;
+
+    const result = await sellHeroDroppedObject(sack, 10, 10);
+
+    assert.equal(result.sold, true);
+    assert.match(game._lastPlineMessage, /sold some items inside .*sack for \d+ gold pieces\./);
+    assert.equal(shopkeeper.eshk.bill.length, 0);
+    assert.equal(sack.unpaid, false);
+    assert.equal(!!own.no_charge, false);
+    assert.ok(heroGoldAmount(game) > 0);
+});
