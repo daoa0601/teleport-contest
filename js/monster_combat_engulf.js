@@ -7,7 +7,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsVampireShifter, monsterIsWhirly, requireMonsterData, } from './monster_data.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { snuffMonsterInventoryLights } from './monster_inventory_light.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
@@ -53,7 +53,7 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
     const previousEngulf = state._monsterEngulf;
     const previousSwallower = state._monsterSwallower;
     state._monsterEngulf = { attacker, defender, defenderExposed: false };
-    placeMonsterAt(attacker, target.x, target.y);
+    await placeMonsterOnMap(attacker, target.x, target.y);
     newsym(origin.x, origin.y);
     newsym(target.x, target.y);
     let recovered = false;
@@ -80,7 +80,7 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
             }) ? target : origin;
             const alreadyPlaced = monsterAtPosition(state.level, destination.x, destination.y) === attacker;
             if (!alreadyPlaced)
-                placeMonsterAt(attacker, destination.x, destination.y);
+                await placeMonsterOnMap(attacker, destination.x, destination.y);
             state._monsterEngulf = previousEngulf;
             if (destination !== target)
                 newsym(target.x, target.y);
@@ -104,7 +104,7 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
                 heroDied: !!state.program_state.gameover };
         }
         if (attackerDied) {
-            placeMonsterAt(defender, target.x, target.y);
+            await placeMonsterOnMap(defender, target.x, target.y);
             state._monsterEngulf = previousEngulf;
             newsym(target.x, target.y);
         }
@@ -113,8 +113,9 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
                 const verb = monsterDigests(attacker) ? 'regurgitated' : monsterEnfolds(attacker) ? 'released' : 'expelled';
                 await publish(`${monsterName(defender, { state, capitalized: true })} is ${verb}!`);
             }
-            placeMonsterAt(attacker, origin.x, origin.y);
-            placeMonsterAt(defender, target.x, target.y);
+            removeMonsterFromMapAt(target.x, target.y, state);
+            await placeMonsterOnMap(attacker, origin.x, origin.y);
+            await placeMonsterOnMap(defender, target.x, target.y);
             state._monsterEngulf = previousEngulf;
             newsym(origin.x, origin.y);
             newsym(target.x, target.y);
@@ -129,9 +130,9 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
         // one square after the transient map context has been released.
         if (!recovered) {
             if (attacker.mhp > 0 && state.level.monsters.includes(attacker))
-                placeMonsterAt(attacker, origin.x, origin.y);
+                await placeMonsterOnMap(attacker, origin.x, origin.y);
             if (defender.mhp > 0 && state.level.monsters.includes(defender))
-                placeMonsterAt(defender, target.x, target.y);
+                await placeMonsterOnMap(defender, target.x, target.y);
             newsym(origin.x, origin.y);
             newsym(target.x, target.y);
         }

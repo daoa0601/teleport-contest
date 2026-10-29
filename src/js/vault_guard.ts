@@ -9,7 +9,7 @@ import { map_location, newsym, plineWithContinuation } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { releaseMonsterInventory } from './monster_drop.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -126,16 +126,19 @@ function blackout(x: number, y: number, state: GameState) {
     }
 }
 
-export function parkVaultGuard(guard: Monster, state: GameState = game) {
+export async function parkVaultGuard(guard: Monster, state: GameState = game) {
     requireLiveGame(state);
     requireVaultGuard(guard);
     const polearm = state.context.polearm;
     if (polearm?.hitmonId === guard.m_id) polearm.hitmonId = null;
     const x = guard.mx,
         y = guard.my;
-    // The JS monster list also supplies occupancy; hide the old head before redraw.
-    placeMonsterAt(guard, 0, 0);
-    if (x) newsym(x, y);
+    if (x) {
+        removeMonsterFromMapAt(x, y, state);
+        newsym(x, y);
+    }
+    if (monsterAtPosition(requireGameLevel(state), 0, 0, state) !== guard)
+        await placeMonsterOnMap(guard, 0, 0, state);
     guard._egd.ogx = guard._egd.ogy = 0;
 }
 
@@ -145,7 +148,7 @@ export async function prepareVaultGuardDeath(guard: Monster, state: GameState = 
     if (!dispose) {
         await releaseMonsterInventory(guard, state, { show: false });
         guard.mhp = 0;
-        parkVaultGuard(guard, state);
+        await parkVaultGuard(guard, state);
         dispose = await clearVaultCorridor(guard, true, state);
     }
     if (dispose) guard.isgd = 0;
@@ -153,7 +156,7 @@ export async function prepareVaultGuardDeath(guard: Monster, state: GameState = 
 }
 
 // C vault.c:findgd(). Parked guards still own their unfinished corridor.
-export function findVaultGuard(state: GameState = game): VaultGuard | null {
+export async function findVaultGuard(state: GameState = game): Promise<VaultGuard | null> {
     requireLiveGame(state);
     const heroLevel = state.u.uz;
     if (!heroLevel) throw new Error('Finding a vault guard requires the hero dungeon location.');
@@ -180,6 +183,6 @@ export function findVaultGuard(state: GameState = game): VaultGuard | null {
     returning.mux = state.u.ux;
     returning.muy = state.u.uy;
     returning.mx = returning.my = 0;
-    parkVaultGuard(returning, state);
+    await parkVaultGuard(returning, state);
     return returning;
 }

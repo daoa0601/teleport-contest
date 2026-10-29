@@ -38,22 +38,22 @@ const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
 const STRANGE_OBJECT = 0;
 // C vault.c:vault_summon_gd(). The next world turn owns guard arrival.
-export function summonVaultGuardSoon(state = game) {
+export async function summonVaultGuardSoon(state = game) {
     const level = requireGameLevel(state);
     const inVault = (state.u.urooms || []).some((roomno) => {
         const room = level.rooms[roomno - ROOMOFFSET];
         return isRoom(room) && room.rtype === VAULT;
     });
-    if (inVault && !findVaultGuard(state))
+    if (inVault && !(await findVaultGuard(state)))
         state.u.uinvault = VAULT_GUARD_TIME - 1;
 }
 function vaultRoomAt(x, y, level = game.level) {
     const roomno = roomsAt(level, x, y, VAULT)[0];
     return roomno === undefined ? null : roomForRoomno(level, roomno);
 }
-// Called from the synchronous once-per-global-turn owner.  Returning true
+// Called once per global turn. Returning true
 // means invault() has suspended before the later engraving-wear roll.
-export function maintainVaultResidence(state = game) {
+export async function maintainVaultResidence(state = game) {
     requireLiveGame(state);
     const vault = vaultRoomAt(state.u?.ux, state.u?.uy, state.level);
     if (!vault) {
@@ -67,7 +67,7 @@ export function maintainVaultResidence(state = game) {
         state.u.uinvault = (state.u.uinvault || 0) + 1;
     if (state.u.uinvault < VAULT_GUARD_TIME ||
         state.u.uinvault % (VAULT_GUARD_TIME / 2) !== 0 ||
-        findVaultGuard(state) ||
+        await findVaultGuard(state) ||
         state._vaultGuardArrivalPending)
         return false;
     state._vaultGuardArrivalPending = { vault };

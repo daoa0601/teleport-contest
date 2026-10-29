@@ -44,7 +44,7 @@ void test('a guard arriving over a pending removal message pages with the old ar
     assert.match(game._pending_message ?? '', /You were wearing/);
     // The guard arrives while the removal message is still pending.
     game.u.uinvault = 29;
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     const seenClasses = [];
     const input = resetInputState();
     input.beforeRead = () => {

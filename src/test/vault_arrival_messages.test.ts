@@ -26,7 +26,7 @@ void test('the guard accepts and echoes names longer than thirty-one characters'
     for (let x = 9; x <= 10; x++)
         for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     const name = 'Alexandria '.repeat(4).trim();
     const input = resetInputState();
     const arrival = continueVaultGuardArrival();
@@ -60,7 +60,7 @@ for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
         game.u.uinvault = 29;
         await pline('You see here 398 gold pieces.');
         const input = resetInputState();
-        assert.equal(maintainVaultResidence(), true);
+        assert.equal(await maintainVaultResidence(), true);
 
         const answers: PromptAnswer[] = [
             { prompt: /You see here 398 gold pieces\.--More--/, keys: ' ' },
@@ -102,7 +102,7 @@ void test('guard arrival does not redraw warnings before announcing the guard', 
     grantIntrinsicProperty('warning', 'outside');
     const before = glyphAt(14, 12)?.kind;
     game.u.uinvault = 29;
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     const input = resetInputState();
 
     const arrival = continueVaultGuardArrival();
@@ -126,7 +126,7 @@ void test('answering a guard does not change its hallucinated appearance before 
     game.u.uinvault = 29;
     game.u.hallucinationTurns = 20;
     initRng(123n);
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     const input = resetInputState();
     const arrival = continueVaultGuardArrival();
     await input.waitUntilBlocked();

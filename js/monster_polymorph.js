@@ -5,7 +5,7 @@ import { BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, GPCOORDS_MAP, GPCOORDS_NONE, In_end
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, swallowed } from './display.js';
 import { dragonFormForArmor } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
-import { placeMonsterAt } from './monster_location.js';
+import { placeMonsterOnMap } from './monster_location.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName, monsterFormChangeName, namelessMonsterName } from './monster_name.js';
@@ -689,7 +689,7 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
         return null;
     if (monster.wormno) {
         removeMonsterWormBody(monster);
-        placeMonsterAt(monster, monster.mx, monster.my);
+        await placeMonsterOnMap(monster, monster.mx, monster.my);
     }
     if (M_AP_TYPE(monster) && MONSTER_SYMBOL[targetMnum] !== 13)
         revealMonsterAppearance(monster);

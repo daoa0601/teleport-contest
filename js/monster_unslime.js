@@ -11,7 +11,7 @@ import { speciesCanBlow } from './monster_anatomy.js';
 import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAnimal, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, } from './monster_data.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { consumeMonsterItem, presentMonsterHornUse, presentMonsterScrollRead, presentMonsterWandUse, } from './monster_item_use.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName, monsterReflexiveAction, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { adjustMonsterSpeed } from './monster_speed.js';
@@ -210,7 +210,7 @@ async function triggerCureTrap(monster, trap, visible, context) {
     }
     else {
         const oldX = monster.mx, oldY = monster.my;
-        placeMonsterAt(monster, trap.tx, trap.ty);
+        await placeMonsterOnMap(monster, trap.tx, trap.ty);
         newsym(oldX, oldY);
         if (monster.wormno)
             advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });

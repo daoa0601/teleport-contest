@@ -16,7 +16,7 @@ import { findVaultGuard } from './vault_guard.js';
 const COIN_CLASS = 12;
 export async function payVaultGuardOnExit({ silent = false, publish = plineWithContinuation, random = rn2, } = {}) {
     const state = requireInitializedGame();
-    const guard = findVaultGuard(state);
+    const guard = await findVaultGuard(state);
     const amount = heroGoldAmount(state);
     if (!amount || !guard)
         return;

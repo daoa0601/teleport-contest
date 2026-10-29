@@ -4,7 +4,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 
-import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
+import { monsterHasMapPosition, placeMonsterOnMap } from './monster_location.js';
 import {
     BOTH_SIDES, RLOC_ERR, RLOC_NOMSG,
     D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
@@ -463,6 +463,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     refreshMovementProperties(game);
     if (wasStealthy && !hero.stealth)
         await plineWithContinuation("You aren't stealthy anymore.");
+    steed.headOnMap = false;
     await moveHeroByTeleport(steed.mx, steed.my, game);
     await applyHeroLocationEffects();
     // Mounting uses teleds(), whose invocation message follows spot effects.
@@ -782,6 +783,7 @@ export async function dismountHero(
     const oldx = hero.ux;
     const oldy = hero.uy;
     const wasStealthy = hero.stealth;
+    steed.headOnMap = false;
     hero.usteed = null;
     refreshMovementProperties(state);
     if (!wasStealthy && hero.stealth) await announce('You seem less noisy now.');
@@ -799,7 +801,12 @@ export async function dismountHero(
     let movement = null;
     let location = null;
     if (!steed.dead && steed.mhp > 0) {
-        placeMonsterAt(steed, steedPosition.x, steedPosition.y);
+        state._steedDismounting = true;
+        try {
+            await placeMonsterOnMap(steed, steedPosition.x, steedPosition.y, state);
+        } finally {
+            state._steedDismounting = false;
+        }
         if (reason === DISMOUNT_BONES) {
             if (!(await moveSteedOffHero(state, steed, random)))
                 await randomMonsterRelocation(steed, {

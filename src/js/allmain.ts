@@ -973,7 +973,7 @@ async function finishInitialTurnMaintenanceAfterAmbient({
     // the resulting C turn number is the existing JS value, not value + 1.
     await periodicTurnExercise(sourceTurn);
     await checkAttributeExercise(sourceTurn);
-    if (maintainVaultResidence(game)) {
+    if (await maintainVaultResidence(game)) {
         // invault() owns an interactive getlin()/pager transaction.  Preserve
         // the remaining same-turn maintenance so it resumes only after that
         // transaction completes, just as the synchronous C stack does.

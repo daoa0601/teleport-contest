@@ -231,7 +231,7 @@ void test('guard arrival preserves the vault wall restriction for restoration', 
             level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
     const input = resetInputState();
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
     const arrived = await answerPrompts(continueVaultGuardArrival(), input, [
         { prompt: /Suddenly one of the Vault's guards enters![\s\S]*--More--/, keys: ' ' },
         { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },
@@ -257,7 +257,7 @@ for (const done of [false, true]) {
             for (let y = 9; y <= 10; y++)
                 level.requireAt(x, y).roomno = ROOMOFFSET;
         game.u.uinvault = 29;
-        assert.equal(maintainVaultResidence(), false);
+        assert.equal(await maintainVaultResidence(), false);
         assert.equal(level.monsters.filter(monster => monster.isgd).length, 1);
         assert.equal(guard.mhp, done ? 0 : guard.mhpmax);
         assert.deepEqual([guard.mx, guard.my], [0, 0]);
@@ -275,7 +275,7 @@ void test('a migrating guard returns directly to its unfinished home corridor', 
         for (let y = 9; y <= 10; y++)
             level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
-    assert.equal(maintainVaultResidence(), false);
+    assert.equal(await maintainVaultResidence(), false);
     assert.equal(level.monsters.includes(guard), true);
     assert.equal(game._migratingMonsters.includes(guard), false);
     assert.equal(guard.mstate, MON_FLOOR);
@@ -300,7 +300,7 @@ for (const migrating of [false, true]) {
             await sendMonsterToLimbo(older);
             await sendMonsterToLimbo(newer);
         }
-        assert.equal(maintainVaultResidence(), false);
+        assert.equal(await maintainVaultResidence(), false);
         if (migrating) {
             assert.equal(level.monsters.includes(newer), true);
             assert.equal(level.monsters.includes(older), false);

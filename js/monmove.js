@@ -120,7 +120,7 @@ import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } fr
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
-import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { dismountHero } from './steed.js';
 import { DISMOUNT_THROWN } from './const.js';
 import { breakMonsterBoulder, monsterCanBreakBoulder } from './monster_boulder.js';
@@ -692,7 +692,7 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
             await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? trapName(misc.trap.ttyp, { state }) : 'hidden trap'}!`);
         }
         const oldx = monster.mx, oldy = monster.my;
-        placeMonsterAt(monster, misc.trap.tx, misc.trap.ty);
+        await placeMonsterOnMap(monster, misc.trap.tx, misc.trap.ty);
         newsym(oldx, oldy);
         if (monster.wormno)
             advanceMonsterWormBody(monster, { state });
@@ -2306,16 +2306,16 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
             };
         }
     }
-    monster.mx = nix;
-    monster.my = niy;
     if (nix !== oldx || niy !== oldy) {
+        removeMonsterFromMapAt(oldx, oldy, state);
+        await placeMonsterOnMap(monster, nix, niy, state);
         if (!Array.isArray(monster.mtrack))
             monster.mtrack = [];
         monster.mtrack.unshift({ x: oldx, y: oldy });
         monster.mtrack.length = Math.min(monster.mtrack.length, 4);
     }
     else {
-        pullLeashedPetCloser(monster, state, random, calls);
+        await pullLeashedPetCloser(monster, state, random, calls);
         nix = monster.mx;
         niy = monster.my;
     }
@@ -2337,7 +2337,7 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
 }
 // C dog_move() keeps a leashed pet close even after an action which left it
 // in place. Its fallback probes use dirtocoord's map coordinates as written.
-function pullLeashedPetCloser(monster, state, random, calls) {
+async function pullLeashedPetCloser(monster, state, random, calls) {
     if (!monster.mleashed || dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 4)
         return;
     const dx = Math.sign(monster.mx - state.u.ux);
@@ -2368,8 +2368,8 @@ function pullLeashedPetCloser(monster, state, random, calls) {
     // The native region check precedes placement and uses the unchanged
     // planned square when this is a forced leash move.
     updateMonsterRegions(monster, state);
-    monster.mx = destination.x;
-    monster.my = destination.y;
+    removeMonsterFromMapAt(monster.mx, monster.my, state);
+    await placeMonsterOnMap(monster, destination.x, destination.y, state);
     newsym(monster.mx, monster.my);
     setMonsterApparentHeroPosition(monster, state, random, calls);
 }
@@ -2580,8 +2580,8 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
                     ...inventoryAction,
                 };
             }
-            monster.mx = nx;
-            monster.my = ny;
+            removeMonsterFromMapAt(oldx, oldy, state);
+            await placeMonsterOnMap(monster, nx, ny, state);
             if (!Array.isArray(monster.mtrack))
                 monster.mtrack = [];
             monster.mtrack.unshift({ x: oldx, y: oldy });
@@ -3068,9 +3068,9 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     }
     if (selected)
         await leaveMovementCloud(state, monster.mnum, !!monster.mcan, oldx, oldy, random);
-    monster.mx = nix;
-    monster.my = niy;
     if (selected) {
+        removeMonsterFromMapAt(oldx, oldy, state);
+        await placeMonsterOnMap(monster, nix, niy, state);
         if (monster.wormno)
             advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
         // C m_move() exposes a concealer which left its cover right after
@@ -3542,7 +3542,8 @@ async function moveSpecial(monster, state, random, rollDice, rollOne, calls, { i
     if (monsterAtPosition(state.level, selected.x, selected.y) ||
         (selected.x === state.u.ux && selected.y === state.u.uy))
         return movement;
-    placeMonsterAt(monster, selected.x, selected.y);
+    removeMonsterFromMapAt(oldx, oldy, state);
+    await placeMonsterOnMap(monster, selected.x, selected.y, state);
     if (state === game)
         newsym(selected.x, selected.y);
     if (monster.isshk && !inHisShop && shopkeeperInOwnShop(monster, state))
@@ -7281,7 +7282,7 @@ export async function resumeDeferredPetEating(action, state, random = rn2, rollD
     if (monster.dead || monster.mhp <= 0)
         movement.postMoveStatus = MMOVE_DIED;
     else if (!movement.moved && monsterHasMapPosition(monster, state)) {
-        pullLeashedPetCloser(monster, state, random, calls);
+        await pullLeashedPetCloser(monster, state, random, calls);
         movement.x = monster.mx;
         movement.y = monster.my;
         movement.moved = movement.x !== movement.oldx || movement.y !== movement.oldy;

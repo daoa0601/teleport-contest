@@ -18,7 +18,7 @@ import {
 } from './monster_data.js';
 import { triggerMonsterDoorTrap } from './monster_door_trap.js';
 import { monsterHasMagicKey } from './monster_key.js';
-import { placeMonsterAt } from './monster_location.js';
+import { placeMonsterOnMap } from './monster_location.js';
 import { monsterCorrodesBars } from './monster_movement_traits.js';
 import { monsterName } from './monster_name.js';
 import { monsterCanFog } from './monster_perception.js';
@@ -56,7 +56,7 @@ export async function shiftMonsterForDoor(monster: Monster, state: PlayingGameSt
         || !(door.doormask & (D_CLOSED | D_LOCKED)) || !monsterCanFog(monster, state))
         return { died: false, heroDied: false };
     if (wasSeen || wasSpotted) {
-        placeMonsterAt(monster, previousPosition.x, previousPosition.y);
+        await placeMonsterOnMap(monster, previousPosition.x, previousPosition.y);
         newsym(destination.x, destination.y);
         newsym(previousPosition.x, previousPosition.y);
     }
@@ -67,7 +67,7 @@ export async function shiftMonsterForDoor(monster: Monster, state: PlayingGameSt
     const died = !!monster.dead || monster.mhp <= 0;
     const heroDied = !!change?.heroDied || !!state.program_state.gameover;
     if (!died && (wasSeen || wasSpotted)) {
-        placeMonsterAt(monster, destination.x, destination.y);
+        await placeMonsterOnMap(monster, destination.x, destination.y);
         newsym(previousPosition.x, previousPosition.y);
         newsym(destination.x, destination.y);
     }

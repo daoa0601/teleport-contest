@@ -20,7 +20,7 @@ import { healMonster } from './mon.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { insideWizardTower } from './dungeon.js';
 import { depth } from './hacklib.js';
-import { monsterHasMapPosition, placeMonsterAt as placeMonsterOnMap } from './monster_location.js';
+import { monsterHasMapPosition, placeMonsterOnMap } from './monster_location.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import {
@@ -137,7 +137,7 @@ export function setShopResidency(monster: Monster, zeroOut: boolean, state: Game
 
 // C mon_leave(): both followers and independently migrating monsters lose
 // their old shop residency and carry only a tail length between levels.
-export function prepareMonsterDeparture(monster: Monster, state: GameState): void {
+export async function prepareMonsterDeparture(monster: Monster, state: GameState): Promise<void> {
     for (const object of monster.minvent || monster.inventory || [])
         clearNoCharge(object);
     setShopResidency(monster, true, state);
@@ -146,12 +146,12 @@ export function prepareMonsterDeparture(monster: Monster, state: GameState): voi
         const count = Math.min(monster.wormSegments?.length ?? 0, MAX_NUM_WORMS - 1);
         removeMonsterWormBody(monster);
         monster.migratingWormSegments = count;
-        if (x) placeMonsterAt(monster, x, y);
+        if (x) await placeMigratingMonster(monster, x, y);
     }
 }
 
-function placeMonsterAt(monster: Monster, x: number, y: number): void {
-    placeMonsterOnMap(monster, x, y);
+async function placeMigratingMonster(monster: Monster, x: number, y: number): Promise<void> {
+    await placeMonsterOnMap(monster, x, y);
     monster.mtrack = [];
 }
 
@@ -189,7 +189,7 @@ export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
         await releaseMonsterLeashWithFeedback(monster, { state });
     }
 
-    prepareMonsterDeparture(monster, state);
+    await prepareMonsterDeparture(monster, state);
     await detachMonsterFromLevel(monster, state);
     if (confused) monster.mconf = 1;
     monster.migrating = true;

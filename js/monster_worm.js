@@ -357,13 +357,16 @@ export function validMonsterWormBodies(level) {
 function savedWormPoint(value) {
     return isSavedRecord(value)
         && typeof value.x === 'number' && Number.isInteger(value.x)
-        && typeof value.y === 'number' && Number.isInteger(value.y);
+        && typeof value.y === 'number' && Number.isInteger(value.y)
+        && (value.onMap === undefined || typeof value.onMap === 'boolean');
 }
-// C restore.c calls place_wsegs(), which normalizes only the hidden head.
+// C restore.c rebuilds the monster grid and places the whole worm chain.
 export function restoreMonsterWormHeads(level) {
     for (const monster of level.monsters) {
         // The native monster grid is rebuilt from fmon when loading a level.
         delete monster.headOnMap;
+        for (const segment of monster.wormSegments ?? [])
+            delete segment.onMap;
         if (monster.wormno)
             monster.wormHead = { x: monster.mx, y: monster.my };
     }

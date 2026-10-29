@@ -22,7 +22,7 @@ import {
     consumeMonsterItem, presentMonsterHornUse, presentMonsterScrollRead,
     presentMonsterWandUse,
 } from './monster_item_use.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName, monsterReflexiveAction, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { adjustMonsterSpeed } from './monster_speed.js';
@@ -229,7 +229,7 @@ async function triggerCureTrap(monster: Monster, trap: Trap, visible: boolean, c
         if (visible) await publish(`${name} triggers ${trap.tseen ? 'the' : 'a'} fire trap!`);
     } else {
         const oldX = monster.mx, oldY = monster.my;
-        placeMonsterAt(monster, trap.tx, trap.ty);
+        await placeMonsterOnMap(monster, trap.tx, trap.ty);
         newsym(oldX, oldY);
         if (monster.wormno) advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
         newsym(monster.mx, monster.my);

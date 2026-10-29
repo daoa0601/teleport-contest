@@ -1,7 +1,7 @@
 import type {
     BonesMonsterData, MinionData, Monster, MonsterExtra, MonsterFlag,
     MonsterLevel, PetData, PriestData, SavedMonsterTraits, ShopBillEntry,
-    ShopkeeperData, VaultGuardData,
+    ShopkeeperData, VaultGuardData, WormSegment,
 } from './monster_types.js';
 import type { Position } from './map_types.js';
 import {
@@ -23,6 +23,9 @@ const flag: Check<MonsterFlag> = (value): value is MonsterFlag =>
 
 const position: Check<Position> = (value): value is Position =>
     closedFieldsMatch(value, { x: integer, y: integer });
+
+const wormSegment: Check<WormSegment> = (value): value is WormSegment =>
+    closedFieldsMatch(value, { x: integer, y: integer, onMap: optional(boolean) });
 
 const level: Check<MonsterLevel> = (value): value is MonsterLevel =>
     closedFieldsMatch(value, { dnum: integer, dlevel: integer });
@@ -165,7 +168,7 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         my: integer,
         mstate: optional(integer),
         headOnMap: optional(boolean),
-        wormSegments: optional(arrayOf(position)),
+        wormSegments: optional(arrayOf(wormSegment)),
         // Saving is unavailable while cutworm is awaiting a message pager.
         wormDetachedSegments: (entry): entry is undefined => entry === undefined,
         m_id: integer,

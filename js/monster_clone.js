@@ -6,7 +6,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { nextIdent } from './ident.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
 import { tameMonster } from './monster_taming.js';
 import { rn2 } from './rng.js';
@@ -70,7 +70,7 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
     clone.mhpmax = monster.mhpmax;
     clone.mhp = Math.trunc(monster.mhp / 2);
     monster.mhp -= clone.mhp;
-    placeMonsterAt(clone, destination.x, destination.y);
+    await placeMonsterOnMap(clone, destination.x, destination.y);
     // cutworm replaces the copied body after cloning. During taming, the
     // copied worm number still refers to the parent's retained segments.
     level.monsters.push(clone);

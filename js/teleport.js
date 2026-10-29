@@ -2,7 +2,7 @@
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './monster_location.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -20,7 +20,7 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWit
 import { vision_recalc } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js';
 import { rn2, rnd } from './rng.js';
-import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
+import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { AMULET_OF_YENDOR, LEASH, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, WAN_TELEPORTATION, } from './object_data.js';
 import { spendHeroNutrition } from './hunger.js';
@@ -539,12 +539,12 @@ export async function relocateMonsterTo(monster, x, y, { state = game, random = 
         if (monster.wormno)
             clearMonsterWormFromMap(monster);
         else {
-            monster.mstate = (monster.mstate ?? 0) | MON_OFFMAP;
+            removeMonsterFromMapAt(oldx, oldy, state);
             newsym(oldx, oldy);
         }
     }
     monster.mtrack = [];
-    placeMonsterAt(monster, x, y);
+    await placeMonsterOnMap(monster, x, y);
     updateMonsterRegions(monster, state);
     if (monster.wormno)
         placeMonsterWormTailRandomly(monster, segments, { state, random });

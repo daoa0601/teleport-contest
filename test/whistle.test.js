@@ -90,7 +90,7 @@ void test('a cursed ordinary whistle schedules a guard for the next vault turn',
     assert.match(game._pending_message, /shrill whistling sound/);
     assert.equal(game.u.uinvault, 29);
     assert.equal(game.level.monsters.length, 0);
-    assert.equal(maintainVaultResidence(), true);
+    assert.equal(await maintainVaultResidence(), true);
 });
 for (const form of ['killer bee', 'air elemental']) {
     void test(`a ${form} body cannot use a whistle`, async () => {

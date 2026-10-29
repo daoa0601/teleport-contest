@@ -50,7 +50,7 @@ export async function collectLevelFollowers(state = game, petsOnly = false) {
             else if (await staysBehind(monster, state)) {
                 continue;
             }
-            prepareMonsterDeparture(monster, state);
+            await prepareMonsterDeparture(monster, state);
             await detachMonsterFromLevel(monster, state);
             monster.mx = monster.my = 0;
             monster.mlstmv = state.moves;

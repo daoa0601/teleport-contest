@@ -1,7 +1,7 @@
 // Occupants caught by a moving drawbridge.
 // C ref: dbridge.c do_entity(), e_missed(), e_jumps(), e_survives_at().
 
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, placeMonsterOnMap } from './monster_location.js';
 import { drawbridgeWallPosition, findDrawbridgeAt } from './dbridge.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
@@ -190,12 +190,12 @@ function entityJumps(entity: DrawbridgeEntity, state: GameState): boolean {
     return chances >= rnd(10);
 }
 
-function moveEntity(entity: DrawbridgeEntity, destination: Position, state: GameState): void {
+async function moveEntity(entity: DrawbridgeEntity, destination: Position, state: GameState): Promise<void> {
     if (entity.hero) {
         state.u.ux = destination.x;
         state.u.uy = destination.y;
     } else {
-        placeMonsterAt(entity.actor, destination.x, destination.y);
+        await placeMonsterOnMap(entity.actor, destination.x, destination.y);
         updateMonsterRegions(entity.actor, state);
     }
     entity.x = destination.x;
@@ -378,7 +378,7 @@ async function handleEntity(
         }
     }
     if (relocates && !occupantAt(occupants, destination.x, destination.y))
-        moveEntity(entity, destination, state);
+        await moveEntity(entity, destination, state);
 
     const visibleAfterMove = entityIsVisible(entity);
     if (isDrawbridgeWallAt(entity.x, entity.y, state)) {
