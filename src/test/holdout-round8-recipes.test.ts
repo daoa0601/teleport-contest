@@ -37,7 +37,7 @@ const completed: { name: string; effects: string[] }[] = [
     { name: 'bear-trap', effects: ['You are caught in a bear trap.', 'A bear trap closes on your foot!', 'You are released from the bear trap.',
         'You finally wriggle free.', 'You disarm the bear trap.'] },
     { name: 'troubled-prayer', effects: ['You feel appropriately lawful.',
-        'You are now wearing the cursed blindfold.', 'You feel that Loki is pleased'] },
+        'You are now wearing the cursed blindfold.', 'Your blindfold softly glows amber.'] },
     { name: 'altar-offerings', effects: ['Such an action is an insult to chaos!',
         "You'll regret this infamous offense!", 'You feel ashamed.'] },
     { name: 'shop-robbery', effects: ['You escaped the shop without paying!', 'An alarm sounds!'] },
@@ -48,8 +48,28 @@ const completed: { name: string; effects: string[] }[] = [
     { name: 'pudding-splitting', effects: ['You divide as the newt hits you!'] },
     { name: 'yellow-light-blast', effects: ['The yellow light explodes!'] },
     { name: 'silver-searing', effects: ['Silver sears the werejackal!'] },
-    { name: 'nymph-seduction', effects: ['Time stands still while you court her.'] },
+    { name: 'demon-seduction', effects: [
+        "Time stands still while you and the succubus lie in each other's arms...",
+        'You seem to have enjoyed it more than the succubus...',
+    ] },
 ];
+
+for (const message of ['You feel that Lugh is well-pleased.', 'You can see again.', 'Your vision clears.']) {
+    void test(`troubled prayer requires the blindfold repair despite: ${message}`, () => {
+        const result = validateRecipeRecording('troubled-prayer', recording([
+            'You feel appropriately lawful.', 'You are now wearing the cursed blindfold.', message,
+        ]));
+        assert.equal(result.ok, false, 'prayer must uncurse the blindfold');
+    });
+}
+
+for (const message of ['The wood nymph seduces you.', 'The water nymph charms you.',
+    'Time stands still while you court her.']) {
+    void test(`demon seduction rejects nymph theft: ${message}`, () => {
+        const result = validateRecipeRecording('demon-seduction', recording([message]));
+        assert.equal(result.ok, false, 'nymph theft does not exercise demon seduction');
+    });
+}
 
 for (const { name, effects } of completed) {
     void test(`${name} accepts completed effects and requires every effect`, () => {
@@ -93,3 +113,32 @@ void test('the cursed study recipe reads a cursed book through live commands', a
     assert.equal(sawBook, true, 'the hero must obtain the spellbook');
     assert.equal(sawEffect, true, 'the cursed book must misfire');
 });
+
+for (const character of [
+    { role: 'knight', race: 'human', gender: 'male', align: 'lawful' },
+    { role: 'valkyrie', race: 'human', gender: 'female', align: 'lawful' },
+]) {
+    void test(`the demon seduction recipe removes armor and seduces a ${character.gender} hero`, async () => {
+        const plan = makeRecipe('demon-seduction', { seed: 11, datetime: '20000110090000', character });
+        const segment = plan.segments[0];
+        assert.ok(segment);
+        const engine = new Engine({ ...segment, display: new GameDisplay(null), storage: memoryStorage() });
+        await engine.runUntilInputNeeded();
+        const driver = createSessionDriver(segment.driver);
+        const screens: string[] = [];
+        for (let inputs = 0; inputs < 400; inputs++) {
+            const key = driver.nextKey(screenText(capturedScreen(engine)).split('\n'));
+            if (key === null) break;
+            engine.inputGate.feed(key);
+            await engine.runUntilInputNeeded();
+            screens.push(screenText(capturedScreen(engine)));
+        }
+
+        assert.equal(driver.exhausted, true, 'seduction must finish within 400 inputs');
+        const result = validateRecipeRecording('demon-seduction', { version: 5,
+            segments: [{ steps: screens.map(screen => ({ screen })) }] });
+        assert.equal(result.ok, true, JSON.stringify(result));
+        assert.equal(engine.state.uarm, null, 'the demon must remove the suit');
+        assert.equal(engine.state.uarms, null, 'the demon must remove the shield');
+    });
+}

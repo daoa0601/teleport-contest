@@ -19,8 +19,8 @@ function clearFloor(...items) {
 function recipe(description, success, actions, roles = ['knight']) {
     return {
         roles, options: ['playmode:debug', '!autopickup', '!menu_overlay', '!tips'], description, success,
-        build: ({ seed, datetime, rc }) => [{ seed, datetime, nethackrc: rc(), driver: [
-                    keys('#levelchange\r20\r'), ...actions(seed), keys('\x1b:\x1b'),
+        build: ({ seed, datetime, rc, character }) => [{ seed, datetime, nethackrc: rc(), driver: [
+                    keys('#levelchange\r20\r'), ...actions(seed, character), keys('\x1b:\x1b'),
                 ] }],
     };
 }
@@ -194,9 +194,11 @@ export const ROUND8_RECIPES = {
         ...'hykulnjbhykulnjb'.split('').map(direction => keys(`F${direction}`)),
     ]),
     // mhitu.c:doseduce(), mayberem().
-    'nymph-seduction': recipe('Create nymphs and wait for their seduction attacks.', ['A nymph seduces the hero.'], () => [
-        keys('\x07nymph\r\x07nymph\r\x07nymph\r'), keys('m.'.repeat(40)),
-    ]),
+    'demon-seduction': recipe('Create an opposite-sex amorous demon and let it remove armor and seduce the hero.', ['The demon completes seduction and its outcome takes effect.'], (_seed, character) => [
+        keys(`\x07hostile ${character.gender === 'female' ? 'male' : 'female'} amorous demon\r`),
+        // The yes keys consent to armor removal when the demon asks.
+        keys('m.y'.repeat(40)),
+    ], ['knight', 'wizard', 'valkyrie']),
 };
 export function validateRound8Recipe(name, session) {
     const screens = (session.segments[0]?.steps ?? []).map(step => step.screen
@@ -274,7 +276,7 @@ export function validateRound8Recipe(name, session) {
         case 'troubled-prayer':
             has('sacrifice raised alignment', /You feel (?:you are )?(?:appropriately lawful|thoroughly on the right path)\./);
             has('hero wore the blindfold', /You are now wearing .* blindfold/);
-            has('prayer fixed a trouble', /You feel that .* is (?:well-)?pleased|You can see again|Your vision clears/);
+            has('prayer uncursed the blindfold', /Your blindfold softly glows amber\./);
             break;
         case 'altar-offerings':
             has('unicorn insulted the altar', /Such an action is an insult to chaos!/);
@@ -306,8 +308,9 @@ export function validateRound8Recipe(name, session) {
         case 'silver-searing':
             has('silver seared a monster', /[Ss]ilver .*sears?/);
             break;
-        case 'nymph-seduction':
-            has('the nymph seduced the hero', /seduces you|Time stands still while you |charms you/);
+        case 'demon-seduction':
+            has('the demon completed seduction', /Time stands still while you and the (?:succubus|incubus) lie in each other's arms\.\.\./);
+            has('seduction had an outcome', /You seem to have enjoyed it more than the (?:succubus|incubus)\.\.\.|The (?:succubus|incubus) seems to have enjoyed it more than you\.\.\./);
             break;
         default:
             throw new Error(`unknown round-8 recipe ${name}`);
