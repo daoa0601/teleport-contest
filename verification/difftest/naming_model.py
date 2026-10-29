@@ -132,6 +132,7 @@ def naming_object_state(value, meta, depth=0, count=None):
         plain_text(result['oname'], 'oname', 40)
     for key, low, high in [('quan', 1, 1000), ('owt', 0, 10000),
                            ('corpsenm', -1, len(meta['monsters']) - 1),
+                           ('oeaten', 0, 1000000),
                            ('oeroded', 0, 3), ('oeroded2', 0, 3)]:
         integer(result[key], low, high, key)
     species_bound = otyp in {types['CORPSE'], types['STATUE'], types['FIGURINE']}
@@ -173,7 +174,9 @@ def naming_object_state(value, meta, depth=0, count=None):
     if depth > 2 or count[0] > 8:
         raise ValueError('At most 8 naming objects over two containment edges')
     if result['oeaten']:
-        if meta['classes'][otyp] != 7 or result['oeaten'] > meta['nutrition'][otyp]:
+        nutrition = (meta['bodies'][result['corpsenm']][1] if otyp == types['CORPSE']
+                     else result['owt'] if result['globby'] else meta['nutrition'][otyp])
+        if meta['classes'][otyp] != 7 or result['oeaten'] > nutrition:
             raise ValueError('Partly eaten food needs 0 < oeaten <= nutrition (eat.c:obj_nutrition)')
     # Worn masks without the matching equipment slot owners keep donning() and
     # doffing() false in C (ga.afternmv is null, takeoff mask empty).
@@ -281,11 +284,34 @@ def naming_case(raw, meta):
 def naming_edges(meta):
     """Boundary inputs from the C special-case tables and owning functions."""
 
+    initial = meta.get('initialKnown') or []
+
     def case(target, **changes):
+        object_state = changes.get('object')
+        # Cases that do not state discovery keep their type's initial
+        # knowledge; an explicit discovery (including a deliberate
+        # nameKnown=0) always wins.
+        if isinstance(object_state, dict) and 'discovery' not in changes \
+                and 'discovery' not in object_state:
+            otyp = object_state.get('otyp')
+            if isinstance(otyp, str):
+                otyp = meta['objects'].get(otyp)
+            if isinstance(otyp, int) and 0 <= otyp < len(initial) and initial[otyp]:
+                changes['discovery'] = dict(nameKnown=1)
         try:
             return naming_case(dict(target=target, **changes), meta)
-        except ValueError:
-            return None  # combination is outside the documented domain
+        except ValueError as error:
+            documented = ('Initially known types cannot be made unknown',
+                          'Novels are named by construction',
+                          'Generic class rows precede FIRST_OBJECT',
+                          'must contain a non-space character',
+                          'needs a species (mkcorpstat callers)',
+                          'leashmon must be 0',
+                          'slime mold spe must index a registered fruit',
+                          'Glob type, globby flag')
+            if any(message in str(error) for message in documented):
+                return None  # combination is outside the documented domain
+            raise
 
     cases = []
     pool = [*AS_IS_WORDS, *ONE_OFF_SINGULARS, *ONE_OFF_PLURALS,
@@ -601,7 +627,7 @@ def naming_generated(meta, count, seed):
             if otyp == types['TIN'] and rng.randrange(2):
                 body.update(corpsenm=meta['monsters'].index(rng.choice(species)),
                             known=1, cknown=1, spe=rng.choice([-3, -2, -1, 0, 1]))
-            if oclass == 7 and meta['nutrition'][otyp]:
+            if oclass == 7 and meta['nutrition'][otyp] and not body.get('globby'):
                 body['oeaten'] = rng.randint(0, meta['nutrition'][otyp])
             if rng.randrange(6) == 0:
                 body['oname'] = rng.choice(['Sting', 'Fido', 'Glork', 'Excalibur Jr'])

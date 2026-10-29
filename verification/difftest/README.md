@@ -361,28 +361,70 @@ The naming state relation extends the creation relation. Facts beyond it:
 
 ## Naming measured results
 
-Native build: 140 objects in 14.4 s. `--naming --count 6000 --self-test`:
-16 domain probes rejected, 8 emitted-JS mutants killed (`makeplural` default
+Round-3 review rerun: native build, 140 objects in 15.30 s.
+`--naming --count 6000 --self-test`:
+17 domain probes rejected, 9 emitted-JS mutants killed (`makeplural` default
 suffix, an extra `rnd(1)` draw inside `makePlural`, `makesingular` ies→y,
 `an` single-letter x-rule, `the` insertion, lenses `pair of`, `greased`
-prefix, `invisible` adjective), 11,016 cases in 14.5 s with 0 mismatches.
-String targets measure the real stream position and RNG log on both sides;
-the extra-draw mutant is killed through `rng.core`, not a constant zero.
+prefix, `invisible` adjective, and removal of `objectCombatName`'s own
+observation), 11,160 cases in 15.88 s with 0 mismatches. String targets
+measure the real stream position and RNG log on both sides; the extra-draw
+mutant is killed through `rng.core`, not a constant zero. The `xname`
+pairing relies on `objectCombatName`'s internal observation (C `xname()`
+observes itself); only the `doname` path, whose formatter delegates
+observation to its caller, observes explicitly.
 
 | Target | Cases | Mismatches |
 |---|---:|---:|
 | `makeplural` | 2,519 | 0 |
 | `makesingular` | 2,136 | 0 |
 | `articles` | 1,026 | 0 |
-| `xname` | 1,639 | 0 |
-| `doname` | 1,639 | 0 |
+| `xname` | 1,717 | 0 |
+| `doname` | 1,705 | 0 |
 | `x_monnam` | 2,057 | 0 |
 
-Additional batches: edges plus full type/species sweeps 5,016 cases 0
-mismatches; seed 777000 with 12,000 generated cases 15,390 total 0 mismatches;
-seed 20261029 with 4,000 generated cases 7,390 total 0 mismatches. Regression
-runs after the harness changes: original six targets 683 cases 0 mismatches
-(5 probes, 8 mutants), creation 2,102 cases 0 mismatches.
+The naming batch includes 5,160 boundary and full type/species sweep cases.
+Hand-authored cases default to their type's initial knowledge, and only the
+documented domain exclusions are dropped. The round-3 run passed all 25
+harness tests in 14.624 s; the original six targets matched all 683 cases in
+3.84 s (5 rejected probes, 8 killed mutants).
+The creation rerun matched all 2,402 cases in 9.50 s, including 8
+correspondence counterexamples, 8 killed creation mutants and 10 rejected
+creation-domain probes.
+
+### Round-3 self-test findings
+
+The quantity probe now uses `MACE` with `quan=2` and `nameKnown=1`.
+`include/objects.h:WEAPON` gives the mace `oc_merge=0` and initial
+`oc_name_known=1`; `invent.c:mergable` rejects a type with `oc_merge=0`.
+The former `POTION_OF_BOOZE` input failed type lookup before quantity was
+checked. The actual `POT_BOOZE` has `oc_merge=1` through the `POTION` macro.
+The new domain test accepts a singleton mace and two booze potions, and
+rejects two maces specifically because the type does not stack.
+
+A second test changes only the mace's metadata merge flag to 1 and requires
+the naming self-test to reject that erroneous domain. It failed with the
+old probe (`RuntimeError not raised`) and passes with the corrected probe.
+The explicit discovery flag matters: without it, even a singleton mace
+fails the unrelated initial-knowledge restriction.
+
+The child-default test was removed. Canonicalization makes deletion and
+resetting to zero observationally equivalent for those fields, so it did not
+establish its stated distinction. Its replacement minimizes a real emitted
+`doname` mutant: quantity, erosion, blindness and RNG position simplify, the
+necessary grease remains, and the native/port result difference still
+reproduces. Disabling reduction in memory makes this test fail (`5 != 1`);
+the normal reducer passes. No new game behavior or equivalence claim is
+introduced by either self-test change.
+
+`npm run compile` exited 0. The requested public replay used one worker and
+finished all 44 sessions in 30.264 s: 43 full matches, 11,396/11,405 screens,
+792,838/792,838 random calls and zero crashes. The public ledger check exited
+0, retaining every verified call for all 363 functions. The remaining
+screen difference is `seed2200-wizard-quaff-zap-read`, step 158: native option
+help prints the recorder host's configuration path. There is no RNG
+difference in that session. No full game suite, pool/eval run or new
+recording was run.
 
 ### Candidate bugs
 
@@ -403,25 +445,46 @@ remains outside this comparison.
 
 ### Naming existing equivalence claims
 
-`NETHACK_RECORDER=... uv run prove.py` exited 0 with all claims holding
-(59.9 s). Per-claim times from this unit's run:
+The round-3 `NETHACK_RECORDER=... uv run prove.py` run exited 0: all 33
+existing claims remain PROVED, including the two slow table claims and all
+configured domain probes and mutants. No proof claim was added or changed.
+Per-claim times exclude their negative checks:
 
-| Claim | Result | Time | Claim | Result | Time |
-|---|---|---:|---|---|---:|
-| `rn2` | PROVED | 0.2 s | `rnd` | PROVED | 0.1 s |
-| `rn1` | PROVED | 0.4 s | `rnl` | PROVED | 1.1 s |
-| `d` | PROVED | 0.3 s | `rne` | PROVED | 1.3 s |
-| `rnz` | PROVED | 5.9 s | `rn2_on_display_rng` | PROVED | 0.1 s |
-| `distmin` | PROVED | 0.3 s | `dist2` | PROVED | 2.0 s |
-| `enermod` | PROVED | 4.8 s | `newuexp` | PROVED | 1.4 s |
-| `xlev_to_rank` | PROVED | 0.3 s | `rounddiv` | PROVED | 0.6 s |
-| `Align2amask` | PROVED | 0.5 s | `Amask2align` | PROVED | 1.1 s |
-| `acurr:StrDex` | PROVED | 1.2 s | `acurrstr` | PROVED | 0.5 s |
-| `dbon:human` | PROVED | 0.9 s | `abon:human` | PROVED | 17.2 s |
-| `lower_bits` | PROVED | 0.0 s | `upper_bits` | PROVED | 0.0 s |
-| `isaac64_mix` | PROVED | 0.1 s | `isaac64_update` | PROVED | 0.4 s |
-| `isaac64_reseed` | PROVED | 4.1 s | `isaac64_init` | PROVED | 0.1 s |
-| `isaac64_next_uint64` | PROVED | 0.0 s | `isaac64_seed_packing` | PROVED | 0.1 s |
+| Claim | Result | Time |
+|---|---|---:|
+| `rn2` | PROVED | 0.2 s |
+| `rnd` | PROVED | 0.1 s |
+| `rn1` | PROVED | 0.6 s |
+| `rnl` | PROVED | 1.5 s |
+| `d` | PROVED | 0.3 s |
+| `rne` | PROVED | 0.7 s |
+| `rnz` | PROVED | 2.4 s |
+| `rn2_on_display_rng` | PROVED | 0.1 s |
+| `distmin` | PROVED | 0.1 s |
+| `dist2` | PROVED | 0.3 s |
+| `enermod` | PROVED | 2.1 s |
+| `newuexp` | PROVED | 0.6 s |
+| `xlev_to_rank` | PROVED | 0.2 s |
+| `rounddiv` | PROVED | 0.4 s |
+| `Align2amask` | PROVED | 0.7 s |
+| `Amask2align` | PROVED | 0.9 s |
+| `acurr:StrDex` | PROVED | 1.0 s |
+| `acurrstr` | PROVED | 0.3 s |
+| `dbon:human` | PROVED | 0.6 s |
+| `abon:human` | PROVED | 2.3 s |
+| `acurr:all` | PROVED | 5.9 s |
+| `dbon:all` | PROVED | 0.3 s |
+| `abon:forms` | PROVED | 45.1 s |
+| `experience:tables` | PROVED | 409.1 s |
+| `mcalcmove:tables` | PROVED | 186.7 s |
+| `lower_bits` | PROVED | 0.0 s |
+| `upper_bits` | PROVED | 0.0 s |
+| `isaac64_mix` | PROVED | 0.1 s |
+| `isaac64_update` | PROVED | 0.4 s |
+| `isaac64_reseed` | PROVED | 4.8 s |
+| `isaac64_init` | PROVED | 0.1 s |
+| `isaac64_next_uint64` | PROVED | 0.1 s |
+| `isaac64_seed_packing` | PROVED | 0.1 s |
 
 ## Naming remaining limits
 

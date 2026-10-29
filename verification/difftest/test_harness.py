@@ -4,7 +4,7 @@ import unittest
 
 from build import CACHE
 from model import canonical, metadata
-from run import HERE, Worker, difference, minimize, reductions
+from run import HERE, Worker, difference, minimize, naming_negative_checks
 
 
 class HarnessTests(unittest.TestCase):
@@ -105,19 +105,57 @@ class HarnessTests(unittest.TestCase):
         self.assertIsNone(difference(left, right))
         self.assertEqual(right['rng'], dict(core=0, display=0, log=[]))
 
-    def test_naming_contents_children_reduce_against_naming_defaults(self):
-        # Reducing a naming case must reset contained-object fields to the
-        # naming defaults (key present at 0), not delete keys the weight
-        # schema never had.
-        state = canonical(dict(target='doname', object=dict(otyp='SACK', cknown=1,
-            dknown=1, contents=[dict(otyp='DAGGER', dknown=1, known=1)])), self.meta)
-        # The reducer offers one-field candidates resetting the naming-only
-        # child fields (dknown/known) back to their domain defaults.
-        resets = [candidate for candidate in reductions(state, self.meta)
-                  if candidate['object']['contents']
-                  and (candidate['object']['contents'][0]['dknown'] == 0
-                       or candidate['object']['contents'][0]['known'] == 0)]
-        self.assertTrue(resets)
+    def test_naming_reducer_keeps_a_real_emitted_mutant_counterexample(self):
+        state = canonical(dict(target='doname',
+            object=dict(otyp='ELVEN_ARROW', quan=5, greased=1, dknown=1,
+                        oeroded=2),
+            hero=dict(blind=1, role=3), seed=42, position=255,
+            discovery=dict(nameKnown=1)), self.meta)
+        with Worker([str(CACHE / 'native')], 'name-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'name-mutant',
+                       'naming_doname') as port:
+            reduced = minimize(state, native, port, self.meta, 'result')
+            self.assertEqual(reduced['object']['quan'], 1)
+            self.assertEqual(reduced['object']['oeroded'], 0)
+            self.assertEqual(reduced['hero']['blind'], 0)
+            self.assertEqual(reduced['position'], 0)
+            self.assertEqual(reduced['object']['greased'], 1)
+            found = difference(native.call(reduced), port.call(reduced))
+            self.assertEqual(found['path'], 'result')
+
+    def test_naming_quantity_domain_accepts_potions_but_rejects_stacked_maces(self):
+        potions = canonical(dict(target='xname',
+            object=dict(otyp='POT_BOOZE', quan=2)), self.meta)
+        self.assertEqual(potions['object']['quan'], 2)
+        mace = canonical(dict(target='xname', object=dict(otyp='MACE'),
+                              discovery=dict(nameKnown=1)), self.meta)
+        self.assertEqual(mace['object']['quan'], 1)
+        with self.assertRaisesRegex(ValueError, 'does not stack'):
+            canonical(dict(target='xname', object=dict(otyp='MACE', quan=2),
+                           discovery=dict(nameKnown=1)), self.meta)
+
+    def test_naming_self_test_detects_an_incorrect_quantity_domain(self):
+        # An erroneous merge flag admits stacked maces. The self-test must
+        # reject this domain before comparing any native and port results.
+        meta = deepcopy(self.meta)
+        meta['merge'][meta['objects']['MACE']] = 1
+        with Worker([str(CACHE / 'native')], 'quantity-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'quantity-port') as port, \
+                self.assertRaisesRegex(RuntimeError, 'Naming domain probe unexpectedly accepted'):
+            naming_negative_checks(native, port, meta)
+
+    def test_naming_xname_observes_through_the_entry_point(self):
+        # xname's pairing must rely on objectCombatName's own observation:
+        # an unobserved ring shows its appearance, not the unseen noun.
+        state = canonical(dict(target='xname', object=dict(otyp='ADORNMENT',
+            dknown=0)), self.meta)
+        with Worker([str(CACHE / 'native')], 'obs-native') as native, \
+                Worker(['node', str(HERE / 'port.mjs')], 'obs-port') as port:
+            left, right = native.call(state), port.call(state)
+        self.assertIsNone(difference(left, right))
+        self.assertNotEqual(left['result'], 'ring')
+        self.assertTrue(left['result'].endswith('ring'), left['result'])
+        self.assertEqual(left['state']['dknown'], 1)
 
     def test_naming_container_child_keeps_table_knowledge(self):
         # Root discovery applies to the root type only: a container with an

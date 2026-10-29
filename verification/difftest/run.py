@@ -364,9 +364,12 @@ def naming_negative_checks(native, port, meta):
         dict(target='articles', text='x' * 121),
         dict(target='xname', object=dict(otyp='SPE_NOVEL')),
         dict(target='xname', object=dict(otyp=0)),
-        dict(target='xname', object=dict(otyp='POTION_OF_BOOZE', quan=2)),
+        # Match the mace's initial knowledge so only its quantity is invalid.
+        dict(target='xname', object=dict(otyp='MACE', quan=2),
+             discovery=dict(nameKnown=1)),
         dict(target='xname', object=dict(otyp='CORPSE', corpsenm=-1)),
         dict(target='doname', object=dict(otyp='FOOD_RATION', oeaten=99999)),
+        dict(target='doname', object=dict(otyp='FOOD_RATION', oeaten=-1)),
         dict(target='doname', object=dict(otyp='MACE', wornMask=0x20000000)),
         dict(target='x_monnam', article=4),
         dict(target='x_monnam', suppress=0x10),
@@ -385,6 +388,7 @@ def naming_negative_checks(native, port, meta):
     mutants = {
         'naming_plural': dict(target='makeplural', text='newt'),
         'naming_string_draw': dict(target='makeplural', text='newt'),
+        'naming_observe': dict(target='xname', object=dict(otyp='ADORNMENT', dknown=0)),
         'naming_singular': dict(target='makesingular', text='rubies'),
         'naming_an': dict(target='articles', text='x'),
         'naming_the': dict(target='articles', text='elven dagger'),

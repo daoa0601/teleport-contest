@@ -110,15 +110,18 @@ async function objectNaming(input) {
     for (let i = 0; i < input.position; i++) isaac64_next_uint64(game.coreCtx);
     const before = [position(game.coreCtx), position(game.displayCtx)];
     enableRngLog();
-    // C xname() observes the object itself; the port splits observation out.
-    observeObjectForNaming(object, { state: game });
     if (input.target === 15) {
+        // C xname() observes the object itself; objectCombatName carries
+        // that observation, so no preliminary call may repair the object.
         const base = objectCombatName(object, { state: game, includeCorpseSpecies: false });
         return { result: base, an: withIndefiniteArticle(base),
             the: definiteName(base, game), aobjnam: objectAction(object, null, game),
             state: namingState(object),
             rng: namingRng(before) };
     }
+    // C doname() reaches the same observation through its internal xname();
+    // the port's objectDescription delegates observation to its caller.
+    observeObjectForNaming(object, { state: game });
     const result = await objectDescription(object, { state: game });
     return { result, state: namingState(object), rng: namingRng(before) };
 }

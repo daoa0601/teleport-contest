@@ -50,6 +50,8 @@ const changes = {
         "if (invisible)\n        adjectives += 'unseen ';"],
     naming_string_draw: ['object_grammar.js', 'export function makePlural(value) {',
         "import { rnd } from './rng.js';\nexport function makePlural(value) {\n    rnd(1);"],
+    naming_observe: ['objnam.js', 'observeObjectForNaming(object, { state });',
+        ';'],
 };
 const mutation = process.env.DIFFTEST_MUTANT;
 if (mutation) {
