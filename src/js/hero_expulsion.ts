@@ -149,6 +149,10 @@ export async function expelHero(monster: Monster, {
 }: ExpelHeroOptions = {}): Promise<ExpelHeroResult> {
     if (!state.u.uswallow || state.u.ustuck !== monster)
         return { expelled: false };
+    // C mhitu.c expels() flags the status line before its message: vpline()
+    // flushes the screen (redrawing botl) before update_topl() pages the
+    // still-unseen line that forced this expulsion's --More--.
+    state.context.botl = true;
     if (message) {
         const line = expulsionMessage(monster, engulfingSpecies, state);
         if (line) await publish(line);

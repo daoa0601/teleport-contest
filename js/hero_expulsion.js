@@ -102,6 +102,10 @@ export async function releaseHeroFromMonster(monster, { state = game, publish = 
 export async function expelHero(monster, { state = game, message = true, engulfingSpecies = monster.mnum, publish = plineWithContinuation, redraw = redrawAfterRelease, refresh = newsym, random = rn2, rollOne = rnd, } = {}) {
     if (!state.u.uswallow || state.u.ustuck !== monster)
         return { expelled: false };
+    // C mhitu.c expels() flags the status line before its message: vpline()
+    // flushes the screen (redrawing botl) before update_topl() pages the
+    // still-unseen line that forced this expulsion's --More--.
+    state.context.botl = true;
     if (message) {
         const line = expulsionMessage(monster, engulfingSpecies, state);
         if (line)

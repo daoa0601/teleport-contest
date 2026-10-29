@@ -26,7 +26,7 @@ import {
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold,
-    squeakyBoardNoteWithArticle,
+    squeakyBoardNoteWithArticle, MGIVENNAME,
 } from './const.js';
 import {
     displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, pline,
@@ -233,7 +233,7 @@ async function triggerPit(
     // C trap.c:1842-1847: suppress the article in steed messages when using
     // its name (never chosen while hallucinating), and pass the "poor"
     // adjective plus SUPPRESS_SADDLE through x_monnam().
-    const steedArticle = steed?.name && !heroIsHallucinating(game) ? 'none' : 'the';
+    const steedArticle = MGIVENNAME(steed) && !heroIsHallucinating(game) ? 'none' : 'the';
     const steedName = steed
         ? monsterName(steed, { state: game, article: steedArticle, suppressSaddle: true })
         : '';

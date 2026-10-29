@@ -4,12 +4,13 @@ import test from 'node:test';
 // Yname2(uarmf), so iron shoes and kicking boots are both named and the
 // verb stays singular.
 import { rhack } from '../js/cmd.js';
-import { SPIKED_PIT, TT_PIT } from '../js/const.js';
+import { PIT, SPIKED_PIT, TT_PIT } from '../js/const.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { createSaddledSteed } from './support/monsters.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -31,4 +32,21 @@ for (const [footwear, description] of [
         assert.equal(game.uarmf, shoes);
     });
 }
+// C trap.c:1846 checks has_mgivenname() for the steed's article. A display
+// name that is not a christened name (quantum_cat.ts leaves Schroedinger's
+// cat with only monster.name) keeps "the": "You lead the poor horse...",
+// never a bare "poor horse".
+void test('a pit steed without a given name keeps its article', async () => {
+    const level = freshObjectRoom();
+    requireFixtureGame(game);
+    const steed = await createSaddledSteed('horse', { x: 10, y: 10 });
+    steed.name = "Schroedinger's Cat";
+    game.u.usteed = steed;
+    addTrap(level, PIT, 11, 10, { tseen: false });
+    pushKeys(' '.repeat(20));
+    await rhack('l'.charCodeAt(0));
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game._pending_message, 'You lead the poor horse into a pit!');
+    assert.equal(game.u.utraptype, TT_PIT);
+});
 //# sourceMappingURL=pit_iron_shoes.test.js.map

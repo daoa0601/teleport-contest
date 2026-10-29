@@ -14,7 +14,7 @@ import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
+import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, MGIVENNAME, } from './const.js';
 import { displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
@@ -152,7 +152,7 @@ async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recurs
     // C trap.c:1842-1847: suppress the article in steed messages when using
     // its name (never chosen while hallucinating), and pass the "poor"
     // adjective plus SUPPRESS_SADDLE through x_monnam().
-    const steedArticle = steed?.name && !heroIsHallucinating(game) ? 'none' : 'the';
+    const steedArticle = MGIVENNAME(steed) && !heroIsHallucinating(game) ? 'none' : 'the';
     const steedName = steed
         ? monsterName(steed, { state: game, article: steedArticle, suppressSaddle: true })
         : '';

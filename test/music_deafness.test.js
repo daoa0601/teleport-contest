@@ -1,12 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { LEATHER_DRUM } from '../js/object_data.js';
-import { Terminal } from '../js/terminal.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('a permanently deaf drummer feels the performance without gaining temporary deafness', async () => {
@@ -24,15 +23,17 @@ void test('a permanently deaf drummer feels the performance without gaining temp
     assert.equal(game.u.deafTurns ?? 0, 0);
     assert.match(messages.join('\n'), /You pound on the drum\./);
 });
-// C music.c LEATHER_DRUM deafens the drummer inside the same command whose
-// row is still waiting for input, and bot() runs before that input request:
-// the pager's screen carries the "Deaf" condition.
+// C music.c LEATHER_DRUM scares an engulfing lurker awake; monflee() calls
+// expels(), which flags botl before its "unfolds" pline (mhitu.c). vpline()
+// then flushes that flag — redrawing the committed "Deaf" condition —
+// before update_topl() pages the still-unseen drum row (fb70ad53…, step 311).
 void test('a deafening drum row pages with its Deaf condition already in the status line', async () => {
     const input = freshTurnRoom();
-    game.nhDisplay = new GameDisplay(new Terminal(null, { rows: 24, cols: 70 }));
-    // A narrower topline keeps the drum's row from joining the previous
-    // one, so the pager stops for it at an input request.
     const drum = await addInventoryObject(LEATHER_DRUM);
+    const lurker = await createMonsterAt('lurker above', game.u.ux, game.u.uy);
+    lurker.mstrategy = 0; // a roaming lurker, not one still lying in wait
+    game.u.uswallow = 1;
+    game.u.ustuck = lurker;
     const pages = [];
     input.beforeRead = () => {
         if (/use or apply/.test(game._pending_message))
@@ -47,10 +48,12 @@ void test('a deafening drum row pages with its Deaf condition already in the sta
     };
     pushKeys('a');
     await moveloop_core();
-    await finishAtCommandInput(input, moveloop_core, /playing|deafening|^$/);
+    await finishAtCommandInput(input, moveloop_core, /playing|deafening|released|flee|^$/);
     assert.ok((game.u.deafTurns ?? 0) > 0, 'the drum deafens its player');
-    const row = pages.find(page => /--More--/.test(page))?.split('\n')[23];
-    assert.ok(row, 'The drum performance reaches the message pager');
+    assert.equal(game.u.uswallow, 0, 'the scared lurker releases the drummer');
+    const row = pages.find(page => /deafening/.test(page) && /--More--/.test(page))
+        ?.split('\n')[23];
+    assert.ok(row, 'The drum row pages when the lurker is expelled');
     assert.match(row ?? '', / Deaf/);
 });
 //# sourceMappingURL=music_deafness.test.js.map

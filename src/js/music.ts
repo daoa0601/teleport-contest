@@ -2,8 +2,7 @@
 // C ref: music.c.
 
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { makeDeaf } from './hero_hearing.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower,
@@ -425,14 +424,14 @@ async function playLeatherDrum(familiar: boolean, mundane = false): Promise<Inst
         return result;
     }
     if (!heroIsDeaf()) {
-        // C music.c LEATHER_DRUM prints the row before incr_itimeout(), but
-        // tty only pauses for it at the next input boundary, after the whole
-        // action and bot(): commit the deafness first so the paged message
-        // already carries the "Deaf" condition, as potion.c:make_deaf() does.
-        await makeDeaf((game.u.deafTurns ?? 0) + rn2(20) + 30, { talk: false });
         await plineWithContinuation(
             `You beat a ${familiar ? 'familiar ' : ''}deafening row!`,
         );
+        // C music.c LEATHER_DRUM: incr_itimeout() follows the row, before
+        // awaken_monsters(); the status line only refreshes when a later
+        // flush_screen() finds botl set (mhitu.c expels() sets it first).
+        game.u.deafTurns = (game.u.deafTurns ?? 0) + rn2(20) + 30;
+        syncDeafness(game);
     } else {
         await plineWithContinuation('You pound on the drum.');
     }
