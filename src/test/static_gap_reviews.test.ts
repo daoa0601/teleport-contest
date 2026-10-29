@@ -1,18 +1,34 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
 
 const root = process.cwd();
 const piece = 'The creature unlocks and opens a door.';
 const key = `allmain.c\tshow_message\t${piece}`;
-const location = 'src/js/monster_door_passage.ts:resolveMonsterDoorPassage';
+const location = 'src/js/reviewed.ts:printDoorMessage';
 
-function runMessages(review: string, options: string[] = [], nativePiece = piece): { status: number | null; output: string } {
+function runMessages(review: string, options: string[] = [], nativePiece = piece): {
+    status: number | null; output: string; cacheEntries: string[];
+} {
     mkdirSync(join(root, '.cache'), { recursive: true });
     const dir = mkdtempSync(join(root, '.cache', 'static-reviewed-test-'));
     try {
+        // The entry file determines the project root. Copy it so every
+        // source read and cache write belongs to this temporary project.
+        const scripts = join(dir, 'scripts');
+        mkdirSync(scripts);
+        copyFileSync(join(root, 'scripts', 'static-gaps.mjs'), join(scripts, 'static-gaps.mjs'));
+        symlinkSync(join(root, 'scripts', 'lib'), join(scripts, 'lib'), 'dir');
+        symlinkSync(join(root, 'node_modules'), join(dir, 'node_modules'), 'dir');
+        const port = join(dir, 'src', 'js');
+        mkdirSync(port, { recursive: true });
+        writeFileSync(join(port, 'reviewed.ts'),
+            '// removedMessage is mentioned here but has no definition.\n'
+            + 'export function printDoorMessage(actor: string, action: string): string {\n'
+            + '    return `${actor} ${action} a door.`;\n'
+            + '}\n');
         const native = join(dir, 'native');
         mkdirSync(join(native, 'src'), { recursive: true });
         mkdirSync(join(native, 'include'));
@@ -23,12 +39,14 @@ function runMessages(review: string, options: string[] = [], nativePiece = piece
         const present = join(dir, 'present.tsv');
         writeFileSync(ledger, review);
         writeFileSync(present, '# No previously present literals in this small C source.\n');
-        const result = spawnSync(process.execPath, [join(root, 'scripts', 'static-gaps.mjs'), 'messages',
+        const result = spawnSync(process.execPath, [join(scripts, 'static-gaps.mjs'), 'messages',
             '--reviewed-ledger', ledger, '--check-ledger', present, ...options], {
-            cwd: root, env: { ...process.env, NETHACK_SOURCE: native }, encoding: 'utf8', timeout: 30000,
+            cwd: dir, env: { ...process.env, NETHACK_SOURCE: native }, encoding: 'utf8', timeout: 30000,
         });
         assert.ifError(result.error);
-        return { status: result.status, output: result.stdout + result.stderr };
+        const cache = join(dir, '.cache', 'static-gaps');
+        return { status: result.status, output: result.stdout + result.stderr,
+            cacheEntries: existsSync(cache) ? readdirSync(cache) : [] };
     } finally {
         rmSync(dir, { recursive: true, force: true });
     }
@@ -70,11 +88,16 @@ await test('a missing composed port file fails without hiding the missing messag
 });
 
 await test('a function mention does not keep a removed composition alive', () => {
-    // The native name is mentioned in monster_door_passage.ts comments;
-    // the actual port function has a different name.
-    const result = runMessages(`${key}\tcomposed\tsrc/js/monster_door_passage.ts:postmov\n`);
+    const result = runMessages(`${key}\tcomposed\tsrc/js/reviewed.ts:removedMessage\n`);
     assert.equal(result.status, 1, result.output);
-    assert.match(result.output, /stale.*function.*postmov/i);
+    assert.match(result.output, /stale.*function.*removedMessage/i);
+});
+
+await test('diagnostics and C facts are written inside the temporary project', () => {
+    const result = runMessages(`${key}\tdead\tA reviewed native condition.\n`);
+    assert.equal(result.status, 0, result.output);
+    assert.ok(result.cacheEntries.includes('messages.json'), 'Missing diagnostics in the temporary project');
+    assert.ok(result.cacheEntries.includes('c-facts'), 'Missing C cache in the temporary project');
 });
 
 await test('every cited composition location is checked', () => {
