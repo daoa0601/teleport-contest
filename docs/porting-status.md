@@ -471,18 +471,29 @@ commit:
   duplicate `DIGCHECK_*` copy in `hero_digging.ts` is gone. The three left,
   `ATR_INVERSE`/`ATR_BOLD`/`ATR_BLINK`, are the frozen terminal's attribute
   bits; `color_attr.ts` maps C's values onto them.
-- **edges**: 1,374 C functions have a counterpart. 1,776 edges are missing,
-  1,111 only cited, 106 justified and 2,107 present. Every missing edge of
-  the 65 most-run gameplay functions (by RNG-ledger call count) was read on
-  both sides. 105 renames went into `c-ts-aliases.tsv`, and inlined or
-  unobservable edges went into `c-edges-justified.tsv` with a note each. No
-  gap that common play reaches was found. Two rare ones were fixed:
-  `makemon()` births now carry the monster square for `accessiblemsg`, and
-  the Book of the Dead's lava survival message uses its seen name and
-  `hcolor()`. `mount_steed()`'s `hliquid("water")` was a false lead: C
-  refuses a hallucinating rider before the underwater check. Known rare gaps
-  left: the `trickery()` bones-id check, `enter_explore_mode()` on restore,
-  and status-hilite unhighlighting (no hilite_status support).
+- **edges**: 1,460 C functions have a counterpart. 1,528 edges are missing,
+  1,163 only cited, 248 justified and 2,679 present. Three triage rounds
+  read the missing edges on both sides. Round one covered the 65 most-run
+  gameplay functions (by RNG-ledger call count). Round two covered every
+  function whose missing callee rolls dice directly (90 functions). The
+  rounds added 237 renames to `c-ts-aliases.tsv`, many of which correct a
+  counterpart that a comment citation had picked wrongly. Inlined or
+  unobservable edges went into `c-edges-justified.tsv` with a note each.
+  No gap that common play reaches was found, and none desyncs the RNG.
+  Three rare message gaps were fixed:
+  - `makemon()` births carry the monster square for `accessiblemsg`;
+  - the Book of the Dead's lava survival uses `hcolor()`;
+  - `help_monster_out()` names the polymorphed hero's own limbs.
+
+  Three reported gaps are dead code in C itself:
+  - `mount_steed()`'s `hliquid()`: hallucinating riders are refused first;
+  - `create_monster()`'s boulder-mimic relocation: `m->x` is set before
+    the `m->x < 0` test;
+  - `dodip()`'s `rider_cant_reach()`: `can_reach_floor()` refuses first.
+
+  Known rare gaps left: the `trickery()` bones-id check,
+  `enter_explore_mode()` on restore, and status-hilite unhighlighting (no
+  hilite_status support).
 
 Ledgers `docs/ledger/c-{messages,constants,edges}.tsv` are checked by the
 `static-gaps` CI job. The busiest functions turned up no common-play gaps,
