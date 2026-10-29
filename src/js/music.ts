@@ -427,6 +427,9 @@ async function playLeatherDrum(familiar: boolean, mundane = false): Promise<Inst
         await plineWithContinuation(
             `You beat a ${familiar ? 'familiar ' : ''}deafening row!`,
         );
+        // C music.c LEATHER_DRUM: incr_itimeout() follows the row, before
+        // awaken_monsters(); the status line only refreshes when a later
+        // flush_screen() finds botl set (mhitu.c expels() sets it first).
         game.u.deafTurns = (game.u.deafTurns ?? 0) + rn2(20) + 30;
         syncDeafness(game);
     } else {

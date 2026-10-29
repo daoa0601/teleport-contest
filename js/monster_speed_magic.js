@@ -26,7 +26,7 @@ export async function affectMonsterSpeed(monster, kind, source, state, options) 
         }
         if (kind === 'slow' && state.u?.uswallow
             && state.u?.ustuck === monster && monsterIsWhirly(monster)) {
-            await pline(`You disrupt ${holdingMonsterName(monster)}!`);
+            await pline(`You disrupt ${holdingMonsterName(monster, state)}!`);
             await pline('A huge hole opens up...');
             await expelHero(monster, {
                 state, random: options.random, rollOne: options.roll,

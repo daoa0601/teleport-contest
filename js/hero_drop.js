@@ -95,7 +95,7 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
             throw new Error('Swallowed hero has no swallowing monster');
         // barrier between you and the floor
         if (state.flags?.verbose !== false) {
-            const swallowerName = holdingMonsterName(hero.ustuck);
+            const swallowerName = holdingMonsterName(hero.ustuck, state);
             const into = monsterDigests(hero.ustuck)
                 ? `${possessive(swallowerName)} ${monsterStomachName(hero.ustuck.mnum)}`
                 : swallowerName;

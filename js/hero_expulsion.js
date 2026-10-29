@@ -8,8 +8,8 @@ import { impossible } from './diagnostics.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { heroFormSticks } from './hero_species.js';
 import { heroIsBlind } from './senses.js';
-import { MGIVENNAME, RLOC_NOMSG } from './const.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, monsterDigests, monsterEnfolds, monsterIsWhirly, monsterTypeName, monsterHasNoHands, } from './monster_data.js';
+import { RLOC_NOMSG } from './const.js';
+import { MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly, monsterHasNoHands, } from './monster_data.js';
 import { AD_COLD, AD_ELEC, AD_STCK, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { docrt, newsym, plineWithContinuation, } from './display.js';
 import { placeBallAndChain } from './ball.js';
@@ -31,15 +31,15 @@ export async function releaseMonsterHold(monster, { state = game, publish = plin
     }
     return false;
 }
-export function holdingMonsterName(monster) {
-    const givenName = MGIVENNAME(monster);
-    if (givenName)
-        return givenName;
-    const name = monsterTypeName(monster.mnum, !!monster.female);
-    return (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x00080000 ? name : `the ${name}`;
+// C names the hero's holder with mon_nam() in every message that uses it
+// (do.c drop(), trap.c float_up()/float_down(), zap.c's slow-monster
+// disrupt), so engulfing priests and minions keep their "of <god>" title,
+// shopkeepers their names, and invisible holders their "invisible".
+export function holdingMonsterName(monster, state = game) {
+    return monsterName(monster, { state });
 }
-export function holdingMonsterSubject(monster) {
-    const name = holdingMonsterName(monster);
+export function holdingMonsterSubject(monster, state = game) {
+    const name = holdingMonsterName(monster, state);
     return name.charAt(0).toUpperCase() + name.slice(1);
 }
 export async function releaseHeroGrip(state = game, publish = plineWithContinuation) {
@@ -102,6 +102,10 @@ export async function releaseHeroFromMonster(monster, { state = game, publish = 
 export async function expelHero(monster, { state = game, message = true, engulfingSpecies = monster.mnum, publish = plineWithContinuation, redraw = redrawAfterRelease, refresh = newsym, random = rn2, rollOne = rnd, } = {}) {
     if (!state.u.uswallow || state.u.ustuck !== monster)
         return { expelled: false };
+    // C mhitu.c expels() flags the status line before its message: vpline()
+    // flushes the screen (redrawing botl) before update_topl() pages the
+    // still-unseen line that forced this expulsion's --More--.
+    state.context.botl = true;
     if (message) {
         const line = expulsionMessage(monster, engulfingSpecies, state);
         if (line)

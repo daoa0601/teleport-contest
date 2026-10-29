@@ -6,12 +6,14 @@ import test from 'node:test';
 // verb stays singular.
 
 import { rhack } from '../js/cmd.js';
-import { SPIKED_PIT, TT_PIT } from '../js/const.js';
+import { PIT, SPIKED_PIT, TT_PIT } from '../js/const.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { createSaddledSteed } from './support/monsters.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -35,5 +37,28 @@ for (const [footwear, description] of [
             `Your pair of ${description} protects you from the sharp iron spikes.`);
         assert.equal(game.u.utraptype, TT_PIT);
         assert.equal(game.uarmf, shoes);
+    });
+}
+
+// C trap.c:trapeffect_pit() passes "poor" and SUPPRESS_SADDLE to
+// x_monnam(), with ARTICLE_NONE when the steed has a given name.
+for (const [trapType, description, message] of [
+    [PIT, 'pit', 'You lead poor Silver into a pit!'],
+    [SPIKED_PIT, 'spiked pit', 'Poor Silver lands on a set of sharp iron spikes!'],
+] as const) {
+    void test(`a named steed entering a ${description} is called poor by name`, async () => {
+        const level = freshObjectRoom();
+        requireFixtureGame(game);
+        const steed = await createSaddledSteed('horse', { x: 10, y: 10 });
+        setMonsterGivenName(steed, 'Silver');
+        game.u.usteed = steed;
+        addTrap(level, trapType, 11, 10, { tseen: false });
+        pushKeys(' '.repeat(20));
+
+        await rhack('l'.charCodeAt(0));
+
+        assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+        assert.equal(game._pending_message, message);
+        assert.equal(game.u.utraptype, TT_PIT);
     });
 }

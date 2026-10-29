@@ -61,6 +61,26 @@ void test('dropping while swallowed describes the stomach', async () => {
         : true);
 });
 
+// C do.c:741 names the engulfer with mon_nam(), so a minion elemental
+// carries its deity title from priest.c:priestname() ("of <god>").
+void test('dropping while swallowed names a minion engulfer after its god', async () => {
+    freshObjectRoom({ gameplaySeed: 83 });
+    requireFixtureGame(game);
+    const dagger = await addInventoryObject(DAGGER, { invlet: 'a' });
+    const elemental = await createMonsterAt('air elemental', 10, 10);
+    elemental.isminion = 1;
+    elemental.emin = { parentmid: 0, min_align: 0, renegade: 0 };
+    game.u.uswallow = 1;
+    game.u.ustuck = elemental;
+    game._pending_message = '';
+    pushKeys(' ');
+
+    const took = await dropHeroObject(dagger);
+
+    assert.equal(took, true);
+    assert.match(game._pending_message, /into the air elemental of Ishtar\./);
+});
+
 // C do.c:748 yobjnam: an unpaid object swallowed mid-sentence keeps the
 // shopkeeper's proper name capitalized; only the generic articles
 // ("Your"/"The") lowercase.
