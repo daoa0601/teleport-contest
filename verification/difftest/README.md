@@ -119,6 +119,13 @@ core/display word counts and RNG operation/argument/result
 entries are also compared. Missing optional JS scalar storage maps to its native
 zero default. Species absence maps to `-1`. No whole-memory comparison is made.
 
+This full comparison belongs to the differential runner, as required by the unit
+brief. The ten tests in `test_creation.py` instead run C and JS independently
+and assert only their named game rules: charges, fuel, contents, species choice,
+inventory ownership and teleport eligibility. They do not compare complete
+observations or RNG logs. The reducer self-test was removed from that behavior
+file, and schema validation moved into the runner's explicit negative checks.
+
 Every new target has a concrete counterexample probe that deliberately breaks
 one entry-state correspondence, and an independently killed emitted-JS mutant:
 
@@ -133,36 +140,45 @@ one entry-state correspondence, and an independently killed emitted-JS mutant:
 | inventory, other gear | leprechaun vs soldier: created species differs | skip its gold initialization |
 | teleport restriction | stasis expiry 40 vs 39 on turn 40: teleport eligibility differs | inclusive expiry `>=` becomes `>` |
 
-Controls must match completely before a probe or mutant is accepted. The six
-creation schema probes reject an invalid object type, object class, range
-endpoint, depth, monster class and species respectively. The original five
-invalid-domain probes and seven mutants remain active, including independent
-state, extra-word and log-only changes.
+Controls must match completely before a probe or mutant is accepted. The ten
+creation schema probes reject invalid object types, object classes, range
+endpoints, depths, monster classes, species, override bits, population flags and
+duplicate species histories. The original five invalid-domain probes and seven
+mutants remain active, including independent state, extra-word and log-only
+changes. A new `creation_log` mutant adds `d(0, 1)` during object construction.
+Both `rnd.c:d` and emitted `rng.js:d` consume no words for zero dice; the JS call
+adds only a log entry. The differential runner rejects it at `rng.log`.
+
+All ten creation behavior tests pass with `creation_log` enabled (10.663 s).
+Before removing the full-result assertion from their helper, the same calibration
+reported 26 failures across those ten tests (10.378 s). The independent behavior
+assertions still reject the strict-expiry `stasis` mutant at both equality
+boundaries, `(0,0)` and `(40,40)` (two JS failures, 1.920 s).
 
 Differences are reduced by deleting list entries and resetting scalar fields to
 domain defaults while retaining the target and object/species identities. The
 reducer preserves the first differing projection path and validates every
 candidate. This is one-minimal under those operations, not a globally smallest
-seed or integer input. New tests exercise reduction of species-history entries.
+seed or integer input.
 
 ## Measured results
 
-The review rerun compiled all 140 native objects in 15.29 s. `npm run compile`
-exited 0. All 20 focused harness tests passed in 13.762 s; the creation batch,
-including negative checks, took 20.64 s and exited 0. No full game behavior suite,
+The review rerun compiled all 140 native objects in 15.57 s. `npm run compile`
+exited 0. All 18 focused tests passed in 12.196 s; the creation batch, including
+negative checks, took 19.20 s and exited 0. No full game behavior suite,
 pool/eval/fresh corpus, new recording or CI job was run or added. Game code,
 generated runtime files, shared documentation and ledgers are unchanged.
 
 The explicitly requested public run used one worker and completed all 44
-sessions in 30.00 s: 43 full passes, zero errors, 11,396/11,405 matched screens
+sessions in 30.61 s: 43 full passes, zero errors, 11,396/11,405 matched screens
 and 792,838/792,838 matched RNG calls. The screen-only miss was
 `seed2200-wizard-quaff-zap-read` at step 158, the same session and position
 reported before this change. The public ledger check exited 0: all 363 functions
 retained every verified call. The exact commands were:
 
 ```sh
-TRIAGE_JOBS=1 node scripts/triage-holdout.mjs public .cache/fv-difftest2-review1-public
-node scripts/rng-function-table.mjs .cache/fv-difftest2-review1-public \
+TRIAGE_JOBS=1 node scripts/triage-holdout.mjs public .cache/fv-difftest2-review2-public
+node scripts/rng-function-table.mjs .cache/fv-difftest2-review2-public \
   --check-ledger docs/ledger/public-rng.tsv
 ```
 
@@ -187,10 +203,11 @@ guided; this is not a claim that every switch arm or rare branch executed.
 
 The original 6,083 cases also still matched: weight 1,031; inventory weight 1,019;
 capacity 1,006; near-capacity 1,006; damage 1,009; accuracy 1,012. That run took
-4.52 s. The focused tests cover the original eight behaviors plus twelve creation
-and loader behaviors. Creation negative checks found all eight deliberately broken
-correspondences and killed all eight new mutants; all eleven input-domain probes
-and all fifteen mutants across both sets behaved as expected.
+4.34 s. The focused run includes the eight unchanged base harness tests and ten
+creation behavior tests. Creation negative checks found all eight deliberately
+broken correspondences and killed all eight mutants. Together with the base
+checks and the additional creation-log calibration, all fifteen input-domain
+probes and all sixteen mutants behaved as expected.
 
 ### Reduced differences during development
 
@@ -243,18 +260,18 @@ per-claim times; they exclude the negative checks following each claim.
 | Claim | Result | Time | Claim | Result | Time |
 |---|---|---:|---|---|---:|
 | `rn2` | PROVED | 0.2 s | `rnd` | PROVED | 0.1 s |
-| `rn1` | PROVED | 0.5 s | `rnl` | PROVED | 1.0 s |
+| `rn1` | PROVED | 0.4 s | `rnl` | PROVED | 1.0 s |
 | `d` | PROVED | 0.3 s | `rne` | PROVED | 1.2 s |
-| `rnz` | PROVED | 4.5 s | `rn2_on_display_rng` | PROVED | 0.1 s |
-| `distmin` | PROVED | 0.4 s | `dist2` | PROVED | 1.5 s |
-| `enermod` | PROVED | 4.7 s | `newuexp` | PROVED | 1.6 s |
+| `rnz` | PROVED | 4.7 s | `rn2_on_display_rng` | PROVED | 0.1 s |
+| `distmin` | PROVED | 0.3 s | `dist2` | PROVED | 1.0 s |
+| `enermod` | PROVED | 5.1 s | `newuexp` | PROVED | 1.4 s |
 | `xlev_to_rank` | PROVED | 0.3 s | `rounddiv` | PROVED | 0.6 s |
-| `Align2amask` | PROVED | 0.6 s | `Amask2align` | PROVED | 1.3 s |
+| `Align2amask` | PROVED | 0.5 s | `Amask2align` | PROVED | 1.3 s |
 | `acurr:StrDex` | PROVED | 1.3 s | `acurrstr` | PROVED | 0.5 s |
-| `dbon:human` | PROVED | 0.8 s | `abon:human` | PROVED | 16.3 s |
+| `dbon:human` | PROVED | 0.8 s | `abon:human` | PROVED | 19.6 s |
 | `lower_bits` | PROVED | 0.1 s | `upper_bits` | PROVED | 0.0 s |
-| `isaac64_mix` | PROVED | 0.1 s | `isaac64_update` | PROVED | 0.3 s |
-| `isaac64_reseed` | PROVED | 3.6 s | `isaac64_init` | PROVED | 0.1 s |
+| `isaac64_mix` | PROVED | 0.1 s | `isaac64_update` | PROVED | 0.4 s |
+| `isaac64_reseed` | PROVED | 3.7 s | `isaac64_init` | PROVED | 0.1 s |
 | `isaac64_next_uint64` | PROVED | 0.0 s | `isaac64_seed_packing` | PROVED | 0.1 s |
 
 ## Remaining limits

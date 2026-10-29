@@ -179,6 +179,7 @@ def negative_checks(native, port, meta):
         'state': dict(target='dmgval'),
         'rng': dict(target='dmgval'),
         'log': dict(target='dmgval'),
+        'creation_log': dict(target='mksobj', init=0),
     }
     for name, raw in mutants.items():
         state = canonical(raw, meta)
@@ -187,7 +188,8 @@ def negative_checks(native, port, meta):
             raise RuntimeError(f'Mutant control already diverges: {name}')
         with Worker(['node', str(HERE / 'port.mjs')], f'mutant-{name}', name) as worker:
             found = difference(c_result, worker.call(state))
-        expected = {'state': 'state.', 'rng': 'rng.core', 'log': 'rng.log'}.get(name, 'result')
+        expected = {'state': 'state.', 'rng': 'rng.core', 'log': 'rng.log',
+                    'creation_log': 'rng.log'}.get(name, 'result')
         if not found or not found['path'].startswith(expected):
             raise RuntimeError(f'Mutant survived or failed for the wrong reason: {name}: {found}')
         print(f'KILLED {name}: {found["path"]}', flush=True)
@@ -244,7 +246,10 @@ def creation_negative_checks(native, port, meta):
     invalid = [dict(target='mksobj', otyp=17), dict(target='mkobj', oclass=1),
                dict(target='rnd_class', first=len(meta['names'])),
                dict(target='rndmonst', level=dict(depth=0)), dict(target='mkclass', mclass=0),
-               dict(target='makemon_inventory', mnum=len(meta['monsters']))]
+               dict(target='makemon_inventory', mnum=len(meta['monsters'])),
+               dict(target='mkclass', mclass=59), dict(target='mkclass', spc=4),
+               dict(target='rndmonst', vitals=[dict(mnum=0, flags=4)]),
+               dict(target='rndmonst', vitals=[dict(mnum=0), dict(mnum=0)])]
     for raw in invalid:
         try:
             canonical(raw, meta)

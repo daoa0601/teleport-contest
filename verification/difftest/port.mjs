@@ -7,6 +7,8 @@ import { createInterface } from 'node:readline';
 const changes = {
     create_object: ['mklev.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
         'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); otmp.spe = 100;'],
+    creation_log: ['mklev.js', 'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0);',
+        'const otmp = createObjectBase(otyp, nextIdent(), game.moves ?? 0); d(0, 1);'],
     create_class: ['mklev.js', 'const excludeNovel = oclass === SPBOOK_no_NOVEL;',
         'oclass = WEAPON_CLASS; const excludeNovel = oclass === SPBOOK_no_NOVEL;'],
     random_range: ['mklev.js', 'return first === last ? first : 0;',
