@@ -659,7 +659,13 @@ glyph/color machinery -- with no play-reachable divergence;
 `.cache/audit-display/final.md` records the verification, including the
 display-RNG draw sites and orders, the DARKROOMSYM Rogue alias, the wall-angle
 matrices, and behavior tests for `mon_warning`/`under_water`, which the corpus
-never executes natively).
+never executes natively), and a second pass over `dig.c`, `lock.c` and `engrave.c` (the
+audit-dig-lock unit compared every function against the port with no
+play-reachable divergence; `.cache/audit-dig-lock/final.md` records the
+verification, including adj_pit_checks() clearing the shared rm.flags before
+its own W_NONDIGGABLE stone test so that branch is dead in C too, the #if 0
+burial block, the caller-less see_engraving()/feel_engraving(), and
+rot_organic()'s container-hold infinite loop the port stops instead).
 
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
