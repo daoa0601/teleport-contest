@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { dosounds } from '../js/ambient_sounds.js';
-import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, MON_MIGRATING, MORGUE, ROOMOFFSET, SWAMP, TEMPLE, VAULT, ZOO } from '../js/const.js';
+import { ALTAR, AM_SHRINE, Align2amask, ANY_SHOP, BARRACKS, BEEHIVE, COURT, MON_MIGRATING, MORGUE, ROOMOFFSET, SWAMP, TEMPLE, VAULT, ZOO } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -35,6 +35,9 @@ async function topline() {
 void test('a staffed temple outside the hero room produces a prayer to its deity', async () => {
     const level = await soundRoom(TEMPLE);
     requirePlayingGame(game);
+    const altar = level.requireAt(8, 10);
+    altar.typ = ALTAR;
+    altar.flags = AM_SHRINE | Align2amask(0);
     const priest = await createMonsterAt('aligned cleric', 8, 10);
     priest.ispriest = 1;
     priest.epri = {
