@@ -23,7 +23,7 @@ void test('removing a ring reports the hand it occupied while still worn', async
         ['uright', 'right', RIN_PROTECTION],
         ['uleft', 'left', RIN_WARNING],
     ] as const) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const ring = await addInventoryObject(type, {
             invlet: 'b', dknown: true, bknown: true,
@@ -40,7 +40,7 @@ void test('removing a ring reports the hand it occupied while still worn', async
 });
 
 void test('removing an amulet reports it without a wearing suffix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, {
         invlet: 'b', dknown: true, bknown: true,
@@ -57,7 +57,7 @@ void test('removing an amulet reports it without a wearing suffix', async () => 
 });
 
 void test('a ring of levitation reports its hand before the landing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_LEVITATION, {
         invlet: 'b', dknown: true, bknown: true,

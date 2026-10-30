@@ -107,7 +107,7 @@ async function fullOptionRow(name: string): Promise<string> {
 }
 
 void test('the simple options menu toggles autoquiver without using a turn', async () => {
-    freshObjectRoom({ flags: { autoquiver: false } });
+    await freshObjectRoom({ flags: { autoquiver: false } });
     requirePlayingGame(game);
 
     await simpleOption('autoquiver');
@@ -118,7 +118,7 @@ void test('the simple options menu toggles autoquiver without using a turn', asy
 });
 
 void test('simple option help explains the choices and can be hidden again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const command = rhack('O'.charCodeAt(0));
     await input.waitUntilBlocked();
@@ -139,7 +139,7 @@ void test('simple option help explains the choices and can be hidden again', asy
 });
 
 void test('full options edit compounds in their displayed order', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const prompts = await fullOptions(['fruit', 'number_pad']);
 
@@ -148,7 +148,7 @@ void test('full options edit compounds in their displayed order', async () => {
 });
 
 void test('full option help returns to the choices with its help offer removed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['view help for options menu'], view => view.includes('--More--') ? ' ' : '\x1b');
 
@@ -158,7 +158,7 @@ void test('full option help returns to the choices with its help offer removed',
 });
 
 void test('full fruit edits announce the native singular name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['fruit'], view => view.includes('Set fruit to what?') ? 'mangos\n' : ' ');
 
@@ -167,7 +167,7 @@ void test('full fruit edits announce the native singular name', async () => {
 });
 
 void test('runmode offers native display choices and keeps the selected mode', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['runmode'], () => 't');
 
@@ -176,7 +176,7 @@ void test('runmode offers native display choices and keeps the selected mode', a
 });
 
 void test('message history mode uses its own choice menu and confirmation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['msg_window'], () => 'r');
 
@@ -186,7 +186,7 @@ void test('message history mode uses its own choice menu and confirmation', asyn
 });
 
 void test('version choices describe the absent branch for the released build', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['versinfo'], view => view.includes('Select version information flags:') ? '\x1b' : ' ');
 
@@ -195,7 +195,7 @@ void test('version choices describe the absent branch for the released build', a
 });
 
 void test('paranoid confirmation can clear all preselected actions', async () => {
-    freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
+    await freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
 
     const views = await fullOptions(['paranoid_confirmation'], () => '-\n');
 
@@ -204,7 +204,7 @@ void test('paranoid confirmation can clear all preselected actions', async () =>
 });
 
 void test('tab-separated paranoia arguments select their confirmations in options', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=paranoid_confirmation:pray\ttrap');
 
     const views = await fullOptions(['paranoid_confirmation']);
@@ -216,7 +216,7 @@ void test('tab-separated paranoia arguments select their confirmations in option
 });
 
 void test('disclosure edits selected categories in native category order', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['disclose'], view => {
         if (view.includes('Change which disclosure options categories:')) return 'iv\n';
@@ -231,7 +231,7 @@ void test('disclosure edits selected categories in native category order', async
 });
 
 void test('autounlock applies the checked action set from the simple menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('iauf\n\x1b');
 
@@ -241,7 +241,7 @@ void test('autounlock applies the checked action set from the simple menu', asyn
 });
 
 void test('pickup burden uses the native encumbrance choices', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['pickup_burden'], () => 'l');
 
@@ -254,7 +254,7 @@ for (const [value, expected] of [
     ['n', 'strained'], ['o', 'overtaxed'], ['T', 'overtaxed'], ['l', 'overloaded'],
 ] as const) {
     void test(`the full options menu expands pickup_burden:${value} to ${expected}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc(`OPTIONS=pickup_burden:${value}`);
 
         const row = await fullOptionRow('pickup_burden');
@@ -264,7 +264,7 @@ for (const [value, expected] of [
 }
 
 void test('an invalid pickup burden keeps the previous encumbrance setting', async () => {
-    freshObjectRoom({ flags: { pickup_burden: 5 } });
+    await freshObjectRoom({ flags: { pickup_burden: 5 } });
     applyNethackrc('OPTIONS=pickup_burden:invalid');
 
     const row = await fullOptionRow('pickup_burden');
@@ -273,7 +273,7 @@ void test('an invalid pickup burden keeps the previous encumbrance setting', asy
 });
 
 void test('cancelling autopickup types discards new checks', async () => {
-    freshObjectRoom({ flags: { pickup_types: '$' } });
+    await freshObjectRoom({ flags: { pickup_types: '$' } });
 
     await fullOptions(['pickup_types'], () => 'c\x1b');
 
@@ -281,7 +281,7 @@ void test('cancelling autopickup types discards new checks', async () => {
 });
 
 void test('the all-classes autopickup choice stores the native empty list', async () => {
-    freshObjectRoom({ flags: { pickup_types: '$' } });
+    await freshObjectRoom({ flags: { pickup_types: '$' } });
 
     await fullOptions(['pickup_types'], () => 'A\n');
 
@@ -289,7 +289,7 @@ void test('the all-classes autopickup choice stores the native empty list', asyn
 });
 
 void test('traditional autopickup prompts for symbols and preserves order', async () => {
-    freshObjectRoom({ flags: { menu_style: 0, pickup_types: '$' } });
+    await freshObjectRoom({ flags: { menu_style: 0, pickup_types: '$' } });
 
     const views = await fullOptions(['pickup_types'], () => ')%\n');
 
@@ -299,7 +299,7 @@ void test('traditional autopickup prompts for symbols and preserves order', asyn
 
 for (const [value, expected] of [['12', 12], ['-2', 5], ['nonsense', 0], ['', 5]] as const) {
     void test(`pile_limit accepts native numeric input ${JSON.stringify(value)}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const views = await fullOptions(['pile_limit'], () => `${value}\n`);
 
@@ -309,7 +309,7 @@ for (const [value, expected] of [['12', 12], ['-2', 5], ['nonsense', 0], ['', 5]
 }
 
 void test('packorder reports bad classes while retaining the valid entries', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['packorder'], view => view.includes('Set packorder to what?') ? ')~)%\n' : ' ');
 
@@ -319,7 +319,7 @@ void test('packorder reports bad classes while retaining the valid entries', asy
 });
 
 void test('invalid menuinvertmode leaves its previous value and reports the range error', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.iflags.menuinvertmode = 2;
 
     const views = await fullOptions(['menuinvertmode'], () => '3\n');
@@ -330,7 +330,7 @@ void test('invalid menuinvertmode leaves its previous value and reports the rang
 });
 
 void test('invalid status height is rejected by its compound prompt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['statuslines'], () => '4\n');
 
@@ -339,7 +339,7 @@ void test('invalid status height is rejected by its compound prompt', async () =
 });
 
 void test('a highlighting rule with an unknown status field reports that field', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['hilite_status'], () => 'mystery/red\n');
 
@@ -349,7 +349,7 @@ void test('a highlighting rule with an unknown status field reports that field',
 
 for (const configuration of ['OPTIONS=menu_next_page:^F,menu_previous_page:^B', 'BINDINGS=^F:menu_next_page,^B:menu_previous_page']) {
     void test(`configured menu navigation works in the public options command (${configuration.split('=')[0]})`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc(configuration);
         const input = resetInputState();
         const command = rhack('O'.charCodeAt(0));
@@ -370,7 +370,7 @@ for (const configuration of ['OPTIONS=menu_next_page:^F,menu_previous_page:^B', 
 
 for (const symbols of ['0!~', '0\\x21\\o176']) {
     void test(`configured warning symbols keep the default map symbol and its threat description (${symbols})`, async () => {
-        freshObjectRoom({ hero: { warning: true } });
+        await freshObjectRoom({ hero: { warning: true } });
         applyNethackrc(`OPTIONS=warnings:${symbols}`);
         const xorn = await createMonsterAt('xorn', 11, 10, NO_MINVENT);
         xorn.minvis = 1;
@@ -379,7 +379,7 @@ for (const symbols of ['0!~', '0\\x21\\o176']) {
         resetInputState().feed('\x1b');
 
         await rhack('O'.charCodeAt(0));
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         // assign_warnings() only retargets gw.warnsyms for the pager; the map
@@ -391,7 +391,7 @@ for (const symbols of ['0!~', '0\\x21\\o176']) {
 }
 
 void test('bulk inversion leaves unselected full-menu booleans unchanged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const command = rhack('m'.charCodeAt(0));
     await input.waitUntilBlocked();
@@ -414,7 +414,7 @@ void test('bulk inversion leaves unselected full-menu booleans unchanged', async
 });
 
 void test('idlecheckpoint reports that the native build cannot enable it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['idlecheckpoint']);
 
@@ -422,7 +422,7 @@ void test('idlecheckpoint reports that the native build cannot enable it', async
 });
 
 void test('native no-prefixes and repeated negations survive opening options', async () => {
-    freshObjectRoom({ flags: { color: true, time: true, verbose: false } });
+    await freshObjectRoom({ flags: { color: true, time: true, verbose: false } });
     applyNethackrc('OPTIONS=nocolor,no-time,!!verbose');
     resetInputState().feed('\x1b');
 
@@ -434,7 +434,7 @@ void test('native no-prefixes and repeated negations survive opening options', a
 });
 
 void test('native compound abbreviations show their canonical settings', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=runmode:w,pile_limit:-8,msg_window:reversed,paranoid_confirmation:pr tr sw');
     resetInputState().feed('\x1b');
 
@@ -447,7 +447,7 @@ void test('native compound abbreviations show their canonical settings', async (
 });
 
 void test('invalid traditional pickup classes retain valid symbols once and report the error', async () => {
-    freshObjectRoom({ flags: { menu_style: 0 } });
+    await freshObjectRoom({ flags: { menu_style: 0 } });
 
     await fullOptions(['pickup_types'], () => ')x)\n');
 
@@ -456,7 +456,7 @@ void test('invalid traditional pickup classes retain valid symbols once and repo
 });
 
 void test('coordinate and location filtering options use their native menus', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['whatis_coord', 'whatis_filter'], view =>
         view.includes('Select coordinate display') ? 'm' : 'v');
@@ -468,7 +468,7 @@ void test('coordinate and location filtering options use their native menus', as
 });
 
 void test('changing version information redraws the displayed version', async () => {
-    freshObjectRoom({ flags: { showvers: true } });
+    await freshObjectRoom({ flags: { showvers: true } });
 
     const views = await fullOptions(['versinfo'], view => view.includes('Select version information flags:') ? 'ng\n' : ' ');
 
@@ -478,7 +478,7 @@ void test('changing version information redraws the displayed version', async ()
 });
 
 void test('status condition choices update the live status line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['status condition fields'], view => {
         if (view.includes('Choose status conditions to toggle')) return 'a\n';
@@ -491,7 +491,7 @@ void test('status condition choices update the live status line', async () => {
 });
 
 void test('accepting an autounlock alias preserves its current key action', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=autounlock:apply_key');
     resetInputState().feed('i\n\x1b');
 
@@ -501,7 +501,7 @@ void test('accepting an autounlock alias preserves its current key action', asyn
 });
 
 void test('number-pad mode selection honors the configured menu search key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menu_search:;');
     const input = resetInputState();
     input.feed('b;');
@@ -517,7 +517,7 @@ void test('number-pad mode selection honors the configured menu search key', asy
 });
 
 void test('scores retains valid prefixes and reports a negative count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['scores'], () => '4top/-2around\n');
 
@@ -527,7 +527,7 @@ void test('scores retains valid prefixes and reports a negative count', async ()
 });
 
 void test('a blank scores answer keeps every score choice and reports the missing value', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.flags.end_top = 3;
     game.flags.end_around = 2;
     game.flags.end_own = true;
@@ -541,7 +541,7 @@ void test('a blank scores answer keeps every score choice and reports the missin
 });
 
 void test('scores reads fields in any case and quotes unknown text as typed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['scores'], () => '5TOP/NoOwn/BOGUS\n');
 
@@ -551,7 +551,7 @@ void test('scores reads fields in any case and quotes unknown text as typed', as
 });
 
 void test('feature-alert suppression accepts a current or older native version', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['suppress_alert'], () => '3.7.2\n');
 
@@ -560,7 +560,7 @@ void test('feature-alert suppression accepts a current or older native version',
 });
 
 void test('feature-alert suppression rejects future versions and keeps the old setting', async () => {
-    freshObjectRoom({ flags: { suppress_alert: '3.3.1' } });
+    await freshObjectRoom({ flags: { suppress_alert: '3.3.1' } });
 
     await fullOptions(['suppress_alert'], () => '9.0.0\n');
 
@@ -569,7 +569,7 @@ void test('feature-alert suppression rejects future versions and keeps the old s
 });
 
 void test('packorder keeps its old order until all validation errors have been acknowledged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const previous = inventoryOrderSymbols();
     let acknowledged = false;
 
@@ -586,7 +586,7 @@ void test('packorder keeps its old order until all validation errors have been a
 });
 
 void test('each disclosure category commits before the next category prompt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['disclose'], view => {
         if (view.includes('Change which disclosure options categories:')) return 'iv\n';
@@ -601,7 +601,7 @@ void test('each disclosure category commits before the next category prompt', as
 
 for (const style of [0, 2] as const) {
     void test(`pickup types are cleared during the native ${style === 0 ? 'text' : 'menu'} prompt and restored on Escape`, async () => {
-        freshObjectRoom({ flags: { menu_style: style, pickup_types: '$' } });
+        await freshObjectRoom({ flags: { menu_style: style, pickup_types: '$' } });
 
         await fullOptions(['pickup_types'], view => {
             assert.match(view, style === 0 ? /New pickup_types:/ : /Autopickup what\?/);
@@ -614,35 +614,35 @@ for (const style of [0, 2] as const) {
 }
 
 void test('restoring a game retains the current background-color preference', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Options';
     const storage = memoryStorage();
     await simpleOption('bgcolors');
     assert.equal(await saveGame(storage), true);
     await simpleOption('bgcolors');
 
-    assert.equal(restoreGame('Options', storage), true);
+    assert.equal(await restoreGame('Options', storage), true);
     const row = await simpleOption('bgcolors', false);
 
     assert.match(row, /\[X\]/);
 });
 
 void test('restoring a game retains the current sound preference', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Options';
     const storage = memoryStorage();
     await fullOptions(['sounds']);
     assert.equal(await saveGame(storage), true);
     await fullOptions(['sounds']);
 
-    assert.equal(restoreGame('Options', storage), true);
+    assert.equal(await restoreGame('Options', storage), true);
     await fullOptions(['sounds']);
 
     assert.match(game._pending_message, /'sounds' option toggled on\./);
 });
 
 void test('cancelling a full-screen simple options menu restores the status rows', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 50, rows: 24 }));
     await bot();
     resetInputState().feed('\x1b');
@@ -653,7 +653,7 @@ void test('cancelling a full-screen simple options menu restores the status rows
 });
 
 void test('a negated empty paranoia value clears all confirmations', async () => {
-    freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
+    await freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
     applyNethackrc('OPTIONS=!paranoid_confirmation:');
     resetInputState().feed('\x1b');
 
@@ -663,7 +663,7 @@ void test('a negated empty paranoia value clears all confirmations', async () =>
 });
 
 void test('the boolean help option toggles without opening menu instructions', async () => {
-    freshObjectRoom({ flags: { help: true } });
+    await freshObjectRoom({ flags: { help: true } });
 
     const views = await fullOptions(['help']);
 
@@ -672,7 +672,7 @@ void test('the boolean help option toggles without opening menu instructions', a
 });
 
 void test('menu instructions and the boolean help option can be selected together', async () => {
-    freshObjectRoom({ flags: { help: true } });
+    await freshObjectRoom({ flags: { help: true } });
 
     const views = await fullOptions(['view help for options menu', 'help'], view => view.includes('--More--') ? ' ' : '\x1b');
 
@@ -681,7 +681,7 @@ void test('menu instructions and the boolean help option can be selected togethe
 });
 
 void test('an empty packorder answer leaves the order unchanged without an error', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const previous = inventoryOrderSymbols();
 
     await fullOptions(['packorder'], () => '\n');
@@ -691,7 +691,7 @@ void test('an empty packorder answer leaves the order unchanged without an error
 });
 
 void test('an empty pile limit reports its missing parameter and resets the threshold', async () => {
-    freshObjectRoom({ flags: { pile_limit: 9 } });
+    await freshObjectRoom({ flags: { pile_limit: 9 } });
 
     await fullOptions(['pile_limit'], () => '\n');
 
@@ -700,7 +700,7 @@ void test('an empty pile limit reports its missing parameter and resets the thre
 });
 
 void test('an empty status height reports both native validation errors', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const views = await fullOptions(['statuslines'], view => view.includes('Set statuslines to what?') ? '\n' : ' ');
 
@@ -710,7 +710,7 @@ void test('an empty status height reports both native validation errors', async 
 
 for (const mode of ['normal', 'explore', 'debug']) {
     void test(`the full options menu displays ${mode} play mode`, async () => {
-        freshObjectRoom({ flags: { debug: mode === 'debug', explore: mode === 'explore' } });
+        await freshObjectRoom({ flags: { debug: mode === 'debug', explore: mode === 'explore' } });
 
         const row = await fullOptionRow('playmode');
 
@@ -719,7 +719,7 @@ for (const mode of ['normal', 'explore', 'debug']) {
 }
 
 void test('the full options menu displays the disabled bones preference', async () => {
-    freshObjectRoom({ flags: { bones: false } });
+    await freshObjectRoom({ flags: { bones: false } });
 
     const row = await fullOptionRow('bones');
 
@@ -734,7 +734,7 @@ for (const { symset, expected } of [
     { symset: 'Enhanced1', expected: '[Enhanced1, active, handler=UTF8]' },
 ]) {
     void test(`the full options menu displays the ${symset ?? 'default'} symbol set state`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.symset = symset;
 
@@ -752,7 +752,7 @@ for (const { preference, description } of [
     { preference: '', description: 'random' },
 ]) {
     void test(`the full options menu displays the ${description} pet preference`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.preferred_pet = preference;
 
         const row = await fullOptionRow('pettype');

@@ -9,7 +9,7 @@ import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an object wish keeps the individual name supplied after named', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('dagger named Needle');
 
@@ -20,7 +20,7 @@ void test('an object wish keeps the individual name supplied after named', async
 
 for (const weapon of ['polearm', 'hammer']) {
     void test(`a random ${weapon} wish loses its personal name during artifact lookup`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const result = await readObjectName(`uncursed +2 ${weapon} named Keepsake`, { wizardWish: true });
 
@@ -32,7 +32,7 @@ for (const weapon of ['polearm', 'hammer']) {
 }
 
 void test('a matching artifact name can turn a wished base object into that artifact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact);
 
@@ -45,7 +45,7 @@ void test('a matching artifact name can turn a wished base object into that arti
 });
 
 void test('a named fruit is checked before an artifact with the same label', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const fruit = addFruit('Excalibur');
 
     const result = await readObjectName('Excalibur');

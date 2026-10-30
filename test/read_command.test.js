@@ -10,8 +10,8 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SCR_CONFUSE_MONSTER = OBJECT_NAMES.indexOf('confuse monster');
 const SCR_CHARGING = OBJECT_NAMES.indexOf('charging');
-function readingRoom(options = {}) {
-    freshObjectRoom({ gameplaySeed: 62n, ...options });
+async function readingRoom(options = {}) {
+    await freshObjectRoom({ gameplaySeed: 62n, ...options });
     requirePlayingGame(game);
     const input = resetInputState();
     const messages = [];
@@ -35,7 +35,7 @@ async function read(object, input) {
     await rhack('r'.charCodeAt(0));
 }
 void test('blindness rejects an unseen scroll before literacy or consumption', async () => {
-    const { input } = readingRoom();
+    const { input } = await readingRoom();
     requirePlayingGame(game);
     setHeroBlindnessTurns(10);
     const scroll = await addInventoryObject(SCR_MAGIC_MAPPING, {
@@ -51,7 +51,7 @@ void test('blindness rejects an unseen scroll before literacy or consumption', a
 });
 for (const [type, wording] of [[SPE_FORCE_BOLT, 'mystic runes'], [SPE_NOVEL, 'words']]) {
     void test(`blindness prevents reading a book's ${wording} even after seeing it`, async () => {
-        const { input } = readingRoom();
+        const { input } = await readingRoom();
         requirePlayingGame(game);
         const book = await addInventoryObject(type);
         setHeroBlindnessTurns(10);
@@ -62,7 +62,7 @@ for (const [type, wording] of [[SPE_FORCE_BOLT, 'mystic runes'], [SPE_NOVEL, 'wo
     });
 }
 void test('a seen scroll can be recited while blind and unable to speak', async () => {
-    const { input, messages } = readingRoom();
+    const { input, messages } = await readingRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_MAGIC_MAPPING);
     setHeroBlindnessTurns(10);
@@ -74,7 +74,7 @@ void test('a seen scroll can be recited while blind and unable to speak', async 
     assert.match([...messages, game._pending_message].join('\n'), /As you cogitate the formula/);
 });
 void test('reading one scroll in a stack consumes one and discovers its type only once', async () => {
-    const { input } = readingRoom();
+    const { input } = await readingRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_MAGIC_MAPPING, { quan: 2, typeKnown: false });
     await read(scroll, input);
@@ -90,7 +90,7 @@ void test('reading one scroll in a stack consumes one and discovers its type onl
     assert.deepEqual(gameLogEvents().map(event => event.text), ['became literate by reading a scroll']);
 });
 void test('blank paper remains carried and does not break illiteracy', async () => {
-    const { input } = readingRoom();
+    const { input } = await readingRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_BLANK_PAPER);
     await read(scroll, input);
@@ -103,7 +103,7 @@ void test('blank paper remains carried and does not break illiteracy', async () 
     assert.match(game._pending_message, /This scroll seems to be blank\./);
 });
 void test('an unidentified scroll remains in use until its actual naming prompt is answered', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CONFUSE_MONSTER, { typeKnown: false });
     const input = resetInputState();
@@ -131,7 +131,7 @@ void test('an unidentified scroll remains in use until its actual naming prompt 
     assert.equal(game.context.move, 1);
 });
 void test('charging acknowledges the consumed scroll before asking which object to charge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_CHARGING, { typeKnown: false });
     const wand = await addInventoryObject(WAN_MAGIC_MISSILE, { spe: 0, recharged: 0 });
@@ -155,7 +155,7 @@ void test('charging acknowledges the consumed scroll before asking which object 
     assert.equal(game.context.move, 1);
 });
 void test('canceling reading with an empty inventory spends no time and records no literacy', async () => {
-    const { input } = readingRoom();
+    const { input } = await readingRoom();
     requirePlayingGame(game);
     input.feed('\u001b');
     await rhack('r'.charCodeAt(0));
@@ -164,7 +164,7 @@ void test('canceling reading with an empty inventory spends no time and records 
     assert.match(game._pending_message, /Never mind\./);
 });
 void test('overtaxed reading rejects the action before asking for an object', async () => {
-    readingRoom();
+    await readingRoom();
     requirePlayingGame(game);
     await addInventoryObject(BOULDER, { quan: 2 });
     const scroll = await addInventoryObject(SCR_MAGIC_MAPPING);

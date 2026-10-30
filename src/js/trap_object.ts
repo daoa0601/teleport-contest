@@ -29,7 +29,7 @@ export async function convertTrapToObject(
         if (trap.madeby_u) await sellHeroDroppedObject(object, trap.tx, trap.ty, state);
         await stack_object(object, state);
     }
-    newsym(trap.tx, trap.ty);
+    await newsym(trap.tx, trap.ty);
     if (state.u.utrap && state.u.ux === trap.tx && state.u.uy === trap.ty) {
         await resetHeroTrap(true, state);
         if (state.program_state.gameover) return object;

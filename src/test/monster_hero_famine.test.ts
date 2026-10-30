@@ -10,7 +10,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const fainted of [false, true]) {
     void test(`Famine ${fainted ? 'spares the nutrition of a fainted hero' : 'takes nutrition once before substituting a stunning touch'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10,
+        await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10,
             uhunger: fainted ? -10 : 900, uhs: fainted ? FAINTED : NOT_HUNGRY } });
         requirePlayingGame(game);
         const rider = await createMonsterAt('Famine', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 void test('a monkey fleeing with unpaid goods names the shopkeeper as their owner', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
     shopkeeper.eshk.shknam = '+Ada';
@@ -36,7 +36,7 @@ void test('a monkey fleeing with unpaid goods names the shopkeeper as their owne
     assert.match(messages.join('\n'), /The monkey tries to run away with Ada's dagger\./);
 });
 void test('a monkey names a newly observed potion appearance when fleeing with it', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     assert.ok(game.objectDescriptions);
     game.objectDescriptions[POT_HEALING] = 'magenta';
@@ -59,7 +59,7 @@ void test('a monkey names a newly observed potion appearance when fleeing with i
     assert.match(prose, /The monkey tries to run away with your magenta potion\./);
 });
 void test('theft while blind does not reveal an unseen potion appearance', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     setHeroBlindnessTurns(10);
     assert.ok(game.objectDescriptions);
@@ -82,7 +82,7 @@ void test('theft while blind does not reveal an unseen potion appearance', async
     assert.doesNotMatch(messages.join('\n'), /magenta/);
 });
 void test('a hallucinated disarm names the thief afresh while the theft keeps its first name', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, hallucinationTurns: 50 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, hallucinationTurns: 50 } });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER);
     game.uwep = dagger;

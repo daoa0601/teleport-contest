@@ -17,7 +17,7 @@ for (const [species, damage, index] of [
     ['Pestilence', AD_PEST, 1], ['Famine', AD_FAMN, 1], ['Demogorgon', AD_DISE, 3],
 ]) {
     void test(`${species} substitutes stun after its preceding illness or hunger attack succeeds`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const attacker = await createMonsterAt(species, 12, 10, NO_MINVENT);
         requirePlayingGame(game);
         const missed = Array(index).fill(M_ATTK_MISS);
@@ -31,7 +31,7 @@ for (const [species, damage, index] of [
     });
 }
 void test('energy drain adapts to the hero energy reserve while respecting the level-six floor', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, uen: 10, uenmax: 12 } });
+    await freshObjectRoom({ hero: { ulevel: 1, uen: 10, uenmax: 12 } });
     const vortex = await createMonsterAt('energy vortex', 12, 10, NO_MINVENT);
     requirePlayingGame(game);
     assert.deepEqual(selectAttack(vortex, game.u, 1, [], game), [AT_ENGL, AD_DREN, 1, 3]);
@@ -45,7 +45,7 @@ void test('energy drain adapts to the hero energy reserve while respecting the l
     assert.deepEqual(selectAttack(vortex, game.u, 1, [], game), [AT_ENGL, AD_DREN, 3, 9]);
 });
 void test('hero energy scaling takes precedence over an engulfing monster cooldown', async () => {
-    freshObjectRoom({ hero: { ulevel: 6, uen: 40, uenmax: 100 } });
+    await freshObjectRoom({ hero: { ulevel: 6, uen: 40, uenmax: 100 } });
     const vortex = await createMonsterAt('energy vortex', 12, 10, NO_MINVENT);
     vortex.mspec_used = 2;
     const defender = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
@@ -55,14 +55,14 @@ void test('hero energy scaling takes precedence over an engulfing monster cooldo
     assert.deepEqual(selectAttack(vortex, defender, 0, [], game), [AT_TUCH, AD_ELEC, 1, 6]);
 });
 void test('a monster target does not cause energy scaling from the hero reserve', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, uen: 0, uenmax: 0 } });
+    await freshObjectRoom({ hero: { ulevel: 1, uen: 0, uenmax: 0 } });
     const vortex = await createMonsterAt('energy vortex', 12, 10, NO_MINVENT);
     const defender = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
     requirePlayingGame(game);
     assert.deepEqual(selectAttack(vortex, defender, 1, [], game), [AT_ENGL, AD_DREN, 2, 6]);
 });
 void test('cooldowns replace holds and polymorph touches while preserving harmless sticky touches', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const owlbear = await createMonsterAt('owlbear', 12, 10, NO_MINVENT);
     const engineer = await createMonsterAt('genetic engineer', 13, 10, NO_MINVENT);
     const lichen = await createMonsterAt('lichen', 14, 10, NO_MINVENT);
@@ -76,7 +76,7 @@ void test('cooldowns replace holds and polymorph touches while preserving harmle
     assert.deepEqual(selectAttack(lichen, game.u, 0, [], game), [AT_TUCH, AD_PHYS, 0, 0]);
 });
 void test('cancelled special weapon attacks become physical without changing later cold touches', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wight = await createMonsterAt('barrow wight', 12, 10, NO_MINVENT);
     requirePlayingGame(game);
     assert.equal(selectAttack(wight, game.u, 0, [], game)[1], AD_DRLI);
@@ -87,7 +87,7 @@ void test('cancelled special weapon attacks become physical without changing lat
 });
 for (const artifact of ['Stormbringer', 'Vorpal Blade']) {
     void test(`a wielded ${artifact} replaces a wight's draining weapon attack`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const wight = await createMonsterAt('barrow wight', 12, 10, NO_MINVENT);
         await equipMonsterObject(wight, await artifactObject(artifact), W_WEP);
         requirePlayingGame(game);
@@ -97,7 +97,7 @@ for (const artifact of ['Stormbringer', 'Vorpal Blade']) {
     });
 }
 void test('a petrifying corpse weapon replaces a monster draining weapon attack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wight = await createMonsterAt('barrow wight', 12, 10, NO_MINVENT);
     await equipMonsterObject(wight, await knownObject(LEATHER_GLOVES), W_ARMG);
     await equipMonsterObject(wight, await corpseObject(nameToMonster('cockatrice')), W_WEP);
@@ -105,7 +105,7 @@ void test('a petrifying corpse weapon replaces a monster draining weapon attack'
     assert.equal(selectAttack(wight, game.u, 0, [], game)[1], AD_PHYS);
 });
 void test('a physical second weapon attack protects the first special weapon slot from substitution', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const assassin = await createMonsterAt('Master Assassin', 12, 10, NO_MINVENT);
     assassin.mcan = true;
     await equipMonsterObject(assassin, await artifactObject('Vorpal Blade'), W_WEP);
@@ -114,7 +114,7 @@ void test('a physical second weapon attack protects the first special weapon slo
     assert.equal(selectAttack(assassin, game.u, 1, [], game)[1], AD_PHYS);
 });
 void test('liches replace first-slot cold touches against resistant heroes and equipped monsters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lich = await createMonsterAt('lich', 12, 10, NO_MINVENT);
     const archLich = await createMonsterAt('arch-lich', 13, 10, NO_MINVENT);
     const defender = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
@@ -126,14 +126,14 @@ void test('liches replace first-slot cold touches against resistant heroes and e
     assert.deepEqual(selectAttack(archLich, defender, 0, [], game), [AT_TUCH, AD_PHYS, 3, 6]);
 });
 void test('a cold-resistant shade does not invite a useless physical lich touch', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lich = await createMonsterAt('lich', 12, 10, NO_MINVENT);
     const shade = await createMonsterAt('shade', 13, 10, NO_MINVENT);
     requirePlayingGame(game);
     assert.equal(selectAttack(lich, shade, 0, [], game)[1], AD_COLD);
 });
 void test('home-plane elemental damage doubles only attacks which were not replaced', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const elemental = await createMonsterAt('air elemental', 12, 10, NO_MINVENT);
     requirePlayingGame(game);
     const foreign = selectAttack(elemental, game.u, 0, [], game);
@@ -145,7 +145,7 @@ void test('home-plane elemental damage doubles only attacks which were not repla
     assert.deepEqual(selectAttack(elemental, game.u, 0, [], game), [AT_CLAW, AD_PHYS, 1, 6]);
 });
 void test('hero form attacks use home-elemental bonuses and retain special weapon damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const defender = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
     installPolymorphedHero('air elemental');
     requirePlayingGame(game);
@@ -156,7 +156,7 @@ void test('hero form attacks use home-elemental bonuses and retain special weapo
     assert.equal(selectAttack(game.u, defender, 0, [], game)[1], AD_DRLI);
 });
 void test('the enabled native seduction setting retains the amorous demon seduction bite', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const demon = await createMonsterAt('amorous demon', 12, 10, NO_MINVENT);
     requirePlayingGame(game);
     assert.equal(selectAttack(demon, game.u, 0, [], game)[1], AD_SSEX);

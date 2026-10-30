@@ -48,10 +48,10 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
             carried.worn = true;
             carried.wielded = true;
             if (cansee(x, y))
-                newsym(x, y);
+                await newsym(x, y);
             // C return_from_mtoss() then falls through to its closing redraw.
             if (cansee(x, y))
-                newsym(x, y);
+                await newsym(x, y);
             return;
         }
         let damage = random(2);
@@ -93,7 +93,7 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         }
     }
     else {
-        dropTether?.();
+        await dropTether?.();
         await publishHeardMessage('a loud snap!', publish, state);
     }
     const options = { state: requireInitializedGame(state), publish, random };
@@ -102,7 +102,7 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         const landed = await landFloorObject(weapon, x, y, { ...options, verb: 'drop' });
         if (!landed) {
             if (cansee(x, y))
-                newsym(x, y);
+                await newsym(x, y);
             return;
         }
     }
@@ -117,6 +117,6 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
     if (objectShedsLight(weapon))
         state.vision_full_recalc = 1;
     if (cansee(x, y))
-        newsym(x, y);
+        await newsym(x, y);
 }
 //# sourceMappingURL=monster_returning_weapon.js.map

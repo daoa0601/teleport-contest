@@ -9,7 +9,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('dip offers carried equipment and excludes coins', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     await addInventoryObject(GOLD_PIECE, { quan: 80 });
     const input = resetInputState();
@@ -24,7 +24,7 @@ void test('dip offers carried equipment and excludes coins', async () => {
 });
 for (const inventory of ['only coins', 'nothing']) {
     void test(`dip offers the full inventory when carrying ${inventory}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         if (inventory === 'only coins')
             await addInventoryObject(GOLD_PIECE, { quan: 80 });
         const input = resetInputState();
@@ -40,7 +40,7 @@ for (const inventory of ['only coins', 'nothing']) {
 }
 for (const choice of ['typed coin', 'coin in full inventory', 'coin in another slot']) {
     void test(`dip rejects a ${choice} and cancels without taking a turn`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await addInventoryObject(DAGGER);
         const coins = await addInventoryObject(GOLD_PIECE, { quan: 80 });
         if (choice === 'coin in another slot')

@@ -6,7 +6,7 @@ import { nhgetch, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('cancelling an empty extended command clears its prompt from the tty', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('q\x7f\x7f\x1b');
     await rhack('#'.charCodeAt(0));
@@ -16,7 +16,7 @@ void test('cancelling an empty extended command clears its prompt from the tty',
 });
 for (const erase of ['\b', '\x7f']) {
     void test(`erasing a completed extended command removes its suggestion with ${JSON.stringify(erase)}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const input = resetInputState();
         input.feed(`en${erase}\n\x1b`);
         await rhack('#'.charCodeAt(0));
@@ -25,7 +25,7 @@ for (const erase of ['\b', '\x7f']) {
     });
 }
 void test('extended-command completion does not ignore leading spaces while typing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed(' aut\n');
     await rhack('#'.charCodeAt(0));
@@ -33,7 +33,7 @@ void test('extended-command completion does not ignore leading spaces while typi
     assert.equal(game.context.move, 0);
 });
 void test('unknown extended commands identify the configured initiator key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     game.commandBindings.bindKey('!'.charCodeAt(0), '#');
     input.feed('!bogus\n');
@@ -41,7 +41,7 @@ void test('unknown extended commands identify the configured initiator key', asy
     assert.equal(game._pending_message, '!bogus: unknown extended command.');
 });
 void test('listing extended commands returns to the editor for the next command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.flags.pickup = false;
     const input = resetInputState();
     input.feed('#?\n\x1bautopickup\n');
@@ -50,7 +50,7 @@ void test('listing extended commands returns to the editor for the next command'
     assert.equal(game.context.move, 0);
 });
 void test('cancelling the editor after listing extended commands preserves list recall', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('#?\n\x1b\x1b');
     await rhack(0);
@@ -76,7 +76,7 @@ void test('cancelling the editor after listing extended commands preserves list 
 });
 for (const answer of ['\n', '   \n', '\x1b', 'wait\x1b\x1b']) {
     void test(`an empty or cancelled command-list search returns to the editor (${JSON.stringify(answer)})`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const input = resetInputState();
         input.feed('#?\n:');
         const action = rhack(0);
@@ -94,7 +94,7 @@ for (const answer of ['\n', '   \n', '\x1b', 'wait\x1b\x1b']) {
     });
 }
 void test('a nonempty command-list search redisplays matching command descriptions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('#?\n:');
     const action = rhack(0);
@@ -115,7 +115,7 @@ void test('a nonempty command-list search redisplays matching command descriptio
 });
 for (const mode of ['ordinary', 'explore', 'wizard']) {
     void test(`command-list search uses the ${mode} description of genocided`, async () => {
-        freshObjectRoom({ flags: { debug: mode === 'wizard', explore: mode === 'explore' } });
+        await freshObjectRoom({ flags: { debug: mode === 'wizard', explore: mode === 'explore' } });
         const input = resetInputState();
         input.feed('#?\n:');
         const action = rhack(0);
@@ -140,7 +140,7 @@ for (const mode of ['ordinary', 'explore', 'wizard']) {
     });
 }
 void test('the extmenu option asks for command initials in a menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.flags.extmenu = true;
     const input = resetInputState();
     input.feed('#');

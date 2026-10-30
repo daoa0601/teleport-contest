@@ -104,9 +104,9 @@ export async function fractureRock(
         if (!level) throw new Error('Floor fracture requires a level.');
         if (!visionCellBlocksLight(level, x, y)) {
             vision_note_blocker_change(x, y);
-            vision_recalc(0);
+            await vision_recalc(0);
         }
-        if (cansee(x, y)) newsym(x, y);
+        if (cansee(x, y)) await newsym(x, y);
     }
 }
 

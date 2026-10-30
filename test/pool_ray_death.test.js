@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 for (const breath of [true, false]) {
     void test(`${breath ? 'disintegration breath' : 'a death ray'} asks an explorer whether to die without announcing ordinary HP death`, async () => {
-        freshObjectRoom({ flags: { explore: true } });
+        await freshObjectRoom({ flags: { explore: true } });
         requirePlayingGame(game);
         const cloak = breath ? await addInventoryObject(CLOAK_OF_DISPLACEMENT) : null;
         if (cloak)

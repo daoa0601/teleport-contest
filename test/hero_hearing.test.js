@@ -13,7 +13,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('new timed deafness commits before its awaited message boundary', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await pline('You carefully examine the old inscriptions covering this long corridor.');
     const input = resetInputState();
@@ -31,7 +31,7 @@ void test('new timed deafness commits before its awaited message boundary', asyn
     assert.match(game._pending_message, /unable to hear anything/);
 });
 void test('extending an active hearing timeout is silent', async () => {
-    freshObjectRoom({ hero: { deafTurns: 10 } });
+    await freshObjectRoom({ hero: { deafTurns: 10 } });
     requireFixtureGame(game);
     syncDeafness();
     await makeDeaf(40);
@@ -39,7 +39,7 @@ void test('extending an active hearing timeout is silent', async () => {
     assert.ok(!game._pending_message);
 });
 void test('clearing timed deafness restores hearing and announces it', async () => {
-    freshObjectRoom({ hero: { deafTurns: 10 } });
+    await freshObjectRoom({ hero: { deafTurns: 10 } });
     requireFixtureGame(game);
     syncDeafness();
     await makeDeaf(0);
@@ -49,7 +49,7 @@ void test('clearing timed deafness restores hearing and announces it', async () 
 });
 for (const name of ['permanent', 'equipment']) {
     void test(`${name} deafness remains when the timed component is cured`, async () => {
-        freshObjectRoom({ hero: { deafTurns: 10 } });
+        await freshObjectRoom({ hero: { deafTurns: 10 } });
         requireFixtureGame(game);
         if (name === 'permanent')
             game.u.uroleplay.deaf = true;
@@ -63,7 +63,7 @@ for (const name of ['permanent', 'equipment']) {
     });
 }
 void test('silent healing clears timed deafness without a line', async () => {
-    freshObjectRoom({ hero: { deafTurns: 10 } });
+    await freshObjectRoom({ hero: { deafTurns: 10 } });
     requireFixtureGame(game);
     syncDeafness();
     await makeDeaf(0, { talk: false });
@@ -71,7 +71,7 @@ void test('silent healing clears timed deafness without a line', async () => {
     assert.ok(!game._pending_message);
 });
 void test('an unaware hero gains and loses timed deafness silently', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await putHeroToSleep(8);
     await makeDeaf(30);
@@ -81,14 +81,14 @@ void test('an unaware hero gains and loses timed deafness silently', async () =>
     assert.ok(!game._pending_message);
 });
 void test('hearing timeouts clamp to the native duration limit', async () => {
-    freshObjectRoom({ hero: { deafTurns: 10 } });
+    await freshObjectRoom({ hero: { deafTurns: 10 } });
     requireFixtureGame(game);
     await makeDeaf(TIMEOUT + 30);
     assert.equal(game.u.deafTurns, TIMEOUT);
     assert.equal(heroIsDeaf(), true);
 });
 void test('wizard deafness feedback finishes before its native map redraw', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const input = resetInputState();
     const action = runExtendedCommand('wizintrinsic', 'j\n');

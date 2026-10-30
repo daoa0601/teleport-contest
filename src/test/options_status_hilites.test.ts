@@ -141,7 +141,7 @@ async function statusHiliteDurationRow(): Promise<string> {
 
 for (const key of ['X', '~']) {
     void test(`rebinding '${key}' reports an empty required parameter before any binding confirmation`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         if (key === '~') game.commandBindings.remove(key.charCodeAt(0));
         const [input, command] = openFullMenu();
         await input.waitUntilBlocked();
@@ -169,7 +169,7 @@ for (const key of ['X', '~']) {
 
 for (const name of ['silent', 'perm_invent']) {
     void test(`the fuzzer accepts toggle(${name}) without changing it or printing a message`, async () => {
-        freshObjectRoom({ flags: { silent: true }, iflags: { debug_fuzzer: true, perm_invent: false } });
+        await freshObjectRoom({ flags: { silent: true }, iflags: { debug_fuzzer: true, perm_invent: false } });
         assert.equal(await toggleBooleanOptionPrefix(name), true);
         assert.equal(game.flags.silent, true);
         assert.equal(game.iflags.perm_invent, false);
@@ -182,7 +182,7 @@ void test('a fuzzer deletion keeps the menu listing count when enabling status h
         fld: BL_HP, set: true, anytype: 'int' as const, value: 0,
         behavior: BL_TH_ALWAYS_HILITE, textmatch: '', rel: NO_LTEQGT, coloridx: 1 | (HL_NONE << 8),
     }] : []);
-    freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 0, debug_fuzzer: true } });
+    await freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 0, debug_fuzzer: true } });
     // With the config-format row present, 's' is hitpoints. Select its
     // only rule and the explicit remove action, then accept that menu.
     bindInputGate(new HiliteFuzzerInput('saX\n'));
@@ -211,7 +211,7 @@ class HiliteFuzzerInput extends InputGate {
 }
 
 void test('status highlight rules add, show and count a hitpoints threshold', async () => {
-    freshObjectRoom({ hero: { uhp: 50, uhpmax: 60 } });
+    await freshObjectRoom({ hero: { uhp: 50, uhpmax: 60 } });
     requirePlayingGame(game);
     await bot();
     const [input, command] = openSimpleMenu();
@@ -270,7 +270,7 @@ void test('status highlight rules add, show and count a hitpoints threshold', as
 });
 
 void test('status highlight percentage rules keep their threshold operator', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
@@ -292,7 +292,7 @@ void test('status highlight percentage rules keep their threshold operator', asy
 });
 
 void test('status highlight value entry rejects bad numbers and ranges', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views } = await runScript(input, command, [
@@ -324,7 +324,7 @@ void test('status highlight value entry rejects bad numbers and ranges', async (
 });
 
 void test('status highlight condition rules group the chosen conditions', async () => {
-    freshObjectRoom({ hero: { blindTurns: 5 } });
+    await freshObjectRoom({ hero: { blindTurns: 5 } });
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
@@ -356,7 +356,7 @@ void test('status highlight condition rules group the chosen conditions', async 
 });
 
 void test('the bind keys row binds a command and lists the change', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openFullMenu();
     await input.waitUntilBlocked();
@@ -392,7 +392,7 @@ void test('the bind keys row binds a command and lists the change', async () => 
 });
 
 void test('#toggle without a parameter points at the full options command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     await runExtendedCommand('toggle');
@@ -402,7 +402,7 @@ void test('#toggle without a parameter points at the full options command', asyn
 });
 
 void test('toggle with a parameter flips every matching boolean', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
 
     assert.equal(await toggleBooleanOptionPrefix('verbose'), true);
@@ -415,7 +415,7 @@ void test('toggle with a parameter flips every matching boolean', async () => {
 });
 
 void test('the hilite field table follows initblstats order, not the enum', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views } = await runScript(input, command, [
@@ -437,7 +437,7 @@ void test('the hilite field table follows initblstats order, not the enum', asyn
 });
 
 void test("a sixth bad value is still prompted; the seventh draws the line", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
@@ -464,7 +464,7 @@ void test("a sixth bad value is still prompted; the seventh draws the line", asy
 });
 
 void test('a condition rule the gather skips leaves "No current hilites"', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views, prose } = await runScript(input, command, [
@@ -491,7 +491,7 @@ void test('a condition rule the gather skips leaves "No current hilites"', async
 });
 
 void test('toggle skips wizard-only booleans and reports uncompiled idlecheckpoint', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     // menu_tab_sep and montelecontrol are set_wizonly: no match at all.
@@ -508,7 +508,7 @@ void test('toggle skips wizard-only booleans and reports uncompiled idlecheckpoi
 });
 
 void test('idlecheckpoint quiets later toggles until the simple options menu closes', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
 
     await toggleBooleanOptionPrefix('idlecheckpoint');
@@ -524,7 +524,7 @@ void test('idlecheckpoint quiets later toggles until the simple options menu clo
 });
 
 void test('multi-match toggles update the status before each toggle message pauses', async () => {
-    freshObjectRoom({ hero: { uexp: 123 }, flags: { showexp: false, showvers: false } });
+    await freshObjectRoom({ hero: { uexp: 123 }, flags: { showexp: false, showvers: false } });
     applyNethackrc('MSGTYPE=stop "option toggled"');
     await bot();
     const input = resetInputState();
@@ -549,7 +549,7 @@ void test('multi-match toggles update the status before each toggle message paus
 });
 
 void test('a quiet status toggle updates the status before returning', async () => {
-    freshObjectRoom({ flags: { time: false } });
+    await freshObjectRoom({ flags: { time: false } });
     await bot();
     await toggleBooleanOptionPrefix('idlecheckpoint');
 
@@ -560,7 +560,7 @@ void test('a quiet status toggle updates the status before returning', async () 
 });
 
 void test('a light-option toggle restores vision before its confirmation pauses', async () => {
-    freshObjectRoom({ recalculateVision: false });
+    await freshObjectRoom({ recalculateVision: false });
     requirePlayingGame(game);
     applyNethackrc('MSGTYPE=stop "option toggled"');
     assert.equal(cansee(game.u.ux + 1, game.u.uy), false);
@@ -581,7 +581,7 @@ void test('a light-option toggle restores vision before its confirmation pauses'
 });
 
 void test('the status hilite menu returns after one field visit under the fuzzer', async () => {
-    freshObjectRoom({ gameplaySeed: 2n, iflags: { debug_fuzzer: true } });
+    await freshObjectRoom({ gameplaySeed: 2n, iflags: { debug_fuzzer: true } });
     const input = resetInputState();
     let visitedField = false;
     input.beforeRead = () => {
@@ -600,7 +600,7 @@ void test('the status hilite menu returns after one field visit under the fuzzer
 });
 
 void test('#toggle also flips the window-capability booleans', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     // Direct calls page their own toggle messages; acknowledge them.
     const input = resetInputState();
@@ -626,7 +626,7 @@ void test('#toggle also flips the window-capability booleans', async () => {
 });
 
 void test('#toggle refuses to enable permanent inventory on tty without a message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     assert.equal(await toggleBooleanOptionPrefix('perm_invent'), false);
@@ -636,7 +636,7 @@ void test('#toggle refuses to enable permanent inventory on tty without a messag
 
 for (const mode of ['ascii_map', 'tiled_map']) {
     void test(`#toggle(${mode}) switches map modes and pages its message before redrawing`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         const pagedMessages: string[] = [];
@@ -676,7 +676,7 @@ for (const mode of ['ascii_map', 'tiled_map']) {
 
 for (const keyfirst of [true, false]) {
     void test(`rebinding ${keyfirst ? 'a key' : 'a command'} reads the key without adding it to the prompt history`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const [input, command] = openFullMenu();
         await input.waitUntilBlocked();
@@ -711,7 +711,7 @@ for (const keyfirst of [true, false]) {
 }
 
 void test('typed leading blanks survive into the threshold value rows', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const [input, command] = openSimpleMenu();
     const { views } = await runScript(input, command, [
@@ -756,7 +756,7 @@ function hitpointCell() {
 }
 
 void test('live status duration reassessment applies a new rule to unchanged HP', async () => {
-    freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
+    await freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
     await bot();
     const original = hitpointCell();
     assert.equal(original.color, NO_COLOR);
@@ -775,7 +775,7 @@ void test('live status duration reassessment applies a new rule to unchanged HP'
 });
 
 void test('full-screen options preserve a temporary HP highlight until duration reassessment', async () => {
-    freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
+    await freshObjectRoom({ flags: { menu_overlay: false, cmdassist: false } });
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=hilite_status:hp/always/blue/down/red');
     await bot();

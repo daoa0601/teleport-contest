@@ -165,8 +165,8 @@ export async function dropObjectAtHero(object, { impact = false, state = game, p
         }
         const stacked = await stack_object(object, state);
         if (heroIsBlind(state) && propertyIsActive('levitation', state))
-            map_object(stacked ?? object, false);
-        newsym(hero.ux, hero.uy); // remap location under self
+            await map_object(stacked ?? object, false);
+        await newsym(hero.ux, hero.uy); // remap location under self
     }
     await reportHeroEncumbrance(state, publish);
     return object;

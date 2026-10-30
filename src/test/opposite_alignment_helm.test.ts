@@ -18,7 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
 
 void test('an opposite-alignment helm changes alignment, confuses and curses, then restores base alignment on removal', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1], ublessed: 3 } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1], ublessed: 3 } });
     const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { known: false, typeKnown: false });
 
     const messages = await dress('W', helmet);
@@ -40,7 +40,7 @@ void test('an opposite-alignment helm changes alignment, confuses and curses, th
 });
 
 void test('a fatal Excalibur blast stops helmet wear before cursing it', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight',
         hero: { uhp: 1, uhpmax: 1, ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1] },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
@@ -62,7 +62,7 @@ void test('a fatal Excalibur blast stops helmet wear before cursing it', async (
 });
 
 void test('a fatal alignment blast during helmet removal leaves the helmet worn', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1] },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
     });
@@ -88,7 +88,7 @@ void test('a fatal alignment blast during helmet removal leaves the helmet worn'
 
 for (const id of [2, 3]) {
     void test(`a neutral hero's opposite alignment follows helm identity parity ${id % 2}`, async () => {
-        freshObjectRoom({ hero: { ualign: { type: 0, record: 0, abuse: 0 }, ualignbase: [0, 0] } });
+        await freshObjectRoom({ hero: { ualign: { type: 0, record: 0, abuse: 0 }, ualignbase: [0, 0] } });
         const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { o_id: id, known: false });
 
         await dress('W', helmet);
@@ -99,7 +99,7 @@ for (const id of [2, 3]) {
 }
 
 void test('an opposite-alignment helm summons a hostile fury when alignment abuse exceeds its chance bound', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 0, abuse: 100 }, ualignbase: [1, 1] } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 0, abuse: 100 }, ualignbase: [1, 1] } });
     const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { known: false });
 
     await dress('W', helmet);
@@ -112,7 +112,7 @@ void test('an opposite-alignment helm summons a hostile fury when alignment abus
 });
 
 void test('an opposite-alignment helm on the Astral Plane summons the remaining furies through extinction', async () => {
-    freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 1 }, ualign: { type: 1, record: 0, abuse: 0 }, ualignbase: [1, 1] } });
+    await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 1 }, ualign: { type: 1, record: 0, abuse: 0 }, ualignbase: [1, 1] } });
     game.astral_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
     const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { known: false });
 

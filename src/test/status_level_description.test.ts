@@ -7,7 +7,7 @@ import { requireScreenRow } from './support/screen.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 
 void test('Fort Ludios uses its dungeon name instead of its numerical depth', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Fort Ludios', depth_start: 20 })];
     game.knox_level = createSpecialLevel({ dnum: 0, dlevel: 8 });
@@ -19,7 +19,7 @@ void test('Fort Ludios uses its dungeon name instead of its numerical depth', as
 });
 
 void test('quest home numbering follows the quest branch identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.quest_dnum = 0;
     game.dungeons = [createDungeon({ dname: 'Renamed Quest', depth_start: 15 })];
 

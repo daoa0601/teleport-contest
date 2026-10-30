@@ -58,7 +58,7 @@ export async function dryFountainAt(x: number, y: number, {
     location.flags = 0;
     location.looted = 0;
     location.blessedftn = 0;
-    newsym(x, y);
+    await newsym(x, y);
     if (causedByHero && inTown(level, x, y))
         await angerWatchGuards(false, { publish });
     return true;
@@ -102,7 +102,7 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
     const ux = state.u.ux;
     const uy = state.u.uy;
     let madePool = 0;
-    for (const { x, y } of clearAreaCells(ux, uy, 7)) {
+    for (const { x, y } of await clearAreaCells(ux, uy, 7)) {
         if (((x + y) % 2) || (x === ux && y === uy)
             || rn2(1 + distmin(ux, uy, x, y))) continue;
         const location = state.level?.at?.(x, y);
@@ -132,7 +132,7 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
                 monsterMoving: !!state.context.mon_moving,
             });
         } else {
-            newsym(x, y);
+            await newsym(x, y);
         }
     }
     if (!madePool) {

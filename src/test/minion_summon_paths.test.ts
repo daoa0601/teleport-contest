@@ -44,7 +44,7 @@ function genocideDemons({ lordsOnly = false } = {}): void {
 }
 
 void test('a neutral angel summons renegade neutral angels in one flash of light', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const summoner = await createMonsterAt(PM_ANGEL, 11, 10, MM_EMIN | NO_MINVENT);
     finishSpecialRoamer(summoner, 0, true);
@@ -69,7 +69,7 @@ void test('a neutral angel summons renegade neutral angels in one flash of light
 });
 
 void test('Demonbane leaves a demon summoner puzzled and alone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await setPrimaryWeapon(await artifactObject('Demonbane'));
     const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
@@ -88,7 +88,7 @@ void test('Demonbane leaves a demon summoner puzzled and alone', async () => {
 // 1/20 roll; with every lord and prince gone, those fall back to ndemon().
 void test('a demon lord whose peers are gone falls back to ordinary demons', async () => {
     const summonWithSeed = async (seed: bigint, genocided: boolean) => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const lord = await createMonsterAt('Yeenoghu', 11, 10, NO_MINVENT);
         lord.msleeping = 0;
@@ -117,7 +117,7 @@ void test('a demon lord whose peers are gone falls back to ordinary demons', asy
 });
 
 void test('a demon lord summons nothing once every demon is genocided', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lord = await createMonsterAt('Yeenoghu', 11, 10, NO_MINVENT);
     lord.msleeping = 0;
@@ -138,7 +138,7 @@ for (const { alignment, deity, description } of [
     { alignment: -128, deity: 'Moloch', description: 'unaligned' },
 ] satisfies { alignment: number; deity: string; description: string }[]) {
     void test(`an angry ${description} god sends a hostile servant that denounces the hero`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const log = absorbMessages();
         initRng(7n);

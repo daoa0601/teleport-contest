@@ -32,7 +32,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('a hero filling shop water pays for the buried pile before hearing the splash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { shopkeeper } = await createStaffedShop();
@@ -64,7 +64,7 @@ void test('a hero filling shop water pays for the buried pile before hearing the
 });
 
 void test('a natural thaw filling shop water buries goods without charging the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { shopkeeper } = await createStaffedShop();
@@ -90,7 +90,7 @@ void test('a natural thaw filling shop water buries goods without charging the h
 });
 
 void test('burial removes cover and engravings, even on an empty square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await floorObject(DAGGER, 12, 10);
     const spider = await createMonsterAt('cave spider', 12, 10);
@@ -107,7 +107,7 @@ void test('burial removes cover and engravings, even on an empty square', async 
 });
 
 void test('an eel cannot stay hidden over a dry raised drawbridge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const drawbridge = requireGameLevel().requireAt(12, 10);
     drawbridge.typ = DRAWBRIDGE_UP;
@@ -115,13 +115,13 @@ void test('an eel cannot stay hidden over a dry raised drawbridge', async () => 
     const eel = await createMonsterAt('giant eel', 12, 10);
     eel.mundetected = 1;
 
-    maybeUnhideAt(12, 10);
+    await maybeUnhideAt(12, 10);
 
     assert.equal(!!eel.mundetected, false);
 });
 
 void test('burying the attached ball deletes its chain and anchors a levitating hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { ux: x, uy: y } = game.u;
@@ -155,7 +155,7 @@ void test('burying the attached ball deletes its chain and anchors a levitating 
 });
 
 void test('burying a floor leash releases the animal and the leash attachment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10);
     const leash = await floorObject(LEASH, 12, 10);
@@ -170,7 +170,7 @@ void test('burying a floor leash releases the animal and the leash attachment', 
 });
 
 void test('an absorbed billed rock retains its debt instead of vanishing from the bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { shopkeeper } = await createStaffedShop();
@@ -188,7 +188,7 @@ void test('an absorbed billed rock retains its debt instead of vanishing from th
 });
 
 void test('a protected tool and attached chain stay above ground while the rest of a shop pile is buried', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     await createStaffedShop();
@@ -215,7 +215,7 @@ void test('a protected tool and attached chain stay above ground while the rest 
 });
 
 void test('shop credit pays for burial without a second merchandise debt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { shopkeeper } = await createStaffedShop();
@@ -238,7 +238,7 @@ void test('shop credit pays for burial without a second merchandise debt', async
 });
 
 void test("burying an angry shopkeeper's goods records robbery rather than peaceful debt", async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     pushKeys(' '.repeat(100));
     const { shopkeeper } = await createStaffedShop();
@@ -261,7 +261,7 @@ void test("burying an angry shopkeeper's goods records robbery rather than peace
 
 for (const operation of ['bury', 'delete']) {
     void test(`${operation} releases the leash of a pony mounted through the ride command`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             role: 'knight',
             hero: { ulevel: 30 },
             flags: { tips: false, verbose: false, pickup: false },

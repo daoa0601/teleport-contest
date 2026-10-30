@@ -35,7 +35,7 @@ async function passageRoom(species, terrain = DOOR, mask = D_CLOSED) {
     location.typ = terrain;
     location.doormask = mask;
     vision_note_blocker_change(12, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     return { level, monster, location, input };
 }
@@ -78,7 +78,7 @@ for (const deaf of [false, true]) {
         game.blind = true;
         game.u.blindTurns = 10;
         game.u.deafTurns = deaf ? 10 : 0;
-        vision_recalc(0);
+        await vision_recalc(0);
         await resolveMonsterDoorPassage(monster, game, { ...doorOptions(monster), wasDoorVisible: false });
         await flush_screen(1);
         assert.equal(location.doormask, D_ISOPEN);

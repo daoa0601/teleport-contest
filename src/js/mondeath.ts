@@ -348,9 +348,9 @@ async function reviveShiftedVampire(
     });
     if (door.heroDied) return door;
     if (state === game) {
-        newsym(x, y);
+        await newsym(x, y);
         if (monster.mx !== x || monster.my !== y)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
     }
     return {
         ...door,

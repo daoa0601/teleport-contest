@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const protection of ['none', 'free action', 'cancelled attacker', 'already helpless']) {
     void test(`a cube touch deals damage with ${protection}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const cube = await createMonsterAt('gelatinous cube', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         cube.mux = game.u.ux;

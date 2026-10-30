@@ -13,7 +13,7 @@ export async function affectMonsterSpeed(monster, kind, source, state, options) 
     const resisted = monsterResistsEffect(monster, attackLevel, options.random);
     let observed = false;
     if (!resisted) {
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         const speed = adjustMonsterSpeed(monster, kind === 'speed' ? 1 : -1);
         checkMonsterGearNextTurn(monster);
         if (speed.changed && speed.canDescribe && canSeeMonster(monster)) {

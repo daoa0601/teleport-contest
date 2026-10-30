@@ -76,7 +76,7 @@ export async function drinkSink({ state = game }: { state?: GameState } = {}) {
             placeCreatedObject(await mkobj(RING_CLASS, true), hero.ux, hero.uy, state);
             location.looted = (location.looted ?? 0) | S_LRING;
             exerciseWisdom(true, state);
-            newsym(hero.ux, hero.uy);
+            await newsym(hero.ux, hero.uy);
         } else await pline(`Some dirty ${displayLiquidName('water', state)} backs up in the drain.`);
         break;
     case 6:

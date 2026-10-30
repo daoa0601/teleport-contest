@@ -11,7 +11,7 @@ void test('ordinary Angels can be roaming minions even without inventory', async
     let roamers = 0;
     let ordinary = 0;
     for (let seed = 1; seed <= 24; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         requirePlayingGame(game);
 
         const angel = await makemonAt(MONSTER_NAME.indexOf('Angel'), 11, 10, MM_NOMSG | NO_MINVENT);
@@ -34,7 +34,7 @@ void test('ordinary Angels can be roaming minions even without inventory', async
 });
 
 void test('the caller owns an Angel minion alignment requested with MM_EMIN', async () => {
-    freshObjectRoom({ gameplaySeed: 1 });
+    await freshObjectRoom({ gameplaySeed: 1 });
 
     const angel = await makemonAt(MONSTER_NAME.indexOf('Angel'), 11, 10, MM_NOMSG | NO_MINVENT | MM_EMIN);
 
@@ -46,7 +46,7 @@ void test('MM_ANGRY makes a roaming Angel hostile only to a co-aligned hero', as
     let peaceful = 0;
     let hostile = 0;
     for (let seed = 1; seed <= 24; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         requirePlayingGame(game);
 
         const angel = await makemonAt(MONSTER_NAME.indexOf('Angel'), 11, 10,
@@ -70,7 +70,7 @@ void test('MM_ANGRY makes a roaming Angel hostile only to a co-aligned hero', as
 
 for (const inMklev of [false, true]) {
     void test(`a monster requested at the hero's square ${inMklev ? 'during level creation leaves its idea of the hero unset' : 'locates the hero'}`, async () => {
-        freshObjectRoom({ gameplaySeed: 3 });
+        await freshObjectRoom({ gameplaySeed: 3 });
         requirePlayingGame(game);
         game.in_mklev = inMklev;
 

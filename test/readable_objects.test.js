@@ -15,8 +15,8 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
 const GOLD_PIECE = OBJECT_NAMES.indexOf('gold piece');
-function readingRoom(options = {}) {
-    freshObjectRoom({ ...options, flags: { verbose: true, ...options.flags } });
+async function readingRoom(options = {}) {
+    await freshObjectRoom({ ...options, flags: { verbose: true, ...options.flags } });
     requirePlayingGame(game);
     const input = resetInputState();
     const messages = [];
@@ -38,7 +38,7 @@ async function readingOutput(messages) {
     return [...messages, game._pending_message || ''].join('\n');
 }
 void test('reading a fortune cookie consumes one without granting nutrition and records literacy once', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const cookie = await addInventoryObject(FORTUNE_COOKIE, { quan: 2 });
     const hunger = game.u.uhunger;
@@ -52,7 +52,7 @@ void test('reading a fortune cookie consumes one without granting nutrition and 
     assert.match(await readingOutput(messages), /break up the cookie/);
 });
 void test('a blind hero breaks a cookie without becoming literate', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const cookie = await addInventoryObject(FORTUNE_COOKIE);
     setHeroBlindnessTurns(10);
@@ -64,7 +64,7 @@ void test('a blind hero breaks a cookie without becoming literate', async () => 
 });
 for (const type of [T_SHIRT, ALCHEMY_SMOCK]) {
     void test(`reading an eroded garment of type ${type} retains the garment and counts literacy`, async () => {
-        const { messages } = readingRoom();
+        const { messages } = await readingRoom();
         requirePlayingGame(game);
         game.ubirthday = 12345;
         const garment = await addInventoryObject(type, { oeroded: 3 });
@@ -79,7 +79,7 @@ for (const type of [T_SHIRT, ALCHEMY_SMOCK]) {
     });
 }
 void test('a suit covers a worn T-shirt but not a shirt held in the pack', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const worn = await addInventoryObject(T_SHIRT);
     await wearHeroArmor(worn);
@@ -94,7 +94,7 @@ void test('a suit covers a worn T-shirt but not a shirt held in the pack', async
     assert.equal(game.u.uconduct.literate, 1);
 });
 void test('examining a Hawaiian shirt describes its design without breaking illiteracy', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const shirt = await addInventoryObject(HAWAIIAN_SHIRT);
     game.ubirthday = 12345;
@@ -104,7 +104,7 @@ void test('examining a Hawaiian shirt describes its design without breaking illi
     assert.match(await readingOutput(messages), /The design features .+ on an? .+ background\./);
 });
 void test('blindness blocks ordinary cloth writing without using a turn', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const shirt = await addInventoryObject(T_SHIRT);
     setHeroBlindnessTurns(10);
@@ -114,7 +114,7 @@ void test('blindness blocks ordinary cloth writing without using a turn', async 
     assert.match(await readingOutput(messages), /can't feel any Braille writing/);
 });
 void test('a tourist can feel a conical hat inscription without formally identifying its type', async () => {
-    const { input, messages } = readingRoom({ role: 'tourist' });
+    const { input, messages } = await readingRoom({ role: 'tourist' });
     requirePlayingGame(game);
     let hat;
     do {
@@ -141,7 +141,7 @@ void test('a tourist can feel a conical hat inscription without formally identif
     assert.match(await readingOutput(messages), /feel lettering.+WIZZARD/);
 });
 void test('an unmarked tourist hat has nothing to read', async () => {
-    const { messages } = readingRoom({ role: 'tourist' });
+    const { messages } = await readingRoom({ role: 'tourist' });
     requirePlayingGame(game);
     let hat;
     do {
@@ -153,7 +153,7 @@ void test('an unmarked tourist hat has nothing to read', async () => {
     assert.match(await readingOutput(messages), /can't find anything to read on this/);
 });
 void test('other roles cannot read tourist-only conical-hat inscriptions', async () => {
-    const { messages } = readingRoom({ role: 'wizard' });
+    const { messages } = await readingRoom({ role: 'wizard' });
     requirePlayingGame(game);
     const hat = await addInventoryObject(CORNUTHAUM);
     const result = await readOrdinaryObject(hat);
@@ -162,7 +162,7 @@ void test('other roles cannot read tourist-only conical-hat inscriptions', async
     assert.match(await readingOutput(messages), /silly thing to read/);
 });
 void test('blind credit-card reading exposes its embossed number and counts literacy', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const card = await addInventoryObject(CREDIT_CARD);
     setHeroBlindnessTurns(10);
@@ -175,7 +175,7 @@ void test('blind credit-card reading exposes its embossed number and counts lite
     assert.doesNotMatch(output, /Card|Bank/);
 });
 void test('an artifact credit card bears the platinum label', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     const card = await addInventoryItem(await artifactObject('The Platinum Yendorian Express Card'));
@@ -184,7 +184,7 @@ void test('an artifact credit card bears the platinum label', async () => {
 });
 for (const blind of [false, true]) {
     void test(`reading a coin ${blind ? 'by touch' : 'by sight'} counts literacy without spending it`, async () => {
-        const { messages } = readingRoom();
+        const { messages } = await readingRoom();
         requirePlayingGame(game);
         const coins = await addInventoryObject(GOLD_PIECE, { quan: 12 });
         if (blind)
@@ -197,7 +197,7 @@ for (const blind of [false, true]) {
     });
 }
 void test('the Orb of Fate signature can be read by touch', async () => {
-    const { messages } = readingRoom({ role: 'valkyrie' });
+    const { messages } = await readingRoom({ role: 'valkyrie' });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     const orb = await addInventoryItem(await artifactObject('The Orb of Fate'));
@@ -207,7 +207,7 @@ void test('the Orb of Fate signature can be read by touch', async () => {
     assert.match(await readingOutput(messages), /feel the engraved signature.+Odin/s);
 });
 void test('a magic marker carries a real species-colored ink label', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const marker = await addInventoryObject(MAGIC_MARKER);
     const charges = marker.spe;
@@ -218,7 +218,7 @@ void test('a magic marker carries a real species-colored ink label', async () =>
     assert.match(await readingOutput(messages), /Magic Marker\(TM\) .+ Red Ink Marker Pen\.  Water Soluble/);
 });
 void test('blank candy wrappers and unlabeled grease cost no time or literacy', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const candy = await addInventoryObject(CANDY_BAR, { spe: 0 });
     const grease = await addInventoryObject(CAN_OF_GREASE);
@@ -228,7 +228,7 @@ void test('blank candy wrappers and unlabeled grease cost no time or literacy', 
     assert.match(await readingOutput(messages), /wrapper is blank/);
 });
 void test('a printed candy wrapper can be read without eating the bar', async () => {
-    const { messages } = readingRoom();
+    const { messages } = await readingRoom();
     requirePlayingGame(game);
     const candy = await addInventoryObject(CANDY_BAR);
     const result = await readOrdinaryObject(candy);
@@ -238,7 +238,7 @@ void test('a printed candy wrapper can be read without eating the bar', async ()
     assert.match(await readingOutput(messages), /The wrapper reads: ".+"\./);
 });
 void test('scrolls and spellbooks are left to the ordinary read command owner', async () => {
-    readingRoom();
+    await readingRoom();
     requirePlayingGame(game);
     for (const type of [SCR_BLANK_PAPER, SPE_FORCE_BOLT]) {
         const object = await addInventoryObject(type);

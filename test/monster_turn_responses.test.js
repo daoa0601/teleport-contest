@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 for (const deaf of [false, true]) {
     void test(`an adjacent shrieker wakes distant monsters when the hero is ${deaf ? 'deaf' : 'hearing'}`, async () => {
-        freshObjectRoom({ left: 8, right: 25, hero: { deaf } });
+        await freshObjectRoom({ left: 8, right: 25, hero: { deaf } });
         requirePlayingGame(game);
         const sleeper = await createMonsterAt('goblin', 24, 10, MM_ANGRY | NO_MINVENT);
         sleeper.msleeping = 1;
@@ -28,7 +28,7 @@ for (const deaf of [false, true]) {
     });
 }
 void test('an active erinys alerts distant monsters when she can see the hero', async () => {
-    freshObjectRoom({ left: 8, right: 25, hero: { uhp: 200, uhpmax: 200 } });
+    await freshObjectRoom({ left: 8, right: 25, hero: { uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     const sleeper = await createMonsterAt('goblin', 24, 10, MM_ANGRY | NO_MINVENT);
     sleeper.msleeping = 1;

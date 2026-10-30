@@ -15,7 +15,7 @@ const warnings = [
 ];
 for (const [remaining, message] of warnings) {
     void test(`Warning senses ice with ${remaining} turns until it melts`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(11, 10).typ = ICE;
         grantIntrinsicProperty('warning', 'outside');
         scheduleLevelTimer(11, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves + remaining);
@@ -25,7 +25,7 @@ for (const [remaining, message] of warnings) {
 }
 for (const warning of [false, true]) {
     void test(`ice that will not melt soon stays quiet ${warning ? 'with' : 'without'} Warning`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(11, 10).typ = ICE;
         if (warning)
             grantIntrinsicProperty('warning', 'outside');

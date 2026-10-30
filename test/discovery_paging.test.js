@@ -8,7 +8,7 @@ import { objectClassForType, recordObjectCall, recordObjectKnowledge } from '../
 import { applyNethackrc } from '../js/options.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a long discovery call name wraps without losing its unidentified appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectKnowledge(POT_HEALING);
     recordObjectCall(POT_HEALING, 'a very familiar remedy which I keep in reserve for emergencies');
     const input = resetInputState();
@@ -29,7 +29,7 @@ void test('a long discovery call name wraps without losing its unidentified appe
     }
 });
 void test('sortloot discovers later classes only after the earlier text pages are dismissed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=sortdiscoveries:s');
     for (let type = 18; type < OBJECT_DESCRIPTIONS.length; type++)
         if (objectClassForType(type) === 3 && OBJECT_DESCRIPTIONS[type])

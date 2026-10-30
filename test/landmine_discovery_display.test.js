@@ -14,11 +14,11 @@ for (const detonates of [false, true]) {
         });
         requirePlayingGame(game);
         placeMonsterAt(monster, 12, 10);
-        newsym(11, 10);
-        newsym(12, 10);
+        await newsym(11, 10);
+        await newsym(12, 10);
         await flush_screen(1);
         placeMonsterAt(monster, 11, 10);
-        newsym(12, 10);
+        await newsym(12, 10);
         const shown = [];
         const random = (limit) => limit === 3 ? (detonates ? 0 : 1) : limit - 1;
         const publish = async (message) => {
@@ -43,7 +43,7 @@ void test('a grounded monster is drawn before announcing its land mine explosion
     });
     requirePlayingGame(game);
     placeMonsterAt(monster, 12, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     placeMonsterAt(monster, 11, 10);
     let shownAtExplosion;

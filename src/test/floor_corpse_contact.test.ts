@@ -45,7 +45,7 @@ async function dangerousPile({ artifact = true, quantity = 1 } = {}) {
 
 for (const pile of ['single', 'multiple', 'count only'] as const) {
     void test(`blind inspection of a ${pile} corpse pile can petrify the hero`, async () => {
-        freshObjectRoom({ flags: { pickup: false, pile_limit: 1 } });
+        await freshObjectRoom({ flags: { pickup: false, pile_limit: 1 } });
         requireFixtureGame(game);
         await dangerousPile({ artifact: pile !== 'single' });
         const engraving = makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth');
@@ -66,7 +66,7 @@ for (const pile of ['single', 'multiple', 'count only'] as const) {
 
 for (const protectedBy of ['sight', 'gloves', 'stone golem form'] as const) {
     void test(`${protectedBy} allows inspection beyond a cockatrice corpse`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         await dangerousPile();
         pushKeys(' '.repeat(100));
@@ -85,7 +85,7 @@ for (const protectedBy of ['sight', 'gloves', 'stone golem form'] as const) {
 }
 
 void test('life saving survives tactile contact but does not resume the interrupted pile list', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { magicbane } = await dangerousPile();
     const engraving = makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth');
@@ -107,7 +107,7 @@ void test('life saving survives tactile contact but does not resume the interrup
 });
 
 void test('a flesh golem turns into a stone golem after feeling the corpse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await dangerousPile();
     pushKeys(' '.repeat(100));
@@ -122,7 +122,7 @@ void test('a flesh golem turns into a stone golem after feeling the corpse', asy
 });
 
 void test('count-only corpse contact neither inspects beatitude nor reports a singular killer for a stack', async () => {
-    freshObjectRoom({ role: 'priest', flags: { pickup: false, pile_limit: 1 } });
+    await freshObjectRoom({ role: 'priest', flags: { pickup: false, pile_limit: 1 } });
     requireFixtureGame(game);
     const { corpse } = await dangerousPile({ artifact: false, quantity: 2 });
     setHeroBlindnessTurns(20);
@@ -136,7 +136,7 @@ void test('count-only corpse contact neither inspects beatitude nor reports a si
 });
 
 void test('fatal tactile contact stops the no-pickup-form feedback tail', async () => {
-    freshObjectRoom({ flags: { pickup: false } });
+    await freshObjectRoom({ flags: { pickup: false } });
     requireFixtureGame(game);
     await dangerousPile({ artifact: false });
     pushKeys(' '.repeat(100));
@@ -154,7 +154,7 @@ void test('fatal tactile contact stops the no-pickup-form feedback tail', async 
 
 for (const levitating of [false, true] as const) {
     void test(`controlled teleport ${levitating ? 'cannot reach' : 'feels'} a corpse below the hero`, async () => {
-        freshObjectRoom({ flags: { debug: true, pickup: false } });
+        await freshObjectRoom({ flags: { debug: true, pickup: false } });
         requireFixtureGame(game);
         const corpse = await floorObject(CORPSE, 12, 10, {
             initialize: false, corpsenm: MONSTER_NAME.indexOf('cockatrice'),
@@ -178,7 +178,7 @@ for (const levitating of [false, true] as const) {
 
 
 void test('a fatal stone-golem conversion reports the lava death, not survival', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     pushKeys(' '.repeat(100));
     await polymonHero(MONSTER_NAME.indexOf('iron golem'));

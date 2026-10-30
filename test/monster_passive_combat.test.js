@@ -11,7 +11,7 @@ import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function freshFight(defenderSpecies, attackerSpecies = 'soldier') {
-    freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+    await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt(attackerSpecies, 10, 10, NO_MINVENT);
     initializePet(attacker, { state: game });

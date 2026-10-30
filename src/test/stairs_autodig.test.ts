@@ -11,7 +11,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('down starts digging with a wielded pick when autodig is enabled', async () => {
-    freshObjectRoom({ flags: { autodig: true } });
+    await freshObjectRoom({ flags: { autodig: true } });
     requirePlayingGame(game);
     const pick = await addInventoryObject(PICK_AXE);
     await setPrimaryWeapon(pick);
@@ -25,7 +25,7 @@ void test('down starts digging with a wielded pick when autodig is enabled', asy
 });
 
 void test('down at an unopened vibrating square says it cannot be used yet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     addTrap(game.level, VIBRATING_SQUARE, game.u.ux, game.u.uy, { tseen: true });
 

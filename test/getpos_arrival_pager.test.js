@@ -8,7 +8,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('targeting restores its goal after a notice while arrival map output is paused', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     game._mapFlushPaused = true;
     const input = resetInputState();
     const selected = await answerPrompts(selectMapPosition({
@@ -21,7 +21,7 @@ void test('targeting restores its goal after a notice while arrival map output i
     assert.equal(selected?.x, 10);
 });
 void test('an unknown key ends monster targeting and offers to force the invalid destination', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
     const monster = await createMonsterAt('goblin', 12, 10);
     game._monTelecontrol = true;
     const input = resetInputState();

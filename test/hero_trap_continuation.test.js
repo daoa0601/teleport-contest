@@ -17,7 +17,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 void test('failed adjacent untrapping exposes a spider that leaves its cover', async () => {
-    const level = freshObjectRoom({ flags: { pickup: false } });
+    const level = await freshObjectRoom({ flags: { pickup: false } });
     installPolymorphedHero('cave spider');
     await floorObject(ROCK, 10, 10);
     game.u.uundetected = 1;
@@ -31,7 +31,7 @@ void test('failed adjacent untrapping exposes a spider that leaves its cover', a
 });
 for (const lifesaving of [false, true]) {
     void test(`hurling through fire ${lifesaving ? 'continues after life saving' : 'stops at permanent death'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         addTrap(game.level, FIRE_TRAP, 11, 10);
         if (lifesaving)
@@ -48,7 +48,7 @@ for (const lifesaving of [false, true]) {
             assert.equal(game._deathKiller, 'tower of flame');
     });
     void test(`bear-trap outcome distinguishes ${lifesaving ? 'recovery' : 'permanent death'} from travel`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
         if (lifesaving)
@@ -62,7 +62,7 @@ for (const lifesaving of [false, true]) {
 }
 for (const lifesaving of [false, true]) {
     void test(`failed adjacent untrapping ${lifesaving ? 'resumes after life saving' : 'can kill the hero'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         addTrap(game.level, BEAR_TRAP, 11, 10, { tseen: true });
         if (lifesaving)
@@ -80,7 +80,7 @@ for (const lifesaving of [false, true]) {
             assert.equal(game._deathKiller, 'bear trap');
     });
     void test(`crawling out of water reports ${lifesaving ? 'survival after life saving' : 'death at the landing trap'}`, async () => {
-        const level = freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        const level = await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         for (let x = 9; x <= 11; x++)
             for (let y = 9; y <= 11; y++)

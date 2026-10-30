@@ -17,8 +17,8 @@ import { freshObjectRoom } from './support/object-room.js';
 
 const PM_GIANT_ZOMBIE = 247;
 
-function freshState() {
-    freshObjectRoom({
+async function freshState() {
+    await freshObjectRoom({
         heroX: 13,
         heroY: 10,
         objectInitializationSeed: 700n,
@@ -29,7 +29,7 @@ function freshState() {
 
 void test('a zombie attacks a nearby giant and the giant rises as a zombie',
     async () => {
-        freshState();
+        await freshState();
         requirePlayingGame(game);
         const zombie = await createMonsterAt('human zombie', 10, 10);
         zombie.mux = game.u.ux;
@@ -74,7 +74,7 @@ void test('a zombie attacks a nearby giant and the giant rises as a zombie',
     });
 
 void test('a fatal monster attack makes a shifted vampire rise', async () => {
-    freshState();
+    await freshState();
     requirePlayingGame(game);
     const dragon = await createMonsterAt('red dragon', 10, 10);
     initializePet(dragon, { state: game });

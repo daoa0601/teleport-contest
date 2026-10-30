@@ -43,7 +43,7 @@ async function readDead(book) {
     return await readBookOfDead(book);
 }
 async function invocationBook() {
-    freshObjectRoom({ left: 6, right: 26, top: 3, bottom: 19, heroX: 16, heroY: 11,
+    await freshObjectRoom({ left: 6, right: 26, top: 3, bottom: 19, heroX: 16, heroY: 11,
         hero: { uz: { dnum: 0, dlevel: 8 } }, gameplaySeed: 12n });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 9, depth_start: 1, flags: { hellish: true } })];
@@ -59,7 +59,7 @@ async function preparedRelics() {
     return { bell, candles };
 }
 void test('the Dead Book identifies itself without consuming the actual book', async () => {
-    freshObjectRoom({ hero: { blindTurns: 20 } });
+    await freshObjectRoom({ hero: { blindTurns: 20 } });
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD, { initialize: false, known: false, dknown: false });
     await readDead(book);
@@ -71,7 +71,7 @@ void test('the Dead Book identifies itself without consuming the actual book', a
     assert.equal(book.spestudied ?? 0, 0);
 });
 void test('blessed reading pacifies visible undead and makes distant enemies flee', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const nearby = await createMonsterAt(MONSTER_NAME.indexOf('ghost'), 11, 10, NO_MINVENT);
     const distant = await createMonsterAt(MONSTER_NAME.indexOf('human zombie'), 15, 10, NO_MINVENT);
@@ -87,7 +87,7 @@ void test('blessed reading pacifies visible undead and makes distant enemies fle
     assert.equal(living.mpeaceful, 0);
 });
 void test('blessed reading increases an existing pet undead to the native limit', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const ghost = await createMonsterAt(MONSTER_NAME.indexOf('ghost'), 11, 10, NO_MINVENT);
     ghost.mtame = 19;
@@ -98,18 +98,18 @@ void test('blessed reading increases an existing pet undead to the native limit'
     assert.equal(ghost.mtame, 20);
 });
 void test('blessed reading does not pacify unseen undead through a wall', async () => {
-    freshObjectRoom({ hero: { blindTurns: 20 } });
+    await freshObjectRoom({ hero: { blindTurns: 20 } });
     requirePlayingGame(game);
     const ghost = await createMonsterAt(MONSTER_NAME.indexOf('ghost'), 11, 10, NO_MINVENT);
     ghost.mpeaceful = 0;
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD, { initialize: false, blessed: true });
     await readDead(book);
     assert.equal(ghost.mpeaceful, 0);
 });
 void test('cursed reading revives a carried corpse and creates a real undead swarm', async () => {
-    freshObjectRoom({ left: 5, right: 20, top: 4, bottom: 17, gameplaySeed: 9n });
+    await freshObjectRoom({ left: 5, right: 20, top: 4, bottom: 17, gameplaySeed: 9n });
     requirePlayingGame(game);
     const corpse = await addInventoryObject(CORPSE, { initialize: false, corpsenm: MONSTER_NAME.indexOf('human zombie'), norevive: true });
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD, { initialize: false, cursed: true });
@@ -187,7 +187,7 @@ void test('successful invocation changes real terrain, traps, boulders, stairs a
     assert.equal(game.inventory.includes(book), true);
 });
 void test('novel generation retains its canonical title as actual object identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_NOVEL, { initialize: false });
     assert.ok(book.oextra !== undefined && book.oextra !== null, 'Expected book.oextra to be initialized');
@@ -196,7 +196,7 @@ void test('novel generation retains its canonical title as actual object identit
     assert.equal(novelTitle(book), book.oextra.oname);
 });
 void test('reading a novel waits for its tribute page before conduct and one-time experience', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_NOVEL, { initialize: false, novelidx: 0 });
     const input = resetInputState();
@@ -218,7 +218,7 @@ void test('reading a novel waits for its tribute page before conduct and one-tim
     assert.equal(game.u.uexp, 20);
 });
 void test('repeated reading exhausts each passage once before restarting the same novel', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const book = await addInventoryObject(SPE_NOVEL, { initialize: false, novelidx: 0 });
     const passages = new Set();
@@ -233,7 +233,7 @@ void test('repeated reading exhausts each passage once before restarting the sam
     assert.ok(passages.has(game._toplines));
 });
 void test('a different copy of the same novel gets its own unread passage pool', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const first = await addInventoryObject(SPE_NOVEL, { initialize: false, novelidx: 0 });
     const second = await addInventoryObject(SPE_NOVEL, { initialize: false, novelidx: 0 });
@@ -267,7 +267,7 @@ void test('blind invocation creates the Sanctum stairs and retains an earlier in
     requirePlayingGame(game);
     await preparedRelics();
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     game.u.udg_cnt = 1;
     await readDead(book);
     assert.equal(game.level.requireAt(16, 11).typ, STAIRS);
@@ -286,7 +286,7 @@ void test('unlit seven-candle relics summon undead rather than opening the Sanct
     assert.equal(game.u.uevent?.invoked, undefined);
 });
 void test('cursed reading restarts viable carried egg hatching', async () => {
-    freshObjectRoom({ gameplaySeed: 6n });
+    await freshObjectRoom({ gameplaySeed: 6n });
     requirePlayingGame(game);
     const egg = await addInventoryObject(EGG, { initialize: false, corpsenm: MONSTER_NAME.indexOf('chickatrice') });
     stopAllObjectTimers(egg);
@@ -301,7 +301,7 @@ void test('cursed reading restarts viable carried egg hatching', async () => {
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('chickatrice')));
 });
 void test('reading an unpaid novel adds a usage fee without removing it from its bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const book = await addInventoryObject(SPE_NOVEL, { initialize: false, novelidx: 0 });

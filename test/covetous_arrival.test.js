@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 void test('a blind covetous lich can locate and attack the hero after teleporting', async () => {
-    freshObjectRoom({ left: 7, right: 35,
+    await freshObjectRoom({ left: 7, right: 35,
         hero: { uac: -10, uhp: 100, uhpmax: 100, coldResistance: true } });
     requirePlayingGame(game);
     const lich = await createMonsterAt('master lich', 30, 10, NO_MINVENT);
@@ -40,14 +40,14 @@ void test('a blind covetous lich can locate and attack the hero after teleportin
 void test('a lich returning from unseen retreat stairs announces its arrival from that location', async () => {
     let returns = 0;
     for (let seed = 1; seed <= 20; seed++) {
-        const level = freshObjectRoom({ left: 8, right: 45,
+        const level = await freshObjectRoom({ left: 8, right: 45,
             hero: { uac: -1000, coldResistance: true, seeInvisible: true } });
         await init_dungeons();
         requirePlayingGame(game);
         for (let y = 6; y <= 14; y++)
             level.requireAt(20, y).typ = VWALL;
         vision_reset();
-        vision_recalc(0);
+        await vision_recalc(0);
         await mkstairs(40, 10, true, null);
         const lich = await createMonsterAt('master lich', 11, 10, NO_MINVENT);
         lich.minvis = 1;
@@ -77,7 +77,7 @@ void test('a lich returning from unseen retreat stairs announces its arrival fro
 void test('an unseen arch-lich introduces its covetous arrival with An', async () => {
     let arrivals = 0;
     for (let seed = 1; seed <= 20; seed++) {
-        const level = freshObjectRoom({ hero: { uac: -1000, coldResistance: true } });
+        const level = await freshObjectRoom({ hero: { uac: -1000, coldResistance: true } });
         requirePlayingGame(game);
         level.requireAt(30, 10).typ = ROOM;
         const lich = await createMonsterAt('arch-lich', 30, 10, NO_MINVENT);

@@ -228,7 +228,7 @@ export async function resolveMonsterCorpseChance(monster: Monster, {
     if (death.crumbles && cansee(monster.mx, monster.my) && !monsterDeathSwallower(state))
         await publish(monsterBodyCrumblesMessage(monster, state));
     if (death.explosion) {
-        if (state === game) newsym(monster.mx, monster.my);
+        if (state === game) await newsym(monster.mx, monster.my);
         const explosion = await resolveMonsterDeathExplosion(monster, monster.mx, monster.my,
             death.explosion, { state, publish, random, rollDice });
         if (explosion.heroDied) return { leavesRemains: false, heroDied: true };
@@ -372,7 +372,7 @@ async function createPuddingGlob(monster: Monster, state: GameState, publish: Me
     );
     const remains = await meldNearbyFloorGlobs(glob, { state, publish });
     setMonsterGivenName(monster, null);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     return remains;
 }
 
@@ -431,9 +431,9 @@ async function finishMonsterRemains(
     if (state.context.bypasses) bypassObject(remains, state);
     if (monster.name) remains.oname = monster.name;
     const stacked = await stack_object(remains, state);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (stacked.ox !== monster.mx || stacked.oy !== monster.my)
-        newsym(stacked.ox, stacked.oy);
+        await newsym(stacked.ox, stacked.oy);
     return stacked;
 }
 
@@ -454,7 +454,7 @@ export async function detachDeadMonster(
     markQuestLeaderDead(monster, state);
     await returnDeadKop(monster, state, rollOne);
     logDeadMonster(monster, state);
-    if (state === game) unmap_invisible(x, y, false);
+    if (state === game) await unmap_invisible(x, y, false);
     if (monster.mleashed) releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true
     // species and empty map square are projected by mon_leaving_level.
@@ -471,7 +471,7 @@ export async function detachDeadMonster(
         if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
         finishShopkeeperDeparture(monster, state);
     }
-    if (monster.wormno) removeMonsterWormBody(monster);
+    if (monster.wormno) await removeMonsterWormBody(monster);
     monster.dead = true;
     if (state.u.usteed === monster) {
         const result = await dismountHero(DISMOUNT_GENERIC, {
@@ -590,8 +590,8 @@ export async function finishMonsterLiquidDeath(
         })
         : null;
     if (state === game) {
-        unmap_invisible(x, y, false);
-        newsym(x, y);
+        await unmap_invisible(x, y, false);
+        await newsym(x, y);
     }
     return {
         oldx: x, oldy: y, x, y,
@@ -609,7 +609,7 @@ export async function finishMonsterTrapDeath(
     const x = monster.mx;
     const y = monster.my;
     const death = await finishMonsterKilled(monster, state, options);
-    if (!death.survived && !death.heroDied && state === game) newsym(x, y);
+    if (!death.survived && !death.heroDied && state === game) await newsym(x, y);
     return death;
 }
 

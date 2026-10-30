@@ -4,8 +4,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { canDigDown } from '../js/mklev.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
-void test('the invocation floor depends on the dungeon hellish flag', () => {
-    freshObjectRoom();
+void test('the invocation floor depends on the dungeon hellish flag', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dungeon = createDungeon({ dname: 'Hell', num_dunlevs: 4,
         flags: { hellish: true } });

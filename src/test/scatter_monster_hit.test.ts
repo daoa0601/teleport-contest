@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('scattered poisoned weapons can kill a monster with their poison', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.context.mon_moving = true;
     const soldier = await createMonsterAt('soldier', 13, 10);
     soldier.mhp = soldier.mhpmax = 100;
@@ -26,7 +26,7 @@ void test('scattered poisoned weapons can kill a monster with their poison', asy
 });
 
 void test('a weapon landing after a fatal scatter hit is drawn on the vacated square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 13, 10);
     soldier.mhp = 1;
     const dagger = await floorObject(DAGGER, 14, 10);
@@ -43,7 +43,7 @@ void test('a weapon landing after a fatal scatter hit is drawn on the vacated sq
 });
 
 void test('a scattered corpse hit names the projectile without its species', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const soldier = await createMonsterAt('soldier', 13, 10);
     soldier.mhp = soldier.mhpmax = 100;
     await floorObject(CORPSE, 14, 10, { corpsenm: 0 });
@@ -58,7 +58,7 @@ void test('a scattered corpse hit names the projectile without its species', asy
 });
 
 void test('a scattered stone passes harmlessly through a xorn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const xorn = await createMonsterAt('xorn', 13, 10);
     const hp = xorn.mhp;
     await floorObject(ROCK, 14, 10);
@@ -71,7 +71,7 @@ void test('a scattered stone passes harmlessly through a xorn', async () => {
 });
 
 void test('a scattered weapon touching a rust monster rusts before it lands', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('rust monster', 13, 10);
     monster.mhp = monster.mhpmax = 100;
     const dagger = await floorObject(DAGGER, 14, 10);

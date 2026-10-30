@@ -355,7 +355,7 @@ export async function transformWereMonster(monster, state = game, { repaint = st
         monster.mhp = Math.min(monster.mhpmax, monster.mhp + healing);
     }
     if (repaint)
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     await adjustMonsterClothingAfterPolymorph(monster, state, { publish });
     await updateMonsterWeaponAfterPolymorph(monster, state, { publish });
     const targetX = monster.mux, targetY = monster.muy;

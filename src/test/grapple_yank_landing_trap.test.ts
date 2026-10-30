@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C apply.c:3857-3859: after the yank hurtle, use_grapple() runs
 // spoteffects(TRUE), so the landing square triggers its trap.
 void test('a hook yank onto an unseen pit drops the hero into it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const hook = await addInventoryObject(GRAPPLING_HOOK, { wielded: true, owornmask: W_WEP });
     game.uwep = game.u.uwep = hook;
     installHeroWeaponSkills({});

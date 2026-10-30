@@ -10,7 +10,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a golem hero finishes rescuing a cockatrice after the touch turns the hero to stone', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     requirePlayingGame(game);
     installPolymorphedHero('flesh golem');
     const cockatrice = await createMonsterAt('cockatrice', 11, 10);

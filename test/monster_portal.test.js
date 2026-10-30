@@ -15,7 +15,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
 async function portalMonster(species = 'little dog') {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt(species, 12, 10, NO_MINVENT);
     const trap = addTrap(game.level, MAGIC_PORTAL, 12, 10, {

@@ -13,7 +13,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('cancelling a level teleport trap displays the resulting confusion', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
     const input = resetInputState();
     await bot();

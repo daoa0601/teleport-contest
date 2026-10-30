@@ -17,7 +17,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const deferred of [false, true]) {
     void test(`a monster wielding Frost Brand freezes the hero in ${deferred ? 'presented' : 'immediate'} combat`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         goblin.mux = game.u.ux;
@@ -42,7 +42,7 @@ for (const deferred of [false, true]) {
 }
 
 void test('cold resistance stops Frost Brand bonus damage but leaves potions vulnerable', async () => {
-    freshObjectRoom({ hero: { coldResistance: true, uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ hero: { coldResistance: true, uhp: 40, uhpmax: 40 } });
     const potion = await addInventoryObject(POT_HEALING);
     const messages: string[] = [];
 
@@ -59,7 +59,7 @@ void test('cold resistance stops Frost Brand bonus damage but leaves potions vul
 });
 
 void test('Fire Brand burns away slime even when the hero resists its fire', async () => {
-    freshObjectRoom({ hero: { fireResistance: true, slimed: true, slimedTurns: 5 } });
+    await freshObjectRoom({ hero: { fireResistance: true, slimed: true, slimedTurns: 5 } });
     const lamp = await addInventoryObject(OIL_LAMP, { lamplit: false });
     const messages: string[] = [];
 
@@ -80,7 +80,7 @@ for (const blind of [false, true]) {
         hpIncrements[7] = 6;
         const energyIncrements = Array.from({ length: 31 }, () => 0);
         energyIncrements[7] = 3;
-        freshObjectRoom({ hero: { uhp: 40, uhpmax: 40, ulevel: 8,
+        await freshObjectRoom({ hero: { uhp: 40, uhpmax: 40, ulevel: 8,
             uhpinc: hpIncrements, ueninc: energyIncrements,
             uen: 10, uenmax: 10, blindTurns: blind ? 10 : 0 } });
         const attacker = await createMonsterAt('orc', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -104,7 +104,7 @@ for (const blind of [false, true]) {
 }
 
 void test('drain resistance prevents Stormbringer level loss and healing', async () => {
-    freshRoomWithPolymorphedHero('vampire');
+    await freshRoomWithPolymorphedHero('vampire');
     const attacker = await createMonsterAt('orc', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     attacker.mhp = 5;
     attacker.mhpmax = 20;
@@ -118,7 +118,7 @@ void test('drain resistance prevents Stormbringer level loss and healing', async
 });
 
 void test('Magicbane cancellation takes magical energy without cancelling carried objects', async () => {
-    freshObjectRoom({ hero: { uen: 5, uenmax: 10 } });
+    await freshObjectRoom({ hero: { uen: 5, uenmax: 10 } });
     const potion = await addInventoryObject(POT_HEALING, { blessed: true });
     const messages: string[] = [];
 
@@ -137,7 +137,7 @@ void test('Magicbane cancellation takes magical energy without cancelling carrie
 });
 
 void test('antimagic resists Magicbane cancellation but can still leave the hero stunned', async () => {
-    freshObjectRoom({ hero: { antimagic: true, uen: 5, uenmax: 10 } });
+    await freshObjectRoom({ hero: { antimagic: true, uen: 5, uenmax: 10 } });
     const messages: string[] = [];
     const hit = await applyArtifactHit(await artifactObject('Magicbane'), 'hero', 4, {
         dieRoll: 1, random: limit => limit - 1, rollOne: sides => sides,
@@ -153,7 +153,7 @@ void test('antimagic resists Magicbane cancellation but can still leave the hero
 });
 
 void test('Magicbane rehumanization prevents the remaining weapon damage', async () => {
-    freshRoomWithPolymorphedHero('wolf', { hero: { uen: 5, uenmax: 10 } });
+    await freshRoomWithPolymorphedHero('wolf', { hero: { uen: 5, uenmax: 10 } });
     const hit = await applyArtifactHit(await artifactObject('Magicbane'), 'hero', 4, {
         dieRoll: 1, random: limit => limit - 1, rollOne: sides => sides,
     });
@@ -164,7 +164,7 @@ void test('Magicbane rehumanization prevents the remaining weapon damage', async
 });
 
 void test('Magicbane scares a sticky hero into releasing its attacker for three turns', async () => {
-    freshRoomWithPolymorphedHero('owlbear');
+    await freshRoomWithPolymorphedHero('owlbear');
     const attacker = await createMonsterAt('orc', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     game.u.ustuck = attacker;
     const messages: string[] = [];
@@ -180,7 +180,7 @@ void test('Magicbane scares a sticky hero into releasing its attacker for three 
 });
 
 void test('a Magicbane probe can confuse the hero without probing a monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages: string[] = [];
     await applyArtifactHit(await artifactObject('Magicbane'), 'hero', 4, {
         dieRoll: 8, random: () => 0, rollOne: sides => sides,
@@ -193,7 +193,7 @@ void test('a Magicbane probe can confuse the hero without probing a monster', as
 
 for (const name of ['Vorpal Blade', 'The Tsurugi of Muramasa']) {
     void test(`${name} delivers fatal damage to a human hero on a natural one`, async () => {
-        freshObjectRoom({ hero: { uhp: 30, uhpmax: 30 } });
+        await freshObjectRoom({ hero: { uhp: 30, uhpmax: 30 } });
         const messages: string[] = [];
         const blade = await artifactObject(name, { dknown: false });
         const hit = await applyArtifactHit(blade, 'hero', 4, {
@@ -208,7 +208,7 @@ for (const name of ['Vorpal Blade', 'The Tsurugi of Muramasa']) {
 }
 
 void test('Vorpal Blade misses a headless hero without inflicting weapon damage', async () => {
-    freshRoomWithPolymorphedHero('gas spore');
+    await freshRoomWithPolymorphedHero('gas spore');
     const hit = await applyArtifactHit(await artifactObject('Vorpal Blade'), 'hero', 4, {
         dieRoll: 1,
     });
@@ -218,7 +218,7 @@ void test('Vorpal Blade misses a headless hero without inflicting weapon damage'
 });
 
 void test('a Vorpal miss on a headless hero bypasses armor reduction and poisoned weapon effects', async () => {
-    freshRoomWithPolymorphedHero('gas spore', {
+    await freshRoomWithPolymorphedHero('gas spore', {
         polymorph: { hitPoints: 100 }, hero: { uac: -10 },
     });
     requirePlayingGame(game);
@@ -237,7 +237,7 @@ void test('a Vorpal miss on a headless hero bypasses armor reduction and poisone
 });
 
 void test('Vorpal Blade passes through a ghost hero neck without beheading', async () => {
-    freshRoomWithPolymorphedHero('ghost');
+    await freshRoomWithPolymorphedHero('ghost');
     const messages: string[] = [];
     const hit = await applyArtifactHit(await artifactObject('Vorpal Blade'), 'hero', 4, {
         dieRoll: 1, publish: async message => { messages.push(message); },
@@ -248,7 +248,7 @@ void test('Vorpal Blade passes through a ghost hero neck without beheading', asy
 });
 
 void test('Tsurugi cuts deeply into a large hero instead of cutting it in half', async () => {
-    freshRoomWithPolymorphedHero('giant');
+    await freshRoomWithPolymorphedHero('giant');
     const messages: string[] = [];
     const hit = await applyArtifactHit(await artifactObject('The Tsurugi of Muramasa'), 'hero', 4, {
         dieRoll: 1, rollOne: sides => sides,
@@ -260,7 +260,7 @@ void test('Tsurugi cuts deeply into a large hero instead of cutting it in half',
 });
 
 void test('Cleaver adds physical damage without replacing the ordinary hit message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const hit = await applyArtifactHit(await artifactObject('Cleaver'), 'hero', 7, {
         rollOne: sides => sides,
     });
@@ -269,7 +269,7 @@ void test('Cleaver adds physical damage without replacing the ordinary hit messa
 });
 
 void test('an artifact message does not make the next ordinary weapon hit say again', async () => {
-    freshRoomWithPolymorphedHero('giant', {
+    await freshRoomWithPolymorphedHero('giant', {
         polymorph: { hitPoints: 100 }, hero: { uac: 10 },
     });
     requirePlayingGame(game);
@@ -296,7 +296,7 @@ void test('an artifact message does not make the next ordinary weapon hit say ag
 });
 
 void test('a corpse hit that starts petrification does not make the next hit say again', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const captain = await createMonsterAt('captain', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     captain.mux = game.u.ux;

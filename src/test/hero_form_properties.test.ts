@@ -22,7 +22,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { prepareHeroStartup } from './support/startup.js';
 
 void test('fire immunity protects a dragon body and ends when the hero changes back', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     pushKeys('polyself\nred dragon\n                        ');
     await rhack('#'.charCodeAt(0));
@@ -40,7 +40,7 @@ void test('fire immunity protects a dragon body and ends when the hero changes b
 });
 
 void test('losing a cold-resistant form does not remove protection from a ring', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('cold resistance'));
     await wearHeroAccessory(ring, 'uleft');
@@ -57,7 +57,7 @@ void test('losing a cold-resistant form does not remove protection from a ring',
 });
 
 void test('a floating eye floats over a pit without acquiring flight', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     addTrap(level, PIT, game.u.ux + 1, game.u.uy);
     pushKeys('polyself\nfloating eye\n                        ');
@@ -74,12 +74,12 @@ void test('a floating eye floats over a pit without acquiring flight', async () 
 });
 
 void test('a vampire senses a human behind a wall without seeing an animal there', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     const jackal = await createMonsterAt('jackal', 14, 11, NO_MINVENT);
     for (let y = 0; y < 21; y++) level.requireAt(12, y).typ = STONE;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSpotMonster(soldier), false);
     pushKeys('polyself\nvampire\n                        ');
 
@@ -91,21 +91,21 @@ void test('a vampire senses a human behind a wall without seeing an animal there
 });
 
 void test('a blind mind flayer senses minds but not a mindless golem', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     const golem = await createMonsterAt('stone golem', 14, 11, NO_MINVENT);
     pushKeys('polyself\nmind flayer\n                        ');
     await rhack('#'.charCodeAt(0));
 
     setHeroBlindnessTurns(5);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(canSpotMonster(soldier), true);
     assert.equal(canSpotMonster(golem), false);
 });
 
 void test('escaping a web restores flight without changing the bat body', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     pushKeys('polyself\nbat\n                        ');
     await rhack('#'.charCodeAt(0));

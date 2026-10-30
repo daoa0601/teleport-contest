@@ -34,7 +34,7 @@ function venomTypeForAttack(attack) {
 async function settleVenom(venom, x, y, state) {
     placeCreatedObject(venom, x, y);
     await stack_object(venom, state);
-    newsym(x, y);
+    await newsym(x, y);
 }
 async function breakVenomAtEndpoint(venom, x, y, state, publish, random) {
     venom.ox = x;

@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // so a luckstone always carries a lucky teleporter out of the water.
 void test('a luckstone makes every drowning escape roll trigger the teleport spell', async () => {
     for (let seed = 1n; seed <= 12n; seed++) {
-        const level = freshObjectRoom({ hero: { ulevel: 14, uen: 60, uenmax: 60 } });
+        const level = await freshObjectRoom({ hero: { ulevel: 14, uen: 60, uenmax: 60 } });
         for (let x = 9; x <= 11; x++) {
             for (let y = 9; y <= 11; y++)
                 level.requireAt(x, y).typ = POOL;
@@ -35,7 +35,7 @@ void test('a luckstone makes every drowning escape roll trigger the teleport spe
 // C trap.c:5205+5218+5243: drain_en() applies its exclamation to the fully
 // drained hero's lethargy line too.
 void test('a fully drained energy well reads the lethargic exclamation', async () => {
-    freshObjectRoom({ hero: { uen: 0, uenmax: 0 } });
+    await freshObjectRoom({ hero: { uen: 0, uenmax: 0 } });
     const exclaimed = drainHeroEnergy(game, 4, { maximumAlreadyDrained: true });
     const plain = drainHeroEnergy(game, 4, { maximumAlreadyDrained: false });
     assert.equal(exclaimed, 'You feel momentarily lethargic!');

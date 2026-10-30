@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('a unicorn blocked by the hero line can teleport instead of walking', async () => {
     let teleported = 0;
     for (let seed = 1; seed <= 8; seed++) {
-        freshObjectRoom({ left: 10, right: 18, top: 10, bottom: 10,
+        await freshObjectRoom({ left: 10, right: 18, top: 10, bottom: 10,
             heroX: 16, heroY: 10 });
         requirePlayingGame(game);
         const unicorn = await createMonsterAt('white unicorn', 10, 10, MM_ANGRY | NO_MINVENT);

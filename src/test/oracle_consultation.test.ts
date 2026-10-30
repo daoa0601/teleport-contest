@@ -12,7 +12,7 @@ import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 async function oracleWithGold(gold: number) {
-    freshObjectRoom({ hero: { uexp: 0 } });
+    await freshObjectRoom({ hero: { uexp: 0 } });
     const oracle = await createMonsterAt('Oracle', 11, 10);
     oracle.mpeaceful = 1;
     oracle.msleeping = 0;
@@ -74,7 +74,7 @@ void test('a paid major consultation grants its reward once, including after sav
     assert.equal(game.u.urexp, 378);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const input = resetInputState();
     input.display = { async readKey() { return 32; } };
     await runExtendedCommand('chat', 'lny');

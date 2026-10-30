@@ -7,7 +7,7 @@ import { costlySpot, shopkeeperInOwnShop } from '../js/shk.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 async function adjacentShops() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const west = await createStaffedShop({
         left: 7, right: 10, top: 8, bottom: 12, keeperX: 9, keeperY: 10,

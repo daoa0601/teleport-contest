@@ -10,7 +10,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const under of [DB_FLOOR, DB_ICE]) {
     void test(`pickup can reach an object below a raised bridge over ${under === DB_FLOOR ? 'ground' : 'ice'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const square = level.requireAt(10, 10);
         square.typ = DRAWBRIDGE_UP;
         square.drawbridgemask = under;
@@ -23,12 +23,12 @@ for (const under of [DB_FLOOR, DB_ICE]) {
 }
 for (const under of [DB_FLOOR, DB_ICE, DB_LAVA]) {
     void test(`the raised bridge underlay ${under} does not cover floor objects`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const square = level.requireAt(11, 10);
         square.typ = DRAWBRIDGE_UP;
         square.drawbridgemask = under;
         await floorObject(DIAMOND, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         assert.equal(glyphAt(11, 10)?.kind, 'object');
     });
 }

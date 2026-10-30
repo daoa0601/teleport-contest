@@ -8,7 +8,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('unknown-direction guidance advertises the configured movement and pick keys', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.equal(game.commandBindings.bindKey(104, 'nothing').accepted, true);
     assert.equal(game.commandBindings.bindKey(115, 'movewest').accepted, true);
     assert.equal(game.commandBindings.bindSpecialKey(61, 'getpos.pick'), true);
@@ -23,7 +23,7 @@ void test('unknown-direction guidance advertises the configured movement and pic
 });
 
 void test('unknown meta keys use the native visible key notation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed(0xe2);
 

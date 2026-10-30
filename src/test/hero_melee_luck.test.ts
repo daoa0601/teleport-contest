@@ -18,7 +18,7 @@ for (const { cursed, hitBonus, expectedHit } of [
 ]) {
     void test(`a carried ${cursed ? 'cursed' : 'uncursed'} luckstone ${cursed ? 'spoils' : 'rescues'} a marginal melee attack`, async () => {
         for (const carrying of [false, true]) {
-            freshObjectRoom({ hero: { uhitinc: hitBonus, uluck: 0 } });
+            await freshObjectRoom({ hero: { uhitinc: hitBonus, uluck: 0 } });
             installPolymorphedHero('newt');
             // Levitation lets this tiny body carry a stone without the
             // encumbrance penalty masking the luck bonus under test.

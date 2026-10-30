@@ -26,7 +26,7 @@ async function messageLine() {
     return requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
 }
 void test('a known ring shuffled to silver sears with its current material name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('minotaur');
     const { first, last } = getObjectClassBounds(4);
     const ringType = Array.from({ length: last - first + 1 }, (_, index) => first + index)
@@ -41,7 +41,7 @@ void test('a known ring shuffled to silver sears with its current material name'
     assert.match(await messageLine(), /Your silver ring sears the imp!/);
 });
 void test('a hallucinating hero can mistake an unseen worm tail for someone rather than something', async () => {
-    freshObjectRoom({ gameplaySeed: 97n });
+    await freshObjectRoom({ gameplaySeed: 97n });
     installPolymorphedHero('giant eel');
     const worm = await createMonsterAt('long worm', 11, 10, BIRTH_FLAGS);
     const tail = worm.wormSegments?.find(segment => segment.x !== 0
@@ -68,7 +68,7 @@ void test('a hallucinating hero can mistake an unseen worm tail for someone rath
     assert.ok(!game.u.ustuck, 'A failed tail grab must never establish a hold');
 });
 void test('releasing a named creature while hallucinating hides its real name and clears the hold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('rope golem');
     const monster = await createMonsterAt('goblin', 11, 10, BIRTH_FLAGS);
     setMonsterGivenName(monster, 'The Carefully Named Goblin');

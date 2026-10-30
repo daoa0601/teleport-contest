@@ -197,7 +197,7 @@ async function travelAcrossRoom(engine, targetX) {
     engine.state.u.uy = 10;
     engine.state._travelTarget = { x: targetX, y: 10 };
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     clearMessageWindow();
     await docrt();
     await flush_screen(1);

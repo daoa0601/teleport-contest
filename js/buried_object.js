@@ -77,8 +77,8 @@ export async function buryFloorObjectsAt(x, y, state = game, { publish = plineWi
         object = result.next;
     }
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
-    maybeUnhideAt(x, y, state);
+    await newsym(x, y);
+    await maybeUnhideAt(x, y, state);
     if (shop && loss) {
         await publish(`You owe ${shopkeeperName(shop.resident, { state })} ${loss} ${currency(loss, { state })} for burying merchandise.`);
     }
@@ -162,7 +162,7 @@ export async function unearthFloorObjectsAt(x, y, state = game) {
         unearthed.push(object);
     }
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
+    await newsym(x, y);
     return unearthed;
 }
 // C dig.c:buried_ball(): the buried iron ball at the spot, or the nearest one
@@ -197,7 +197,7 @@ export async function buriedBallToPunishment(state = game) {
     await punishHero(ball, state);
     clearHeroTrap(state);
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 //# sourceMappingURL=buried_object.js.map

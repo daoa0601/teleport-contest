@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 for (const resistance of [false, true]) {
     for (const cancelled of [false, true]) {
         void test(`Scorpius's ${cancelled ? 'cancelled' : 'ordinary'} sting ${resistance ? 'respects sickness resistance' : 'causes disease and contact damage'}`, async () => {
-            freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, sicknessResistance: resistance } });
+            await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, sicknessResistance: resistance } });
             requirePlayingGame(game);
             const scorpion = await createMonsterAt('Scorpius', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
             scorpion.mux = game.u.ux;
@@ -42,7 +42,7 @@ for (const resistance of [false, true]) {
 }
 
 void test('a disease sting shortens existing sickness and records its new cause', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10,
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10,
         sick: true, sickTurns: 30, sickType: SICK_NONVOMITABLE, sickCause: 'old illness' } });
     requirePlayingGame(game);
     const scorpion = await createMonsterAt('Scorpius', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

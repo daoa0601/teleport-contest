@@ -35,7 +35,7 @@ function breathe(direction: string | 27, options: HeroBreathOptions = {}) {
 }
 
 void test('a winter wolf uses #monster to breathe frost at a target', async () => {
-    const level = freshMonsterAbilityRoom('winter wolf', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('winter wolf', { energy: 30 });
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 1;
     jackal.m_lev = 1;
@@ -56,7 +56,7 @@ void test('a winter wolf uses #monster to breathe frost at a target', async () =
 
 void test('cancelling breath direction spends energy but does not spend a turn',
     async () => {
-        freshMonsterAbilityRoom('red dragon', { energy: 30 });
+        await freshMonsterAbilityRoom('red dragon', { energy: 30 });
 
         const result = await breathe(27);
 
@@ -67,7 +67,7 @@ void test('cancelling breath direction spends energy but does not spend a turn',
 
 void test('disintegration breath destroys a shield before hurting its wearer',
     async () => {
-        freshMonsterAbilityRoom('black dragon', { energy: 30 });
+        await freshMonsterAbilityRoom('black dragon', { energy: 30 });
         const shield = await knownObject(SMALL_SHIELD, {
             worn: true, owornmask: W_ARMS,
         });
@@ -87,7 +87,7 @@ void test('disintegration breath destroys a shield before hurting its wearer',
 
 void test('fatal disintegration destroys ordinary gear but spares black scales',
     async () => {
-        const level = freshMonsterAbilityRoom('black dragon', { energy: 30 });
+        const level = await freshMonsterAbilityRoom('black dragon', { energy: 30 });
         const sword = await knownObject(LONG_SWORD);
         const scales = await knownObject(BLACK_DRAGON_SCALES);
         const jackal = await createMonsterAt('jackal', 11, 10);
@@ -107,7 +107,7 @@ void test('fatal disintegration destroys ordinary gear but spares black scales',
     });
 
 void test('acid breath corrodes a monster weapon and armor', async () => {
-    freshMonsterAbilityRoom('yellow dragon', { energy: 30 });
+    await freshMonsterAbilityRoom('yellow dragon', { energy: 30 });
     const sword = await knownObject(LONG_SWORD);
     const helmet = await knownObject(HELMET);
     const jackal = await createMonsterAt('jackal', 11, 10);
@@ -127,7 +127,7 @@ void test('acid breath corrodes a monster weapon and armor', async () => {
 });
 
 void test('lightning breath can melt iron bars', async () => {
-    const level = freshMonsterAbilityRoom('blue dragon', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('blue dragon', { energy: 30 });
     level.rooms.push(createRoom({ lx: 7, hx: 16, ly: 6, hy: 14 }));
     level.nroom = 1;
     for (let x = 7; x <= 16; x++) {
@@ -150,7 +150,7 @@ void test('lightning breath can melt iron bars', async () => {
 });
 
 void test('breath fired while swallowed hits the engulfer directly', async () => {
-    const level = freshMonsterAbilityRoom('winter wolf', { energy: 30 });
+    const level = await freshMonsterAbilityRoom('winter wolf', { energy: 30 });
     const worm = await createMonsterAt(
         'purple worm', game.u.ux + 1, game.u.uy,
     );

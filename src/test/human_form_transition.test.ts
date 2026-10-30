@@ -24,8 +24,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 
-function formTransitionRoom(debug = false) {
-    freshObjectRoom({
+async function formTransitionRoom(debug = false) {
+    await freshObjectRoom({
         gameplaySeed: 143n,
         hero: { urexp: 1000 },
         flags: { debug, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
@@ -58,7 +58,7 @@ for (const scenario of [
     { flags: 1 | GENOCIDE_ON_THRONE, cause: 'killed by an imperious order' },
 ]) {
     void test(`losing a borrowed body preserves ${scenario.cause} before human aftermath`, async () => {
-        const { text } = formTransitionRoom();
+        const { text } = await formTransitionRoom();
         requirePlayingGame(game);
         installPolymorphedHero('black pudding');
         const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
@@ -85,7 +85,7 @@ for (const scenario of [
 }
 
 void test('a genocided original race is fatal even when the restored human HP is positive', async () => {
-    formTransitionRoom();
+    await formTransitionRoom();
     requireFixtureGame(game);
     installPolymorphedHero('wolf');
     const human = game.mvitals[game.urace.mnum];
@@ -100,7 +100,7 @@ void test('a genocided original race is fatal even when the restored human HP is
 });
 
 void test('controlled newman reaches genocide after announcing its renewed human body', async () => {
-    const { input, text } = formTransitionRoom();
+    const { input, text } = await formTransitionRoom();
     requirePlayingGame(game);
     installPolymorphedHero('black pudding');
     await genocideHumanBase(1);
@@ -117,7 +117,7 @@ void test('controlled newman reaches genocide after announcing its renewed human
 });
 
 void test('refusing delayed genocide resumes sight and strangulation, and consumes the earlier death cause', async () => {
-    const { input } = formTransitionRoom(true);
+    const { input } = await formTransitionRoom(true);
     requirePlayingGame(game);
     installPolymorphedHero('black pudding');
     game.u.macurr = { a: [9, 10, 11, 12, 13, 14] };
@@ -165,7 +165,7 @@ void test('refusing delayed genocide resumes sight and strangulation, and consum
 });
 
 void test('returning to human form ends a mimic meal without its delayed recovery message', async () => {
-    const { text } = formTransitionRoom();
+    const { text } = await formTransitionRoom();
     installPolymorphedHero('wolf');
     await beginMealMimicry(20);
     assert.equal(heroHasInvoluntaryDelay(), true);
@@ -182,7 +182,7 @@ void test('returning to human form ends a mimic meal without its delayed recover
 });
 
 void test('an unchanging amulet is discovered when a living monster body is forced back to human', async () => {
-    const { text } = formTransitionRoom();
+    const { text } = await formTransitionRoom();
     const amulet = await addInventoryObject(AMULET_OF_UNCHANGING, { typeKnown: false, known: false });
     await wearHeroAccessory(amulet, 'uamul');
     await flushPendingTopline();
@@ -202,7 +202,7 @@ void test('an unchanging amulet is discovered when a living monster body is forc
 // C polyself.c:newman(): polyman() announces the renewed body and the later
 // encumber_msg() joins that topline instead of replacing it.
 void test('a renewed human body keeps its announcement before the encumbrance change', async () => {
-    const { input, text } = formTransitionRoom();
+    const { input, text } = await formTransitionRoom();
     requirePlayingGame(game);
     installPolymorphedHero('homunculus');
     while (nearCapacity(game) === UNENCUMBERED) await addInventoryObject(ROCK);

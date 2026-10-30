@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { assertWormBody } from './support/worms.js';
 for (const sleeping of [false, true]) {
     void test(`a ${sleeping ? 'sleeping' : 'awake'} hero observes a newly seen boulder launch`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const boulder = await floorObject(BOULDER, 12, 10, { dknown: false, oname: 'Moon' });
         if (sleeping)
@@ -32,7 +32,7 @@ for (const sleeping of [false, true]) {
 }
 for (const hit of [false, true]) {
     void test(`a named rolling boulder retains its name when it ${hit ? 'hits' : 'misses'}`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         requirePlayingGame(game);
         const wolf = await createMonsterAt('wolf', 13, 10, NO_MINVENT);
         wolf.mhp = wolf.mhpmax = 100;
@@ -48,7 +48,7 @@ for (const hit of [false, true]) {
 void test('hallucination changes the pronoun for a monster that a boulder passes through', async () => {
     const pronouns = new Set();
     for (let seed = 1n; seed <= 24n; seed++) {
-        freshObjectRoom({ flags: { verbose: false }, hero: { hallucinationTurns: 100 } });
+        await freshObjectRoom({ flags: { verbose: false }, hero: { hallucinationTurns: 100 } });
         requirePlayingGame(game);
         const xorn = await createMonsterAt('xorn', 13, 10, NO_MINVENT);
         const hp = xorn.mhp;
@@ -73,7 +73,7 @@ void test('hallucination changes the pronoun for a monster that a boulder passes
 for (const monsterTurn of [false, true]) {
     for (const visible of [false, true]) {
         void test(`landmine debris ${visible ? 'announces a visible death' : 'silently kills an unseen monster'} during ${monsterTurn ? 'a monster' : 'the hero'} turn`, async () => {
-            const level = freshObjectRoom({ context: { mon_moving: monsterTurn } });
+            const level = await freshObjectRoom({ context: { mon_moving: monsterTurn } });
             requirePlayingGame(game);
             const wolf = await createMonsterAt('wolf', 14, 10, NO_MINVENT);
             wolf.mhp = 1;
@@ -81,7 +81,7 @@ for (const monsterTurn of [false, true]) {
                 for (let x = 14; x <= 16; x++)
                     for (let y = 6; y <= 14; y++)
                         level.requireAt(x, y).lit = false;
-                vision_recalc(0);
+                await vision_recalc(0);
             }
             addTrap(level, LANDMINE, 13, 10);
             await floorObject(BOULDER, 12, 10);
@@ -100,10 +100,10 @@ for (const monsterTurn of [false, true]) {
 void test('killing a worm through its tail leaves random treasure at its head', async () => {
     let treasureDrops = 0;
     for (let seed = 1n; seed <= 32n; seed++) {
-        const level = freshObjectRoom({ right: 22 });
+        const level = await freshObjectRoom({ right: 22 });
         requirePlayingGame(game);
         const worm = await createMonsterAt('long worm', 16, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
-        initializeMonsterWormBody(worm, { segmentCount: 1 });
+        await initializeMonsterWormBody(worm, { segmentCount: 1 });
         assertWormBody(worm);
         const tail = worm.wormSegments[0];
         assert.ok(tail, 'the test needs a tail to hit');

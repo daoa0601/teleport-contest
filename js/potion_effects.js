@@ -193,7 +193,7 @@ async function monsterDetection(source, state) {
         let found = false;
         for (let x = 1; x < COLNO; x++)
             for (let y = 0; y < ROWNO; y++) {
-                unmap_invisible(x, y);
+                await unmap_invisible(x, y);
                 if (monsterAtPosition(state.level, x, y))
                     found = true;
             }

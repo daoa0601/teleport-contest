@@ -23,7 +23,7 @@ const S_SNAKE = 45;
 // C mcastu.c:cursetxt() picks its phrasing from the caster's view of the
 // hero's apparent position; each variant is reachable through a blocked cast.
 async function blockedCastCleric(level: number) {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     const cleric = await createMonsterAt('aligned cleric', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     cleric.mpeaceful = 0;
@@ -83,7 +83,7 @@ void test('a blocked directed spell curses in the general direction of an invisi
 // rn2(m_lev) exceeds the highest spell level, so a level 20 cleric whose first
 // draw is 19 casts a level 12 fire pillar rather than the level 13 geyser.
 void test('a high-level cleric re-rolls an out-of-range spell choice within the table', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, fireResistance: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, fireResistance: true } });
     requirePlayingGame(game);
     const cleric = await createMonsterAt('aligned cleric', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     cleric.mpeaceful = 0;
@@ -111,7 +111,7 @@ void test('a high-level cleric re-rolls an out-of-range spell choice within the 
 // the caster's perceived hero position when the real hero is displaced or
 // invisible to the caster.
 async function undirectedCasterAttack(species: string, level: number) {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     game.level.flags.rndmongen = false;
     const caster = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -179,7 +179,7 @@ void test('a summon nasties spell surrounds the displaced image with monsters', 
 });
 
 void test('magic resistance blocks the destroy-armor spell with a field of force', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, antimagic: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, antimagic: true } });
     requirePlayingGame(game);
     const apprentice = await createMonsterAt('apprentice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     apprentice.mpeaceful = 0;
@@ -204,7 +204,7 @@ void test('magic resistance blocks the destroy-armor spell with a field of force
 });
 
 void test('a weaken-you spell drains one point of strength', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     const apprentice = await createMonsterAt('apprentice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     apprentice.mpeaceful = 0;
@@ -234,7 +234,7 @@ void test('a fatal weaken-you names the caster in the strength-loss death', asyn
     // C mcastu.c:mcast_weaken_you() passes losestr() a killer built by
     // death_inflicted_by(kbuf, "strength loss", mtmp), so a hero already at
     // the strength minimum dies to that named cause.
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { bones: false, disclose: '-i -a -v -c -o' },
         hero: { uhp: 1, uhpmax: 500, uac: -1000 },
     });
@@ -270,7 +270,7 @@ void test('a fatal weaken-you names the caster in the strength-loss death', asyn
 });
 
 void test('a curse-items spell offers unhelpful help', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     const cleric = await createMonsterAt('aligned cleric', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     cleric.mpeaceful = 0;
@@ -294,7 +294,7 @@ void test('a curse-items spell offers unhelpful help', async () => {
 });
 
 void test('a small psi bolt gives only a slight headache', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     const apprentice = await createMonsterAt('apprentice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     apprentice.mpeaceful = 0;
@@ -321,7 +321,7 @@ void test('a small psi bolt gives only a slight headache', async () => {
 });
 
 void test('an insect spell falls back to sticks-to-snakes when ants are genocided', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     game.level.flags.rndmongen = false;
     // C mcast_insects() picks S_SNAKE only when mkclass(S_ANT, 0) finds no
@@ -361,7 +361,7 @@ void test('an insect spell falls back to sticks-to-snakes when ants are genocide
 });
 
 void test('the touch of death spell leaves a demon-bodied hero no deader', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     installPolymorphedHero('marilith', { hitPoints: 500 });
     const caster = await createMonsterAt('apprentice', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -388,7 +388,7 @@ void test('the touch of death spell leaves a demon-bodied hero no deader', async
 });
 
 void test('the Wizard summons nasties with a threat rather than an appearance note', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000 } });
     requirePlayingGame(game);
     game.level.flags.rndmongen = false;
     const wizard = await createMonsterAt('Wizard of Yendor', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

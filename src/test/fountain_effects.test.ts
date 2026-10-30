@@ -11,7 +11,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('dipping in a fountain can curse a blessed possession', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const rock = await addInventoryObject(ROCK, { blessed: true });
     initRng(1n);
@@ -24,7 +24,7 @@ void test('dipping in a fountain can curse a blessed possession', async () => {
 
 for (const seed of [74n, 60n, 16n, 91n]) {
     void test(`a fountain removes a curse with draught seed ${seed}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(10, 10).typ = FOUNTAIN;
         const armor = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
         initRng(seed);
@@ -37,7 +37,7 @@ for (const seed of [74n, 60n, 16n, 91n]) {
 }
 
 void test('a blind fountain dip removes a curse without a visible glow', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const armor = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
     setHeroBlindnessTurns(30);
@@ -50,7 +50,7 @@ void test('a blind fountain dip removes a curse without a visible glow', async (
 });
 
 void test('a fountain dip feels like a loss when there is no curse to remove', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const armor = await addInventoryObject(LEATHER_ARMOR);
     initRng(74n);
@@ -62,7 +62,7 @@ void test('a fountain dip feels like a loss when there is no curse to remove', a
 });
 
 void test('fate26 resolves the current arm noun into the exact tingling line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const effect = resolveDippedSensationFate({
         fate: 26,
         armName: () => 'tentacle',
@@ -75,7 +75,7 @@ void test('fate26 resolves the current arm noun into the exact tingling line', a
 });
 
 void test('fate27 does not resolve anatomy for the exact sudden-chill line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const effect = resolveDippedSensationFate({
         fate: 27,
         armName() {
@@ -90,7 +90,7 @@ void test('fate27 does not resolve anatomy for the exact sudden-chill line', asy
 });
 
 void test('sensation reducer leaves adjacent fountain fates to their owners', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.deepEqual(resolveDippedSensationFate({ fate: 25 }), {
         handled: false,
         message: '',

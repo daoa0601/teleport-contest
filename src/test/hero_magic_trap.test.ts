@@ -20,7 +20,7 @@ for (const hero of [
     { form: 'vampire', female: true, oddly: true },
 ]) {
     void test(`a ${hero.female ? 'female' : 'male'} hero in ${hero.form} form feels ${hero.oddly ? 'oddly ' : ''}like the prodigal son`, async () => {
-        const trap = magicTrapRoom();
+        const trap = await magicTrapRoom();
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'The Quest' })];
         game._activeSpecialLevel = {
@@ -38,8 +38,8 @@ for (const hero of [
     });
 }
 
-function magicTrapRoom() {
-    freshObjectRoom();
+async function magicTrapRoom() {
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -47,7 +47,7 @@ function magicTrapRoom() {
 }
 
 void test('a magic-trap flash blinds and deafens the hero, summons monsters, and wakes nearby sleepers', async () => {
-    const trap = magicTrapRoom();
+    const trap = await magicTrapRoom();
     requirePlayingGame(game);
     const sleeper = await createMonsterAt('goblin', 12, 10);
     sleeper.msleeping = 1;
@@ -63,7 +63,7 @@ void test('a magic-trap flash blinds and deafens the hero, summons monsters, and
 });
 
 void test('a hero in Archon form sees a nearby sleeper wake after resisting a magic-trap flash', async () => {
-    const trap = magicTrapRoom();
+    const trap = await magicTrapRoom();
     const sleeper = await createMonsterAt('goblin', 12, 10);
     sleeper.msleeping = 1;
     installPolymorphedHero('Archon');
@@ -78,7 +78,7 @@ void test('a hero in Archon form sees a nearby sleeper wake after resisting a ma
 });
 
 void test('a deaf hero resists the flash and gains a shorter deafness extension', async () => {
-    const trap = magicTrapRoom();
+    const trap = await magicTrapRoom();
     game.u.blindResistance = true;
     game.u.deafTurns = 5;
     initRng(16n);
@@ -90,7 +90,7 @@ void test('a deaf hero resists the flash and gains a shorter deafness extension'
 });
 
 void test('a benevolent magic trap increases charisma and tames adjacent monsters', async () => {
-    const trap = magicTrapRoom();
+    const trap = await magicTrapRoom();
     const goblin = await createMonsterAt('goblin', 11, 10);
     const charisma = game.u.acurr?.a[A_CHA];
     assert.ok(charisma !== undefined);
@@ -118,7 +118,7 @@ for (const outcome of [
     },
 ]) {
     void test(`a benevolent magic trap ${outcome.description}`, async () => {
-        const trap = magicTrapRoom();
+        const trap = await magicTrapRoom();
         requirePlayingGame(game);
         game.u.acurr.a[A_CHA] = outcome.charisma;
         game.u.amax.a[A_CHA] = outcome.charisma;
@@ -133,7 +133,7 @@ for (const outcome of [
 }
 
 void test('magic-trap cleansing uncurses worn gear and preserves the confusion timeout', async () => {
-    const trap = magicTrapRoom();
+    const trap = await magicTrapRoom();
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION, { cursed: true });
     await wearHeroAccessory(amulet, 'uamul');
     game.u.confusionTurns = 12;
@@ -150,7 +150,7 @@ void test('magic-trap cleansing uncurses worn gear and preserves the confusion t
 void test('a hallucinating hero hears a low hum and sees a far-out invisibility message', async () => {
     let heardHum = false;
     for (let seed = 1n; seed <= 200n && !heardHum; seed++) {
-        const trap = magicTrapRoom();
+        const trap = await magicTrapRoom();
         requirePlayingGame(game);
         game.u.hallucinationTurns = 100;
         const messages: string[] = [];

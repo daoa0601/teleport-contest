@@ -35,7 +35,7 @@ async function enterAt(x: number, y: number) {
 
 for (const cause of ['departure', 'environment', 'hero', 'genocide']) {
     void test(`${cause} removes a resident keeper's damage and settles the hero's purchases`, async () => {
-        freshObjectRoom({ hero: { ux: 4, uy: 10 } });
+        await freshObjectRoom({ hero: { ux: 4, uy: 10 } });
         requirePlayingGame(game);
         const { room, roomno, shopkeeper } = await createStaffedShop({ keeperX: 12 });
         await enterAt(10, 10);
@@ -77,7 +77,7 @@ for (const cause of ['departure', 'environment', 'hero', 'genocide']) {
 }
 
 void test('a keeper leaving a different shop only clears shallow floor ownership there', async () => {
-    freshObjectRoom({ right: 27, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ right: 27, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const west = await createStaffedShop({ keeperX: 12 });
     const east = await createStaffedShop({ left: 18, right: 24, keeperX: 22 });
@@ -106,7 +106,7 @@ void test('a keeper leaving a different shop only clears shallow floor ownership
 });
 
 void test('a shared shop boundary settles the departing keeper even when its room is not first', async () => {
-    freshObjectRoom({ hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const west = await createStaffedShop({ left: 7, right: 10, keeperX: 9 });
     const east = await createStaffedShop({ left: 12, right: 15, keeperX: 14 });

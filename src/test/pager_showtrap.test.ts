@@ -10,10 +10,10 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const seen of [true, false]) {
     void test(`showtrap identifies only a known web with seen=${seen}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.traps.push({ tx: 11, ty: 10, ttyp: WEB, tseen: seen,
             madeby_u: true, once: false, launch: { x: 0, y: 0 } });
-        newsym(11, 10);
+        await newsym(11, 10);
         const input = resetInputState();
         await answerPrompts(rhack('^'.charCodeAt(0)), input, [
             { prompt: /In what direction\?/, keys: 'l' },

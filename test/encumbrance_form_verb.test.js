@@ -15,7 +15,7 @@ for (const [form, verb] of [
     ['gray ooze', 'tremble'],
 ]) {
     void test(`a strained ${form} hero ${verb}s under a lightened load`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         if (form !== 'human')
             installPolymorphedHero(form);
         while (nearCapacity(game) < 3)

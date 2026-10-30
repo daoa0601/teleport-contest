@@ -7,7 +7,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const quantity of [1, 3]) {
     void test(`acid corrosion keeps the personal name of ${quantity === 1 ? 'a dagger' : 'stacked daggers'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const daggers = await addInventoryObject(DAGGER, { quan: quantity, oname: 'Toothpick' });
         const acid = await addInventoryObject(POT_ACID);
         await runExtendedCommand('dip', daggers.invlet + acid.invlet + ' '.repeat(20));

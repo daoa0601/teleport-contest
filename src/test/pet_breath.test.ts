@@ -41,7 +41,7 @@ async function breathTarget(species = 'orc-captain') {
 }
 
 void test('a tame dragon completes its breath attack instead of moving', async () => {
-    freshRangedCombatRoom({ recalculateVision: true });
+    await freshRangedCombatRoom({ recalculateVision: true });
     requirePlayingGame(game);
     const dragon = await redDragon();
     const target = await breathTarget();
@@ -97,7 +97,7 @@ void test('a mounted dragon with no target snarls and spends the turn', async ()
 });
 
 void test('a pet completes its weapon and breath attacks before one full counterattack', async () => {
-    freshRangedCombatRoom({ recalculateVision: true });
+    await freshRangedCombatRoom({ recalculateVision: true });
     requirePlayingGame(game);
     // Nazgul combines weapon and sleep breath; Aleax resists sleep and has two weapon attacks.
     const pet = await createMonsterAt('Nazgul', 10, 10, TEST_MONSTER_FLAGS);
@@ -137,7 +137,7 @@ void test('a pet completes its weapon and breath attacks before one full counter
 });
 
 void test('poison gas from a pet breath blocks its target weapon counterattack', async () => {
-    freshRangedCombatRoom({ recalculateVision: true });
+    await freshRangedCombatRoom({ recalculateVision: true });
     requirePlayingGame(game);
     const golem = await createMonsterAt('iron golem', 10, 10, TEST_MONSTER_FLAGS);
     initializePet(golem, { state: game });
@@ -174,7 +174,7 @@ void test('poison gas from a pet breath blocks its target weapon counterattack',
 });
 
 void test('a forced hungry pet snarls without attacking its available target', async () => {
-    freshRangedCombatRoom({ recalculateVision: true });
+    await freshRangedCombatRoom({ recalculateVision: true });
     requirePlayingGame(game);
     const dragon = await redDragon();
     const target = await breathTarget();

@@ -102,7 +102,7 @@ async function summonPets(object, state) {
         const wasSeen = canSpotMonster(pet);
         const oldName = wasSeen ? petName(pet, state) : null;
         if (M_AP_TYPE(pet))
-            revealMonsterAppearance(pet);
+            await revealMonsterAppearance(pet);
         const oldx = pet.mx, oldy = pet.my;
         await moveMonsterNextToHero(pet, state, { flags: known ? RLOC_NONE : RLOC_MSG });
         if (state.program_state.gameover)
@@ -111,7 +111,7 @@ async function summonPets(object, state) {
             continue;
         if (pet.mundetected) {
             pet.mundetected = 0;
-            newsym(pet.mx, pet.my);
+            await newsym(pet.mx, pet.my);
         }
         state._lastPlineKind = PLNMSG_enum;
         const trap = await triggerImmediateMonsterTrap(pet, state, {

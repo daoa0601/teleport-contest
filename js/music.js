@@ -146,12 +146,12 @@ async function putMonstersToSleep(distance) {
         if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             && !monster.msleeping && !monster.mfrozen
             && [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster)))
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
         if (monsterResistsSleep(monster) || monsterResistsInstrument(monster)) {
             await shieldeff(monster.mx, monster.my);
             continue;
         }
-        if (!putMonsterToSleep(monster, duration))
+        if (!await putMonsterToSleep(monster, duration))
             continue;
         monster.msleeping = 1;
         if (monster === game.u.ustuck && !game.u.uswallow && !heroFormSticks()) {
@@ -172,7 +172,7 @@ async function charmSnakes(distance) {
         monster.mavenge = 0;
         monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (!canSeeMonster(monster))
             continue;
         if (!wasVisible) {

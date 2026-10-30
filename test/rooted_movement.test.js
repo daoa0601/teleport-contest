@@ -7,7 +7,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const levitating of [false, true]) {
     void test(`a blue jelly stays rooted ${levitating ? 'while levitating' : 'on the ground'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         installPolymorphedHero('blue jelly');
         if (levitating)
             grantIntrinsicProperty('levitation', 'outside');

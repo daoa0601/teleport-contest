@@ -10,7 +10,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const wielded of [false, true]) {
     void test(`an archer ${wielded ? 'backs away with a wielded bow' : 'approaches while its bow is only carried'}`, async () => {
-        freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
+        await freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
         requirePlayingGame(game);
         const elf = await createMonsterAt('elven monarch', 10, 10, MM_ANGRY | NO_MINVENT);
         const bow = await knownObject(ELVEN_BOW);

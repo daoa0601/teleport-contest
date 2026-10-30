@@ -39,7 +39,7 @@ const cases: {
 // govern questpgr.c:qtext_pronoun() even after restore rolls new genders.
 for (const { name, role, leaderGender, nemesisGender, text } of cases) {
     void test(`restoring preserves the saved quest pronouns for ${name}`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         game.plname = 'Questor';
         const quest = ensureQuestStatus();
         quest.ldrgend = leaderGender;
@@ -49,7 +49,7 @@ for (const { name, role, leaderGender, nemesisGender, text } of cases) {
 
         resetGame();
         initRng(1);
-        assert.equal(restoreGame('Questor', storage), true);
+        assert.equal(await restoreGame('Questor', storage), true);
         const afterRestore = rn2(1000);
 
         assert.equal(game.quest_status?.ldrgend, leaderGender,

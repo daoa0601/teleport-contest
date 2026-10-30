@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a Hungry transition changes status after its announcement is acknowledged', async () => {
-    freshObjectRoom({ hero: { uhunger: 151, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 151, uhs: NOT_HUNGRY } });
     await plineWithContinuation('You hear the footsteps of a guard approaching from the corridor.');
     const input = resetInputState();
     let pages = 0;

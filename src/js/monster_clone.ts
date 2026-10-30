@@ -124,7 +124,7 @@ export async function cloneMonster(
     }
 
     setMonsterMalign(clone, state);
-    if (state === game) newsym(clone.mx, clone.my);
+    if (state === game) await newsym(clone.mx, clone.my);
     return clone;
 }
 

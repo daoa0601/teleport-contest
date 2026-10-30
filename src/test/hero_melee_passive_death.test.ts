@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a fatal Oracle passive displays its damage and identifies the invisible unique killer', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { verbose: true, showdamage: true, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
         hero: { uhitinc: 100, uhp: 1, uhpmax: 40, urexp: 100, seeInvisible: true },
     });

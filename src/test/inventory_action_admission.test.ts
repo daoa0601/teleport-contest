@@ -10,7 +10,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('inventory dropping is refused while the hero is buried', async () => {
-    freshObjectRoom({ hero: { uburied: true } });
+    await freshObjectRoom({ hero: { uburied: true } });
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
 
@@ -26,7 +26,7 @@ void test('inventory dropping is refused while the hero is buried', async () => 
 });
 
 void test('a kitten cannot put on a ring from its inventory action menu', async () => {
-    freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf('kitten'), mh: 10, mhmax: 10 } });
+    await freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf('kitten'), mh: 10, mhmax: 10 } });
     const ring = await addInventoryObject(RIN_PROTECTION, { known: true, typeKnown: true });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -43,7 +43,7 @@ void test('a kitten cannot put on a ring from its inventory action menu', async 
 });
 
 void test('a humanoid can wear an inventory ring when carrying no armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION, { known: true, typeKnown: true });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [

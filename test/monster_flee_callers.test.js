@@ -24,7 +24,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const command of ['walk', 'pick']) {
     for (const alreadyFleeing of [false, true]) {
         void test(`${command}: a blocked pet ${alreadyFleeing ? 'keeps untimed fear' : 'starts a timed flight'}`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             const pet = await createMonsterAt('little dog', 11, 10);
             initializePet(pet, { state: game });
@@ -50,7 +50,7 @@ for (const command of ['walk', 'pick']) {
     }
 }
 void test('a wounded melee opponent releases its grip when it loses courage', async () => {
-    freshObjectRoom({ hero: { uhitinc: 30 } });
+    await freshObjectRoom({ hero: { uhitinc: 30 } });
     requirePlayingGame(game);
     const bear = await createMonsterAt('owlbear', 11, 10);
     bear.mhp = 40;
@@ -72,7 +72,7 @@ void test('a wounded melee opponent releases its grip when it loses courage', as
 });
 for (const saved of [false, true]) {
     void test(`garlic breath ${saved ? 'resumes eating after life saving' : 'stops eating and later scares after fatal expulsion'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhunger: 900 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhunger: 900 } });
         requirePlayingGame(game);
         const later = await createMonsterAt('little dog', 12, 10);
         const worm = await createMonsterAt('purple worm', 11, 10);
@@ -103,7 +103,7 @@ for (const saved of [false, true]) {
 }
 for (const untimed of [false, true]) {
     void test(`a drying eel releases its grip and ${untimed ? 'keeps untimed fear' : 'starts a two-turn flight'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const eel = await createMonsterAt('giant eel', 11, 10);
         if (untimed)
@@ -121,7 +121,7 @@ for (const untimed of [false, true]) {
     });
 }
 void test('garlic makes an undead hero nauseated instead of frightening nearby monsters', async () => {
-    freshObjectRoom({ hero: { uhunger: 900 } });
+    await freshObjectRoom({ hero: { uhunger: 900 } });
     requirePlayingGame(game);
     installPolymorphedHero('vampire');
     const worm = await createMonsterAt('purple worm', 11, 10);
@@ -156,7 +156,7 @@ void test('a successful thief replaces timed fear with untimed flight', async ()
     assert.equal(nymph.mfleetim, 0);
 });
 void test('low health alone does not make an engulfer release the hero after melee', async () => {
-    freshObjectRoom({ hero: { uhitinc: 30 } });
+    await freshObjectRoom({ hero: { uhitinc: 30 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mhp = 40;
@@ -172,10 +172,10 @@ void test('low health alone does not make an engulfer release the hero after mel
     assert.equal(Boolean(game.u.uswallow), true);
 });
 void test('an applied polearm does not frighten a wounded foe through melee morale', async () => {
-    freshObjectRoom({ hero: { uhitinc: 30 }, flags: { verbose: false } });
+    await freshObjectRoom({ hero: { uhitinc: 30 }, flags: { verbose: false } });
     requirePlayingGame(game);
     const bear = await createMonsterAt('owlbear', 12, 10);
-    newsym(bear.mx, bear.my);
+    await newsym(bear.mx, bear.my);
     bear.mhp = 40;
     bear.mhpmax = 100;
     const pole = await addInventoryObject(OBJECT_NAMES.indexOf('halberd'));

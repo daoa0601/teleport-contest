@@ -18,7 +18,7 @@ for (const [role, target, expected] of [
     ['caveman', 30, 'Pioneer'],
 ] as const) {
     void test(`a raised ${role} hero is titled ${expected}`, async () => {
-        freshObjectRoom({ role, flags: { debug: true }, hero: { ulevel: 1 } });
+        await freshObjectRoom({ role, flags: { debug: true }, hero: { ulevel: 1 } });
         requireFixtureGame(game);
         initRng(1n);
 
@@ -30,7 +30,7 @@ for (const [role, target, expected] of [
 }
 
 void test('a drained hero returns to the starting rank title', async () => {
-    freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 4 } });
+    await freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 4 } });
     requireFixtureGame(game);
     initRng(1n);
 
@@ -41,7 +41,7 @@ void test('a drained hero returns to the starting rank title', async () => {
 });
 
 void test('crossing a rank boundary reports the attained rank', async () => {
-    freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 1 } });
     requireFixtureGame(game);
     initRng(1n);
 

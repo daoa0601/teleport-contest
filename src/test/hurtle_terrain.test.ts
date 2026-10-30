@@ -16,7 +16,7 @@ for (const property of ['levitation', 'flying'] as const) {
     for (const terrain of [STONE, DOOR, LAVAWALL]) {
         const name = terrain === STONE ? 'solid rock' : terrain === DOOR ? 'a closed door' : 'a lava wall';
         void test(`hurtling through ${name} blocks ${property} until the hero emerges`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             grantIntrinsicProperty('passesWalls', 'outside');
             grantIntrinsicProperty(property, 'outside');
             const square = level.requireAt(11, 10);
@@ -39,7 +39,7 @@ for (const property of ['levitation', 'flying'] as const) {
     }
 
     void test(`hurtling into a water wall blocks ${property} and stops a swimming hero`, async () => {
-        const level = freshObjectRoom({ hero: { swimming: true } });
+        const level = await freshObjectRoom({ hero: { swimming: true } });
         grantIntrinsicProperty(property, 'outside');
         level.requireAt(11, 10).typ = WATER;
         installPagerInput(resetInputState(), { expected: /levitate|fly|plunge/, limit: 6 });
@@ -54,7 +54,7 @@ for (const property of ['levitation', 'flying'] as const) {
 }
 
 void test('a swimming hero entering a pool stops before activating its trap', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true } });
+    const level = await freshObjectRoom({ hero: { swimming: true } });
     level.requireAt(11, 10).typ = POOL;
     const trap = addTrap(level, VIBRATING_SQUARE, 11, 10);
     installPagerInput(resetInputState(), { expected: /fall into|ground vibrates/, limit: 4 });
@@ -68,7 +68,7 @@ void test('a swimming hero entering a pool stops before activating its trap', as
 });
 
 void test('a swimming rider hurtled into a pool stays in the saddle', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { swimming: true } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { swimming: true } });
     const steed = await createSaddledSteed('pony', { x: 10, y: 10 });
     game.u.usteed = steed;
     level.requireAt(11, 10).typ = POOL;
@@ -83,7 +83,7 @@ void test('a swimming rider hurtled into a pool stays in the saddle', async () =
 });
 
 void test('levitation restored after hurtling out of a water wall brings the hero above water', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true, uinwater: 1 } });
+    const level = await freshObjectRoom({ hero: { swimming: true, uinwater: 1 } });
     level.requireAt(10, 10).typ = WATER;
     level.requireAt(11, 10).typ = POOL;
     grantIntrinsicProperty('levitation', 'outside');

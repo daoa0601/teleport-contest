@@ -20,7 +20,7 @@ void test('a migrating chameleon reports its off-map worm head before reverting 
     requirePlayingGame(game);
     const monster = await createMonsterAt('chameleon', 12, 10, NO_MINVENT);
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('long worm'));
-    initializeMonsterWormBody(monster, { segmentCount: 3 });
+    await initializeMonsterWormBody(monster, { segmentCount: 3 });
     assert.ok((monster.wormSegments?.length ?? 0) > 0);
     await migrateMonsterOffLevel(monster, game, { dst: { dnum: 0, dlevel: 2 } }, {
         mode: MIGR_EXACT_XY, coordinate: { x: 14, y: 10 },
@@ -52,7 +52,7 @@ for (const mode of [MIGR_EXACT_XY, MIGR_RANDOM]) {
         requirePlayingGame(game);
         initRng(41n);
         const worm = await createMonsterAt('long worm', 12, 10, NO_MINVENT);
-        initializeMonsterWormBody(worm, { segmentCount: 4 });
+        await initializeMonsterWormBody(worm, { segmentCount: 4 });
         assert.equal(worm.wormSegments?.length, 4);
         await migrateMonsterOffLevel(worm, game, { dst: { dnum: 0, dlevel: 2 } }, {
             mode, coordinate: { x: 14, y: 10 },

@@ -160,7 +160,7 @@ async function strikeUndiggable(tool, x, y, state) {
     const statue = pile.find((object) => object.otyp === STATUE);
     if (trap?.ttyp === WEB) {
         if (!trap.tseen) {
-            seeTrap(trap, state);
+            await seeTrap(trap, state);
             await plineWithContinuation('There is a spider web there!');
         }
         await plineWithContinuation(`${ownedObjectAction(tool, 'become', state)} entangled in the web.`);
@@ -237,7 +237,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
     const verbing = isPick(tool) ? 'digging' : 'chopping';
     if (hero.uswallow &&
         hero.ustuck &&
-        (await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state, { x: hero.ux + hero.dx, y: hero.uy + hero.dy }))) {
+        await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state, { x: hero.ux + hero.dx, y: hero.uy + hero.dy })) {
         return { spentTime: true };
     }
     if (state.underwater || hero.uinwater) {
@@ -266,7 +266,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
             (mon.mhp ?? 1) > 0 &&
             mon.mx === x &&
             mon.my === y);
-        if (monster && (await attackWithTool(tool, monster, attackMonster, payShopkeeper, state, { x, y })))
+        if (monster && await attackWithTool(tool, monster, attackMonster, payShopkeeper, state, { x, y }))
             return { spentTime: true };
         if (diggingTarget(tool, x, y, state) === DIGTYP_UNDIGGABLE)
             await strikeUndiggable(tool, x, y, state);

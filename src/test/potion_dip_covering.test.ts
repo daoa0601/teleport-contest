@@ -16,7 +16,7 @@ for (const { cloakUnpaid, suitUnpaid, covering } of [
     { cloakUnpaid: false, suitUnpaid: false, covering: 'your leather cloak and leather armor' },
 ]) {
     void test(`dipping a covered shirt names ${covering}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const shirt = await addInventoryObject(HAWAIIAN_SHIRT, { owornmask: W_ARMU });
         const suit = await addInventoryObject(LEATHER_ARMOR, { owornmask: W_ARM });

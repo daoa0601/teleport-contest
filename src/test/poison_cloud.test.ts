@@ -30,7 +30,7 @@ function freshCloudRoom(hero: ObjectRoomOptions['hero'] = {}) {
 }
 
 void test('an unseen nearby monster coughs without revealing its species', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const xan = await createMonsterAt('xan', 11, 10);
     xan.minvis = true;
     requireGameLevel().regions = [await poisonCloud({ x: 11, y: 10 })];

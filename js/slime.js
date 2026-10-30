@@ -207,7 +207,7 @@ export async function slimeDialogue({ state = game, publish = plineWithContinuat
     if (turns === 1) {
         hero.m_ap_type = M_AP_MONSTER;
         hero.mappearance = PM_GREEN_SLIME;
-        repaint(hero.ux, hero.uy);
+        await repaint(hero.ux, hero.uy);
     }
     const message = slimeMessage(turns, state, randomMonsterName);
     if (message)

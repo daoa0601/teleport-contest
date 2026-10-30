@@ -32,7 +32,7 @@ void test('holy water leaves a werebeast in its current body when a hostile worm
     const hero = installPolymorphedHero('wererat', { hitPoints: 100 });
     setHeroLycanthropy(hero.umonnum);
     const worm = await createMonsterAt('long worm', 14, 10);
-    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 0 });
     worm.wormSegments = [{ x: 11, y: 10 }, { x: 12, y: 10 }, { x: 13, y: 10 }];
     worm.mpeaceful = 0;
     const water = await addInventoryObject(POT_WATER, { blessed: true });

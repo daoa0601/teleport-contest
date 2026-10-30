@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('a monster arrow passing over an identical floor arrow leaves the cursor after the restored cell', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 12 });
+    await freshObjectRoom({ heroX: 10, heroY: 12 });
     requirePlayingGame(game);
     await floorObject(ARROW, 12, 10, { initialize: false });
     await redrawMap();
@@ -22,11 +22,11 @@ void test('a monster arrow passing over an identical floor arrow leaves the curs
     const display = requireGameDisplay(game);
     assert.equal(requireScreenCell(11, 11).ch, ')');
     assert.deepEqual([display.cursorCol, display.cursorRow], [11, 11]);
-    flight.clear();
+    await flight.clear();
 });
 
 void test('a hero arrow passing over an identical floor arrow leaves the cursor after the restored cell', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 12 });
+    await freshObjectRoom({ heroX: 10, heroY: 12 });
     await floorObject(ARROW, 12, 10, { initialize: false });
     await redrawMap();
     const arrow = await knownObject(ARROW, { initialize: false });

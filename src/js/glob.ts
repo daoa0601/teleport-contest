@@ -145,8 +145,8 @@ export async function meldNearbyFloorGlobs(glob: GameObject, {
         const oldX = absorbed.ox;
         const oldY = absorbed.oy;
         combined = await absorbGlob(survivor, absorbed, state, { publish });
-        if (state === game && cansee(oldX, oldY)) newsym(oldX, oldY);
-        maybeUnhideAt(oldX, oldY, state);
+        if (state === game && cansee(oldX, oldY)) await newsym(oldX, oldY);
+        await maybeUnhideAt(oldX, oldY, state);
     }
 }
 
@@ -248,7 +248,7 @@ function clearHeroEquipment(object: GameObject, state: GameState): void {
     if (removed) state._occupation = null;
 }
 
-function deleteGlob(glob: GameObject, state: GameState): void {
+async function deleteGlob(glob: GameObject, state: GameState): Promise<void> {
     const where = glob.where;
     const x = glob.ox, y = glob.oy;
     if (where === 'inventory') {
@@ -260,7 +260,7 @@ function deleteGlob(glob: GameObject, state: GameState): void {
         glob.owornmask = 0;
     }
     unlinkObject(glob, state);
-    if (where === 'floor') maybeUnhideAt(x, y, state);
+    if (where === 'floor') await maybeUnhideAt(x, y, state);
     if (state.context.victual?.piece === glob) state.context.victual = null;
     // obfree() retains a consumed shop object for itemized billing.
     if (reconcileObjectDeletionBill(glob, null, state) === 'retained') return;
@@ -284,9 +284,9 @@ function shrinkingGlobName(glob: GameObject, state: GameState): string {
     }
 }
 
-export function runClaimedGlobTimer(
+export async function runClaimedGlobTimer(
     claimed: DueObjectTimer | null, state: GameState = game, currentTurn = state.moves ?? 0,
-): GlobTimerEvent | null {
+): Promise<GlobTimerEvent | null> {
     if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.SHRINK_GLOB)
         return null;
     const glob = claimed.object;
@@ -322,7 +322,7 @@ export function runClaimedGlobTimer(
             : missedShrinks;
         if (delta >= glob.owt) {
             glob.owt = 0;
-            deleteGlob(glob, state);
+            await deleteGlob(glob, state);
             return {
                 glob, x, y, overdue: true, delta,
                 gone: true, message: null,
@@ -389,9 +389,9 @@ export function runClaimedGlobTimer(
 
     if (gone) {
         const visible = where === 'floor' && cansee(x, y);
-        deleteGlob(glob, state);
+        await deleteGlob(glob, state);
         if (visible) {
-            newsym(x, y);
+            await newsym(x, y);
             const subject = x !== state.u.ux || y !== state.u.uy
                 ? name.replace(/^The /u, 'A ') : name;
             message = `${subject} fades away.`;
@@ -410,7 +410,7 @@ export async function finishGlobTimer(
     publish: MessagePublisher = plineWithContinuation,
 ): Promise<GlobTimerEvent | null> {
     if (!event?.finishPending || !event.glob) return event;
-    if (event.gone) deleteGlob(event.glob, state);
+    if (event.gone) await deleteGlob(event.glob, state);
     else scheduleNextGlobAttempt(event.glob, state, currentTurn);
     event.finishPending = false;
     event.finished = true;

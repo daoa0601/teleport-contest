@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('calling known holy water names its type without its blessing', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(POT_WATER, { invlet: 'a', blessed: true });
     const input = resetInputState();
     input.feed('name\r');
@@ -19,7 +19,7 @@ void test('calling known holy water names its type without its blessing', async 
     assert.equal(game._objectCallNames?.[POT_WATER], 'Clear Drink');
 });
 void test('an empty type-name answer keeps the existing call name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();
@@ -29,7 +29,7 @@ void test('an empty type-name answer keeps the existing call name', async () => 
     assert.equal(game._objectCallNames?.[RIN_PROTECTION], 'Defense');
 });
 void test('type calling keeps printable high bytes and limits the normalized name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });
     const input = resetInputState();
     input.feed(`name\r  \u00a0Café   ${'r'.repeat(68)}\r`);
@@ -39,7 +39,7 @@ void test('type calling keeps printable high bytes and limits the normalized nam
     assert.equal(game.context.move, 0);
 });
 void test('erasing a call name keeps the unidentified ring in encountered discoveries', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();

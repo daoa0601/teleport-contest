@@ -12,7 +12,7 @@ import { applyMonsterStoningAttack } from '../js/stoning.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a hero awakened by combat staggers aloud when the next blow knocks them back', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 10, 11, NO_MINVENT);
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
@@ -40,7 +40,7 @@ void test('a hero awakened by combat staggers aloud when the next blow knocks th
     assert.ok(messages.includes('You stagger...'), messages.join('\n'));
 });
 void test('a sleeping hero dreams of the cockatrice hiss', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
     await putHeroToSleep(5);
     const messages = [];
@@ -51,7 +51,7 @@ void test('a sleeping hero dreams of the cockatrice hiss', async () => {
     assert.ok(messages.includes("You dream that you hear the cockatrice's hissing!"));
 });
 void test('a sleeping hero dreams of poison weakening its muscles', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await putHeroToSleep(5);
     const strength = game.u.acurr?.a[A_STR];
     assert.ok(strength !== undefined);

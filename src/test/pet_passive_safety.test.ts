@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 
 async function contactTurn(species: string, enemy: string, resistance = 0) {
-    freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10 });
     const pet = await createMonsterAt(species, 12, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(pet);
     pet.m_lev = 30;

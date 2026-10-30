@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
     { type: POT_SLEEPING, name: 'sleeping' }]) {
     void test(`potion of ${name} vapors preserve an existing longer paralysis`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game._helplessTurns = 30;
         const potion = await knownObject(type);
@@ -27,7 +27,7 @@ for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
     });
 
     void test(`shorter ${name} vapors preserve protection during prayer`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             flags: { paranoia_bits: PARANOID_PRAY },
             hero: { uhp: 20, ublesscnt: 0, uluck: 0, ugangr: 0,
                 ualign: { type: 0, record: 10 } },
@@ -47,7 +47,7 @@ for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
     });
 
     void test(`prayer completes with movement recovery after shorter ${name} vapors`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             flags: { paranoia_bits: PARANOID_PRAY },
             hero: { ublesscnt: 0, uluck: 0, ugangr: 0,
                 ualign: { type: 0, record: 10 } },
@@ -70,7 +70,7 @@ for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
 }
 
 void test('paralysis vapors clear sleep when they replace a shorter delay', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._helplessTurns = 1;
     game.u.usleep = game.moves;

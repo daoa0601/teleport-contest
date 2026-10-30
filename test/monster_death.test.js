@@ -21,7 +21,7 @@ import { addTrap, floorObjects, floorObjectsAt, } from './support/level-state.js
 import { createMonsterAt, equipMonsterObject, requireMonsterVital, } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a zombie special corpse stays on the floor when its boulder fills a pit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const zombie = await createMonsterAt('giant zombie', 11, 10);
     zombie.mtrapped = 1;
@@ -33,7 +33,7 @@ void test('a zombie special corpse stays on the floor when its boulder fills a p
     assert.equal(floorObjectsAt(level, 11, 10).some(object => object.otyp === CORPSE), true);
 });
 void test('a large monster leaves a corpse without a random chance', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 11, 10);
     const death = await finishEnvironmentalMonsterDeath(giant, game, {
@@ -44,7 +44,7 @@ void test('a large monster leaves a corpse without a random chance', async () =>
     assert.equal(floorObjectsAt(level, 11, 10).includes(death.corpse), true);
 });
 void test('a monster death updates its species death count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 11, 10);
     await finishEnvironmentalMonsterDeath(giant, game, {
@@ -53,7 +53,7 @@ void test('a monster death updates its species death count', async () => {
     assert.equal(requireMonsterVital(giant.mnum).died, 1);
 });
 void test('a dead mail daemon stops future mail delivery', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const daemon = await createMonsterAt('mail daemon', 11, 10);
     await finishEnvironmentalMonsterDeath(daemon, game, {
@@ -62,7 +62,7 @@ void test('a dead mail daemon stops future mail delivery', async () => {
     assert.equal((requireMonsterVital(daemon.mnum).mvflags & G_GENOD) !== 0, true);
 });
 void test('a dead chameleon returns to its true species', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     const chameleon = MONSTER_NAME.indexOf('chameleon');
     const monster = await createMonsterAt(chameleon, 11, 10);
@@ -77,7 +77,7 @@ void test('a dead chameleon returns to its true species', async () => {
     assert.equal(requireMonsterVital(killedForm).died ?? 0, 0);
 });
 void test('a dead werewolf returns to its human species', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const humanWerewolf = MONSTER_NAME.lastIndexOf('werewolf');
     const monster = await createMonsterAt(humanWerewolf, 11, 10);
@@ -93,7 +93,7 @@ void test('a dead werewolf returns to its human species', async () => {
     assert.equal(requireMonsterVital(killedForm).died ?? 0, 0);
 });
 void test('a dead steam vortex leaves a harmless steam cloud', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const vortex = await createMonsterAt('steam vortex', 11, 10);
     await finishEnvironmentalMonsterDeath(vortex, game, {
@@ -105,7 +105,7 @@ void test('a dead steam vortex leaves a harmless steam cloud', async () => {
     assert.equal(cloud?.cells.some(cell => cell.x === 11 && cell.y === 10), true);
 });
 void test('a dead Kop can return elsewhere on the level', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 3n });
+    const level = await freshObjectRoom({ gameplaySeed: 3n });
     requirePlayingGame(game);
     const kop = await createMonsterAt('Keystone Kop', 11, 10);
     initRng(3n);
@@ -119,7 +119,7 @@ void test('a dead Kop can return elsewhere on the level', async () => {
     assert.ok(returnedKop.mhp > 0);
 });
 void test('killing a peaceful monster can reduce luck', async () => {
-    freshObjectRoom({ gameplaySeed: 4n });
+    await freshObjectRoom({ gameplaySeed: 4n });
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mpeaceful = 1;
@@ -133,7 +133,7 @@ void test('killing a peaceful monster can reduce luck', async () => {
     assert.equal(game.u.uluck, -1);
 });
 void test('killing a co-aligned unicorn costs at least five luck', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 0 } } });
     requirePlayingGame(game);
     const unicorn = await createMonsterAt('white unicorn', 11, 10);
     game.u.uluck = 0;
@@ -145,7 +145,7 @@ void test('killing a co-aligned unicorn costs at least five luck', async () => {
     assert.ok(game.u.uluck === -5 || game.u.uluck === -6);
 });
 void test('murder costs luck and intrinsic telepathy', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const prisoner = await createMonsterAt('prisoner', 11, 10);
     prisoner.malign = 0;
@@ -160,7 +160,7 @@ void test('murder costs luck and intrinsic telepathy', async () => {
     assert.ok(game.u.uluck === -2 || game.u.uluck === -3);
 });
 void test('killing the quest leader punishes the hero and angers guardians', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 1n,
         hero: { ualign: { type: -1, record: 8 } },
     });
@@ -197,7 +197,7 @@ void test('killing the quest leader punishes the hero and angers guardians', asy
     });
 });
 void test('killing the nemesis before the leader rewards alignment', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const nemesis = await createMonsterAt('Minion of Huhetotl', 11, 10);
     nemesis.malign = 0;
@@ -219,7 +219,7 @@ void test('killing the nemesis before the leader rewards alignment', async () =>
     });
 });
 void test('killing a quest guardian costs alignment and at least four luck', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const guardian = await createMonsterAt('student', 11, 10);
     guardian.malign = 0;
@@ -235,7 +235,7 @@ void test('killing a quest guardian costs alignment and at least four luck', asy
     assert.ok(game.u.uluck === -4 || game.u.uluck === -5);
 });
 void test('killing an aligned priest removes divine protection', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { ualign: { type: -1, record: 0 }, ublessed: 3 },
     });
     requirePlayingGame(game);
@@ -261,7 +261,7 @@ void test('killing an aligned priest removes divine protection', async () => {
     });
 });
 void test('killing a pit-trapped monster with a boulder buries its corpse', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 28n });
+    const level = await freshObjectRoom({ gameplaySeed: 28n });
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 11, 10);
     giant.mtrapped = 1;
@@ -277,7 +277,7 @@ void test('killing a pit-trapped monster with a boulder buries its corpse', asyn
     assert.match(game._pending_message, /The giant's corpse ends up buried\.$/);
 });
 void test('a boulder already in a monster pit prevents death remains', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 29n });
+    const level = await freshObjectRoom({ gameplaySeed: 29n });
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 11, 10);
     giant.mtrapped = 1;
@@ -291,7 +291,7 @@ void test('a boulder already in a monster pit prevents death remains', async () 
     assert.equal(floorObjectsAt(level, 11, 10).some(object => object.otyp === CORPSE), false);
 });
 void test('killing a monster inside solid rock leaves no objects', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 30n });
+    const level = await freshObjectRoom({ gameplaySeed: 30n });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = STONE;
     const jackal = await createMonsterAt('jackal', 11, 10);
@@ -307,7 +307,7 @@ void test('Kops and cloned monsters do not leave random bonus objects', async ()
         { species: 'Keystone Kop' },
         { species: 'jackal', cloned: true },
     ]) {
-        const level = freshObjectRoom({ gameplaySeed: 10n });
+        const level = await freshObjectRoom({ gameplaySeed: 10n });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10);
         monster.mcloned = cloned ? 1 : 0;
@@ -320,7 +320,7 @@ void test('Kops and cloned monsters do not leave random bonus objects', async ()
     }
 });
 void test('pool water destroys an acid potion dropped by a dying monster', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         gameplaySeed: 482n,
         hero: { uluck: -5 },
     });
@@ -337,7 +337,7 @@ void test('pool water destroys an acid potion dropped by a dying monster', async
     assert.equal(potion.where, 'gone');
 });
 void test('a glob dropped by a dying monster joins a neighboring glob', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 483n });
+    const level = await freshObjectRoom({ gameplaySeed: 483n });
     requirePlayingGame(game);
     placeCreatedObject(await knownObject(GLOB_OF_BLACK_PUDDING), 12, 10);
     const jackal = await createMonsterAt('jackal', 11, 10);
@@ -352,7 +352,7 @@ void test('a glob dropped by a dying monster joins a neighboring glob', async ()
     assert.equal(globs[0]?.owt, 40);
 });
 void test('a potion dropped on a hot dungeon floor shatters', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         gameplaySeed: 484n,
         heroX: 15,
         heroY: 10,
@@ -371,7 +371,7 @@ void test('a potion dropped on a hot dungeon floor shatters', async () => {
     assert.deepEqual(floorObjectsAt(level, 11, 10), []);
 });
 void test('a monster-turn drop reveals an object curse on a visible altar', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = ALTAR;
     game.context.mon_moving = true;
@@ -389,7 +389,7 @@ void test('a monster-turn drop reveals an object curse on a visible altar', asyn
     assert.equal(game.u.uconduct.gnostic ?? 0, 0);
 });
 void test('a visible lich crumbles to dust instead of leaving a corpse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lich = await createMonsterAt('lich', 11, 10);
     const messages = [];
@@ -401,7 +401,7 @@ void test('a visible lich crumbles to dust instead of leaving a corpse', async (
     assert.deepEqual(messages, ["The lich's body crumbles into dust."]);
 });
 void test('a stone golem leaves a statue of itself', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 21n });
+    const level = await freshObjectRoom({ gameplaySeed: 21n });
     requirePlayingGame(game);
     const golem = await createMonsterAt('stone golem', 11, 10);
     await finishEnvironmentalMonsterDeath(golem, game, {
@@ -412,7 +412,7 @@ void test('a stone golem leaves a statue of itself', async () => {
     assert.equal(statue?.corpsenm, golem.mnum);
 });
 void test('a clay golem collapses into a pile of rocks', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 22n });
+    const level = await freshObjectRoom({ gameplaySeed: 22n });
     requirePlayingGame(game);
     const golem = await createMonsterAt('clay golem', 11, 10);
     await finishEnvironmentalMonsterDeath(golem, game, {
@@ -454,7 +454,7 @@ void test('golems leave the materials they were made from', async () => {
     ];
     for (const golemCase of cases) {
         const { species, minimum, maximum, materials, } = golemCase;
-        const level = freshObjectRoom({ gameplaySeed: 23n });
+        const level = await freshObjectRoom({ gameplaySeed: 23n });
         requirePlayingGame(game);
         const golem = await createMonsterAt(species, 11, 10);
         await finishEnvironmentalMonsterDeath(golem, game, {
@@ -476,7 +476,7 @@ void test('golems leave the materials they were made from', async () => {
     }
 });
 void test('an adult dragon can leave scales with its corpse', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n });
+    const level = await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     const dragon = await createMonsterAt('red dragon', 11, 10);
     initRng(1n);
@@ -492,7 +492,7 @@ void test('unicorns and long worms leave both a body and a useful part', async (
         ['white unicorn', UNICORN_HORN],
         ['long worm', WORM_TOOTH],
     ]) {
-        const level = freshObjectRoom({ gameplaySeed: 24n });
+        const level = await freshObjectRoom({ gameplaySeed: 24n });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10);
         await finishEnvironmentalMonsterDeath(monster, game, {
@@ -504,7 +504,7 @@ void test('unicorns and long worms leave both a body and a useful part', async (
     }
 });
 void test('a black pudding congeals and joins a nearby glob', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 25n });
+    const level = await freshObjectRoom({ gameplaySeed: 25n });
     requirePlayingGame(game);
     const oldGlob = await knownObject(GLOB_OF_BLACK_PUDDING);
     placeCreatedObject(oldGlob, 12, 10);
@@ -521,7 +521,7 @@ void test('a black pudding congeals and joins a nearby glob', async () => {
     assert.equal(glob?.owt, 40);
 });
 void test('a dungeon-killed gas spore explodes where corpses cannot drop', async () => {
-    freshObjectRoom({ gameplaySeed: 26n });
+    await freshObjectRoom({ gameplaySeed: 26n });
     requirePlayingGame(game);
     game.level.flags.deathdrops = false;
     const gasSpore = await createMonsterAt('gas spore', 11, 10);
@@ -536,7 +536,7 @@ void test('a dungeon-killed gas spore explodes where corpses cannot drop', async
     assert.ok(game.u.uhp < heroHitPoints);
 });
 void test('killing a gas spore blasts the hero and nearby monsters', async () => {
-    freshObjectRoom({ gameplaySeed: 27n });
+    await freshObjectRoom({ gameplaySeed: 27n });
     requirePlayingGame(game);
     game.u.uhp = game.u.uhpmax = 100;
     const gasSpore = await createMonsterAt('gas spore', 11, 10);
@@ -552,7 +552,7 @@ void test('killing a gas spore blasts the hero and nearby monsters', async () =>
     assert.ok(game.u.uhp < 100);
 });
 void test('a hero kill releases a fixed crysknife before placing it on the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const orc = await createMonsterAt('orc', 12, 10);
     const knife = await knownObject(CRYSKNIFE, { oerodeproof: true });
@@ -565,7 +565,7 @@ void test('a hero kill releases a fixed crysknife before placing it on the floor
     assert.equal(knife.otyp, WORM_TOOTH);
 });
 void test('a new pudding glob follows its heavier survivor to reach the next neighbor', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 25n });
+    const level = await freshObjectRoom({ gameplaySeed: 25n });
     requirePlayingGame(game);
     const heavy = await knownObject(GLOB_OF_BLACK_PUDDING);
     const distant = await knownObject(GLOB_OF_BLACK_PUDDING);
@@ -585,7 +585,7 @@ void test('a new pudding glob follows its heavier survivor to reach the next nei
 for (const liquid of [false, true]) {
     for (const lifesaving of [false, true]) {
         void test(`${liquid ? 'liquid' : 'environmental'} monster death ${lifesaving ? 'resumes a blast after hero life saving' : 'propagates a fatal blast before its wake effects'}`, async () => {
-            freshObjectRoom({ right: 20, hero: { uhp: 1, uhpmax: 100 } });
+            await freshObjectRoom({ right: 20, hero: { uhp: 1, uhpmax: 100 } });
             requirePlayingGame(game);
             if (lifesaving) {
                 const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -608,7 +608,7 @@ for (const liquid of [false, true]) {
 }
 for (const healthy of [false, true]) {
     void test(`a blast destroying a polymorphed body ${healthy ? 'continues after return to a healthy human body' : 'stops if the human body cannot survive'}`, async () => {
-        freshObjectRoom({ right: 20, hero: { uhp: healthy ? 100 : 0, uhpmax: 100 } });
+        await freshObjectRoom({ right: 20, hero: { uhp: healthy ? 100 : 0, uhpmax: 100 } });
         requirePlayingGame(game);
         installPolymorphedHero('kobold', { hitPoints: 1 });
         const spore = await createMonsterAt('gas spore', 11, 10);
@@ -624,7 +624,7 @@ for (const healthy of [false, true]) {
     });
 }
 void test('refusing death in explore mode continues the explosion wake effect', async () => {
-    freshObjectRoom({ right: 20, hero: { uhp: 1, uhpmax: 100 } });
+    await freshObjectRoom({ right: 20, hero: { uhp: 1, uhpmax: 100 } });
     requirePlayingGame(game);
     game.flags.explore = true;
     const spore = await createMonsterAt('gas spore', 11, 10);
@@ -640,7 +640,7 @@ void test('refusing death in explore mode continues the explosion wake effect', 
 });
 for (const hallucinating of [false, true]) {
     void test(`a crumbling lich is named by current ${hallucinating ? 'hallucination' : 'invisible sight'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const lich = await createMonsterAt('lich', 11, 10);
         const messages = [];

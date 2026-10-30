@@ -18,7 +18,7 @@ import { createRoom } from './support/topology.js';
 import { initRng } from '../js/rng.js';
 
 void test('the guard accepts and echoes names longer than thirty-one characters', async () => {
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     level.requireAt(16, 10).typ = CORR;
@@ -45,7 +45,7 @@ void test('the guard accepts and echoes names longer than thirty-one characters'
 
 for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
     void test(`guard arrival pages unread prose and requests gold kept in ${goldLocation}`, async () => {
-        const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+        const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
         requirePlayingGame(game);
         level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
         level.requireAt(16, 10).typ = CORR;
@@ -89,7 +89,7 @@ for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
 }
 
 void test('guard arrival does not redraw warnings before announcing the guard', async () => {
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     level.requireAt(16, 10).typ = CORR;
@@ -116,7 +116,7 @@ void test('guard arrival does not redraw warnings before announcing the guard', 
 });
 
 void test('answering a guard does not change its hallucinated appearance before the next turn', async () => {
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     for (let x = 9; x <= 10; x++)

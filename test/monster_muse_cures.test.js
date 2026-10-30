@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const adjacent of [true, false]) {
     void test(`watching a monster drink acid ${adjacent ? 'nearby shows its appearance' : 'at a distance keeps its appearance unknown'}`, async () => {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', adjacent ? 13 : 10, 10, NO_MINVENT);
         monster.mhp = monster.mhpmax = 100;
@@ -35,7 +35,7 @@ for (const adjacent of [true, false]) {
 }
 for (const species of ['bat', 'giant bat', 'vampire bat']) {
     void test(`a lizard cures a ${species} without claiming its natural confusion is steadier`, async () => {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 13, 10, NO_MINVENT);
         monster.mconf = 1;

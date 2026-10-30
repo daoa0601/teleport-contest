@@ -15,7 +15,7 @@ void test('the terrain view can retain a discovered trap', async () => {
     const trap = await maketrap(14, 10, PIT);
     assert.ok(trap);
     trap.tseen = true;
-    newsym(14, 10);
+    await newsym(14, 10);
     input.feed('\x7fb');
     const action = rhack(0);
     try {
@@ -34,7 +34,7 @@ void test('the terrain view can retain a discovered trap', async () => {
 // leaves a cleared topl with the map restored.
 void test('terrain browsing pages the announcement before the getpos prompt', async () => {
     const input = freshTurnRoom({ flags: { tips: false } });
-    newsym(10, 9);
+    await newsym(10, 9);
     input.feed('\x7fc');
     const action = rhack(0);
     const topl = () => requireScreenRow(0).map(cell => cell.ch).join('').trim();
@@ -86,7 +86,7 @@ void test('removing an object from a terrain view retains DECgraphics floor rend
     const input = freshTurnRoom({ flags: { tips: false } });
     game.symset = 'DECgraphics';
     await floorObject(DAGGER, 14, 10);
-    newsym(14, 10);
+    await newsym(14, 10);
     input.feed('\x7fa');
     const action = rhack(0);
     try {

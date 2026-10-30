@@ -16,7 +16,7 @@ for (const [blind, quantity, expected] of [
     [false, 3, 'The runed arrows tumble into the pit.'],
 ]) {
     void test(`${quantity} unidentified elven arrow${quantity > 1 ? 's' : ''} falling into a pit${blind ? ' unseen' : ''}`, async () => {
-        const level = freshObjectRoom({ hero: { blindTurns: blind ? 50 : 0 } });
+        const level = await freshObjectRoom({ hero: { blindTurns: blind ? 50 : 0 } });
         const { ux, uy } = game.u;
         addTrap(level, PIT, ux, uy, { tseen: true });
         const arrows = await knownObject(ELVEN_ARROW, {

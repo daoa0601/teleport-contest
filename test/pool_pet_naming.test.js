@@ -80,7 +80,7 @@ void test('eight-bit tty input preserves printable bytes in each configured pet 
     assert.equal(settings.flags.horsename, 'BjÃ¶rk');
 });
 void test('a configured pet uses the existing eight-bit input setting and replaces control bytes', async () => {
-    freshObjectRoom({ role: 'ranger' });
+    await freshObjectRoom({ role: 'ranger' });
     game.iflags.wc_eight_bit_input = true;
     game.preferred_pet = 'd';
     applyNethackrc('OPTIONS=dogname:M\x01élusine\x7f');
@@ -94,7 +94,7 @@ void test('eight-bit pet names retain printable characters beside sanitized cont
     assert.equal(settings.flags.catname, 'â.¬');
 });
 void test('eight-bit pet names retain the last character at the native name limit', async () => {
-    freshObjectRoom({ role: 'ranger' });
+    await freshObjectRoom({ role: 'ranger' });
     game.preferred_pet = 'd';
     const prefix = 'a'.repeat(PL_PSIZ - 2);
     applyNethackrc(`OPTIONS=dogname:${prefix}ĀZ,eight_bit_tty`);
@@ -121,7 +121,7 @@ void test('configured pet names end at a null byte', () => {
 });
 void test('a configured dog name overrides the role default and preserves its case', async () => {
     const settings = parseNethackrc('OPTIONS=dogname:Sir Wags');
-    freshObjectRoom({ role: 'ranger', flags: settings.flags });
+    await freshObjectRoom({ role: 'ranger', flags: settings.flags });
     game.preferred_pet = 'd';
     const pet = await makedog();
     assert.ok(pet);

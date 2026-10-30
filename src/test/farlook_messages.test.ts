@@ -12,36 +12,36 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('farlook reports an unremembered object disguise as something', async () => {
-    const level = freshObjectRoom({ hero: { detectMonsters: true } });
+    const level = await freshObjectRoom({ hero: { detectMonsters: true } });
     level.flags.hero_memory = true;
     const mimic = await createMonsterAt('small mimic', 30, 10, MM_NOGRP | NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = CHEST;
-    newsym(30, 10);
+    await newsym(30, 10);
 
     assert.equal(await farlookLocationDescription(30, 10), 'small mimic, mimicking something');
 });
 
 void test('farlook names a sensed furniture disguise', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true } });
     const mimic = await createMonsterAt('small mimic', 11, 10, MM_NOGRP | NO_MINVENT);
     mimic.m_ap_type = M_AP_FURNITURE;
     const stairs = MAP_SYMBOLS.findIndex(symbol => symbol.name === 'staircase down');
     assert.ok(stairs >= 0);
     mimic.mappearance = stairs;
-    newsym(11, 10);
+    await newsym(11, 10);
 
     assert.equal(await farlookLocationDescription(11, 10), 'small mimic, mimicking a staircase down');
 });
 
 void test('farlook at a clear worm tail does not report the cloud around its head', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const worm = await createMonsterAt('long worm', 11, 10, MM_NOGRP | MM_NOTAIL | NO_MINVENT);
     worm.mpeaceful = false;
     worm.wormSegments = [{ x: 12, y: 10 }];
     await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
-    newsym(11, 10);
-    newsym(12, 10);
+    await newsym(11, 10);
+    await newsym(12, 10);
 
     assert.equal(await farlookLocationDescription(11, 10), 'long worm, in a cloud of vapor');
     assert.equal(await farlookLocationDescription(12, 10), 'tail of a long worm');

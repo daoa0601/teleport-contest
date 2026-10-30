@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('restore rejects a nonnumeric hero statistic before changing the live game', async () => {
-    freshObjectRoom({ moves: 27 });
+    await freshObjectRoom({ moves: 27 });
     game.plname = 'MalformedHero';
     const hero = game.u;
     const level = game.level;
@@ -26,14 +26,14 @@ void test('restore rejects a nonnumeric hero statistic before changing the live 
     assert.ok(isSavedRecord(saved.state.u));
     saved.state.u.uhp = 'healthy';
     storage.setItem(key, encodeSavedGraph(saved));
-    assert.equal(restoreGame(game.plname, storage), false);
+    assert.equal(await restoreGame(game.plname, storage), false);
     assert.equal(game.u, hero);
     assert.equal(game.level, level);
     assert.equal(game.moves, 27);
     assert.notEqual(storage.getItem(key), null);
 });
 void test('restore rejects process state embedded in saved game data', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'RuntimeFields';
     const programState = game.program_state;
     const storage = memoryStorage();
@@ -45,12 +45,12 @@ void test('restore rejects process state embedded in saved game data', async () 
     assert.ok(isSavedRecord(saved) && isSavedRecord(saved.state));
     saved.state.program_state = { gameover: true };
     storage.setItem(key, encodeSavedGraph(saved));
-    assert.equal(restoreGame(game.plname, storage), false);
+    assert.equal(await restoreGame(game.plname, storage), false);
     assert.equal(game.program_state, programState);
     assert.notEqual(storage.getItem(key), null);
 });
 void test('restore rejects an object whose required field exists only in prototype metadata', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'MalformedObject';
     const club = await addInventoryObject(CLUB);
     const storage = memoryStorage();
@@ -69,7 +69,7 @@ void test('restore rejects an object whose required field exists only in prototy
         value: { quan: 1 }, enumerable: true,
     });
     storage.setItem(key, encodeSavedGraph(saved));
-    assert.equal(restoreGame(game.plname, storage), false);
+    assert.equal(await restoreGame(game.plname, storage), false);
     assert.equal(game.inventory[0], club);
     assert.notEqual(storage.getItem(key), null);
 });
@@ -90,7 +90,7 @@ void test('restore rejects a cached level without its recovery time before chang
     assert.ok(isSavedRecord(destination));
     delete destination.savedAt;
     storage.setItem(key, encodeSavedGraph(saved));
-    assert.equal(restoreGame(game.plname, storage), false);
+    assert.equal(await restoreGame(game.plname, storage), false);
     assert.equal(game.level, source);
     assert.notEqual(storage.getItem(key), null);
 });
@@ -102,7 +102,7 @@ for (const { columns, rows } of [
     { columns: COLNO, rows: ROWNO + 1 },
 ]) {
     void test(`restore rejects a ${columns} by ${rows} map before replacing the live level`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const hero = game.u;
         game.plname = 'MalformedMap';
         const storage = memoryStorage();
@@ -126,7 +126,7 @@ for (const { columns, rows } of [
         if (rows > ROWNO)
             cells[ROWNO] = firstCell;
         storage.setItem(key, encodeSavedGraph(saved));
-        assert.equal(restoreGame(game.plname, storage), false);
+        assert.equal(await restoreGame(game.plname, storage), false);
         assert.equal(game.level, level);
         assert.equal(game.u, hero);
         assert.notEqual(storage.getItem(key), null);
@@ -134,7 +134,7 @@ for (const { columns, rows } of [
 }
 for (const mnum of [-1, MONSTER_NAME.length]) {
     void test(`restore rejects monster species ${mnum} before replacing live entities`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const hero = game.u;
         const monster = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         game.plname = 'MalformedSpecies';
@@ -152,7 +152,7 @@ for (const mnum of [-1, MONSTER_NAME.length]) {
         assert.ok(isSavedRecord(savedMonster));
         savedMonster.mnum = mnum;
         storage.setItem(key, encodeSavedGraph(saved));
-        assert.equal(restoreGame(game.plname, storage), false);
+        assert.equal(await restoreGame(game.plname, storage), false);
         assert.equal(game.level, level);
         assert.equal(game.u, hero);
         assert.equal(level.monsters[0], monster);
@@ -161,7 +161,7 @@ for (const mnum of [-1, MONSTER_NAME.length]) {
 }
 for (const otyp of [-1, OBJECT_NAMES.length]) {
     void test(`restore rejects object type ${otyp} before replacing the live inventory`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const hero = game.u;
         const club = await addInventoryObject(CLUB);
         const inventory = game.inventory;
@@ -179,7 +179,7 @@ for (const otyp of [-1, OBJECT_NAMES.length]) {
         assert.ok(isSavedRecord(savedObject));
         savedObject.otyp = otyp;
         storage.setItem(key, encodeSavedGraph(saved));
-        assert.equal(restoreGame(game.plname, storage), false);
+        assert.equal(await restoreGame(game.plname, storage), false);
         assert.equal(game.level, level);
         assert.equal(game.u, hero);
         assert.equal(game.inventory, inventory);
@@ -188,7 +188,7 @@ for (const otyp of [-1, OBJECT_NAMES.length]) {
     });
 }
 void test('restore accepts endpoint metadata indices and absent-species sentinels', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const firstMonster = await createMonsterAt(0, 11, 10, NO_MINVENT);
     const lastMonster = await createMonsterAt(MONSTER_NAME.length - 1, 12, 10, NO_MINVENT);
     firstMonster.cham = NON_PM;
@@ -197,7 +197,7 @@ void test('restore accepts endpoint metadata indices and absent-species sentinel
     game.plname = 'MetadataEndpoints';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     assert.ok(game.level);
     assert.equal(game.level.monsters.find(monster => monster.m_id === firstMonster.m_id)?.mnum, 0);
     assert.equal(game.level.monsters.find(monster => monster.m_id === firstMonster.m_id)?.cham, NON_PM);

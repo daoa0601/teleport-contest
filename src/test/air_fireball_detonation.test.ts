@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // reports that it "vanishes into the aether", then still explodes at the
 // cell it entered, with the blast coerced to a wand-style fire explosion.
 void test('a fireball vanishing into the aether still detonates at the edge', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, dx: 1, dy: 0, dz: 0 } });
+    await freshObjectRoom({ hero: { ulevel: 1, dx: 1, dy: 0, dz: 0 } });
     requirePlayingGame(game);
     game.air_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     const jackal = await createMonsterAt('jackal', 16, 9, NO_MINVENT);

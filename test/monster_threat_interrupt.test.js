@@ -15,7 +15,7 @@ async function searchWhileMonsterApproaches(hallucinationTurns) {
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 20, 10);
     monster.mpeaceful = 1;
-    vision_recalc(0);
+    await vision_recalc(0);
     const binding = game.commandBindings.lookup('s'.charCodeAt(0));
     assert.ok(binding);
     game.multi = 30;

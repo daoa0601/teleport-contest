@@ -8,7 +8,7 @@ import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 for (const [form, face] of [['floating eye', 'body'], ['brown mold', 'front']]) {
     void test(`wiping a clean ${form} names its ${face}`, async () => {
         assert.ok(form);
-        freshRoomWithPolymorphedHero(form);
+        await freshRoomWithPolymorphedHero(form);
 
         await runExtendedCommand('wipe');
 

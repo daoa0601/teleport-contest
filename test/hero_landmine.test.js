@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const lifesaving of [false, true]) {
     void test(`a land mine ${lifesaving ? 'continues the explosion after life saving' : 'does not continue the explosion after permanent death'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         const mine = addTrap(game.level, LANDMINE, 10, 10);
         const sleeper = await createMonsterAt('jackal', 12, 10);
@@ -39,7 +39,7 @@ for (const lifesaving of [false, true]) {
 }
 for (const unchanging of [false, true]) {
     void test(`a land mine destroying the monster body ${unchanging ? 'kills an unchanging hero before the blast tail' : 'rehumanizes the hero before the pit fall'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         installPolymorphedHero('giant ant', { hitPoints: 1, maxHitPoints: 100 });
         const mine = addTrap(game.level, LANDMINE, 10, 10);

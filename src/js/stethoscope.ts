@@ -103,7 +103,7 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
         await diagnoseMonster(monster, x, y);
         return spentTime;
     }
-    if (unmap_invisible(x, y)) await pline('The invisible monster must have moved.');
+    if (await unmap_invisible(x, y)) await pline('The invisible monster must have moved.');
     const location = game.level.requireAt(x, y);
     if (location.typ === SDOOR || location.typ === SCORR) {
         const door = location.typ === SDOOR;
@@ -111,7 +111,7 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
         if (door) convertSecretDoor(location);
         else { location.typ = CORR; location.flags = 0; location.doormask = 0; }
         vision_note_blocker_change(x, y);
-        feel_newsym(x, y);
+        await feel_newsym(x, y);
         return spentTime;
     }
     const floor = await diagnoseFloorObjects(x, y);
@@ -133,7 +133,7 @@ async function diagnoseMonster(monster: Monster, x: number, y: number) {
     if (monster.mundetected) {
         if (!canSpotMonster(monster)) await pline(`There is ${name} hidden there.`);
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     } else if (monster.mappearance) {
         const type = M_AP_TYPE(monster), appearance = monster.mappearance;
         let what = 'thing', plural = false;
@@ -146,11 +146,11 @@ async function diagnoseMonster(monster: Monster, x: number, y: number) {
             plural = slot === 'uarmf' || slot === 'uarmg' || appearance === LENSES;
         } else if (type === M_AP_MONSTER) what = monsterTypeName(appearance, monster.female);
         else if (type === M_AP_FURNITURE) what = MAP_SYMBOLS[appearance]?.name ?? 'thing';
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         await pline(`${plural ? 'Those' : 'That'} ${what} ${plural ? 'are' : 'is'} really ${name}.`);
     } else if (game.flags.verbose && !canSpotMonster(monster)) await pline(`There is ${name} there.`);
     await pline(await monsterStatusLine(monster, { x, y }));
-    if (!canSpotMonster(monster)) map_invisible(x, y);
+    if (!canSpotMonster(monster)) await map_invisible(x, y);
 }
 
 async function diagnoseFloorObjects(x: number, y: number): Promise<{ found: boolean; spentTime: boolean }> {
@@ -172,7 +172,7 @@ async function diagnoseFloorObjects(x: number, y: number): Promise<{ found: bool
         return { found: true, spentTime: true };
     }
     if (object.otyp === CORPSE) {
-        if (heroIsBlind(game)) map_object(object);
+        if (heroIsBlind(game)) await map_object(object);
         const reviver = game.urole.key === 'healer' && pile.some(item => item.otyp === CORPSE
             && objectTimers(item).some(timer => timer.kind === OBJECT_TIMER_KIND.REVIVE_MON));
         const here = x === game.u.ux && y === game.u.uy;

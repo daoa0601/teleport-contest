@@ -39,7 +39,7 @@ function acknowledgePrizeMessages() {
 }
 
 void test('the Mines prize merges on pickup and remains mergeable after dropping it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const carried = await addInventoryObject(LUCKSTONE, { quan: 2, initialize: false });
     const prize = await placePrize('mines', LUCKSTONE);
@@ -78,7 +78,7 @@ void test('the Mines prize merges on pickup and remains mergeable after dropping
 
 for (const type of [BAG_OF_HOLDING, AMULET_OF_REFLECTION]) {
     void test(`an acquired Sokoban ${type === BAG_OF_HOLDING ? 'bag' : 'amulet'} becomes searchable when dropped`, async () => {
-        const level = freshObjectRoom({ right: 24 });
+        const level = await freshObjectRoom({ right: 24 });
         requirePlayingGame(game);
         const state = game;
         const prize = await placePrize('sokoban', type);
@@ -112,7 +112,7 @@ for (const type of [BAG_OF_HOLDING, AMULET_OF_REFLECTION]) {
 }
 
 void test('picking up a lookalike does not claim the separately designated prize', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     const ordinary = await floorObject(LUCKSTONE, game.u.ux, game.u.uy, { initialize: false });
     const prize = await floorObject(LUCKSTONE, 12, 10, {

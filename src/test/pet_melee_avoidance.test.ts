@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function meleeRoom(species: string) {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     const pet = await createMonsterAt('large dog', 10, 10, BIRTH_FLAGS);
     initializePet(pet);
     pet.m_lev = 15;

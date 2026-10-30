@@ -94,7 +94,7 @@ async function fillMineHoleWithLiquid(
     }
     const effect = await options.resolveLiquid?.(liquid);
     if ((effect && 'died' in effect && effect.died) || state.program_state?.gameover) return;
-    newsym(x, y);
+    await newsym(x, y);
 }
 
 export async function explodeLandMine(
@@ -157,7 +157,7 @@ export async function explodeLandMine(
             } else {
                 survivingTrap.ttyp = PIT;
                 survivingTrap.madeby_u = false;
-                seeTrap(survivingTrap, state);
+                await seeTrap(survivingTrap, state);
             }
         }
     }

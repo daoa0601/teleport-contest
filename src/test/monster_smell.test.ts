@@ -29,7 +29,7 @@ async function unseenPolymorph(target: number, x: number) {
 }
 
 void test('a hero smells a monster that polymorphs where it cannot be seen', async () => {
-    freshObjectRoom({ gameplaySeed: 7n });
+    await freshObjectRoom({ gameplaySeed: 7n });
     requirePlayingGame(game);
     initRng(7n);
 
@@ -39,7 +39,7 @@ void test('a hero smells a monster that polymorphs where it cannot be seen', asy
 });
 
 void test('a smell-free species stays silent even in a scented class', async () => {
-    freshObjectRoom({ gameplaySeed: 7n });
+    await freshObjectRoom({ gameplaySeed: 7n });
     requirePlayingGame(game);
     initRng(7n);
 
@@ -49,7 +49,7 @@ void test('a smell-free species stays silent even in a scented class', async () 
 });
 
 void test('a hero without a sense of smell notices nothing', async () => {
-    freshObjectRoom({ gameplaySeed: 7n });
+    await freshObjectRoom({ gameplaySeed: 7n });
     requirePlayingGame(game);
     initRng(7n);
     const original = game.u.umonnum;

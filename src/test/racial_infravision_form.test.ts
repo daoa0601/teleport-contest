@@ -17,7 +17,7 @@ void test('gnome and dwarf infravision follows the current body while elf and or
     for (const name of ['gnome', 'dwarf', 'elf', 'orc']) {
         const race = races.find(candidate => candidate.name === name);
         assert.ok(race);
-        const level = freshObjectRoom({ race });
+        const level = await freshObjectRoom({ race });
         uInitMisc(1);
         await uInitInventoryAttrs();
         game.u.ux = game.u.ux0 = 10;
@@ -27,13 +27,13 @@ void test('gnome and dwarf infravision follows the current body while elf and or
         monster.mpeaceful = false;
         monster.m_lev = 12;
         level.requireAt(14, 10).lit = false;
-        vision_recalc(0);
-        newsym(14, 10);
+        await vision_recalc(0);
+        await newsym(14, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(13, 11).ch, '@', `${name} sees the soldier before polymorph`);
 
         installPolymorphedHero('piranha');
-        newsym(14, 10);
+        await newsym(14, 10);
         await flush_screen(1);
 
         assert.equal(requireScreenCell(13, 11).ch, name === 'elf' || name === 'orc' ? '@' : '3',

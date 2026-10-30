@@ -335,7 +335,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
             && monsterLeavesCorpse(monster, rn2);
     }
     if (deathExplosion !== null) {
-        newsym(x, y);
+        await newsym(x, y);
         const explosion = await resolveMonsterDeathExplosion(
             monster, x, y, deathExplosion, {
                 state: game,
@@ -374,7 +374,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     }
     // Native xkilled jumps over this landing/redraw block when remains are
     // suppressed. Otherwise the map is current before kill-credit messages.
-    if (levelAllowsDeathDrops) newsym(x, y);
+    if (levelAllowsDeathDrops) await newsym(x, y);
 
     if (killingIsMurder(monster)) await punishMurder();
     if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)

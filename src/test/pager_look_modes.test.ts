@@ -9,7 +9,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('ordinary look ends after an unknown direction', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const input = resetInputState();
     input.feed('/s');
     await answerPrompts(rhack('/'.charCodeAt(0)), input, []);
@@ -20,7 +20,7 @@ void test('ordinary look ends after an unknown direction', async () => {
 });
 
 void test('ordinary look ends on a quit character without describing a location', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const input = resetInputState();
     input.feed('/ ');
 
@@ -33,7 +33,7 @@ void test('ordinary look ends on a quit character without describing a location'
 });
 
 void test('quick look restores its goal after disabling descriptions and restores verbosity', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const input = resetInputState();
     input.feed('#');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
@@ -44,7 +44,7 @@ void test('quick look restores its goal after disabling descriptions and restore
 });
 
 void test('submerged quick look describes distant cursor positions as unreconnoitered', async () => {
-    const level = freshObjectRoom({ flags: { tips: false }, hero: { uinwater: true } });
+    const level = await freshObjectRoom({ flags: { tips: false }, hero: { uinwater: true } });
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     await docrt();
     const input = resetInputState();

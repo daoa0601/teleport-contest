@@ -14,7 +14,7 @@ for (const [type, blind, levitating, sound] of [
     [DIAMOND, false, true, 'Plop!'],
 ]) {
     void test(`dropping into water makes a ${sound} for ${blind ? 'a blind hero' : 'a levitating hero'}`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
         const object = await addInventoryObject(type, { invlet: 'a' });

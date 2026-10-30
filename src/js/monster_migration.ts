@@ -144,7 +144,7 @@ export async function prepareMonsterDeparture(monster: Monster, state: GameState
     if (monster.wormno) {
         const x = monster.mx, y = monster.my;
         const count = Math.min(monster.wormSegments?.length ?? 0, MAX_NUM_WORMS - 1);
-        removeMonsterWormBody(monster);
+        await removeMonsterWormBody(monster);
         monster.migratingWormSegments = count;
         if (x) await placeMigratingMonster(monster, x, y);
     }
@@ -211,7 +211,7 @@ export async function migrateMonsterOffLevel<T extends Pick<Trap, 'dst'>>(
     // C migrate_to_level() keeps a mobile light but turns it global (mx == 0)
     // and recalculates vision at once, so what it lit goes dark before the
     // next monster moves.
-    if (monsterEmitsLight(monster.mnum)) vision_recalc(0);
+    if (monsterEmitsLight(monster.mnum)) await vision_recalc(0);
     return {
         kind, trap, visible, destination: monster.migrationDestination,
         damage: 0, killed: false,
@@ -246,7 +246,7 @@ export function updateMonsterLastMove(state: GameState = game): void {
 }
 
 // C dog.c mon_catchup_elapsed_time().
-export function catchUpMonster(monster: Monster, moves: number, state: GameState): void {
+export async function catchUpMonster(monster: Monster, moves: number, state: GameState): Promise<void> {
     if (moves < 0) throw new RangeError('Monster catch-up cannot start in the future.');
     const imv = Math.min(Math.trunc(moves), LARGEST_INT - 1);
 
@@ -265,7 +265,7 @@ export function catchUpMonster(monster: Monster, moves: number, state: GameState
     if (monster.mstun && rn2(imv + 1) > 5) monster.mstun = 0;
 
     if (monster.meating) {
-        if (imv > monster.meating) finishMonsterEating(monster, state);
+        if (imv > monster.meating) await finishMonsterEating(monster, state);
         else monster.meating -= imv;
     }
     if (imv > (monster.mspec_used ?? 0)) monster.mspec_used = 0;
@@ -396,7 +396,7 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
     const lastMove = monster.mlstmv ?? state.moves ?? 0;
     if (lastMove < (state.moves ?? 0) - 1) {
         const elapsed = (state.moves ?? 0) - 1 - lastMove;
-        catchUpMonster(monster, elapsed, state);
+        await catchUpMonster(monster, elapsed, state);
         wander = Math.min(elapsed, 8);
     }
 
@@ -470,7 +470,7 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
     }
 
     monster.mstate = (monster.mstate ?? 0) & ~MON_STILL_ARRIVING;
-    if (monster.mx) newsym(monster.mx, monster.my);
+    if (monster.mx) await newsym(monster.mx, monster.my);
     return true;
 }
 

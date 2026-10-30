@@ -18,7 +18,7 @@ function appearanceBlocksLight(type: number, appearance: number): boolean {
         || appearance === DOOR || IS_WALL(appearance);
 }
 
-export function revealMonsterAppearance(monster: Monster, {
+export async function revealMonsterAppearance(monster: Monster, {
     includeMonsterDisguise = true,
 } = {}) {
     const type = M_AP_TYPE(monster);
@@ -38,7 +38,7 @@ export function revealMonsterAppearance(monster: Monster, {
     if (monster.mextra) delete monster.mextra.mcorpsenm;
     if (lightBlocker)
         vision_note_blocker_change(monster.mx, monster.my);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     return {
         revealed: true, type, appearance, corpsenm, lightBlocker,
     };

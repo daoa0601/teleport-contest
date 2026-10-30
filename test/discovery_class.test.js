@@ -11,7 +11,7 @@ import { applyNethackrc } from '../js/options.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('class discoveries offer the discovered classes and show only the selected class', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectKnowledge(POT_HEALING);
     recordObjectKnowledge(WAN_FIRE);
     const input = resetInputState();
@@ -23,7 +23,7 @@ void test('class discoveries offer the discovered classes and show only the sele
     assert.equal(game.context.move, 0);
 });
 void test('traditional class discovery accepts an undiscovered class without advertising it', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menustyle:traditional');
     recordObjectKnowledge(POT_HEALING);
     const input = resetInputState();
@@ -33,7 +33,7 @@ void test('traditional class discovery accepts an undiscovered class without adv
     assert.equal(game.context.move, 0);
 });
 void test('the undiscovered rock class uses the native boulders and statues name', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menustyle:traditional');
     recordObjectKnowledge(POT_HEALING);
     const input = resetInputState();
@@ -42,7 +42,7 @@ void test('the undiscovered rock class uses the native boulders and statues name
     assert.equal(game._pending_message, "You haven't discovered any boulders/statues yet.");
 });
 void test('partial class discovery skips the class menu when only one class is available', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menustyle:partial,sortdiscoveries:c');
     recordObjectKnowledge(POT_HEALING);
     const input = resetInputState();
@@ -50,13 +50,13 @@ void test('partial class discovery skips the class menu when only one class is a
     await rhack('`'.charCodeAt(0));
 });
 void test('class discoveries with nothing to show print the native items message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await rhack('`'.charCodeAt(0));
     assert.equal(game._pending_message, "You haven't discovered any items yet.");
     assert.equal(game.context.move, 0);
 });
 void test('class discoveries accept the relic synonym and artifact class', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menustyle:traditional');
     recordObjectKnowledge(BELL_OF_OPENING);
     const artifact = artifactByName('Excalibur');
@@ -73,7 +73,7 @@ void test('class discoveries accept the relic synonym and artifact class', async
     await rhack('`'.charCodeAt(0));
 });
 void test('wizard class discovery can dump undiscovered artifacts and their creation flags', async (t) => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=menustyle:traditional');
     recordObjectKnowledge(POT_HEALING);
     const excalibur = artifactByName('Excalibur');
@@ -94,7 +94,7 @@ void test('wizard class discovery can dump undiscovered artifacts and their crea
     assert.ok(!game._artifactDiscoveries?.length, 'Dumping artifacts does not discover them');
 });
 void test('declining the wizard artifact dump displays only discovered artifacts', async (t) => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     applyNethackrc('OPTIONS=menustyle:partial');
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact);
@@ -108,7 +108,7 @@ void test('declining the wizard artifact dump displays only discovered artifacts
     assert.equal(game.context.move, 0);
 });
 void test('the class discovery sort chooser can be cancelled before asking for a class', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectKnowledge(POT_HEALING);
     const input = resetInputState();
     input.feed('`');

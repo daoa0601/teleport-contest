@@ -66,7 +66,7 @@ export async function gainGuardianAngel(state = requireInitializedGame()) {
         angel.mtame = 10;
         state.u.uconduct.pets++;
     }
-    newsym(angel.mx, angel.my);
+    await newsym(angel.mx, angel.my);
     await plineWithContinuation(heroIsBlind(state)
         ? formatFeltMessage('the presence of a friendly angel near you.', state)
         : 'An angel appears near you.');

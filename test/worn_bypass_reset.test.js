@@ -7,7 +7,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('turn cleanup clears bypasses on a swallowed hero’s floating ball and chain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await installSwallowedHero(await createMonsterAt('purple worm', 11, 10));
     await punishHero();
     const ball = game.uball, chain = game.uchain;

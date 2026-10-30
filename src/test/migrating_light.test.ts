@@ -14,12 +14,12 @@ import { freshObjectRoom } from './support/object-room.js';
 // calls vision_recalc() at once, so the squares it lit go dark before any
 // other monster moves rather than at the next scheduled recalculation.
 void test('a luminous monster leaving the level darkens what it lit immediately', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
     const vortex = await createMonsterAt('fire vortex', 13, 10, MM_NOGRP | NO_MINVENT);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), true, 'The vortex lights the square beyond it.');
 
     const trap = addTrap(requireGameLevel(), LEVEL_TELEP, 13, 10);

@@ -19,7 +19,7 @@ function status() {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
 void test('curing petrification removes Stone when the cure feedback is displayed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await setHeroPetrificationTimeout(5);
     await bot();
     assert.match(status(), /\bStone\b/);
@@ -30,7 +30,7 @@ void test('curing petrification removes Stone when the cure feedback is displaye
 });
 for (const species of ['lizard', 'acid blob']) {
     void test(`eating ${species} flesh clears Stone before the cure message is displayed`, async () => {
-        freshObjectRoom({ hero: { uhunger: 200 } });
+        await freshObjectRoom({ hero: { uhunger: 200 } });
         const food = await addInventoryObject(CORPSE, {
             corpsenm: MONSTER_NAME.indexOf(species), age: game.moves,
         });
@@ -51,7 +51,7 @@ for (const [type, label] of [
     [SICK_VOMITABLE, 'FoodPois'], [SICK_NONVOMITABLE, 'TermIll'],
 ]) {
     void test(`${label} appears on the next message flush and disappears after a cure`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await bot();
         await startHeroSickness({ turns: 20, type });
         await plineWithContinuation('You wait.');
@@ -62,7 +62,7 @@ for (const [type, label] of [
     });
 }
 void test('vomiting away food poisoning keeps FoodPois on the paged choke message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await startHeroSickness({ turns: 20, type: SICK_VOMITABLE, cause: 'tainted meat' });
     await flush_screen(1);
     assert.match(status(), /\bFoodPois\b/);
@@ -85,7 +85,7 @@ void test('vomiting away food poisoning keeps FoodPois on the paged choke messag
     assert.doesNotMatch(status(), /\bFoodPois\b/);
 });
 void test('fatal conditions follow hunger in native severity order', async () => {
-    freshObjectRoom({ hero: { uhs: HUNGRY } });
+    await freshObjectRoom({ hero: { uhs: HUNGRY } });
     await startHeroSickness({ turns: 20, type: SICK_VOMITABLE | SICK_NONVOMITABLE });
     await setHeroSlimingTimeout(10);
     await setHeroPetrificationTimeout(5);
@@ -98,7 +98,7 @@ void test('fatal conditions follow hunger in native severity order', async () =>
     assert.match(status(), /FoodPois TermIll/);
 });
 void test('conditions of equal severity use native alphabetical order', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await makeStunned(5, { talk: false });
     await makeConfused(5, { talk: false });
     await flush_screen(1);

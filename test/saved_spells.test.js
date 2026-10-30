@@ -17,7 +17,7 @@ for (const [description, type] of [
     ['Book of the Dead', SPE_BOOK_OF_THE_DEAD],
 ]) {
     void test(`restore rejects a memorized ${description} before changing live state`, async () => {
-        const level = freshObjectRoom({ role: 'wizard' });
+        const level = await freshObjectRoom({ role: 'wizard' });
         game.plname = 'SavedSpells';
         forceLearnSpell(SPE_FORCE_BOLT);
         const hero = game.u;
@@ -35,7 +35,7 @@ for (const [description, type] of [
         assert.ok(isSavedRecord(spell));
         spell.otyp = type;
         storage.setItem(key, encodeSavedGraph(snapshot));
-        assert.equal(restoreGame(game.plname, storage), false);
+        assert.equal(await restoreGame(game.plname, storage), false);
         assert.equal(game.u, hero);
         assert.equal(game.level, level);
         assert.equal(game.spells, spells);
@@ -43,13 +43,13 @@ for (const [description, type] of [
     });
 }
 void test('a restored memorized spell remains selectable for casting', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     game.plname = 'SavedSpells';
     forceLearnSpell(SPE_FORCE_BOLT);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     game.spells = [];
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const input = resetInputState();
     const selection = selectSpellToCast();
     await input.waitUntilBlocked();

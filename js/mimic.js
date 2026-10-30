@@ -61,7 +61,7 @@ export async function revealMimicIdentity(monster, { state = game, omitWait = fa
     }
     if (identity)
         await publish(`${omitWait ? prefix.replace(/^Wait!  /, '') : prefix}${identity}!`);
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
 }
 export function isObjectOrFurnitureMimic(monster, state = game) {
     return !!monster
@@ -108,6 +108,6 @@ export async function stumbleOntoMimic(monster, state = game, publish = pline) {
     }
     await wakeMonster(monster, { attacked: false });
     if (!canSpotMonster(monster))
-        map_invisible(monster.mx, monster.my);
+        await map_invisible(monster.mx, monster.my);
 }
 //# sourceMappingURL=mimic.js.map

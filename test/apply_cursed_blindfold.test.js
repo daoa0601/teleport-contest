@@ -13,7 +13,7 @@ import { wearEyewear } from '../js/eyewear.js';
 // refuses with "You can't.  It is cursed.", reveals its BUC, and still
 // spends the turn.
 void test('applying a worn cursed blindfold refuses and reveals the curse', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const blindfold = await addInventoryObject(BLINDFOLD, { invlet: 'a' });
     blindfold.cursed = true;
     blindfold.bknown = false;

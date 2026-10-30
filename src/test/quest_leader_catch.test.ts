@@ -22,7 +22,7 @@ for (const { name, otyp } of [
         { senses: 'sighted and deaf', blind: false, deaf: true },
     ]) {
         void test(`a ${senses} hero learns only what they perceive when the leader returns an unseen ${name}`, async () => {
-            freshObjectRoom({ role: 'healer', hero: {
+            await freshObjectRoom({ role: 'healer', hero: {
                 blindTurns: blind ? 100 : 0, deafTurns: deaf ? 100 : 0,
             } });
             const leader = await createMonsterAt('Hippocrates', 11, 10);
@@ -53,7 +53,7 @@ for (const { description, gridBug, diagonal, verb } of [
     { description: 'a diagonally adjacent grid bug leader', gridBug: true, diagonal: true, verb: 'tosses' },
 ]) {
     void test(`throwing the quest artifact to ${description} completes the quest and ${verb} it back`, async () => {
-        freshObjectRoom({ role: 'healer' });
+        await freshObjectRoom({ role: 'healer' });
         const leader = await createMonsterAt('Hippocrates', 11, diagonal ? 11 : 10);
         registerQuestLeader(leader);
         if (gridBug)

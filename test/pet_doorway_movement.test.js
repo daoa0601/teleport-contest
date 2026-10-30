@@ -15,7 +15,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const doorway of ['entry', 'exit']) {
     void test(`a pet cannot be displaced diagonally at an intact doorway ${doorway}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const dog = await createMonsterAt('little dog', 11, 9, MM_NOGRP | NO_MINVENT);
         initializePet(dog, { state: game });
@@ -35,7 +35,7 @@ for (const doorway of ['entry', 'exit']) {
 for (const doorMask of [D_CLOSED, D_LOCKED]) {
     for (const carryingDagger of [false, true]) {
         void test(`an amorphous hero swaps diagonally into a ${doorMask === D_LOCKED ? 'locked' : 'closed'} door with ${carryingDagger ? 'a dagger' : 'empty inventory'}`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             installPolymorphedHero('gray ooze');
             if (carryingDagger)
@@ -58,7 +58,7 @@ for (const doorMask of [D_CLOSED, D_LOCKED]) {
 }
 for (const originDoorMask of [D_CLOSED, D_ISOPEN]) {
     void test(`oozing into a closed door still forbids a diagonal exit from an intact ${originDoorMask === D_CLOSED ? 'closed' : 'open'} doorway`, async () => {
-        const level = freshObjectRoom({ flags: { mention_walls: true } });
+        const level = await freshObjectRoom({ flags: { mention_walls: true } });
         requirePlayingGame(game);
         installPolymorphedHero('gray ooze');
         const dog = await createMonsterAt('little dog', 11, 9, MM_NOGRP | NO_MINVENT);
@@ -88,7 +88,7 @@ for (const originDoorMask of [D_CLOSED, D_ISOPEN]) {
 }
 for (const inventory of ['empty sack', 'filled sack', 'long sword']) {
     void test(`an amorphous hero's ${inventory} determines whether it fits under a door`, async () => {
-        const level = freshObjectRoom({ flags: { autoopen: false } });
+        const level = await freshObjectRoom({ flags: { autoopen: false } });
         requirePlayingGame(game);
         installPolymorphedHero('gray ooze');
         if (inventory === 'long sword')
@@ -113,7 +113,7 @@ for (const inventory of ['empty sack', 'filled sack', 'long sword']) {
 for (const doorMask of [D_CLOSED, D_LOCKED]) {
     for (const direction of ['l', 'u']) {
         void test(`an amorphous hero oozes ${direction === 'u' ? 'diagonally' : 'orthogonally'} under a ${doorMask === D_LOCKED ? 'locked' : 'closed'} door without a pet`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             installPolymorphedHero('gray ooze');
             const y = direction === 'u' ? 9 : 10;
@@ -129,7 +129,7 @@ for (const doorMask of [D_CLOSED, D_LOCKED]) {
     }
 }
 void test('an amorphous hero can decline a trap inside a closed door before swapping with a pet', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
     installPolymorphedHero('gray ooze');
     const dog = await createMonsterAt('little dog', 11, 9, MM_NOGRP | NO_MINVENT);

@@ -15,7 +15,7 @@ function remembered(x, y) {
     return glyph?.kind === 'terrain' ? glyph.terrainName : glyph?.kind;
 }
 void test('a light lit just before a fatal blow shows its area before the death pager', async () => {
-    const level = freshObjectRoom({ left: 2, right: 30, flags: { debug: true } });
+    const level = await freshObjectRoom({ left: 2, right: 30, flags: { debug: true } });
     requirePlayingGame(game);
     for (let x = 2; x <= 30; x++) {
         for (let y = 6; y <= 14; y++) {
@@ -24,7 +24,7 @@ void test('a light lit just before a fatal blow shows its area before the death 
         }
     }
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     const far = { x: game.u.ux + 2, y: game.u.uy };
     assert.equal(remembered(far.x, far.y), 'dark part of a room');
     const killer = await createMonsterAt('arch-lich', game.u.ux - 1, game.u.uy);

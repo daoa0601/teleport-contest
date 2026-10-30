@@ -24,7 +24,7 @@ const maximumDice = (count, sides) => count * sides;
 const drainSucceeds = (range) => range === 3 ? 0 : range - 1;
 const energyDrainSucceeds = (range) => range === 4 ? 0 : range - 1;
 async function combatPair(attackerSpecies, defenderSpecies) {
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     game.datetime = '20261010230000';
     const attacker = await createMonsterAt(attackerSpecies, 11, 10, TEST_MONSTER_FLAGS);

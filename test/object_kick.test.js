@@ -27,7 +27,7 @@ void test('kicking a loose object moves its existing identity', async () => {
     assert.deepEqual([club.ox, club.oy], [15, 10]);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const restored = floorObjects(game.level).filter(object => object.o_id === club.o_id);
     assert.equal(restored.length, 1);
     assert.ok(restored[0]);

@@ -19,31 +19,31 @@ async function lookEast(): Promise<string> {
 }
 
 void test('quick look identifies the weapon class before the particular object', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     await floorObject(DAGGER, 11, 10, { known: false, bknown: false });
-    newsym(11, 10);
+    await newsym(11, 10);
 
     assert.match(await lookEast(), /^\)\s+a weapon \(a dagger\)/);
 });
 
 void test('quick look lists both meanings of a fountain symbol', async () => {
-    const level = freshObjectRoom({ flags: { tips: false } });
+    const level = await freshObjectRoom({ flags: { tips: false } });
     level.requireAt(11, 10).typ = FOUNTAIN;
-    newsym(11, 10);
+    await newsym(11, 10);
 
     assert.match(await lookEast(), /^\{\s+a sink or a fountain \(fountain\)/);
 });
 
 for (const read of [false, true]) {
     void test(`quick look quotes only remembered engraving text with read=${read}`, async () => {
-        freshObjectRoom({ flags: { tips: false } });
+        await freshObjectRoom({ flags: { tips: false } });
         const engraving = makeEngravingAt(11, 10, 'Elbereth', null, 0, ENGRAVE);
         assert.ok(engraving);
         engraving.erevealed = true;
         engraving.eread = read;
         engraving.rememberedText = 'Elbereth';
         engraving.text = 'a newer inscription';
-        newsym(11, 10);
+        await newsym(11, 10);
 
         const text = await lookEast();
         assert.match(text, read ? /engraving with remembered text: "Elbereth"/

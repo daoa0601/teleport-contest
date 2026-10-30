@@ -8,7 +8,7 @@ import { FOOD_RATION, LEATHER_ARMOR, OBJECT_NAMES, SACK } from '../js/object_dat
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('putting everything in a bag warns once for consecutive worn items', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_FULL } });
+    await freshObjectRoom({ flags: { menu_style: MENU_FULL } });
     await addInventoryObject(LEATHER_ARMOR, { owornmask: W_ARM });
     await addInventoryObject(OBJECT_NAMES.indexOf('low boots'), { owornmask: W_ARMF });
     const food = await addInventoryObject(FOOD_RATION, { quan: 4 });

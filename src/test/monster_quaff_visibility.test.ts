@@ -56,7 +56,7 @@ for (const [kind, otyp] of [
             if (!visible) setHeroBlindnessTurns(20);
             game.u.deafTurns = perception.endsWith('and deaf') ? 20 : 0;
             syncDeafness();
-            vision_recalc(0);
+            await vision_recalc(0);
             assert.equal(canSpotMonster(monster), true);
             assert.equal(canSeeMonster(monster), visible);
             initRng(otyp === POT_HEALING ? 2n : 1n);
@@ -93,7 +93,7 @@ for (const wisdom of [3, 18]) {
     void test(`visible healing discovery ${wisdom === 3 ? 'can' : 'cannot'} increase exercise at Wisdom ${wisdom}`, async () => {
         let gains = 0;
         for (let seed = 1; seed <= 32; seed++) {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             // Exclude bottle occupants so every trial reaches healing discovery.
             for (const species of ['ghost', 'djinni']) {

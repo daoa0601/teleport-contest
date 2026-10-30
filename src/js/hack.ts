@@ -85,8 +85,8 @@ import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;
-type Repaint = (x: number, y: number) => void;
-type RecalculateVision = (mode: number) => void;
+type Repaint = (x: number, y: number) => void | Promise<void>;
+type RecalculateVision = (mode: number) => void | Promise<void>;
 /** Liquid deaths may say whether losehp() still owes its "You die..." line. */
 type LiquidDeathHandler = (options: FinishHeroDeathOptions) => unknown;
 type EquipmentSlot = 'uamul' | 'uleft' | 'uright' | 'ublindf' | 'uarm'
@@ -549,7 +549,7 @@ async function finishLavaEffects({
     const hero = state.u;
     const damage = rollDice(6, 6);
     // C lava_effects() maps the liquid by touch before its first message.
-    if (state === game) feel_newsym(hero.ux, hero.uy);
+    if (state === game) await feel_newsym(hero.ux, hero.uy);
     await burnAwayHeroSlime(state, publish);
     if (heroLikesLava(state))
         return { entered: true, moved: false, died: false };
@@ -800,9 +800,9 @@ async function finishLiquidTeleport(
     // spoteffects() announces surfacing before it clears the submerged view.
     const from = { x: movement.oldx, y: movement.oldy };
     const to = { x: movement.x, y: movement.y };
-    repaint(movement.oldx, movement.oldy);
+    await repaint(movement.oldx, movement.oldy);
     resetVision();
-    recalculateVision(0);
+    await recalculateVision(0);
     const landing = await applyLandingEffects({ from, to });
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
@@ -931,7 +931,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     }
 
     // drown() maps the water by touch before any entry message can page.
-    if (state === game) feel_newsym(x, y);
+    if (state === game) await feel_newsym(x, y);
     const waterWall = location.typ === WATER;
     let canLiveUnderwater = heroCanLiveUnderwater(state);
     let stayingInPool = false;
@@ -980,7 +980,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
             await unplaceBallAndChain(state);
             await placeBallAndChain(state);
         }
-        recalculateVision(2);
+        await recalculateVision(2);
         await setHeroInWater(true, state);
         // drown() clears the whole map on every dive, even after surfacing
         // has restored land outside the previous underwater viewport.

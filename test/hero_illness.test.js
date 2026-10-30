@@ -19,7 +19,7 @@ import { freshHeroConditionRoom, installPolymorphedHero, } from './support/hero-
 import { wearHeroArmor } from '../js/armor.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 void test('fatal illness worsens and reaches the normal death path', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     requireFixtureGame(game);
     await startHeroSickness({
         state: game,
@@ -53,7 +53,7 @@ void test('fatal illness worsens and reaches the normal death path', async () =>
 // already requested a refresh. done_timeout() marks Sick again for done().
 for (const pendingRefresh of [false, true]) {
     void test(`terminal illness ${pendingRefresh ? 'leaves' : 'keeps'} TermIll on screen at its fatal message${pendingRefresh ? ' after a pending refresh' : ''}`, async () => {
-        freshHeroConditionRoom();
+        await freshHeroConditionRoom();
         requireFixtureGame(game);
         const input = resetInputState();
         const fatalStatus = [];
@@ -90,7 +90,7 @@ for (const pendingRefresh of [false, true]) {
     });
 }
 void test('the Constitution recovery roll can cure food poisoning', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     requireFixtureGame(game);
     const constitution = game.u.acurr.a[A_CON];
     await startHeroSickness({
@@ -113,7 +113,7 @@ void test('the Constitution recovery roll can cure food poisoning', async () => 
     assert.deepEqual(messages, ['You have recovered from your illness.']);
 });
 void test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     requireFixtureGame(game);
     game.u.uhunger = 900;
     await startHeroSickness({
@@ -146,7 +146,7 @@ void test('nausea worsens, confuses, stuns, and ends in vomiting', async () => {
     assert.equal(game._helplessTurns, 2);
 });
 void test('a rat form cannot vomit away food poisoning', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     requireFixtureGame(game);
     installPolymorphedHero('sewer rat', { turns: 20 });
     await startHeroSickness({
@@ -166,7 +166,7 @@ void test('a rat form cannot vomit away food poisoning', async () => {
     assert.equal(game._helplessTurns, 2);
 });
 void test('natural vomiting expiry announces the vomit without a cure message', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     startHeroVomiting({ turns: 1 });
     const messages = [];
     await advanceHeroVomiting({ publish: async (message) => { messages.push(message); } });
@@ -175,7 +175,7 @@ void test('natural vomiting expiry announces the vomit without a cure message', 
     assert.equal(game._helplessTurns, 2);
 });
 void test('a vomiting yellow dragon breathes acid on its weapon and armor', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     requireFixtureGame(game);
     installPolymorphedHero('yellow dragon', { turns: 20 });
     const sword = await addInventoryWeapon(LONG_SWORD);
@@ -207,7 +207,7 @@ void test('a vomiting yellow dragon breathes acid on its weapon and armor', asyn
 void test('a hallucinating dragon breathing acid on itself names a strange liquid', async () => {
     const liquids = new Set();
     for (let seed = 1; seed <= 8; seed++) {
-        freshHeroConditionRoom();
+        await freshHeroConditionRoom();
         requireFixtureGame(game);
         installPolymorphedHero('yellow dragon', { turns: 20 });
         game.u.hallucinationTurns = 100;
@@ -227,7 +227,7 @@ void test('a hallucinating dragon breathing acid on itself names a strange liqui
 });
 for (const previousTurns of [0, 36]) {
     void test(`${previousTurns ? 'worsening illness' : 'new illness'} waits for the old message before changing symptoms`, async () => {
-        freshHeroConditionRoom();
+        await freshHeroConditionRoom();
         requireFixtureGame(game);
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
@@ -258,7 +258,7 @@ for (const previousTurns of [0, 36]) {
     });
 }
 void test('wizard illness feedback stays between earlier and later selected properties', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     requireFixtureGame(game);
     game.flags.debug = true;
     const messages = [];
@@ -281,7 +281,7 @@ void test('wizard illness feedback stays between earlier and later selected prop
 });
 for (const source of ['named horn', 'wizard command']) {
     void test(`fatal sickness keeps the ${source}'s death description`, async () => {
-        freshHeroConditionRoom();
+        await freshHeroConditionRoom();
         requireFixtureGame(game);
         game.storage = memoryStorage();
         game.u.urexp = 100;

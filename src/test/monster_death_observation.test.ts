@@ -18,7 +18,7 @@ const scenarios: { name: string; x: number; seen: boolean; artifact?: boolean; h
 ];
 for (const scenario of scenarios) {
     void test(`death-drop naming observes a ${scenario.name} by C distance and sense rules`, async () => {
-        freshObjectRoom({ right: 20, role: scenario.role || 'caveman' });
+        await freshObjectRoom({ right: 20, role: scenario.role || 'caveman' });
         requirePlayingGame(game);
         const orc = await createMonsterAt('orc', scenario.x, 10);
         const knowledge = { dknown: false, bknown: false, typeKnown: false };

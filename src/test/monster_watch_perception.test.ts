@@ -19,7 +19,7 @@ for (const condition of ['visible', 'invisible', 'wrapped', 'blind watch'] as co
     const situation = condition === 'wrapped' ? 'mummy wrapping blocks invisibility'
         : condition === 'blind watch' ? 'the watchman is blind' : `the hero is ${condition}`;
     void test(`a town watchman ${canWitness ? 'warns' : 'does not warn'} a lock picker when ${situation}`, async () => {
-        const level = freshObjectRoom({ flags: { verbose: true },
+        const level = await freshObjectRoom({ flags: { verbose: true },
             hero: { invisibleTurns: condition === 'invisible' || condition === 'wrapped' ? 50 : 0 } });
         requirePlayingGame(game);
         level.flags.has_town = true;
@@ -32,7 +32,7 @@ for (const condition of ['visible', 'invisible', 'wrapped', 'blind watch'] as co
         door.typ = DOOR;
         door.doormask = D_LOCKED;
         vision_note_blocker_change(11, 10);
-        vision_recalc(0);
+        await vision_recalc(0);
         const input = resetInputState();
         pushKeys('y');
         await pickLock(await addInventoryObject(LOCK_PICK), { target: { x: 11, y: 10 } });

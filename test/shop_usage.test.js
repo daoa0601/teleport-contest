@@ -16,7 +16,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 async function pickUpMerchandise(type, properties = {}, charisma = 12) {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_CHA] = charisma;
     game.u.amax.a[A_CHA] = charisma;

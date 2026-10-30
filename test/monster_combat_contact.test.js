@@ -17,7 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['wood nymph', 'water nymph', 'mountain nymph']) {
     void test(`${species} seduction contact uses the defender's sight and sex`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const nymph = await createMonsterAt(species, 12, 10, MM_NOGRP | NO_MINVENT);
         const orc = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
         orc.female = false;
@@ -35,7 +35,7 @@ for (const species of ['wood nymph', 'water nymph', 'mountain nymph']) {
     });
 }
 void test('seduction compatibility distinguishes unseen seduction from theft and sexual attacks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const demon = await createMonsterAt('amorous demon', 12, 10, MM_NOGRP | NO_MINVENT);
     demon.female = true;
     demon.minvis = true;
@@ -53,7 +53,7 @@ void test('seduction compatibility distinguishes unseen seduction from theft and
     assert.equal(seductionCompatibility(demon, orc, [AT_TUCH, AD_SSEX, 0, 0]), 0);
 });
 void test('nymphs can engage neuter defenders but amorous demons and animals cannot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const nymph = await createMonsterAt('water nymph', 12, 10, MM_NOGRP | NO_MINVENT);
     const cloud = await createMonsterAt('fog cloud', 13, 10, MM_NOGRP | NO_MINVENT);
     const demon = await createMonsterAt('amorous demon', 14, 10, MM_NOGRP | NO_MINVENT);
@@ -63,7 +63,7 @@ void test('nymphs can engage neuter defenders but amorous demons and animals can
     assert.equal(seductionCompatibility(dog, nymph, [AT_TUCH, AD_SEDU, 0, 0]), 0);
 });
 void test('hero nymph form shares the same compatibility rule and preserves blindness independence', async () => {
-    freshObjectRoom({ flags: { female: true } });
+    await freshObjectRoom({ flags: { female: true } });
     installPolymorphedHero('mountain nymph');
     const orc = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
     orc.female = false;
@@ -72,7 +72,7 @@ void test('hero nymph form shares the same compatibility rule and preserves blin
     assert.equal(seductionCompatibility('hero', orc, [AT_CLAW, AD_SEDU, 0, 0]), 1);
 });
 void test('an invisible seducer requires the hero to perceive it for a seduction attack', async () => {
-    freshObjectRoom({ flags: { female: true } });
+    await freshObjectRoom({ flags: { female: true } });
     const demon = await createMonsterAt('amorous demon', 12, 10, MM_NOGRP | NO_MINVENT);
     demon.female = false;
     demon.minvis = true;
@@ -82,7 +82,7 @@ void test('an invisible seducer requires the hero to perceive it for a seduction
     assert.equal(seductionCompatibility(demon, 'hero', [AT_TUCH, AD_SEDU, 0, 0]), 1);
 });
 void test('cancelled seducers use ordinary miss feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const nymph = await createMonsterAt('mountain nymph', 12, 10, MM_NOGRP | NO_MINVENT);
     const orc = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
     const messages = [];
@@ -93,7 +93,7 @@ void test('cancelled seducers use ordinary miss feedback', async () => {
     assert.deepEqual(messages, ['The mountain nymph pretends to be friendly to the orc.', 'The mountain nymph misses the orc.']);
 });
 void test('shade admission rejects an ordinary weapon and wakes its defender without damaging it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('seeInvisible', 'outside');
     const orc = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
     const shade = await createMonsterAt('shade', 13, 10, MM_NOGRP | NO_MINVENT);
@@ -110,7 +110,7 @@ void test('shade admission rejects an ordinary weapon and wakes its defender wit
     assert.deepEqual(messages, ["The orc's dagger passes harmlessly through the shade."]);
 });
 void test('compatible seduction enters a shade contact without the physical rejection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('seeInvisible', 'outside');
     const nymph = await createMonsterAt('water nymph', 12, 10, MM_NOGRP | NO_MINVENT);
     const shade = await createMonsterAt('shade', 13, 10, MM_NOGRP | NO_MINVENT);
@@ -125,7 +125,7 @@ void test('compatible seduction enters a shade contact without the physical reje
     assert.deepEqual(messages, ['The water nymph smiles at the shade engagingly.']);
 });
 void test('the physical shade probe can wake an unseen defender silently even when its opponent is visible', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const orc = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
     const shade = await createMonsterAt('shade', 13, 10, MM_NOGRP | NO_MINVENT);
     shade.minvis = true;
@@ -142,7 +142,7 @@ void test('the physical shade probe can wake an unseen defender silently even wh
     assert.equal(messages.length, 0);
 });
 void test('silver weapon contact reaches a shade without inventing flesh', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('seeInvisible', 'outside');
     const orc = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
     const shade = await createMonsterAt('shade', 13, 10, MM_NOGRP | NO_MINVENT);
@@ -155,7 +155,7 @@ void test('silver weapon contact reaches a shade without inventing flesh', async
     assert.deepEqual(messages, ['The orc hits the shade.', "The orc's silver saber sears the shade!"]);
 });
 void test('artifact contact leaves hit feedback to its owner while retaining silver feedback', async () => {
-    freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
     const orc = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
     const vampire = await createMonsterAt('vampire', 13, 10, MM_NOGRP | NO_MINVENT);
     const saber = await artifactObject('Grayswandir');
@@ -167,7 +167,7 @@ void test('artifact contact leaves hit feedback to its owner while retaining sil
     assert.equal(messages[1], 'The orc hits the vampire.');
 });
 void test('tentacle hits and self-directed misses use native target grammar', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const flayer = await createMonsterAt('mind flayer', 12, 10, MM_NOGRP | NO_MINVENT);
     flayer.female = true;
     const orc = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
@@ -179,7 +179,7 @@ void test('tentacle hits and self-directed misses use native target grammar', as
     assert.deepEqual(messages, ["The mind flayer's tentacles suck the orc.", 'The mind flayer misses herself.', 'The mind flayer hits herself.']);
 });
 void test('a self-directed silver strike names the attackers own flesh', async () => {
-    freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
     const vampire = await createMonsterAt('vampire', 12, 10, MM_NOGRP | NO_MINVENT);
     vampire.female = false;
     const saber = await knownObject(OBJECT_NAMES.indexOf('silver saber'));
@@ -190,7 +190,7 @@ void test('a self-directed silver strike names the attackers own flesh', async (
     assert.deepEqual(messages, ['The vampire hits himself.', "The vampire's silver saber sears his own flesh!"]);
 });
 void test('silver contact resumes after the generic hit page and leaves the defender alive', async () => {
-    freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
+    await freshObjectRoom({ hero: { protectionFromShapeChangers: true } });
     const orc = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
     const vampire = await createMonsterAt('vampire', 13, 10, MM_NOGRP | NO_MINVENT);
     const saber = await knownObject(OBJECT_NAMES.indexOf('silver saber'));

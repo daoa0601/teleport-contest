@@ -6,7 +6,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 const personalName = 'Treasure'.repeat(7) + 'Vaults';
 void test('checking an empty locked chest shortens its inscription and preserves the trap question', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, {
         initialize: false, tknown: false, blessed: true, greased: true,
         cknown: true, lknown: true, olocked: true, oextra: { oname: personalName },
@@ -22,7 +22,7 @@ void test('checking an empty locked chest shortens its inscription and preserves
     assert.equal(chest.lknown, true);
 });
 void test('checking a chest keeps its full inscription when the question fits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, {
         initialize: false, tknown: false, bknown: false, oextra: { oname: personalName },
     });
@@ -33,7 +33,7 @@ void test('checking a chest keeps its full inscription when the question fits', 
     assert.equal(chest.oextra?.oname, personalName);
 });
 void test('disarming a known chest trap keeps the full inscription without inventory details', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, {
         initialize: false, otrapped: true, tknown: true, blessed: true, greased: true,
         cknown: true, lknown: true, olocked: true, oextra: { oname: personalName },

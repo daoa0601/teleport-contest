@@ -10,8 +10,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
-function endingRoom() {
-    freshObjectRoom({ flags: { bones: false, disclose: 'none', tombstone: false } });
+async function endingRoom() {
+    await freshObjectRoom({ flags: { bones: false, disclose: 'none', tombstone: false } });
     game.storage = memoryStorage();
     game.iflags.toptenwin = false;
     const screens = [];
@@ -27,7 +27,7 @@ function endingRoom() {
     return screens;
 }
 void test('a petrifying monster uses turned to stone in the final summary', async () => {
-    const screens = endingRoom();
+    const screens = await endingRoom();
     const cockatrice = await createMonsterAt('cockatrice', 11, 10);
     await finishMonsterAttackDeath(cockatrice, { deathType: STONING });
     const summary = screens.find(screen => screen.includes('You were level')) ?? '';
@@ -35,7 +35,7 @@ void test('a petrifying monster uses turned to stone in the final summary', asyn
     assert.match(summary, /when you turned to stone\./);
 });
 void test('death on the Astral Plane omits a dungeon level number', async () => {
-    const screens = endingRoom();
+    const screens = await endingRoom();
     game.dungeons = [createDungeon({ dname: 'The Elemental Planes', num_dunlevs: 5 })];
     game.astral_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
     game.u.uz = { dnum: 0, dlevel: 1 };
@@ -45,7 +45,7 @@ void test('death on the Astral Plane omits a dungeon level number', async () => 
     assert.doesNotMatch(summary, /on dungeon level/);
 });
 void test('quitting Fort Ludios omits the dungeon level suffix', async () => {
-    const screens = endingRoom();
+    const screens = await endingRoom();
     game.dungeons = [createDungeon({ dname: 'Fort Ludios', num_dunlevs: 1 })];
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.knox_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
@@ -55,7 +55,7 @@ void test('quitting Fort Ludios omits the dungeon level suffix', async () => {
     assert.doesNotMatch(summary, /on dungeon level/);
 });
 void test('a one-level dungeon still shows its depth when it is not Fort Ludios', async () => {
-    const screens = endingRoom();
+    const screens = await endingRoom();
     game.dungeons = [createDungeon({ dname: 'The Tutorial', num_dunlevs: 1 })];
     game.u.uz = { dnum: 0, dlevel: 1 };
     await doquit();

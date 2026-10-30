@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 for (const polymorphed of [false, true]) {
     void test(`the Oracle's passive damage updates ${polymorphed ? 'monster-form' : 'human'} HP on the next screen flush`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (polymorphed)
             installPolymorphedHero('wolf', { hitPoints: 40 });

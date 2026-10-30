@@ -17,7 +17,7 @@ function screenText(): string {
 }
 
 void test('a boulder restored for bones after a fatal roll does not change the final view', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         heroX: 10, right: 26,
         flags: { debug: true, bones: true, disclose: '-i -a -v -c -o', tombstone: false },
         hero: { uz: { dnum: 0, dlevel: 1 }, ulevel: 1, uhp: 1, uhpmax: 12 },
@@ -28,7 +28,7 @@ void test('a boulder restored for bones after a fatal roll does not change the f
     game.storage = memoryStorage();
     game.iflags.toptenwin = false;
     await floorObject(BOULDER, 15, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(17, 10), false, 'the waiting boulder blocks the view behind it');
 
     const input = resetInputState();
@@ -61,11 +61,11 @@ void test('a boulder restored for bones after a fatal roll does not change the f
 void test('a boulder placed during play blocks the view behind it', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), true);
 
     await floorObject(BOULDER, 12, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(cansee(14, 10), false);
 });

@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const antimagic of [false, true]) {
     void test(`an exploding cursed book describes its released energy${antimagic ? ' against antimagic' : ''}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, antimagic } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, antimagic } });
         requirePlayingGame(game);
         const book = await addInventoryObject(SPE_FINGER_OF_DEATH, { cursed: true });
         assert.ok(game.objectDescriptions);

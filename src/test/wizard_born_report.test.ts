@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // on a blank line. Native formats the running totals into a buffer but never
 // puts them, so no totals row appears; species with no activity stay unlisted.
 void test('#wizborn lists per-species birth and death counters', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const ant = MONSTER_NAME.indexOf('giant ant');
     const newt = MONSTER_NAME.indexOf('newt');

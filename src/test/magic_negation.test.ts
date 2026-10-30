@@ -12,7 +12,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('protection accessories help only while worn and do not stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_PROTECTION);
     const amulet = await addInventoryObject(AMULET_OF_GUARDING);
@@ -28,7 +28,7 @@ void test('protection accessories help only while worn and do not stack', async 
 void test('a protection cloak cancels special attacks only while worn', async () => {
     const protection = [];
     for (const worn of [false, true]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         const cloak = await knownObject(CLOAK_OF_PROTECTION);
@@ -43,7 +43,7 @@ void test('a protection cloak cancels special attacks only while worn', async ()
 });
 
 void test('a high cleric has protection without any equipment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const cleric = await createMonsterAt('high cleric', 11, 10, NO_MINVENT);
 

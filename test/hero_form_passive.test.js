@@ -13,7 +13,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function freshAttack(form, hitPoints = 40) {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     installPolymorphedHero(form, { hitPoints });
     const attacker = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     attacker.mpeaceful = false;

@@ -12,12 +12,12 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('completing a visible pet pickup removes the object from remembered terrain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
     initializePet(dog);
     const potion = await floorObject(POT_HEALING, 12, 10);
-    newsym(12, 10);
+    await newsym(12, 10);
     await commitPetPickup(dog, { pickedUp: potion, pickupPending: true }, game);
     assert.ok(dog.minvent.includes(potion), 'the pet must pick up the visible potion');
     await makeBlinded(5, { talk: false });

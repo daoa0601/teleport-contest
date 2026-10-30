@@ -9,7 +9,7 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function giantSetsOffMine() {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 14, 10, MM_NOGRP | NO_MINVENT);
     giant.mhp = giant.mhpmax = 100;

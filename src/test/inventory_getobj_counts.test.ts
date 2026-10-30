@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('#adjust moves only the counted part of a stack', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 7 });
     const input = resetInputState();
     input.feed('adjust\r');
@@ -28,7 +28,7 @@ void test('#adjust moves only the counted part of a stack', async t => {
 
 for (const forcedMenu of [false, true]) {
     void test(`#adjust rejects an excessive count ${forcedMenu ? 'and keeps the forced-menu selection' : 'and asks for another selection'}`, async t => {
-        freshObjectRoom({ flags: { force_invmenu: forcedMenu } });
+        await freshObjectRoom({ flags: { force_invmenu: forcedMenu } });
         const dagger = await addInventoryObject(DAGGER, { quan: 4 });
         const input = resetInputState();
         input.feed('adjust\r');
@@ -51,7 +51,7 @@ for (const forcedMenu of [false, true]) {
 }
 
 void test('counted #adjust reveals a wielded stack curse and moves the whole stack', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, {
         quan: 7, cursed: true, bknown: false, wielded: true, owornmask: W_WEP,
     });
@@ -76,7 +76,7 @@ void test('counted #adjust reveals a wielded stack curse and moves the whole sta
 });
 
 void test('zero typed before a drop letter means that no count was supplied', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 7 });
     const input = resetInputState();
     planInput(input, t, [{ prompt: /What do you want to drop\?/, keys: `0${dagger.invlet}` }]);
@@ -87,7 +87,7 @@ void test('zero typed before a drop letter means that no count was supplied', as
 });
 
 void test('a gold throw count leaves the rest of the purse carried', async t => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     await addInventoryObject(GOLD_PIECE, { quan: 10 });
     const input = resetInputState();
     planInput(input, t, [
@@ -103,7 +103,7 @@ void test('a gold throw count leaves the rest of the purse carried', async t => 
 
 for (const count of [2, 6]) {
     void test(`a forced throw menu rejects count ${count} and throws one of the selected stack`, async t => {
-        const level = freshObjectRoom({ flags: { force_invmenu: true } });
+        const level = await freshObjectRoom({ flags: { force_invmenu: true } });
         const dagger = await addInventoryObject(DAGGER, { quan: 4 });
         const input = resetInputState();
         planInput(input, t, [
@@ -125,7 +125,7 @@ for (const count of [2, 6]) {
 }
 
 void test('inaccessible possessions explain that there is nothing else suitable', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER);
     const selected = await chooseInventoryObject('remove', () => GETOBJ_EXCLUDE_INACCESS);
     assert.equal(selected, null);

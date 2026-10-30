@@ -7,7 +7,7 @@ import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a wizard terrain wish can make a blessed looted fountain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('blessed looted fountain', { wizardWish: true });
 
@@ -20,7 +20,7 @@ void test('a wizard terrain wish can make a blessed looted fountain', async () =
 });
 
 void test('a wizard terrain wish can create a pit at the hero location', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('pit', { wizardWish: true });
 
@@ -30,7 +30,7 @@ void test('a wizard terrain wish can create a pit at the hero location', async (
 });
 
 void test('a door wish keeps its wall orientation and requested trap and lock', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const location = requireGameLevel().requireAt(game.u.ux, game.u.uy);
     location.typ = HWALL;
     location.horizontal = true;
@@ -44,7 +44,7 @@ void test('a door wish keeps its wall orientation and requested trap and lock', 
 });
 
 void test('an altar wish honors an explicit alignment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('lawful altar', { wizardWish: true });
 

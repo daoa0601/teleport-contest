@@ -10,7 +10,7 @@ import { artifactObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a throne curse names the intelligent artifact which resists it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = THRONE;
     const sword = await addInventoryItem(await artifactObject('Excalibur', { rknown: true }));
     assert.ok(sword.oartifact);

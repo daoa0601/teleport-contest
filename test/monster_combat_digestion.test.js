@@ -22,7 +22,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function digestionRoom(species, { minion = false } = {}) {
-    const level = freshObjectRoom({ gameplaySeed: 97n, moves: 1000,
+    const level = await freshObjectRoom({ gameplaySeed: 97n, moves: 1000,
         flags: { verbose: true }, context: { mon_moving: true },
         hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);

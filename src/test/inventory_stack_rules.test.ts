@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('#adjust collects potions whose irrelevant erosion knowledge differs', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await addInventoryObject(POT_HEALING, { quan: 2 });
     const second = await addInventoryObject(POT_HEALING, { nomerge: true, oerodeproof: true, rknown: false, quan: 3 });
     second.nomerge = false;
@@ -25,7 +25,7 @@ void test('#adjust collects potions whose irrelevant erosion knowledge differs',
 });
 
 void test('#adjust leaves revivable troll corpses in separate stacks', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const troll = MONSTER_NAME.indexOf('troll');
     const first = await addInventoryObject(CORPSE, { corpsenm: troll, spe: 0 });
     const second = await addInventoryObject(CORPSE, { corpsenm: troll, spe: 0, nomerge: true });
@@ -42,7 +42,7 @@ void test('#adjust leaves revivable troll corpses in separate stacks', async t =
 });
 
 void test('#adjust keeps poisoned darts apart from plain darts', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await addInventoryObject(DART, { quan: 2, opoisoned: false });
     const second = await addInventoryObject(DART, { quan: 3, opoisoned: true, nomerge: true });
     second.nomerge = false;
@@ -58,7 +58,7 @@ void test('#adjust keeps poisoned darts apart from plain darts', async t => {
 });
 
 void test('#adjust keeps diluted potions apart from full-strength potions', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await addInventoryObject(POT_HEALING, { quan: 2 });
     const second = await addInventoryObject(POT_HEALING, { quan: 3, odiluted: true, nomerge: true });
     second.nomerge = false;
@@ -73,7 +73,7 @@ void test('#adjust keeps diluted potions apart from full-strength potions', asyn
 });
 
 void test('#adjust keeps stamped mail scrolls of different object-id parity apart', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20000 });
     const second = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20001, nomerge: true });
     second.nomerge = false;
@@ -89,7 +89,7 @@ void test('#adjust keeps stamped mail scrolls of different object-id parity apar
 });
 
 void test('#adjust collects stamped mail scrolls whose object ids share a parity', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20002 });
     const second = await addInventoryObject(SCR_MAIL, { spe: 2, o_id: 20004, nomerge: true });
     second.nomerge = false;

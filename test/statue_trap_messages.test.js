@@ -11,7 +11,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['jackal', 'stone golem']) {
     void test(`stepping on a ${species} statue trap describes the statue ${species === 'jackal' ? 'coming to life' : 'moving'}`, async () => {
-        const level = freshObjectRoom({ flags: { pickup: false } });
+        const level = await freshObjectRoom({ flags: { pickup: false } });
         requirePlayingGame(game);
         await createCorpstatAt(STATUE, null, MONSTER_NAME.indexOf(species), 11, 10, 0);
         addTrap(level, STATUE_TRAP, 11, 10);

@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const species of ['goblin', 'giant eel']) {
     void test(`an underwater hero ${species === 'goblin' ? 'cannot be attacked by a nonswimmer' : 'can be bitten by a swimmer'}`, async () => {
-        const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         level.requireAt(11, 10).typ = POOL;
         const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -26,7 +26,7 @@ for (const species of ['goblin', 'giant eel']) {
 }
 for (const prayer of [false, true]) {
     void test(`a swallower ${prayer ? 'leaves a praying hero alone' : 'always knows where its swallowed hero is'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const cloud = await createMonsterAt('fog cloud', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         game.u.invulnerable = prayer;

@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
 void test('taking off yellow dragon armor exposes a wielded cockatrice corpse and resolves life saving', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._moveloopStarted = true;
     game.u.umovement = 12;
     const scales = await addInventoryObject(YELLOW_DRAGON_SCALES, { known: false });
@@ -44,7 +44,7 @@ for (const form of [null, 'hobbit', 'hill giant']) {
     const cause = form === null ? 'removing' : 'losing';
     const action = form === null ? 'taking off armor' : `becoming a ${form}`;
     void test(`${action} records ${cause} yellow dragon armor as the petrification cause`, async () => {
-        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+        await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
         game.storage = memoryStorage();
         const scales = await addInventoryObject(YELLOW_DRAGON_SCALES, { known: false });
         await putOn(scales);

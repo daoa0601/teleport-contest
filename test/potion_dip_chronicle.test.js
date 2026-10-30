@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const female of [false, true]) {
     void test(`polymorph dipping chronicles ${female ? 'her' : 'his'} first item only once`, async () => {
-        freshObjectRoom({ flags: { female } });
+        await freshObjectRoom({ flags: { female } });
         requirePlayingGame(game);
         const dagger = await addInventoryObject(DAGGER);
         const axe = await addInventoryObject(AXE);
@@ -27,7 +27,7 @@ for (const female of [false, true]) {
     });
 }
 void test('an immune polymorph dip preserves conduct and adds no chronicle event', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await addInventoryObject(POT_POLYMORPH, { quan: 2 });
     resetInputState();

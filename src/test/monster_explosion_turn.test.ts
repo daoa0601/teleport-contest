@@ -17,7 +17,7 @@ import { installPagerInput } from './support/pager-input.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function conflictExplosionRoom(species: string) {
-    freshObjectRoom({ hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const source = await createMonsterAt(species, 11, 10, BIRTH_FLAGS);

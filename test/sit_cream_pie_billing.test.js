@@ -7,7 +7,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 void test('sitting on shop cream pies charges the whole destroyed stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     const pies = await floorObject(CREAM_PIE, 10, 10, { quan: 2, quantity: 2 });
     await runExtendedCommand('sit', ' '.repeat(20));

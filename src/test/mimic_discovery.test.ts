@@ -18,12 +18,12 @@ import { requireScreenCell } from './support/screen.js';
 
 for (const distance of [2, 4]) {
     void test(`a potion disguise ${distance} squares away does not add its appearance to discoveries`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const mimic = await createMonsterAt('small mimic', 10 + distance, 10);
         mimic.m_ap_type = M_AP_OBJECT;
         mimic.mappearance = POT_HEALING;
-        newsym(mimic.mx, mimic.my);
+        await newsym(mimic.mx, mimic.my);
 
         const showing = dodiscovered();
         const text = requireGameDisplay().grid
@@ -37,7 +37,7 @@ for (const distance of [2, 4]) {
 }
 
 void test('recognizing a boulder disguise does not let the hero see through it', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 12, 10);
     mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
@@ -45,19 +45,19 @@ void test('recognizing a boulder disguise does not let the hero see through it',
     assert.equal(cansee(14, 10), true);
 
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.equal(cansee(12, 10), true);
     assert.equal(cansee(14, 10), false);
 });
 
 void test('attacking a known object appearance still reveals the mimic', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 12, 10);
     mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
     mimic.mappearance = ARROW;
-    newsym(12, 10);
+    await newsym(12, 10);
     pushKeys(' '.repeat(10));
 
     const result = await prepareAppliedWeaponAttack(mimic, await addInventoryWeapon(CLUB));
@@ -69,7 +69,7 @@ void test('attacking a known object appearance still reveals the mimic', async (
 });
 
 void test('a thrown weapon passes over a known object disguise', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 10;
     const club = await addInventoryWeapon(CLUB, { invlet: 'a' });
@@ -77,7 +77,7 @@ void test('a thrown weapon passes over a known object disguise', async () => {
     mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
     mimic.mappearance = POT_HEALING;
     const hp = mimic.mhp;
-    newsym(12, 10);
+    await newsym(12, 10);
 
     await throwInventoryObject(club, 'l', Array.from({ length: 10 }, () => ' '));
 
@@ -87,7 +87,7 @@ void test('a thrown weapon passes over a known object disguise', async () => {
 });
 
 void test('a thrown weapon hits an object disguise on a warned square', async () => {
-    freshObjectRoom({ right: 20, hero: { warning: true, uhitinc: 50 } });
+    await freshObjectRoom({ right: 20, hero: { warning: true, uhitinc: 50 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 10;
     const club = await addInventoryWeapon(CLUB, { invlet: 'a' });
@@ -98,7 +98,7 @@ void test('a thrown weapon hits an object disguise on a warned square', async ()
     mimic.m_lev = 8;
     const hp = mimic.mhp;
     await makeBlinded(10, { talk: false });
-    newsym(12, 10);
+    await newsym(12, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(11, 11).ch, '2');
 

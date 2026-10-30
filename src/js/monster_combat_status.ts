@@ -204,6 +204,6 @@ async function sleepContact(defender: Monster, duration: number, context: Monste
         await shieldeff(defender.mx, defender.my, context.state);
         return false;
     }
-    return putMonsterToSleep(defender, duration);
+    return await putMonsterToSleep(defender, duration);
 }
 

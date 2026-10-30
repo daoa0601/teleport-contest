@@ -15,7 +15,7 @@ import { requireScreenCell } from './support/screen.js';
 import { syncBlindness } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 void test('a concealed attacker reveals itself and the object covering it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const snake = await createMonsterAt('pit viper', 11, 10, NO_MINVENT);
     await floorObject(TOWEL, 11, 10, { bknown: false });
@@ -39,7 +39,7 @@ void test('a concealed attacker reveals itself and the object covering it', asyn
 });
 for (const underwater of [false, true]) {
     void test(`an attacker reveals ${underwater ? 'its covering object to an underwater hero' : 'the water without identifying the submerged object'}`, async () => {
-        const level = freshObjectRoom({ hero: { underwater } });
+        const level = await freshObjectRoom({ hero: { underwater } });
         requirePlayingGame(game);
         if (underwater)
             level.requireAt(10, 10).typ = POOL;
@@ -65,7 +65,7 @@ for (const underwater of [false, true]) {
     });
 }
 void test('a blind warned hero sees the warning, not a remembered unseen marker, where a hidden jellyfish stung', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 20, warning: true } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 20, warning: true } });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = POOL;
     const eel = await createMonsterAt('jellyfish', 11, 10, NO_MINVENT);
@@ -74,7 +74,7 @@ void test('a blind warned hero sees the warning, not a remembered unseen marker,
     eel.mux = game.u.ux;
     eel.muy = game.u.uy;
     syncBlindness(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     installPagerInput(input, { expected: /It /, limit: 5 });
     await performMonsterHeroAttack(eel, game, {
@@ -85,7 +85,7 @@ void test('a blind warned hero sees the warning, not a remembered unseen marker,
     assert.match(requireScreenCell(10, 11).ch, /^[1-5]$/);
 });
 void test('an invisible attacking eel is revealed where the hero sees its pool', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = POOL;
     const eel = await createMonsterAt('giant eel', 11, 10, NO_MINVENT);

@@ -120,7 +120,7 @@ export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x:
     boulder.oy = y;
     await useUpFloorObject(boulder, 1, { state, publish });
     const buriedFloorObjects = await buryFloorObjectsAt(x, y, state, { publish });
-    newsym(x, y);
+    await newsym(x, y);
     return { finished: true, object: null, buriedFloorObjects };
 }
 

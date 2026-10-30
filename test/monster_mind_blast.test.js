@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const attitude of ['hostile', 'peaceful', 'invulnerable']) {
     void test(`a ${attitude} mind flayer can unleash a psychic blast before moving`, async () => {
-        freshObjectRoom({ right: 26, hero: { uhp: 100, uhpmax: 100, telepathy: true,
+        await freshObjectRoom({ right: 26, hero: { uhp: 100, uhpmax: 100, telepathy: true,
                 invulnerable: attitude === 'invulnerable' } });
         requirePlayingGame(game);
         const flayer = await createMonsterAt('mind flayer', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -34,7 +34,7 @@ for (const attitude of ['hostile', 'peaceful', 'invulnerable']) {
     });
 }
 void test('a psychic blast wakes and hurts opposing minds anywhere on the level', async () => {
-    freshObjectRoom({ right: 30, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ right: 30, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const flayer = await createMonsterAt('mind flayer', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const enemy = await createMonsterAt('floating eye', 25, 10, MM_NOGRP | NO_MINVENT);
@@ -59,7 +59,7 @@ void test('a psychic blast wakes and hurts opposing minds anywhere on the level'
     assert.equal(ally.mhp, 20);
 });
 void test('a psychic blast hits newer monsters first, assigning damage and messages in that order', async () => {
-    freshObjectRoom({ right: 24, hero: { invulnerable: true } });
+    await freshObjectRoom({ right: 24, hero: { invulnerable: true } });
     requirePlayingGame(game);
     const flayer = await createMonsterAt('mind flayer', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const older = await createMonsterAt('floating eye', 14, 10, MM_NOGRP | NO_MINVENT);
@@ -84,7 +84,7 @@ void test('a psychic blast hits newer monsters first, assigning damage and messa
     ]);
 });
 void test('a distant psychic blast is faint and does not attack any minds', async () => {
-    freshObjectRoom({ right: 30, hero: { uhp: 100, uhpmax: 100, telepathy: true } });
+    await freshObjectRoom({ right: 30, hero: { uhp: 100, uhpmax: 100, telepathy: true } });
     requirePlayingGame(game);
     const flayer = await createMonsterAt('mind flayer', 20, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const enemy = await createMonsterAt('floating eye', 21, 10, MM_NOGRP | NO_MINVENT);
@@ -103,7 +103,7 @@ void test('a distant psychic blast is faint and does not attack any minds', asyn
     assert.match(messages.join('\n'), /You sense a faint wave of psychic energy\./);
 });
 void test('a psychic hit reveals a hiding hero and halves odd damage with Half spell damage', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, telepathy: true,
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, telepathy: true,
             halfSpellDamage: true, uundetected: true } });
     requirePlayingGame(game);
     const flayer = await createMonsterAt('mind flayer', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -117,7 +117,7 @@ void test('a psychic hit reveals a hiding hero and halves odd damage with Half s
     assert.match(messages.join('\n'), /It locks on to your latent telepathy!/);
 });
 void test('a lethal psychic blast kills an opposing monster without hero kill credit', async () => {
-    freshObjectRoom({ right: 24, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ right: 24, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const flayer = await createMonsterAt('mind flayer', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     const eye = await createMonsterAt('floating eye', 14, 10, MM_NOGRP | NO_MINVENT);

@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('leaving water for ice below a raised bridge names the ice', async () => {
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     const square = level.requireAt(10, 10);
     square.typ = DRAWBRIDGE_UP;
     square.drawbridgemask = DB_ICE;

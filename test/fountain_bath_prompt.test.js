@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the urge to bathe needs no extra dismissal when the hero has no gold to lose', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const rock = await addInventoryObject(ROCK);
     resetInputState().display = {
@@ -22,7 +22,7 @@ void test('the urge to bathe needs no extra dismissal when the hero has no gold 
     assert.equal(game.context.move, 1);
 });
 void test('gold is lost before the bath message pauses, while later fountain effects wait', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const rock = await addInventoryObject(ROCK);
     setHeroGoldAmount(game, 100);

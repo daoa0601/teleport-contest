@@ -30,7 +30,7 @@ void test('reading the prepared invocation book shows the fire ring before the m
     level.monsters = [];
     game.nhDisplay = new GameDisplay(null);
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD, { initialize: false });
     await addInventoryObject(BELL_OF_OPENING, { initialize: false, age: game.moves - 4 });
     await addInventoryObject(CANDELABRUM_OF_INVOCATION, { initialize: false, spe: 7, lamplit: true });

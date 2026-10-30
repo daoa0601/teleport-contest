@@ -11,7 +11,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function statusFight(source = 'goblin', target = 'orc') {
-    freshObjectRoom({ heroX: 8, context: { mon_moving: true }, gameplaySeed: 81n });
+    await freshObjectRoom({ heroX: 8, context: { mon_moving: true }, gameplaySeed: 81n });
     requirePlayingGame(game);
     const attacker = await createMonsterAt(source, 11, 10, BIRTH_FLAGS);
     const defender = await createMonsterAt(target, 12, 10, BIRTH_FLAGS);

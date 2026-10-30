@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // cave announcement before any ceiling square visibly changes.
 void test('an Earth cave-in announcement pages before the ceiling collapses',
     async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requireFixtureGame(game);
         game.earth_level = {
             ...game.u.uz, flags: { town: false }, alignment: null,

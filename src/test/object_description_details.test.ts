@@ -20,7 +20,7 @@ import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a leash names its attached pet even when that pet is invisible', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(pet, { state: game });
     pet.minvis = true;
@@ -38,7 +38,7 @@ for (const { count, lit, suffix } of [
     { count: 7, lit: true, suffix: '(7 of 7 candles, lit)' },
 ]) {
     void test(`the candelabrum shows ${suffix}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const candelabrum = await knownObject(CANDELABRUM_OF_INVOCATION, {
             bknown: false, known: false, spe: count, age: 200,
         });
@@ -53,7 +53,7 @@ for (const { count, lit, suffix } of [
 
 for (const [type, name] of [[TALLOW_CANDLE, 'tallow'], [WAX_CANDLE, 'wax']] as const) {
     void test(`a fresh ${name} candle counts scheduled burn time before becoming partly used`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const candle = await knownObject(type, { bknown: false });
         assert.equal(beginObjectBurn(candle), true);
 
@@ -76,7 +76,7 @@ for (const [type, name] of [
     [BRASS_LANTERN, 'brass lantern'], [POT_OIL, 'potion of oil'],
 ] as const) {
     void test(`a burning ${name} shows its light without a charge suffix`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const light = await knownObject(type, { bknown: false, spe: 1, age: 400 });
         assert.equal(beginObjectBurn(light), true);
 
@@ -92,7 +92,7 @@ for (const [type, name] of [
 
 for (const [type, name] of [[WAN_FIRE, 'wand'], [MAGIC_MARKER, 'marker']] as const) {
     void test(`a ${name} shows recharge count and charges only when identified`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const object = await knownObject(type, {
             bknown: false, known: false, recharged: 2, spe: 9,
         });
@@ -106,7 +106,7 @@ for (const [type, name] of [[WAN_FIRE, 'wand'], [MAGIC_MARKER, 'marker']] as con
 }
 
 void test('a weapon-tool displays enchantment instead of charges', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const horn = await knownObject(UNICORN_HORN, { bknown: false, recharged: 1, spe: 2 });
 
     const description = await inventoryItemDescription(horn);
@@ -116,7 +116,7 @@ void test('a weapon-tool displays enchantment instead of charges', async () => {
 });
 
 void test('a started meal is partly eaten even before its first nutrition is consumed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const nutrition = OBJECT_NUTRITION[FOOD_RATION];
     assert.ok(nutrition !== undefined && nutrition > 0);
     const ration = await knownObject(FOOD_RATION, { bknown: false, oeaten: nutrition });
@@ -125,7 +125,7 @@ void test('a started meal is partly eaten even before its first nutrition is con
 });
 
 void test('an egg reveals its origin when its species becomes known', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const species = MONSTER_NAME.indexOf('cockatrice');
     const egg = await knownObject(EGG, {
         initialize: false, bknown: false, known: false, corpsenm: species, spe: 1,
@@ -138,7 +138,7 @@ void test('an egg reveals its origin when its species becomes known', async () =
 });
 
 void test('egg origin requires a real species and the laid-by-you flag', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ordinary = await knownObject(EGG, { bknown: false, corpsenm: NON_PM, spe: 1 });
     const found = await knownObject(EGG, {
         bknown: false, corpsenm: MONSTER_NAME.indexOf('cockatrice'), spe: 0,
@@ -153,7 +153,7 @@ for (const [gender, label] of [
     [CORPSTAT_FEMALE, 'female'], [CORPSTAT_NEUTER, 'neuter'],
 ] as const) {
     void test(`wizard gender display reports ${label} only when requested`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const figurine = await knownObject(FIGURINE, {
             bknown: false, corpsenm: MONSTER_NAME.indexOf('little dog'), spe: gender,
         });

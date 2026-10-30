@@ -15,7 +15,7 @@ for (const { name, species, type, quantity, text } of [
     { name: 'a metal dagger in rust monster form', species: 'rust monster', type: DAGGER, quantity: 1, text: 'Eat this' },
 ]) {
     void test(`the inventory action menu offers eating ${name}`, async () => {
-        freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf(species), mh: 20, mhmax: 20 } });
+        await freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf(species), mh: 20, mhmax: 20 } });
         const item = await addInventoryObject(type, { quan: quantity });
         const input = resetInputState();
         input.feed(item.invlet);
@@ -32,7 +32,7 @@ for (const { name, species, type, quantity, text } of [
 }
 
 void test('the inventory eating action starts the selected meal without asking about food on the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ration = await addInventoryObject(FOOD_RATION, { quan: 3 });
     const apple = await floorObject(APPLE, game.u.ux, game.u.uy);
     const input = resetInputState();

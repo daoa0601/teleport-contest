@@ -171,8 +171,8 @@ export async function openDrawbridge(x, y, state = game, options = {}) {
     if (state.program_state?.gameover)
         return true;
     await clearDrawbridgeSquares(bridge, wall, false, state);
-    newsym(x, y);
-    newsym(wall.x, wall.y);
+    await newsym(x, y);
+    await newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
     if (Is_stronghold(state.u?.uz)) {
         if (!state.u.uevent)
@@ -200,8 +200,8 @@ export async function closeDrawbridge(x, y, state = game, options = {}) {
     if (state.level?.objects[x]?.[y]?.length && !heroIsDeaf(state))
         await publishHeardMessage('smashing and crushing.', plineWithContinuation, state);
     await clearDrawbridgeSquares(bridge, wall, true, state);
-    newsym(x, y);
-    newsym(wall.x, wall.y);
+    await newsym(x, y);
+    await newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
     return true;
 }
@@ -238,10 +238,10 @@ export async function destroyDrawbridge(x, y, state = game, options = {}) {
     removeEngravingAt(bridge.x, bridge.y, state);
     removeEngravingAt(wall.x, wall.y, state);
     await scatterDrawbridgeDebris(bridge, wall, state, options);
-    newsym(bridge.x, bridge.y);
-    newsym(wall.x, wall.y);
+    await newsym(bridge.x, bridge.y);
+    await newsym(wall.x, wall.y);
     vision_note_blocker_change(wall.x, wall.y);
-    vision_recalc(0);
+    await vision_recalc(0);
     if (Is_stronghold(state.u?.uz)) {
         if (!state.u.uevent)
             state.u.uevent = {};

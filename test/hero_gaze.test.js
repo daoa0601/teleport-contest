@@ -16,7 +16,7 @@ function gaze(options = {}) {
     });
 }
 void test('an umber hulk uses #monster to confuse a visible monster', async () => {
-    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    await freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     await runMonsterAbilityCommand(' '.repeat(6));
@@ -25,7 +25,7 @@ void test('an umber hulk uses #monster to confuse a visible monster', async () =
     assert.equal(game.context.move, 1);
 });
 void test('a blind hero cannot use a gaze attack', async () => {
-    freshMonsterAbilityRoom('umber hulk', {
+    await freshMonsterAbilityRoom('umber hulk', {
         energy: 30,
         polymorph: { blindTurns: 3 },
     });
@@ -37,7 +37,7 @@ void test('a blind hero cannot use a gaze attack', async () => {
     assert.equal(game.u.uen, 30);
 });
 void test('a pyrolisk fiery gaze burns a monster', async () => {
-    freshMonsterAbilityRoom('pyrolisk', { energy: 30 });
+    await freshMonsterAbilityRoom('pyrolisk', { energy: 30 });
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mhp = jackal.mhpmax = 12;
@@ -49,7 +49,7 @@ void test('a pyrolisk fiery gaze burns a monster', async () => {
     assert.equal(game.u.uen, 15);
 });
 void test('gazing at a floating eye can freeze the hero', async () => {
-    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    await freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     requireFixtureGame(game);
     const eye = await createMonsterAt('floating eye', 11, 10);
     eye.m_lev = 2;
@@ -61,7 +61,7 @@ void test('gazing at a floating eye can freeze the hero', async () => {
     assert.match(game._pending_message, /You can move again\./);
 });
 void test('a gaze reaches the newest monster first and spares a pet', async () => {
-    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    await freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     requireFixtureGame(game);
     const pet = await createMonsterAt('jackal', 11, 10);
     pet.mtame = 10;

@@ -14,7 +14,7 @@ import { freshGameplayRoom, freshTurnRoom } from './support/playable-room.js';
 const M2_DEMON = 0x00000100;
 for (const cancelled of [false, true]) {
     void test(`a ${cancelled ? 'cancelled demon cannot summon' : 'demon can summon'} help during an attack`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
         demon.mpeaceful = false;

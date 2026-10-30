@@ -14,9 +14,9 @@ import { assertWormBody } from './support/worms.js';
 for (const female of [false, true]) {
     for (const tame of [false, true]) {
         void test(`monster detection preserves ${female ? 'female' : 'male'} ${tame ? 'pet' : 'wild'} worm glyphs from head to tail`, async () => {
-            freshObjectRoom({ right: 25, flags: { tips: false } });
+            await freshObjectRoom({ right: 25, flags: { tips: false } });
             const worm = await createMonsterAt('long worm', 20, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
-            initializeMonsterWormBody(worm, { segmentCount: 3, random: () => 0 });
+            await initializeMonsterWormBody(worm, { segmentCount: 3, random: () => 0 });
             assertWormBody(worm);
             assert.equal(worm.wormSegments.length, 3);
             worm.female = female;

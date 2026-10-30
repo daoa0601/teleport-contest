@@ -5,7 +5,7 @@ import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('#wizrumorcheck displays both rumor sections and supporting text without taking a turn', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const pages = [];
     const input = resetInputState();
     input.beforeRead = () => {

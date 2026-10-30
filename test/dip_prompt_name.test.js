@@ -17,7 +17,7 @@ function screenRow(row) {
 // pair of leather gloves (being worn)" is exactly 50 characters, so the
 // known-status adjective survives into the empty-inventory refusal.
 void test('a full-length dip target keeps its uncursed adjective in the refusal', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const gloves = await addInventoryObject(LEATHER_GLOVES, {
         spe: 0, owornmask: W_ARMG,
     });
@@ -40,7 +40,7 @@ void test('a full-length dip target keeps its uncursed adjective in the refusal'
 // A 52-character doname overflows the limit, so short_oname() strips the
 // known-status attributes and re-donames the cloak without "uncursed".
 void test('an over-long dip target loses its uncursed adjective first', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const cloak = await addInventoryObject(CLOAK_OF_MAGIC_RESISTANCE, {
         spe: 0, owornmask: W_ARMC,
     });
@@ -63,7 +63,7 @@ void test('an over-long dip target loses its uncursed adjective first', async ()
 // fits and keeps the curse while dropping "greased".  (Priests drop the
 // redundant "uncursed" for armor, so the curse is the visible adjective.)
 void test('a priest dip target keeps its curse through the strip', async () => {
-    freshObjectRoom({ role: 'priest', flags: { verbose: true } });
+    await freshObjectRoom({ role: 'priest', flags: { verbose: true } });
     const cloak = await addInventoryObject(CLOAK_OF_MAGIC_RESISTANCE, {
         spe: 0, owornmask: W_ARMC, cursed: true, greased: true,
     });
@@ -82,7 +82,7 @@ void test('a priest dip target keeps its curse through the strip', async () => {
 // With a potion carried, the same formatted name becomes the second getobj
 // prompt asking what to dip the item into.
 void test('the dip-into prompt spells out the worn target with its enchantment', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const gloves = await addInventoryObject(LEATHER_GLOVES, {
         spe: 2, owornmask: W_ARMG,
     });
@@ -105,7 +105,7 @@ void test('the dip-into prompt spells out the worn target with its enchantment',
 // mixed (diluted) extra healings "abcdefghijklmnop" asks to dip "2 potions
 // of extra healing named abcdefghijklmnop", never "diluted" ones.
 void test('a long-named diluted potion loses its diluted adjective when shortened', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const diluted = await addInventoryObject(POT_EXTRA_HEALING, {
         quan: 2, odiluted: true, bknown: false,
         oextra: { oname: 'abcdefghijklmnop' },
@@ -128,7 +128,7 @@ void test('a long-named diluted potion loses its diluted adjective when shortene
 // X"), and the 43-character result fits the 50-character dip limit, so the
 // beatitude adjective survives.
 void test('a long type call name is truncated before the dip question', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const potion = await addInventoryObject(POT_GAIN_LEVEL, {
         typeKnown: false, dknown: true,
     });

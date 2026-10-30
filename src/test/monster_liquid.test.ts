@@ -18,7 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const lava of [false, true]) {
     void test(`${lava ? 'lava scorching' : 'iron golem rust'} on the hero turn gives no hero kill credit`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(lava ? 'fire ant' : 'iron golem', 12, 10);
         monster.mhp = 1;
@@ -38,7 +38,7 @@ for (const lava of [false, true]) {
 }
 
 void test('a drowning engulfer announces the water flushing the hero out', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 12, 10);
     await installSwallowedHero(worm);
@@ -56,7 +56,7 @@ void test('a drowning engulfer announces the water flushing the hero out', async
 });
 
 void test('lava describes a named water elemental by its body rather than its given name', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const elemental = await createMonsterAt('water elemental', 12, 10);
     setMonsterGivenName(elemental, 'Droplet');
@@ -72,7 +72,7 @@ void test('lava describes a named water elemental by its body rather than its gi
 });
 
 void test('a drowning invisible monster does not reveal its species', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('giant', 12, 10);
     monster.minvis = true;
@@ -89,7 +89,7 @@ void test('a drowning invisible monster does not reveal its species', async () =
 
 for (const lava of [false, true]) {
     void test(`an unseen pet lost to ${lava ? 'lava' : 'drowning'} gives the native sad feeling`, async () => {
-        const level = freshObjectRoom({ hero: { uluck: -5 } });
+        const level = await freshObjectRoom({ hero: { uluck: -5 } });
         requirePlayingGame(game);
         const pet = await createMonsterAt('little dog', 12, 10);
         initializePet(pet);
@@ -121,7 +121,7 @@ for (const lava of [false, true]) {
 }
 
 void test('a drowning monster drops its potion into water only once', async () => {
-    const level = freshObjectRoom({ hero: { uluck: -5 } });
+    const level = await freshObjectRoom({ hero: { uluck: -5 } });
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     const giant = await createMonsterAt('giant', 12, 10);
@@ -139,7 +139,7 @@ void test('a drowning monster drops its potion into water only once', async () =
 
 for (const lava of [false, true]) {
     void test(`a ${lava ? 'lava survivor' : 'life-saved drowning monster'} with nowhere safe to stand waits in limbo`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(lava ? 'fire ant' : 'giant', 12, 10);
         if (!lava) await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -161,7 +161,7 @@ for (const lava of [false, true]) {
 
 for (const property of ['flying', 'levitating'] as const) {
     void test(`a ${property} rider keeps the steed and its equipment above lava`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const steed = await createSaddledSteed();
         game.u.usteed = steed;
@@ -182,7 +182,7 @@ for (const property of ['flying', 'levitating'] as const) {
 }
 
 void test('an iron golem can rust in a pool despite being breathless', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     const golem = await createMonsterAt('iron golem', 12, 10);
@@ -204,7 +204,7 @@ void test('an iron golem can rust in a pool despite being breathless', async () 
 });
 
 void test('an iron golem remains in the pool when it does not rust', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     const golem = await createMonsterAt('iron golem', 12, 10);
@@ -221,7 +221,7 @@ void test('an iron golem remains in the pool when it does not rust', async () =>
 });
 
 void test('a fire-resistant lava survivor announces its escape', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = LAVAPOOL;
     const ant = await createMonsterAt('fire ant', 12, 10);
@@ -248,7 +248,7 @@ void test('a fire-resistant lava survivor announces its escape', async () => {
 });
 
 void test('a life-saved drowning monster escapes without a teleport announcement', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = POOL;
     const orc = await createMonsterAt('orc', 12, 10);
@@ -280,7 +280,7 @@ void test('a life-saved drowning monster escapes without a teleport announcement
 
 for (const lava of [false, true]) {
     void test(`a teleporter in ${lava ? 'lava' : 'water'} on a no-teleport level is told why it cannot escape`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.flags.noteleport = true;
         const mechanic = await createMonsterAt('quantum mechanic', 12, 10);
@@ -300,7 +300,7 @@ for (const lava of [false, true]) {
 
 for (const species of ['gremlin', 'iron golem'] as const) {
     void test(`${species === 'gremlin' ? 'a' : 'an'} ${species} surviving a pool announces its acid potion exploding`, async () => {
-        const level = freshObjectRoom({ hero: { uluck: -5 } });
+        const level = await freshObjectRoom({ hero: { uluck: -5 } });
         requirePlayingGame(game);
         level.requireAt(12, 10).typ = POOL;
         const monster = await createMonsterAt(species, 12, 10);

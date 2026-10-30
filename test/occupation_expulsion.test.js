@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const peaceful of [false, true]) {
     void test(`expulsion ${peaceful ? 'allows eating beside a peaceful' : 'stops eating beside a hostile'} engulfer`, async () => {
-        freshObjectRoom({ hero: { uhunger: 400, uhs: NOT_HUNGRY } });
+        await freshObjectRoom({ hero: { uhunger: 400, uhs: NOT_HUNGRY } });
         requirePlayingGame(game);
         const trapper = await createMonsterAt('trapper', 11, 10, MM_NOGRP | NO_MINVENT);
         trapper.mpeaceful = peaceful ? 1 : 0;
@@ -38,7 +38,7 @@ for (const peaceful of [false, true]) {
     });
 }
 void test('expulsion keeps the hallucinated engulfer seen when eating was interrupted', async () => {
-    freshObjectRoom({ hero: { uhunger: 400, uhs: NOT_HUNGRY, hallucinationTurns: 100 } });
+    await freshObjectRoom({ hero: { uhunger: 400, uhs: NOT_HUNGRY, hallucinationTurns: 100 } });
     requirePlayingGame(game);
     applyNethackrc('MSGTYPE=stop "You stop eating"');
     const trapper = await createMonsterAt('trapper', 11, 10, MM_NOGRP | NO_MINVENT);

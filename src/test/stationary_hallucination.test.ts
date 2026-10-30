@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const condition of ['paralyzed', 'waiting', 'sleeping'] as const) {
     void test(`a ${condition} monster changes its hallucinated appearance without moving`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: 20, stealth: true } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 20, stealth: true } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('soldier', 14, 10, MM_NOGRP | NO_MINVENT);
         monster.mpeaceful = false;
@@ -21,7 +21,7 @@ for (const condition of ['paralyzed', 'waiting', 'sleeping'] as const) {
             game.u.invisibleTurns = 20;
         } else monster.msleeping = 1;
         initRng(1n);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         const previous = glyphAt(monster.mx, monster.my);
         assert.ok(previous?.kind === 'monster');
 

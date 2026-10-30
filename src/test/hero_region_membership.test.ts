@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const startsInside of [false, true]) {
     void test(`blocked knockback ${startsInside ? 'out of' : 'into'} gas updates the hero's exposure`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         await createMonsterAt('fire elemental', 11, 10, NO_MINVENT);
         const cloud = await createGasCloudSelection(game,
@@ -32,7 +32,7 @@ for (const startsInside of [false, true]) {
 }
 
 void test('saving preserves gas exposure after blocked knockback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await createMonsterAt('fire elemental', 11, 10, NO_MINVENT);
     await createGasCloudSelection(game, [{ x: 10, y: 10 }], 5, 8, async () => {});
@@ -43,7 +43,7 @@ void test('saving preserves gas exposure after blocked knockback', async () => {
     game.plname = 'CloudSurvivor';
 
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('CloudSurvivor', storage), true);
+    assert.equal(await restoreGame('CloudSurvivor', storage), true);
     await runLevelRegions(game, { publish: async () => {}, rollOne: () => 1 });
 
     assert.equal(game.u.uhp, hp);

@@ -10,13 +10,13 @@ import { vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('blind lava entry shows the felt lava while the fatal message waits for acknowledgement', async () => {
-    const level = freshObjectRoom({ flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' } });
+    const level = await freshObjectRoom({ flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' } });
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     level.requireAt(ux, uy).typ = LAVAPOOL;
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
-    newsym(ux, uy);
+    await vision_recalc(0);
+    await newsym(ux, uy);
     await flush_screen(1);
     const input = resetInputState();
     let lavaAtDeath;

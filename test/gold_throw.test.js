@@ -25,7 +25,7 @@ const PM_WATCHMAN = 282;
 void test('gold blocked by an adjacent wall leaves later hallucinated appearances unchanged', async () => {
     const catchNames = [];
     for (const direction of ['>', 'l']) {
-        const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         level.flags.noteleport = true;
         level.requireAt(11, 10).typ = STONE;
         const purse = await carriedGold(100);

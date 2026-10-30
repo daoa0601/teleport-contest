@@ -16,10 +16,10 @@ for (const { objectType, name, message } of [
 ]) {
     for (const alreadySeen of [false, true]) {
         void test(`opening at ${alreadySeen ? 'a known' : 'a newly noticed'} ${name} ${alreadySeen ? 'does not use' : 'uses'} a turn`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             await floorObject(objectType, 11, 10);
-            if (alreadySeen) newsym(11, 10);
-            else map_background(11, 10, true);
+            if (alreadySeen) await newsym(11, 10);
+            else await map_background(11, 10, true);
             pushKey('l');
 
             await rhack('o'.charCodeAt(0));
@@ -36,7 +36,7 @@ for (const { objectType, message } of [
     { objectType: ROCK, message: 'You feel no door there.' },
 ]) {
     void test(`opening toward an object while blind reports: ${message}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: 10 } });
+        await freshObjectRoom({ hero: { blindTurns: 10 } });
         await floorObject(objectType, 11, 10);
         pushKey('l');
 

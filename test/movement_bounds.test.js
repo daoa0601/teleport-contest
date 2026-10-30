@@ -13,7 +13,7 @@ for (const [x, y, key, direction] of [
     [10, 0, 'u', 'north'], [10, 20, 'b', 'south'],
 ]) {
     void test(`walking ${key} from ${x},${y} reports the ${direction} map limit`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 1, right: 79, top: 0, bottom: 20,
             heroX: x, heroY: y, flags: { mention_walls: true },
         });
@@ -30,7 +30,7 @@ for (const [mode, keys] of [
     ['counted walk', '4k'], ['run', 'K'], ['rush', '\x0b'],
 ]) {
     void test(`a ${mode} stops at the map edge without spending a turn`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 1, right: 79, top: 0, bottom: 20,
             heroX: 10, heroY: 0, flags: { mention_walls: false },
         });
@@ -48,7 +48,7 @@ for (const [mode, keys] of [
 }
 for (const [x, y, key] of [[1, 10, 'h'], [10, 0, 'k']]) {
     void test(`force fighting beyond ${x},${y} attacks an unknown obstacle`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 1, right: 79, top: 0, bottom: 20,
             heroX: x, heroY: y, flags: { mention_walls: true },
         });
@@ -66,7 +66,7 @@ for (const [x, y, key, destination] of [
     [2, 1, 'y', [1, 0]], [78, 19, 'n', [79, 20]],
 ]) {
     void test(`the hero can enter the legal map corner ${destination}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             left: 1, right: 79, top: 0, bottom: 20,
             heroX: x, heroY: y,
         });

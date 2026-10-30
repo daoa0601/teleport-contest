@@ -8,7 +8,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('picking up a matching known item needs only one comparison acknowledgement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pear = await addInventoryObject(PEAR, { bknown: false });
     await floorObject(PEAR, game.u.ux, game.u.uy, { bknown: true });

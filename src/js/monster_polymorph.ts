@@ -586,7 +586,7 @@ export async function normalizeMonsterShape(
             return { changed, heroDied: true };
         monster.cham = NON_PM;
         if (cancelled) monster.mcan = 1;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     if (isWereMonster(monster) && !isHumanWereMonster(monster)) {
         changed = await transformWereMonster(monster, state, { publish }) || changed;
@@ -594,10 +594,10 @@ export async function normalizeMonsterShape(
     }
     const appearance = M_AP_TYPE(monster);
     if (appearance === M_AP_NOTHING) return { changed, heroDied: false };
-    if (monster.meating) finishMonsterEating(monster, state);
+    if (monster.meating) await finishMonsterEating(monster, state);
     else {
         if (appearance !== M_AP_MONSTER) monster.msleeping = 1;
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
     }
     return { changed: true, heroDied: false };
 }
@@ -612,7 +612,7 @@ export async function restartMonsterShapechanging(state: GameState = game): Prom
             monster.cham = naturalShapechanger(monster.mnum) ? monster.mnum : NON_PM;
         if (MONSTER_SYMBOL[monster.mnum] === 13 && monster.msleeping) { // S_MIMIC
             await setMimicAppearance(monster);
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         }
     }
 }
@@ -636,7 +636,7 @@ async function dropBouldersTheNewFormCannotCarry(
     return dropped;
 }
 
-function initialShapechangedMonster<T extends Monster>(monster: T, targetMnum: number): T {
+async function initialShapechangedMonster<T extends Monster>(monster: T, targetMnum: number): Promise<T> {
     const baseMnum = monster.mnum;
     const female = shapechangerGender(
         baseMnum, targetMnum, !!monster.female,
@@ -670,7 +670,7 @@ function initialShapechangedMonster<T extends Monster>(monster: T, targetMnum: n
     monster.weaponCheck = 0;
     // newcham() owns a fresh worm body, including its tail roll. The
     // caller's MM_NOTAIL only controls an ordinary long-worm birth.
-    if (targetMnum === PM_LONG_WORM) initializeMonsterWormBody(monster);
+    if (targetMnum === PM_LONG_WORM) await initializeMonsterWormBody(monster);
     return monster;
 }
 
@@ -704,9 +704,9 @@ export async function initialShapechangedBirth<T extends Monster>(monster: T): P
     if (targetMnum === null || targetMnum === baseMnum
         || !acceptsShapechangerForm(baseMnum, targetMnum))
         return null;
-    const changed = initialShapechangedMonster(monster, targetMnum);
+    const changed = await initialShapechangedMonster(monster, targetMnum);
     changed.meverseen = 0;
-    newsym(changed.mx, changed.my);
+    await newsym(changed.mx, changed.my);
     // newcham() ends with mon_break_armor() even for a newborn without
     // armor; its perceived pronouns still draw while the hero hallucinates.
     await adjustMonsterClothingAfterPolymorph(changed, game);
@@ -767,11 +767,11 @@ export async function changeMonsterForm(
         || monsterIsGenocided(targetMnum)) return null;
 
     if (monster.wormno) {
-        removeMonsterWormBody(monster);
+        await removeMonsterWormBody(monster);
         await placeMonsterOnMap(monster, monster.mx, monster.my);
     }
     if (M_AP_TYPE(monster) && MONSTER_SYMBOL[targetMnum] !== 13)
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
@@ -826,7 +826,7 @@ export async function changeMonsterForm(
                     leashReleased, leashReleaseVisible,
                 };
             } else {
-                swallowed(false);
+                await swallowed(false);
             }
         } else if ((!monsterSpeciesSticks(targetMnum) && !heroFormSticks(state))
             || monsterIsUnsolid(monster)) {
@@ -834,10 +834,10 @@ export async function changeMonsterForm(
         }
     }
     if (targetMnum === PM_LONG_WORM)
-        initializeMonsterWormBody(monster);
+        await initializeMonsterWormBody(monster);
     monster.meverseen = 0;
 
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     let message: string | null = null;
     if (showMessage) {
         const nowSpotted = canSpotMonster(monster);

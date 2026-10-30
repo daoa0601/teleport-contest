@@ -9,7 +9,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a mounted sit refusal names the saddled steed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pony = await createSaddledSteed('pony', { x: 10, y: 10 });
     game.u.usteed = pony;
 
@@ -20,7 +20,7 @@ void test('a mounted sit refusal names the saddled steed', async () => {
 });
 
 void test('a trapped dragon cannot sit with its rear claw caught in the bear trap', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     installPolymorphedHero('red dragon');
     addTrap(level, BEAR_TRAP, 10, 10);
     game.u.utrap = 3;

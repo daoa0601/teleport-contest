@@ -182,7 +182,7 @@ async function flashCreatedMonster(monster: Monster): Promise<void> {
         await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
     } finally {
         row[monster.mx] = saved;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
 }
 

@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('striking a shop boulder charges for the boulder before turning it into rocks', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const boulder = await floorObject(BOULDER, 10, 10, { no_charge: false });

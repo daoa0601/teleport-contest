@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('frightening a pet into a pit reduces tameness and alignment after the fall', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(pet);
@@ -39,7 +39,7 @@ for (const restricted of [false, true]) {
         ? 'a displaced pet is abused even if the level blocks its teleportation'
         : 'a displaced pet is abused after teleporting on the same level';
     void test(description, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.flags.noteleport = restricted;
         const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
@@ -63,7 +63,7 @@ for (const restricted of [false, true]) {
     });
 }
 void test('a pet that avoids a familiar teleport trap receives no displacement penalty', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(pet);
@@ -82,7 +82,7 @@ void test('a pet that avoids a familiar teleport trap receives no displacement p
     assert.equal(game._lastPlineMessage, 'You frighten your kitten.');
 });
 void test('a pet drowned by displacement gives kill credit and the pet-loss guilt penalty', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(pet);

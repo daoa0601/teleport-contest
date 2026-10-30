@@ -22,7 +22,7 @@ async function priestAt(x, y, { local = false } = {}) {
     return priest;
 }
 void test('exit removes a nonlocal priest and ordinary cargo without counting a kill', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const priest = await priestAt(12, 10);
     const potion = await knownObject(POT_HEALING);
@@ -39,7 +39,7 @@ void test('exit removes a nonlocal priest and ordinary cargo without counting a 
     assert.equal(game.mvitals?.[priest.mnum]?.died ?? 0, 0);
 });
 void test('a departing nonlocal priest leaves the real Amulet on the floor', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const priest = await priestAt(12, 10);
     const amulet = await knownObject(AMULET_OF_YENDOR);
@@ -51,7 +51,7 @@ void test('a departing nonlocal priest leaves the real Amulet on the floor', asy
     assert.equal(amulet.where, 'floor');
 });
 void test('local priests, dead priests, and ordinary monsters remain after cleanup', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const local = await priestAt(12, 10, { local: true });
     const dead = await priestAt(13, 10);
@@ -65,7 +65,7 @@ void test('local priests, dead priests, and ordinary monsters remain after clean
     assert.equal(level.monsters.includes(orc), true);
 });
 void test('cleanup removes every living nonlocal priest from the changing monster list', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const first = await priestAt(12, 10);
     const second = await priestAt(13, 10);
@@ -78,7 +78,7 @@ void test('cleanup removes every living nonlocal priest from the changing monste
     }
 });
 void test('a priest on the same numbered depth in a different dungeon is nonlocal', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const priest = await priestAt(12, 10, { local: true });
     assert.ok(priest.epri);

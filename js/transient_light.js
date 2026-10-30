@@ -18,7 +18,7 @@ export async function showTransientLight(object, x, y, state = game) {
         (state._transientLights ??= []).unshift({ x, y, range: 0 });
     }
     try {
-        vision_recalc(0);
+        await vision_recalc(0);
         await flush_screen(0);
         for (const monster of state.level.monsters) {
             if (monster.dead || monster.mhp <= 0 || monster.isgd && !monster.mx)
@@ -45,7 +45,7 @@ export async function cleanupTransientLight(state = game) {
     requirePlayingGame(state);
     discardFlashes(state);
     if (state.vision_full_recalc)
-        vision_recalc(0);
+        await vision_recalc(0);
     let changed = false;
     for (const monster of state.level.monsters) {
         if (monster.dead || monster.mhp <= 0 || !monster.mtemplit)
@@ -53,7 +53,7 @@ export async function cleanupTransientLight(state = game) {
         monster.mtemplit = 0;
         changed = true;
         if (!canSpotMonster(monster))
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
     }
     if (changed)
         await flush_screen(0);

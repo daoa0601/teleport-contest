@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const newestHasAmulet of [false, true]) {
     void test(`resurrection recalls the latest migrated Wizard${newestHasAmulet ? ' without the Amulet' : ''}`, async () => {
-        freshObjectRoom({ hero: { deafTurns: 100 } });
+        await freshObjectRoom({ hero: { deafTurns: 100 } });
         requirePlayingGame(game);
         const first = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
         const second = await createMonsterAt('Wizard of Yendor', 13, 10, NO_MINVENT);
@@ -44,7 +44,7 @@ for (const anotherWizard of [false, true]) {
     void test(`harassment recalls a Wizard with a bagged Amulet${anotherWizard ? ' while another Wizard is present' : ''}`, async () => {
         let recalled = false;
         for (let seed = 1; seed <= 32 && !recalled; seed++) {
-            freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
+            await freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
             requirePlayingGame(game);
             game.level.flags.rndmongen = false;
             const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);

@@ -24,13 +24,13 @@ import { requireScreenCell } from './support/screen.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 void test('relocation refreshes a blind hero warning range before arrival effects', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
+    await vision_recalc(0);
     grantIntrinsicProperty('warning', 'outside');
     const wight = await createMonsterAt('barrow wight', 21, 10);
-    newsym(wight.mx, wight.my);
+    await newsym(wight.mx, wight.my);
     await flush_screen(1);
     assert.notEqual(requireScreenCell(20, 11).ch, '1');
     await moveHeroByTeleport(12, 10);
@@ -38,7 +38,7 @@ void test('relocation refreshes a blind hero warning range before arrival effect
     assert.equal(requireScreenCell(20, 11).ch, '1');
 });
 void test('teleport unearths a chained ball and carries the restored punishment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const ball = await installHeroChainedToBuriedBall();
     pushKeys(' '.repeat(20));
@@ -54,7 +54,7 @@ void test('teleport unearths a chained ball and carries the restored punishment'
 });
 for (const trapType of [PIT, HOLE]) {
     void test(`relocation ${trapType === PIT ? 'fills an old pit' : 'does not fill an old hole'} beneath a boulder`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const trap = addTrap(game.level, trapType, 10, 10);
         const boulder = await floorObject(BOULDER, 10, 10);
@@ -65,7 +65,7 @@ for (const trapType of [PIT, HOLE]) {
 }
 for (const form of ['large mimic', 'cave spider']) {
     void test(`relocation reveals a hidden ${form}, even with cover at the destination`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         installPolymorphedHero(form);
         await floorObject(DIAMOND, 10, 10);
@@ -80,7 +80,7 @@ for (const form of ['large mimic', 'cave spider']) {
     });
 }
 void test('relocation does not wake a sleeping hero or shorten the sleep', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await putHeroToSleep(8);
     const sleepingSince = game.u.usleep;
@@ -90,7 +90,7 @@ void test('relocation does not wake a sleeping hero or shorten the sleep', async
 });
 for (const condition of ['grounded', 'levitating', 'polymorphed']) {
     void test(`a ${condition} dwarf ${condition === 'grounded' ? 'senses' : 'cannot sense'} buried objects after relocation`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const dwarf = races.find(race => race.name === 'dwarf');
         assert.ok(dwarf);
@@ -113,7 +113,7 @@ for (const condition of ['grounded', 'levitating', 'polymorphed']) {
     });
 }
 void test('a completed teleport announces the invocation square after revealing its trap', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false } });
     requireFixtureGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', ...{ num_dunlevs: 30, flags: { hellish: true } } })];
     game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
@@ -129,7 +129,7 @@ void test('a completed teleport announces the invocation square after revealing 
     assert.match(game._pending_message, /You feel a strange vibration under your feet\./);
 });
 void test('natural teleport needs no at-will level, Strength, hunger, or energy', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { tips: false },
         hero: { ulevel: 1, uen: 0, uhunger: 2 },
     });
@@ -145,7 +145,7 @@ void test('natural teleport needs no at-will level, Strength, hunger, or energy'
     assert.equal(game.u.uen, 0);
 });
 void test('natural teleport obeys the level restriction before choosing a destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.flags.noteleport = true;
     const result = await teleportHero();
@@ -154,7 +154,7 @@ void test('natural teleport obeys the level restriction before choosing a destin
     assert.match(game._pending_message, /A mysterious force prevents you from teleporting!/);
 });
 void test('cancelling natural controlled teleport does not run arrival or charge resources', async () => {
-    freshObjectRoom({ flags: { tips: false, pickup: true } });
+    await freshObjectRoom({ flags: { tips: false, pickup: true } });
     requireFixtureGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_TELEPORT_CONTROL), 'uleft');
     const gem = await floorObject(DIAMOND, 10, 10);
@@ -169,7 +169,7 @@ void test('cancelling natural controlled teleport does not run arrival or charge
     assert.equal(game.u.uen, energy);
 });
 void test('choosing the current square is a teleport and still completes pickup', async () => {
-    freshObjectRoom({ flags: { tips: false, pickup: true } });
+    await freshObjectRoom({ flags: { tips: false, pickup: true } });
     requireFixtureGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_TELEPORT_CONTROL), 'uleft');
     const gem = await floorObject(DIAMOND, 10, 10);
@@ -180,7 +180,7 @@ void test('choosing the current square is a teleport and still completes pickup'
     assert.equal(game.inventory.includes(gem), true);
 });
 void test('a conscious paralyzed hero can still choose a teleport destination', async () => {
-    freshObjectRoom({ flags: { tips: false } });
+    await freshObjectRoom({ flags: { tips: false } });
     requireFixtureGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_TELEPORT_CONTROL), 'uleft');
     game._helplessTurns = 8;

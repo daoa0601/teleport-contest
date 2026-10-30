@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test('an arch-lich can summon demons through Gehennom summon-nasties', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Gehennom', flags: { hellish: true } })];
     const lich = await createMonsterAt('arch-lich', 14, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
@@ -42,7 +42,7 @@ void test('an arch-lich can summon demons through Gehennom summon-nasties', asyn
 void test('Wizard-style demon summoning can choose lawful demons without a caster', async () => {
     let lawfulSummons = 0;
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ hero: { ulevel: 20, uz: { dnum: 0, dlevel: 20 } } });
+        await freshObjectRoom({ hero: { ulevel: 20, uz: { dnum: 0, dlevel: 20 } } });
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
         initRng(BigInt(seed));

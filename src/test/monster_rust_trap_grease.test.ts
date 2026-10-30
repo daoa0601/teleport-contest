@@ -50,10 +50,10 @@ void test('a monster stepping onto an unseen rust trap is drawn there before the
     const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { x: 12, y: 10 });
     trap.tseen = false;
     placeMonsterAt(monster, 13, 10);
-    newsym(12, 10);
-    newsym(13, 10);
+    await newsym(12, 10);
+    await newsym(13, 10);
     placeMonsterAt(monster, 12, 10);
-    newsym(13, 10);
+    await newsym(13, 10);
     const cell = () => requireGameDisplay().grid[10 + 1]?.[12 - 1]?.ch;
     assert.notEqual(cell(), 'H');
     let shownAtMessage: string | undefined;

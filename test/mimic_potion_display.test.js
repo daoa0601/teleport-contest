@@ -7,11 +7,11 @@ import { POT_HEALING } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a distant mimic shows the color of its potion disguise', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('large mimic', 15, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = POT_HEALING;
-    newsym(15, 10);
+    await newsym(15, 10);
     await flush_screen(1);
     const glyph = glyphAt(15, 10);
     assert.equal(glyph?.kind, 'object');

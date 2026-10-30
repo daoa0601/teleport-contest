@@ -13,7 +13,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 void test('a confused holder loses its grip when it wanders away from the hero', async () => {
     let escaped = 0;
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+        await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
         requirePlayingGame(game);
         const python = await createMonsterAt('python', 11, 10, MM_ANGRY | NO_MINVENT);
         python.mconf = 1;

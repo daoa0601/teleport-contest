@@ -51,7 +51,7 @@ void test('run stop messages carry the blocking square for accessiblemsg', async
     input.feed('\x0b ' + ' '.repeat(4)); // control-k: rush north
     const orc = await createMonsterAt('orc', 10, 8);
     orc.mpeaceful = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     await rhack(0);
     await continueRun();
     await flush_screen(1);
@@ -62,7 +62,7 @@ void test('a known trap ahead prefixes its stop message for accessiblemsg', asyn
     const input = freshTurnRoom({ flags: { tips: false, mention_walls: true, accessiblemsg: true } });
     input.feed('\x0b ' + ' '.repeat(4));
     addTrap(requireGameLevel(), PIT, 10, 8).tseen = true;
-    vision_recalc(0);
+    await vision_recalc(0);
     await rhack(0);
     await continueRun();
     await flush_screen(1);
@@ -75,7 +75,7 @@ void test('a closed door stop message carries the door square for accessiblemsg'
     const door = requireGameLevel().requireAt(10, 8);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
-    vision_recalc(0);
+    await vision_recalc(0);
     await rhack(0);
     await continueRun();
     await flush_screen(1);
@@ -94,7 +94,7 @@ void test('a boulder blocking a rush names its direction for accessiblemsg', asy
 });
 
 void test('warning reveal messages carry the hidden monster square for accessiblemsg', async () => {
-    freshObjectRoom({ flags: { tips: false, accessiblemsg: true } });
+    await freshObjectRoom({ flags: { tips: false, accessiblemsg: true } });
     grantIntrinsicProperty('warning', 'outside');
     const piercer = await createMonsterAt('iron piercer', 11, 10);
     piercer.mundetected = 1;
@@ -102,7 +102,7 @@ void test('warning reveal messages carry the hidden monster square for accessibl
     piercer.m_lev = 8;
     piercer.mcanmove = 0;
     piercer.mfrozen = 20;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSpotMonster(piercer), false);
     game._moveloopStarted = true;
     game._heroTimePending = true;
@@ -124,7 +124,7 @@ void test('warning reveal messages carry the hidden monster square for accessibl
 void test('a hallucinating hero can perceive another liquid when jumping out of lava', async () => {
     const messages: string[] = [];
     for (let seed = 1; seed <= 8; seed++) {
-        freshObjectRoom({ flags: { tips: false, pickup: false }, hero: { utrap: 4, utraptype: TT_LAVA } });
+        await freshObjectRoom({ flags: { tips: false, pickup: false }, hero: { utrap: 4, utraptype: TT_LAVA } });
         grantIntrinsicProperty('jumping', 'form');
         game.u.hallucinationTurns = 10;
         const input = resetInputState();

@@ -18,7 +18,7 @@ for (const { resistant, cancelled, approaches } of [
     const contact = cancelled ? 'cancelled fire contact'
         : resistant ? 'seeing fire fail' : 'seeing fire hurt the hero';
     void test(`a pyrolisk ${approaches ? 'approaches' : 'retreats'} after ${contact}`, async () => {
-        freshObjectRoom({ right: 18, hero: { fireResistance: resistant, uhp: 200, uhpmax: 200 } });
+        await freshObjectRoom({ right: 18, hero: { fireResistance: resistant, uhp: 200, uhpmax: 200 } });
         requirePlayingGame(game);
         const pyrolisk = await createMonsterAt('pyrolisk', 13, 10, MM_ANGRY | NO_MINVENT);
         pyrolisk.msleeping = 0;
@@ -45,7 +45,7 @@ for (const form of ['paper golem', 'straw golem']) {
         { resistant: true, unchanging: true },
     ]) {
         void test(`a pyrolisk retreats after fire burns a ${unchanging ? 'unchanging ' : ''}${resistant ? 'fire-resistant ' : ''}${form} hero out of its form`, async () => {
-            freshObjectRoom({ right: 18, hero: { uhp: 200, uhpmax: 200 } });
+            await freshObjectRoom({ right: 18, hero: { uhp: 200, uhpmax: 200 } });
             requirePlayingGame(game);
             installPolymorphedHero(form, { unchanging });
             if (resistant)
@@ -72,7 +72,7 @@ for (const form of ['paper golem', 'straw golem']) {
 }
 for (const fireResistanceKnown of [true, false]) {
     void test(`a hell hound ${fireResistanceKnown ? 'approaches a hero known to resist fire' : 'backs away to use its fire breath'}`, async () => {
-        freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
+        await freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
         requirePlayingGame(game);
         const hound = await createMonsterAt('hell hound', 10, 10, MM_ANGRY | NO_MINVENT);
         hound.msleeping = 0;
@@ -82,7 +82,7 @@ for (const fireResistanceKnown of [true, false]) {
     });
 }
 void test('a confused Chromatic Dragon can wander toward the hero instead of retreating for breath', async () => {
-    freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
+    await freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
     requirePlayingGame(game);
     const dragon = await createMonsterAt('Chromatic Dragon', 10, 10, MM_ANGRY | NO_MINVENT);
     dragon.mconf = 1;

@@ -8,7 +8,7 @@ import { useHeroNymphAbility } from '../js/hero_nymph_ability.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshRoomWithPolymorphedHero, installPunishedHero, } from './support/hero-state.js';
 void test('a nymph uses #monster to remove her ball and chain', async () => {
-    freshRoomWithPolymorphedHero('water nymph');
+    await freshRoomWithPolymorphedHero('water nymph');
     requireFixtureGame(game);
     const { ball, chain } = await installPunishedHero();
     const pile = floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy);
@@ -22,7 +22,7 @@ void test('a nymph uses #monster to remove her ball and chain', async () => {
     assert.equal(chain.where, 'gone');
 });
 void test('an unchained nymph reports the buried ball without spending time', async () => {
-    freshRoomWithPolymorphedHero('water nymph');
+    await freshRoomWithPolymorphedHero('water nymph');
     requireFixtureGame(game);
     game.u.utrap = 3;
     game.u.utraptype = TT_BURIEDBALL;
@@ -37,7 +37,7 @@ void test('an unchained nymph reports the buried ball without spending time', as
     ]);
 });
 void test('an unpunished nymph has no chain to remove', async () => {
-    freshRoomWithPolymorphedHero('water nymph');
+    await freshRoomWithPolymorphedHero('water nymph');
     requireFixtureGame(game);
     const messages = [];
     const result = await useHeroNymphAbility({

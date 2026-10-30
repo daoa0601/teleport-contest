@@ -12,7 +12,7 @@ import { installHeroChainedToBuriedBall } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('a blessed opening bell announces levitation returning after freeing a buried ball', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('levitation', 'outside');
     const ball = await installHeroChainedToBuriedBall();
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, blessed: true });
@@ -28,16 +28,16 @@ void test('a blessed opening bell announces levitation returning after freeing a
     assert.match([...messages, game._pending_message].join(' '), /You start to float in the air!/);
 });
 void test('unearthing a visible buried object immediately displays it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const dagger = await knownObject(DAGGER);
     addBuriedObject(dagger, 12, 10);
-    newsym(12, 10);
+    await newsym(12, 10);
     await unearthFloorObjectsAt(12, 10);
     assert.equal(dagger.where, 'floor');
     assert.equal(level.requireAt(12, 10).disp_ch, ')');
 });
 void test('digging beneath a boulder does not inspect treasure before the boulder fills its pit', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uhp: 500, uhpmax: 500 }, flags: { verbose: true, pickup: true },
     });
     await floorObject(BOULDER, 10, 10);

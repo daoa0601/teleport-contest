@@ -158,7 +158,7 @@ async function makeGasCloud(
             for (let y = Math.min(...ys); y <= Math.max(...ys); y++) {
                 if (!isok(x, y)) continue;
                 if (regionContains(region, x, y)) vision_note_blocker_change(x, y);
-                if (cansee(x, y)) newsym(x, y);
+                if (cansee(x, y)) await newsym(x, y);
             }
         }
     }
@@ -313,7 +313,7 @@ export async function rescueHeroFromRegion(state: GameState = game): Promise<voi
             await plineWithContinuation(formatFeltMessage('able to breathe.', state));
         }
     } else if (cloud) {
-        removeGasCloud(cloud, state);
+        await removeGasCloud(cloud, state);
         await plineWithContinuation('The gas cloud enveloping you dissipates.');
     } else {
         await plineWithContinuation('The gas cloud has dissipated.');
@@ -466,7 +466,7 @@ async function affectMonsterWithGas(
 
 // C region.c:remove_region(). Unlink before rebuilding the blocker table so
 // this cloud no longer hides the terrain, while overlapping clouds still do.
-function removeGasCloud(region: GasCloud, state: GameState): void {
+async function removeGasCloud(region: GasCloud, state: GameState): Promise<void> {
     const level = requireGameLevel(state);
     const index = level.regions.indexOf(region);
     if (index < 0) return;
@@ -489,21 +489,21 @@ function removeGasCloud(region: GasCloud, state: GameState): void {
     game.underwater = gameUnderwater;
     if (heroIsBlind(state)) return;
     for (const cell of region.cells)
-        if (cansee(cell.x, cell.y)) newsym(cell.x, cell.y);
+        if (cansee(cell.x, cell.y)) await newsym(cell.x, cell.y);
 }
 
 // C rest_regions() removes expired clouds without running their expiry callback.
 // Time spent on another level reduces a finite lifetime, never its damage.
-export function restoreLevelRegions(state: GameState, elapsed: number): void {
+export async function restoreLevelRegions(state: GameState, elapsed: number): Promise<void> {
     const regions = requireGameLevel(state).regions;
     for (const region of [...regions].reverse()) {
         if (region.ttl < 0) continue;
         region.ttl = Math.max(0, region.ttl - elapsed);
-        if (region.ttl === 0) removeGasCloud(region, state);
+        if (region.ttl === 0) await removeGasCloud(region, state);
     }
 }
 
-function expireRegions(state: GameState): { aroundHero: boolean; inSight: number } {
+async function expireRegions(state: GameState): Promise<{ aroundHero: boolean; inSight: number }> {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
     const level = requireGameLevel(state);
@@ -525,7 +525,7 @@ function expireRegions(state: GameState): { aroundHero: boolean; inSight: number
                 else if (cansee(cell.x, cell.y)) dissipatedInSight++;
             }
         }
-        removeGasCloud(region, state);
+        await removeGasCloud(region, state);
     }
     return { aroundHero: dissipatedAroundHero, inSight: dissipatedInSight };
 }
@@ -557,7 +557,7 @@ export async function runLevelRegions(state: GameState | null | undefined, {
     onAnger,
 }: RegionTurnOptions = {}): Promise<RegionEvent[]> {
     if (!state?.level?.regions?.length) return [];
-    const dissipation = expireRegions(state);
+    const dissipation = await expireRegions(state);
     const events: RegionEvent[] = [];
     for (const region of state.level.regions) {
         if (region.ttl > 0) region.ttl--;

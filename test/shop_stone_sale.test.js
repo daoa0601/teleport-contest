@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { planInput } from './support/planned-input.js';
 void test('an unidentified mineral stone receives the ordinary gem-class sale price', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.m_id = 4; // This keeper discounts unknown non-gems.
     await setShopkeeperGold(shopkeeper, 100);

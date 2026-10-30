@@ -107,7 +107,7 @@ export async function makeFamiliar(object = null, x = game.u.ux, y = game.u.uy, 
         initializePet(monster, { state, everything: true });
     monster.msleeping = 0;
     setMonsterMalign(monster, state);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (monster.mtame && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
         monster.weaponCheck = NEED_HTH_WEAPON;
         await wieldMonsterWeapon(monster, state, { publish: announce });

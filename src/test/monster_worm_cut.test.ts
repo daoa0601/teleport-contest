@@ -16,10 +16,10 @@ import { installPagerInput } from './support/pager-input.js';
 import { assertWormBody } from './support/worms.js';
 
 async function wormWithTail() {
-    freshObjectRoom({ left: 8, right: 25, top: 6, bottom: 15, heroX: 10, heroY: 10 });
+    await freshObjectRoom({ left: 8, right: 25, top: 6, bottom: 15, heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 16, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
-    initializeMonsterWormBody(worm, { segmentCount: 5, random: () => 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 5, random: () => 0 });
     assertWormBody(worm);
     assert.equal(worm.wormSegments.length, 5, 'The test needs a body with a middle segment.');
     worm.m_lev = 8;

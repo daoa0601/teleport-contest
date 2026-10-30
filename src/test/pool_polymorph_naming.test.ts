@@ -12,7 +12,7 @@ for (const [species, description] of [
     ['monk', 'an initiate'], ['cave dweller', 'a wanderer'], ['Olog-hai', 'an Olog-hai'],
 ] as const) {
     void test(`polymorph announces the new form as ${description}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt('little dog', 11, 10);
         setMonsterGivenName(monster, 'Spot');
         const messages: string[] = [];
@@ -27,7 +27,7 @@ for (const [species, description] of [
 }
 
 void test('a named mount that becomes visible announces its saddle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mount = await createSaddledSteed('pony');
     setMonsterGivenName(mount, 'Spot');
     mount.minvis = true;

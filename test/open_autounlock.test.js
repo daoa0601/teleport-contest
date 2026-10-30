@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('opening a locked door offers the carried unlock tool after acknowledging the lock', async () => {
     for (const answer of ['y', 'q']) {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;
@@ -32,7 +32,7 @@ void test('opening a locked door offers the carried unlock tool after acknowledg
 });
 for (const doorState of [D_CLOSED, D_LOCKED]) {
     void test(`opening a ${doorState === D_LOCKED ? 'locked' : 'closed'} door from a pit refuses without spending a turn`, async () => {
-        const level = freshObjectRoom({ hero: { utrap: 3, utraptype: TT_PIT } });
+        const level = await freshObjectRoom({ hero: { utrap: 3, utraptype: TT_PIT } });
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = doorState;
@@ -48,7 +48,7 @@ for (const doorState of [D_CLOSED, D_LOCKED]) {
     });
 }
 void test('a visible xorn refusal shares the message line with the locked door', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;
@@ -64,7 +64,7 @@ void test('a visible xorn refusal shares the message line with the locked door',
     assert.equal(door.doormask, D_LOCKED);
 });
 void test('a long visible monster refusal waits for the locked-door acknowledgment', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;
@@ -82,7 +82,7 @@ void test('a long visible monster refusal waits for the locked-door acknowledgme
     assert.equal(door.doormask, D_LOCKED);
 });
 void test('an unseen xorn on the door does not prevent autounlock', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;
@@ -100,7 +100,7 @@ void test('an unseen xorn on the door does not prevent autounlock', async () => 
     assert.equal(door.doormask, D_LOCKED);
 });
 void test('the Oracle credit-card refusal shares the message line with the locked door', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const oracle = await createMonsterAt('Oracle', 12, 10);
     placeMonsterAt(oracle, 11, 10);
     const door = level.requireAt(11, 10);
@@ -119,7 +119,7 @@ void test('the Oracle credit-card refusal shares the message line with the locke
 const keyTouchAlignments = [0, -1];
 for (const alignment of keyTouchAlignments) {
     void test(`autounlock touches a foreign quest key before ${alignment === 0 ? 'rejecting it' : 'starting to unlock'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uhp: 100, uhpmax: 100, ualign: { type: alignment, record: 10 } },
         });
         requirePlayingGame(game);
@@ -152,7 +152,7 @@ for (const alignment of keyTouchAlignments) {
     });
 }
 void test('autounlock names a fully identified quest key without inventory annotations', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;

@@ -12,7 +12,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('diving again after surfacing clears distant land from the underwater view', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true } });
+    const level = await freshObjectRoom({ hero: { swimming: true } });
     level.requireAt(10, 10).typ = MOAT;
     level.requireAt(11, 10).typ = MOAT;
     const publish = () => {};
@@ -39,13 +39,13 @@ void test('diving again after surfacing clears distant land from the underwater 
 });
 
 void test('blind water entry maps the felt moat before the sinking message is acknowledged', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     level.requireAt(ux, uy).typ = MOAT;
     setHeroBlindnessTurns(10);
-    vision_recalc(0);
-    newsym(ux, uy);
+    await vision_recalc(0);
+    await newsym(ux, uy);
     await flush_screen(1);
     const input = resetInputState();
     let glyphWhileSinking: string | undefined;

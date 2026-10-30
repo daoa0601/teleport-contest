@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('an individual naming prompt pluralizes a stack before its existing inscription', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const arrows = await addInventoryObject(ARROW, {
         invlet: 'a', quan: 4, oextra: { oname: 'First Flight' },
     });
@@ -50,7 +50,7 @@ for (const { title, type, callName, description } of [
     },
 ]) {
     void test(`an individual naming prompt ${title}`, async (t) => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const object = await addInventoryObject(type, {
             invlet: 'a', typeKnown: false, oextra: { oname: longInscription },
         });
@@ -76,7 +76,7 @@ for (const { title, type, callName, description } of [
     });
 }
 void test('naming a wielded elven dagger Sting creates its artifact and warning', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
     await setPrimaryWeapon(dagger);
     const input = resetInputState();
@@ -91,7 +91,7 @@ void test('naming a wielded elven dagger Sting creates its artifact and warning'
     assert.equal(game.context.move, 0);
 });
 void test('naming the alternate weapon Orcrist ends two-weapon combat', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const artifact = artifactByName('Orcrist');
     assert.ok(artifact);
     const weapon = await addInventoryObject(artifact.baseType, { invlet: 'a' });
@@ -108,7 +108,7 @@ void test('naming the alternate weapon Orcrist ends two-weapon combat', async ()
     assert.ok(game.gamelog?.some(event => event.text === 'chose an elven broadsword to be named "Orcrist"'));
 });
 void test('restricted artifact lettering slips instead of creating Excalibur', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(LONG_SWORD, { invlet: 'a' });
     const input = resetInputState();
     input.feed('name\rExcalibur\r');
@@ -121,7 +121,7 @@ void test('restricted artifact lettering slips instead of creating Excalibur', a
     assert.equal(game.u.uconduct?.literate, 1);
 });
 void test('an existing artifact resists a new individual name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(LONG_SWORD, { invlet: 'a' });
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact);
@@ -133,7 +133,7 @@ void test('an existing artifact resists a new individual name', async () => {
     assert.equal(sword.oextra?.oname, 'Excalibur');
 });
 void test('novels reject individual naming before asking for a name', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const novel = await addInventoryObject(SPE_NOVEL, { invlet: 'a' });
     const publishedTitle = novel.oextra?.oname;
     const input = resetInputState();
@@ -144,7 +144,7 @@ void test('novels reject individual naming before asking for a name', async (t) 
     assert.equal(novel.oextra?.oname, publishedTitle);
 });
 void test('empty naming input preserves a name and spaces remove it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a', oname: 'Keepsake' });
     const input = resetInputState();
     input.feed('name\r\r');
@@ -158,7 +158,7 @@ void test('empty naming input preserves a name and spaces remove it', async () =
 });
 for (const typedName of ['', 'Replacement']) {
     void test(`EOF ${typedName ? 'after typed text' : 'at an empty prompt'} cancels individual naming`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(ELVEN_DAGGER, {
             invlet: 'a', oextra: { oname: 'Keepsake' },
         });
@@ -171,7 +171,7 @@ for (const typedName of ['', 'Replacement']) {
     });
 }
 void test('individual naming keeps printable high bytes and limits the normalized name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
     const input = resetInputState();
     input.feed(`name\r  \u00a0Café   ${'r'.repeat(68)}\r`);

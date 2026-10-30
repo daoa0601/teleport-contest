@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function conflictRoom(attackerSpecies: string, defenderSpecies = 'orc') {
-    freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const flags = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
@@ -25,7 +25,7 @@ async function conflictRoom(attackerSpecies: string, defenderSpecies = 'orc') {
     attacker.mhp = attacker.mhpmax = 300;
     defender.mhp = defender.mhpmax = 300;
     defender.movement = 0;
-    vision_recalc(0);
+    await vision_recalc(0);
     installPagerInput(resetInputState(), {
         expected: /umber hulk|orc|Archon|worm|vortex|hell hound|Burrrrp|medallion/, limit: 20,
     });

@@ -13,7 +13,7 @@ import { GOLD_PIECE, SACK } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 for (const gold of [49, 50, 100]) {
     void test(`a robbed angry keeper accepts restitution only when ${gold} gold covers half the loss`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.mpeaceful = 0;
@@ -36,7 +36,7 @@ for (const gold of [49, 50, 100]) {
     });
 }
 void test('hidden gold prevents an underpayment from satisfying a robbed keeper', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Ada';
     shopkeeper.mpeaceful = 0;
@@ -51,7 +51,7 @@ void test('hidden gold prevents an underpayment from satisfying a robbed keeper'
     assert.equal(game.context.move, 1);
 });
 void test('a peaceful keeper outside the shop accepts all visible gold but rejects less than half the loss', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop({ left: 11 });
     shopkeeper.eshk.shknam = 'Ada';
     shopkeeper.eshk.robbed = 100;
@@ -66,7 +66,7 @@ void test('a peaceful keeper outside the shop accepts all visible gold but rejec
 });
 for (const gold of [999, 1200]) {
     void test(`an angry keeper without losses ${gold >= 1000 ? 'accepts' : 'refuses'} an appeasement payment from ${gold} gold`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.mpeaceful = 0;

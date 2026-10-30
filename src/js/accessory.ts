@@ -126,14 +126,14 @@ export async function wearHeroAccessory(
     if (property === 'seeInvisible') {
         await refreshInvisibleMonsters({ state });
         if (propertyIsActive('invisible', state) && !wasSeeingInvisible && !heroIsBlind(state)) {
-            newsym(state.u.ux, state.u.uy);
+            await newsym(state.u.ux, state.u.uy);
             await plineWithContinuation('Suddenly you are transparent, but there!');
             learnRing(object, true, state);
         }
     } else if (property === 'invisible' && !wasInvisible
         && !propertyIsBlocked('invisible', state) && !heroIsBlind(state)) {
         learnRing(object, true, state);
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         await showInvisibilityMessage(state);
     }
     if (property === 'protectionFromShapeChangers')
@@ -195,7 +195,7 @@ async function changeSexFromAmulet(object: GameObject, state: GameState): Promis
     if (changed) learnObjectType(AMULET_OF_CHANGE, state);
     await showWornAmulet(object, state);
     if (changed) {
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         state.context.botl = true;
         await plineWithContinuation(`You are suddenly very ${state.flags.female ? 'feminine' : 'masculine'}!`);
     } else await plineWithContinuation("You don't feel like yourself.");
@@ -234,13 +234,13 @@ export async function removeHeroAccessory(
     if (property === 'seeInvisible') {
         if (!propertyIsActive('seeInvisible', state)) await refreshInvisibleMonsters({ state });
         if (propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state) && !heroIsBlind(state)) {
-            newsym(state.u.ux, state.u.uy);
+            await newsym(state.u.ux, state.u.uy);
             await plineWithContinuation('Suddenly you cannot see yourself.');
             learnRing(object, true, state);
         }
     } else if (property === 'invisible' && !propertyIsActive('invisible', state)
         && !propertyIsBlocked('invisible', state) && !heroIsBlind(state)) {
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         await plineWithContinuation(`Your body seems to unfade${propertyIsActive('seeInvisible', state) ? ' completely' : '..'}.`);
         learnRing(object, true, state);
     }

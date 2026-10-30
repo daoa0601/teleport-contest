@@ -358,7 +358,7 @@ void test('a visible boulder offers pushing', async () => {
     const engine = await startMenuGame();
     try {
         await floorObject(BOULDER, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         await type(engine, '#therecmdmenu\nl');
         assert.match(screen(), /a - Push the boulder/);
     } finally { await finish(engine); }
@@ -368,10 +368,10 @@ void test('a monster standing on a remembered boulder does not hide the push act
     const engine = await startMenuGame();
     try {
         await floorObject(BOULDER, 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         const goblin = await createMonsterAt('goblin', 11, 10);
         goblin.mpeaceful = true;
-        newsym(11, 10);
+        await newsym(11, 10);
 
         await type(engine, '#therecmdmenu\nl');
 
@@ -492,7 +492,7 @@ void test('the here menu offers dismounting the current steed', async () => {
 void test('an unseen-creature marker offers attacking without revealing a monster', async () => {
     const engine = await startMenuGame();
     try {
-        map_invisible(11, 10);
+        await map_invisible(11, 10);
         await type(engine, '#therecmdmenu\n_l,');
         assert.match(screen(), /a - Attack unseen creature/);
         assert.match(screen(), /b - Look at map symbol/);

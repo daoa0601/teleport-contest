@@ -24,7 +24,7 @@ async function anchoredMessages(attempts: number): Promise<string[]> {
 }
 
 void test('a hero stuck in the floor is anchored by that surface', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     game.u.utrap = 5;
@@ -35,7 +35,7 @@ void test('a hero stuck in the floor is anchored by that surface', async () => {
 });
 
 void test('a hallucinating hero is anchored by varying imaginary liquids', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await makeHallucinated(100, { talk: false });
     game.u.utrap = 5;

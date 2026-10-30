@@ -9,7 +9,7 @@ import { requireScreenRow } from './support/screen.js';
 void test('returning to human form redraws health before its announcement even when AC stays the same', async () => {
     const kobold = MONSTER_NAME.indexOf('kobold');
     assert.ok(kobold >= 0);
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             mtimedone: 100, umonnum: kobold, mh: 7, mhmax: 9, uac: 10,
         } });
     await bot();

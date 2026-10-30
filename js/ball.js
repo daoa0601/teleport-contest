@@ -152,7 +152,7 @@ export async function unplaceBallAndChain(state = game) {
         await impossible('unplacebc denied, restriction in place', { state });
         return;
     }
-    unplaceBallAndChainCore(state);
+    await unplaceBallAndChainCore(state);
 }
 export async function reserveBallAndChainPlacement(state = game) {
     if (state._ballChainRestriction) {
@@ -161,10 +161,10 @@ export async function reserveBallAndChainPlacement(state = game) {
     }
     const pin = rnd(400);
     state._ballChainRestriction = pin;
-    unplaceBallAndChainCore(state);
+    await unplaceBallAndChainCore(state);
     return pin;
 }
-function unplaceBallAndChainCore(state) {
+async function unplaceBallAndChainCore(state) {
     requireLiveGame(state);
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
@@ -182,14 +182,14 @@ function unplaceBallAndChainCore(state) {
         unlinkObject(ball, state);
         if (heroIsBlind(state) && ((state.u.bc_felt ?? 0) & BC_BALL))
             locationAt(ball.ox, ball.oy, state).remembered_glyph = state.u.bglyph;
-        maybeUnhideAt(ball.ox, ball.oy, state);
-        newsym(ball.ox, ball.oy);
+        await maybeUnhideAt(ball.ox, ball.oy, state);
+        await newsym(ball.ox, ball.oy);
     }
     unlinkObject(chain, state);
     if (heroIsBlind(state) && ((state.u.bc_felt ?? 0) & BC_CHAIN))
         locationAt(chain.ox, chain.oy, state).remembered_glyph = state.u.cglyph;
-    maybeUnhideAt(chain.ox, chain.oy, state);
-    newsym(chain.ox, chain.oy);
+    await maybeUnhideAt(chain.ox, chain.oy, state);
+    await newsym(chain.ox, chain.oy);
     state.u.bc_felt = 0;
 }
 // C gulpmu(): the swallowed floor pair stays FREE but follows its swallower.
@@ -239,7 +239,7 @@ export async function restoreBallAndChainPlacement(pin, state = game, publish = 
     }
     placeObjectSynchronously(chain, x, y, state);
     state.u.bglyph = state.u.cglyph = rememberedGlyphAt(x, y, state);
-    newsym(x, y);
+    await newsym(x, y);
     state._ballChainRestriction = 0;
 }
 function dist2(x1, y1, x2, y2) {
@@ -348,7 +348,7 @@ export async function dropBall(x, y, { state = game, publish = plineWithContinua
             await moveObject(chain, hero.ux, hero.uy, state);
         if (blind)
             hero.bc_order = await ballChainOrder(state);
-        newsym(hero.ux0, hero.uy0); // clean up old position
+        await newsym(hero.ux0, hero.uy0); // clean up old position
         if (hero.ux0 !== hero.ux || hero.uy0 !== hero.uy)
             await applyHeroLocationEffects(publish);
     }
@@ -394,16 +394,16 @@ export async function setBallAndChainFelt(alreadyBlind, state = game) {
     remove_object(chain, state);
     if (ballOnFloor)
         remove_object(ball, state);
-    newsym(chain.ox, chain.oy);
+    await newsym(chain.ox, chain.oy);
     hero.cglyph = rememberedGlyphAt(chain.ox, chain.oy, state);
     if (hero.bc_order === BCPOS_DIFFER) {
         placeObjectSynchronously(chain, chain.ox, chain.oy, state);
-        newsym(chain.ox, chain.oy);
+        await newsym(chain.ox, chain.oy);
         if (ballOnFloor) {
-            newsym(ball.ox, ball.oy);
+            await newsym(ball.ox, ball.oy);
             hero.bglyph = rememberedGlyphAt(ball.ox, ball.oy, state);
             placeObjectSynchronously(ball, ball.ox, ball.oy, state);
-            newsym(ball.ox, ball.oy);
+            await newsym(ball.ox, ball.oy);
         }
     }
     else {
@@ -416,7 +416,7 @@ export async function setBallAndChainFelt(alreadyBlind, state = game) {
             placeObjectSynchronously(chain, chain.ox, chain.oy, state);
             placeObjectSynchronously(ball, ball.ox, ball.oy, state);
         }
-        newsym(ball.ox, ball.oy);
+        await newsym(ball.ox, ball.oy);
     }
 }
 function chainInMiddle(targetX, targetY, chainX, chainY, ballX, ballY) {
@@ -670,7 +670,7 @@ async function jerkHeroBackToChain(plan, state) {
     if (!monsterAtPosition(level, chain.ox, chain.oy)) {
         state.u.ux = chain.ox;
         state.u.uy = chain.oy;
-        newsym(state.u.ux0, state.u.uy0);
+        await newsym(state.u.ux0, state.u.uy0);
     }
     endVoluntaryMultiTurn(state);
     plan.control = BC_BALL;
@@ -688,12 +688,12 @@ async function unplaceMovingBallAndChain(plan, state) {
     if (!plan.control)
         state.u.bc_order = await ballChainOrder(state);
     remove_object(plan.chain, state);
-    maybeUnhideAt(plan.chain.ox, plan.chain.oy, state);
-    newsym(plan.chain.ox, plan.chain.oy);
+    await maybeUnhideAt(plan.chain.ox, plan.chain.oy, state);
+    await newsym(plan.chain.ox, plan.chain.oy);
     if (!carried(plan.ball, state)) {
         remove_object(plan.ball, state);
-        maybeUnhideAt(plan.ball.ox, plan.ball.oy, state);
-        newsym(plan.ball.ox, plan.ball.oy);
+        await maybeUnhideAt(plan.ball.ox, plan.ball.oy, state);
+        await newsym(plan.ball.ox, plan.ball.oy);
     }
 }
 // C litroom() calls move_bc() around its vision refresh without moving
@@ -738,7 +738,7 @@ export async function finishBallAndChainMove(plan, state = game) {
                 }
                 else if (hero.bc_order === BCPOS_BALL) {
                     if ((hero.bc_felt ?? 0) & BC_CHAIN)
-                        map_object(chain, false, false);
+                        await map_object(chain, false, false);
                     else
                         locationAt(ball.ox, ball.oy, state).remembered_glyph = hero.bglyph;
                 }
@@ -755,7 +755,7 @@ export async function finishBallAndChainMove(plan, state = game) {
                 }
                 else if (hero.bc_order === BCPOS_CHAIN) {
                     if ((hero.bc_felt ?? 0) & BC_BALL)
-                        map_object(ball, false, false);
+                        await map_object(ball, false, false);
                     else
                         locationAt(chain.ox, chain.oy, state).remembered_glyph = hero.cglyph;
                 }
@@ -779,9 +779,9 @@ export async function finishBallAndChainMove(plan, state = game) {
         if (ballOnFloor)
             placeObjectSynchronously(ball, ballx, bally, state);
     }
-    newsym(chainx, chainy);
+    await newsym(chainx, chainy);
     if (ballOnFloor)
-        newsym(ballx, bally);
+        await newsym(ballx, bally);
 }
 function locationAt(x, y, state) {
     const location = requireGameLevel(state).at(x, y);

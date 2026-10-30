@@ -15,7 +15,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createStaffedShop } from './support/shop.js';
 void test('a refused inventory throw leaves its object letter as a movement prefix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('acid blob');
     const potion = await addInventoryObject(POT_HEALING, { invlet: 'g' });
     const input = resetInputState();
@@ -30,7 +30,7 @@ void test('a refused inventory throw leaves its object letter as a movement pref
     assert.equal(game.inventory.includes(potion), true);
 });
 void test('an unaffordable inventory purchase leaves its object letter as a menu prefix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { invlet: 'm', unpaid: true });
     await createStaffedShop({ bill: [
             { bo_id: dagger.o_id, bquan: 1, price: 100, useup: false },
@@ -50,7 +50,7 @@ void test('an unaffordable inventory purchase leaves its object letter as a menu
     assert.equal(game.context.move, 0);
 });
 void test('failed inventory engraving leaves the next player command available', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(game.u.ux, game.u.uy).typ = FOUNTAIN;
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();

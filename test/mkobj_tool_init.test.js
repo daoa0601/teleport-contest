@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C mkobj.c:mksobj_init() TOOL_CLASS branches for candles, lamps, and the
 // charged tools, plus the figurine species draw.
 void test('candles are unlit single-wick stacks with cost-derived fuel', async () => {
-    freshObjectRoom({ gameplaySeed: 4004n });
+    await freshObjectRoom({ gameplaySeed: 4004n });
     for (const typ of [TALLOW_CANDLE, WAX_CANDLE]) {
         for (let i = 0; i < 150; i++) {
             const candle = await mksobj(typ, true, false);
@@ -20,7 +20,7 @@ void test('candles are unlit single-wick stacks with cost-derived fuel', async (
     }
 });
 void test('lamps and lanterns carry partial fuel but never a charge', async () => {
-    freshObjectRoom({ gameplaySeed: 4010n });
+    await freshObjectRoom({ gameplaySeed: 4010n });
     for (const typ of [OIL_LAMP, BRASS_LANTERN]) {
         for (let i = 0; i < 150; i++) {
             const lamp = await mksobj(typ, true, false);
@@ -31,7 +31,7 @@ void test('lamps and lanterns carry partial fuel but never a charge', async () =
     }
 });
 void test('charged tools roll their native charge ranges', async () => {
-    freshObjectRoom({ gameplaySeed: 4020n });
+    await freshObjectRoom({ gameplaySeed: 4020n });
     const ranges = {
         [BAG_OF_TRICKS]: [3, 20],
         [HORN_OF_PLENTY]: [3, 20],
@@ -60,7 +60,7 @@ void test('figurines depict non-human monsters at a fixed weight', async () => {
     // C: the figurine draw retries up to thirty times to avoid human forms
     // while keeping the harder monster band, and figurines keep the fixed
     // object-table weight regardless of the depicted species.
-    freshObjectRoom({ gameplaySeed: 4030n });
+    await freshObjectRoom({ gameplaySeed: 4030n });
     for (let i = 0; i < 300; i++) {
         const figurine = await mksobj(FIGURINE, true, false);
         const species = figurine.corpsenm;

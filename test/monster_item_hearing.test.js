@@ -19,7 +19,7 @@ for (const { condition, expected } of [
     { condition: 'deaf and asleep', expected: undefined },
 ]) {
     void test(`unseen potion drinking respects a hero who is ${condition}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const drinker = await createMonsterAt('orc', 11, 10, NO_MINVENT);
         drinker.minvis = true;
@@ -43,7 +43,7 @@ for (const { condition, expected } of [
 }
 for (const freed of [true, false]) {
     void test(`a bottle djinni speaks to a deaf hero before ${freed ? 'staying peacefully' : 'vanishing'}`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { deafTurns: 10 } });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10, hero: { deafTurns: 10 } });
         requirePlayingGame(game);
         const drinker = await createMonsterAt('orc', 10, 10, NO_MINVENT);
         const potion = await addObjectToMonsterInventory(drinker, await knownObject(POT_HEALING), game);
@@ -77,7 +77,7 @@ for (const { condition, expected } of [
     { condition: 'deaf and asleep', expected: undefined },
 ]) {
     void test(`unseen bugle feedback respects a hero who is ${condition} and still wakes soldiers`, async () => {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const bugler = await createMonsterAt('soldier', 10, 10, NO_MINVENT | MM_NOGRP);
         bugler.minvis = true;

@@ -8,7 +8,7 @@ import { castSpell } from '../js/spell.js';
 import { learnSpell } from './support/spells.js';
 import { freshCasterRoom } from './support/hero-state.js';
 void test('haste self makes the hero very fast without asking for a direction', async () => {
-    freshCasterRoom({ gameplaySeed: 701n });
+    await freshCasterRoom({ gameplaySeed: 701n });
     requirePlayingGame(game);
     await learnSpell(SPE_HASTE_SELF, { skill: P_SKILLED });
     await castSpell(SPE_HASTE_SELF);

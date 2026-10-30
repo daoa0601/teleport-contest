@@ -27,7 +27,7 @@ function screenCell(x: number, y: number) {
 }
 
 void test('an unseen thrower starts a generic projectile glyph which stays frozen after visible flight reveals its appearance', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 12 });
+    await freshObjectRoom({ heroX: 10, heroY: 12 });
     requirePlayingGame(game);
     const state = game;
     state.context.mon_moving = true;
@@ -63,7 +63,7 @@ void test('an unseen thrower starts a generic projectile glyph which stays froze
 });
 
 void test('a sighted hero does not learn the appearance of a completely unseen throw', async () => {
-    const level = freshObjectRoom({ heroX: 10, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 10, heroY: 12 });
     requirePlayingGame(game);
     const state = game;
     state.context.mon_moving = true;
@@ -71,7 +71,7 @@ void test('a sighted hero does not learn the appearance of a completely unseen t
         level.requireAt(x, 10).typ = STONE;
         vision_note_blocker_change(x, 10);
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     const source = await createMonsterAt('orc', 8, 8, NO_MINVENT | MM_NOGRP);
     const potion = await knownObject(POT_WATER);
     await addObjectToMonsterInventory(source, potion);
@@ -94,7 +94,7 @@ void test('a sighted hero does not learn the appearance of a completely unseen t
 });
 
 void test('an advancing tether leaves a white cord behind the weapon and clears every cell', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await redrawMap();
     const aklys = await knownObject(AKLYS);
@@ -109,7 +109,7 @@ void test('an advancing tether leaves a white cord behind the weapon and clears 
     assert.equal(screenCell(12, 10).ch, '-');
     assert.equal(screenCell(13, 10).ch, ')');
 
-    flight.clear();
+    await flight.clear();
     await flush_screen(1);
 
     for (const x of [11, 12, 13]) assert.equal(screenCell(x, 10).ch, '.');
@@ -123,7 +123,7 @@ for (const { x, y, glyph } of [
     { x: 10, y: 10, glyph: '\\' },
 ]) {
     void test(`the tether at ${x},${y} uses the native direction toward the hero`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         await redrawMap();
         const flight = monsterProjectileDisplay(await knownObject(AKLYS), game, { tethered: true });
@@ -133,12 +133,12 @@ for (const { x, y, glyph } of [
 
         assert.equal(screenCell(x, y).ch, glyph);
         assert.equal(screenCell(x, y).color, CLR_WHITE);
-        flight.clear();
+        await flight.clear();
     });
 }
 
 void test('a tether remains drawn outside current sight while an ordinary missile stays hidden', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await redrawMap();
     await makeBlinded(10, { talk: false });
@@ -149,7 +149,7 @@ void test('a tether remains drawn outside current sight while an ordinary missil
     await ordinary.show({ x: 11, y: 10 });
 
     assert.notEqual(screenCell(11, 10).ch, ')');
-    ordinary.clear();
+    await ordinary.clear();
     const tether = monsterProjectileDisplay(object, game, { tethered: true });
 
     await tether.show({ x: 11, y: 10 });
@@ -157,14 +157,14 @@ void test('a tether remains drawn outside current sight while an ordinary missil
 
     assert.equal(screenCell(11, 10).ch, '-');
     assert.equal(screenCell(12, 10).ch, ')');
-    tether.clear();
+    await tether.clear();
     await flush_screen(1);
     assert.notEqual(screenCell(11, 10).ch, '-');
     assert.notEqual(screenCell(12, 10).ch, ')');
 });
 
 void test('a returning tether steps inward before its first return frame', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await redrawMap();
     const flight = monsterProjectileDisplay(await knownObject(AKLYS), game, { tethered: true });
@@ -187,7 +187,7 @@ void test('a returning tether steps inward before its first return frame', async
 });
 
 void test('clearing a tether after game over restores its whole trail without a return animation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await redrawMap();
     const flight = monsterProjectileDisplay(await knownObject(AKLYS), game, { tethered: true });
@@ -196,8 +196,8 @@ void test('clearing a tether after game over restores its whole trail without a 
     await flight.show({ x: 13, y: 10 });
     game.program_state.gameover = true;
 
-    flight.clear();
-    flight.clear();
+    await flight.clear();
+    await flight.clear();
     await flush_screen(1);
 
     for (const x of [11, 12, 13]) assert.equal(screenCell(x, 10).ch, '.');
@@ -205,7 +205,7 @@ void test('clearing a tether after game over restores its whole trail without a 
 
 for (const returns of [false, true]) {
     void test(`a monster's actual aklys flight clears its tether after ${returns ? 'being caught' : 'snapping'}`, async () => {
-        const level = freshObjectRoom({ heroX: 10, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 10, heroY: 12 });
         requirePlayingGame(game);
         game.context.mon_moving = true;
         const source = await createMonsterAt('orc', 8, 10, NO_MINVENT | MM_NOGRP);
@@ -243,7 +243,7 @@ for (const returns of [false, true]) {
 // C return_from_mtoss(): a snapping tether runs tmp_at(DISP_END, 0) before
 // "You hear a loud snap!", so a --More-- on that message shows no cord.
 void test('a snapping aklys tether is erased before the snap is heard', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 12 });
+    await freshObjectRoom({ heroX: 10, heroY: 12 });
     requirePlayingGame(game);
     game.context.mon_moving = true;
     const source = await createMonsterAt('orc', 8, 10, NO_MINVENT | MM_NOGRP);
@@ -272,7 +272,7 @@ void test('a snapping aklys tether is erased before the snap is heard', async ()
 // message's flush shows the weakened Strength while the hunger word itself
 // still describes the pre-transition state.
 void test('a blinding potion impact defers its status update to the hunger message that follows', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         heroX: 10, heroY: 12,
         hero: {
             uhunger: 51, uhs: HUNGRY,

@@ -17,7 +17,7 @@ import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js'
 for (const location of ['on the floor', 'held by an invisible monster']) {
     for (const wearsOff of [false, true]) {
         void test(`acid ${wearsOff ? 'dissolves' : 'leaves'} grease on an artifact ${location} without revealing it`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const sting = await artifactObject('Sting', { dknown: false, greased: true });
             if (location === 'on the floor') {
                 placeCreatedObject(sting, 11, 10);
@@ -42,7 +42,7 @@ for (const location of ['on the floor', 'held by an invisible monster']) {
     }
 }
 void test('acid names a visible greased stack with its quantity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const daggers = await addInventoryObject(DAGGER, { greased: true, quan: 3 });
     const messages = [];
     await damageObjectWithAcid(daggers, {
@@ -56,7 +56,7 @@ void test('acid names a visible greased stack with its quantity', async () => {
 for (const armor of [DWARVISH_CLOAK, YELLOW_DRAGON_SCALES]) {
     const kind = armor === DWARVISH_CLOAK ? 'burn' : 'corrosion';
     void test(`inventory protection against ${kind} leaves unseen gloves unobserved`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         wearHeroArmor(await addInventoryObject(armor));
         const gloves = await addInventoryObject(kind === 'burn' ? LEATHER_GLOVES : GAUNTLETS_OF_POWER, { dknown: false, typeKnown: false, observed: false });
         const messages = [];
@@ -74,7 +74,7 @@ for (const armor of [DWARVISH_CLOAK, YELLOW_DRAGON_SCALES]) {
 for (const firstProtectionFails of [false, true]) {
     const protection = firstProtectionFails ? 'the later corrosion check' : 'the initial acid check';
     void test(`acid damage leaves unseen gloves unobserved when armor passes ${protection}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         wearHeroArmor(await addInventoryObject(YELLOW_DRAGON_SCALES));
         const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, {
             dknown: false, typeKnown: false, observed: false,
@@ -95,7 +95,7 @@ for (const firstProtectionFails of [false, true]) {
     });
 }
 void test('gloves become observed when fire gets past a dwarvish cloak', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     wearHeroArmor(await addInventoryObject(DWARVISH_CLOAK));
     const gloves = await addInventoryObject(LEATHER_GLOVES, {
         dknown: false, typeKnown: false, observed: false,
@@ -112,7 +112,7 @@ void test('gloves become observed when fire gets past a dwarvish cloak', async (
     assert.match(messages[0] ?? '', /^Your .+ smoulders?!$/u);
 });
 void test('erosion names an unfamiliar monster weapon by its visible appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const troll = await createMonsterAt('water troll', 11, 10, NO_MINVENT);
     const weapon = await uninitializedObject(OBJECT_NAMES.indexOf('ranseur'), { typeKnown: false });
     await addObjectToMonsterInventory(troll, weapon);

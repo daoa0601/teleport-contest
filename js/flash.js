@@ -48,7 +48,7 @@ export async function doBlindingRay(object, { dx, dy }, { state = game } = {}) {
                 const onHead = x === monster.mx && y === monster.my;
                 if (!monster.minvis) {
                     for (const cell of cells)
-                        newsym(cell.x, cell.y);
+                        await newsym(cell.x, cell.y);
                     heroDied = (await flashHitsMonster(monster, object, { state, onHead })).heroDied;
                     if (!heroDied && object.otyp === EXPENSIVE_CAMERA)
                         await seeMonsterCloseup(monster, { state, photo: true, onHead });
@@ -62,9 +62,9 @@ export async function doBlindingRay(object, { dx, dy }, { state = game } = {}) {
                 break;
             if (cansee(x, y)) {
                 if (!monster)
-                    unmap_invisible(x, y);
+                    await unmap_invisible(x, y);
                 cells.push({ x, y });
-                show_glyph_cell(x, y, '!', CLR_WHITE);
+                await show_glyph_cell(x, y, '!', CLR_WHITE);
                 await flush_screen(0);
                 await state.animationFrame?.();
             }
@@ -72,7 +72,7 @@ export async function doBlindingRay(object, { dx, dy }, { state = game } = {}) {
     }
     finally {
         for (const cell of cells)
-            newsym(cell.x, cell.y);
+            await newsym(cell.x, cell.y);
         await cleanupTransientLight(state);
     }
     return heroDied;

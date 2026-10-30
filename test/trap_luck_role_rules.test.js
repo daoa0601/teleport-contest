@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('a carried luckstone protects against a chest trap through its bonus luck', async () => {
     for (const carryLuckstone of [false, true]) {
-        freshObjectRoom({ hero: { uluck: 10, moreluck: 0 } });
+        await freshObjectRoom({ hero: { uluck: 10, moreluck: 0 } });
         requirePlayingGame(game);
         const chest = await addInventoryObject(CHEST, { otrapped: true });
         if (carryLuckstone)

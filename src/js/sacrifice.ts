@@ -262,7 +262,7 @@ async function useOffering(object: GameObject): Promise<void> {
         if (game.u.uundetected && heroFormHidesUnderObjects()
             && !game.level.objects?.[game.u.ux]?.[game.u.uy]?.length)
             game.u.uundetected = false;
-        newsym(game.u.ux, game.u.uy);
+        await newsym(game.u.ux, game.u.uy);
     }
 }
 
@@ -307,7 +307,7 @@ async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Pro
         changeLuck(1);
         const altar = game.level.requireAt(hero.ux, hero.uy);
         altar.flags = Align2amask(hero.ualign.type) | (altar.flags & AM_SHRINE);
-        newsym(hero.ux, hero.uy);
+        await newsym(hero.ux, hero.uy);
         if (!heroIsBlind(game)) {
             const color = hero.ualign.type > 0 ? 'white' : hero.ualign.type < 0 ? 'black' : 'gray';
             await pline(`The altar glows ${displayColorName(color)}.`);
@@ -344,7 +344,7 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
     if (alignment !== -1 && alignment !== A_NONE) {
         await pline(`The altar is stained with ${game.urace.adj} blood.`);
         altar.flags = Align2amask(-1);
-        newsym(hero.ux, hero.uy);
+        await newsym(hero.ux, hero.uy);
         await angerTemplePriest();
     } else {
         let failure;
@@ -353,7 +353,7 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
             await pline(`The blood floods the altar, which vanishes in ${withIndefiniteArticle(color)} cloud!`);
             altar.typ = ROOM;
             altar.flags = 0;
-            newsym(hero.ux, hero.uy);
+            await newsym(hero.ux, hero.uy);
             await angerTemplePriest();
             failure = 'The cloud dissipates.';
         } else {

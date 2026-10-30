@@ -30,8 +30,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
-function wandRoom({ hero = {}, flags = {}, ...options }: ObjectRoomOptions = {}) {
-    freshObjectRoom({ left: 5, right: 24, top: 5, bottom: 15,
+async function wandRoom({ hero = {}, flags = {}, ...options }: ObjectRoomOptions = {}) {
+    await freshObjectRoom({ left: 5, right: 24, top: 5, bottom: 15,
         hero: { uhp: 500, uhpmax: 500, ...hero },
         flags: { verbose: true, ...flags }, gameplaySeed: 19n, ...options });
     requirePlayingGame(game);
@@ -61,7 +61,7 @@ async function bystander(species: number | string, x: number, y: number, hitPoin
 }
 
 void test('applying an inert wand confirms, destroys it, and spends a turn', async () => {
-    wandRoom();
+    await wandRoom();
     requirePlayingGame(game);
     const object = await wand();
 
@@ -74,7 +74,7 @@ void test('applying an inert wand confirms, destroys it, and spends a turn', asy
 });
 
 void test('refusing to break a wand preserves its charges and spends no time', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_MAGIC_MISSILE, 3);
     input.feed('n');
@@ -87,7 +87,7 @@ void test('refusing to break a wand preserves its charges and spends no time', a
 });
 
 void test('the confirmation waits before removing the wand or spending a charge', async () => {
-    wandRoom();
+    await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_MAGIC_MISSILE, 3);
     const input = resetInputState();
@@ -105,7 +105,7 @@ void test('the confirmation waits before removing the wand or spending a charge'
 
 for (const [answer, broken] of [['y\n', false], ['yes\n', true]] as const) {
     void test(`paranoid wand confirmation ${broken ? 'accepts yes' : 'rejects a lone y'}`, async () => {
-        const { input } = wandRoom({ flags: { paranoia_bits: PARANOID_BREAKWAND } });
+        const { input } = await wandRoom({ flags: { paranoia_bits: PARANOID_BREAKWAND } });
         requirePlayingGame(game);
         const object = await wand();
         input.feed(answer);
@@ -118,7 +118,7 @@ for (const [answer, broken] of [['y\n', false], ['yes\n', true]] as const) {
 }
 
 void test('a handless form cannot break a wand', async () => {
-    wandRoom();
+    await wandRoom();
     requirePlayingGame(game);
     const object = await wand();
     installPolymorphedHero('floating eye');
@@ -131,7 +131,7 @@ void test('a handless form cannot break a wand', async () => {
 });
 
 void test('a welded two-handed weapon prevents breaking another object', async () => {
-    wandRoom();
+    await wandRoom();
     requirePlayingGame(game);
     const object = await wand();
     await setPrimaryWeapon(await addInventoryObject(TWO_HANDED_SWORD, { cursed: true }));
@@ -148,7 +148,7 @@ for (const [appearance, strength, succeeds] of [
     ['oak', 9, false], ['oak', 10, true],
 ] as const) {
     void test(`${appearance} wand breakage ${succeeds ? 'succeeds' : 'fails'} at strength ${strength}`, async () => {
-        const { input } = wandRoom();
+        const { input } = await wandRoom();
         requirePlayingGame(game);
         const object = await wand();
         assert.ok(game.objectDescriptions !== undefined && game.objectDescriptions !== null, 'Expected game.objectDescriptions to be initialized');
@@ -166,7 +166,7 @@ for (const [appearance, strength, succeeds] of [
 
 for (const charges of [-1, 0]) {
     void test(`an exhausted wand with ${charges} charges breaks without an explosion`, async () => {
-        const { input, messages } = wandRoom();
+        const { input, messages } = await wandRoom();
         requirePlayingGame(game);
         const object = await wand(WAN_MAGIC_MISSILE, charges);
         initRng(1n);
@@ -185,7 +185,7 @@ for (const charges of [-1, 0]) {
 }
 
 void test('breaking a wielded wand clears the weapon slot and voluntary repetition', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand();
     await setPrimaryWeapon(object);
@@ -207,7 +207,7 @@ for (const [otyp, damage] of [
     [WAN_LIGHTNING, 48], [WAN_DEATH, 48],
 ] as const) {
     void test(`breaking a wand of ${OBJECT_NAMES[otyp]} uses all three original charges`, async () => {
-        const { input } = wandRoom();
+        const { input } = await wandRoom();
         requirePlayingGame(game);
         const object = await wand(otyp, 3);
         const jackal = await bystander('jackal', 11, 10);
@@ -225,7 +225,7 @@ for (const [otyp, damage] of [
 }
 
 void test('life saving resumes an attack-wand explosion through identification and disposal', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
     const object = await wand(WAN_MAGIC_MISSILE, 3);
@@ -245,7 +245,7 @@ void test('life saving resumes an attack-wand explosion through identification a
 
 for (const swallowed of [false, true]) {
     void test(`an opening wand releases the hero from ${swallowed ? 'engulfment' : 'a grasp'} without exploding`, async () => {
-        const { input } = wandRoom();
+        const { input } = await wandRoom();
         requirePlayingGame(game);
         const object = await wand(WAN_OPENING);
         const holder = await bystander(swallowed ? 'purple worm' : 'owlbear', 11, 10);
@@ -266,7 +266,7 @@ for (const swallowed of [false, true]) {
 }
 
 void test('an unseen opening wand releases a grasp without identifying its type', async () => {
-    const { input } = wandRoom({ hero: { blindTurns: 20 } });
+    const { input } = await wandRoom({ hero: { blindTurns: 20 } });
     requirePlayingGame(game);
     const object = await wand(WAN_OPENING, 2, { dknown: false, observed: false });
     game.u.ustuck = await bystander('owlbear', 11, 10);
@@ -280,7 +280,7 @@ void test('an unseen opening wand releases a grasp without identifying its type'
 });
 
 void test('a creation wand makes real nearby monsters after the initial blast', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_CREATE_MONSTER, 1);
     grantIntrinsicProperty('antimagic', 'outside');
@@ -295,7 +295,7 @@ void test('a creation wand makes real nearby monsters after the initial blast', 
 });
 
 void test('a one-charge digging wand opens real pits and lets an adjacent boulder fill its pit', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_DIGGING, 1);
     grantIntrinsicProperty('levitation', 'outside');
@@ -312,7 +312,7 @@ void test('a one-charge digging wand opens real pits and lets an adjacent boulde
 });
 
 void test('digging a town wall with a broken wand creates a pit and angers a witness', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_DIGGING, 1);
     grantIntrinsicProperty('levitation', 'outside');
@@ -330,7 +330,7 @@ void test('digging a town wall with a broken wand creates a pit and angers a wit
 });
 
 void test('a broken light wand kills a distant gremlin through the real lighting death owner', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_LIGHT, 1);
     const gremlin = await bystander('gremlin', 14, 10, 1);
@@ -346,12 +346,12 @@ void test('a broken light wand kills a distant gremlin through the real lighting
 });
 
 void test('flashing a nearby worm tail does not blind the head outside the broken-wand area', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_LIGHT, 1);
     const worm = await bystander('long worm', 11, 10, 500, MM_NOTAIL);
     placeMonsterAt(worm, 12, 10);
-    advanceMonsterWormBody(worm);
+    await advanceMonsterWormBody(worm);
     assert.ok(worm.wormSegments !== undefined && worm.wormSegments !== null, 'Expected worm.wormSegments to be initialized');
     assert.ok(worm.wormSegments.some(segment => segment.x === 11 && segment.y === 10));
     input.feed('y');
@@ -365,7 +365,7 @@ void test('flashing a nearby worm tail does not blind the head outside the broke
 
 
 void test('a sighted opening-wand confirmation observes its appearance before release identifies it', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_OPENING, 2, { dknown: false, observed: false });
     game.u.ustuck = await bystander('owlbear', 11, 10);
@@ -382,7 +382,7 @@ void test('a sighted opening-wand confirmation observes its appearance before re
 
 for (const reason of ['handless', 'weak', 'occupied']) {
     void test(`${reason} admission ${reason === 'occupied' ? 'does not name or observe' : 'names and observes'} an unseen wand`, async () => {
-        wandRoom();
+        await wandRoom();
         requirePlayingGame(game);
         const object = await wand(WAN_NOTHING, 2, { dknown: false, observed: false });
         if (reason === 'handless') installPolymorphedHero('floating eye');
@@ -402,7 +402,7 @@ for (const reason of ['handless', 'weak', 'occupied']) {
 
 
 void test('a wrested last charge powers the broken wand with one to three charges', async () => {
-    const { input, messages } = wandRoom();
+    const { input, messages } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_MAGIC_MISSILE, 0);
     initRng(49n);
@@ -419,7 +419,7 @@ void test('a wrested last charge powers the broken wand with one to three charge
 });
 
 void test('breaking an unpaid wand charges usage and preserves its destroyed-stock bill', async () => {
-    const { input } = wandRoom();
+    const { input } = await wandRoom();
     requirePlayingGame(game);
     const object = await wand(WAN_NOTHING, 3, { unpaid: true });
     const { shopkeeper } = await createStaffedShop({

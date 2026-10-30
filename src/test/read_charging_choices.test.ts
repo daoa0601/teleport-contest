@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('choosing hands for a charging scroll mimes charging and still consumes the scroll', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     let answered = false;

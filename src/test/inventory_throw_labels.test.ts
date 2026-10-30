@@ -12,7 +12,7 @@ import { requireScreenRow } from './support/screen.js';
 for (const quantity of [1, 50]) {
     for (const quivered of [false, true]) {
         void test(`the throw action describes ${quivered ? 'quivered' : 'unquivered'} gold ${quantity === 1 ? 'as one item' : 'as the whole purse'}`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const coins = await addInventoryObject(GOLD_PIECE, { quan: quantity });
             if (quivered) await setQuiverObject(coins);
             const input = resetInputState();

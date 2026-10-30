@@ -25,7 +25,7 @@ async function monster(mnum: number, level: number, hitPoints: number, x = 11) {
 
 void test('a young monster becomes its adult form after crossing its level limit',
     async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dog = await monster(PM_LITTLE_DOG, 3, 24);
         const victim = await monster(100, 7, 1, 12);
 
@@ -45,7 +45,7 @@ void test('a young monster becomes its adult form after crossing its level limit
     });
 
 void test('a gain-level potion can turn a killer bee into a queen bee', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bee = await monster(PM_KILLER_BEE, 8, 20);
 
     const growth = growMonster(bee, {
@@ -62,7 +62,7 @@ void test('a gain-level potion can turn a killer bee into a queen bee', async ()
 });
 
 void test('growing into a genocided adult marks the monster for removal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await monster(PM_LITTLE_DOG, 3, 24);
     const victim = await monster(100, 7, 1, 12);
     assert.ok(game.mvitals);

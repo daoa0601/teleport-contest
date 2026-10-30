@@ -19,8 +19,8 @@ function messageRow() {
     return row.map(cell => cell.ch).join('').trim();
 }
 
-function freshConfirmation() {
-    freshObjectRoom();
+async function freshConfirmation() {
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Confirmation';
     game.storage = memoryStorage();
@@ -29,7 +29,7 @@ function freshConfirmation() {
 
 for (const answer of ['n', 'y']) {
     void test(`${answer === 'y' ? 'accepting' : 'refusing'} overwrite keeps the requested save snapshot`, async () => {
-        const input = freshConfirmation();
+        const input = await freshConfirmation();
         assert.equal(await saveGame(), true);
         game.moves += 5;
         game.program_state.something_worth_saving = true;
@@ -63,7 +63,7 @@ for (const [name, answer] of [
     ['Enter', '\n'], ['an invalid key followed by no', 'xN'],
 ] as const) {
     void test(`declining save with ${name} clears the question and keeps play running`, async () => {
-        const input = freshConfirmation();
+        const input = await freshConfirmation();
         requirePlayingGame(game);
         const saving = rhack('S'.charCodeAt(0));
         await input.waitUntilBlocked();
@@ -85,7 +85,7 @@ for (const [name, answer] of [
 }
 
 void test('confirming save writes the game and exits with the native goodbye', async () => {
-    const input = freshConfirmation();
+    const input = await freshConfirmation();
     requirePlayingGame(game);
     input.feed('y');
 
@@ -106,7 +106,7 @@ void test('confirming save writes the game and exits with the native goodbye', a
 });
 
 void test('declining a counted save stops voluntary repetition without spending a turn', async () => {
-    const input = freshConfirmation();
+    const input = await freshConfirmation();
     requirePlayingGame(game);
     game.multi = 4;
     input.feed('n');
@@ -119,7 +119,7 @@ void test('declining a counted save stops voluntary repetition without spending 
 
 for (const multi of [0, 4, -4]) {
     void test(`declining quit clears its question and applies native cancellation for multi ${multi}`, async () => {
-        const input = freshConfirmation();
+        const input = await freshConfirmation();
         requirePlayingGame(game);
         game.multi = multi;
         game.u.invulnerable = true;

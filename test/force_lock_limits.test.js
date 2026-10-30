@@ -12,7 +12,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 void test('forcing while levitating refuses before asking about a chest', async () => {
-    freshObjectRoom({ hero: { levitating: true } });
+    await freshObjectRoom({ hero: { levitating: true } });
     game.uwep = game.u.uwep = await addInventoryObject(DAGGER);
     const chest = await floorObject(CHEST, 10, 10, { olocked: true });
     pushKeys('force\nq');
@@ -23,7 +23,7 @@ void test('forcing while levitating refuses before asking about a chest', async 
 });
 for (const type of [TOWEL, OBJECT_NAMES.indexOf('flail')]) {
     void test(`forcing with ${type === TOWEL ? 'a nonweapon' : 'a flail'} gives the native refusal`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.uwep = game.u.uwep = await addInventoryObject(type);
         pushKeys('force\n');
         await rhack('#'.charCodeAt(0));
@@ -32,7 +32,7 @@ for (const type of [TOWEL, OBJECT_NAMES.indexOf('flail')]) {
     });
 }
 void test('a forcing prompt does not disclose an unknown locked chest before the question', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.uwep = game.u.uwep = await addInventoryObject(DAGGER);
     const chest = await floorObject(CHEST, 10, 10, { olocked: true, lknown: false, bknown: false });
     const input = resetInputState();
@@ -42,7 +42,7 @@ void test('a forcing prompt does not disclose an unknown locked chest before the
     assert.equal(chest.olocked, true);
 });
 void test('a stopped forcing attempt resumes without another chest question', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.uwep = game.u.uwep = await addInventoryObject(BOULDER);
     const chest = await floorObject(CHEST, 10, 10, { olocked: true });
     pushKeys('force\ny');
@@ -57,7 +57,7 @@ void test('a stopped forcing attempt resumes without another chest question', as
     assert.match(game._pending_message, /You resume your attempt to force the lock\./);
 });
 void test('walking away and back requires a fresh chest forcing question', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.uwep = game.u.uwep = await addInventoryObject(CLUB);
     const chest = await floorObject(CHEST, 10, 10, { olocked: true, obroken: false });
     const input = resetInputState();
@@ -78,7 +78,7 @@ void test('walking away and back requires a fresh chest forcing question', async
     assert.equal(chest.obroken, false);
 });
 void test('breaking a shop chest lock bills only the chest', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     const { shopkeeper } = await createStaffedShop({ left: 8, right: 14, top: 8, bottom: 12, keeperX: 13 });
     const dagger = await addInventoryObject(DAGGER, { spe: 10 });
     game.uwep = game.u.uwep = dagger;

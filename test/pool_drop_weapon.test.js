@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const [type, noun] of [[SPEAR, 'spear'], [LONG_SWORD, 'sword'], [IRON_CHAIN, 'chain']]) {
     void test(`losing hands makes the hero drop the ${noun} by its weapon description`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const weapon = await addInventoryObject(type);
         await setPrimaryWeapon(weapon);

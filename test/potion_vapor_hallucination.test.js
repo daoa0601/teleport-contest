@@ -13,8 +13,8 @@ import { freshObjectRoom } from './support/object-room.js';
 // zero, so an unknown bottle still reaches the trycall() naming prompt.
 // The bottle reaches the vapor via dothrow.c breakobj() on a wall next to
 // the hero, which announces the peculiar odor first.
-function freshVisionRoom() {
-    freshObjectRoom({
+async function freshVisionRoom() {
+    await freshObjectRoom({
         hero: {
             uz: { dnum: 0, dlevel: 4 },
             ulevel: 4,
@@ -37,7 +37,7 @@ function freshVisionRoom() {
     game.level.requireAt(11, 10).typ = STONE;
 }
 void test('hallucination vapors show a momentary vision without causing hallucination', async () => {
-    freshVisionRoom();
+    await freshVisionRoom();
     const potion = await addInventoryObject(POT_HALLUCINATION, {
         known: false, typeKnown: false,
     });
@@ -54,7 +54,7 @@ void test('hallucination vapors show a momentary vision without causing hallucin
     assert.equal(game.context.move, 1);
 });
 void test('an unknown hallucination vapor offers the call-name prompt', async () => {
-    freshVisionRoom();
+    await freshVisionRoom();
     const potion = await addInventoryObject(POT_HALLUCINATION, {
         known: false, typeKnown: false,
     });

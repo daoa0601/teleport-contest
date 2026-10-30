@@ -68,7 +68,7 @@ export async function summonVaultGuardSoon(state: GameState = game) {
         const room = level.rooms[roomno - ROOMOFFSET];
         return isRoom(room) && room.rtype === VAULT;
     });
-    if (inVault && !(await findVaultGuard(state))) state.u.uinvault = VAULT_GUARD_TIME - 1;
+    if (inVault && !await findVaultGuard(state)) state.u.uinvault = VAULT_GUARD_TIME - 1;
 }
 
 function vaultRoomAt(x: number, y: number, level: GameMap | null = game.level): Room | null {
@@ -205,8 +205,8 @@ export async function continueVaultGuardArrival(state: GameState = game) {
 
     const spotted = canSpotMonster(guard);
     await plineWithContinuation(spotted ? "Suddenly one of the Vault's guards enters!" : 'Someone else has entered the Vault.');
-    if (spotted) newsym(guard.mx, guard.my);
-    else map_invisible(entry.x, entry.y);
+    if (spotted) await newsym(guard.mx, guard.my);
+    else await map_invisible(entry.x, entry.y);
     const deaf = heroIsDeaf(state), blind = heroIsBlind(state);
     const name = () => monsterName(guard, { state, capitalized: true, suppressIt: true });
     if (state.u.uswallow) {

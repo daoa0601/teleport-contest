@@ -8,7 +8,7 @@ import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an observed unidentified amulet retains its appearance and class noun', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await knownObject(AMULET_OF_UNCHANGING, { typeKnown: false, known: false });
     assert.ok(game.objectDescriptions);
     game.objectDescriptions[AMULET_OF_UNCHANGING] = 'octagonal';
@@ -18,7 +18,7 @@ void test('an observed unidentified amulet retains its appearance and class noun
 });
 
 void test('an unseen amulet conceals its discovered type, call name, and personal name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await knownObject(AMULET_OF_UNCHANGING, {
         typeKnown: false, dknown: false, oname: 'Keepsake',
     });
@@ -34,7 +34,7 @@ void test('an unseen amulet conceals its discovered type, call name, and persona
 });
 
 void test('calling an amulet names its class while minimal naming keeps only its appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await knownObject(AMULET_OF_UNCHANGING, {
         typeKnown: false, known: false, oname: 'Keepsake',
     });
@@ -47,7 +47,7 @@ void test('calling an amulet names its class while minimal naming keeps only its
 });
 
 void test('discovering an amulet replaces appearance and call name with its actual type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await knownObject(AMULET_OF_UNCHANGING, { typeKnown: false, known: false });
     recordObjectCall(AMULET_OF_UNCHANGING, 'Steady');
 
@@ -62,7 +62,7 @@ for (const [type, identifiedName] of [
     [FAKE_AMULET_OF_YENDOR, 'cheap plastic imitation of the Amulet of Yendor'],
 ] as const) {
     void test(`${identifiedName} needs individual identification and ignores a type call name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const amulet = await knownObject(type, { typeKnown: false, known: false });
         recordObjectCall(type, 'Authentic');
         learnObjectType(type);
@@ -78,7 +78,7 @@ for (const [type, identifiedName] of [
 }
 
 void test('an individually known fake Amulet does not need discovery of its general type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const fake = await knownObject(FAKE_AMULET_OF_YENDOR, { typeKnown: false, known: true });
 
     assert.equal(objectName(fake), 'cheap plastic imitation of the Amulet of Yendor');
@@ -86,7 +86,7 @@ void test('an individually known fake Amulet does not need discovery of its gene
 });
 
 void test('identification override reveals an unseen fake Amulet without changing its knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const fake = await knownObject(FAKE_AMULET_OF_YENDOR, {
         typeKnown: false, known: false, dknown: false,
     });

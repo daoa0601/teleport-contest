@@ -12,7 +12,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('metal eaten with a tin still nourishes a hero whose infection ends the metal-eating form', async () => {
-    freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200 } });
+    await freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200 } });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(OBJECT_NAMES.indexOf('silver dagger'));
     await setPrimaryWeapon(dagger);

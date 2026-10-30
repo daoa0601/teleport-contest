@@ -11,7 +11,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('#wizwhere retains the invocation position after the ritual removes its trap', async () => {
-    const level = freshObjectRoom({ left: 6, right: 26, top: 3, bottom: 19, heroX: 16, heroY: 11,
+    const level = await freshObjectRoom({ left: 6, right: 26, top: 3, bottom: 19, heroX: 16, heroY: 11,
         flags: { debug: true }, hero: { uz: { dnum: 0, dlevel: 8 } } });
     game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 9, flags: { hellish: true } })];
     game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
@@ -34,7 +34,7 @@ void test('#wizwhere retains the invocation position after the ritual removes it
 });
 
 void test('#wizwhere marks the current special level and reports a portal location', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
     game.specialLevels = new Map([['oracle', createSpecialLevel({ dnum: 0, dlevel: 8 })]]);
@@ -52,7 +52,7 @@ void test('#wizwhere marks the current special level and reports a portal locati
 });
 
 void test('wizard level teleport from the endgame offers only endgame destinations', async () => {
-    freshObjectRoom({ flags: { debug: true }, hero: { uz: { dnum: 1, dlevel: 1 } } });
+    await freshObjectRoom({ flags: { debug: true }, hero: { uz: { dnum: 1, dlevel: 1 } } });
     requirePlayingGame(game);
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 }),

@@ -72,7 +72,7 @@ async function chooseSpellCenter(state) {
     await plineWithContinuation(question);
     const valid = (x, y) => Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 10
         && isok(x, y) && cansee(x, y) && !IS_STWALL(state.level.at(x, y)?.typ ?? 0);
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse)
         await showGetposTip(state);
@@ -159,7 +159,7 @@ export async function castChainLightning({ state = game } = {}) {
                         else {
                             await plineWithContinuation(`You shock ${monsterName(monster, { state })}${damage > 4 ? '!' : '.'}`);
                             if (!canSeeMonster(monster) && !state.notonhead)
-                                map_invisible(zap.x, zap.y);
+                                await map_invisible(zap.x, zap.y);
                         }
                     }
                     else if (canSeeMonster(monster)) {
@@ -197,7 +197,7 @@ export async function castChainLightning({ state = game } = {}) {
     }
     finally {
         if (!state.program_state.gameover)
-            painted.clear();
+            await painted.clear();
     }
     return { heroDied: false };
 }
@@ -225,7 +225,7 @@ async function propagateLightning(queue, painted, zap, displayedBeam, state) {
         return;
     queue.push({ direction: zap.direction, x, y, strength });
     if (cansee(x, y)) {
-        paintRayCell(painted, x, y, dx, dy, displayedBeam);
+        await paintRayCell(painted, x, y, dx, dy, displayedBeam);
         await flush_screen(0);
     }
 }

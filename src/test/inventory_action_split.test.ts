@@ -11,7 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a carried stack offers splitting through its inventory action menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 4 });
     const input = resetInputState();
     input.feed(dagger.invlet);
@@ -33,7 +33,7 @@ for (const { count, amount, destination } of [
     { count: 7, amount: 3, destination: '\x1b' },
 ]) {
     void test(`splitting ${amount} of ${count} daggers ${destination === '\x1b' ? 'can be cancelled' : 'keeps the remaining stack in its original slot'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER, { quan: count });
         const originalLetter = dagger.invlet;
         const input = resetInputState();
@@ -59,7 +59,7 @@ for (const { count, amount, destination } of [
 }
 
 void test('splitting into an occupied incompatible slot moves its old item to a free slot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 2 });
     const club = await addInventoryObject(CLUB);
     const occupied = club.invlet;
@@ -79,7 +79,7 @@ void test('splitting into an occupied incompatible slot moves its old item to a 
 });
 
 void test('splitting into a compatible stack merges the selected quantity into that destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 2 });
     const destination = await knownObject(DAGGER, { quan: 4, where: 'inventory', invlet: 'z' });
     game.inventory.push(destination);
@@ -98,7 +98,7 @@ void test('splitting into a compatible stack merges the selected quantity into t
 
 for (const eraseKey of ['\b', '\x7f']) {
     void test(`${eraseKey === '\b' ? 'Backspace' : 'Delete'} clears the split count display, while a typed zero remains visible`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER, { quan: 7 });
         const input = resetInputState();
         await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -128,7 +128,7 @@ for (const eraseKey of ['\b', '\x7f']) {
 }
 
 void test('overflowing a native long displays zero and rejects the split amount', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 7 });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -157,7 +157,7 @@ for (const { description, digits, amount } of [
     { description: 'backspacing a count above the safe-integer limit', digits: '90071992547409937' + '\b'.repeat(16), amount: 9 },
 ]) {
     void test(`a split uses the remaining count after ${description}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER, { quan: 20 });
         const input = resetInputState();
         await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -177,7 +177,7 @@ for (const { description, digits, amount } of [
 }
 
 void test('the fifth invalid split destination cancels and rejoins the stack without another reminder pager', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 2 });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [
@@ -208,7 +208,7 @@ void test('the fifth invalid split destination cancels and rejoins the stack wit
 });
 
 void test('dismissing the used-letter menu counts toward the split destination retry limit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { quan: 2 });
     await addInventoryObject(CLUB);
     const input = resetInputState();

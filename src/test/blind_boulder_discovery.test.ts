@@ -10,7 +10,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a blind hero feels an unfamiliar boulder before trying to push it', async () => {
-    freshObjectRoom({ hero: { blindTurns: 5 } });
+    await freshObjectRoom({ hero: { blindTurns: 5 } });
     const boulder = await floorObject(BOULDER, 11, 10);
 
     await rhack('l'.charCodeAt(0));
@@ -25,13 +25,13 @@ void test('a blind hero feels an unfamiliar boulder before trying to push it', a
 });
 
 void test('a blind hero remembers the new square after pushing a familiar boulder', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 5 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 5 } });
     setHeroBlindnessTurns(5);
-    vision_recalc(0);
+    await vision_recalc(0);
     level.requireAt(12, 12).seenv = 0;
     level.requireAt(12, 12).waslit = false;
     const boulder = await floorObject(BOULDER, 11, 11);
-    map_object(boulder, true);
+    await map_object(boulder, true);
 
     await rhack('n'.charCodeAt(0));
     await flush_screen(1);

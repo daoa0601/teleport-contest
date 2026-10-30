@@ -10,8 +10,8 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
-function endingRoom(debug = false) {
-    freshObjectRoom({
+async function endingRoom(debug = false) {
+    await freshObjectRoom({
         hero: { urexp: 100 }, flags: { debug, bones: false, disclose: 'none', tombstone: false },
     });
     game.storage = memoryStorage();
@@ -29,7 +29,7 @@ function endingRoom(debug = false) {
     return screens;
 }
 void test('wizard trickery returns to play without recording a fatal event', async () => {
-    const screens = endingRoom(true);
+    const screens = await endingRoom(true);
     const hp = game.u.uhp;
     assert.equal(await finishHeroDeath({ killer: 'changed level file', deathType: TRICKED }), false);
     assert.equal(!!game.program_state.gameover, false);
@@ -38,7 +38,7 @@ void test('wizard trickery returns to play without recording a fatal event', asy
     assert.equal(screens.length, 0);
 });
 void test('panic bypasses life saving and object cleanup', async () => {
-    const screens = endingRoom();
+    const screens = await endingRoom();
     const potion = await addInventoryObject(POT_HEALING, { in_use: true });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -53,7 +53,7 @@ void test('panic bypasses life saving and object cleanup', async () => {
     assert.ok(screens.every(screen => !/But wait|You die\.\.\./.test(screen)));
 });
 void test('genocide without a caller killer uses the unprefixed native death name', async () => {
-    endingRoom();
+    await endingRoom();
     await finishHeroDeath({ killer: '', deathType: GENOCIDED, deathLineShown: true });
     assert.equal(loadScoreRecords()[0]?.death, 'genocided');
 });

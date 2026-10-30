@@ -22,7 +22,7 @@ for (const peaceful of [false, true]) {
     void test(`a blocked ${peaceful ? 'peaceful' : 'hostile'} monster can attack the hero under Conflict`, async () => {
         let attacked = false;
         for (let seed = 1; seed <= 16 && !attacked; seed++) {
-            freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
+            await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
                 hero: { ulevel: 30, uhp: 200, uhpmax: 200 } });
             requirePlayingGame(game);
             await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
@@ -44,7 +44,7 @@ for (const peaceful of [false, true]) {
 }
 
 void test('a blocked peaceful monster leaves the hero alone without Conflict', async () => {
-    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
         hero: { uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
@@ -99,7 +99,7 @@ for (const blind of [false, true]) {
     void test(`an adjacent ${blind ? 'blind' : 'sighted'} hostile ${blind ? 'can wander instead of attacking' : 'stays to attack'}`, async () => {
         let wandered = false;
         for (let seed = 1; seed <= 32 && !wandered; seed++) {
-            freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+            await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
             requirePlayingGame(game);
             const goblin = await createMonsterAt('goblin', 11, 10, MM_ANGRY | NO_MINVENT);
             goblin.msleeping = 0;

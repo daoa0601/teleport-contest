@@ -8,7 +8,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a missing feature appends its notice to the automatic description', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     resetInputState();
     await paintGetposCursor({ x: 11, y: 10 }, 'floor of a room', null, { flushPending: true });
     await pline("Can't find dungeon feature '_'.");
@@ -16,7 +16,7 @@ void test('a missing feature appends its notice to the automatic description', a
     assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd(), "floor of a room  Can't find dungeon feature '_'.");
 });
 void test('cursor movement describes the displayed location and configured coordinates', async () => {
-    freshObjectRoom({ iflags: { getpos_coords: 'm' } });
+    await freshObjectRoom({ iflags: { getpos_coords: 'm' } });
     const input = resetInputState();
     input.feed('l');
     const selected = await answerPrompts(selectMapPosition({
@@ -25,7 +25,7 @@ void test('cursor movement describes the displayed location and configured coord
     assert.equal(selected?.x, 11);
 });
 void test('automatic descriptions warn about invalid locations without preventing selection', async () => {
-    freshObjectRoom({ iflags: { getpos_coords: 's' } });
+    await freshObjectRoom({ iflags: { getpos_coords: 's' } });
     const input = resetInputState();
     input.feed('l');
     const selected = await answerPrompts(selectMapPosition({
@@ -35,7 +35,7 @@ void test('automatic descriptions warn about invalid locations without preventin
     assert.equal(selected?.x, 11);
 });
 void test('automatic description resumes after the target-menu toggle notice is read', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('!');
     await answerPrompts(selectMapPosition({
@@ -47,11 +47,11 @@ void test('automatic description resumes after the target-menu toggle notice is 
     assert.equal(game.iflags.getloc_usemenu, true);
 });
 void test('travel descriptions reject unseen stone even when the hero passes through walls', async () => {
-    const level = freshObjectRoom({ hero: { passesWalls: true }, iflags: { getloc_travelmode: true } });
+    const level = await freshObjectRoom({ hero: { passesWalls: true }, iflags: { getloc_travelmode: true } });
     const stone = level.requireAt(17, 10);
     stone.seenv = 0;
     stone.remembered_glyph = terrain_glyph(stone, 17, 10);
-    newsym(17, 10);
+    await newsym(17, 10);
     const input = resetInputState();
     input.feed('l');
     await answerPrompts(selectMapPosition({

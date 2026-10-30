@@ -3,7 +3,7 @@ import { addTrap } from './level-state.js';
 import { createMonsterAt, equipMonsterObject } from './monsters.js';
 import { freshObjectRoom } from './object-room.js';
 export async function freshMonsterTrapRoom(trapType, { x = 11, y = 10, gameplaySeed, room = {}, monster = {}, trap = {}, } = {}) {
-    const level = freshObjectRoom({ ...room, ...(gameplaySeed === undefined ? {} : { gameplaySeed }) });
+    const level = await freshObjectRoom({ ...room, ...(gameplaySeed === undefined ? {} : { gameplaySeed }) });
     const { mnum, species = 'giant', hitPoints, maxHitPoints = hitPoints, level: monsterLevel, inventory = [], minvent = inventory, mtrapped, mtrapseen, mpeaceful, minvis, misc_worn_check, msleeping, mcanmove, mfrozen, mhp, mhpmax, m_lev, mtrack, cham, } = monster;
     const actor = await createMonsterAt(mnum ?? species, x, y);
     if (hitPoints !== undefined)

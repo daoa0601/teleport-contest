@@ -1,6 +1,6 @@
 import { freshObjectRoom } from './object-room.js';
-export function freshRangedCombatRoom(options = {}) {
-    const level = freshObjectRoom({
+export async function freshRangedCombatRoom(options = {}) {
+    const level = await freshObjectRoom({
         right: 20,
         heroX: 18,
         heroY: 12,

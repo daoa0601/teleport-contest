@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 
 void test('an uneventful sit cannot make Vlad\'s throne disappear', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const throne = level.requireAt(10, 10);
     throne.typ = THRONE;
     game.dungeons = [createDungeon({ dname: "Vlad's Tower" })];

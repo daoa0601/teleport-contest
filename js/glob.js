@@ -92,8 +92,8 @@ export async function meldNearbyFloorGlobs(glob, { state = game, publish = pline
         const oldY = absorbed.oy;
         combined = await absorbGlob(survivor, absorbed, state, { publish });
         if (state === game && cansee(oldX, oldY))
-            newsym(oldX, oldY);
-        maybeUnhideAt(oldX, oldY, state);
+            await newsym(oldX, oldY);
+        await maybeUnhideAt(oldX, oldY, state);
     }
 }
 function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {
@@ -186,7 +186,7 @@ function clearHeroEquipment(object, state) {
     if (removed)
         state._occupation = null;
 }
-function deleteGlob(glob, state) {
+async function deleteGlob(glob, state) {
     const where = glob.where;
     const x = glob.ox, y = glob.oy;
     if (where === 'inventory') {
@@ -201,7 +201,7 @@ function deleteGlob(glob, state) {
     }
     unlinkObject(glob, state);
     if (where === 'floor')
-        maybeUnhideAt(x, y, state);
+        await maybeUnhideAt(x, y, state);
     if (state.context.victual?.piece === glob)
         state.context.victual = null;
     // obfree() retains a consumed shop object for itemized billing.
@@ -227,7 +227,7 @@ function shrinkingGlobName(glob, state) {
             state.iflags.partly_eaten_hack = previous;
     }
 }
-export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.moves ?? 0) {
+export async function runClaimedGlobTimer(claimed, state = game, currentTurn = state.moves ?? 0) {
     if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.SHRINK_GLOB)
         return null;
     const glob = claimed.object;
@@ -259,7 +259,7 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
             : missedShrinks;
         if (delta >= glob.owt) {
             glob.owt = 0;
-            deleteGlob(glob, state);
+            await deleteGlob(glob, state);
             return {
                 glob, x, y, overdue: true, delta,
                 gone: true, message: null,
@@ -321,9 +321,9 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
     }
     if (gone) {
         const visible = where === 'floor' && cansee(x, y);
-        deleteGlob(glob, state);
+        await deleteGlob(glob, state);
         if (visible) {
-            newsym(x, y);
+            await newsym(x, y);
             const subject = x !== state.u.ux || y !== state.u.uy
                 ? name.replace(/^The /u, 'A ') : name;
             message = `${subject} fades away.`;
@@ -341,7 +341,7 @@ export async function finishGlobTimer(event, state = game, currentTurn = state.m
     if (!event?.finishPending || !event.glob)
         return event;
     if (event.gone)
-        deleteGlob(event.glob, state);
+        await deleteGlob(event.glob, state);
     else
         scheduleNextGlobAttempt(event.glob, state, currentTurn);
     event.finishPending = false;

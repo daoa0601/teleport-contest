@@ -23,7 +23,7 @@ function topline() {
     return requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
 }
 void test('a hungry metal-eating pet catches a quivered coin as food', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const mole = await createMonsterAt('rock mole', 11, 10, NO_MINVENT);
     initializePet(mole);
     assert.ok(mole.edog);
@@ -45,7 +45,7 @@ void test('missed potions can thaw an immobilized target or leave it frozen acro
     let thawedMisses = 0;
     let frozenMisses = 0;
     for (let seed = 1n; seed <= 100n; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.u.acurr.a[A_DEX] = 3;
         const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
@@ -78,7 +78,7 @@ void test('missed potions can thaw an immobilized target or leave it frozen acro
     assert.ok(frozenMisses > 0, `Every target thawed among ${thawedMisses} visibly missed throws`);
 });
 void test('potion misses respect nonverbose target descriptions', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 3;
     await createMonsterAt('little dog', 11, 10, NO_MINVENT);
@@ -97,7 +97,7 @@ void test('potion misses respect nonverbose target descriptions', async () => {
     }
 });
 void test('recovering a split projectile reuses its former inventory letter when free', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const daggers = await addInventoryObject(DAGGER, { invlet: 'b', quan: 2 });
     await setQuiverObject(daggers);
     const input = resetInputState();
@@ -113,7 +113,7 @@ void test('recovering a split projectile reuses its former inventory letter when
     assert.match(topline(), /^b - a \+0 dagger \(at the ready\)\./);
 });
 void test('fire assistance retains the displayed map while acknowledging the launcher', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'samurai',
         flags: { fireassist: true, pushweapon: false, time: false },
     });

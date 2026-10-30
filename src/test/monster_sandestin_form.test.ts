@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 void test('Rogue-level sandestins retry lowercase forms before changing shape', async () => {
     for (let seed = 1n; seed <= 64n; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const sandestin = await createMonsterAt('sandestin', 13, 10, NO_MINVENT);
         await changeMonsterForm(sandestin, MONSTER_NAME.indexOf('sandestin'), game);
@@ -28,7 +28,7 @@ void test('Rogue-level sandestins retry lowercase forms before changing shape', 
 void test('a Rogue-level sandestin can fall back to lowercase when uppercase forms are genocided', async () => {
     let changed = 0;
     for (let seed = 1n; seed <= 16n; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const sandestin = await createMonsterAt('sandestin', 13, 10, NO_MINVENT);
         await changeMonsterForm(sandestin, MONSTER_NAME.indexOf('sandestin'), game);

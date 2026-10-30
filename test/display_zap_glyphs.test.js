@@ -7,7 +7,7 @@ import { castNativeRay } from '../js/ray_attack.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('an ASCII cold ray keeps its direction and beam type in the displayed glyph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.symset = 'ASCII';
     let frames = 0;
     game.animationFrame = async () => {

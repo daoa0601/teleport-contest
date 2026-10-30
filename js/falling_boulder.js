@@ -70,7 +70,7 @@ export async function dropBoulderOnMonster(x, y, { state = game, confused = fals
         if (cansee(x, y)) {
             await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${await fallingRockName(object, state)}!`);
             if (monster.minvis && !canSpotMonster(monster))
-                map_invisible(x, y);
+                await map_invisible(x, y);
         }
         else if (swallowsHero) {
             await hear(`something hit ${possessiveName(monsterName(monster, { state }))} ${monsterStomachName(monster.mnum)} over your ${heroHeadName(state)}!`, state);
@@ -131,7 +131,7 @@ async function fallingRockName(object, state) {
 }
 async function landFallingRock(object, x, y, state) {
     await landFloorObject(object, x, y, { state, verb: 'fall' });
-    newsym(x, y);
+    await newsym(x, y);
 }
 async function hear(message, state) {
     const heard = formatHeardMessage(message, state);

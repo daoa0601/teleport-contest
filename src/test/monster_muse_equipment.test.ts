@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const base of ['vampire', 'vampire leader', 'Vlad the Impaler']) {
     void test(`random equipment never gives life saving to a living form of ${base}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
         let ordinaryLifeSavers = 0;
         for (let seed = 1; seed <= 200; seed++) {

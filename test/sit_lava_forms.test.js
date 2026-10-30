@@ -11,7 +11,7 @@ for (const [form, likesLava] of [
     ['fire elemental', true], ['salamander', true],
 ]) {
     void test(`sitting in lava as a ${form} ${likesLava ? 'feels warm' : 'still burns the fire-resistant body'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         installPolymorphedHero(form, { hitPoints: 100 });
         level.requireAt(10, 10).typ = LAVAPOOL;

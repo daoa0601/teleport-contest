@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('a paged wand backfire resumes fatal contact and displays the committed zero HP', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { verbose: false, disclose: '-i -a -v -c -o', tombstone: false },
         hero: { uhp: 1, uhpmax: 10, uac: 10 },
     });

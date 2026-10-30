@@ -31,7 +31,7 @@ export async function revealMonsterCombatDefender(defender, state = game) {
     if (!defender.mundetected)
         return;
     defender.mundetected = 0;
-    newsym(defender.mx, defender.my);
+    await newsym(defender.mx, defender.my);
     if (!canSeeMonster(defender) || canSenseMonster(defender))
         return;
     if (heroIsUnaware(state)) {
@@ -53,7 +53,7 @@ export async function revealMonsterCombatDefender(defender, state = game) {
     }
 }
 export async function prepareMonsterCombatContact(aggressor, defender, attack, weapon, { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d }) {
-    revealAttackingMonsters(aggressor, defender, visible);
+    await revealAttackingMonsters(aggressor, defender, visible);
     const compatibility = aggressor.mcan ? 0 : seductionCompatibility(aggressor, defender, attack, state);
     if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
@@ -79,7 +79,7 @@ export async function prepareMonsterCombatContact(aggressor, defender, attack, w
     return 'contact';
 }
 export async function showMonsterCombatMiss(aggressor, defender, attack, { state = game, visible, publish = plineWithContinuation }) {
-    revealAttackingMonsters(aggressor, defender, visible);
+    await revealAttackingMonsters(aggressor, defender, visible);
     if (!visible) {
         await reportMonsterCombatNoise(aggressor, state, { publish });
         return;
@@ -101,7 +101,7 @@ export async function rejectMonsterShadeContact(aggressor, defender, weapon, { s
             : `${possessiveName(monsterName(aggressor, { state, capitalized: true }))} ${what}`;
         await publish(`${subject} ${verbForSubject(what, 'pass')} harmlessly through ${target}.`);
         if (!canSpotMonster(defender))
-            map_invisible(defender.mx, defender.my);
+            await map_invisible(defender.mx, defender.my);
     }
     defender.msleeping = 0;
     return true;
@@ -159,11 +159,11 @@ async function showSilverContact(aggressor, defender, weapon, subject, state, pu
     const simpleName = (weapon.quan ?? weapon.quantity ?? 1) === 1 ? noun : pluralizeObjectNoun(weapon, noun);
     await publish(`${possessiveName(subject)} ${simpleName} sears ${target}!`);
 }
-function revealAttackingMonsters(aggressor, defender, visible) {
+async function revealAttackingMonsters(aggressor, defender, visible) {
     let changed = false;
     for (const monster of [defender, aggressor]) {
         if (M_AP_TYPE(monster)) {
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
             changed = true;
         }
         else if (monster.mundetected) {
@@ -175,9 +175,9 @@ function revealAttackingMonsters(aggressor, defender, visible) {
         return;
     for (const monster of [aggressor, defender]) {
         if (!canSpotMonster(monster))
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
         else if (changed)
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
     }
 }
 // C mhitm.c:failed_grab(). Unlike hitmm/missmm, a failed hold is silent

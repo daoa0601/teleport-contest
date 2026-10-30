@@ -8,7 +8,7 @@ import { monsterName, possessiveName } from '../js/monster_name.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the sleeping Rogue-level ghost is addressed by its assigned name', async () => {
-    freshObjectRoom({ gameplaySeed: 17n });
+    await freshObjectRoom({ gameplaySeed: 17n });
     game.rogue_level = { dnum: 0, dlevel: 8 };
 
     await mklev();

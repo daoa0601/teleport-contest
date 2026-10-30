@@ -20,7 +20,7 @@ export async function startMenuGame(bindings = ''): Promise<Engine> {
     game.u.ux = 10;
     game.u.uy = 10;
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     clearMessageWindow();
     await docrt();
     return engine;

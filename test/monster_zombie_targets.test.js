@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['goblin', 'large kobold', 'gnome lord', 'dwarf lord', 'Woodland-elf', 'fire giant', 'Kop Lieutenant']) {
     void test(`a zombie can approach ${species} to zombify it`, async () => {
-        freshObjectRoom({ heroX: 15, heroY: 12 });
+        await freshObjectRoom({ heroX: 15, heroY: 12 });
         requirePlayingGame(game);
         const zombie = await createMonsterAt('kobold zombie', 10, 10, MM_ANGRY | NO_MINVENT);
         const living = await createMonsterAt(species, 11, 10, MM_ANGRY | NO_MINVENT);
@@ -20,7 +20,7 @@ for (const species of ['goblin', 'large kobold', 'gnome lord', 'dwarf lord', 'Wo
     });
 }
 void test('a goblin corpse requested for zombification is scheduled to rise', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('goblin'));
     startCorpseTimeout(corpse, { zombify: true });

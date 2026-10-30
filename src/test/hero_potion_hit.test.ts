@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a monster-thrown inert potion damages the actual hero and consumes its free object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await knownObject(POT_FRUIT_JUICE);
     const hp = game.u.uhp;
@@ -43,7 +43,7 @@ for (const [label, blessed, cursed, totalDamage] of [
     ['blessed', true, false, 3], ['uncursed', false, false, 5], ['cursed', false, true, 9],
 ] as const) {
     void test(`half physical damage reduces both the bottle and ${label} acid damage`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         grantIntrinsicProperty('halfPhysicalDamage', 'outside');
         const potion = await knownObject(POT_ACID, { blessed, cursed });
@@ -63,7 +63,7 @@ for (const [label, blessed, cursed, totalDamage] of [
 }
 
 void test('acid resistance stops acid damage but leaves the bottle impact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('acidResistance', 'outside');
     const potion = await knownObject(POT_ACID, { cursed: true });
@@ -84,7 +84,7 @@ for (const [label, type] of [
     ['blindness', POT_BLINDNESS], ['confusion', POT_CONFUSION],
 ] as const) {
     void test(`a direct ${label} potion impact applies its real vapor effect`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const potion = await knownObject(type);
         const hp = game.u.uhp;
@@ -100,7 +100,7 @@ for (const [label, type] of [
 }
 
 void test('an eyeless breathless form takes bottle damage but receives no confusion vapor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('energy vortex', { hitPoints: 30 });
     const potion = await knownObject(POT_CONFUSION);
@@ -115,7 +115,7 @@ void test('an eyeless breathless form takes bottle damage but receives no confus
 });
 
 void test('antimagic blocks direct potion polymorph without shielding the glass impact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('antimagic', 'outside');
     const form = game.u.umonnum;
@@ -134,7 +134,7 @@ void test('antimagic blocks direct potion polymorph without shielding the glass 
 });
 
 void test('an unknown potion waits for its actual call-name input before it is freed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await knownObject(POT_FRUIT_JUICE, { typeKnown: false, dknown: true });
     const input = resetInputState();
     const impact = hitHeroWithThrownPotion(potion, { rollOne: () => 1, publish: async () => {} });
@@ -147,7 +147,7 @@ void test('an unknown potion waits for its actual call-name input before it is f
 });
 
 void test('impact and evaporation use the real message pager', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await knownObject(POT_FRUIT_JUICE);
     const input = resetInputState();
 
@@ -163,7 +163,7 @@ void test('impact and evaporation use the real message pager', async () => {
 
 for (const [hp, killer] of [[1, 'thrown potion'], [3, 'potion of acid']] as const) {
     void test(`fatal potion impact is attributed to ${killer}`, async () => {
-        freshObjectRoom({ hero: { uhp: hp, uhpmax: 40 }, flags: { disclose: '-i -a -v -c -o' } });
+        await freshObjectRoom({ hero: { uhp: hp, uhpmax: 40 }, flags: { disclose: '-i -a -v -c -o' } });
         game.storage = memoryStorage();
         const potion = await knownObject(POT_ACID);
         const input = resetInputState();
@@ -183,7 +183,7 @@ for (const [hp, killer] of [[1, 'thrown potion'], [3, 'potion of acid']] as cons
 }
 
 void test('life saving permits a potion vapor effect after lethal bottle damage', async () => {
-    freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 }, flags: { disclose: '-i -a -v -c -o' } });
+    await freshObjectRoom({ hero: { uhp: 1, uhpmax: 40 }, flags: { disclose: '-i -a -v -c -o' } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');

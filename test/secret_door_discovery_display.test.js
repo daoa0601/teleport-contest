@@ -6,7 +6,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('discovering a hidden door remembers it even outside the visible area', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         recalculateVision: false, gameplaySeed: 811n, hero: { nv_range: 0 },
     });
     for (const column of level.locations) {
@@ -19,8 +19,8 @@ void test('discovering a hidden door remembers it even outside the visible area'
     door.typ = SDOOR;
     door.horizontal = true;
     vision_reset_new_level();
-    vision_recalc(0);
-    newsym(9, 9);
+    await vision_recalc(0);
+    await newsym(9, 9);
     assert.equal(cansee(9, 9), false, 'the dark door is outside night vision');
     for (let attempt = 0; attempt < 100 && door.typ === SDOOR; attempt++) {
         await automaticSearch();

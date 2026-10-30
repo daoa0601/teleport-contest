@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('starting a duplicate object timer leaves the original callback due', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const egg = await addInventoryObject(EGG, { initialize: false });
     const deadline = game.moves + 5;
     scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, deadline);
@@ -23,8 +23,8 @@ void test('starting a duplicate object timer leaves the original callback due', 
     assert.equal(egg.timed, 0);
 });
 
-void test('starting a duplicate spot timer leaves the original melt due', () => {
-    freshObjectRoom();
+void test('starting a duplicate spot timer leaves the original melt due', async () => {
+    await freshObjectRoom();
     const deadline = game.moves + 5;
     scheduleLevelTimer(12, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline);
 

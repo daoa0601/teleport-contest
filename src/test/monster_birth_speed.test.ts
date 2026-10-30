@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const hellish of [false, true]) {
     void test(`a raven keeps its natural movement rate when born ${hellish ? 'in Gehennom' : 'outside Gehennom'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.dungeons = [createDungeon({ dname: hellish ? 'Gehennom' : 'The Dungeons of Doom', flags: { hellish } })];
 
         const raven = await createMonsterAt('raven', 13, 10, NO_MINVENT);
@@ -21,7 +21,7 @@ for (const hellish of [false, true]) {
 
     for (const species of ['bat', 'giant bat', 'vampire bat']) {
         void test(`a ${species} ${hellish ? 'is permanently fast in Gehennom' : 'has normal speed outside Gehennom'}`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             game.dungeons = [createDungeon({ dname: hellish ? 'Gehennom' : 'The Dungeons of Doom', flags: { hellish } })];
 
             const bat = await createMonsterAt(species, 13, 10, NO_MINVENT);

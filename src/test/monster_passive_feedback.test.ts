@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const species of ['acid blob', 'gelatinous cube']) {
     void test(`an unseen ${species} is not identified by its passive retaliation`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const attacker = await createMonsterAt('orc', 11, 10, NO_MINVENT);
         const defender = await createMonsterAt(species, 12, 10, NO_MINVENT);
         defender.minvis = true;
@@ -29,7 +29,7 @@ for (const species of ['acid blob', 'gelatinous cube']) {
 }
 
 void test('hallucination changes the perceived liquid in an acid passive splash', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 }, gameplaySeed: 18n });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 }, gameplaySeed: 18n });
     const attacker = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     const defender = await createMonsterAt('acid blob', 12, 10, NO_MINVENT);
     attacker.mhp = attacker.mhpmax = 100;

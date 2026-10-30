@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const species = (name: string) => MONSTER_NAME.indexOf(name);
 
 void test('a vampire born in Sokoban retains pit and hole knowledge after shapechanging', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
     requirePlayingGame(game);
     game.sokoban_dnum = game.u.uz.dnum;
 
@@ -32,7 +32,7 @@ void test('a vampire born in Sokoban retains pit and hole knowledge after shapec
 
 for (const name of ['vampire', 'vampire leader']) {
     void test(`${name} stays in its native form when its alternate forms are genocided`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         for (const alternate of ['wolf', 'fog cloud', 'vampire bat'])
             requireMonsterVital(species(alternate)).mvflags = G_GENOD;
@@ -47,7 +47,7 @@ for (const name of ['vampire', 'vampire leader']) {
 }
 
 void test('an unchanged vampire birth still receives ordinary native inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     for (const alternate of ['wolf', 'fog cloud', 'vampire bat'])
         requireMonsterVital(species(alternate)).mvflags = G_GENOD;
@@ -64,7 +64,7 @@ void test('an unchanged vampire birth still receives ordinary native inventory',
 void test('vampire births use the uppercase bat form on the Rogue level', async () => {
     for (const name of ['vampire', 'vampire leader']) {
         for (let seed = 1; seed <= 16; seed++) {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             game.rogue_level = { ...game.u.uz };
             initRng(BigInt(seed));
@@ -84,7 +84,7 @@ for (const [name, terrain, underlay] of [
 ] as const) {
     void test(`a vampire leader born over ${name} does not choose wolf form`, async () => {
         for (let seed = 1; seed <= 32; seed++) {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             const location = level.requireAt(11, 10);
             location.typ = terrain;
@@ -101,7 +101,7 @@ for (const [name, terrain, underlay] of [
 
 for (const noTail of [false, true]) {
     void test(`a chameleon born in long-worm form has a working body ${noTail ? 'despite MM_NOTAIL' : 'with default flags'}`, async () => {
-        const level = freshObjectRoom({ left: 7, right: 30, top: 5, bottom: 17 });
+        const level = await freshObjectRoom({ left: 7, right: 30, top: 5, bottom: 17 });
         requirePlayingGame(game);
         initRng(242n);
 

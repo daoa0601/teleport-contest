@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the hero announces rising as undead even when bones are disabled', async () => {
-    freshObjectRoom({ flags: {
+    await freshObjectRoom({ flags: {
             bones: false, debug: true, disclose: '-i -a -v -g -c -o', tombstone: false,
         } });
     game.u.ugrave_arise = MONSTER_NAME.indexOf('gnome zombie');

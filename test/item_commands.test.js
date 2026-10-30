@@ -45,7 +45,7 @@ void test('an invalid wish can be replaced by a valid wish', async () => {
 void test('a cursed scroll of light darkens the visible area', async () => {
     const level = freshGameplayRoom();
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     await addInventoryObject(SCR_LIGHT, { invlet: 'a', cursed: true });
     pushKey('a');
     pushKey(' ');
@@ -92,7 +92,7 @@ void test('quaffing applies the potion, consumes it, and uses a turn', async () 
     assert.equal(game.context.move, 1);
 });
 void test('dropping a cursed item on an altar reveals its curse', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requireFixtureGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = ALTAR;
     const potion = await addInventoryObject(POT_GAIN_ENERGY, {

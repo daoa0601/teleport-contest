@@ -98,7 +98,7 @@ export async function releaseMonsterInventory(monster: Monster, state: GameState
         if (landed) dropped.push(landed);
         if (!gameWasOver && state.program_state.gameover) return dropped;
     }
-    if (show && cansee(x, y)) newsym(x, y);
+    if (show && cansee(x, y)) await newsym(x, y);
     return dropped;
 }
 

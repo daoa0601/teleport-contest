@@ -17,7 +17,7 @@ for (const { type, known, seen, description, noun } of [
 ]) {
     for (const washing of [false, true]) {
         void test(`${washing ? 'washing' : 'spilling cursed oil on'} ${known ? 'known' : 'unknown'} ${description}, ${seen ? 'seen' : 'unseen'}, names ${noun}`, async () => {
-            freshObjectRoom({ hero: { blindTurns: seen ? 0 : 20 } });
+            await freshObjectRoom({ hero: { blindTurns: seen ? 0 : 20 } });
             requirePlayingGame(game);
             assert.ok(game.objectDescriptions);
             game.objectDescriptions[type] = description;

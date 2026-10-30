@@ -12,7 +12,7 @@ import { teleportHeroAtWill } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a drowning hero uses a known teleport trap without at-will power or hunger costs', async () => {
-    const level = freshObjectRoom({ hero: { ulevel: 1, uen: 0, uhunger: 900 } });
+    const level = await freshObjectRoom({ hero: { ulevel: 1, uen: 0, uhunger: 900 } });
     for (let x = 9; x <= 11; x++) {
         for (let y = 9; y <= 11; y++)
             level.requireAt(x, y).typ = POOL;
@@ -33,7 +33,7 @@ void test('a drowning hero uses a known teleport trap without at-will power or h
     assert.ok(messages.includes('You jump onto the teleportation trap.'));
 });
 void test('teleport at will can use a learned spell without intrinsic teleportation', async () => {
-    freshObjectRoom({ role: 'wizard', flags: { tips: false, verbose: false },
+    await freshObjectRoom({ role: 'wizard', flags: { tips: false, verbose: false },
         hero: { ulevel: 30, uen: 50, uenmax: 50, uhunger: 900,
             acurr: { a: [18, 25, 18, 18, 18, 18] } } });
     grantIntrinsicProperty('teleportControl', 'outside');
@@ -50,7 +50,7 @@ void test('teleport at will can use a learned spell without intrinsic teleportat
     assert.equal(game.u.uhunger, 900, 'a high-intelligence Wizard pays only the spell nutrition cost');
 });
 void test('the Amulet can disorient an at-will teleport after power is spent', async () => {
-    freshObjectRoom({ hero: { ulevel: 12, uen: 50, uhunger: 900, uhave: { amulet: true } } });
+    await freshObjectRoom({ hero: { ulevel: 12, uen: 50, uhunger: 900, uhave: { amulet: true } } });
     grantIntrinsicProperty('teleportation', 'outside');
     grantIntrinsicProperty('teleportControl', 'outside');
     const messages = [];
@@ -68,7 +68,7 @@ void test('the Amulet can disorient an at-will teleport after power is spent', a
 });
 for (const failure of ['energy', 'stunned spell']) {
     void test(`an escape teleport refused for ${failure} leaves the enclosing action time intact`, async () => {
-        freshObjectRoom({ hero: { ulevel: 12, uen: failure === 'energy' ? 0 : 50 } });
+        await freshObjectRoom({ hero: { ulevel: 12, uen: failure === 'energy' ? 0 : 50 } });
         grantIntrinsicProperty('teleportation', 'outside');
         if (failure === 'stunned spell') {
             game.u.ulevel = 1;

@@ -33,7 +33,7 @@ async function interventionTurn(seed, earlierMessage) {
 void test('a blind hero can be cursed by Wizard harassment without seeing a glow', async () => {
     let curses = 0;
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ hero: { blindTurns: 100, uevent: { udemigod: true }, udg_cnt: 1 } });
+        await freshObjectRoom({ hero: { blindTurns: 100, uevent: { udemigod: true }, udg_cnt: 1 } });
         requirePlayingGame(game);
         game.level.flags.rndmongen = false;
         const dagger = await addInventoryObject(DAGGER, { cursed: false, blessed: false });
@@ -46,7 +46,7 @@ void test('a blind hero can be cursed by Wizard harassment without seeing a glow
 });
 void test('Astral harassment never resurrects the Wizard', async () => {
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ hero: { uz: { dnum: 1, dlevel: 1 }, uevent: { udemigod: true }, udg_cnt: 1 } });
+        await freshObjectRoom({ hero: { uz: { dnum: 1, dlevel: 1 }, uevent: { udemigod: true }, udg_cnt: 1 } });
         requirePlayingGame(game);
         game.astral_level = { dnum: 1, dlevel: 1, flags: { town: false }, alignment: 0 };
         game.level.flags.rndmongen = false;
@@ -58,7 +58,7 @@ void test('harassment acknowledges older prose before showing its nervousness or
     let glows = 0;
     let nervous = 0;
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
+        await freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
         const { text, pages } = await interventionTurn(seed, 'You inspect the quiet stone archway at the entrance to the passage.');
         const glow = text.includes('glow surrounding you.');
         const nerves = text.includes('vaguely nervous.');

@@ -9,7 +9,7 @@ import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 void test('looking inside shop merchandise quotes the contained goods without buying them', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
     const chest = await floorObject(CHEST, game.u.ux, game.u.uy, {
         initialize: false, olocked: false, otrapped: false, cknown: true,

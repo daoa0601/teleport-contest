@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // regardless of oeaten. Tied rations keep chain order; both precede cookies.
 for (const partlyFirst of [true, false]) {
     void test(`loot lists rations before cookies and keeps ${partlyFirst ? 'partly eaten' : 'whole'} rations first when stashed last`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const sack = await floorObject(SACK, 10, 10, { cknown: true });
         const partly = await knownObject(FOOD_RATION, { where: 'free', oeaten: 400 });
         const whole = await knownObject(FOOD_RATION, { where: 'free', quan: 2, quantity: 2 });
@@ -38,7 +38,7 @@ for (const partlyFirst of [true, false]) {
 }
 for (const partlyFirst of [true, false]) {
     void test(`loot lists fresh rations before rotten rations when ${partlyFirst ? 'rotten' : 'fresh'} rations were stashed last`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const sack = await floorObject(SACK, 10, 10, { cknown: true });
         const rotten = await knownObject(FOOD_RATION, { where: 'free', oeaten: 400, orotten: true });
         const fresh = await knownObject(FOOD_RATION, { where: 'free', quan: 2, quantity: 2 });

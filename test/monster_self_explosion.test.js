@@ -27,7 +27,7 @@ import { initRng } from '../js/rng.js';
 import { polymonHero } from '../js/polyself.js';
 import { createDungeon } from './support/topology.js';
 void test('a light exploding at the wrong location announces nearby monsters waking', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const light = await createMonsterAt('yellow light', 11, 10, NO_MINVENT);
     const ogre = await createMonsterAt('ogre', 13, 10, NO_MINVENT);
     ogre.msleeping = 1;
@@ -337,7 +337,7 @@ void test('fire-resistant monster inventory can burn without damaging its carrie
     assert.equal(monster.mhp, 500);
 });
 void test('worn defending dragon scales mark the hero unaffected by a sphere', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const sphere = await createMonsterAt('flaming sphere', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     await equipMonsterObject(sphere, await knownObject(RED_DRAGON_SCALES), W_ARM);

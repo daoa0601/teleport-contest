@@ -25,7 +25,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a fire horn survives landing in lava', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(12, 10).typ = LAVAPOOL;
     const horn = await knownObject(FIRE_HORN);
@@ -42,7 +42,7 @@ void test('a fire horn survives landing in lava', async () => {
 
 for (const type of [TOOLED_HORN, UNICORN_HORN]) {
     void test(`a ${type === TOOLED_HORN ? 'tooled' : 'unicorn'} horn burns up when it lands in lava`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(12, 10).typ = LAVAPOOL;
         const horn = await knownObject(type);
         const messages: string[] = [];
@@ -58,7 +58,7 @@ for (const type of [TOOLED_HORN, UNICORN_HORN]) {
 }
 
 void test('a chest burning in lava spills surviving contents onto its square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(12, 10).typ = LAVAPOOL;
     const chest = await knownObject(CHEST, { initialize: false });
@@ -79,7 +79,7 @@ void test('a chest burning in lava spills surviving contents onto its square', a
 
 for (const role of ['ranger', 'priest'] as const) {
     void test(`a ${role} observes a horn spilling from a chest into visible lava`, async () => {
-        const level = freshObjectRoom({ role });
+        const level = await freshObjectRoom({ role });
         level.requireAt(12, 10).typ = LAVAPOOL;
         const chest = await knownObject(CHEST, { initialize: false });
         const horn = await knownObject(TOOLED_HORN, {
@@ -104,11 +104,11 @@ for (const role of ['ranger', 'priest'] as const) {
     });
 
     void test(`a ${role} does not observe a horn spilling from a chest into dark lava`, async () => {
-        const level = freshObjectRoom({ role });
+        const level = await freshObjectRoom({ role });
         const lava = level.requireAt(12, 10);
         lava.typ = LAVAPOOL;
         lava.lit = false;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 10), false, 'The lava must be outside the hero\'s sight.');
         assert.equal(couldsee(12, 10), true, 'The hero must have a clear line to the lava.');
         const chest = await knownObject(CHEST, { initialize: false });
@@ -135,7 +135,7 @@ for (const role of ['ranger', 'priest'] as const) {
 }
 
 void test('an unlit oil potion landing in lava ignites and explodes', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = LAVAPOOL;
     const potion = await knownObject(POT_OIL, { lamplit: false });
     const messages: string[] = [];
@@ -151,7 +151,7 @@ void test('an unlit oil potion landing in lava ignites and explodes', async () =
 });
 
 void test('oil spilled from a burning chest explodes in the lava below', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = LAVAPOOL;
     const chest = await knownObject(CHEST, { initialize: false });
     const potion = await knownObject(POT_OIL, { lamplit: false });
@@ -170,7 +170,7 @@ void test('oil spilled from a burning chest explodes in the lava below', async (
 });
 
 void test('a potion broken by hot ground affects the hero near its landing, not its old position', async () => {
-    freshObjectRoom({ hero: { uhp: 20, uhpmax: 40 } });
+    await freshObjectRoom({ hero: { uhp: 20, uhpmax: 40 } });
     requireFixtureGame(game);
     game.level.flags.temperature = 1;
     learnObjectType(POT_HEALING);
@@ -187,7 +187,7 @@ void test('a potion broken by hot ground affects the hero near its landing, not 
 });
 
 void test('a free Book of the Dead does not show steam at its old visible location', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const book = await knownObject(SPE_BOOK_OF_THE_DEAD);
     placeCreatedObject(book, 12, 10);
@@ -202,7 +202,7 @@ void test('a free Book of the Dead does not show steam at its old visible locati
 });
 
 void test('a carried Book of the Dead shows steam at the hero rather than stale coordinates', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
     book.ox = book.oy = 0;
@@ -215,7 +215,7 @@ void test('a carried Book of the Dead shows steam at the hero rather than stale 
 });
 
 void test('a heavier landing glob is absorbed by the smaller glob already on the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const settled = await knownObject(GLOB_OF_BLACK_PUDDING);
     const landing = await knownObject(GLOB_OF_BLACK_PUDDING);
@@ -232,7 +232,7 @@ void test('a heavier landing glob is absorbed by the smaller glob already on the
 });
 
 void test('floor glob merging reveals a monster when its cover disappears', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const large = await knownObject(GLOB_OF_BLACK_PUDDING);
     const cover = await knownObject(GLOB_OF_BLACK_PUDDING);
     large.owt = 2 * cover.owt;
@@ -249,11 +249,11 @@ void test('floor glob merging reveals a monster when its cover disappears', asyn
 });
 
 void test('a sleeping hero dreams of hearing a potion shatter on hot ground', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     requireFixtureGame(game);
     game.level.flags.temperature = 1;
     level.requireAt(18, 10).lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(18, 10), false);
     await putHeroToSleep(20);
     initRng(4n);

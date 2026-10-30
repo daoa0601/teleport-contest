@@ -20,7 +20,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 async function corridor(species = 'leprechaun') {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 10, right: 14, top: 10, bottom: 10,
         flags: { verbose: true },
     });
@@ -99,7 +99,7 @@ void test('a goblin opens its destination door before a direct move completes', 
     assert.ok(door);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
-    vision_recalc(0);
+    await vision_recalc(0);
     const result = await moveMonsterForHeroAttack(goblin);
 
     assert.equal(result.status, MMOVE_MOVED);
@@ -113,7 +113,7 @@ void test('a leprechaun is too small to open a door while dodging', async () => 
     const door = level.requireAt(12, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
-    vision_recalc(0);
+    await vision_recalc(0);
     const result = await moveMonsterForHeroAttack(leprechaun);
 
     assert.equal(result.status, MMOVE_NOTHING);

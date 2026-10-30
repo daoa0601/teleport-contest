@@ -20,7 +20,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 async function pricingShop() {
-    freshObjectRoom();
+    await freshObjectRoom();
     return await createStaffedShop();
 }
 
@@ -94,7 +94,7 @@ void test('glob quotes remember the displayed price for the full weight', async 
 });
 
 void test('remembered quotes appear only for unidentified types when price quotes are enabled', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await addInventoryObject(POT_HEALING, { typeKnown: false });
     recordObjectPriceQuote(POT_HEALING, 50);
     recordObjectPriceQuote(POT_HEALING, 75);

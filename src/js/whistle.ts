@@ -115,14 +115,14 @@ async function summonPets(object: GameObject, state: GameState) {
         }
         const wasSeen = canSpotMonster(pet);
         const oldName = wasSeen ? petName(pet, state) : null;
-        if (M_AP_TYPE(pet)) revealMonsterAppearance(pet);
+        if (M_AP_TYPE(pet)) await revealMonsterAppearance(pet);
         const oldx = pet.mx, oldy = pet.my;
         await moveMonsterNextToHero(pet, state, { flags: known ? RLOC_NONE : RLOC_MSG });
         if (state.program_state.gameover) return;
         if (pet.mx === oldx && pet.my === oldy) continue;
         if (pet.mundetected) {
             pet.mundetected = 0;
-            newsym(pet.mx, pet.my);
+            await newsym(pet.mx, pet.my);
         }
         state._lastPlineKind = PLNMSG_enum;
         const trap = await triggerImmediateMonsterTrap(pet, state, {

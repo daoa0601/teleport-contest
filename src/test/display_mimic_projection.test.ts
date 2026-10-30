@@ -12,13 +12,13 @@ import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('a furniture mimic uses the selected dungeon graphics in both sight and memory', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.symset = 'DECgraphics';
     const mimic = await createMonsterAt('small mimic', 11, 10);
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = CmapSymbol.hwall;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '─');
@@ -26,20 +26,20 @@ void test('a furniture mimic uses the selected dungeon graphics in both sight an
 });
 
 void test('infravision alone does not expose the true form of a disguised warm monster in darkness', async () => {
-    const level = freshObjectRoom({ hero: { infravision: true } });
+    const level = await freshObjectRoom({ hero: { infravision: true } });
     game.symset = 'ASCII';
     const location = level.requireAt(14, 10);
     location.lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), false);
     assert.equal(couldsee(14, 10), true);
     const monster = await createMonsterAt('goblin', 14, 10);
     monster.m_ap_type = M_AP_FURNITURE;
     monster.mappearance = CmapSymbol.fountain;
     monster.meverseen = 0;
-    map_background(14, 10);
+    await map_background(14, 10);
 
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(13, 11).ch, '.');
@@ -47,13 +47,13 @@ void test('infravision alone does not expose the true form of a disguised warm m
 });
 
 void test('a tame monster disguise is shown as its apparent species without pet highlighting', async () => {
-    freshObjectRoom({ flags: { hilite_pet: true } });
+    await freshObjectRoom({ flags: { hilite_pet: true } });
     const mimic = await createMonsterAt('small mimic', 11, 10);
     mimic.m_ap_type = M_AP_MONSTER;
     mimic.mappearance = MONSTER_NAME.indexOf('goblin');
     mimic.mtame = 5;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, 'o');

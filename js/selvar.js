@@ -519,11 +519,11 @@ export function selection_from_mkroom(room = null) {
     }
     return selection;
 }
-export function selection_force_newsyms(selection) {
+export async function selection_force_newsyms(selection) {
     for (let x = 1; x < selection.wid; x++)
         for (let y = 0; y < selection.hei; y++)
             if (selection_getpoint(x, y, selection))
-                newsym_force(x, y);
+                await newsym_force(x, y);
 }
 const GROW_DIRECTIONS = {
     all: W_ANY,

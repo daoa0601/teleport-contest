@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('debug mode lists #migratemons with its migration description', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
     input.feed('j');
     const action = rhack('?'.charCodeAt(0));

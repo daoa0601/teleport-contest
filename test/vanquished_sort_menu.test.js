@@ -13,7 +13,7 @@ import { requireScreenRow } from './support/screen.js';
 // offers the sort-order menu even when only one species (or none) was
 // vanquished; a plain #vanquished with one species shows no such menu.
 void test("'m #vanquished' picks the sort order before a single-species list", async (t) => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const newt = MONSTER_NAME.indexOf('newt');
     game.mvitals ??= [];
@@ -28,7 +28,7 @@ void test("'m #vanquished' picks the sort order before a single-species list", a
     assert.equal(game.flags.vanqSortmode, 0);
 });
 void test("'m #vanquished' still picks a sort order with nothing vanquished", async (t) => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const input = resetInputState();
     planInput(input, t, [
@@ -41,7 +41,7 @@ void test("'m #vanquished' still picks a sort order with nothing vanquished", as
 // present-tense notice and leaves it on the topl; the disclosure window path
 // replaces the topl, but this branch never opens one.
 void test('plain #vanquished with nothing vanquished announces it on the topl', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.feed('vanquished\n');

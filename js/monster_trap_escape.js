@@ -25,7 +25,7 @@ export async function tryMonsterTrapEscape(monster, state = game, { random = rn2
     const pit = is_pit(trap.ttyp);
     if (!trap.tseen && seeSquare && inSight
         && (pit || [BEAR_TRAP, HOLE, WEB].includes(trap.ttyp))) {
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     }
     const climbsEasily = (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_HUGE
         || MONSTER_NAME[monster.mnum] === 'pit fiend';

@@ -5,7 +5,7 @@ import { lookAtMonster } from '../js/pager_monsters.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a named cancelled coyote retains its species before its Latin alias', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const coyote = await createMonsterAt('coyote', 11, 10);
     setMonsterGivenName(coyote, 'Runner');
     coyote.mcan = 1;

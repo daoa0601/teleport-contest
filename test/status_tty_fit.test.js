@@ -13,7 +13,7 @@ function status() {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
 void test('disabling time restores the full tutorial status label', async () => {
-    freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
+    await freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
     game._tutorialActive = true;
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 52, rows: 24 }));
     await bot();
@@ -24,7 +24,7 @@ void test('disabling time restores the full tutorial status label', async () => 
     assert.match(status(), /^Tutorial:8 /);
 });
 void test('disabling time removes the empty capacity separator left by shortening', async () => {
-    freshObjectRoom({ moves: 10000, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
+    await freshObjectRoom({ moves: 10000, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 50, rows: 24 }));
     await bot();
     assert.match(status(), /T:10000  Bl/);
@@ -33,7 +33,7 @@ void test('disabling time removes the empty capacity separator left by shortenin
     assert.match(status(), /Xp:8 Blind/);
 });
 void test('tty shortens all condition names together before losing a condition', async () => {
-    freshObjectRoom({ flags: { time: true }, hero: {
+    await freshObjectRoom({ flags: { time: true }, hero: {
             blindTurns: 5, confusionTurns: 5, deafTurns: 5,
             hallucinationTurns: 5, stunnedTurns: 5,
         } });
@@ -43,14 +43,14 @@ void test('tty shortens all condition names together before losing a condition',
     assert.equal(status().at(-1), ' ');
 });
 void test('tty shortens encumbrance after the conditions reach their shortest form', async () => {
-    freshObjectRoom({ hero: { blindTurns: 5, confusionTurns: 5, uhs: 1 } });
+    await freshObjectRoom({ hero: { blindTurns: 5, confusionTurns: 5, uhs: 1 } });
     setHeroGoldAmount(game, 1234567);
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 60, rows: 24 }));
     await bot();
     assert.match(status(), /Overload Bl Cf/);
 });
 void test('tty keeps an empty capacity separator after shortening until capacity changes', async () => {
-    freshObjectRoom({ moves: 10000, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
+    await freshObjectRoom({ moves: 10000, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 50, rows: 24 }));
     await bot();
     assert.match(status(), /T:10000  Bl/);
@@ -67,7 +67,7 @@ void test('tty keeps an empty capacity separator after shortening until capacity
     assert.match(status(), /T:8 Blind/, 'becoming unencumbered resets the empty capacity field');
 });
 void test('a time-only update refits the row while retaining earlier health', async () => {
-    freshObjectRoom({ moves: 9, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
+    await freshObjectRoom({ moves: 9, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
     requirePlayingGame(game);
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 51, rows: 24 }));
     await bot();
@@ -80,7 +80,7 @@ void test('a time-only update refits the row while retaining earlier health', as
     assert.equal(status().at(-1), ' ');
 });
 void test('a shortened tutorial level restores the Dlvl prefix on later status refits', async () => {
-    freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
+    await freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
     game._tutorialActive = true;
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 52, rows: 24 }));
     await bot();

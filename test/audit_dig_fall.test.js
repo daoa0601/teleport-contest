@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 void test('a visible ceiling-clinger stays above a hole made by a broken digging wand', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     const wumpus = await createMonsterAt('wumpus', 11, 10);
     wumpus.mhp = wumpus.mhpmax = 500;
@@ -35,7 +35,7 @@ void test('a visible ceiling-clinger stays above a hole made by a broken digging
     assert.equal(wand.where, 'gone');
 });
 void test('a monster drops only one level when a digging wand opens a hole beneath it', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     const goblin = await createMonsterAt('goblin', 11, 10);
     goblin.mhp = goblin.mhpmax = 500;
@@ -52,7 +52,7 @@ void test('a monster drops only one level when a digging wand opens a hole benea
 });
 for (const name of [null, 'Pip']) {
     void test(`${name ? 'a named' : 'an unnamed'} monster takes its fall damage when a digging zap opens a pit beneath it`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         await maketrap(10, 10, PIT);
         game.u.utrap = 5;
         game.u.utraptype = TT_PIT;

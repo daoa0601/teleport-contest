@@ -19,8 +19,8 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 import { createStaffedShop } from './support/shop.js';
 
-function readinessRoom() {
-    freshObjectRoom({ role: 'rogue' });
+async function readinessRoom() {
+    await freshObjectRoom({ role: 'rogue' });
     const messages: string[] = [];
     const input = resetInputState();
     installPagerInput(input, {
@@ -33,7 +33,7 @@ function readinessRoom() {
 
 for (const command of ['w', 'x']) {
     void test(`${command} refuses a two-handed axe with a shield and keeps both weapon slots`, async () => {
-        readinessRoom();
+        await readinessRoom();
         const dagger = await addInventoryObject(DAGGER);
         const axe = await addInventoryObject(BATTLE_AXE);
         const shield = await addInventoryObject(SMALL_SHIELD);
@@ -51,7 +51,7 @@ for (const command of ['w', 'x']) {
     });
 
     void test(`${command} life-saves bare-handed cockatrice wielding without installing the corpse`, async () => {
-        const messages = readinessRoom();
+        const messages = await readinessRoom();
         const dagger = await addInventoryObject(DAGGER);
         const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
         await setPrimaryWeapon(dagger);
@@ -72,7 +72,7 @@ for (const command of ['w', 'x']) {
 }
 
 void test('swapping to an incompatible artifact checks its touch refusal', async () => {
-    readinessRoom();
+    await readinessRoom();
     const dagger = await addInventoryObject(DAGGER);
     const artifact = artifactByName('Excalibur');
     assert.ok(artifact);
@@ -91,7 +91,7 @@ void test('swapping to an incompatible artifact checks its touch refusal', async
 });
 
 void test('a silver-hating form cannot wield an ordinary silver weapon', async () => {
-    readinessRoom();
+    await readinessRoom();
     game.u.umonnum = MONSTER_NAME.indexOf('vampire');
     game.u.mh = game.u.mhmax = 40;
     const saber = await addInventoryObject(OBJECT_NAMES.indexOf('silver saber'));
@@ -106,7 +106,7 @@ void test('a silver-hating form cannot wield an ordinary silver weapon', async (
 });
 
 void test('gloves permit wielding a cockatrice corpse', async () => {
-    readinessRoom();
+    await readinessRoom();
     const gloves = await addInventoryObject(LEATHER_GLOVES);
     game.uarmg = game.u.uarmg = gloves;
     const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
@@ -119,7 +119,7 @@ void test('gloves permit wielding a cockatrice corpse', async () => {
 });
 
 void test('empty hands use the gloved description', async () => {
-    readinessRoom();
+    await readinessRoom();
     const gloves = await addInventoryObject(LEATHER_GLOVES);
     game.uarmg = game.u.uarmg = gloves;
 
@@ -134,7 +134,7 @@ void test('empty hands use the gloved description', async () => {
 // unchanged empty hand and uwep == oldwep still holds, so the failed-wield
 // branch restores the (empty) secondary and never announces a missing one.
 void test('swapping with no weapons reports the unchanged hand once', async () => {
-    readinessRoom();
+    await readinessRoom();
     // A hero whose slots were never populated (fresh u_init without a
     // starting weapon) keeps the optional fields unset rather than null.
     delete game.uwep;
@@ -155,7 +155,7 @@ void test('swapping with no weapons reports the unchanged hand once', async () =
 });
 
 void test('wielding an uncursed aklys secures its tether', async () => {
-    const messages = readinessRoom();
+    const messages = await readinessRoom();
     const aklys = await addInventoryObject(AKLYS);
 
     pushKeys(aklys.invlet);
@@ -168,7 +168,7 @@ void test('wielding an uncursed aklys secures its tether', async () => {
 
 for (const quantity of [1, 5]) {
     void test(`wielding ${quantity} unpaid dagger${quantity === 1 ? '' : 's'} names the shopkeeper's goods with the right number`, async () => {
-        readinessRoom();
+        await readinessRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Izchak';
         const daggers = await floorObject(DAGGER, game.u.ux, game.u.uy, { quan: quantity });

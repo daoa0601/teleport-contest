@@ -11,7 +11,7 @@ const PM_HUMAN = MONSTER_NAME.indexOf('human');
 // C mkobj.c:mksobj_init() FOOD_CLASS and GEM_CLASS branches for the rarely
 // generated comestibles, plus the species-driven body objects.
 void test('tins are spinach or a nutritious monster meat preparation', async () => {
-    freshObjectRoom({ gameplaySeed: 601n });
+    await freshObjectRoom({ gameplaySeed: 601n });
     let spinach = 0;
     let meat = 0;
     for (let i = 0; i < 600; i++) {
@@ -30,7 +30,7 @@ void test('tins are spinach or a nutritious monster meat preparation', async () 
     assert.ok(spinach > 0 && meat > 0, 'this seed rolls both tin kinds');
 });
 void test('kelp and candy bars keep their native quantity and wrapper', async () => {
-    freshObjectRoom({ gameplaySeed: 602n });
+    await freshObjectRoom({ gameplaySeed: 602n });
     for (let i = 0; i < 200; i++) {
         const kelp = await mksobj(KELP_FROND, true, false);
         assert.ok(kelp.quan === 1 || kelp.quan === 2, `kelp quantity ${kelp.quan} outside 1..2`);
@@ -39,7 +39,7 @@ void test('kelp and candy bars keep their native quantity and wrapper', async ()
     }
 });
 void test('gems follow their native quantity rules', async () => {
-    freshObjectRoom({ gameplaySeed: 603n });
+    await freshObjectRoom({ gameplaySeed: 603n });
     for (let i = 0; i < 200; i++) {
         const rock = await mksobj(ROCK, true, false);
         assert.ok(rock.quan >= 6 && rock.quan <= 11, `rock quantity ${rock.quan} outside 6..11`);
@@ -50,7 +50,7 @@ void test('gems follow their native quantity rules', async () => {
     }
 });
 void test('a corpse weighs its species body weight and keeps one timer', async () => {
-    freshObjectRoom({ gameplaySeed: 604n });
+    await freshObjectRoom({ gameplaySeed: 604n });
     for (let i = 0; i < 200; i++) {
         const corpse = await mksobj(CORPSE, true, false);
         const species = corpse.corpsenm;
@@ -63,7 +63,7 @@ void test('statues of tiny bodies still weigh a hundred units', async () => {
     // C weight(): a statue weighs 1.5 times the depicted corpse's weight
     // but never less than (2*body size + 1) * 100, so tiny or weightless
     // species still yield substantial statues; a human statue weighs 2175.
-    freshObjectRoom({ gameplaySeed: 605n });
+    await freshObjectRoom({ gameplaySeed: 605n });
     const bee = await mkcorpstat(STATUE, null, PM_KILLER_BEE, 9, 8, 0);
     assert.equal(objectWeight(bee), 100);
     assert.equal(bee.owt, 100);
@@ -83,7 +83,7 @@ void test('statues of tiny bodies still weigh a hundred units', async () => {
     assert.ok(books > 0, 'this seed hides a book in at least one statue');
 });
 void test('set_corpsenm reweighs a statue for its new species', async () => {
-    freshObjectRoom({ gameplaySeed: 606n });
+    await freshObjectRoom({ gameplaySeed: 606n });
     const statue = await mksobj(STATUE, true, false);
     set_corpsenm(statue, PM_KILLER_BEE);
     assert.equal(statue.owt, 100, 'a killer bee statue keeps the hundred-unit statue floor');

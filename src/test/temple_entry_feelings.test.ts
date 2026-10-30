@@ -20,7 +20,7 @@ interface FeelingCase {
 }
 
 async function tendedTemple(hero: { type: AlignmentValue; record: number }, shrine: boolean) {
-    const level = freshObjectRoom({ hero: { ualign: { type: hero.type, record: hero.record } } });
+    const level = await freshObjectRoom({ hero: { ualign: { type: hero.type, record: hero.record } } });
     requirePlayingGame(game);
     const room = createRoom({ lx: 11, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });
     level.rooms = [room];

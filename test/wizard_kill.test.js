@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('#wizkill keeps the first-target prompt visible before the cursor moves', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     resetInputState().display = {
         async readKey() {
@@ -21,7 +21,7 @@ void test('#wizkill keeps the first-target prompt visible before the cursor move
     assert.equal(game.context.move, 0);
 });
 void test('#wizkill keeps selecting targets from the last chosen position without taking time', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     const first = await createMonsterAt('lichen', 11, 10);
     const second = await createMonsterAt('lichen', 12, 10);
@@ -34,7 +34,7 @@ void test('#wizkill keeps selecting targets from the last chosen position withou
     assert.equal(game.context.move, 0);
 });
 void test('menu-prefixed #wizkill gives no kill credit to the hero', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('lichen', 11, 10);
     const experience = game.u.uexp;
@@ -49,7 +49,7 @@ void test('menu-prefixed #wizkill gives no kill credit to the hero', async () =>
     assert.equal(game.context.move, 0);
 });
 void test('#wizkill clears a remembered unseen monster at an empty target', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     level.requireAt(11, 10).remembered_glyph = { kind: 'invisible', ch: 'I', color: 8 };
     await runExtendedCommand('wizkill', 'l.');

@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // deadly again: eat.c:eatcorpse() and edibility_prompts() then treat the meal
 // as stoneable.
 void test('a genocided stone golem makes golem flesh petrifying again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await polymonHero(MONSTER_NAME.indexOf('flesh golem'));
     const cockatrice = MONSTER_NAME.indexOf('cockatrice');
     const stoneGolem = MONSTER_NAME.indexOf('stone golem');

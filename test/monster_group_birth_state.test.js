@@ -9,7 +9,7 @@ import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a group leader already has its kill-alignment value when a member arrival pauses for input', async () => {
     for (let seed = 1; seed <= 16; seed++) {
-        const level = freshObjectRoom({ gameplaySeed: seed, hero: { ualign: { type: 1, record: 0 } } });
+        const level = await freshObjectRoom({ gameplaySeed: seed, hero: { ualign: { type: 1, record: 0 } } });
         requirePlayingGame(game);
         const jackal = MONSTER_NAME.indexOf('jackal');
         game.mvitals = Array.from({ length: SPECIAL_PM }, (_, species) => ({

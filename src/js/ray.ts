@@ -254,14 +254,14 @@ export async function runRay({
             if (valid && location?.typ !== STONE) {
                 if (canSee(x, y)) {
                     const monster = rayMonsterAt(x, y, state);
-                    if (monster && !canSpotMonster(monster)) map_invisible(x, y);
-                    else if (!monster) unmap_invisible(x, y);
+                    if (monster && !canSpotMonster(monster)) await map_invisible(x, y);
+                    else if (!monster) await unmap_invisible(x, y);
                 }
                 if (canSee(x, y)
                     && (rayPositionIsOpen(x, y, state)
                         || (rayPositionIsValid(previousX, previousY)
                             && canSee(previousX, previousY)))) {
-                    paintRayCell(beamCells, x, y, dx, dy, beamType);
+                    await paintRayCell(beamCells, x, y, dx, dy, beamType);
                     await captureRayTraversalFrame(state);
                 }
                 state.bhitpos = { x, y };
@@ -304,7 +304,7 @@ export async function runRay({
             }
         }
     } finally {
-        if (!heroDied && !state.program_state?.gameover) beamCells.clear();
+        if (!heroDied && !state.program_state?.gameover) await beamCells.clear();
     }
     return undefined;
 }
@@ -321,10 +321,10 @@ export async function captureRayTraversalFrame(state: GameState = game) {
     await state.animationFrame?.();
 }
 
-export function paintRayCell(effect: TemporaryMapEffect, x: number, y: number, dx: number, dy: number, beamType: number) {
+export async function paintRayCell(effect: TemporaryMapEffect, x: number, y: number, dx: number, dy: number, beamType: number) {
     const glyph = zapdir_to_glyph(dx, dy, beamType);
     effect.changeGlyph(glyph);
-    effect.draw(x, y);
+    await effect.draw(x, y);
 }
 
 function rayBouncebackChance(valid: boolean, location: MapLocation | null | undefined, state: GameState) {

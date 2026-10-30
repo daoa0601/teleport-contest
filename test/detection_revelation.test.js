@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 for (const kind of ['floor', 'door', 'chest']) {
     void test(`the Bell of Opening maps a detected ${kind} trap from every direction while blind`, async (t) => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const location = level.requireAt(14, 10);
         location.seenv = 0;
         if (kind === 'floor')

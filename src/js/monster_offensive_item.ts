@@ -117,7 +117,7 @@ async function readMonsterEarthScroll(
         if (seen) learnObjectType(scroll.otyp, state);
     } else if (cansee(x, y)) {
         await publish(`The ${ceilingName(x, y, state)} rumbles in the middle of nowhere!`);
-        if (monster.minvis) map_invisible(x, y);
+        if (monster.minvis) await map_invisible(x, y);
         if (seen) learnObjectType(scroll.otyp, state);
     }
     // The caster can die under the central boulder. Consume before drops so

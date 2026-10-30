@@ -62,7 +62,7 @@ const PM_GREMLIN = 40;
 const PM_ARCHEOLOGIST = 331;
 
 async function freshSwallowedState(mnum: number) {
-    freshObjectRoom({
+    await freshObjectRoom({
         right: 12,
         flags: { verbose: true },
         hero: {

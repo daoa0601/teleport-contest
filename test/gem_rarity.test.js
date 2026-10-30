@@ -62,7 +62,7 @@ void test('a game restored on a deep level keeps deep-level gem selection', asyn
     game.specialLevels?.clear();
     game.flags.bones = false;
     await mklev();
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     initRng(17n);
     const selections = Array.from({ length: 200 }, () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1));
     assert.ok(selections.some(type => type < DILITHIUM_CRYSTAL + 9), 'rare gems must remain available after restoring the deep-level game');

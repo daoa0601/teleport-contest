@@ -23,7 +23,7 @@ async function knownMonsterDisguise() {
     return mimic;
 }
 void test('cancellation reveals a known monster disguise without putting its actor to sleep', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await knownMonsterDisguise();
     requirePlayingGame(game);
@@ -34,7 +34,7 @@ void test('cancellation reveals a known monster disguise without putting its act
     assert.equal(mimic.msleeping, 0);
 });
 void test('cancellation still puts a revealed known object mimic to sleep', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
@@ -46,7 +46,7 @@ void test('cancellation still puts a revealed known object mimic to sleep', asyn
     assert.equal(mimic.msleeping, 1);
 });
 void test('a breath ray reports missing a known monster disguise', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     const mimic = await knownMonsterDisguise();
     requirePlayingGame(game);
@@ -61,7 +61,7 @@ void test('a breath ray reports missing a known monster disguise', async () => {
     assert.match(messages.join('\n'), /The blast of frost misses/);
 });
 void test('an earthquake preserves a known monster disguise', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     const mimic = await knownMonsterDisguise();
     requirePlayingGame(game);
@@ -73,7 +73,7 @@ void test('an earthquake preserves a known monster disguise', async () => {
     assert.equal(mimic.mappearance, MONSTER_NAME.indexOf('goblin'));
 });
 void test('a visible known monster disguise makes an untended shop certain', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 13 });
     await knownMonsterDisguise();

@@ -52,7 +52,7 @@ export async function punishHero(source = null, state = game) {
         await placeBallAndChain(state);
         if (heroIsBlind(state))
             await setBallAndChainFelt(true, state);
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
     }
 }
 export async function unpunishHero(state = game) {

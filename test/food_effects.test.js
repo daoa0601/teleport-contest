@@ -23,7 +23,7 @@ const HUMAN_WEREWOLF = MONSTER_NAME.indexOf('werewolf', 260);
 const WEREWOLF = MONSTER_NAME.indexOf('werewolf');
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 void test('eating a carrot clears temporary blindness', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     game.u.blindTurns = 12;
     game.u.ucreamed = 0;
@@ -36,7 +36,7 @@ void test('eating a carrot clears temporary blindness', async () => {
     assert.equal(game.inventory.includes(carrot), false);
 });
 void test('eating an uncursed eucalyptus leaf cures illness and nausea', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     game.u.sick = true;
     game.u.sickTurns = 18;
@@ -56,7 +56,7 @@ void test('eating an uncursed eucalyptus leaf cures illness and nausea', async (
     assert.equal(game.inventory.includes(leaf), false);
 });
 void test('eating wolfsbane cures lycanthropy and ends beast form', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     installHumanWerewolfHero({ beast: true });
     const wolfsbane = await addInventoryObject(SPRIG_OF_WOLFSBANE, {
@@ -71,7 +71,7 @@ void test('eating wolfsbane cures lycanthropy and ends beast form', async () => 
     assert.equal(game.inventory.includes(wolfsbane), false);
 });
 void test('finishing a human werewolf corpse rejects a silver weapon', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     const saber = await addInventoryWeapon(SILVER_SABER);
     const corpse = await addInventoryObject(CORPSE, {
@@ -92,7 +92,7 @@ void test('finishing a human werewolf corpse rejects a silver weapon', async () 
     assert.equal(floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy).includes(saber), true);
 });
 void test('eating a cockatrice egg starts petrification', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     const egg = await addInventoryObject(EGG, {
         age: game.moves,
@@ -105,7 +105,7 @@ void test('eating a cockatrice egg starts petrification', async () => {
     assert.equal(game.inventory.includes(egg), false);
 });
 void test('eating royal jelly strengthens and heals the hero', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     game.u.uhp = 5;
     game.u.uhpmax = 40;
@@ -124,7 +124,7 @@ void test('eating royal jelly strengthens and heals the hero', async () => {
     assert.equal(game.inventory.includes(jelly), false);
 });
 void test('eating a cursed apple puts the hero to sleep', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     const apple = await addInventoryObject(APPLE, {
         age: game.moves,
@@ -139,7 +139,7 @@ void test('eating a cursed apple puts the hero to sleep', async () => {
     assert.equal(game.inventory.includes(apple), false);
 });
 void test('reading a fortune cookie grants nutrition and literacy', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     game.u.uhunger = 900;
     game.u.uconduct = {};
@@ -153,7 +153,7 @@ void test('reading a fortune cookie grants nutrition and literacy', async () => 
     assert.equal(game.inventory.includes(cookie), false);
 });
 void test('a tainted corpse is consumed and starts fatal sickness', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requireFixtureGame(game);
     game.moves = 1000;
     const corpse = await addInventoryObject(CORPSE, {
@@ -182,7 +182,7 @@ void test('a tainted corpse is consumed and starts fatal sickness', async () => 
 });
 for (const level of [4, 30]) {
     void test(`finishing a wraith corpse grants experience at level ${level}`, async () => {
-        freshObjectRoom({ hero: { ulevel: level }, gameplaySeed: 45300n });
+        await freshObjectRoom({ hero: { ulevel: level }, gameplaySeed: 45300n });
         requireFixtureGame(game);
         const health = game.u.uhpmax;
         const corpse = await addInventoryObject(CORPSE, {

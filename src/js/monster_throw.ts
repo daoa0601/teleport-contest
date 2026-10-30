@@ -227,11 +227,11 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
             await returnMonsterWeapon(source, missile, state.bhitpos.x, state.bhitpos.y, {
                 state, publish, random, rollOne,
                 animateReturn: () => flightDisplay.backtrack(),
-                dropTether: () => flightDisplay.clear(),
+                dropTether: async () => await flightDisplay.clear(),
             });
         }
     } finally {
-        display?.clear();
+        await display?.clear();
         if (state._thrownObject === missile) state._thrownObject = null;
         shot.heroDied = !!state.program_state.gameover;
         shot.projectileBroken = missile.where === 'gone';
@@ -398,7 +398,7 @@ async function hitMonsterWithProjectile(defender: Monster, shot: MonsterProjecti
         await dropMonsterProjectile(shot, false, { x: defender.mx, y: defender.my }, context);
         return true;
     }
-    if (disguised) revealMonsterAppearance(defender);
+    if (disguised) await revealMonsterAppearance(defender);
     defender.msleeping = 0;
     if (object.oclass === POTION_CLASS) {
         const potion = await hitMonsterWithSupportedPotion({

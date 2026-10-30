@@ -18,7 +18,7 @@ function topLine() {
 // Enter Astral as a new level and return each top line the hero acknowledges,
 // followed by the line left showing once arrival finishes.
 async function arriveOnAstral(t, { record, deaf = false, blind = false }) {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { bones: false }, gameplaySeed: 37n,
         hero: { ualign: { type: 0, record }, uconduct: { pets: 1 } },
     });
@@ -48,7 +48,7 @@ async function arriveOnAstral(t, { record, deaf = false, blind = false }) {
 }
 for (const pets of [0, 1]) {
     void test(`Astral arrival grants an equipped guardian while ${pets ? 'keeping' : 'preserving petless'} conduct`, async (t) => {
-        freshObjectRoom({
+        await freshObjectRoom({
             flags: { bones: false }, gameplaySeed: 37n,
             hero: { ualign: { type: 0, record: 9 }, uconduct: { pets } },
         });
@@ -78,7 +78,7 @@ for (const pets of [0, 1]) {
     });
 }
 void test('Conflict replaces the Astral guardian reward with hostile angels', async (t) => {
-    freshObjectRoom({ flags: { bones: false }, gameplaySeed: 37n,
+    await freshObjectRoom({ flags: { bones: false }, gameplaySeed: 37n,
         hero: { ualign: { type: 0, record: 9 } } });
     requirePlayingGame(game);
     await init_dungeons();

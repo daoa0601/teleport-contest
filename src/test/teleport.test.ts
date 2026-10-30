@@ -23,7 +23,7 @@ import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('postmortem relocation releases a monster from the trap on its old square', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('guard', 12, 10, NO_MINVENT);
     const pit = addTrap(level, PIT, 12, 10, { tseen: true });

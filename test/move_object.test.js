@@ -24,7 +24,7 @@ async function hiddenMonsterAt(mnum, x, y, { trapped = false } = {}) {
     return monster;
 }
 void test('moving an object reowns its floor pile in one step', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await knownObject(CHEST);
     placeCreatedObject(chest, 10, 10, game);
@@ -36,7 +36,7 @@ void test('moving an object reowns its floor pile in one step', async () => {
     assert.equal(chest.where, 'floor');
 });
 void test('a hider under the moved object is silently exposed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await knownObject(CHEST);
     placeCreatedObject(chest, 10, 10, game);
@@ -45,7 +45,7 @@ void test('a hider under the moved object is silently exposed', async () => {
     assert.equal(scorpion.mundetected, 0);
 });
 void test('a hider whose cover remains stays hidden', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const moved = await knownObject(CHEST);
     const cover = await knownObject(CHEST);
@@ -56,7 +56,7 @@ void test('a hider whose cover remains stays hidden', async () => {
     assert.equal(scorpion.mundetected, 1);
 });
 void test('a trapped hider under remaining cover is exposed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await knownObject(CHEST);
     placeCreatedObject(chest, 10, 10, game);
@@ -65,15 +65,15 @@ void test('a trapped hider under remaining cover is exposed', async () => {
     assert.equal(scorpion.mundetected, 0);
 });
 void test('a hidden eel out of water is exposed at its square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const eel = await hiddenMonsterAt(MONSTER_NAME.indexOf('giant eel'), 10, 10);
     assert.equal(MONSTER_SYMBOL[eel.mnum], S_EEL);
-    maybeUnhideAt(10, 10, game);
+    await maybeUnhideAt(10, 10, game);
     assert.equal(eel.mundetected, 0);
 });
 void test('a hidden hero under the vacated object is exposed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await knownObject(CHEST);
     placeCreatedObject(chest, 10, 10, game);

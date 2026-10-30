@@ -16,7 +16,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createRoom } from './support/topology.js';
 
 async function templeWithPriest(onAltar: boolean) {
-    const level = freshObjectRoom({ hero: { ualign: { type: 0, record: 0 } } });
+    const level = await freshObjectRoom({ hero: { ualign: { type: 0, record: 0 } } });
     requirePlayingGame(game);
     const room = createRoom({ lx: 11, hx: 16, ly: 6, hy: 14, rtype: TEMPLE });
     level.rooms = [room];

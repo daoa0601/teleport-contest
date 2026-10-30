@@ -33,7 +33,7 @@ for (const occupant of ['pony', 'long worm'] as const) {
         let point = { x: 10, y: 5 };
         const first = await createMonsterAt(occupant, point.x, point.y, NO_MINVENT | MM_NOTAIL);
         if (occupant === 'long worm') {
-            initializeMonsterWormBody(first, { segmentCount: 1, random: () => 0 });
+            await initializeMonsterWormBody(first, { segmentCount: 1, random: () => 0 });
             const tail = first.wormSegments?.[0];
             assert.ok(tail, 'the occupying worm must have a tail');
             point = { x: tail.x, y: tail.y };

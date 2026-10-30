@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 void test('returning merchandise moves the last bill item into its place in the payment menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const first = await addInventoryObject(DAGGER);
     const second = await addInventoryObject(OBJECT_NAMES.indexOf('knife'));
     const third = await addInventoryObject(SHORT_SWORD);

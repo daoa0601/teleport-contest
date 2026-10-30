@@ -18,7 +18,7 @@ void test('restoring a deferred stair descent completes it at the destination st
     assert.equal(await saveGame(storage), true);
     resetGame();
     initRng(44n);
-    assert.equal(restoreGame('Descending', storage), true);
+    assert.equal(await restoreGame('Descending', storage), true);
     const input = resetInputState();
     let reads = 0;
     input.beforeRead = () => {
@@ -44,7 +44,7 @@ for (const removePortal of [false, true]) {
         assert.equal(await saveGame(storage), true);
         resetGame();
         initRng(44n);
-        assert.equal(restoreGame('Portaling', storage), true);
+        assert.equal(await restoreGame('Portaling', storage), true);
 
         await finishScheduledLevelChange();
 

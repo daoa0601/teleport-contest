@@ -82,7 +82,7 @@ export async function finishMonsterPolymorphTrap(event, { publish = async () => 
     event.changed = !!change;
     event.killed = !!change && !change.selfTouch.survived;
     if (event.inSight) {
-        seeTrap(event.trap, state);
+        await seeTrap(event.trap, state);
     }
     event.finished = true;
     return event;

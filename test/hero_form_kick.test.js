@@ -14,7 +14,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function kickRoom(form, defender = 'hill giant', formHealth = 200) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 8, right: 15, top: 8, bottom: 12,
         flags: { verbose: true },
         hero: { uhitinc: 100, uhp: 200, uhpmax: 200 },

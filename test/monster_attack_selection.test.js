@@ -19,7 +19,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function conflictRoom(expectedMessages) {
-    freshObjectRoom({ hero: { ulevel: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30 } });
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     installPagerInput(resetInputState(), { expected: expectedMessages, limit: 12 });
 }
@@ -36,7 +36,7 @@ void test('a released purple worm keeps its bite and substitutes a claw while it
     giant.mhp = giant.mhpmax = 100;
     giant.msleeping = 1;
     giant.movement = 0;
-    vision_recalc(0);
+    await vision_recalc(0);
     initRng(1n);
     const action = await runMonsterAction(worm, game);
     const attack = action.conflictFight?.attack;

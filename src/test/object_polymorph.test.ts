@@ -45,7 +45,7 @@ import { heroPolyGender, setHeroSpecies } from '../js/hero_species.js';
 const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
 
 void test('explicit transformation preserves a wielded stack and its inventory letter', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const arrows = await addInventoryObject(ARROW, { quan: 5, spe: 3, cursed: true, opoisoned: true });
     const letter = arrows.invlet;
@@ -65,7 +65,7 @@ void test('explicit transformation preserves a wielded stack and its inventory l
 });
 
 void test('replacement keeps its container and does not retain the old object identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await addInventoryObject(CHEST);
     const ration = await knownObject(FOOD_RATION);
@@ -82,7 +82,7 @@ void test('replacement keeps its container and does not retain the old object id
 });
 
 void test('replacement remains in its monster carrier inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('giant', 12, 10, NO_MINVENT);
     const ration = await knownObject(FOOD_RATION);
@@ -99,7 +99,7 @@ void test('replacement remains in its monster carrier inventory', async () => {
 });
 
 void test('a transformed chest destroys its real contents and their burn timers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await floorObject(CHEST, 12, 10);
     const lamp = await knownObject(OIL_LAMP, { age: 300 });
@@ -117,7 +117,7 @@ void test('a transformed chest destroys its real contents and their burn timers'
 });
 
 void test('polymorph removes carried luck and consumes the former identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const stone = await addInventoryObject(LUCKSTONE, { blessed: true });
     assert.equal(game.u.moreluck, 3);
@@ -129,7 +129,7 @@ void test('polymorph removes carried luck and consumes the former identity', asy
 });
 
 void test('polymorph releases a real leash when the replacement is not a leash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     pet.mleashed = 1;
@@ -142,7 +142,7 @@ void test('polymorph releases a real leash when the replacement is not a leash',
 });
 
 void test('crocodile remains become one pair of uncursed proofed low boots', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await corpseObject(MONSTER_NAME.indexOf('crocodile'), { cursed: true, quan: 3 });
 
@@ -158,7 +158,7 @@ void test('crocodile remains become one pair of uncursed proofed low boots', asy
 });
 
 void test('magic lamps lose their wish and well studied spellbooks become blank', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lamp = await knownObject(OIL_LAMP);
     const oil = await poly_obj(lamp, MAGIC_LAMP);
@@ -173,7 +173,7 @@ void test('magic lamps lose their wish and well studied spellbooks become blank'
 });
 
 void test('remaining oil fuel carries over and spent fuel dilutes a new potion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const oil = await knownObject(POT_OIL, { age: 100 });
     const replacement = await poly_obj(oil, POT_OIL);
@@ -186,7 +186,7 @@ void test('remaining oil fuel carries over and spent fuel dilutes a new potion',
 });
 
 void test('shuddering destroys only part of a stack and leaves a usable floor object', async () => {
-    freshObjectRoom({ gameplaySeed: 3n });
+    await freshObjectRoom({ gameplaySeed: 3n });
     requirePlayingGame(game);
     const arrows = await floorObject(ARROW, 12, 10, { quan: 40 });
 
@@ -200,7 +200,7 @@ void test('shuddering destroys only part of a stack and leaves a usable floor ob
 });
 
 void test('shuddered shop goods retain their used-up bill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
     const arrows = await floorObject(ARROW, 12, 10, { quan: 12 });
@@ -217,7 +217,7 @@ void test('shuddered shop goods retain their used-up bill', async () => {
 });
 
 void test('an unpaid replacement retains the old bill identity and angers its owner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
     const dagger = await addInventoryObject(DAGGER);
@@ -234,7 +234,7 @@ void test('an unpaid replacement retains the old bill identity and angers its ow
 });
 
 void test('gold material makes a real golem and consumes the pile', async () => {
-    freshObjectRoom({ gameplaySeed: 13n });
+    await freshObjectRoom({ gameplaySeed: 13n });
     requirePlayingGame(game);
     const gold = await floorObject(GOLD_PIECE, 12, 10, { quan: 5000 });
     game.context.poly_zapped = objectMaterial(gold);
@@ -249,7 +249,7 @@ void test('gold material makes a real golem and consumes the pile', async () => 
 });
 
 void test('one object cannot make a material golem', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const gold = await floorObject(GOLD_PIECE, 12, 10);
     game.context.poly_zapped = objectMaterial(gold);
@@ -259,7 +259,7 @@ void test('one object cannot make a material golem', async () => {
 });
 
 void test('the pile is consumed even when no species can be born', async () => {
-    freshObjectRoom({ gameplaySeed: 13n });
+    await freshObjectRoom({ gameplaySeed: 13n });
     requirePlayingGame(game);
     const gold = await floorObject(GOLD_PIECE, 12, 10, { quan: 5000 });
     game.context.poly_zapped = objectMaterial(gold);
@@ -273,7 +273,7 @@ void test('the pile is consumed even when no species can be born', async () => {
 });
 
 void test('protected types never count as polymorphed objects', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     for (const type of [AMULET_OF_YENDOR, AMULET_OF_UNCHANGING, WAN_POLYMORPH]) {
         const object = await floorObject(type, 12, 10);
@@ -285,7 +285,7 @@ void test('protected types never count as polymorphed objects', async () => {
 });
 
 void test('stone-to-flesh leaves a meat ring on the same finger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const type = Array.from({ length: 28 }, (_, index) => 173 + index)
         .find(candidate => objectMaterial(candidate) === 21);
@@ -304,7 +304,7 @@ void test('stone-to-flesh leaves a meat ring on the same finger', async () => {
 });
 
 void test('a carried golem statue animates as flesh and removes the inventory statue', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const statue = await addInventoryObject(STATUE, { corpsenm: MONSTER_NAME.indexOf('iron golem') });
     const dagger = await knownObject(DAGGER);
@@ -322,7 +322,7 @@ void test('a carried golem statue animates as flesh and removes the inventory st
 });
 
 void test('stone-to-flesh restores a petrified shopkeeper with its saved name and debt', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.name = 'Manlobbi';
     shopkeeper.eshk.debit = 37;
@@ -342,7 +342,7 @@ void test('stone-to-flesh restores a petrified shopkeeper with its saved name an
 });
 
 void test('a transformed worn amulet changes sex, is identified, and disintegrates', async () => {
-    freshObjectRoom({ flags: { female: false } });
+    await freshObjectRoom({ flags: { female: false } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -359,7 +359,7 @@ void test('a transformed worn amulet changes sex, is identified, and disintegrat
 });
 
 void test('an amulet transformation retains its live object while the wearing message awaits input', async () => {
-    freshObjectRoom({ flags: { female: false } });
+    await freshObjectRoom({ flags: { female: false } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -384,7 +384,7 @@ void test('an amulet transformation retains its live object while the wearing me
 });
 
 void test('a transformed amulet of flying gives its wearer flight and identifies itself', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -399,7 +399,7 @@ void test('a transformed amulet of flying gives its wearer flight and identifies
 });
 
 void test('a fixed-sex form retains its visible sex while the amulet changes the saved human sex', async t => {
-    freshObjectRoom({ flags: { female: true }, hero: { mfemale: false, mtimedone: 100, mh: 40, mhmax: 40 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { mfemale: false, mtimedone: 100, mh: 40, mhmax: 40 } });
     requirePlayingGame(game);
     setHeroSpecies(MONSTER_NAME.indexOf('wood nymph'));
     const before = heroPolyGender();
@@ -422,7 +422,7 @@ void test('a fixed-sex form retains its visible sex while the amulet changes the
 });
 
 void test('a transformed restful-sleep amulet starts its real sleep timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -437,7 +437,7 @@ void test('a transformed restful-sleep amulet starts its real sleep timeout', as
 });
 
 void test('a transformed amulet of unchanging cures an active sliming countdown', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -453,7 +453,7 @@ void test('a transformed amulet of unchanging cures an active sliming countdown'
 });
 
 void test('a transformed guarding amulet changes armor class and identifies itself', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -468,7 +468,7 @@ void test('a transformed guarding amulet changes armor class and identifies itse
 });
 
 void test('a transformed magical-breathing amulet protects its wearer from an existing gas cloud', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
@@ -486,7 +486,7 @@ void test('a transformed magical-breathing amulet protects its wearer from an ex
 });
 
 void test('hero-laid egg polymorph retains parentage and creates a live hatch timer', async () => {
-    freshObjectRoom({ gameplaySeed: 23n });
+    await freshObjectRoom({ gameplaySeed: 23n });
     requirePlayingGame(game);
     const egg = await knownObject(EGG, { spe: 1, quan: 2 });
 
@@ -500,8 +500,8 @@ void test('hero-laid egg polymorph retains parentage and creates a live hatch ti
     assert.ok(objectTimers(replacement).some(timer => timer.kind === 'hatch-egg'));
 });
 
-void test('Scorpius eggs hatch as ordinary scorpions and genocide of either dragon age kills its eggs', () => {
-    freshObjectRoom();
+void test('Scorpius eggs hatch as ordinary scorpions and genocide of either dragon age kills its eggs', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     assert.equal(hatchableEggSpecies(MONSTER_NAME.indexOf('Scorpius')), MONSTER_NAME.indexOf('scorpion'));
     const baby = MONSTER_NAME.indexOf('baby red dragon');

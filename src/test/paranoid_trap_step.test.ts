@@ -23,7 +23,7 @@ void test('startup enables trap confirmation unless configuration explicitly dis
 });
 
 void test('declining a known web consumes no turn and leaves the hero outside it', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
     addTrap(level, WEB, 11, 10, { tseen: true });
     const input = resetInputState();
@@ -38,7 +38,7 @@ void test('declining a known web consumes no turn and leaves the hero outside it
 });
 
 void test('declining a known pit occupied by a pet leaves both actors in place without spending a turn', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
     addTrap(level, PIT, 11, 10, { tseen: true });
     const bat = await createMonsterAt('bat', 11, 10);
@@ -60,7 +60,7 @@ void test('declining a known pit occupied by a pet leaves both actors in place w
 
 for (const [type, name] of [[TELEP_TRAP, 'teleportation trap'], [LEVEL_TELEP, 'level teleporter']] as const) {
     void test(`carrying the Amulet still requires confirmation for a known ${name}`, async () => {
-        const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+        const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
         requirePlayingGame(game);
         await addInventoryObject(AMULET_OF_YENDOR);
         addTrap(level, type, 11, 10, { tseen: true });
@@ -76,7 +76,7 @@ for (const [type, name] of [[TELEP_TRAP, 'teleportation trap'], [LEVEL_TELEP, 'l
 }
 
 void test('accepting a known web enters it and spends the movement turn', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
     addTrap(level, WEB, 11, 10, { tseen: true });
     const input = resetInputState();
@@ -92,7 +92,7 @@ void test('accepting a known web enters it and spends the movement turn', async 
 });
 
 void test('confirm paranoia requires a full answer before entering a known trap', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP | PARANOID_CONFIRM } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP | PARANOID_CONFIRM } });
     requirePlayingGame(game);
     addTrap(level, WEB, 11, 10, { tseen: true });
     const input = resetInputState();
@@ -107,7 +107,7 @@ void test('confirm paranoia requires a full answer before entering a known trap'
 
 for (const reason of ['unknown', 'deliberate', 'spider'] as const) {
     void test(`a ${reason} web step needs no trap confirmation`, async () => {
-        const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+        const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
         requirePlayingGame(game);
         addTrap(level, WEB, 11, 10, { tseen: reason !== 'unknown' });
         if (reason === 'spider') installPolymorphedHero('cave spider');
@@ -123,7 +123,7 @@ for (const reason of ['unknown', 'deliberate', 'spider'] as const) {
 }
 
 void test('levitation is clearly immune to a known pit', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
     addTrap(level, PIT, 11, 10, { tseen: true });
     grantIntrinsicProperty('levitation', 'outside');
@@ -135,7 +135,7 @@ void test('levitation is clearly immune to a known pit', async () => {
 });
 
 void test('a visible cloud is confirmed before a known trap on the same square', async () => {
-    const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
+    const level = await freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
     await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }], { ttl: 10 });
     addTrap(level, WEB, 11, 10, { tseen: true });

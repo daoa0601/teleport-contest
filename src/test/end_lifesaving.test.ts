@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function lifeSavingRoom() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -78,7 +78,7 @@ void test('life saving cures imminent sickness, releases lava, and clears intrin
 });
 
 void test('a life-saved Tourist has the native Fate helplessness reason', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');

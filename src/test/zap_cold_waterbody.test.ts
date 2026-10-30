@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a cold wand names Medusa\'s shallow sea before it freezes', async () => {
-    const level = freshObjectRoom({ right: 30 });
+    const level = await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     game.medusa_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     level.requireAt(11, 10).typ = MOAT;

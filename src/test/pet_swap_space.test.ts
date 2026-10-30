@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const seen of [false, true]) {
     void test(`a pet caught in a ${seen ? 'known' : 'hidden'} bear trap cannot swap places`, async () => {
-        const level = freshObjectRoom({ flags: { tips: false } });
+        const level = await freshObjectRoom({ flags: { tips: false } });
         const dog = await createMonsterAt('little dog', 11, 10, MM_NOGRP | NO_MINVENT);
         initializePet(dog);
         dog.mtrapped = 1;
@@ -32,7 +32,7 @@ for (const seen of [false, true]) {
 }
 
 void test('a grid bug pet cannot swap places diagonally', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bug = await createMonsterAt('grid bug', 11, 9, MM_NOGRP | NO_MINVENT);
     initializePet(bug);
     initRng(1n);
@@ -46,7 +46,7 @@ void test('a grid bug pet cannot swap places diagonally', async () => {
 });
 
 void test('a large pet cannot squeeze diagonally between two rock shoulders', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const horse = await createMonsterAt('horse', 11, 9, MM_NOGRP | NO_MINVENT);
     initializePet(horse);
     level.requireAt(10, 9).typ = STONE;
@@ -63,7 +63,7 @@ void test('a large pet cannot squeeze diagonally between two rock shoulders', as
 
 for (const species of ['Oracle', 'aligned cleric']) {
     void test(`the peaceful ${species} refuses displacement`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
         monster.mpeaceful = 1;
         if (species === 'aligned cleric') monster.ispriest = 1;
@@ -79,7 +79,7 @@ for (const species of ['Oracle', 'aligned cleric']) {
 }
 
 void test('a pet with a stale trapped flag can swap places when its trap is gone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10, MM_NOGRP | NO_MINVENT);
     initializePet(dog);
     dog.mtrapped = 1;
@@ -94,7 +94,7 @@ void test('a pet with a stale trapped flag can swap places when its trap is gone
 });
 
 void test('a pet refuses to move onto a trap under the hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10, MM_NOGRP | NO_MINVENT);
     initializePet(dog);
     addTrap(level, PIT, 10, 10, { tseen: true });

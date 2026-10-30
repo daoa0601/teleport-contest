@@ -27,7 +27,7 @@ export function rememberVisibleTerrain() {
 }
 export async function redrawSight() {
     game.vision_full_recalc = 1;
-    vision_recalc(0);
+    await vision_recalc(0);
     await redrawMap();
 }
 // C potion.c:make_blinded(). The probe must not change live sight or its caches.
@@ -83,7 +83,7 @@ export async function toggleBlindness(state = game) {
     const stinging = wieldedArtifactWarns(state);
     state.context.botl = true;
     state.vision_full_recalc = 1;
-    vision_recalc(0);
+    await vision_recalc(0);
     if (propertyIsActive('telepathy', state)
         || propertyIsActive('infravision', state) || stinging) {
         await see_monsters();

@@ -19,7 +19,7 @@ for (const remembersObjects of [false, true]) {
         initializePet(cube);
         cube.movement = 12;
         await floorObject(ROCK, 12, 10, { cursed: true });
-        newsym(12, 10);
+        await newsym(12, 10);
         const messages = [];
         input.beforeRead = () => {
             assert.ok(messages.length < 30, 'the pet turn must settle promptly');

@@ -326,7 +326,7 @@ void test('a caged soldier spends a turn wielding its lance before striking thro
         }
     }
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     const health = game.u.uhp;
     pushKeys('...');
     await moveloop_core();
@@ -341,7 +341,7 @@ void test('a caged soldier spends a turn wielding its lance before striking thro
 void test('a soldier throws and recovers its tethered club during an ordinary turn', async () => {
     freshTurnRoom({ top: 10, bottom: 10 });
     requirePlayingGame(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     soldier.mpeaceful = false;
     soldier.movement = 12;

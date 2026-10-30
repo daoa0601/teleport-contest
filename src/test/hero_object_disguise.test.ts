@@ -9,12 +9,12 @@ import { requireScreenCell } from './support/screen.js';
 
 for (const otyp of [CORPSE, STATUE]) {
     void test(`the hero's ${otyp === CORPSE ? 'corpse' : 'statue'} disguise retains its generic object symbol while hallucinating`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         game.u.m_ap_type = M_AP_OBJECT;
         game.u.mappearance = otyp;
 
         for (let redraw = 0; redraw < 4; redraw++) {
-            newsym(game.u.ux, game.u.uy);
+            await newsym(game.u.ux, game.u.uy);
             await flush_screen(1);
             assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch,
                 otyp === CORPSE ? '%' : '`');

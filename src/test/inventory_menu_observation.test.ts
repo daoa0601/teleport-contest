@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // loot_classify() observes every sorted object. The exact quantity then
 // survives into a later farlook of the thrown purse.
 void test('a letter-filtered inventory menu still observes the unlisted purse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await placeHeroOnLevel(10, 8);
     const purse = await addInventoryObject(GOLD_PIECE, {
         quan: 22, dknown: false, observed: false,
@@ -37,18 +37,18 @@ void test('a letter-filtered inventory menu still observes the unlisted purse', 
     game.inventory = game.inventory.filter(object => object !== purse);
     purse.where = 'free';
     await placeCreatedObject(purse, 14, 8);
-    newsym(14, 8);
+    await newsym(14, 8);
 
     assert.equal(await farlookLocationDescription(14, 8), '22 gold pieces');
 });
 
 void test('an unobserved floor purse keeps a vague quantity in farlook', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await placeHeroOnLevel(10, 8);
     const spilled = await floorObject(GOLD_PIECE, 14, 8, {
         quan: 22, dknown: false,
     });
-    newsym(14, 8);
+    await newsym(14, 8);
 
     assert.equal(await farlookLocationDescription(14, 8), 'some gold pieces');
     assert.equal(spilled.dknown, false);
@@ -59,7 +59,7 @@ void test('an unobserved floor purse keeps a vague quantity in farlook', async (
 // requested letters (invent.c:3271), so a filter built from older letters
 // selects whatever the fresh assignments put in those slots.
 void test('a letter filter applies to the freshly reassigned letters', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await placeHeroOnLevel(10, 8);
     game.flags.fixinv = false;
     const dart = await addInventoryObject(DART, { dknown: false, observed: false });

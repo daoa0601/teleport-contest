@@ -13,7 +13,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('declining autountrap and accepting unlocking without a tool spends turns but never opens the lock', async () => {
-    freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
+    await freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
     const box = await floorObject(CHEST, 10, 10, { initialize: false, olocked: true, lknown: true, tknown: false });
     const input = resetInputState();
     pushKeys('loot\n');
@@ -42,7 +42,7 @@ void test('declining autountrap and accepting unlocking without a tool spends tu
 });
 
 void test('tool-less autounlock resumes blunt forcing and can unlock the chest without breaking it', async () => {
-    freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
+    await freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
     game.uwep = game.u.uwep = await addInventoryObject(CLUB);
     const box = await floorObject(CHEST, 10, 10, { initialize: false, olocked: true, obroken: false });
     const input = resetInputState();
@@ -70,7 +70,7 @@ void test('tool-less autounlock resumes blunt forcing and can unlock the chest w
 });
 
 void test('tool-less autounlock keeps the turns already spent bashing a chest', async () => {
-    freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
+    await freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
     game.uwep = game.u.uwep = await addInventoryObject(CLUB);
     const box = await floorObject(CHEST, 10, 10, { initialize: false, olocked: true });
     const input = resetInputState();
@@ -97,7 +97,7 @@ void test('tool-less autounlock keeps the turns already spent bashing a chest', 
 });
 
 void test('blunt forcing resumes tool-less picking with the same effort limit', async () => {
-    freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
+    await freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
     game.uwep = game.u.uwep = await addInventoryObject(CLUB);
     const box = await floorObject(CHEST, 10, 10, { initialize: false, olocked: true, lknown: true, tknown: false });
     const input = resetInputState();

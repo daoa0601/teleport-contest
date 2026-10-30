@@ -20,7 +20,7 @@ import { addTrap } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 
 void test('polymorphing monster-worn shoes in a shop angers their owner', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
     const shoes = await knownObject(IRON_SHOES);
     const monster = await createMonsterAt('giant', 11, 10);

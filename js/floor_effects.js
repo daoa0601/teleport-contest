@@ -126,8 +126,8 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
                 else if (airborne)
                     await publish('Plop!');
             }
-            map_background(x, y, false);
-            newsym(x, y);
+            await map_background(x, y, false);
+            await newsym(x, y);
         }
         const messages = [];
         const result = await waterDamageObject(object, messages, state, {

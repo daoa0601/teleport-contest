@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('firing a quivered coin while levitating recoils after its shortened flight', async () => {
-    const level = freshObjectRoom({ right: 35 });
+    const level = await freshObjectRoom({ right: 35 });
     setPropertyTimeout('levitation', 20);
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 3 });
     await setQuiverObject(gold);

@@ -8,7 +8,7 @@ import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an ownership message lets a priest recognize beatitude while blind', async () => {
-    freshObjectRoom({ role: 'priest', hero: { blindTurns: 10 } });
+    await freshObjectRoom({ role: 'priest', hero: { blindTurns: 10 } });
     const dagger = await knownObject(DAGGER, { bknown: false, dknown: false, where: 'inventory' });
 
     ownedObjectName(dagger, game);
@@ -18,7 +18,7 @@ void test('an ownership message lets a priest recognize beatitude while blind', 
 });
 
 void test('corpse-species contact names do not count as observing the corpse', async () => {
-    freshObjectRoom({ role: 'priest' });
+    await freshObjectRoom({ role: 'priest' });
     const corpse = await knownObject(CORPSE, { bknown: false, dknown: false });
 
     objectCombatName(corpse);

@@ -108,7 +108,7 @@ async function restoreBubbleContents(bubble: ElementalBubble, dx: number, dy: nu
             const occupant = monsterAtPosition(level, x, y);
             const oldx = game.u.ux, oldy = game.u.uy;
             await placeHeroOnLevel(x, y);
-            newsym(oldx, oldy);
+            await newsym(oldx, oldy);
             if (occupant) await moveMonsterNextToHero(occupant, game, { flags: RLOC_NOMSG });
         } else if (content.kind === 'trap') {
             content.trap.tx = x;
@@ -118,7 +118,7 @@ async function restoreBubbleContents(bubble: ElementalBubble, dx: number, dy: nu
     bubble.contents = [];
 }
 
-function collectWaterBubbleContents(bubble: ElementalBubble): void {
+async function collectWaterBubbleContents(bubble: ElementalBubble): Promise<void> {
     const level = requireGameLevel();
     bubble.contents = [];
     for (const { x, y } of bubbleCells(bubble)) {
@@ -136,11 +136,11 @@ function collectWaterBubbleContents(bubble: ElementalBubble): void {
         const monster = monsterAtPosition(level, x, y);
         if (monster) {
             bubble.contents.unshift({ kind: 'monster', x, y, monster });
-            if (monster.wormno) clearMonsterWormFromMap(monster);
+            if (monster.wormno) await clearMonsterWormFromMap(monster);
             monster.mx = 0;
             monster.my = 0;
             monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
-            newsym(x, y);
+            await newsym(x, y);
         }
         if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
             bubble.contents.unshift({ kind: 'hero', x, y });
@@ -311,7 +311,7 @@ export async function moveElementalBubbles(): Promise<void> {
     if (!Array.isArray(bubbles) || !bubbles.length) return;
     const level = requireGameLevel();
 
-    vision_recalc(2);
+    await vision_recalc(2);
     game._heroBubble = null;
 
     const traversalUp = !!game._bubbleTraversalUp;
@@ -321,7 +321,7 @@ export async function moveElementalBubbles(): Promise<void> {
         const collectionOrder = traversalUp
             ? bubbles : [...bubbles].reverse();
         for (const bubble of collectionOrder)
-            collectWaterBubbleContents(bubble);
+            await collectWaterBubbleContents(bubble);
     } else if (Is_airlevel(game.u?.uz)) {
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {

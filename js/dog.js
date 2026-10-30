@@ -119,9 +119,9 @@ export async function abusePet(monster, state = game) {
             await publishMonsterGrowl(monster);
         }
         if (!monster.mtame) {
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
             if (monster.wormno)
-                redrawMonsterWorm(monster, state);
+                await redrawMonsterWorm(monster, state);
         }
     }
     return true;
@@ -179,7 +179,7 @@ export function initializePet(monster, { state = game, everything = true } = {})
 export async function makePetWary(monster, { wasDead = true, state = game, random = rn2, publish = plineWithContinuation, repaint = newsym, } = {}) {
     if (!monster)
         return;
-    finishMonsterEating(monster, state);
+    await finishMonsterEating(monster, state);
     if (monster.mtame === undefined || monster.mtame <= 0)
         return;
     const dog = monster.isminion
@@ -215,7 +215,7 @@ export async function makePetWary(monster, { wasDead = true, state = game, rando
             const subject = monsterName(monster, { state, capitalized: true });
             await publish(`${subject} ${monster.mpeaceful ? 'is no longer tame' : 'has become feral'}.`);
         }
-        repaint(monster.mx, monster.my);
+        await repaint(monster.mx, monster.my);
         if (monster.mleashed)
             await releaseMonsterLeashWithFeedback(monster, { state, publish });
         if (state.u.usteed === monster)

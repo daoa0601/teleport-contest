@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a thrown missile does not redraw meal hunger before its miss when no command is repeating', async () => {
-    freshObjectRoom({ hero: { uhunger: 900, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 900, uhs: NOT_HUNGRY } });
     const food = await addInventoryObject(CRAM_RATION);
     const goblin = await createMonsterAt('goblin', 12, 10, MM_NOGRP | MM_NOMSG | NO_MINVENT);
     const dagger = await uninitializedObject(DAGGER, { cursed: false, spe: 0 });

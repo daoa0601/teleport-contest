@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 
 void test('an invisibility ring identifies itself with the native disappearance message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('invisibility'), { typeKnown: false });
     const messages: string[] = [];
     const input = resetInputState();
@@ -31,11 +31,11 @@ void test('an invisibility ring identifies itself with the native disappearance 
 });
 
 void test('a see-invisible ring reveals a stationary invisible monster immediately and hides it on removal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('jackal', 12, 10, NO_MINVENT);
     monster.minvis = 1;
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('see invisible'));
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     assert.notEqual(glyphAt(monster.mx, monster.my)?.kind, 'monster');
     resetInputState().feed(`${ring.invlet}l                `);
 
@@ -47,7 +47,7 @@ void test('a see-invisible ring reveals a stationary invisible monster immediate
 });
 
 void test('an invisible hero discovers a see-invisible ring from becoming visible to themselves', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('invisible', 'outside');
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('see invisible'), { typeKnown: false });
     const messages: string[] = [];
@@ -67,7 +67,7 @@ for (const invisible of [false, true]) {
     for (const command of ['P', 'R'] as const) {
         const action = command === 'P' ? 'wear' : 'removal';
         void test(`see-invisible ring ${action} redraws the hallucinated floor for ${invisible ? 'an invisible' : 'a visible'} hero`, async () => {
-            const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+            const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
             if (invisible) grantIntrinsicProperty('invisible', 'outside');
             await floorObject(ROCK, game.u.ux, game.u.uy);
             const ring = await addInventoryObject(OBJECT_NAMES.indexOf('see invisible'));
@@ -94,12 +94,12 @@ for (const invisible of [false, true]) {
 }
 
 void test('a warning ring refreshes the displayed warning for a stationary invisible giant', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('fire giant', 12, 10, NO_MINVENT);
     monster.minvis = 1;
     monster.mpeaceful = false;
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('warning'));
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     resetInputState().feed(`${ring.invlet}l                `);
 
     await rhack('P'.charCodeAt(0));

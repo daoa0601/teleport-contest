@@ -7,7 +7,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('a scattered potion that hits the hero deals bottle damage before it evaporates', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     const potion = await floorObject(POT_FRUIT_JUICE, ux + 1, uy);
@@ -21,7 +21,7 @@ void test('a scattered potion that hits the hero deals bottle damage before it e
     assert.ok(messages.some(message => /crashes on your head/.test(message)), messages.join(' | '));
 });
 void test('an environmental potion impact leaves the monster eating its meal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { ux, uy } = game.u;
     const dog = await createMonsterAt('dog', ux + 1, uy);
     dog.meating = 7;
@@ -32,7 +32,7 @@ void test('an environmental potion impact leaves the monster eating its meal', a
     assert.equal(dog.meating, 7);
 });
 void test('a scattered potion interrupts the hero occupation when its bottle hits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
     await floorObject(POT_FRUIT_JUICE, 11, 10);
     await scatterFloorObjects(11, 10, 2, {

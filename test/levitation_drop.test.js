@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { W_ART, W_ARTI } from '../js/const.js';
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 async function invokedAhriman() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const heart = await artifactObject('The Heart of Ahriman');
     await addInventoryItem(heart, null, true);
@@ -50,7 +50,7 @@ void test('the finesse only qualifies when the artifact alone holds the hero up'
     await wearHeroAccessory(ring, 'uleft');
     assert.equal(beginLevitatingArtifactDrop(heart), false);
     // An innate source likewise.
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const innate = await artifactObject('The Heart of Ahriman');
     setInvokedProperty('levitation', innate, true, game);
@@ -92,7 +92,7 @@ void test('finish hands control back to an independent flying source', async () 
     assert.match(game._pending_message, /You have stopped levitating and are now flying\./);
 });
 void test('carried sources round-trip the stash and clear only through W_ART', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const heart = await artifactObject('The Heart of Ahriman');
     setCarriedProperty('levitation', heart, true, game);
@@ -107,7 +107,7 @@ void test('carried sources round-trip the stash and clear only through W_ART', a
     assert.equal(hasCarriedProperty('levitation', null, game), false);
 });
 void test('carried sources count as other extrinsic levitation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const heart = await artifactObject('The Heart of Ahriman');
     setCarriedProperty('levitation', heart, true, game);

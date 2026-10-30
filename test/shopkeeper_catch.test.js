@@ -26,7 +26,7 @@ async function shopNearKickLine(keeperX, keeperY) {
     shopkeeper.eshk.shknam = '+Ada';
     shopkeeper.mhp = shopkeeper.mhpmax = 40;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages = [];
     resetInputState().beforeRead = () => {
         if (game._pending_message)

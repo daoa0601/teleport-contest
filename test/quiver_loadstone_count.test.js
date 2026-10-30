@@ -7,7 +7,7 @@ import { LOADSTONE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a counted quiver selection remembers the requested loadstones without splitting a cursed stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const stones = await addInventoryObject(LOADSTONE, { cursed: true, quan: 5 });
     resetInputState();
     pushKeys(`2${stones.invlet}`);

@@ -17,7 +17,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { applyInventoryObject, dropInventoryObject, runExtendedCommand } from './support/commands.js';
 async function combatRoom() {
-    freshObjectRoom({ role: 'barbarian' });
+    await freshObjectRoom({ role: 'barbarian' });
     requirePlayingGame(game);
     const messages = [];
     const input = resetInputState();

@@ -77,13 +77,13 @@ export async function makeHallucinated(turns, { state = game, talk = true, publi
     }
     if (changed) {
         if (!heroIsHallucinating(state))
-            updateMealMimicry(state);
+            await updateMealMimicry(state);
         if (hero.uswallow)
-            swallowed(false);
+            await swallowed(false);
         else {
             await see_monsters();
-            see_objects();
-            see_traps();
+            await see_objects();
+            await see_traps();
         }
         // The pinned TTY port has no persistent inventory window to refresh.
         state.context.botl = true;

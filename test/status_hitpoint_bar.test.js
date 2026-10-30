@@ -30,7 +30,7 @@ void test('the legacy story retains the inverted title and pre-equipment status 
     assert.ok(engine.state.u.uac !== undefined && engine.state.u.uac > 0 && engine.state.u.uac < 10, 'starting armor is already equipped underneath the story');
 });
 void test('a half-full title bar inverts half its fixed thirty-character title', async () => {
-    freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 20, uhpmax: 40 } });
+    await freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 20, uhpmax: 40 } });
     await bot();
     const row = requireScreenRow(22);
     const text = row.map(cell => cell.ch).join('');
@@ -41,7 +41,7 @@ void test('a half-full title bar inverts half its fixed thirty-character title',
     assert.equal(row[16]?.attr, 0);
 });
 void test('a nonzero health fraction keeps one inverted character even above the display cap', async () => {
-    freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 1, uhpmax: 100000 } });
+    await freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 1, uhpmax: 100000 } });
     await bot();
     const row = requireScreenRow(22);
     assert.equal((row[1]?.attr ?? 0) & ATR_INVERSE, ATR_INVERSE);
@@ -49,7 +49,7 @@ void test('a nonzero health fraction keeps one inverted character even above the
     assert.match(row.map(cell => cell.ch).join(''), / - - - -\]/);
 });
 void test('a critically injured title blinks across its inverted and remaining portions', async () => {
-    freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 2, uhpmax: 40 } });
+    await freshObjectRoom({ flags: { hitpointbar: true }, hero: { uhp: 2, uhpmax: 40 } });
     await bot();
     const row = requireScreenRow(22);
     assert.equal(row[0]?.attr, 0, 'the opening bracket stays plain');

@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('a known pit can be escaped without losing health or becoming trapped', async () => {
     let escaped = false;
     for (let seed = 1; seed <= 20 && !escaped; seed++) {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const trap = addTrap(level, PIT, 10, 10, { tseen: true });
         resetInputState().feed(' '.repeat(10));
         initRng(seed);
@@ -28,7 +28,7 @@ void test('a known pit can be escaped without losing health or becoming trapped'
 });
 
 void test('a forced known pit still traps the hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const trap = addTrap(level, PIT, 10, 10, { tseen: true });
     resetInputState().feed(' '.repeat(10));

@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['shopkeeper', 'dog']) {
     for (const condition of ['asleep', 'paralyzed']) {
         void test(`a ${condition} ${species} without a shop cannot answer chat or spend a turn`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const monster = await createMonsterAt(species, 11, 10);
             monster.mstrategy = STRAT_CLOSE | STRAT_WAITFORU;
             if (condition === 'asleep')

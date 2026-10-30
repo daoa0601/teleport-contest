@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 for (const blind of [false, true]) {
     void test(`command input refreshes Sting's warning for a ${blind ? 'blind running' : 'sighted stationary'} hero`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game._moveloopStarted = true;
         await setPrimaryWeapon(await addInventoryItem(await artifactObject('Sting')));

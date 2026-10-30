@@ -12,8 +12,8 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-void test('an involuntary delay ends running and queued commands', () => {
-    freshObjectRoom();
+void test('an involuntary delay ends running and queued commands', async () => {
+    await freshObjectRoom();
     startRun(1, 0);
     game.context.travel = true;
     game._cannedCommands = [{ kind: 'swap-weapon' }];
@@ -33,7 +33,7 @@ void test('an involuntary delay ends running and queued commands', () => {
 });
 
 void test('a shorter delay preserves sleep, protection, and pending commands', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await putHeroToSleep(8);
     game.u.invulnerable = true;
     game._cannedCommands = [{ kind: 'swap-weapon' }];
@@ -50,7 +50,7 @@ void test('a shorter delay preserves sleep, protection, and pending commands', a
 });
 
 void test('an equal delay clears sleep and protection without requesting a status refresh', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await putHeroToSleep(3);
     game.u.invulnerable = true;
     game.context.botl = false;

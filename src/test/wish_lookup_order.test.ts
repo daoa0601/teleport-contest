@@ -12,7 +12,7 @@ import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('the tool class suffix selects a land mine object before wizard trap dispatch', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('land mine tool', { wizardWish: true });
 
@@ -22,7 +22,7 @@ void test('the tool class suffix selects a land mine object before wizard trap d
 });
 
 void test('a rejected paperback wish cannot create wizard terrain', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const square = level.requireAt(10, 10);
     const terrain = square.typ;
 
@@ -34,7 +34,7 @@ void test('a rejected paperback wish cannot create wizard terrain', async () => 
 });
 
 void test('Japanese armor names are resolved before adding mail for an armor retry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(LEATHER_ARMOR, 'tanko mail');
 
     const result = await readObjectName('tanko armor', { wizardWish: true });
@@ -44,7 +44,7 @@ void test('Japanese armor names are resolved before adding mail for an armor ret
 });
 
 void test('a registered fruit is checked before an alias within the tool class', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const fruitId = addFruit('box tool');
 
     const result = await readObjectName('box tool', { wizardWish: true });
@@ -57,7 +57,7 @@ void test('a registered fruit is checked before an alias within the tool class',
 void test('an unmatched called bag with modifiers falls back to the whole tool class', async () => {
     let receivedOtherTool = false;
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
 
         const result = await readObjectName('blessed bag called unregistered', { wizardWish: true });
 
@@ -70,7 +70,7 @@ void test('an unmatched called bag with modifiers falls back to the whole tool c
 });
 
 void test('the Amulet rule precedes tin contents parsing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('tin of the Amulet of Yendor', { wizardWish: true });
 
@@ -81,7 +81,7 @@ void test('the Amulet rule precedes tin contents parsing', async () => {
 void test('a species-qualified orange enters the ordinary name and description lottery', async () => {
     const received = new Set<number>();
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         recordObjectCall(POT_HEALING, 'orange');
 
         const result = await readObjectName('giant orange', { wizardWish: true });

@@ -21,7 +21,7 @@ async function wishObject(...args: Parameters<typeof readObjectName>) {
 
 for (const request of ['rock', '1 rock']) {
     void test(`wishing for "${request}" gives one rock instead of a generated stack`, async () => {
-        freshObjectRoom({ gameplaySeed: 6101 });
+        await freshObjectRoom({ gameplaySeed: 6101 });
         requirePlayingGame(game);
 
         const object = await wishObject(request);
@@ -33,7 +33,7 @@ for (const request of ['rock', '1 rock']) {
 
 for (const wizardWish of [false, true]) {
     void test(`${wizardWish ? 'wizard' : 'ordinary'} wishes cannot stack long swords`, async () => {
-        freshObjectRoom({ gameplaySeed: 6102 });
+        await freshObjectRoom({ gameplaySeed: 6102 });
         requirePlayingGame(game);
 
         const object = await wishObject('3 long swords', { wizardWish });
@@ -44,7 +44,7 @@ for (const wizardWish of [false, true]) {
 
 for (const [request, count] of [['20 arrows', 20], ['7 wax candles', 7]] as const) {
     void test(`an ordinary wish can supply ${request}`, async () => {
-        freshObjectRoom({ gameplaySeed: 6103 });
+        await freshObjectRoom({ gameplaySeed: 6103 });
         requirePlayingGame(game);
 
         const object = await wishObject(request);
@@ -60,7 +60,7 @@ for (const [request, count] of [
     ['0 arrow', 1],
 ] as const) {
     void test(`a zero prefix leaves the wish count unset in "${request}"`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const object = await wishObject(request);
 
@@ -69,7 +69,7 @@ for (const [request, count] of [
 }
 
 void test('an excessive ammunition wish keeps the normal generated stack', async () => {
-    freshObjectRoom({ gameplaySeed: 6104 });
+    await freshObjectRoom({ gameplaySeed: 6104 });
     requirePlayingGame(game);
 
     const object = await wishObject('1000 arrows');
@@ -78,7 +78,7 @@ void test('an excessive ammunition wish keeps the normal generated stack', async
 });
 
 void test('wizard wishes can supply large ammunition stacks', async () => {
-    freshObjectRoom({ gameplaySeed: 6104 });
+    await freshObjectRoom({ gameplaySeed: 6104 });
     requirePlayingGame(game);
 
     const object = await wishObject('1000 arrows', { wizardWish: true });
@@ -89,7 +89,7 @@ void test('wizard wishes can supply large ammunition stacks', async () => {
 
 for (const [wizardWish, amount, weight] of [[false, 5000, 50], [true, 10000, 100]] as const) {
     void test(`${wizardWish ? 'wizard' : 'ordinary'} gold wishes use the appropriate limit`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
 
         const object = await wishObject('10000 gold pieces', { wizardWish });
@@ -100,7 +100,7 @@ for (const [wizardWish, amount, weight] of [[false, 5000, 50], [true, 10000, 100
 }
 
 void test('a count of globs increases one glob\'s weight instead of its stack size', async () => {
-    freshObjectRoom({ gameplaySeed: 6105 });
+    await freshObjectRoom({ gameplaySeed: 6105 });
     requirePlayingGame(game);
 
     const result = await readObjectName('2 medium globs of gray ooze');
@@ -112,7 +112,7 @@ void test('a count of globs increases one glob\'s weight instead of its stack si
 });
 
 void test('an ordinary glob wish respects the limit for very large globs', async () => {
-    freshObjectRoom({ gameplaySeed: 6106 });
+    await freshObjectRoom({ gameplaySeed: 6106 });
     requirePlayingGame(game);
 
     const result = await readObjectName('10 very large gray ooze globs');
@@ -125,7 +125,7 @@ void test('an ordinary glob wish respects the limit for very large globs', async
 
 for (const [answer, weight] of [['y', 5200], ['n', 1040]] as const) {
     void test(`a wizard can ${answer === 'y' ? 'override' : 'keep'} the glob weight limit`, async () => {
-        freshObjectRoom({ gameplaySeed: 6107 });
+        await freshObjectRoom({ gameplaySeed: 6107 });
         requirePlayingGame(game);
         pushKey(answer);
 
@@ -141,7 +141,7 @@ for (const [answer, weight] of [['y', 5200], ['n', 1040]] as const) {
 }
 
 void test('a wish grants the requested single rock to the hero', async () => {
-    freshObjectRoom({ gameplaySeed: 6108 });
+    await freshObjectRoom({ gameplaySeed: 6108 });
     requirePlayingGame(game);
     pushKeys(' 1 rock\n');
 
@@ -160,7 +160,7 @@ for (const [request, replacement] of [
     ['magic lamp', OIL_LAMP],
 ] as const) {
     void test(`an ordinary wish for ${request} supplies its permitted replacement`, async () => {
-        freshObjectRoom({ gameplaySeed: 6201 });
+        await freshObjectRoom({ gameplaySeed: 6201 });
         requirePlayingGame(game);
 
         const result = await readObjectName(request);
@@ -172,7 +172,7 @@ for (const [request, replacement] of [
 }
 
 void test('wishing for the invocation candelabrum gives ordinary candles', async () => {
-    freshObjectRoom({ gameplaySeed: 6202 });
+    await freshObjectRoom({ gameplaySeed: 6202 });
     requirePlayingGame(game);
 
     const object = await wishObject('Candelabrum of Invocation');
@@ -181,7 +181,7 @@ void test('wishing for the invocation candelabrum gives ordinary candles', async
 });
 
 void test('wizard wishes can create the real Amulet of Yendor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const object = await wishObject('Amulet of Yendor', { wizardWish: true });
@@ -190,7 +190,7 @@ void test('wizard wishes can create the real Amulet of Yendor', async () => {
 });
 
 void test('an ordinary wish cannot create venom', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const result = await readObjectName('splash of acid venom');
@@ -200,7 +200,7 @@ void test('an ordinary wish cannot create venom', async () => {
 
 for (const [wizardWish, enchantment] of [[false, 0], [true, 99]] as const) {
     void test(`${wizardWish ? 'wizard' : 'ordinary'} enchantment wishes respect their limit`, async () => {
-        freshObjectRoom({ gameplaySeed: 6203 });
+        await freshObjectRoom({ gameplaySeed: 6203 });
         requirePlayingGame(game);
 
         const object = await wishObject('+999 long sword', { wizardWish });
@@ -210,7 +210,7 @@ for (const [wizardWish, enchantment] of [[false, 0], [true, 99]] as const) {
 }
 
 void test('a negative enchantment request curses the wished weapon', async () => {
-    freshObjectRoom({ gameplaySeed: 6204 });
+    await freshObjectRoom({ gameplaySeed: 6204 });
     requirePlayingGame(game);
 
     const object = await wishObject('-2 long sword');
@@ -220,7 +220,7 @@ void test('a negative enchantment request curses the wished weapon', async () =>
 });
 
 void test('ordinary wand wishes cannot increase their generated charge count', async () => {
-    freshObjectRoom({ gameplaySeed: 6205 });
+    await freshObjectRoom({ gameplaySeed: 6205 });
     requirePlayingGame(game);
 
     const object = await wishObject('wand of light (0:99)');
@@ -229,7 +229,7 @@ void test('ordinary wand wishes cannot increase their generated charge count', a
 });
 
 void test('a negative wand charge request stops at the cancelled state', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const object = await wishObject('-10 wand of light');
@@ -238,7 +238,7 @@ void test('a negative wand charge request stops at the cancelled state', async (
 });
 
 void test('an ordinary wished wand of wishing cannot supply fresh wishes', async () => {
-    freshObjectRoom({ gameplaySeed: 6206 });
+    await freshObjectRoom({ gameplaySeed: 6206 });
     requirePlayingGame(game);
 
     const object = await wishObject('wand of wishing (0:99)');
@@ -248,7 +248,7 @@ void test('an ordinary wished wand of wishing cannot supply fresh wishes', async
 });
 
 void test('wizard wand charge and recharge requests still have storage limits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const object = await wishObject('wand of light (20:999)', { wizardWish: true });
@@ -258,7 +258,7 @@ void test('wizard wand charge and recharge requests still have storage limits', 
 });
 
 void test('identifying a wished wand reveals its real recharge count', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     pushKeys(' wand of light (2:7)\n');
     await makeWish();
@@ -271,7 +271,7 @@ void test('identifying a wished wand reveals its real recharge count', async () 
 });
 
 void test('a chest cannot receive a weapon enchantment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const object = await wishObject('+5 chest');
@@ -281,7 +281,7 @@ void test('a chest cannot receive a weapon enchantment', async () => {
 
 for (const modifier of ['blessed', 'uncursed']) {
     void test(`bad luck from carried items spoils requests for ${modifier} items`, async () => {
-        freshObjectRoom({ hero: { uluck: 1, moreluck: -3 } });
+        await freshObjectRoom({ hero: { uluck: 1, moreluck: -3 } });
         requirePlayingGame(game);
 
         const object = await wishObject(`${modifier} potion of healing`);
@@ -292,7 +292,7 @@ for (const modifier of ['blessed', 'uncursed']) {
 }
 
 void test('bad luck prevents an ordinary wish from making a weapon rustproof', async () => {
-    freshObjectRoom({ hero: { uluck: -1 } });
+    await freshObjectRoom({ hero: { uluck: -1 } });
     requirePlayingGame(game);
 
     const object = await wishObject('rustproof long sword');
@@ -301,7 +301,7 @@ void test('bad luck prevents an ordinary wish from making a weapon rustproof', a
 });
 
 void test('wizard wishes can bless and rustproof an item despite bad luck', async () => {
-    freshObjectRoom({ hero: { uluck: -1 } });
+    await freshObjectRoom({ hero: { uluck: -1 } });
     requirePlayingGame(game);
 
     const object = await wishObject('blessed rustproof long sword', { wizardWish: true });
@@ -312,7 +312,7 @@ void test('wizard wishes can bless and rustproof an item despite bad luck', asyn
 });
 
 void test('a denied quest-artifact wish does not prevent its later creation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const denied = await readObjectName('The Orb of Detection');
@@ -326,7 +326,7 @@ void test('a denied quest-artifact wish does not prevent its later creation', as
 });
 
 void test('even wizard wishes cannot create an artifact stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     const object = await wishObject('9 Grimtooth', { wizardWish: true });

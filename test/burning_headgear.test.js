@@ -11,7 +11,7 @@ for (const { type, description } of [
     { type: ELVEN_LEATHER_HELM, description: 'leather hat' },
 ]) {
     void test(`burning an unidentified ${description} describes its material and protection`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const hat = await addInventoryObject(type, {
             blessed: false, typeKnown: false, dknown: false, oeroded: 0,
             owornmask: W_ARMH,

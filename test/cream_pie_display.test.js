@@ -10,10 +10,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('applying a cream pie clears visible monsters before its blindness message pages', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.flags.hero_memory = true;
     await createMonsterAt('kitten', 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, 'f');
     const pie = await addInventoryObject(CREAM_PIE);

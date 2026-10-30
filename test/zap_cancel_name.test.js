@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('cancellation names a clay golem before erasing the writing on its head', async () => {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requirePlayingGame(game);
     const golem = await createMonsterAt('clay golem', 11, 10);
     setMonsterGivenName(golem, 'Clay');

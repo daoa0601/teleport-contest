@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a mimic cannot absorb a carried boulder', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     const boulder = await addInventoryObject(BOULDER);
@@ -26,7 +26,7 @@ void test('a mimic cannot absorb a carried boulder', async () => {
 });
 
 void test('a neutral mimic refuses the chaotic Stormbringer artifact', async () => {
-    freshObjectRoom({ role: 'wizard', hero: { ualign: { type: -1, record: 10 } } });
+    await freshObjectRoom({ role: 'wizard', hero: { ualign: { type: -1, record: 10 } } });
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     const sword = await addInventoryItem(await artifactObject('Stormbringer'));
@@ -39,7 +39,7 @@ void test('a neutral mimic refuses the chaotic Stormbringer artifact', async () 
 });
 
 void test('an unseen mimic pulls a two-handed weapon from both hands', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     const sword = await addInventoryObject(TWO_HANDED_SWORD);
@@ -55,7 +55,7 @@ void test('an unseen mimic pulls a two-handed weapon from both hands', async () 
 });
 
 void test('a mimic absorbs a thrown object without trying to remove it from inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     const dagger = await knownObject(DAGGER);

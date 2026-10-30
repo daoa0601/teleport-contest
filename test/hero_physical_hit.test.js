@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 async function physicalFight(species = 'hill giant') {
-    freshObjectRoom({ role: 'tourist', flags: { verbose: true }, hero: { uhitinc: 100 } });
+    await freshObjectRoom({ role: 'tourist', flags: { verbose: true }, hero: { uhitinc: 100 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     monster.mhp = monster.mhpmax = 300;

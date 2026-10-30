@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const count of [1, 2, 3, 4]) {
     void test(`traditional drop of ${count} stacks uses the native command result for turn cost`, async () => {
-        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
         const objects = [];
         for (let index = 0; index < count; index++)
             objects.push(await addInventoryObject(DAGGER, { spe: index }));
@@ -29,7 +29,7 @@ for (const count of [1, 2, 3, 4]) {
 }
 
 void test('a refused stack does not change the turn-cost bit of traditional dropping', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+    await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
     const dagger = await addInventoryObject(DAGGER);
     const club = await addInventoryObject(CLUB);
     const loadstone = await addInventoryObject(LOADSTONE, { cursed: true });
@@ -45,7 +45,7 @@ void test('a refused stack does not change the turn-cost bit of traditional drop
 
 for (const dropDagger of [false, true]) {
     void test(`a refused traditional drop clears recall${dropDagger ? ' while preserving time spent dropping another item' : ''}`, async () => {
-        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
         const dagger = dropDagger ? await addInventoryObject(DAGGER) : null;
         const stone = await addInventoryObject(LOADSTONE, { cursed: true });
         const input = resetInputState();
@@ -64,7 +64,7 @@ for (const dropDagger of [false, true]) {
 }
 
 void test('traditional dropping restarts floating letters after gold leaves the inventory', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, fixinv: false, verbose: false } });
+    await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, fixinv: false, verbose: false } });
     setHeroGoldAmount(game, 10);
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
@@ -85,7 +85,7 @@ void test('traditional dropping restarts floating letters after gold leaves the 
 
 for (const dualWielding of [false, true]) {
     void test(`traditional dropping shortens a long item name and keeps its question${dualWielding ? ' while dual-wielding' : ''}`, async () => {
-        freshObjectRoom({ role: 'valkyrie', flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        await freshObjectRoom({ role: 'valkyrie', flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
         const name = 'Marigold the Bold, companion of the far northern expedition';
         const dagger = await addInventoryObject(DAGGER, {
             oname: name, greased: true, oeroded: 3, oeroded2: 3,
@@ -116,7 +116,7 @@ for (const dualWielding of [false, true]) {
 }
 
 void test('combination drop-all converts multiple successful drops into a timed command', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, verbose: false } });
+    await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, verbose: false } });
     const dagger = await addInventoryObject(DAGGER);
     const club = await addInventoryObject(CLUB);
     resetInputState().feed('a\n');
@@ -130,7 +130,7 @@ void test('combination drop-all converts multiple successful drops into a timed 
 
 for (const style of [MENU_TRADITIONAL, MENU_COMBINATION] as const) {
     void test(`drop category inventory uses a menu for one carried item in style ${style}`, async () => {
-        freshObjectRoom({ flags: { menu_style: style } });
+        await freshObjectRoom({ flags: { menu_style: style } });
         const dagger = await addInventoryObject(DAGGER);
         const input = resetInputState();
         input.feed('i\n');
@@ -152,7 +152,7 @@ for (const style of [MENU_TRADITIONAL, MENU_COMBINATION] as const) {
 
 for (const response of ['', ' ', 'A']) {
     void test(`combination drop with no category (${JSON.stringify(response)}) returns when Autoall is disabled`, async () => {
-        freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: 0 } });
+        await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: 0 } });
         const dagger = await addInventoryObject(DAGGER);
         const input = resetInputState();
         input.feed(`${response}\n`);
@@ -179,7 +179,7 @@ for (const response of ['', ' ', 'A']) {
 
 for (const [response, paranoia] of [['', PARANOID_AUTOALL], ['m', 0]] as const) {
     void test(`combination drop allows all items for ${response === 'm' ? 'an explicit menu request' : 'an empty filter with Autoall enabled'}`, async () => {
-        freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: paranoia, verbose: false } });
+        await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: paranoia, verbose: false } });
         const dagger = await addInventoryObject(DAGGER);
         resetInputState().feed(`${response}\n${dagger.invlet}\n`);
 
@@ -193,7 +193,7 @@ for (const [response, paranoia] of [['', PARANOID_AUTOALL], ['m', 0]] as const) 
 // do.c:menu_drop() ignores ggetobj()'s Escape result; allow_category() then
 // admits every item when paranoid_confirm:A is set.
 void test('escaping the combination drop categories still offers every item with Autoall enabled', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: PARANOID_AUTOALL, verbose: false } });
+    await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: PARANOID_AUTOALL, verbose: false } });
     const dagger = await addInventoryObject(DAGGER);
     resetInputState().feed(`\x1b${dagger.invlet}\n`);
 
@@ -204,7 +204,7 @@ void test('escaping the combination drop categories still offers every item with
 });
 
 void test('escaping the combination drop categories drops nothing when Autoall is disabled', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: 0 } });
+    await freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: 0 } });
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
     input.feed('\x1b');

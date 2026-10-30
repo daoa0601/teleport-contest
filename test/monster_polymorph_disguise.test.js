@@ -9,13 +9,13 @@ import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('polymorphing a boulder mimic opens the view beyond its old disguise', async () => {
-    freshObjectRoom({ top: 10, bottom: 10 });
+    await freshObjectRoom({ top: 10, bottom: 10 });
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = BOULDER;
     vision_note_blocker_change(11, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), false);
     await changeMonsterForm(mimic, MONSTER_NAME.indexOf('jackal'), game, { showMessage: true });
     assert.equal(mimic.m_ap_type, 0);

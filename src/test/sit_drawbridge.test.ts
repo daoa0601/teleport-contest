@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const under of [DB_FLOOR, DB_ICE] as const) {
     void test(`sitting below a raised bridge over ${under === DB_FLOOR ? 'ground' : 'ice'} keeps armor dry`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const square = level.requireAt(10, 10);
         square.typ = DRAWBRIDGE_UP;
@@ -32,7 +32,7 @@ for (const under of [DB_FLOOR, DB_ICE] as const) {
 }
 
 void test('sitting below a raised bridge reaches its lava', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const square = level.requireAt(10, 10);
     square.typ = DRAWBRIDGE_UP;
@@ -47,7 +47,7 @@ void test('sitting below a raised bridge reaches its lava', async () => {
 
 for (const raised of [false, true]) {
     void test(`sitting ${raised ? 'below a raised' : 'on a lowered'} bridge over water reaches ${raised ? 'water' : 'the bridge'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const square = level.requireAt(10, 10);
         square.typ = raised ? DRAWBRIDGE_UP : DRAWBRIDGE_DOWN;
         square.drawbridgemask = DB_MOAT;

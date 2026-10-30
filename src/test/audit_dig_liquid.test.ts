@@ -14,7 +14,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createSpecialLevel } from './support/topology.js';
 
 void test('downward digging sloshes exposed lava under a raised drawbridge', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const span = level.requireAt(10, 10);
     span.typ = DRAWBRIDGE_UP;
     span.drawbridgemask = DB_LAVA;
@@ -33,7 +33,7 @@ void test('downward digging sloshes exposed lava under a raised drawbridge', asy
 });
 
 void test('connected pits fill with pool water rather than moat water in Juiblex swamp', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true } });
+    const level = await freshObjectRoom({ hero: { swimming: true } });
     game.juiblex_level = createSpecialLevel({ dnum: 0, dlevel: 8 });
     level.requireAt(12, 10).typ = MOAT;
     await maketrap(10, 10, PIT);
@@ -53,7 +53,7 @@ void test('connected pits fill with pool water rather than moat water in Juiblex
 });
 
 void test('one Juiblex swamp square cannot fill an ordinary downward hole', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     game.juiblex_level = createSpecialLevel({ dnum: 0, dlevel: 8 });
     level.requireAt(11, 10).typ = MOAT;
     grantIntrinsicProperty('levitation', 'outside');
@@ -72,7 +72,7 @@ void test('one Juiblex swamp square cannot fill an ordinary downward hole', asyn
 });
 
 void test('a pick can start digging into solid ground under a raised drawbridge', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const span = level.requireAt(10, 10);
     span.typ = DRAWBRIDGE_UP;
     span.drawbridgemask = DB_FLOOR;
@@ -89,7 +89,7 @@ void test('a pick can start digging into solid ground under a raised drawbridge'
 });
 
 void test('forced pit flooding still tests the liquid supply before wetting floor objects', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true } });
+    const level = await freshObjectRoom({ hero: { swimming: true } });
     level.requireAt(12, 10).typ = POOL;
     await maketrap(10, 10, PIT);
     game.u.utrap = 5;
@@ -108,7 +108,7 @@ void test('forced pit flooding still tests the liquid supply before wetting floo
 });
 
 void test('a broken digging wand opens a pit under a raised drawbridge without destroying the bridge', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     const span = level.requireAt(11, 10);
     span.typ = DRAWBRIDGE_UP;
     span.drawbridgemask = DB_EAST | DB_FLOOR;

@@ -22,7 +22,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 void test('wizard intrinsic counts default to thirty and explicit counts extend the current timeout', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
     const moves = game.moves;
 
@@ -40,7 +40,7 @@ void test('wizard intrinsic counts default to thirty and explicit counts extend 
 });
 
 void test('wizard resistance timeouts saturate without removing permanent resistance', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
     grantIntrinsicProperty('coldResistance', 'outside');
     setPropertyTimeout('coldResistance', TIMEOUT - 1);
@@ -78,7 +78,7 @@ void test('wizard invulnerability and resistance expire through ordinary world t
 });
 
 void test('wizard petrification bypasses resistance but preserves an active death deadline', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const input = resetInputState();
     grantIntrinsicProperty('stoneResistance', 'outside');
@@ -94,7 +94,7 @@ void test('wizard petrification bypasses resistance but preserves an active deat
 });
 
 void test('wizard sliming preserves its active death deadline', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
 
     await selectIntrinsic(input, 'becoming slime', 9, [/You are turning into slime\./]);
@@ -104,7 +104,7 @@ void test('wizard sliming preserves its active death deadline', async () => {
 });
 
 void test('wizard sickness keeps its deadline while applying the native worsening message', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
 
     await selectIntrinsic(input, 'fatally sick', 8, [/You feel deathly sick\./]);
@@ -115,7 +115,7 @@ void test('wizard sickness keeps its deadline while applying the native worsenin
 });
 
 void test('wizard monster warning senses grid bugs through blindness', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
     const bug = await createMonsterAt('grid bug', 11, 10);
     const goblin = await createMonsterAt('goblin', 12, 10);
@@ -135,7 +135,7 @@ void test('wizard monster warning senses grid bugs through blindness', async () 
 });
 
 void test('wizard water walking lifts a submerged hero to the surface immediately', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const input = resetInputState();
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
@@ -153,7 +153,7 @@ void test('wizard water walking lifts a submerged hero to the surface immediatel
 });
 
 void test('wizard shapechanger protection restores a changed monster and reveals a mimic', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const input = resetInputState();
     const shifter = await createMonsterAt('chameleon', 11, 10);
     await changeMonsterForm(shifter, MONSTER_NAME.indexOf('grid bug'));

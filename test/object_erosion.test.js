@@ -13,7 +13,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 const quiet = { publish: async () => { } };
-test.beforeEach(() => freshObjectRoom());
+test.beforeEach(async () => await freshObjectRoom());
 void test('erosion waits for the preceding message before changing the weapon', async () => {
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();

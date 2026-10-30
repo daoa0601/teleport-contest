@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { learnSpell } from './support/spells.js';
 
 void test('blocked invisibility names the actual wrapping worn by the caster', async () => {
-    freshObjectRoom({ role: 'wizard', flags: { menu_style: MENU_TRADITIONAL },
+    await freshObjectRoom({ role: 'wizard', flags: { menu_style: MENU_TRADITIONAL },
         hero: { ulevel: 30, uen: 100, uenmax: 100 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_INT] = 18;
@@ -32,7 +32,7 @@ void test('blocked invisibility names the actual wrapping worn by the caster', a
 });
 
 void test('a self-directed invisibility wand also names the wrapping absorbing it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
     wearHeroArmor(wrapping);
@@ -50,7 +50,7 @@ void test('a self-directed invisibility wand also names the wrapping absorbing i
 
 for (const source of ['spell', 'wand'] as const) {
     void test(`a sleeping hero dreams of the named wrapping absorbing an invisibility ${source}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
         wearHeroArmor(wrapping);
         await putHeroToSleep(5);

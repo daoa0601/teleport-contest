@@ -11,7 +11,7 @@ import { createStaffedShop } from './support/shop.js';
 for (const inside of [false, true]) {
     for (const hallucinating of [false, true]) {
         void test(`an empty ${inside ? 'resident' : 'nonresident'} bill names the keeper ${hallucinating ? 'while hallucinating' : 'without its stored prefix'}`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             const { shopkeeper } = await createStaffedShop({ left: inside ? 8 : 11 });
             shopkeeper.eshk.shknam = '+KeeperControl';
             game.u.hallucinationTurns = hallucinating ? 20 : 0;
@@ -34,7 +34,7 @@ for (const inside of [false, true]) {
 
 for (const condition of ['asleep', 'paralyzed'] as const) {
     void test(`hallucinated payment names the ${condition} keeper before choosing its response`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.msleeping = condition === 'asleep' ? 1 : 0;
         shopkeeper.mcanmove = condition !== 'paralyzed';

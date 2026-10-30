@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a resurrected Wizard announces his threat without repeating his birth announcement', async () => {
-    freshObjectRoom({ moves: 5000 });
+    await freshObjectRoom({ moves: 5000 });
     const messages: string[] = [];
     const input = resetInputState();
     input.beforeRead = () => {
@@ -39,7 +39,7 @@ void test('a resurrected Wizard announces his threat without repeating his birth
 });
 
 void test('an environmental Wizard death starts demigod intervention and removes his population count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
     assert.equal(game.context.no_of_wizards, 1);
     wizard.mhp = 0;
@@ -55,7 +55,7 @@ void test('an environmental Wizard death starts demigod intervention and removes
 });
 
 void test('hero kills of multiple Wizards decrease the count without restarting intervention', async () => {
-    freshObjectRoom({ hero: { ulevel: 30, ulevelmax: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30, ulevelmax: 30 } });
     const first = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
     const second = await createMonsterAt('Wizard of Yendor', 13, 10, NO_MINVENT);
     assert.equal(game.context.no_of_wizards, 2);
@@ -81,7 +81,7 @@ void test('hero kills of multiple Wizards decrease the count without restarting 
 });
 
 void test('a Wizard leaving alive starts intervention without recording a death', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
     const deaths = monsterDeathCount(wizard.mnum);
     assert.ok(wizard.mhp > 0);
@@ -98,7 +98,7 @@ void test('a Wizard leaving alive starts intervention without recording a death'
 });
 
 void test('a demigod countdown already in progress survives an environmental Wizard death', async () => {
-    freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
+    await freshObjectRoom({ hero: { uevent: { udemigod: true }, udg_cnt: 1 } });
     const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
     wizard.mhp = 0;
 
@@ -109,7 +109,7 @@ void test('a demigod countdown already in progress survives an environmental Wiz
 });
 
 void test('life saving keeps the Wizard alive without starting demigod intervention', async () => {
-    freshObjectRoom({ hero: { udg_cnt: 0 } });
+    await freshObjectRoom({ hero: { udg_cnt: 0 } });
     const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
     const amulet = await equipMonsterObject(wizard, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     const input = resetInputState();
@@ -129,7 +129,7 @@ void test('life saving keeps the Wizard alive without starting demigod intervent
 });
 
 void test('killing a newly resurrected Wizard gives twenty points of alignment credit', async () => {
-    freshObjectRoom({ moves: 5000, hero: { ulevel: 30, ulevelmax: 30 } });
+    await freshObjectRoom({ moves: 5000, hero: { ulevel: 30, ulevelmax: 30 } });
     requirePlayingGame(game);
     resetInputState().feed('    ');
 
@@ -144,7 +144,7 @@ void test('killing a newly resurrected Wizard gives twenty points of alignment c
 });
 
 void test('killing a recalled migrating Wizard gives twenty points of alignment credit', async () => {
-    freshObjectRoom({ moves: 5000, hero: { ulevel: 30, ulevelmax: 30 } });
+    await freshObjectRoom({ moves: 5000, hero: { ulevel: 30, ulevelmax: 30 } });
     requirePlayingGame(game);
     const wizard = await createMonsterAt('Wizard of Yendor', 12, 10, NO_MINVENT);
     await migrateMonsterOffLevel(wizard, game, {

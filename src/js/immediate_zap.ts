@@ -98,7 +98,7 @@ export async function hitFloorPileWithWand(wand: GameObject, x: number, y: numbe
             ...pile.filter(object => object.otyp !== BOULDER),
         ];
     }
-    if (hiding) maybeUnhideAt(x, y, state);
+    if (hiding) await maybeUnhideAt(x, y, state);
     await fillPitWithBoulderAt(x, y, state);
     return affected;
 }
@@ -142,7 +142,7 @@ export async function hitObjectWithWand(object: GameObject, wand: GameObject, { 
     case WAN_CANCELLATION:
     case SPE_CANCELLATION:
         await cancelObjectMagic(object, { state });
-        newsym(object.ox, object.oy);
+        await newsym(object.ox, object.oy);
         break;
     case SPE_DRAIN_LIFE:
         await drainObjectEnchantment(object, { state, byHero: true });
@@ -151,7 +151,7 @@ export async function hitObjectWithWand(object: GameObject, wand: GameObject, { 
     case SPE_TELEPORT_AWAY: {
         const x = object.ox, y = object.oy;
         await relocateObjectRandomly(object, { state });
-        maybeUnhideAt(x, y, state);
+        await maybeUnhideAt(x, y, state);
         break;
     }
     case WAN_MAKE_INVISIBLE:

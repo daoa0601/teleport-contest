@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a sensed monster relocation identifies even an unseen teleportation wand', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
     game._monTelecontrol = true;
     grantIntrinsicProperty('telepathy', 'outside');
     setHeroBlindnessTurns(10);

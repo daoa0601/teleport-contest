@@ -112,7 +112,7 @@ async function optionRow(name: string): Promise<string> {
 }
 
 void test('autopickup exceptions list and remove from the options menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('AUTOPICKUP_EXCEPTION=">worthless glass"\nAUTOPICKUP_EXCEPTION="<arrow');
 
     assert.match(await optionRow('autopickup exceptions'), /\[\(2 currently set\)\]/);
@@ -143,7 +143,7 @@ void test('autopickup exceptions list and remove from the options menu', async (
 });
 
 void test('the options menu lists configured menu colors newest first', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('MENUCOLOR="blessed.*" = yellow\nMENUCOLOR="cursed item" = light blue&bold');
 
     assert.match(await optionRow('menu colors'), /\[\(2 currently set\)\]/);
@@ -169,7 +169,7 @@ void test('the options menu lists configured menu colors newest first', async ()
 });
 
 void test('menu headings offer the native color and attribute pickers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     assert.match(await optionRow('menu_headings'), /\[no-color&inverse\]/);
 
@@ -207,7 +207,7 @@ void test('menu headings offer the native color and attribute pickers', async ()
 });
 
 void test('the color picker replaces active menucolor rules while it is open', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     // A catch-all rule would recolor every picker row if it stayed active;
     // coloratt.c:basic_menu_colors() swaps the player's rules out for the
     // duration and restores them afterwards.
@@ -232,7 +232,7 @@ void test('the color picker replaces active menucolor rules while it is open', a
 });
 
 void test('boolean toggles from the options menu refresh the status fields', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await fullOptions(['showexp', 'time'], []);
 
@@ -243,7 +243,7 @@ void test('boolean toggles from the options menu refresh the status fields', asy
 });
 
 void test('a configured menu heading style keeps its parsed value', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menu_headings:green');
 
     assert.deepEqual(game.iflags.menu_headings, { attr: 0, color: 2 });
@@ -269,7 +269,7 @@ void test('menu heading values report unknown colors and attributes', () => {
 });
 
 void test('statushilites reports and changes its highlight duration', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=statushilites:5');
 
     assert.equal(game.iflags.hiliteDelta, 5);
@@ -285,7 +285,7 @@ void test('statushilites reports and changes its highlight duration', async () =
 });
 
 void test('sortloot offers the native sorting choices with the current one marked', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     assert.match(await optionRow('sortloot'), /\[loot\]/);
 
@@ -300,7 +300,7 @@ void test('sortloot offers the native sorting choices with the current one marke
 });
 
 void test('sortdiscoveries picks its discovery ordering from the O command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     assert.match(await optionRow('sortdiscoveries'), /\[by order of discovery within each class\]/);
 
@@ -317,7 +317,7 @@ void test('sortdiscoveries picks its discovery ordering from the O command', asy
 });
 
 void test('an over-long menu color pattern is elided at the native byte limit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     // The 255-byte listing row needs a terminal wide enough to show it.
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 300, rows: 24 }));
     // Neither the tty line editor (COLNO characters) nor the 255-byte
@@ -347,7 +347,7 @@ void test('an over-long menu color pattern is elided at the native byte limit', 
 });
 
 void test('options menu section headings keep their style under menucolor rules', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
 
     // options.c:8831 adds the full menu's section titles via add_menu_heading(),
@@ -391,7 +391,7 @@ void test('options menu section headings keep their style under menucolor rules'
 });
 
 void test('the status-conditions heading keeps its style under menucolor rules', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=menucolors\nMENUCOLOR="."=red');
 
     // botl.c:1411 emits the "sorted ..." row via add_menu_heading(); the
@@ -415,7 +415,7 @@ void test('the status-conditions heading keeps its style under menucolor rules',
 });
 
 void test('the autocomplete editor applies deselection and keeps cancellation unchanged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('AUTOCOMPLETE=dip');
     assert.equal(completeExtendedCommand('dip'), 'dip');
     await fullOptions(['autocompletions'], [
@@ -431,7 +431,7 @@ void test('the autocomplete editor applies deselection and keeps cancellation un
 });
 
 void test('the vanquished option displays its current order and reports a selected change', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=sortvanquished:A');
     assert.match(await optionRow('sortvanquished'), /\[A: alphabetically, unique monsters intermixed\]/);
     await fullOptions(['sortvanquished'], [
@@ -447,7 +447,7 @@ for (const [mode, description] of [
     ['C', 'by monster class, high to low level in class'],
 ]) {
     void test(`sortvanquished:${mode} displays its configured ordering`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc(`OPTIONS=sortvanquished:${mode}`);
         assert.ok((await optionRow('sortvanquished')).includes(`[${mode}: ${description}]`));
     });

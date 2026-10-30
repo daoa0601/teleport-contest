@@ -23,7 +23,7 @@ import { installPagerInput } from './support/pager-input.js';
 import type { MessagePublisher } from '../js/display.js';
 
 async function gazeRoom(source = 'umber hulk', target = 'orc') {
-    freshObjectRoom({ heroX: 8, heroY: 10, flags: { verbose: true } });
+    await freshObjectRoom({ heroX: 8, heroY: 10, flags: { verbose: true } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt(source, 11, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt(target, 12, 10, MM_NOGRP | NO_MINVENT);

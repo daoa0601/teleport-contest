@@ -20,7 +20,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('starting weapons keep the first primary and alternate instead of replacing them', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const katana = await addInventoryObject(KATANA, { initialize: false });
     const sword = await addInventoryObject(LONG_SWORD, { initialize: false });
     const axe = await addInventoryObject(AXE, { initialize: false });
@@ -42,7 +42,7 @@ void test('starting weapons keep the first primary and alternate instead of repl
 
 for (const otyp of [CROSSBOW, PICK_AXE, UNICORN_HORN, TIN_OPENER]) {
     void test(`a starting ${OBJECT_NAMES[otyp]} can be the primary weapon`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(otyp, { initialize: false });
 
         await useStartingItem(item, game);
@@ -55,7 +55,7 @@ for (const otyp of [CROSSBOW, PICK_AXE, UNICORN_HORN, TIN_OPENER]) {
 }
 
 void test('a rogue keeps starting daggers as the alternate weapon after a sword', async () => {
-    freshObjectRoom({ role: 'rogue' });
+    await freshObjectRoom({ role: 'rogue' });
     const sword = await addInventoryObject(LONG_SWORD, { initialize: false });
     const daggers = await addInventoryObject(DAGGER, { initialize: false, quan: 8 });
 
@@ -70,7 +70,7 @@ void test('a rogue keeps starting daggers as the alternate weapon after a sword'
 
 for (const otyp of [ELVEN_ARROW, CROSSBOW_BOLT, DART, BOOMERANG, FLINT, ROCK]) {
     void test(`a starting ${OBJECT_NAMES[otyp]} goes into the empty quiver`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(otyp, { initialize: false });
 
         await useStartingItem(item, game);
@@ -85,7 +85,7 @@ for (const otyp of [ELVEN_ARROW, CROSSBOW_BOLT, DART, BOOMERANG, FLINT, ROCK]) {
 }
 
 void test('later starting ammunition leaves the first quiver stack in place', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const darts = await addInventoryObject(DART, { initialize: false });
     const arrows = await addInventoryObject(ELVEN_ARROW, { initialize: false });
 
@@ -99,7 +99,7 @@ void test('later starting ammunition leaves the first quiver stack in place', as
 });
 
 void test('ordinary tools and precious gems stay unequipped', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const towel = await addInventoryObject(TOWEL, { initialize: false });
     const gem = await addInventoryObject(DILITHIUM_CRYSTAL, { initialize: false });
 
@@ -125,7 +125,7 @@ const armorCases: readonly { otyp: number; slot: ArmorSlot; mask: number }[] = [
 
 for (const { otyp, slot, mask } of armorCases) {
     void test(`a starting ${OBJECT_NAMES[otyp]} is worn in its armor slot`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(otyp, { initialize: false });
 
         await useStartingItem(item, game);
@@ -138,7 +138,7 @@ for (const { otyp, slot, mask } of armorCases) {
 }
 
 void test('later starting armor leaves an occupied slot alone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const helmet = await addInventoryObject(HELMET, { initialize: false });
     const fedora = await addInventoryObject(FEDORA, { initialize: false });
 
@@ -150,7 +150,7 @@ void test('later starting armor leaves an occupied slot alone', async () => {
 });
 
 void test('a starting shield ends two-weapon combat and retains the alternate weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(LONG_SWORD, { initialize: false });
     const dagger = await addInventoryObject(DAGGER, { initialize: false });
     const shield = await addInventoryObject(SMALL_SHIELD, { initialize: false });
@@ -168,7 +168,7 @@ void test('a starting shield ends two-weapon combat and retains the alternate we
 });
 
 void test('a wielded two-handed starting weapon prevents wearing a shield', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await addInventoryObject(TWO_HANDED_SWORD, { initialize: false });
     const shield = await addInventoryObject(SMALL_SHIELD, { initialize: false });
 
@@ -181,7 +181,7 @@ void test('a wielded two-handed starting weapon prevents wearing a shield', asyn
 });
 
 void test('a worn starting shield puts a two-handed weapon in the alternate slot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const shield = await addInventoryObject(SMALL_SHIELD, { initialize: false });
     const sword = await addInventoryObject(TWO_HANDED_SWORD, { initialize: false });
     const dagger = await addInventoryObject(DAGGER, { initialize: false });
@@ -197,7 +197,7 @@ void test('a worn starting shield puts a two-handed weapon in the alternate slot
 });
 
 void test('starting spellbooks teach spells from their object types without presentation fields', async () => {
-    freshObjectRoom({ moves: 1 });
+    await freshObjectRoom({ moves: 1 });
     requirePlayingGame(game);
     const light = await addInventoryObject(SPE_LIGHT, { initialize: false });
     const protection = await addInventoryObject(SPE_PROTECTION, { initialize: false });

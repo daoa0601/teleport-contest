@@ -5,7 +5,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an explicitly angry shopkeeper is born hostile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const keeper = await createMonsterAt('shopkeeper', 12, 10, MM_ANGRY | NO_MINVENT);
 

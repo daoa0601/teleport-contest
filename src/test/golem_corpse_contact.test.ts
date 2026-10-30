@@ -23,7 +23,7 @@ const cockatrice = MONSTER_NAME.indexOf('cockatrice');
 const stoneGolem = MONSTER_NAME.indexOf('stone golem');
 
 async function golemContactRoom(form = 'flesh golem') {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'archeologist',
         flags: { verbose: false },
         hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } },

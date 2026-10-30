@@ -22,7 +22,7 @@ const maximumRoll = (sides: number) => sides;
 
 for (const injuredHitPoints of [5, 18]) {
     void test(`a monster wielding Stormbringer heals from ${injuredHitPoints} HP without healing the hero`, async () => {
-        freshObjectRoom({ hero: { uhp: 3, uhpmax: 20 } });
+        await freshObjectRoom({ hero: { uhp: 3, uhpmax: 20 } });
         requirePlayingGame(game);
         const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
         const defender = await createMonsterAt('pony', 12, 10, TEST_MONSTER_FLAGS);
@@ -48,7 +48,7 @@ for (const injuredHitPoints of [5, 18]) {
 }
 
 void test('monster Stormbringer drains a level-zero defender fatally and heals its attacker', async () => {
-    freshObjectRoom({ hero: { uhp: 3, uhpmax: 20 } });
+    await freshObjectRoom({ hero: { uhp: 3, uhpmax: 20 } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
@@ -69,7 +69,7 @@ void test('monster Stormbringer drains a level-zero defender fatally and heals i
 });
 
 void test('a blind hero receives no artifact feedback or healing from two monsters fighting', async () => {
-    freshObjectRoom({ hero: { uhp: 3, uhpmax: 20 } });
+    await freshObjectRoom({ hero: { uhp: 3, uhpmax: 20 } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('pony', 12, 10, TEST_MONSTER_FLAGS);
@@ -92,7 +92,7 @@ void test('a blind hero receives no artifact feedback or healing from two monste
 });
 
 void test('artifact feedback is visible when only the monster attacker square can be seen', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('pony', 14, 10, TEST_MONSTER_FLAGS);
@@ -100,7 +100,7 @@ void test('artifact feedback is visible when only the monster attacker square ca
         level.requireAt(13, y).typ = STONE;
         vision_note_blocker_change(13, y);
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(attacker.mx, attacker.my), true);
     assert.equal(cansee(defender.mx, defender.my), false);
     const messages: string[] = [];
@@ -115,7 +115,7 @@ void test('artifact feedback is visible when only the monster attacker square ca
 });
 
 void test('a monster cannot make a blind hero feel Fire Brand by attacking the hero-held defender', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('pony', 12, 10, TEST_MONSTER_FLAGS);
@@ -134,7 +134,7 @@ void test('a monster cannot make a blind hero feel Fire Brand by attacking the h
 });
 
 void test('the Tsurugi names the monster wielder when cutting a large defender deeply', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('mumak', 12, 10, TEST_MONSTER_FLAGS);
@@ -152,7 +152,7 @@ void test('the Tsurugi names the monster wielder when cutting a large defender d
 });
 
 void test('a monster using the Tsurugi cannot slice the hero swallower from inside', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
@@ -172,7 +172,7 @@ void test('a monster using the Tsurugi cannot slice the hero swallower from insi
 
 for (const visible of [false, true]) {
     void test(`Vorpal Blade's headless miss has ${visible ? 'visible monster' : 'no unseen'} feedback`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
         const defender = await createMonsterAt('gas spore', 12, 10, TEST_MONSTER_FLAGS);
@@ -192,7 +192,7 @@ for (const visible of [false, true]) {
 }
 
 void test('Vorpal Blade cannot behead another monster while the hero is swallowed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('jackal', 13, 10, TEST_MONSTER_FLAGS);
@@ -208,7 +208,7 @@ void test('Vorpal Blade cannot behead another monster while the hero is swallowe
 });
 
 void test('a monster using Magicbane cancels spellcasting without giving energy to the hero', async () => {
-    freshObjectRoom({ hero: { uen: 2, uenmax: 3, uenpeak: 3 } });
+    await freshObjectRoom({ hero: { uen: 2, uenmax: 3, uenpeak: 3 } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('gnomish wizard', 12, 10, TEST_MONSTER_FLAGS);
@@ -229,7 +229,7 @@ void test('a monster using Magicbane cancels spellcasting without giving energy 
 });
 
 void test('unseen monster Magicbane hits stun and confuse without revealing their effects', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
@@ -249,7 +249,7 @@ void test('unseen monster Magicbane hits stun and confuse without revealing thei
 });
 
 void test('a monster Magicbane probe marks an invisible target without disclosing its inventory', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
@@ -271,7 +271,7 @@ void test('a monster Magicbane probe marks an invisible target without disclosin
 });
 
 void test('the hero Magicbane probe reveals the actual monster inventory in its window', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const defender = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
     const dagger = await uninitializedObject(DAGGER, { dknown: false, bknown: false });
@@ -294,7 +294,7 @@ void test('the hero Magicbane probe reveals the actual monster inventory in its 
 });
 
 void test('Magicbane names a cancelled shapechanger in its restored form for later feedback', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('wolf', 12, 10, TEST_MONSTER_FLAGS);

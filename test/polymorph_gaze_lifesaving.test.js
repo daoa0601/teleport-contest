@@ -8,7 +8,7 @@ import { knownObject } from './support/game-objects.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 void test('a floating eye saved from a fiery gaze still paralyzes its attacker', async () => {
-    freshMonsterAbilityRoom('pyrolisk', { energy: 30 });
+    await freshMonsterAbilityRoom('pyrolisk', { energy: 30 });
     const eye = await createMonsterAt('floating eye', 11, 10);
     eye.mhp = 1;
     eye.mpeaceful = 0;

@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('photograph experience includes the protection of worn monster armor', async () => {
     const awards: number[] = [];
     for (const armored of [false, true]) {
-        freshObjectRoom({ role: 'tourist', hero: { ulevel: 30, uexp: 0 } });
+        await freshObjectRoom({ role: 'tourist', hero: { ulevel: 30, uexp: 0 } });
         requirePlayingGame(game);
         const target = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
         target.msleeping = 1;

@@ -407,7 +407,7 @@ export async function teleportHeroAtWill({
             if (await promptYesNo('Jump in?') === 'n') trap = undefined;
             else {
                 deleteTrap(trap, state);
-                newsym(hero.ux, hero.uy);
+                await newsym(hero.ux, hero.uy);
             }
         }
     } else trap = undefined;
@@ -649,17 +649,17 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
 
     const segments = monster.wormno ? monster.wormSegments?.length ?? 0 : 0;
     if (oldx) {
-        if (monster.wormno) clearMonsterWormFromMap(monster);
+        if (monster.wormno) await clearMonsterWormFromMap(monster);
         else {
             removeMonsterFromMapAt(oldx, oldy, state);
-            newsym(oldx, oldy);
+            await newsym(oldx, oldy);
         }
     }
     monster.mtrack = [];
     await placeMonsterOnMap(monster, x, y);
     updateMonsterRegions(monster, state);
     if (monster.wormno)
-        placeMonsterWormTailRandomly(monster, segments, { state, random });
+        await placeMonsterWormTailRandomly(monster, segments, { state, random });
 
     const hero = state.u;
     if (hero.ustuck === monster) {
@@ -671,8 +671,8 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
             await releaseHeroFromMonster(monster, { state, rollOne });
         }
     }
-    maybeUnhideAt(x, y, state);
-    newsym(x, y);
+    await maybeUnhideAt(x, y, state);
+    await newsym(x, y);
     setMonsterApparentHeroPosition(monster, state, random, calls);
 
     if (report && (canSpotMonster(monster) || appear || hero.ustuck === monster)) {
@@ -878,8 +878,8 @@ async function moveLeashedMonsterNextToHero(monster: Monster, state: GameState, 
     if (!destination) return;
     await relocateMonsterTo(monster, destination.x, destination.y, { state, random });
     if (state === game) {
-        newsym(oldx, oldy);
-        newsym(monster.mx, monster.my);
+        await newsym(oldx, oldy);
+        await newsym(monster.mx, monster.my);
     }
 }
 
@@ -972,7 +972,7 @@ export async function teleportMonsterFromTrap(
     }
     if (event.visible) {
         await publish(`${subject} ${canSeeMonster(monster) ? 'seems disoriented.' : 'suddenly disappears!'}`);
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     }
     return event;
 }
@@ -1045,13 +1045,13 @@ export async function moveHeroByTeleport(x: number, y: number, state = game, {
     const chain = state.uchain || u.uchain;
     if (ballActive && chain?.where === 'free') await placeBallAndChain(state);
     updateHeroRegions(state);
-    newsym(oldx, oldy);
+    await newsym(oldx, oldy);
     await see_monsters();
     state.vision_full_recalc = 1;
     endVoluntaryMultiTurn(state);
     const movement = { oldx, oldy, x, y };
     const arrival = await withMonsterNoticesBlocked(state, async () => {
-        vision_recalc(0);
+        await vision_recalc(0);
         const landing = await finishArrival(movement);
         if (!landing?.died && !state.program_state.gameover) await announceInvocationSquare();
         return landing;
@@ -1072,13 +1072,13 @@ export async function teleportMonsterThroughPortal(monster: Monster, trap: Trap,
             || isHomeElemental(monster.mnum) || random(7))) {
         if (seen && MONSTER_SYMBOL[monster.mnum] !== S_ELEMENTAL) {
             await publish(`${monsterName(monster, { state, capitalized: true })} seems to shimmer for a moment.`);
-            seeTrap(trap, state);
+            await seeTrap(trap, state);
         }
         return null;
     }
     if (seen) {
         await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     }
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, trap, {
@@ -1112,7 +1112,7 @@ export async function teleportMonsterThroughHole(monster: Monster, trap: Trap, {
     if (seen) {
         const effect = trap.ttyp === HOLE ? 'falls into a hole' : 'falls through a trap door';
         await publish(`Suddenly, ${monsterName(monster, { state })} ${effect}.`);
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     }
     return migrateMonsterOffLevel(monster, state, { ...trap, dst: destination }, {
         kind: 'level-fall-migration', mode: MIGR_RANDOM,
@@ -1140,7 +1140,7 @@ export async function teleportMonsterToRandomLevel(monster: Monster, trap: Trap,
     }
     if (seen) {
         await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     }
     if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) },

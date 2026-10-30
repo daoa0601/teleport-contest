@@ -16,7 +16,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function openTin(species, known = true) {
-    freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200 } });
+    await freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200 } });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger);

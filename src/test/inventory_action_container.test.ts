@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const discovered of [false, true]) {
     void test(`${discovered ? 'a discovered' : 'an unidentified'} bag of tricks offers ${discovered ? 'reaching inside' : 'opening'} in its item actions`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const bag = await addInventoryObject(BAG_OF_TRICKS, { typeKnown: discovered });
         const input = resetInputState();
         input.feed(bag.invlet);
@@ -28,7 +28,7 @@ for (const discovered of [false, true]) {
 }
 
 void test('a bag of tricks with unknown contents offers tipping through its item actions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bag = await addInventoryObject(BAG_OF_TRICKS, { cknown: false });
     const input = resetInputState();
     input.feed(bag.invlet);
@@ -42,7 +42,7 @@ void test('a bag of tricks with unknown contents offers tipping through its item
 });
 
 void test('a carried sack offers opening through its inventory action menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
     const input = resetInputState();
     input.feed(sack.invlet);
@@ -58,7 +58,7 @@ void test('a carried sack offers opening through its inventory action menu', asy
 });
 
 void test('the inventory opening action applies the selected sack after its menu closes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
     const input = resetInputState();
     await answerPrompts(rhack('i'.charCodeAt(0)), input, [

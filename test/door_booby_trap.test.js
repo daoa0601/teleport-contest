@@ -83,7 +83,7 @@ void test('picking a trapped lock refreshes sight before the next monster acts',
     // Six squares is outside a level-one hero's explosion wake radius.
     game.u.aggravateMonster = true;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(16, 10), false, 'The closed door must hide the sleeping gnome.');
     const tool = await knownObject(LOCK_PICK);
     game.u.dx = 1;

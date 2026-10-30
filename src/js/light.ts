@@ -172,12 +172,12 @@ function swallowedLightMessage() {
         : `${subject} glistens.`;
 }
 
-function roomEffectCells(radius: number, lit: boolean): Position[] {
+async function roomEffectCells(radius: number, lit: boolean): Promise<Position[]> {
     if (!Is_rogue_level(game.u?.uz)) {
         // Sunsword illuminates the hero's spot directly; do_clear_area
         // rejects radius zero in both the native source and the port.
         if (radius === 0) return [{ x: game.u.ux, y: game.u.uy }];
-        return clearAreaCells(game.u.ux, game.u.uy, radius);
+        return await clearAreaCells(game.u.ux, game.u.uy, radius);
     }
 
     const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
@@ -383,7 +383,7 @@ export async function lightHitsGremlin(
         return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my);
     } else if (cansee(monster.mx, monster.my)
         && !canSpotMonster(monster)) {
-        map_invisible(monster.mx, monster.my);
+        await map_invisible(monster.mx, monster.my);
     }
 }
 
@@ -423,7 +423,7 @@ export async function lightRoom(
     const ballAndChain = !lit && !blind ? await beginBallAndChainRedraw() : null;
 
     const gremlins = [];
-    for (const { x, y } of roomEffectCells(radius, lit)) {
+    for (const { x, y } of await roomEffectCells(radius, lit)) {
         const location = game.level?.at?.(x, y);
         if (!location) continue;
         location.lit = !!lit;
@@ -438,12 +438,12 @@ export async function lightRoom(
         if (monster) gremlins.push(monster);
     }
     if (!blind) {
-        vision_recalc(2);
+        await vision_recalc(2);
         await finishBallAndChainMove(ballAndChain);
     }
     game.vision_full_recalc = 1;
     if (lit && gremlins.length) {
-        vision_recalc(0);
+        await vision_recalc(0);
         for (const gremlin of gremlins.reverse()) {
             if (!finishMonsterKill)
                 throw new TypeError('lightRoom needs a monster death handler');
@@ -498,7 +498,7 @@ async function createConfusedLightPets(scroll: GameObject): Promise<boolean> {
         monster.msleeping = 0;
         monster.mcan = 1;
         if (canSpotMonster(monster)) sawLight = true;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     if (sawLight)
         await plineWithContinuation('Lights appear all around you!');
@@ -696,7 +696,7 @@ async function finishBurnedObject(object: GameObject, state: GameState, { overdu
         await deleteObject(object, state);
     }
     if (floor && (overdue || object.otyp !== POT_OIL))
-        maybeUnhideAt(floor.x, floor.y, state);
+        await maybeUnhideAt(floor.x, floor.y, state);
     return true;
 }
 
@@ -792,7 +792,7 @@ export async function runClaimedObjectBurnTimer(
     if (!destroyed && threshold > 0) beginObjectBurn(object, state, currentTurn);
     if (visible && location && threshold === 0
         && (object.otyp === POT_OIL || object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE))
-        newsym(location.x, location.y);
+        await newsym(location.x, location.y);
     return { object, threshold, overdue: false, destroyed };
 }
 

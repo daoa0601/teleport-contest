@@ -18,17 +18,17 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { assertWormBody } from './support/worms.js';
 
 async function placedWorm(segmentCount: number) {
-    freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14, heroX: 10, heroY: 10 });
+    await freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14, heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10,
         MM_ANGRY | MM_NOTAIL | NO_MINVENT);
-    initializeMonsterWormBody(worm, { segmentCount });
+    await initializeMonsterWormBody(worm, { segmentCount });
     assertWormBody(worm);
     assert.equal(worm.wormSegments.length, segmentCount);
     const squares = [{ x: worm.mx, y: worm.my },
         ...worm.wormSegments.map(({ x, y }) => ({ x, y }))];
     for (const { x, y } of squares) {
-        newsym(x, y);
+        await newsym(x, y);
         assert.equal(monsterAtPosition(game.level, x, y), worm);
         assert.equal(glyphAt(x, y)?.kind, 'monster');
     }
@@ -42,14 +42,14 @@ for (const segmentCount of [0, 3]) {
             requirePlayingGame(game);
             const head = { x: worm.mx, y: worm.my };
 
-            if (removal === 'relocation') clearMonsterWormFromMap(worm);
-            else removeMonsterWormBody(worm);
+            if (removal === 'relocation') await clearMonsterWormFromMap(worm);
+            else await removeMonsterWormBody(worm);
 
             assert.ok(game.level.monsters.includes(worm), 'Removal keeps the monster in the level chain.');
             assert.deepEqual({ x: worm.mx, y: worm.my }, head);
             for (const { x, y } of squares) {
                 assert.equal(monsterAtPosition(game.level, x, y), null, `Removed square ${x},${y} is vacant.`);
-                newsym(x, y);
+                await newsym(x, y);
                 assert.notEqual(glyphAt(x, y)?.kind, 'monster', `Redrawing ${x},${y} keeps it vacant.`);
             }
         });
@@ -58,13 +58,13 @@ for (const segmentCount of [0, 3]) {
     void test(`discarding an already removed ${segmentCount}-segment worm leaves its replacement mapped`, async () => {
         const { worm, squares } = await placedWorm(segmentCount);
         requirePlayingGame(game);
-        clearMonsterWormFromMap(worm);
+        await clearMonsterWormFromMap(worm);
         const replacement = await createMonsterAt('goblin', worm.mx, worm.my, MM_ANGRY | NO_MINVENT);
 
-        removeMonsterWormBody(worm);
+        await removeMonsterWormBody(worm);
 
         assert.equal(monsterAtPosition(game.level, replacement.mx, replacement.my), replacement);
-        newsym(replacement.mx, replacement.my);
+        await newsym(replacement.mx, replacement.my);
         assert.equal(glyphAt(replacement.mx, replacement.my)?.kind, 'monster');
         for (const { x, y } of squares.slice(1))
             assert.equal(monsterAtPosition(game.level, x, y), null);
@@ -79,7 +79,7 @@ for (const segmentCount of [0, 3]) {
 
         for (const { x, y } of squares) {
             assert.equal(monsterAtPosition(game.level, x, y), null, `Death releases ${x},${y}.`);
-            newsym(x, y);
+            await newsym(x, y);
             assert.notEqual(glyphAt(x, y)?.kind, 'monster');
         }
     });
@@ -95,7 +95,7 @@ for (const segmentCount of [0, 3]) {
 
         for (const { x, y } of squares) {
             assert.equal(monsterAtPosition(game.level, x, y), null, `Migration releases ${x},${y}.`);
-            newsym(x, y);
+            await newsym(x, y);
             assert.notEqual(glyphAt(x, y)?.kind, 'monster');
         }
     });
@@ -103,7 +103,7 @@ for (const segmentCount of [0, 3]) {
     void test(`teleport places a removed ${segmentCount}-segment worm back at its unchanged coordinates`, async () => {
         const { worm, squares } = await placedWorm(segmentCount);
         requirePlayingGame(game);
-        clearMonsterWormFromMap(worm);
+        await clearMonsterWormFromMap(worm);
 
         await relocateMonsterTo(worm, worm.mx, worm.my);
 
@@ -112,7 +112,7 @@ for (const segmentCount of [0, 3]) {
         assert.equal(worm.wormSegments.length, segmentCount);
         for (const { x, y } of squares) {
             const occupied: boolean = monsterAtPosition(game.level, x, y) === worm;
-            newsym(x, y);
+            await newsym(x, y);
             assert.equal(glyphAt(x, y)?.kind === 'monster', occupied);
         }
     });
@@ -121,10 +121,10 @@ for (const segmentCount of [0, 3]) {
 void test('placing a discarded worm head does not restore its discarded tail', async () => {
     const { worm, squares } = await placedWorm(3);
     requirePlayingGame(game);
-    removeMonsterWormBody(worm);
+    await removeMonsterWormBody(worm);
 
     placeMonsterAt(worm, worm.mx, worm.my);
-    newsym(worm.mx, worm.my);
+    await newsym(worm.mx, worm.my);
 
     assert.equal(monsterAtPosition(game.level, worm.mx, worm.my), worm);
     assert.equal(glyphAt(worm.mx, worm.my)?.kind, 'monster');
@@ -149,8 +149,8 @@ for (const square of ['head', 'tail']) {
             const { x, y } = point;
             assert.equal(monsterAtPosition(game.level, x, y), replacement);
 
-            if (removal === 'relocation') clearMonsterWormFromMap(worm);
-            else removeMonsterWormBody(worm);
+            if (removal === 'relocation') await clearMonsterWormFromMap(worm);
+            else await removeMonsterWormBody(worm);
 
             assert.equal(monsterAtPosition(game.level, x, y), null,
                 'Removing a worm clears its segment squares, including an overwritten map slot.');

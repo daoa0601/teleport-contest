@@ -121,7 +121,7 @@ void test('an empty earthquake drum acts like an ordinary drum', async () => {
 });
 for (const formHitPoints of [100, 1]) {
     void test(`a chasm ${formHitPoints === 1 ? 'breaks the monster form and continues' : 'damages the monster body, not hidden human HP'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         installPolymorphedHero('giant ant', { hitPoints: formHitPoints, maxHitPoints: 100 });
         const sleeper = await createMonsterAt('jackal', 12, 10);
@@ -140,7 +140,7 @@ for (const formHitPoints of [100, 1]) {
 }
 for (const lifesaving of [false, true]) {
     void test(`chasm ${lifesaving ? 'life saving resumes the earthquake scan' : 'permanent death stops the earthquake scan'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         if (lifesaving)
             await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
@@ -158,7 +158,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('earthquake jostling in an existing pit damages the current monster body', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requireFixtureGame(game);
     installPolymorphedHero('giant ant', { hitPoints: 100 });
     const pit = addTrap(game.level, PIT, 10, 10);

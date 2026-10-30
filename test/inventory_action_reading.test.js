@@ -12,7 +12,7 @@ for (const { type, text } of [
     { type: SPE_BLANK_PAPER, text: 'Read this spellbook' },
 ]) {
     void test(`an inventory item offers its native reading action: ${text}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(type, { known: true, typeKnown: true });
         const input = resetInputState();
         input.feed(item.invlet);

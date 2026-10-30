@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('digging a grave unearths the named corpse of a recorded adventurer', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = GRAVE;
     game.storage = memoryStorage();
     saveScoreRecords([{
@@ -41,7 +41,7 @@ void test('digging a grave unearths the named corpse of a recorded adventurer', 
 });
 
 void test('disturbing a mummy in a grave delivers the complete warning', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = GRAVE;
     grantIntrinsicProperty('levitation', 'outside');
     const wand = await addInventoryObject(WAN_DIGGING, { spe: 2 });

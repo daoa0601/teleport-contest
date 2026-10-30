@@ -51,7 +51,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
-export function premap_detect() {
+export async function premap_detect() {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const loc = game.level?.at(x, y);
@@ -64,29 +64,29 @@ export function premap_detect() {
             loc.waslit = true;
             loc.premapped = true;
             if (loc.typ === SDOOR) loc.wall_info = 0;
-            map_background(x, y, true);
+            await map_background(x, y, true);
             const boulder = game.level?.objects?.[x]?.[y]
                 ?.find(object => object.otyp === BOULDER);
-            if (boulder) map_object(boulder, true, false);
+            if (boulder) await map_object(boulder, true, false);
         }
     }
     for (const trap of game.level?.traps || []) {
         trap.tseen = true;
-        map_trap(trap, true);
+        await map_trap(trap, true);
     }
 }
 
 // C detect.c:do_mapping() and show_map_spot().  Mapping reveals terrain and
 // secret corridors.  It preserves secret doors, unknown traps, and objects
 // the hero had not already seen.
-export function mapLevel({
+export async function mapLevel({
     confused = (game.u?.confusionTurns ?? 0) > 0,
     revealAllTraps = false,
     exercise = true,
 }: { confused?: boolean; revealAllTraps?: boolean; exercise?: boolean } = {}) {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
-            showMapSpot(x, y, { confused, revealAllTraps });
+            await showMapSpot(x, y, { confused, revealAllTraps });
         }
     }
     recordMappedOverviewState();
@@ -94,7 +94,7 @@ export function mapLevel({
 }
 
 // C detect.c:show_map_spot().  The single-square owner also serves probing.
-export function showMapSpot(x: number, y: number, {
+export async function showMapSpot(x: number, y: number, {
     state = game, confused = false, revealAllTraps = false,
 }: { state?: GameState; confused?: boolean; revealAllTraps?: boolean } = {}) {
     if (confused && rn2(7)) return;
@@ -111,21 +111,21 @@ export function showMapSpot(x: number, y: number, {
         color: 'color' in shown && typeof shown.color === 'number' ? shown.color : loc.disp_color, decgfx: 'decgfx' in shown && typeof shown.decgfx === 'boolean' ? shown.decgfx : loc.disp_decgfx } : null;
     const oldAttribute = loc.disp_attr;
     if (level.flags.hero_memory) {
-        magic_map_background(x, y, false);
-        newsym(x, y);
-    } else magic_map_background(x, y, true);
+        await magic_map_background(x, y, false);
+        await newsym(x, y);
+    } else await magic_map_background(x, y, true);
 
     if (!IS_FURNITURE(loc.typ)) {
         const trap = level.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
         const engraving = level.engravings?.find(candidate => candidate.x === x && candidate.y === y);
         if (trap && (trap.tseen || revealAllTraps)) {
             if (revealAllTraps) trap.tseen = true;
-            map_trap(trap, true);
+            await map_trap(trap, true);
         }
-        else if (engraving && !confused) map_engraving(engraving, true);
+        else if (engraving && !confused) await map_engraving(engraving, true);
         else if (oldGlyph && ['object', 'trap'].includes(oldGlyph.kind)) {
             if (level.flags.hero_memory) loc.remembered_glyph = { ...oldGlyph };
-            show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color,
+            await show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color,
                 oldGlyph.decgfx, oldAttribute, oldGlyph);
         }
     }
@@ -195,7 +195,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
             if (x === u.ux && y === u.uy) continue;
             const loc = game.level?.at(x, y);
             if (!loc) continue;
-            if (!automatic && (blind || visibleRegionAt(game, x, y))) feel_location(x, y);
+            if (!automatic && (blind || visibleRegionAt(game, x, y))) await feel_location(x, y);
             if (loc.typ === SDOOR) {
                 if (rnl(7 - bonus)) continue;
                 revealSecretDoor(x, y);
@@ -203,7 +203,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                 endVoluntaryMultiTurn(game);
                 // C dosearch0() maps the discovered door by touch even when
                 // its former wall position remains outside line of sight.
-                feel_location(x, y);
+                await feel_location(x, y);
                 await plineWithContinuation('You find a hidden door.');
                 found = true;
                 continue;
@@ -213,7 +213,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                 revealSecretCorridor(x, y);
                 exerciseWisdom();
                 endVoluntaryMultiTurn(game);
-                feel_newsym(x, y);
+                await feel_newsym(x, y);
                 await plineWithContinuation('You find a hidden passage.');
                 found = true;
                 continue;
@@ -230,7 +230,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                 const result = await findHiddenMonster(monster, false);
                 if (result === -1) continue;
                 if (result > 0) return true;
-            } else if (!automatic && !blind) unmap_invisible(x, y);
+            } else if (!automatic && !blind) await unmap_invisible(x, y);
             const trap = game.level?.traps?.find(candidate =>
                 candidate.tx === x && candidate.ty === y);
             if (trap && !trap.tseen) {
@@ -255,7 +255,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
 export async function findTrap(trap: Trap): Promise<void> {
     trap.tseen = true;
     exerciseWisdom();
-    feel_newsym(trap.tx, trap.ty);
+    await feel_newsym(trap.tx, trap.ty);
     const remembered = game.level?.at(trap.tx, trap.ty)?.remembered_glyph;
     const cleared = heroIsHallucinating(game)
         || remembered?.kind !== 'trap' || remembered.trapType !== trap.ttyp;
@@ -263,11 +263,11 @@ export async function findTrap(trap: Trap): Promise<void> {
         await cls();
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {
-                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'nothing' });
+                await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'nothing' });
             }
         }
-        map_trap(trap, true);
-        displaySelf();
+        await map_trap(trap, true);
+        await displaySelf();
     }
     await plineWithContinuation(foundTrapMessage(trap));
     if (cleared) {
@@ -297,7 +297,7 @@ export async function revealWarnedMonsters(): Promise<void> {
 async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise<-1 | 0 | 1> {
     let found: boolean;
     if (monster.m_ap_type) {
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         found = true;
     } else {
         found = !canSpotMonster(monster);
@@ -314,7 +314,7 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
             monster.mundetected = 0;
             found = true;
         }
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     if (!found) return 0;
     if (!canSpotMonster(monster)
@@ -322,7 +322,7 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
         return -1;
     exerciseWisdom();
     if (!canSpotMonster(monster)) {
-        map_invisible(monster.mx, monster.my);
+        await map_invisible(monster.mx, monster.my);
         // C mfind0() marks the sensed square before both descriptions.
         set_msg_xy(monster.mx, monster.my);
         await plineWithContinuation(formatFeltMessage('an unseen monster!'));
@@ -337,9 +337,9 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
 
 // C detect.c:sense_trap(). A hallucinating hero remembers a fabricated
 // object glyph, while the real trap remains discovered and unchanged.
-function senseDetectedTrap(trap: DetectionTrap) {
+async function senseDetectedTrap(trap: DetectionTrap) {
     if (!heroIsHallucinating(game)) {
-        map_trap(trap, true);
+        await map_trap(trap, true);
         return;
     }
     const firstObject = OBJECT_BASES[2];
@@ -349,10 +349,10 @@ function senseDetectedTrap(trap: DetectionTrap) {
     const species = rn2(MONSTER_SYMBOL.length);
     const image = { otyp: type, oclass: objectClassForType(type), quantity, quan: quantity,
         corpsenm: species, ox: trap.tx, oy: trap.ty };
-    map_object(image, true, false);
+    await map_object(image, true, false);
 }
 
-function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
+async function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
     const location = requireGameLevel(game).requireAt(x, y);
     if (glyph.kind === 'terrain' || glyph.kind === 'trap'
         || glyph.kind === 'unexplored') location.seenv = 0xff;
@@ -360,7 +360,7 @@ function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
     const previousVision = vision?.[x];
     if (!vision || previousVision === undefined) throw new Error(`No vision cell at ${x},${y}`);
     if (!heroIsBlind(game)) vision[x] = 3;
-    newsym(x, y);
+    await newsym(x, y);
     vision[x] = previousVision;
 }
 
@@ -373,8 +373,8 @@ async function revealTrappedContainers(objects: readonly GameObject[] | null | u
             const trap = { ttyp: TRAPPED_CHEST, tx: x, ty: y };
             const glyph = transientTrapGlyph(trap);
             await flashGlyphAt(x, y, glyph, 6);
-            senseDetectedTrap(trap);
-            showFoundFeature(x, y, glyph);
+            await senseDetectedTrap(trap);
+            await showFoundFeature(x, y, glyph);
             found++;
         }
         found += await revealTrappedContainers(object.contents, x, y);
@@ -404,7 +404,7 @@ export async function findit() {
         doors: 0, corridors: 0, traps: 0, monsters: 0,
         unseen: 0, keptUnseen: 0, clearedUnseen: 0,
     };
-    const cells = clearAreaCells(game.u.ux, game.u.uy, BOLT_LIM, {
+    const cells = await clearAreaCells(game.u.ux, game.u.uy, BOLT_LIM, {
         ignoreBlockers: Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz),
     });
     for (const { x, y } of cells) {
@@ -416,15 +416,15 @@ export async function findit() {
         if (loc.typ === SDOOR) {
             await flashGlyphAt(x, y, terrain_glyph({ ...loc, typ: DOOR, doormask: D_CLOSED }, x, y), 6);
             revealSecretDoor(x, y);
-            magic_map_background(x, y, false);
-            showFoundFeature(x, y, terrain_glyph(loc, x, y));
+            await magic_map_background(x, y, false);
+            await showFoundFeature(x, y, terrain_glyph(loc, x, y));
             found.doors++;
         } else if (loc.typ === SCORR) {
             const glyph = terrain_glyph({ ...loc, typ: CORR }, x, y);
             await flashGlyphAt(x, y, glyph, 6);
             revealSecretCorridor(x, y);
-            magic_map_background(x, y, false);
-            showFoundFeature(x, y, glyph);
+            await magic_map_background(x, y, false);
+            await showFoundFeature(x, y, glyph);
             found.corridors++;
         }
 
@@ -434,8 +434,8 @@ export async function findit() {
             const glyph = transientTrapGlyph(trap);
             await flashGlyphAt(x, y, glyph, 6);
             trap.tseen = true;
-            senseDetectedTrap(trap);
-            showFoundFeature(x, y, glyph);
+            await senseDetectedTrap(trap);
+            await showFoundFeature(x, y, glyph);
             found.traps++;
         }
         if (loc.typ === DOOR && (loc.doormask & (D_CLOSED | D_LOCKED))
@@ -443,8 +443,8 @@ export async function findit() {
             const doorTrap = { ttyp: TRAPPED_DOOR, tx: x, ty: y };
             const glyph = transientTrapGlyph(doorTrap);
             await flashGlyphAt(x, y, glyph, 6);
-            senseDetectedTrap(doorTrap);
-            showFoundFeature(x, y, glyph);
+            await senseDetectedTrap(doorTrap);
+            await showFoundFeature(x, y, glyph);
             found.traps++;
         }
 
@@ -471,7 +471,7 @@ export async function findit() {
             let revealedMonster = false;
             if (M_AP_TYPE(monster)) {
                 await flashGlyphAt(x, y, transientMonsterGlyph(monster), 6);
-                revealMonsterAppearance(monster);
+                await revealMonsterAppearance(monster);
                 revealedMonster = true;
             } else if (monster.mundetected
                 && (((MONSTER_FLAGS1[monster.mnum] ?? 0) & (M1_CONCEAL | M1_HIDE))
@@ -481,16 +481,16 @@ export async function findit() {
                 revealedMonster = true;
             }
             if (revealedMonster) found.monsters++;
-            newsym(x, y);
+            await newsym(x, y);
 
             if (loc.remembered_glyph?.kind === 'invisible') {
                 found.keptUnseen++;
             } else if (!canSpotMonster(monster)) {
                 await flashGlyphAt(x, y, { ch: 'I', kind: 'invisible' }, 6);
-                map_invisible(x, y);
+                await map_invisible(x, y);
                 found.unseen++;
             }
-        } else if (unmap_invisible(x, y)) {
+        } else if (await unmap_invisible(x, y)) {
             // C's unmap_invisible() always follows unmap_object() with
             // newsym(), so a visible square rediscovers its floor objects;
             // the flash then ends on that glyph instead of bare background.

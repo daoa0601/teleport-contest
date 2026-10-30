@@ -8,7 +8,7 @@ import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a hallucinated altar flash has a color but does not reveal beatitude', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = ALTAR;
     const dagger = await addInventoryObject(DAGGER, {

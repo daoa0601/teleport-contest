@@ -40,7 +40,7 @@ void test('enlightenment reports worn magic protection once, among resistances',
     assert.equal(game.u.antimagic, true);
 });
 void test('attributes predicts a safe #pray from the live prayer rules', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { debug: true },
         hero: { ublesscnt: 0, ugangr: 0, uluck: 0, ualign: { type: 0, record: 10 } },
     });
@@ -113,7 +113,7 @@ void test('a one-page enlightenment report ends with (end), a longer one numbers
 // C tty_end_menu() cuts an entry to cols - 2 characters, so the ^X menu never
 // draws its final column even when an enlightenment line would reach it.
 void test('enlightenment clips a full-width two-weapon skill line like the tty menu', async () => {
-    freshObjectRoom({ role: 'samurai', flags: { debug: true } });
+    await freshObjectRoom({ role: 'samurai', flags: { debug: true } });
     requirePlayingGame(game);
     const skills = ensureHeroSkills(game);
     assert.ok(skills);

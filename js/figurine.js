@@ -225,12 +225,12 @@ export async function runClaimedFigurineTimer(claimed, state = game, currentTurn
         redraw: floorVisible && !overdue,
     };
 }
-export function finishFigurineTimer(event, state = game) {
+export async function finishFigurineTimer(event, state = game) {
     if (!event?.transformed || !event.finishPending)
         return event;
     deleteFigurine(event.figurine, state);
     if (event.redraw)
-        newsym(event.x, event.y);
+        await newsym(event.x, event.y);
     event.finishPending = false;
     event.finished = true;
     return event;

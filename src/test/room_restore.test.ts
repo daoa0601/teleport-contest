@@ -26,7 +26,7 @@ void test('entering a restored special subroom updates the room linked from its 
     game.plname = 'Nested rooms';
     assert.equal(await saveGame(storage), true);
 
-    assert.equal(restoreGame('Nested rooms', storage), true);
+    assert.equal(await restoreGame('Nested rooms', storage), true);
     requirePlayingGame(game);
     const parent = game.level.rooms.filter(isRoom).find(room => room.nsubrooms > 0);
     const hive = parent?.sbrooms[0];

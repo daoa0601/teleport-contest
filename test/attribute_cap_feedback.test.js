@@ -9,7 +9,7 @@ import { OBJECT_NAMES, POT_GAIN_ABILITY } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('gain ability describes a Strength cap imposed by an opposing equipment bonus as current', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = game.u.amax.a[A_STR] = 118;
     await wearHeroAccessory(await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), { spe: -5 }), 'uleft');

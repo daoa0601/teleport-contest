@@ -17,7 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 void test('life saving during a volley stops the remaining missiles', async () => {
-    freshObjectRoom({ role: 'rogue', recalculateVision: false });
+    await freshObjectRoom({ role: 'rogue', recalculateVision: false });
     installHeroWeaponSkills({ [P_DAGGER]: P_EXPERT });
     game.u.uhp = game.u.uhpmax = 1;
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);

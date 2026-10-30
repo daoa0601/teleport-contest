@@ -175,8 +175,8 @@ export async function applyFloorEffects(
                 if (objectWeight(object) > WT_SPLASH_THRESHOLD) await publish('Splash!');
                 else if (airborne) await publish('Plop!');
             }
-            map_background(x, y, false);
-            newsym(x, y);
+            await map_background(x, y, false);
+            await newsym(x, y);
         }
         const messages: string[] = [];
         const result = await waterDamageObject(object, messages, state, {

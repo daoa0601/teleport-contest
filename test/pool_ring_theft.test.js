@@ -19,7 +19,7 @@ for (const rightHanded of [true, false]) {
             const hand = primaryHand === rightHanded ? 'right' : 'left';
             const blocked = primaryHand || twoHanded;
             void test(`a monkey ${blocked ? 'cannot steal' : 'can steal'} the ${hand}-hand ring under a welded ${twoHanded ? 'two-handed sword' : 'dagger'} of a ${rightHanded ? 'right' : 'left'}-handed hero`, async () => {
-                freshObjectRoom({ hero: { rightHanded, uhp: 100, uhpmax: 100 } });
+                await freshObjectRoom({ hero: { rightHanded, uhp: 100, uhpmax: 100 } });
                 requirePlayingGame(game);
                 const ring = await addInventoryObject(RIN_INCREASE_ACCURACY);
                 await wearHeroAccessory(ring, hand === 'left' ? 'uleft' : 'uright');
@@ -49,7 +49,7 @@ for (const rightHanded of [true, false]) {
     }
 }
 void test('a nymph can take a ring from under a welded two-handed weapon', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const ring = await addInventoryObject(RIN_INCREASE_ACCURACY);
     await wearHeroAccessory(ring, 'uright');

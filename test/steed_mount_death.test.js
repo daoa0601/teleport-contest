@@ -8,7 +8,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test('a fatal mounting slip records the accident without a killer prefix', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight',
         hero: { ulevel: 30, uhp: 1, uhpmax: 100, urexp: 100 },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },

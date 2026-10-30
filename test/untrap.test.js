@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const CLOSED_DOOR_APPEARANCE = 15;
 void test('cursed armor held as a weapon leaves the hands available to untrap', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     const armor = await addInventoryObject(OBJECT_NAMES.indexOf('bronze plate mail'), { cursed: true, bknown: false });
     await setPrimaryWeapon(armor);
     const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
@@ -25,7 +25,7 @@ void test('cursed armor held as a weapon leaves the hands available to untrap', 
     assert.equal(game.context.move, 1);
 });
 void test('a welded two-handed weapon prevents untrapping and reveals its curse', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     const staff = await addInventoryObject(QUARTERSTAFF, { cursed: true, bknown: false });
     await setPrimaryWeapon(staff);
     const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
@@ -37,7 +37,7 @@ void test('a welded two-handed weapon prevents untrapping and reveals its curse'
     assert.equal(game.context.move, 0);
 });
 void test('a ranger can disarm an adjacent bear trap', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     requirePlayingGame(game);
     const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     pushKeys('untrap\nl');
@@ -48,7 +48,7 @@ void test('a ranger can disarm an adjacent bear trap', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('untrapping reveals a monster disguised over the trap', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     requirePlayingGame(game);
     const trap = addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     const mimic = await createMonsterAt('small mimic', 11, 10);
@@ -63,7 +63,7 @@ void test('untrapping reveals a monster disguised over the trap', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('untrapping toward a disguised door reveals its mimic', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10);
     mimic.m_ap_type = M_AP_FURNITURE;
@@ -76,7 +76,7 @@ void test('untrapping toward a disguised door reveals its mimic', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('a boulder fills a pit after its monster is pulled out', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     requirePlayingGame(game);
     const trap = addTrap(level, PIT, 11, 10, {
         tseen: true,
@@ -93,7 +93,7 @@ void test('a boulder fills a pit after its monster is pulled out', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('the Master Key disarms a trapped chest', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'rogue',
         moves: 70,
         hero: { ualign: { type: -1, record: 10 } },
@@ -115,7 +115,7 @@ void test('the Master Key disarms a trapped chest', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('declining a floor trap still allows disarming a chest', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'rogue',
         hero: { ualign: { type: -1, record: 10 } },
     });
@@ -138,7 +138,7 @@ void test('declining a floor trap still allows disarming a chest', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('carrying the Master Key guarantees disarming a door trap', async () => {
-    const level = freshObjectRoom({ role: 'rogue' });
+    const level = await freshObjectRoom({ role: 'rogue' });
     requirePlayingGame(game);
     const key = await artifactObject('The Master Key of Thievery', {
         invlet: 'a',
@@ -163,7 +163,7 @@ void test('carrying the Master Key guarantees disarming a door trap', async () =
     assert.equal(game.context.move, 1);
 });
 void test('cancelling the Master Key direction does not start its cooldown', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'rogue',
         moves: 90,
         hero: { ualign: { type: -1, record: 10 } },
@@ -179,7 +179,7 @@ void test('cancelling the Master Key direction does not start its cooldown', asy
     assert.equal(game.context.move, 0);
 });
 void test('disarming a trapped door awards both score and a threshold level', async () => {
-    const level = freshObjectRoom({ role: 'rogue', hero: {
+    const level = await freshObjectRoom({ role: 'rogue', hero: {
             ulevel: 1, uexp: 19, urexp: 0,
         } });
     requirePlayingGame(game);

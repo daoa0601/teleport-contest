@@ -205,7 +205,7 @@ function canCenterCloud(x: number, y: number, state: PlayingGameState): boolean 
 async function chooseCenter(question: string, state: PlayingGameState): Promise<Position | null> {
     await pline(question);
     const valid = (x: number, y: number) => canCenterCloud(x, y, state);
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = await showGetposTip(state);
     await showGetposInstructions(state);
     if (firstUse) await pline('Move cursor to the desired position:');

@@ -108,7 +108,7 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
 export async function applyCorpsePostEffects(mnum: number, { state = game, tin = null }: CorpseOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (state._mimicMealMessage) finishMealMimicry(state);
+    if (state._mimicMealMessage) await finishMealMimicry(state);
     const hero = state.u;
     const name = requireMonsterData(MONSTER_NAME, mnum);
     if (HUMAN_WERE_FORMS.has(mnum)) {
@@ -224,5 +224,5 @@ async function eatStalker(state: PlayingGameState) {
         grantIntrinsicProperty('seeInvisible', 'outside', state);
         syncHeroInvisibility(state);
     }
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
 }

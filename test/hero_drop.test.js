@@ -19,7 +19,7 @@ const COCKATRICE = OBJECT_NAMES.length; // placeholder-free tests below use real
 // C do.c:714-720/722-734: a wielded dagger drops cleanly; welded or worn
 // items are refused by canletgo before any state changes.
 void test('dropping a wielded weapon releases the slot and lands it', async () => {
-    freshObjectRoom({ gameplaySeed: 81 });
+    await freshObjectRoom({ gameplaySeed: 81 });
     requireFixtureGame(game);
     const dagger = await addInventoryObject(DAGGER, { invlet: 'a' });
     await setPrimaryWeapon(dagger, game);
@@ -34,7 +34,7 @@ void test('dropping a wielded weapon releases the slot and lands it', async () =
 });
 // C do.c:736-751: the swallowed barrier names the digester's stomach.
 void test('dropping while swallowed describes the stomach', async () => {
-    freshObjectRoom({ gameplaySeed: 82 });
+    await freshObjectRoom({ gameplaySeed: 82 });
     requireFixtureGame(game);
     const gem = await addInventoryObject(OBJECT_NAMES.indexOf('diamond'), { invlet: 'a' });
     game.u.uswallow = 1;
@@ -52,7 +52,7 @@ void test('dropping while swallowed describes the stomach', async () => {
 // C do.c:741 names the engulfer with mon_nam(), so a minion elemental
 // carries its deity title from priest.c:priestname() ("of <god>").
 void test('dropping while swallowed names a minion engulfer after its god', async () => {
-    freshObjectRoom({ gameplaySeed: 83 });
+    await freshObjectRoom({ gameplaySeed: 83 });
     requireFixtureGame(game);
     const dagger = await addInventoryObject(DAGGER, { invlet: 'a' });
     const elemental = await createMonsterAt('air elemental', 10, 10);
@@ -70,7 +70,7 @@ void test('dropping while swallowed names a minion engulfer after its god', asyn
 // shopkeeper's proper name capitalized; only the generic articles
 // ("Your"/"The") lowercase.
 void test('an unpaid swallowed drop names the owning shopkeeper', async () => {
-    freshObjectRoom({ gameplaySeed: 86 });
+    await freshObjectRoom({ gameplaySeed: 86 });
     requireFixtureGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 11, keeperY: 10 });
     shopkeeper.eshk.shknam = 'Kabale';
@@ -91,7 +91,7 @@ void test('an unpaid swallowed drop names the owning shopkeeper', async () => {
 });
 // C do.c:753-757: rings over a sink divert to the sink owner.
 void test('a ring over a sink diverts to the sink owner', async () => {
-    freshObjectRoom({ gameplaySeed: 83 });
+    await freshObjectRoom({ gameplaySeed: 83 });
     requireFixtureGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = SINK;
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'), { invlet: 'a' });
@@ -102,7 +102,7 @@ void test('a ring over a sink diverts to the sink owner', async () => {
 });
 // C do.c:946-962: a bare-handed petrifying corpse prompts before dropping.
 void test('a cockatrice corpse prompts for bare hands', async () => {
-    freshObjectRoom({ gameplaySeed: 84 });
+    await freshObjectRoom({ gameplaySeed: 84 });
     requireFixtureGame(game);
     const corpse = await knownObject(OBJECT_NAMES.indexOf('corpse'), {
         invlet: 'a', where: 'inventory',
@@ -120,7 +120,7 @@ void test('a cockatrice corpse prompts for bare hands', async () => {
 });
 // C do.c:786-796 dropx(): the shared core extracts and lands the object.
 void test('dropInventoryObjectAtHero performs the whole dropx sequence', async () => {
-    freshObjectRoom({ gameplaySeed: 85 });
+    await freshObjectRoom({ gameplaySeed: 85 });
     requireFixtureGame(game);
     const gem = await addInventoryObject(OBJECT_NAMES.indexOf('diamond'), { invlet: 'a' });
     pushKeys(' ');

@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const datetime of ['20000229000000', '20000301000000']) {
     void test(`a succubus uses the normalized local date for the glove demand at ${datetime}`, async context => {
         context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 1, 12) });
-        const level = freshObjectRoom({ flags: { female: false }, hero: { blindTurns: 20 } });
+        const level = await freshObjectRoom({ flags: { female: false }, hero: { blindTurns: 20 } });
         requirePlayingGame(game);
         level.flags.noteleport = true;
         game.datetime = datetime;

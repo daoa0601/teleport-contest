@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 
 void test('a fatal cursed levitation collision records the native cause without an article', async () => {
-    freshObjectRoom({ hero: { uhp: 1, urexp: 100 }, flags: {
+    await freshObjectRoom({ hero: { uhp: 1, urexp: 100 }, flags: {
         bones: false, disclose: '-i -a -v -c -o', tombstone: false,
     } });
     requirePlayingGame(game);

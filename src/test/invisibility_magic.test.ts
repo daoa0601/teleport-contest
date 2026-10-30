@@ -41,7 +41,7 @@ void test('drinking an invisibility potion makes the hero invisible', async () =
 // C potion.c peffect_invisibility(): the hero's square is redrawn before
 // the cursed potion's second message makes the first one wait.
 void test('a cursed invisibility potion hides the hero before its warning pages', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await addInventoryObject(POT_INVISIBILITY, { initialize: false, invlet: 'a', cursed: true });
     const heroCells: string[] = [];
@@ -67,7 +67,7 @@ void test('a cursed invisibility potion hides the hero before its warning pages'
 
 void test('the invisibility spell affects the hero without asking for a direction',
     async () => {
-        freshCasterRoom();
+        await freshCasterRoom();
         requireFixtureGame(game);
 
         await learnSpell(SPE_INVISIBILITY, { skill: P_EXPERT });

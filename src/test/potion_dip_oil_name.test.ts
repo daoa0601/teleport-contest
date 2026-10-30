@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const blind of [false, true]) {
     void test(`oil dipping names arrows without their count when ${blind ? 'felt' : 'seen'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
         requirePlayingGame(game);
         const arrows = await addInventoryObject(ARROW, { quan: 12, oeroded: 2 });
         const oil = await addInventoryObject(POT_OIL);
@@ -26,7 +26,7 @@ for (const blind of [false, true]) {
     });
 
     void test(`oil repair names a dagger stack without its count when ${blind ? 'felt' : 'seen'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
         requirePlayingGame(game);
         const daggers = await addInventoryObject(DAGGER, { quan: 3, oeroded: 2, oeroded2: 3 });
         const oil = await addInventoryObject(POT_OIL);
@@ -44,7 +44,7 @@ for (const blind of [false, true]) {
 }
 
 void test('a single oiled dagger uses a singular verb', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const oil = await addInventoryObject(POT_OIL);
     resetInputState();
@@ -57,7 +57,7 @@ void test('a single oiled dagger uses a singular verb', async () => {
 for (const blind of [false, true]) {
     for (const damaged of [false, true]) {
         void test(`oil ${damaged ? 'repair' : 'dipping'} names identified Excalibur when ${blind ? 'felt' : 'seen'}`, async () => {
-            freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+            await freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
             const artifact = artifactByName('Excalibur');
             assert.ok(artifact);
             const sword = await addInventoryObject(LONG_SWORD, {

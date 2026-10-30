@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('sickness potions report a weakened carrying capacity before their HP damage', async () => {
     let physicalAttributeLosses = 0;
     for (let seed = 1n; seed <= 16n; seed++) {
-        freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
+        await freshObjectRoom({ hero: { uhp: 40, uhpmax: 40 } });
         requirePlayingGame(game);
         game._moveloopStarted = true;
         await addInventoryObject(ROCK, { quan: 60 });

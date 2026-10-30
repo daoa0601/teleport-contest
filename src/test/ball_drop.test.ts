@@ -30,7 +30,7 @@ async function punishedHero({
     chainAt?: readonly [number, number];
     seed?: number;
 } = {}) {
-    freshObjectRoom({ gameplaySeed: seed });
+    await freshObjectRoom({ gameplaySeed: seed });
     requirePlayingGame(game);
     pushKeys('  ');
     await punishHero(null, game);
@@ -101,7 +101,7 @@ void test('the chain really moves between floor piles', async () => {
 // forces the chain to move — hero(10,10), ball(11,10), chain(11,11) all in
 // the pool, and (9,9) the only adjacent dry square.
 void test('the crawl-out drags the chain toward the escape square', async () => {
-    freshObjectRoom({ gameplaySeed: 75 });
+    await freshObjectRoom({ gameplaySeed: 75 });
     requirePlayingGame(game);
     pushKeys('  ');
     await punishHero(null, game);
@@ -207,8 +207,8 @@ void test('dropping a blind ball restores the known floor beneath the felt chain
     await moveObject(chain, 10, 11);
     await setBallAndChainFelt(false);
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
-    feel_location(10, 11);
+    await vision_recalc(0);
+    await feel_location(10, 11);
     pushKeys(' '.repeat(10));
 
     await dropBall(11, 10);

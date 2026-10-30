@@ -65,7 +65,7 @@ for (const trapped of [false, true]) {
             door.roomno = roomno;
             door.edge = true;
             vision_reset_new_level();
-            vision_recalc(0);
+            await vision_recalc(0);
             assert.equal(canSpotMonster(shopkeeper), !hidden,
                 'The keeper must start on the intended side of the sight barrier.');
             const messages: string[] = [];

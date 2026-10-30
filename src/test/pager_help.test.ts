@@ -20,7 +20,7 @@ function assertMenuHeading(text: string, attr: number, color: number): void {
 }
 
 void test('the V command shows the native short version and spends no turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await rhack('V'.charCodeAt(0));
     await flush_screen(1);
     const text = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('');
@@ -29,7 +29,7 @@ void test('the V command shows the native short version and spends no turn', asy
 });
 
 void test('whatdoes describes the current binding of a key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.commandBindings.bindKey('x'.charCodeAt(0), 'search');
     const input = resetInputState();
     await answerPrompts(rhack('&'.charCodeAt(0)), input, [
@@ -46,7 +46,7 @@ for (const [key, description] of [
     [' ', "rest one move via 'rest_on_space' option"],
 ] as const) {
     void test(`whatdoes describes waiting with ${key === ' ' ? 'space' : 'a period'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.commandBindings.setRestOnSpace(true);
         const input = resetInputState();
         const operation = rhack('&'.charCodeAt(0));
@@ -64,7 +64,7 @@ for (const [key, description] of [
 }
 
 void test('the extended-command help list describes ordinary waiting', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('k:');
     await answerPrompts(rhack('?'.charCodeAt(0)), input, [
@@ -77,7 +77,7 @@ for (const [key, text] of [['d', /NetHack.*--More--/s], ['o', /NetHack developme
     ['l', /Menu control keys:.*--More--/s], ['j', /Full Current Key Bindings List.*--More--/s],
     ['k', /Extended Commands List.*\(1 of /s]] as const) {
     void test(`help choice ${key} opens its text window`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const input = resetInputState();
         input.feed(key);
         await answerPrompts(rhack('?'.charCodeAt(0)), input, [
@@ -88,7 +88,7 @@ for (const [key, text] of [['d', /NetHack.*--More--/s], ['o', /NetHack developme
 }
 
 void test('help hides wizard-only commands during ordinary play', async () => {
-    freshObjectRoom({ flags: { debug: false } });
+    await freshObjectRoom({ flags: { debug: false } });
     const input = resetInputState();
     const operation = rhack('?'.charCodeAt(0));
     await input.waitUntilBlocked();
@@ -99,7 +99,7 @@ void test('help hides wizard-only commands during ordinary play', async () => {
 });
 
 void test('help names the actual key bound to the full options command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.commandBindings.bindKey('v'.charCodeAt(0), 'optionsfull');
     const input = resetInputState();
     await answerPrompts(rhack('?'.charCodeAt(0)), input, [
@@ -108,7 +108,7 @@ void test('help names the actual key bound to the full options command', async (
 });
 
 void test('the extended-command help list supports wildcard searches', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('k:');
     await answerPrompts(rhack('?'.charCodeAt(0)), input, [
@@ -118,7 +118,7 @@ void test('the extended-command help list supports wildcard searches', async () 
 });
 
 void test('closing #? returns to a fresh extended-command prompt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('?\r');
 
@@ -135,7 +135,7 @@ void test('closing #? returns to a fresh extended-command prompt', async () => {
 });
 
 void test('closing a counted #? preserves the count for the selected wait command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('3#?\r');
     const operation = rhack(0);
@@ -156,7 +156,7 @@ void test('closing a counted #? preserves the count for the selected wait comman
 
 for (const configured of [false, true]) {
     void test(`extended-command headings use ${configured ? 'configured' : 'default'} highlighting`, async () => {
-        freshObjectRoom({ flags: { debug: false } });
+        await freshObjectRoom({ flags: { debug: false } });
         if (configured) game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
         const input = resetInputState();
         input.feed('k');
@@ -175,7 +175,7 @@ for (const configured of [false, true]) {
 }
 
 void test('a debugging command search highlights its section heading', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     game.iflags.menu_headings = { attr: C_ATR_BOLD, color: CLR_RED };
     const input = resetInputState();
     input.feed('k:');

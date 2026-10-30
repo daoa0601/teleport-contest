@@ -15,7 +15,7 @@ function dismissViews() { pushKeys(' '.repeat(16)); }
 // the turn's under_water(0)/under_ground(0) then performs the full clear.
 for (const mode of ['underwater', 'underwater display flag', 'buried']) {
     void test(`a detection browse defers the next full map reset (${mode})`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         if (mode !== 'buried') {
             for (let x = 7; x <= 16; x++)
@@ -37,7 +37,7 @@ for (const mode of ['underwater', 'underwater display flag', 'buried']) {
         if (mode !== 'buried') {
             // A transient glyph beyond the three-by-three viewport must not
             // survive the turn's restricted update.
-            show_glyph_cell(16, 10, '!');
+            await show_glyph_cell(16, 10, '!');
             await flush_screen(1);
             assert.equal(requireScreenCell(15, 11).ch, '!');
             await under_water(0);

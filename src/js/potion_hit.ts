@@ -827,7 +827,7 @@ async function applySupportedDirectEffect({
                             wereTransformationNoun(monster)
                         }.`);
                     }
-                    transformedWere = !!(await transformWere(monster, state));
+                    transformedWere = !!await transformWere(monster, state);
                 }
             } else if (potion.cursed) {
                 angered = false;
@@ -847,7 +847,7 @@ async function applySupportedDirectEffect({
                             wereTransformationNoun(monster)
                         }.`);
                     }
-                    transformedWere = !!(await transformWere(monster, state));
+                    transformedWere = !!await transformWere(monster, state);
                 }
             }
         } else if (monster.mnum === PM_GREMLIN) {
@@ -896,7 +896,7 @@ async function applySupportedDirectEffect({
         setMonsterPermanentInvisibility(monster, !cursedPotion);
         if (!monster.invis_blkd) {
             await repaintMonster(monster);
-            if (monster.wormno) redrawMonsterWormSegments(monster);
+            if (monster.wormno) await redrawMonsterWormSegments(monster);
         }
 
         const spottedAfter = !!spotMonster(monster);
@@ -958,14 +958,14 @@ async function applySupportedDirectEffect({
         const appearance = M_AP_TYPE(monster);
         if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             && (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT))
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
         const inherentOrDefended = monsterHasSleepDefense(monster);
         const resisted = inherentOrDefended
             || monsterResistsPotion(monster, state);
         let slept = false;
         if (resisted) {
             await showShield?.(monster);
-        } else if (putMonsterToSleep(monster, duration)) {
+        } else if (await putMonsterToSleep(monster, duration)) {
             slept = true;
             await publish(`${sentenceSubject(monster)} falls asleep.`);
             if (monster === state.u?.ustuck && !state.u?.uswallow
@@ -1132,8 +1132,8 @@ export async function hitMonsterWithSupportedPotion({
     targetVisible = cansee(monster?.mx, monster?.my),
     targetSpotted = canSeeMonster(monster),
     spotMonster = target => canSpotMonster(target),
-    repaintMonster = target => newsym(target.mx, target.my),
-    rememberInvisible = target => map_invisible(target.mx, target.my),
+    repaintMonster = async target => await newsym(target.mx, target.my),
+    rememberInvisible = async target => await map_invisible(target.mx, target.my),
     wakeNearby = null,
     splitMonster = target => splitMonsterActor(target, state, { publish }),
     transformWere = target => transformWereMonster(target, state),

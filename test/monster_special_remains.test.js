@@ -12,7 +12,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a revived invisible unicorn horn is described with the visible monster modifiers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const unicorn = await createMonsterAt('white unicorn', 11, 10, NO_MINVENT);
     unicorn.minvis = true;
@@ -27,7 +27,7 @@ void test('a revived invisible unicorn horn is described with the visible monste
     assert.ok(messages.includes("The invisible white unicorn's recently regrown horn crumbles to dust."));
 });
 void test('material remains discard the dead golem given name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const golem = await createMonsterAt('clay golem', 11, 10, NO_MINVENT);
     setMonsterGivenName(golem, 'Clayton');
@@ -38,7 +38,7 @@ void test('material remains discard the dead golem given name', async () => {
     assert.equal(death.corpse?.oname, undefined);
 });
 void test('a combat death respects the species current no-corpse flag', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
     requireMonsterVital(giant.mnum).mvflags |= G_NOCORPSE;
@@ -50,7 +50,7 @@ void test('a combat death respects the species current no-corpse flag', async ()
 });
 for (const [species, type] of [['clay golem', ROCK], ['stone golem', STATUE]]) {
     void test(`a killed ${species} leaves remains protected from the current beam`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
         game.context.bypasses = true;
@@ -70,7 +70,7 @@ for (const [species, type] of [
     ['black pudding', GLOB_OF_BLACK_PUDDING],
 ]) {
     void test(`a killed ${species} immediately displays its unmerged glob`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
         const death = await finishMonsterKilled(monster, game, {

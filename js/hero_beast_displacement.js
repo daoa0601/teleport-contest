@@ -45,14 +45,14 @@ export async function settleBeastHeroDisplacement(beast, state) {
         || remembered?.kind === 'invisible' || remembered?.kind === 'warning';
     beast.mx = u.ux0;
     beast.my = u.uy0;
-    newsym(u.ux, u.uy);
-    newsym(u.ux0, u.uy0);
+    await newsym(u.ux, u.uy);
+    await newsym(u.ux0, u.uy0);
     beast.mux = u.ux;
     beast.muy = u.uy;
     const subject = noticed ? monsterName(beast, { state, article: 'your', capitalized: true }) : 'Something';
     await plineWithContinuation(`${subject} swaps places with you...`);
     if (!canSpotMonster(beast))
-        map_invisible(u.ux0, u.uy0);
+        await map_invisible(u.ux0, u.uy0);
     const moving = state.context.mon_moving;
     state.context.mon_moving = true;
     try {

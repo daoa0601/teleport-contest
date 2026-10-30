@@ -38,7 +38,7 @@ for (const quiet of [false, true]) {
 }
 
 void test('falling into an adjacent trap during untrapping leaves nearby buried zombies asleep', async () => {
-    const level = freshObjectRoom({ role: 'caveman' });
+    const level = await freshObjectRoom({ role: 'caveman' });
     addTrap(level, BEAR_TRAP, 11, 10, { tseen: true });
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('gnome')), 12, 10);
     await buryObject(corpse);

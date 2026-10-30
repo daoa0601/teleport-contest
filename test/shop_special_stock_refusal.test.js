@@ -12,7 +12,7 @@ import { knownObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a deaf hero selling the candelabrum to a non-Izchak lighter is refused in silence', async () => {
-    freshObjectRoom({ left: 9, right: 13, top: 9, bottom: 11, role: 'caveman' });
+    await freshObjectRoom({ left: 9, right: 13, top: 9, bottom: 11, role: 'caveman' });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({
         left: 9, right: 13, top: 9, bottom: 11,

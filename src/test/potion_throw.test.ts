@@ -54,7 +54,7 @@ async function freshMapPotionState(distance = 2, monsterOptions: PotionMonsterOp
     const attributes: AttributeValues = [12, 12, 12, 12, 12, 12];
     attributes[A_DEX] = 18;
 
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: {
             uz: { dnum: 0, dlevel: 4 },
             ulevel: 4,
@@ -167,7 +167,7 @@ void test('a blind hero can throw a potion at an unseen monster', async () => {
     requirePlayingGame(game);
     game.u.blindTurns = 10;
     syncBlindness(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     const potion = await addInventoryObject(POT_INVISIBILITY);
 
     initRng(3321n);

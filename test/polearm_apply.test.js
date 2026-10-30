@@ -19,10 +19,10 @@ import { freshObjectRoom } from './support/object-room.js';
 const HALBERD = OBJECT_NAMES.indexOf('halberd');
 const KATANA = OBJECT_NAMES.indexOf('katana');
 const ARROW = OBJECT_NAMES.indexOf('arrow');
-function freshPolearmRoom() {
+async function freshPolearmRoom() {
     // verbose:false keeps the getpos prompt short so follow-up attack
     // lines never overflow into an interactive --More-- dismissal.
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game._travelTipShown = true;
     resetInputState();
@@ -37,19 +37,19 @@ async function installPolearm({ wielded = true, skill = 1 } = {}) {
     return pole;
 }
 function sturdyMonsterAt(species, x, y) {
-    return createMonsterAt(species, x, y).then(monster => {
+    return createMonsterAt(species, x, y).then(async (monster) => {
         monster.mhp = monster.mhpmax = 500;
         // The engine repaints a placed monster through newsym(); the map
         // cell's semantic glyph follows that paint.
-        newsym(x, y);
+        await newsym(x, y);
         return monster;
     });
 }
-function paintAt(x, y) {
-    newsym(x, y);
+async function paintAt(x, y) {
+    await newsym(x, y);
 }
 void test('applying an unwielded polearm wields it before aiming', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm({ wielded: false });
     await applyInventoryObject(pole);
@@ -57,7 +57,7 @@ void test('applying an unwielded polearm wields it before aiming', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('an applied polearm strikes the sole monster in range', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     const monster = await sturdyMonsterAt('jackal', 12, 10);
@@ -67,7 +67,7 @@ void test('an applied polearm strikes the sole monster in range', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('a polearm blow at an adjacent square is too close', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     await sturdyMonsterAt('jackal', 11, 10);
@@ -76,7 +76,7 @@ void test('a polearm blow at an adjacent square is too close', async () => {
     assert.equal(game.context.move, 0);
 });
 void test('a basic polearm cannot reach a knight-move square', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm({ skill: 1 });
     await applyInventoryObject(pole, 'llj.');
@@ -84,7 +84,7 @@ void test('a basic polearm cannot reach a knight-move square', async () => {
     assert.equal(game.context.move, 0);
 });
 void test('a skilled polearm reaches a knight-move square and misses', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm({ skill: P_SKILLED });
     await applyInventoryObject(pole, 'llj.');
@@ -92,21 +92,21 @@ void test('a skilled polearm reaches a knight-move square and misses', async () 
     assert.equal(game.context.move, 1);
 });
 void test('a polearm thumps a statue without waking anything hostile', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     await floorObject(STATUE, 12, 10);
-    paintAt(12, 10);
+    await paintAt(12, 10);
     await applyInventoryObject(pole, 'll.');
     assert.match(game._pending_message, /Thump!  Your blow bounces harmlessly off the statue\.$/);
     assert.equal(game.context.move, 1);
 });
 void test('striking a trapped statue animates it instead of thumping', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     const statue = await floorObject(STATUE, 12, 10);
-    paintAt(12, 10);
+    await paintAt(12, 10);
     addTrap(requireGameLevel(), STATUE_TRAP, 12, 10, { madeby_u: false });
     initRng(3n);
     await applyInventoryObject(pole, 'll.');
@@ -115,38 +115,38 @@ void test('striking a trapped statue animates it instead of thumping', async () 
     assert.equal(game.context.move, 1);
 });
 void test('a polearm thumps a boulder', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     await floorObject(BOULDER, 12, 10);
-    paintAt(12, 10);
+    await paintAt(12, 10);
     await applyInventoryObject(pole, 'll.');
     assert.match(game._pending_message, /Thump!  Your blow bounces harmlessly off the boulder\.$/);
     assert.equal(game.context.move, 1);
 });
 void test('a polearm uselessly attacks furniture', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     requireGameLevel().requireAt(12, 10).typ = THRONE;
-    paintAt(12, 10);
+    await paintAt(12, 10);
     await applyInventoryObject(pole, 'll.');
     assert.match(game._pending_message, /You uselessly attack the opulent throne\.$/);
     assert.equal(game.context.move, 1);
 });
 void test('a blind hero cannot aim at an unseen empty square', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     game.blind = true;
     game.u.blindTurns = 10;
-    vision_recalc(0);
+    await vision_recalc(0);
     await applyInventoryObject(pole, 'll.');
     assert.match(game._pending_message, /You won't hit anything if you can't see that spot\.$/);
     assert.equal(game.context.move, 0);
 });
 void test('an applied polearm scuffs the engraving under the hero', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     await sturdyMonsterAt('jackal', 12, 10);
@@ -157,7 +157,7 @@ void test('an applied polearm scuffs the engraving under the hero', async () => 
     assert.equal(game.context.move, 1);
 });
 void test('Snickersnee strikes once per world turn without spending it', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     // A lawful wielder can handle Snickersnee without an alignment blast.
     game.u.ualign.type = 1;
@@ -182,7 +182,7 @@ void test('Snickersnee strikes once per world turn without spending it', async (
     assert.equal(game.context.move, 0);
 });
 void test('firing with a wielded polearm and no quiver auto-strikes', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     await installPolearm();
     const monster = await sturdyMonsterAt('jackal', 12, 10);
@@ -192,7 +192,7 @@ void test('firing with a wielded polearm and no quiver auto-strikes', async () =
     assert.equal(game.context.move, 1);
 });
 void test('firing a polearm with no candidate does not know what to hit', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     await installPolearm();
     initRng(1n);
@@ -201,7 +201,7 @@ void test('firing a polearm with no candidate does not know what to hit', async 
     assert.equal(game.context.move, 0);
 });
 void test('quivered ammunition defers to the wielded polearm when it can strike', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     await installPolearm();
     const arrow = await addInventoryObject(ARROW, { invlet: 'b' });
@@ -214,13 +214,13 @@ void test('quivered ammunition defers to the wielded polearm when it can strike'
     assert.equal(game.context.move, 1);
 });
 void test('a polearm blow at a closed door is a useless attack', async () => {
-    freshPolearmRoom();
+    await freshPolearmRoom();
     requirePlayingGame(game);
     const pole = await installPolearm();
     const door = requireGameLevel().requireAt(12, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
-    paintAt(12, 10);
+    await paintAt(12, 10);
     await applyInventoryObject(pole, 'll.');
     assert.match(game._pending_message, /You uselessly attack the closed door\.$/);
     assert.equal(game.context.move, 1);

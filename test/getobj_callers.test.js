@@ -27,7 +27,7 @@ async function firstQuestion(command, extended = false) {
     return question;
 }
 void test('drop compacts its suggested letters together with carried gold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(GOLD_PIECE, { quan: 20 });
     for (const [otyp, invlet] of [[DAGGER, 'a'], [BOW, 'b'], [ARROW, 'c'], [APPLE, 'd'], [EGG, 'e']])
         await addInventoryObject(otyp, { invlet });
@@ -36,14 +36,14 @@ void test('drop compacts its suggested letters together with carried gold', asyn
     assert.equal(await firstQuestion('d'), 'What do you want to drop? [$a-e or ?*]');
 });
 void test('drop asks for an object even when the pack is empty', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.inventory.length = 0;
     // GETOBJ_PROMPT keeps the question instead of reporting nothing to drop.
     assert.equal(await firstQuestion('d'), 'What do you want to drop? [*]');
     assert.equal(game.context.move, 0);
 });
 void test('untrapping a squeaky board prompts even without grease or potions', async (t) => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, SQKY_BOARD, game.u.ux + 1, game.u.uy, { tseen: true });
     await addInventoryWeapon(DAGGER, { invlet: 'a' });
     const input = resetInputState();
@@ -56,7 +56,7 @@ void test('untrapping a squeaky board prompts even without grease or potions', a
     assert.equal(game.context.move, 0);
 });
 void test('declining fountain dipping names the dipped object when no potion remains', async (t) => {
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     const here = level.at(game.u.ux, game.u.uy);
     assert.ok(here);
     here.typ = FOUNTAIN;

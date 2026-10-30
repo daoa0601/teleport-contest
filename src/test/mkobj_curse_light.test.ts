@@ -10,7 +10,7 @@ import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('cursing a lit artifact reports its reduced light', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const sword = await addInventoryItem(await artifactObject('Sunsword'));
     pushKeys(' '.repeat(100));

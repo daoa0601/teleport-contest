@@ -7,8 +7,8 @@ import { nextGetposFeature } from '../js/getpos.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const key of ['_', '\xfb']) {
-    void test(`altar search accepts ${key === '_' ? 'the default' : 'the active DECgraphics'} symbol`, () => {
-        const level = freshObjectRoom();
+    void test(`altar search accepts ${key === '_' ? 'the default' : 'the active DECgraphics'} symbol`, async () => {
+        const level = await freshObjectRoom();
         game.symset = 'DECgraphics';
         const altar = level.requireAt(12, 10);
         altar.typ = ALTAR;
@@ -20,8 +20,8 @@ for (const key of ['_', '\xfb']) {
     });
 }
 
-void test('altar search finds a remembered DECgraphics altar after terrain changes unseen', () => {
-    const level = freshObjectRoom();
+void test('altar search finds a remembered DECgraphics altar after terrain changes unseen', async () => {
+    const level = await freshObjectRoom();
     game.symset = 'DECgraphics';
     const altar = level.requireAt(20, 10);
     altar.typ = ALTAR;
@@ -34,8 +34,8 @@ void test('altar search finds a remembered DECgraphics altar after terrain chang
     assert.deepEqual(selected, { x: 20, y: 10 });
 });
 
-void test('a DECgraphics altar does not match the fountain symbol it resembles in the terminal', () => {
-    const level = freshObjectRoom();
+void test('a DECgraphics altar does not match the fountain symbol it resembles in the terminal', async () => {
+    const level = await freshObjectRoom();
     game.symset = 'DECgraphics';
     const altar = level.requireAt(12, 10);
     altar.typ = ALTAR;

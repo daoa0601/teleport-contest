@@ -13,13 +13,13 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('losing intrinsic telepathy preserves a hallucinated monster sensed through an amulet', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     setHeroBlindnessTurns(30);
-    vision_recalc(0);
+    await vision_recalc(0);
     grantIntrinsicProperty('telepathy', 'outside');
     await wearHeroAccessory(await addInventoryObject(OBJECT_NAMES.indexOf('amulet of ESP')), 'uamul');
     const monster = await createMonsterAt('kobold', 12, 10, NO_MINVENT);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     const before = glyphAt(monster.mx, monster.my);
     assert.equal(before?.kind, 'monster');
     initRng(2n);
@@ -30,12 +30,12 @@ void test('losing intrinsic telepathy preserves a hallucinated monster sensed th
     assert.equal(after.mnum, before.mnum, 'The amulet keeps the existing perceived identity visible.');
 });
 void test('losing the last telepathy source removes a blind hero\'s sensed monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroBlindnessTurns(30);
-    vision_recalc(0);
+    await vision_recalc(0);
     grantIntrinsicProperty('telepathy', 'outside');
     const monster = await createMonsterAt('kobold', 12, 10, NO_MINVENT);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     assert.equal(glyphAt(monster.mx, monster.my)?.kind, 'monster');
     initRng(2n);
     await attrcurse();

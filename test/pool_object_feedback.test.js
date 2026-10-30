@@ -7,7 +7,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 void test('breaking the last floor object exposes a hero hiding beneath it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('cave spider');
     const mirror = await floorObject(MIRROR, game.u.ux, game.u.uy);
     game.u.uundetected = true;

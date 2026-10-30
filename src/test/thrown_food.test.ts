@@ -33,7 +33,7 @@ async function message(): Promise<string> {
 }
 
 void test('throwing a treat tames a domestic dog and consumes the projectile without injury', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     dog.mpeaceful = 0;
     const hp = dog.mhp;
@@ -51,7 +51,7 @@ void test('throwing a treat tames a domestic dog and consumes the projectile wit
 
 void test('unsuitable food pacifies a cat and lands without provoking a hostile wakeup', async () => {
     // Verbose is the option default (optlist.h): tmiss names the visible cat.
-    const level = freshObjectRoom({ flags: { verbose: true } });
+    const level = await freshObjectRoom({ flags: { verbose: true } });
     const cat = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     cat.mpeaceful = 0;
     cat.msleeping = 1;
@@ -73,7 +73,7 @@ void test('unsuitable food pacifies a cat and lands without provoking a hostile 
 
 for (const [foodType, becomesPet] of [[BANANA, true], [APPLE, false]] as const) {
     void test(`a monkey ${becomesPet ? 'accepts a thrown banana' : 'is not pacified by a thrown apple'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monkey = await createMonsterAt('monkey', 11, 10, NO_MINVENT);
         monkey.mpeaceful = 0;
         const food = await addInventoryObject(foodType, { invlet: 'a' });
@@ -87,7 +87,7 @@ for (const [foodType, becomesPet] of [[BANANA, true], [APPLE, false]] as const) 
 }
 
 void test('a horse can be tamed by a carrot but is not pacified by animal flesh', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pony = await createMonsterAt('pony', 11, 10, NO_MINVENT);
     pony.mpeaceful = 0;
     const corpse = await addInventoryObject(CORPSE, {
@@ -107,7 +107,7 @@ void test('a horse can be tamed by a carrot but is not pacified by animal flesh'
 });
 
 void test('a pet catches one thrown treat and leaves the rest of the stack with the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(dog);
     assert.ok(dog.edog);
@@ -125,7 +125,7 @@ void test('a pet catches one thrown treat and leaves the rest of the stack with 
 });
 
 void test('kicking food into a dog tames it without putting the eaten object back on the floor', async () => {
-    const level = freshObjectRoom({ right: 22 });
+    const level = await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 18;
     game.u.acurr.a[A_DEX] = 18;
@@ -145,7 +145,7 @@ void test('kicking food into a dog tames it without putting the eaten object bac
 });
 
 void test('a hungry pet catches a cream pie which fails to splatter on it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 3;
     const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
@@ -165,7 +165,7 @@ void test('a hungry pet catches a cream pie which fails to splatter on it', asyn
 });
 
 void test('a rust monster spits caught rustproof armor onto the floor exactly once', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const pet = await createMonsterAt('rust monster', 11, 10, NO_MINVENT);
     initializePet(pet);
     assert.ok(pet.edog);
@@ -189,7 +189,7 @@ void test('a rust monster spits caught rustproof armor onto the floor exactly on
 
 for (const dexterity of [3, 25]) {
     void test(`a kicked pie ${dexterity === 3 ? 'can be caught after missing' : 'splashes before a hungry pet can eat it'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.u.acurr.a[A_DEX] = dexterity;
         const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);

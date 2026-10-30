@@ -14,7 +14,7 @@ function collectRumorPages() {
     return pages;
 }
 void test('a paper rumor introduces its text without announcing a cookie', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pages = collectRumorPages();
     await rumors.outRumor(1, BY_PAPER);
     const text = [...pages, game._pending_message].join('\n');
@@ -24,23 +24,23 @@ void test('a paper rumor introduces its text without announcing a cookie', async
     assert.equal(game.u.uconduct?.literate ?? 0, 0, 'The caller records literacy');
 });
 void test('a blind hero cannot read a paper rumor', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     await rumors.outRumor(1, BY_PAPER);
     assert.equal(game._pending_message, 'What a pity that you cannot read it!');
 });
 void test('paper rumors still print when the hero has fainted', async () => {
-    freshObjectRoom({ hero: { uhs: FAINTED } });
+    await freshObjectRoom({ hero: { uhs: FAINTED } });
     const pages = collectRumorPages();
     await rumors.outRumor(1, BY_PAPER);
     assert.match([...pages, game._pending_message].join('\n'), /^It reads:/);
 });
 void test('a cookie fortune is suppressed while the hero has fainted', async () => {
-    freshObjectRoom({ hero: { uhs: FAINTED } });
+    await freshObjectRoom({ hero: { uhs: FAINTED } });
     await rumors.outRumor(1, BY_COOKIE);
     assert.equal(game._pending_message, '');
 });
 void test('other rumor delivery prints the rumor without a reading or speaker introduction', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     const pages = collectRumorPages();
     await rumors.outRumor(1, BY_OTHER);
     const text = [...pages, game._pending_message].join('\n');

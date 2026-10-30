@@ -6,7 +6,7 @@ import { ORCISH_ARROW } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an Uruk-hai is created with poisoned orcish arrows', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
     const uruk = await createMonsterAt('Uruk-hai', 11, 10);
     const arrows = (uruk.minvent ?? []).find(object => object.otyp === ORCISH_ARROW);
     assert.ok(arrows, 'the uruk-hai loadout must include its bow ammunition');

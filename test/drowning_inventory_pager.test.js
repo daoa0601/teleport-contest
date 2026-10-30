@@ -9,7 +9,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('drowning pauses at a dilution message before wetting later inventory', async () => {
-    const level = freshObjectRoom({ hero: { breathless: true, uluck: -5 } });
+    const level = await freshObjectRoom({ hero: { breathless: true, uluck: -5 } });
     level.requireAt(11, 10).typ = POOL;
     await addInventoryObject(DAGGER);
     await addInventoryObject(POT_HEALING);

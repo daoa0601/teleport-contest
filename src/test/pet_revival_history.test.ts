@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('pet revival ends both its meal and a borrowed mimic appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(dog);
     dog.meating = 4;
@@ -29,7 +29,7 @@ void test('pet revival ends both its meal and a borrowed mimic appearance', asyn
 });
 
 void test('a pet becoming feral after life saving retains its grip on the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
     initializePet(bear);
     assert.ok(bear.edog);
@@ -46,7 +46,7 @@ void test('a pet becoming feral after life saving retains its grip on the hero',
 });
 
 void test('life saving pauses on an abused pet refusing the hero before announcing it has become feral', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bear = await createMonsterAt('owlbear', 11, 10, NO_MINVENT);
     initializePet(bear);
     assert.ok(bear.edog);

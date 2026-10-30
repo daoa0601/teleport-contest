@@ -21,7 +21,7 @@ async function messageLine(): Promise<string> {
 }
 
 async function hungryPet(species: string) {
-    freshObjectRoom({ moves: 1500 });
+    await freshObjectRoom({ moves: 1500 });
     const monster = await createMonsterAt(species, 11, 10,
         MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(monster);
@@ -169,7 +169,7 @@ void test('a hallucinated gecko gives its sales pitch instead of begging noises'
 void test('a hallucinated gecko appearance also gives the sales pitch', async () => {
     const monster = await hungryPet('little dog');
     game.u.hallucinationTurns = 10;
-    show_glyph_cell(monster.mx, monster.my, ':', 2, false, 0, {
+    await show_glyph_cell(monster.mx, monster.my, ':', 2, false, 0, {
         kind: 'monster', mnum: MONSTER_NAME.indexOf('gecko'),
     });
 
@@ -213,7 +213,7 @@ void test('a content dingo remains silent but its animal chat still spends time'
 });
 
 void test('an animal-form shopkeeper gestures about existing credit instead of barking', async () => {
-    freshObjectRoom({ left: 4, heroX: 5 });
+    await freshObjectRoom({ left: 4, heroX: 5 });
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.credit = 25;
     await changeMonsterForm(shopkeeper, MONSTER_NAME.indexOf('wolf'));
@@ -224,7 +224,7 @@ void test('an animal-form shopkeeper gestures about existing credit instead of b
 });
 
 void test('an animal-form shopkeeper stops following the wrong customer', async () => {
-    freshObjectRoom({ left: 4, heroX: 5 });
+    await freshObjectRoom({ left: 4, heroX: 5 });
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.following = 1;
     shopkeeper.eshk.customer = 'Someone else';

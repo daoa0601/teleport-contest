@@ -20,7 +20,7 @@ void test('ARM_BONUS uses complete source a_ac metadata, enchantment, and erosio
     assert.equal(armorBonus({ otyp: ROBE, enchantment: -1, oeroded: 8 }), -1);
 });
 void test('find_ac rebuilds all equipment and protection sources from live state', async () => {
-    freshObjectRoom({ hero: { ublessed: 2, uspellprot: 1 } });
+    await freshObjectRoom({ hero: { ublessed: 2, uspellprot: 1 } });
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(RING_MAIL, { spe: 1 }));
     wearHeroArmor(await addInventoryObject(ROBE, { spe: 0 }));
@@ -33,7 +33,7 @@ void test('find_ac rebuilds all equipment and protection sources from live state
     assert.equal(game.u.uac, -5);
 });
 void test('removing the Wizard cloak recomputes AC from 9 to 10', async () => {
-    freshObjectRoom({ hero: { uac: 9 } });
+    await freshObjectRoom({ hero: { uac: 9 } });
     requirePlayingGame(game);
     const state = game;
     state.uarmc = await uninitializedObject(CLOAK_OF_MAGIC_RESISTANCE, { spe: 0 });
@@ -42,7 +42,7 @@ void test('removing the Wizard cloak recomputes AC from 9 to 10', async () => {
     assert.equal(findArmorClass(state), 10);
 });
 void test('gauntlets of power project Strength 25 without mutating the base', async () => {
-    freshObjectRoom({ hero: { acurr: { a: [9, 10, 10, 10, 10, 10] } } });
+    await freshObjectRoom({ hero: { acurr: { a: [9, 10, 10, 10, 10, 10] } } });
     requirePlayingGame(game);
     const state = game;
     state.uarmg = await uninitializedObject(GAUNTLETS_OF_POWER);
@@ -55,7 +55,7 @@ void test('gauntlets of power project Strength 25 without mutating the base', as
     assert.equal(state.u.acurr.a[A_STR], 9);
 });
 void test('cloak displacement property precedes observable Cloak_on feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const state = game;
     const cloak = await uninitializedObject(CLOAK_OF_DISPLACEMENT, {
@@ -72,7 +72,7 @@ void test('cloak displacement property precedes observable Cloak_on feedback', a
     assert.equal(armorOnIdentifiesType(cloak, messages), true);
 });
 void test('taking off dragon armor removes only the armor resistance', async () => {
-    freshObjectRoom({ hero: { _propertySources: {} } });
+    await freshObjectRoom({ hero: { _propertySources: {} } });
     requirePlayingGame(game);
     const state = game;
     const armor = await uninitializedObject(RED_DRAGON_SCALE_MAIL, { worn: true });

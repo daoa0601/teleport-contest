@@ -16,7 +16,7 @@ for (const { endgame, special, description } of [
     { endgame: true, special: false, description: 'an ordinary player monster stays ordinary in the endgame' },
 ]) {
     void test(description, async () => {
-        freshObjectRoom({ gameplaySeed: 17n });
+        await freshObjectRoom({ gameplaySeed: 17n });
         game.astral_level = createSpecialLevel({ dnum: 5, dlevel: 1 });
         if (endgame) game.u.uz = { dnum: 5, dlevel: 2 };
 
@@ -36,7 +36,7 @@ for (const { endgame, special, description } of [
 
 for (const plane of [1, 2]) {
     void test(`a special knight gets endgame hit dice, a name, and worn armor on plane ${plane}`, async () => {
-        freshObjectRoom({ gameplaySeed: 17n });
+        await freshObjectRoom({ gameplaySeed: 17n });
         game.astral_level = createSpecialLevel({ dnum: 5, dlevel: 1 });
         game.u.uz = { dnum: 5, dlevel: plane };
 
@@ -61,7 +61,7 @@ for (const plane of [1, 2]) {
 
 for (const species of ['monk', 'wizard']) {
     void test(`a special ${species} follows its role's armor restrictions`, async () => {
-        freshObjectRoom({ gameplaySeed: 17n });
+        await freshObjectRoom({ gameplaySeed: 17n });
         game.astral_level = createSpecialLevel({ dnum: 5, dlevel: 1 });
         game.u.uz = { dnum: 5, dlevel: 1 };
 
@@ -79,7 +79,7 @@ for (const species of ['monk', 'wizard']) {
 }
 
 void test('a developer name already used by a player monster is skipped', async () => {
-    freshObjectRoom({ gameplaySeed: 17n });
+    await freshObjectRoom({ gameplaySeed: 17n });
     game.astral_level = createSpecialLevel({ dnum: 5, dlevel: 1 });
     game.u.uz = { dnum: 5, dlevel: 1 };
     const species = MONSTER_NAME.indexOf('knight');
@@ -94,7 +94,7 @@ void test('a developer name already used by a player monster is skipped', async 
 });
 
 void test('a special valkyrie gets a female name and title', async () => {
-    freshObjectRoom({ gameplaySeed: 17n });
+    await freshObjectRoom({ gameplaySeed: 17n });
     game.astral_level = createSpecialLevel({ dnum: 5, dlevel: 1 });
     game.u.uz = { dnum: 5, dlevel: 1 };
 
@@ -106,7 +106,7 @@ void test('a special valkyrie gets a female name and title', async () => {
 });
 
 void test('a player-monster group occupies distinct free squares', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 17n, left: 2, right: 77, top: 1, bottom: 19 });
+    const level = await freshObjectRoom({ gameplaySeed: 17n, left: 2, right: 77, top: 1, bottom: 19 });
     game.in_mklev = true;
 
     await createPlayerMonsters(4, false);
@@ -123,7 +123,7 @@ void test('a player-monster group occupies distinct free squares', async () => {
 
 for (const sameRole of [false, true]) {
     void test(`an endgame opponent challenges a hero of ${sameRole ? 'the same' : 'another'} role`, async () => {
-        freshObjectRoom({ role: sameRole ? 'knight' : 'caveman', gameplaySeed: 17n });
+        await freshObjectRoom({ role: sameRole ? 'knight' : 'caveman', gameplaySeed: 17n });
         game.astral_level = createSpecialLevel({ dnum: 5, dlevel: 1 });
         game.u.uz = { dnum: 5, dlevel: 1 };
         const knight = await createMonsterAt('knight', 11, 10);

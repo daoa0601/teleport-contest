@@ -23,8 +23,8 @@ import { createMonsterAt, equipMonsterObject, requireMonsterVital } from './supp
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function theftRoom(form = 'wood nymph', damageType: DamageType = AD_SEDU) {
-    const level = freshObjectRoom({ gameplaySeed: 37n, flags: { female: true } });
+async function theftRoom(form = 'wood nymph', damageType: DamageType = AD_SEDU) {
+    const level = await freshObjectRoom({ gameplaySeed: 37n, flags: { female: true } });
     requirePlayingGame(game);
     setHeroSpecies(nameToMonster(form), game);
     game.u.mfemale = true;
@@ -41,7 +41,7 @@ function theftRoom(form = 'wood nymph', damageType: DamageType = AD_SEDU) {
 }
 
 void test('gold theft merges an entire purse even with all lettered inventory slots occupied', async () => {
-    const { context, messages } = theftRoom('leprechaun', AD_SGLD);
+    const { context, messages } = await theftRoom('leprechaun', AD_SGLD);
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 10 });
     for (let i = 0; i < 52; i++) await addInventoryObject(DAGGER, { nomerge: true });
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
@@ -57,7 +57,7 @@ void test('gold theft merges an entire purse even with all lettered inventory sl
 });
 
 void test('gold theft drops the purse when no stack or lettered inventory slot is available', async () => {
-    const { level, context, messages } = theftRoom('leprechaun', AD_SGLD);
+    const { level, context, messages } = await theftRoom('leprechaun', AD_SGLD);
     for (let i = 0; i < 52; i++) await addInventoryObject(DAGGER, { nomerge: true });
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const gold = await knownObject(GOLD_PIECE, { quan: 73 });
@@ -72,7 +72,7 @@ void test('gold theft drops the purse when no stack or lettered inventory slot i
 });
 
 void test('item theft takes one possession and leaves gold with an unarmored victim', async () => {
-    const { context } = theftRoom();
+    const { context } = await theftRoom();
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const apple = await knownObject(APPLE);
     const dagger = await knownObject(DAGGER);
@@ -90,7 +90,7 @@ void test('item theft takes one possession and leaves gold with an unarmored vic
 const seductionDamageTypes: DamageType[] = [AD_SEDU, AD_SSEX];
 for (const damageType of seductionDamageTypes) {
     void test(`seduction attack ${damageType} removes a movable victim's suit last and leaves their gold`, async () => {
-        const { context, messages } = theftRoom('amorous demon', damageType);
+        const { context, messages } = await theftRoom('amorous demon', damageType);
         const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         monster.female = false;
         const apple = await knownObject(APPLE);
@@ -115,7 +115,7 @@ for (const damageType of seductionDamageTypes) {
 }
 
 void test('a nymph charms a victim of the same gender into giving up possessions', async () => {
-    const { context, messages } = theftRoom();
+    const { context, messages } = await theftRoom();
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     monster.female = true;
     await equipMonsterObject(monster, await knownObject(LEATHER_ARMOR), W_ARM);
@@ -128,7 +128,7 @@ void test('a nymph charms a victim of the same gender into giving up possessions
 
 for (const immobile of [false, true]) {
     void test(immobile ? 'a paralyzed victim cannot disrobe for a nymph' : 'a monkey steals one item without seducing an armored victim', async () => {
-        const { context, messages } = theftRoom(immobile ? 'wood nymph' : 'monkey', immobile ? AD_SEDU : AD_SITM);
+        const { context, messages } = await theftRoom(immobile ? 'wood nymph' : 'monkey', immobile ? AD_SEDU : AD_SITM);
         const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         if (immobile) monster.mcanmove = 0;
         const suit = await equipMonsterObject(monster, await knownObject(LEATHER_ARMOR), W_ARM);
@@ -145,7 +145,7 @@ for (const immobile of [false, true]) {
 }
 
 void test('theft removes a cursed wielded weapon without leaving a monster ownership link', async () => {
-    const { context } = theftRoom('monkey', AD_SITM);
+    const { context } = await theftRoom('monkey', AD_SITM);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const dagger = await equipMonsterObject(monster, await knownObject(DAGGER, { cursed: true }), W_WEP);
 
@@ -160,7 +160,7 @@ void test('theft removes a cursed wielded weapon without leaving a monster owner
 });
 
 void test('an overloaded theft drops the object before continuing to an item the hero can hold', async () => {
-    const { level, context, messages } = theftRoom('monkey', AD_SITM);
+    const { level, context, messages } = await theftRoom('monkey', AD_SITM);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const apple = await knownObject(APPLE);
     const boulder = await knownObject(BOULDER);
@@ -176,7 +176,7 @@ void test('an overloaded theft drops the object before continuing to an item the
 });
 
 void test('stealing gloves petrifies a corpse-wielding victim and preserves their gold inside the statue', async () => {
-    const { level, context } = theftRoom('monkey', AD_SITM);
+    const { level, context } = await theftRoom('monkey', AD_SITM);
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const corpse = await untimedCorpse(nameToMonster('cockatrice'));
     await equipMonsterObject(monster, corpse, W_WEP);
@@ -198,7 +198,7 @@ void test('stealing gloves petrifies a corpse-wielding victim and preserves thei
 });
 
 void test('touching a stolen petrifying corpse stops seduction even when life saving rescues the hero', async () => {
-    const { context } = theftRoom();
+    const { context } = await theftRoom();
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);

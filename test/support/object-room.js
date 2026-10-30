@@ -3,7 +3,7 @@ import { init_objects } from '../../js/o_init.js';
 import { initRng } from '../../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../../js/vision.js';
 import { freshPlayableRoom } from './playable-room.js';
-export function freshObjectRoom({ objectInitializationSeed = 999n, gameplaySeed, moves = 40, flags = {}, context = {}, hero = {}, recalculateVision = true, ...room } = {}) {
+export async function freshObjectRoom({ objectInitializationSeed = 999n, gameplaySeed, moves = 40, flags = {}, context = {}, hero = {}, recalculateVision = true, ...room } = {}) {
     const attributes = [12, 12, 12, 12, 12, 12];
     const level = freshPlayableRoom({
         left: 7,
@@ -32,7 +32,7 @@ export function freshObjectRoom({ objectInitializationSeed = 999n, gameplaySeed,
     game.in_mklev = false;
     vision_reset_new_level();
     if (recalculateVision)
-        vision_recalc(0);
+        await vision_recalc(0);
     // Opting out of initial sight also opts out of its pending refresh.
     else
         game.vision_full_recalc = 0;

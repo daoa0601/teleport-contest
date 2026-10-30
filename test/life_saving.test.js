@@ -24,7 +24,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 void test('life saving consumes the worn amulet and restores the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -38,7 +38,7 @@ void test('life saving consumes the worn amulet and restores the hero', async ()
     assert.equal(amulet.where, 'gone');
 });
 void test('a life-saving amulet remains payable after it crumbles', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const amulet = await floorObject(AMULET_OF_LIFE_SAVING, 10, 10);
@@ -101,7 +101,7 @@ async function dismissUntilMessage(input, operation, message, prompt = 'pager') 
 }
 for (const [cause, terrain] of [['drowning', POOL], ['burning', LAVAPOOL]]) {
     void test(`${cause} leaves the amulet worn until its recovery messages are dismissed`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         for (let x = game.u.ux - 1; x <= game.u.ux + 1; x++) {
             for (let y = game.u.uy - 1; y <= game.u.uy + 1; y++)

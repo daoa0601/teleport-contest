@@ -9,7 +9,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a propelled potion hit shatters the bottle instead of applying ordinary missile damage', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100 } });
     const potion = await knownObject(POT_FRUIT_JUICE);
     const messages: string[] = [];
 
@@ -24,7 +24,7 @@ void test('a propelled potion hit shatters the bottle instead of applying ordina
 });
 
 void test('a rock striking from above passes harmlessly through a rock-passing hero', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     installPolymorphedHero('xorn', { hitPoints: 40 });
     const rock = await knownObject(ROCK);
     const messages: string[] = [];
@@ -45,7 +45,7 @@ for (const { name, accuracy, roll, hit, message } of [
     { name: 'misses', accuracy: 6, roll: 20, hit: false, message: '3 blessed +2 clubs miss you.' },
 ]) {
     void test(`a stack that ${name} the hero retains its count and known properties`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         const clubs = await knownObject(CLUB, { quantity: 3, blessed: true, spe: 2 });
         const messages: string[] = [];
 
@@ -70,7 +70,7 @@ for (const { artifactName, description } of [
             message: `${description.charAt(0).toUpperCase() + description.slice(1)} misses you.` },
     ]) {
         void test(`identified ${artifactName} keeps its native article when it ${outcome} the hero`, async () => {
-            freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+            await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
             const artifact = artifactByName(artifactName);
             assert.ok(artifact, `Missing artifact: ${artifactName}`);
             const weapon = await artifactObject(artifactName, { rknown: true });

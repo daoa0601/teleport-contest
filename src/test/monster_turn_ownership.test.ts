@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('catching a monster potion transfers it into hero inventory ownership', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('goblin', 11, 10, MM_ANGRY | NO_MINVENT);
     const potion = await knownObject(POT_SLEEPING);
@@ -36,7 +36,7 @@ void test('catching a monster potion transfers it into hero inventory ownership'
 });
 
 void test('monster knockback into lava does not leave a burned victim corpse', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: 18,
         right: 20,
         recalculateVision: false,

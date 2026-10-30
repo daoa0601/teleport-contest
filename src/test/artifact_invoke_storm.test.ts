@@ -12,7 +12,7 @@ import { withMessagePages } from './support/planned-input.js';
 
 for (const name of ['Fire Brand', 'Frost Brand']) {
     void test(`${name} invokes an expert storm without spending energy or training spell skill`, async () => {
-        freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
+        await freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
             hero: { uhp: 500, uhpmax: 500, uen: 0, uenmax: 0 },
             flags: { verbose: true, tips: false }, gameplaySeed: 17n });
         requirePlayingGame(game);

@@ -222,7 +222,7 @@ void test('probing reveals a secret door and an unseen floor trap along its path
     secretDoorSquare.typ = SDOOR;
     secretDoorSquare.doormask = D_LOCKED;
     vision_note_blocker_change(12, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     await zap(WAN_PROBING);
     assert.ok(trap.tseen);
     assert.equal(level.requireAt(12, 10).typ, DOOR);
@@ -231,7 +231,7 @@ void test('probing reveals a secret door and an unseen floor trap along its path
 void test('probing removes an empty remembered invisible monster marker', async () => {
     const level = room();
     requirePlayingGame(game);
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     await zap(WAN_PROBING);
     assert.notEqual(level.requireAt(11, 10).remembered_glyph?.kind, 'invisible');
 });

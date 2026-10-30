@@ -207,7 +207,7 @@ void test('light illuminates the visible area and burns a nearby gremlin',
             for (let y = 8; y <= 12; y++) level.requireAt(x, y).lit = false;
         }
         vision_reset_new_level();
-        vision_recalc(0);
+        await vision_recalc(0);
         const gremlin = await createMonsterAt('gremlin', 11, 10);
         gremlin.mhp = gremlin.mhpmax = 20;
         const wand = await chargedWand(WAN_LIGHT);

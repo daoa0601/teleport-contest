@@ -14,7 +14,7 @@ function appearanceBlocksLight(type, appearance) {
         || appearance === TREE || appearance === SDOOR
         || appearance === DOOR || IS_WALL(appearance);
 }
-export function revealMonsterAppearance(monster, { includeMonsterDisguise = true, } = {}) {
+export async function revealMonsterAppearance(monster, { includeMonsterDisguise = true, } = {}) {
     const type = M_AP_TYPE(monster);
     const appearance = monster?.mappearance ?? 0;
     if (type === 0 || type === M_AP_MONSTER && !includeMonsterDisguise) {
@@ -32,7 +32,7 @@ export function revealMonsterAppearance(monster, { includeMonsterDisguise = true
         delete monster.mextra.mcorpsenm;
     if (lightBlocker)
         vision_note_blocker_change(monster.mx, monster.my);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     return {
         revealed: true, type, appearance, corpsenm, lightBlocker,
     };

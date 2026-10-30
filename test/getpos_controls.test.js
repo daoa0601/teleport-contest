@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { ATR_BOLD, ATR_INVERSE, ATR_NONE, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { C_ATR_BOLD, C_ATR_INVERSE } from '../js/color_attr.js';
 void test('area filtering cycles to targets across connected stone and walls', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { blindTurns: 5 } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { blindTurns: 5 } });
     for (const [x, typ] of [[10, STONE], [11, VWALL], [12, STONE], [13, VWALL]]) {
         const location = level.requireAt(x, 10);
         location.typ = typ;
@@ -29,7 +29,7 @@ void test('area filtering cycles to targets across connected stone and walls', a
     assert.equal(target?.y, 10);
 });
 void test('area filtering cycles to targets across connected secret corridors', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { blindTurns: 5 } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { blindTurns: 5 } });
     for (const [offset, typ] of [STONE, SCORR, SCORR, VWALL].entries()) {
         const location = level.requireAt(10 + offset, 10);
         location.typ = typ;
@@ -45,9 +45,9 @@ void test('area filtering cycles to targets across connected secret corridors', 
     assert.equal(target?.y, 10);
 });
 void test('getpos can use a menu to choose a shown monster', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await createMonsterAt('kitten', 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('!m');
     const selected = await answerPrompts(selectMapPosition({
@@ -62,7 +62,7 @@ void test('getpos can use a menu to choose a shown monster', async () => {
 });
 for (const force of [true, false]) {
     void test(`Enter rebound to the menu toggle works during ${force ? 'forced' : 'voluntary'} targeting`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             flags: { tips: false, verbose: false }, iflags: { getloc_usemenu: false },
         });
         assert.equal(game.commandBindings.bindKey(10, 'nothing').accepted, true);
@@ -80,9 +80,9 @@ for (const force of [true, false]) {
     });
 }
 void test('target menus identify their travel-destination purpose', async () => {
-    freshObjectRoom({ iflags: { getloc_travelmode: true, getloc_usemenu: true } });
+    await freshObjectRoom({ iflags: { getloc_travelmode: true, getloc_usemenu: true } });
     await createMonsterAt('kitten', 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('m');
     const selected = await answerPrompts(selectMapPosition({
@@ -93,7 +93,7 @@ void test('target menus identify their travel-destination purpose', async () => 
     assert.equal(selected?.x, 11);
 });
 void test('quick-look menus gather the new area after reversing direction in a doorway', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
     for (let y = 6; y <= 14; y++) {
         level.requireAt(10, y).typ = VWALL;
         for (let x = 11; x <= 16; x++)
@@ -104,8 +104,8 @@ void test('quick-look menus gather the new area after reversing direction in a d
     doorway.doormask = D_NODOOR;
     await createMonsterAt('kitten', 11, 10);
     await createMonsterAt('little dog', 8, 10);
-    newsym(11, 10);
-    newsym(8, 10);
+    await newsym(11, 10);
+    await newsym(8, 10);
     game.iflags.getloc_filter = 2;
     game.iflags.getloc_usemenu = true;
     const input = resetInputState();
@@ -119,7 +119,7 @@ void test('quick-look menus gather the new area after reversing direction in a d
     assert.equal(game.context.move, 0);
 });
 void test('getpos toggles automatic descriptions off and on', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const input = resetInputState();
     const selected = await answerPrompts(selectMapPosition({
         start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
@@ -133,7 +133,7 @@ void test('getpos toggles automatic descriptions off and on', async () => {
     assert.equal(selected?.x, 11);
 });
 void test('a long automatic description wraps at the last column without paging', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const description = 'a paperback book named The Amazing Maurice and His Educated Rodents (for sale, 15 zorkmids)';
     const input = resetInputState();
     const boundaries = [];
@@ -155,7 +155,7 @@ void test('a long automatic description wraps at the last column without paging'
     assert.deepEqual(boundaries[1], { lastColumn: ' ', nextRowStart: '15' });
 });
 void test('a verbose autodescribe-off notice is paged before the goal prompt returns', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const input = resetInputState();
     const selected = await answerPrompts(selectMapPosition({
         start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
@@ -169,7 +169,7 @@ void test('a verbose autodescribe-off notice is paged before the goal prompt ret
     assert.equal(selected?.x, 10);
 });
 void test('without autodescribe, moving the cursor keeps the last getpos message', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     game.iflags.autodescribe = false;
     const input = resetInputState();
     const selected = await answerPrompts(selectMapPosition({
@@ -182,9 +182,9 @@ void test('without autodescribe, moving the cursor keeps the last getpos message
     assert.equal(selected?.x, 11);
 });
 void test('getpos can limit target cycling to creatures in sight', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
     const distant = await createMonsterAt('kitten', 30, 10);
-    newsym(distant.mx, distant.my);
+    await newsym(distant.mx, distant.my);
     const input = resetInputState();
     input.feed('"m.');
     const selected = await selectMapPosition({
@@ -194,7 +194,7 @@ void test('getpos can limit target cycling to creatures in sight', async () => {
     assert.equal(selected?.y, game.u.uy);
 });
 void test('getpos fast movement can stop at the end of similar terrain', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     const input = resetInputState();
     input.feed('*L.');
     const selected = await selectMapPosition({
@@ -203,9 +203,9 @@ void test('getpos fast movement can stop at the end of similar terrain', async (
     assert.equal(selected?.x, 16);
 });
 void test('configured whatis_menu opens the monster menu during quick look', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await createMonsterAt('kitten', 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     applyNethackrc('OPTIONS=whatis_menu');
     const input = resetInputState();
     input.feed('m');
@@ -222,9 +222,9 @@ for (const [style, stored, attr, color] of [
     ['bold red', C_ATR_BOLD, ATR_BOLD, CLR_RED],
 ]) {
     void test(`quick-look target menu uses ${style} prompt styling`, async () => {
-        freshObjectRoom({ flags: { tips: false, verbose: false } });
+        await freshObjectRoom({ flags: { tips: false, verbose: false } });
         await createMonsterAt('kitten', 11, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         applyNethackrc('OPTIONS=whatis_menu');
         if (style !== 'default')
             game.iflags.menu_headings = { attr: stored, color };
@@ -253,7 +253,7 @@ for (const [style, stored, attr, color] of [
     });
 }
 void test('configured whatis_moveskip stops fast movement at similar terrain', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     applyNethackrc('OPTIONS=whatis_moveskip');
     resetInputState().feed('L.');
     const selected = await selectMapPosition({
@@ -262,7 +262,7 @@ void test('configured whatis_moveskip stops fast movement at similar terrain', a
     assert.equal(selected?.x, 16);
 });
 void test('configuring autodescribe takes effect after the cursor toggle', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     applyNethackrc('OPTIONS=autodescribe');
     const input = resetInputState();
     input.feed('#');
@@ -278,11 +278,11 @@ void test('configuring autodescribe takes effect after the cursor toggle', async
     ]);
 });
 void test('target menus describe displayed glyphs without a caller callback', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await createMonsterAt('kitten', 11, 10);
     level.requireAt(12, 10).typ = FOUNTAIN;
-    newsym(11, 10);
-    newsym(12, 10);
+    await newsym(11, 10);
+    await newsym(12, 10);
     const input = resetInputState();
     input.feed('!m');
     const selected = await answerPrompts(selectMapPosition({

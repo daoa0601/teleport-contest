@@ -20,7 +20,7 @@ function logMessages() {
 }
 
 void test('a first corpse records first food and its independently scoped animal-products event', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     requireFixtureGame(game);
     game.u.ualign.record = 10;
     const corpse = await addInventoryObject(CORPSE, { corpsenm: GOBLIN });
@@ -39,7 +39,7 @@ void test('a first corpse records first food and its independently scoped animal
 });
 
 void test('a first tin uses one conduct log scope while each meat meal costs Monk alignment', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     requireFixtureGame(game);
     game.u.ualign.record = 10;
     pushKeys(' '.repeat(5));
@@ -54,7 +54,7 @@ void test('a first tin uses one conduct log scope while each meat meal costs Mon
 });
 
 void test('an ordinary first food suppresses its animal-products log but still counts the ingredient', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const cookie = await addInventoryObject(FORTUNE_COOKIE);
 
@@ -68,7 +68,7 @@ void test('an ordinary first food suppresses its animal-products log but still c
 });
 
 void test('an egg breaks vegan conduct without counting as meat', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     requireFixtureGame(game);
     const ration = await addInventoryObject(FOOD_RATION);
     const egg = await addInventoryObject(EGG);
@@ -87,7 +87,7 @@ void test('an egg breaks vegan conduct without counting as meat', async () => {
 });
 
 void test('wax and leather non-foods use their native diet rules and first-log wording', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     requireFixtureGame(game);
     game.u.ualign.record = 10;
     const candle = await addInventoryObject(WAX_CANDLE);
@@ -106,8 +106,8 @@ void test('wax and leather non-foods use their native diet rules and first-log w
     assert.match(firstMeat, /^tasted meat by-products for the first time, by eating a leather armor$/);
 });
 
-void test('spinach only breaks food conduct and records its own first-food description', () => {
-    freshObjectRoom();
+void test('spinach only breaks food conduct and records its own first-food description', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
 
     recordSpinachConsumption();

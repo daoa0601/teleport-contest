@@ -8,7 +8,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('dipping a cursed dagger in holy water uncurses it and consumes one bottle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER, { cursed: true });
     const water = await addInventoryObject(POT_WATER, { blessed: true, quan: 2 });
@@ -24,7 +24,7 @@ void test('dipping a cursed dagger in holy water uncurses it and consumes one bo
 });
 
 void test('unholy water removes a blessing before it can curse the target', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER, { blessed: true });
     const water = await addInventoryObject(POT_WATER, { cursed: true });
@@ -38,7 +38,7 @@ void test('unholy water removes a blessing before it can curse the target', asyn
 });
 
 void test('sickness poisons a stack of arrows and healing removes its coating', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const arrows = await addInventoryObject(ARROW, { quan: 12 });
     const sickness = await addInventoryObject(POT_SICKNESS);
@@ -57,7 +57,7 @@ void test('sickness poisons a stack of arrows and healing removes its coating', 
 });
 
 void test('oil repairs one degree of rust and corrosion on a weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER, { oeroded: 2, oeroded2: 3 });
     const oil = await addInventoryObject(POT_OIL);
@@ -72,7 +72,7 @@ void test('oil repairs one degree of rust and corrosion on a weapon', async () =
 });
 
 void test('dipping an oil lamp fills it using the bottle fuel', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const lamp = await addInventoryObject(OIL_LAMP, { age: 100, spe: 0 });
     const oil = await addInventoryObject(POT_OIL, { age: 200 });
@@ -86,7 +86,7 @@ void test('dipping an oil lamp fills it using the bottle fuel', async () => {
 });
 
 void test('a single bottle cannot be dipped into itself and takes no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const water = await addInventoryObject(POT_WATER);
     resetInputState();
 

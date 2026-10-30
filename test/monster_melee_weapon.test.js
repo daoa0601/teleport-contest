@@ -14,7 +14,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('weapon poison weakens the hero despite armor magic cancellation', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
     findArmorClass();
@@ -26,7 +26,7 @@ void test('weapon poison weakens the hero despite armor magic cancellation', asy
     assert.ok(game.u.acurr.a[A_STR] < strength);
 });
 void test('striking a rust-monster body rusts the attacking weapon', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     installPolymorphedHero('rust monster');
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
@@ -39,7 +39,7 @@ void test('striking a rust-monster body rusts the attacking weapon', async () =>
 void test('weapon enchantment helps a monster hit an armored hero', async () => {
     const damage = [];
     for (const spe of [0, 8]) {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         wearHeroArmor(await addInventoryObject(OBJECT_NAMES.indexOf('plate mail')));
         findArmorClass();
@@ -57,7 +57,7 @@ void test('weapon enchantment helps a monster hit an armored hero', async () => 
 void test('a monster\'s enchanted weapon does more damage to another monster', async () => {
     const damage = [];
     for (const spe of [0, 5]) {
-        freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+        await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
         requirePlayingGame(game);
         const captain = await createMonsterAt('captain', 10, 10, NO_MINVENT);
         initializePet(captain, { state: game });
@@ -75,7 +75,7 @@ void test('a monster\'s enchanted weapon does more damage to another monster', a
 void test('weapon enchantment helps a monster hit an armored opponent', async () => {
     const damage = [];
     for (const spe of [0, 8]) {
-        freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+        await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
         requirePlayingGame(game);
         const attacker = await createMonsterAt('captain', 10, 10, NO_MINVENT);
         initializePet(attacker, { state: game });
@@ -94,7 +94,7 @@ void test('weapon enchantment helps a monster hit an armored opponent', async ()
 void test('power gauntlets strengthen a monster\'s weapon hit only while worn', async () => {
     const damage = [];
     for (const gloves of ['none', 'carried', 'worn']) {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         goblin.mpeaceful = false;
@@ -115,7 +115,7 @@ void test('power gauntlets strengthen a monster\'s weapon hit only while worn', 
     assert.ok(damage[2] - damage[0] >= 3 && damage[2] - damage[0] <= 6, `worn gauntlets should add 3 to 6 damage, got ${damage[2] - damage[0]}`);
 });
 void test('a weapon swing waits for the previous message before the monster hits', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     goblin.mpeaceful = false;

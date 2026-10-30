@@ -201,7 +201,7 @@ void test('restore keeps the current altmeta input policy', async () => {
     assert.equal(await saveGame(storage), true);
     applyNethackrc('OPTIONS=altmeta');
     game.commandBindings.bindKey(128 | 'x'.charCodeAt(0), 'wait');
-    assert.equal(restoreGame('CountInput', storage), true);
+    assert.equal(await restoreGame('CountInput', storage), true);
     pushKeys('3\x1bx');
     await rhack(0);
     assert.equal(await waitActions(), 3);

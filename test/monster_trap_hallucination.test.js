@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const alreadySeen of [false, true]) {
     void test(`a fire-resistant monster keeps its arrival hallucination after crossing a ${alreadySeen ? 'known' : 'new'} fire trap`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             left: 10, right: 14, top: 10, bottom: 10,
             flags: { sparkle: false },
             hero: { hallucinationTurns: 20 },
@@ -24,8 +24,8 @@ for (const alreadySeen of [false, true]) {
         monsterName(monster); // The flame announcement names its victim.
         monsterName(monster); // Fire resistance names the uninjured victim.
         if (!alreadySeen)
-            newsym(monster.mx, monster.my);
-        newsym(monster.mx, monster.my); // postmov() draws the arriving monster.
+            await newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my); // postmov() draws the arriving monster.
         const arrival = glyphAt(monster.mx, monster.my);
         assert.ok(arrival?.kind === 'monster');
         initRng(1n);

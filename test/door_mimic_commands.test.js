@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const command of ['o', 'c']) {
     for (const detected of [false, true]) {
         void test(`${command === 'o' ? 'opening' : 'closing'} a ${detected ? 'detected' : 'hidden'} door mimic reveals it and uses a turn`, async () => {
-            const level = freshObjectRoom({ hero: { detectMonsters: detected } });
+            const level = await freshObjectRoom({ hero: { detectMonsters: detected } });
             const doorway = level.requireAt(11, 10);
             doorway.typ = DOOR;
             doorway.doormask = D_NODOOR;
@@ -19,7 +19,7 @@ for (const command of ['o', 'c']) {
             mimic.m_ap_type = M_AP_FURNITURE;
             mimic.mappearance = CmapSymbol.vcdoor;
             mimic.msleeping = 0;
-            newsym(11, 10);
+            await newsym(11, 10);
             pushKey('l');
             await rhack(command.charCodeAt(0));
             assert.equal(M_AP_TYPE(mimic), 0);
@@ -32,7 +32,7 @@ for (const command of ['o', 'c']) {
     }
 }
 void test('trying to open a sleeping door mimic wakes it before the monster turn', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const doorway = level.requireAt(11, 10);
     doorway.typ = DOOR;
     doorway.doormask = D_NODOOR;
@@ -40,7 +40,7 @@ void test('trying to open a sleeping door mimic wakes it before the monster turn
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = CmapSymbol.hcdoor;
     mimic.msleeping = 1;
-    newsym(11, 10);
+    await newsym(11, 10);
     pushKey('l');
     pushKey(' ');
     await rhack('o'.charCodeAt(0));
@@ -49,7 +49,7 @@ void test('trying to open a sleeping door mimic wakes it before the monster turn
     assert.equal(game.context.move, 1);
 });
 void test('closing from a pit refuses before taking a direction or revealing a door mimic', async () => {
-    const level = freshObjectRoom({ hero: { utrap: 3, utraptype: TT_PIT } });
+    const level = await freshObjectRoom({ hero: { utrap: 3, utraptype: TT_PIT } });
     const doorway = level.requireAt(11, 10);
     doorway.typ = DOOR;
     doorway.doormask = D_NODOOR;
@@ -57,7 +57,7 @@ void test('closing from a pit refuses before taking a direction or revealing a d
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = CmapSymbol.vcdoor;
     mimic.msleeping = 0;
-    newsym(11, 10);
+    await newsym(11, 10);
     pushKey('l');
     await rhack('c'.charCodeAt(0));
     assert.equal(game._pending_message, "You can't reach over the edge of the pit.");

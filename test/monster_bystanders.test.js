@@ -20,7 +20,7 @@ async function topline() {
 }
 for (const blind of [false, true]) {
     void test(`quest guardians become angry ${blind ? 'silently when only sensed' : 'visibly when seen'}`, async () => {
-        freshObjectRoom({ role: 'archeologist', hero: { telepathy: true } });
+        await freshObjectRoom({ role: 'archeologist', hero: { telepathy: true } });
         requirePlayingGame(game);
         const leader = await createMonsterAt('Lord Carnarvon', 11, 10, NO_MINVENT);
         const guardian = await createMonsterAt('student', 12, 10, NO_MINVENT);
@@ -37,7 +37,7 @@ for (const blind of [false, true]) {
     });
 }
 void test('an immobile humanoid bystander flinches instead of announcing that it turns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const victim = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     const observer = await createMonsterAt('gnome', 12, 10, NO_MINVENT);
@@ -52,7 +52,7 @@ void test('an immobile humanoid bystander flinches instead of announcing that it
     assert.match(await topline(), /The immobile gnome seems to flinch\./);
 });
 void test('humanoid fear uses species level rather than the level gained at creation', async () => {
-    freshObjectRoom({ hero: { ulevel: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const victim = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     const observer = await createMonsterAt('elf-lord', 12, 10, NO_MINVENT);
@@ -67,7 +67,7 @@ void test('humanoid fear uses species level rather than the level gained at crea
 });
 for (const ownGuardian of [false, true]) {
     void test(`a neanderthal bystander ${ownGuardian ? 'defends its own quest without fleeing' : 'can flee outside its own quest'}`, async () => {
-        freshObjectRoom({ role: ownGuardian ? 'caveman' : 'knight' });
+        await freshObjectRoom({ role: ownGuardian ? 'caveman' : 'knight' });
         requirePlayingGame(game);
         const victim = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         const observer = await createMonsterAt('neanderthal', 12, 10, NO_MINVENT);
@@ -85,7 +85,7 @@ for (const ownGuardian of [false, true]) {
 }
 for (const attacksGuardian of [false, true]) {
     void test(`Shaman Karnov ${attacksGuardian ? 'gets angry when his guardian is attacked' : 'stays peaceful when a stranger is attacked'}`, async () => {
-        freshObjectRoom({ role: 'caveman' });
+        await freshObjectRoom({ role: 'caveman' });
         requirePlayingGame(game);
         const victim = await createMonsterAt(attacksGuardian ? 'neanderthal' : 'goblin', 11, 10, NO_MINVENT);
         const leader = await createMonsterAt('Shaman Karnov', 12, 10, NO_MINVENT);
@@ -99,7 +99,7 @@ for (const attacksGuardian of [false, true]) {
 }
 for (const turns of [0, 30]) {
     void test(`a humanoid bystander already fleeing ${turns ? 'for a time' : 'without a timer'} keeps that fear`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const victim = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         const observer = await createMonsterAt('gnome', 12, 10, NO_MINVENT);
@@ -115,7 +115,7 @@ for (const turns of [0, 30]) {
     });
 }
 void test('a tame humanoid can flee after witnessing an attack without turning hostile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const victim = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     const observer = await createMonsterAt('gnome', 12, 10, NO_MINVENT);
@@ -133,7 +133,7 @@ void test('a tame humanoid can flee after witnessing an attack without turning h
     assert.equal(game.u.ualign.record, alignment - 1);
 });
 void test('a Vrock bystander releases gas when its own kind is attacked', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const victim = await createMonsterAt('vrock', 11, 10, NO_MINVENT);
     const observer = await createMonsterAt('vrock', 12, 10, NO_MINVENT);
@@ -150,7 +150,7 @@ void test('a Vrock bystander releases gas when its own kind is attacked', async 
 });
 for (const verbose of [false, true]) {
     void test(`a named humanoid combines its gasp with flight only when verbose=${verbose}`, async () => {
-        freshObjectRoom({ flags: { verbose } });
+        await freshObjectRoom({ flags: { verbose } });
         requirePlayingGame(game);
         const victim = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         const observer = await createMonsterAt('human', 12, 10, NO_MINVENT);

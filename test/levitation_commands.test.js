@@ -23,7 +23,7 @@ function uncontrolledLevitation() {
     refreshProperty('levitation');
 }
 void test('without any levitation source the descent proceeds ordinarily', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const log = collector();
     const result = await descendFromLevitation(game, { publish: log.publish });
@@ -31,7 +31,7 @@ void test('without any levitation source the descent proceeds ordinarily', async
     assert.deepEqual(log.messages, []);
 });
 void test('an uncontrolled ring only reports floating above the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantWornProperty('levitation', await knownObject(POT_LEVITATION), 'uleft');
     const log = collector();
@@ -41,7 +41,7 @@ void test('an uncontrolled ring only reports floating above the floor', async ()
     assert.equal(game.u.levitating, true);
 });
 void test('descending from a blessed potion lands the hero and spends the turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { blessed: true }), { publish: collector().publish });
     game._pending_message = '';
@@ -53,7 +53,7 @@ void test('descending from a blessed potion lands the hero and spends the turn',
     assert.match(game._pending_message, /float gently to the floor/);
 });
 void test('a worn ring keeps the hero aloft after the potion part is ended', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantWornProperty('levitation', await knownObject(POT_LEVITATION), 'uleft');
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { blessed: true }), { publish: collector().publish });
@@ -69,7 +69,7 @@ void test('a worn ring keeps the hero aloft after the potion part is ended', asy
     assert.ok(log.messages.some(text => /floating high above the floor/.test(text)));
 });
 void test('a trapped hero ends controlled levitation with the latent message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.utrap = 4;
     game.u.utraptype = TT_BEARTRAP;
@@ -85,7 +85,7 @@ void test('a trapped hero ends controlled levitation with the latent message', a
     assert.ok(log.messages.some(text => /latent levitation ceases/.test(text)));
 });
 void test('descending from an invoked artifact cools it down for a long while', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const artifact = artifactByName('The Heart of Ahriman');
     assert.ok(artifact);
@@ -135,7 +135,7 @@ void test('a sighted hero names the ladder beneath without glyph help', async ()
     assert.ok(log.messages.some(text => /above the ladder/.test(text)));
 });
 void test('stuck into the floor, the floating message names the trap', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.utrap = 4;
     game.u.utraptype = TT_INFLOOR;
@@ -146,7 +146,7 @@ void test('stuck into the floor, the floating message names the trap', async () 
     assert.deepEqual(log.messages, ['You are trapped in the floor.']);
 });
 void test('the endgame planes describe floating in their own medium', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     uncontrolledLevitation();
     game.air_level = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: null };
@@ -154,7 +154,7 @@ void test('the endgame planes describe floating in their own medium', async () =
     let log = collector();
     await descendFromLevitation(game, { publish: log.publish });
     assert.ok(log.messages.some(text => /floating in the air/.test(text)));
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     uncontrolledLevitation();
     game.water_level = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: null };

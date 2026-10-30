@@ -6,16 +6,16 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('restoring a level suppresses map projection and blind terrain learning', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     await flush_screen(1);
     const location = level.requireAt(11, 10);
     location.remembered_glyph = null;
     location.seenv = 0;
     game.program_state.restoring = true;
 
-    newsym(11, 10);
-    feel_location(11, 10);
-    show_glyph_cell(11, 10, '!');
+    await newsym(11, 10);
+    await feel_location(11, 10);
+    await show_glyph_cell(11, 10, '!');
     await flush_screen(1);
 
     assert.equal(location.remembered_glyph, null);

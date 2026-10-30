@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('worn dragon scales protect a monster from cold or sleep', async () => {
     for (const element of ['white', 'orange']) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         await addObjectToMonsterInventory(soldier, await knownObject(OBJECT_NAMES.indexOf(`${element} dragon scales`)));
@@ -31,7 +31,7 @@ void test('worn dragon scales protect a monster from cold or sleep', async () =>
     }
 });
 void test('removing one poison-resistant garment keeps protection from the other', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const scales = await addObjectToMonsterInventory(soldier, await knownObject(OBJECT_NAMES.indexOf('green dragon scales')));
@@ -48,7 +48,7 @@ void test('removing one poison-resistant garment keeps protection from the other
     assert.equal(monsterHasPoisonResistance(soldier), false);
 });
 void test('removing an invisibility cloak makes its wearer visible again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const cloak = await addObjectToMonsterInventory(soldier, await knownObject(OBJECT_NAMES.indexOf('cloak of invisibility')));
@@ -59,7 +59,7 @@ void test('removing an invisibility cloak makes its wearer visible again', async
     assert.equal(canSeeMonster(soldier), true);
 });
 void test('speed boots preserve speed after slowing but not after removal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const boots = await addObjectToMonsterInventory(soldier, await knownObject(SPEED_BOOTS));
@@ -72,7 +72,7 @@ void test('speed boots preserve speed after slowing but not after removal', asyn
     assert.equal(soldier.mspeed, 1);
 });
 void test('mummy wrapping blocks permanent invisibility only while worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     setMonsterPermanentInvisibility(soldier);
@@ -84,7 +84,7 @@ void test('mummy wrapping blocks permanent invisibility only while worn', async 
     assert.equal(canSeeMonster(soldier), false);
 });
 void test('a fire ray announces a seen monster\'s smouldering cloak before rolling for its possessions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const wrapping = await addObjectToMonsterInventory(soldier, await knownObject(MUMMY_WRAPPING));
@@ -109,7 +109,7 @@ void test('a fire ray announces a seen monster\'s smouldering cloak before rolli
 // distant_name(otmp, xname), so an unexamined shield seen from afar is a "shield".
 for (const [x, expected] of [[14, 'shield'], [11, 'elven shield']]) {
     void test(`a disintegration blast names a ${x === 14 ? 'distant' : 'nearby'} monster's unseen elven shield as "${expected}"`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const soldier = await createMonsterAt('soldier', x, 10, NO_MINVENT);
         const shield = await addObjectToMonsterInventory(soldier, await knownObject(ELVEN_SHIELD));

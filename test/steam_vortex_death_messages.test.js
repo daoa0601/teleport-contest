@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const alreadyInside of [false, true]) {
     void test(`steam vortex death ${alreadyInside ? 'keeps an existing cloud quiet' : 'announces a new cloud around the hero'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const messages = [];
         const publish = async (message) => { messages.push(message); };
         if (alreadyInside)

@@ -18,7 +18,7 @@ function toplineText() {
 // "unreconnoitered", before any glyph lookup.  Travel's cursor shares
 // this describe path, so its automatic descriptions must match farlook's.
 void test('travel autodescribe beyond arm reach while swallowed reports unreconnoitered terrain', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     game._moveloopStarted = true;
     const engulfer = await createMonsterAt('trapper', game.u.ux, game.u.uy);
     game.u.uswallow = 1;
@@ -40,7 +40,7 @@ void test('travel autodescribe beyond arm reach while swallowed reports unreconn
 void test('travel autodescribe at an invisible unsensed hero shows the floor', async () => {
     const input = freshTurnRoom({ flags: { tips: false, verbose: false } });
     game.u.invis = true;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     const pages = [];
     input.display = { async readKey() {
             pages.push(toplineText());
@@ -55,7 +55,7 @@ void test('travel autodescribe at an invisible unsensed hero shows the floor', a
 // putsyms(), so the DECgraphics glyph char that g_putch() drew on the live
 // topline comes back as its raw high-bit byte and records as a blank.
 void test('previous-message recall renders an encoded glyph byte as a blank', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
     await doprevMessage();
     assert.equal(requireScreenCell(0, 0).ch, ' ');
@@ -65,7 +65,7 @@ void test('previous-message recall renders an encoded glyph byte as a blank', as
 // glyph cell stays blank once the recall repaint has run, matching the tty
 // shadow's rendering of putsyms()' raw high-bit byte.
 void test('screen repaint after glyph recall leaves the glyph cell blank', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     await pline('\x0e\u00fe\x0f        a doorway or the floor of a room');
     await doprevMessage();
     await flush_screen(1);

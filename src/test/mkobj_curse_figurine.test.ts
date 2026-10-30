@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('cursing a carried figurine starts transformation, and uncursing stops it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const figurine = await addInventoryObject(FIGURINE, {
         corpsenm: MONSTER_NAME.indexOf('newt'), cursed: false,
     });

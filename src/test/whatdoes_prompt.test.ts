@@ -7,7 +7,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('command help leaves a space between its question and the typed response', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     let asked = false;
     input.beforeRead = () => {

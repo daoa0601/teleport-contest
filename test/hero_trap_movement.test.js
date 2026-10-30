@@ -181,7 +181,7 @@ void test('a rust trap can rust the helmet worn by the hero', async () => {
     assert.equal(helmet.oeroded, 1);
 });
 void test('enchanted iron shoes absorb an anti-magic field', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uen: 20, uenmax: 20 },
     });
     requireFixtureGame(game);
@@ -207,7 +207,7 @@ void test('an anti-magic field drains energy from an unprotected hero', async ()
     assert.ok(game.u.uenmax < 20);
 });
 void test('wielding Magicbane turns an anti-magic field into an implosion', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uen: 20, uenmax: 20 },
     });
     requireFixtureGame(game);
@@ -284,7 +284,7 @@ void test('stepping into a magic portal moves the hero to its other end', async 
 });
 for (const lifesaving of [false, true]) {
     void test(`walking into a fire trap ${lifesaving ? 'resumes floor burning after life saving' : 'stops floor burning and movement bookkeeping on death'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uhp: 1, uhpmax: 80 }, flags: { pickup: false },
         });
         requireFixtureGame(game);
@@ -308,7 +308,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('a mounted hero escaping a web names the steed', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight',
         flags: { pickup: false },
     });
@@ -326,7 +326,7 @@ void test('a mounted hero escaping a web names the steed', async () => {
     assert.equal(game._pending_message, 'Your pony breaks out of the web.');
 });
 void test('a mounted hero stuck in the floor names the steed', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'knight',
         flags: { pickup: false },
     });
@@ -350,7 +350,7 @@ void test('a hallucinating rider sees one steed identity per lava struggle', asy
     assert.equal(leadName, stuckName.charAt(0).toLowerCase() + stuckName.slice(1), 'both lava messages reuse the single trapmove() steed name');
 });
 async function hallucinatedLavaStuckName(stepIntoLava) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         role: 'knight',
         flags: { pickup: false },
     });

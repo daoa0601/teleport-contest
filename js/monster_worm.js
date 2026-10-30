@@ -20,10 +20,10 @@ function requireWormBody(monster) {
         throw new Error(`Monster ${monster.m_id} has no initialized worm body.`);
 }
 // C worm.c:see_wsegs() traverses the visible tail toward the hidden head.
-export function redrawMonsterWormSegments(monster) {
+export async function redrawMonsterWormSegments(monster) {
     requireWormBody(monster);
     for (const segment of [...monster.wormSegments].reverse())
-        newsym(segment.x, segment.y);
+        await newsym(segment.x, segment.y);
 }
 // C worm.c:cutworm(). The struck segment becomes the new head when the
 // severed tail survives. Neither outcome is a monster death or a birth tally.
@@ -40,7 +40,7 @@ export async function cutWorm(monster, x, y, sliceOrChop, { state = game, random
         return;
     }
     if (cutIndex === monster.wormSegments.length - 1) {
-        removeWormTailTip(monster);
+        await removeWormTailTip(monster);
         return;
     }
     const severed = monster.wormSegments.slice(cutIndex);
@@ -72,7 +72,7 @@ export async function cutWorm(monster, x, y, sliceOrChop, { state = game, random
             while (severed.length) {
                 const segment = severed.pop();
                 if (segment?.x)
-                    newsym(segment.x, segment.y);
+                    await newsym(segment.x, segment.y);
             }
             if (monster.mhp > 1)
                 monster.mhp = Math.trunc(monster.mhp / 2);
@@ -143,32 +143,32 @@ export function wormCrossesBetween(x1, y1, x2, y2, state = game) {
 // Visible segments are head-outward. wormHead holds C's hidden dummy segment;
 // literal head-only moves can leave it behind until worm_move() or restore.
 // Clearing occupancy retains the body slot and deadline for relocation.
-export function clearMonsterWormFromMap(monster) {
+export async function clearMonsterWormFromMap(monster) {
     requireWormBody(monster);
     const count = monster.wormSegments.length;
     for (let i = count - 1; i >= 0; i--) {
         const point = monster.wormSegments[i];
         if (point?.x) {
-            clearWormSquare(point);
+            await clearWormSquare(point);
             point.x = 0;
         }
     }
     if (monster.wormHead.x)
-        clearWormSquare(monster.wormHead);
+        await clearWormSquare(monster.wormHead);
     monster.wormHead.x = 0;
     return count;
 }
-function clearWormSquare(point) {
+async function clearWormSquare(point) {
     // C removes the map slot even if another monster has replaced this
     // segment. A displaced live head is separate from the hidden segment.
     removeMonsterFromMapAt(point.x, point.y);
-    newsym(point.x, point.y);
+    await newsym(point.x, point.y);
 }
-export function removeMonsterWormBody(monster) {
+export async function removeMonsterWormBody(monster) {
     if (!monster?.wormno)
         return;
     monster.wormno = 0;
-    clearMonsterWormFromMap(monster);
+    await clearMonsterWormFromMap(monster);
     monster.wormSegments = [];
     monster.wormHead = null;
     monster.wormGrowTime = 0;
@@ -193,16 +193,16 @@ export function initializeUnplacedMonsterWormBody(monster, segmentCount, { state
 }
 // Ordinary births reserve the body first, then roll and place their tail.
 // An explicit count also serves callers rebuilding a known tail on the map.
-export function initializeMonsterWormBody(monster, { allowTail = true, segmentCount = null, state = game, random = rn2, } = {}) {
+export async function initializeMonsterWormBody(monster, { allowTail = true, segmentCount = null, state = game, random = rn2, } = {}) {
     if (!initializeUnplacedMonsterWormBody(monster, segmentCount ?? 0, { state }))
         return false;
     const requestedSegments = segmentCount != null
         ? segmentCount
         : allowTail ? random(5) : 0;
-    placeMonsterWormTailRandomly(monster, requestedSegments, { state, random });
+    await placeMonsterWormTailRandomly(monster, requestedSegments, { state, random });
     return true;
 }
-export function placeMonsterWormTailRandomly(monster, requestedSegments, { state = game, random = rn2, } = {}) {
+export async function placeMonsterWormTailRandomly(monster, requestedSegments, { state = game, random = rn2, } = {}) {
     monster.wormHead = { x: monster.mx, y: monster.my };
     monster.wormSegments = [];
     let oldX = monster.mx;
@@ -232,31 +232,31 @@ export function placeMonsterWormTailRandomly(monster, requestedSegments, { state
         if (!next)
             break;
         monster.wormSegments.push(next);
-        newsym(next.x, next.y);
+        await newsym(next.x, next.y);
         oldX = next.x;
         oldY = next.y;
     }
 }
 // Native redraw_worm includes the head's dummy segment after the tail.
-export function redrawMonsterWorm(monster, state = game) {
+export async function redrawMonsterWorm(monster, state = game) {
     requireLiveGame(state);
     requireWormBody(monster);
     for (let i = monster.wormSegments.length - 1; i >= 0; i--) {
         const segment = monster.wormSegments[i];
         if (segment)
-            newsym(segment.x, segment.y);
+            await newsym(segment.x, segment.y);
     }
-    newsym(monster.wormHead.x, monster.wormHead.y);
+    await newsym(monster.wormHead.x, monster.wormHead.y);
 }
 // C worm.c:worm_move(). The ordinary movement owner has placed the new head.
-export function advanceMonsterWormBody(monster, { state = game, random = rn2, rollOne = rnd, rollDice = d, } = {}) {
+export async function advanceMonsterWormBody(monster, { state = game, random = rn2, rollOne = rnd, rollDice = d, } = {}) {
     requireWormBody(monster);
     const oldHead = monster.wormHead;
     monster.wormSegments.unshift(oldHead);
-    newsym(oldHead.x, oldHead.y);
+    await newsym(oldHead.x, oldHead.y);
     monster.wormHead = { x: monster.mx, y: monster.my };
     if (monster.wormGrowTime > state.moves) {
-        removeWormTailTip(monster);
+        await removeWormTailTip(monster);
         return;
     }
     if (monster.wormGrowTime === 0) {
@@ -296,16 +296,16 @@ export function advanceMonsterWormBody(monster, { state = game, random = rn2, ro
     }
 }
 // C worm.c:worm_nomove(), only after ordinary candidate selection fails.
-export function shrinkStationaryMonsterWorm(monster, { rollDice = d } = {}) {
+export async function shrinkStationaryMonsterWorm(monster, { rollDice = d } = {}) {
     requireWormBody(monster);
-    removeWormTailTip(monster);
+    await removeWormTailTip(monster);
     if (monster.mhp > monster.wormSegments.length)
         monster.mhp = Math.max(1, monster.mhp - rollDice(2, 2));
 }
-function removeWormTailTip(monster) {
+async function removeWormTailTip(monster) {
     const tip = monster.wormSegments.pop();
     if (tip)
-        newsym(tip.x, tip.y);
+        await newsym(tip.x, tip.y);
 }
 // This boundary proves only worm restoration fields, not a complete Monster.
 // Full saves and bones retain body identity and deadlines rather than rebuilding them.

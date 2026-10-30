@@ -23,9 +23,9 @@ export function monsterIsHelpless(monster: Monster): boolean {
         || !monster.mcanmove || (monster.mfrozen ?? 0) > 0);
 }
 
-export function putMonsterToSleep(monster: Monster, turns: number): boolean {
+export async function putMonsterToSleep(monster: Monster, turns: number): Promise<boolean> {
     if (!monster.mcanmove) return false;
-    finishMonsterEating(monster);
+    await finishMonsterEating(monster);
     const duration = turns + (monster.mfrozen ?? 0);
     if (duration > 0) {
         monster.mcanmove = 0;

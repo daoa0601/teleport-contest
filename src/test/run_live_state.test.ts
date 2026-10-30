@@ -14,7 +14,7 @@ for (const doorway of [
     { name: 'broken', mask: D_BROKEN },
 ]) {
     void test(`a repeat with live run value 8 crosses a doorway (${doorway.name})`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = doorway.mask;
@@ -29,7 +29,7 @@ for (const doorway of [
 }
 
 void test('a repeat uses the live run value when it changes before the next step', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = FOUNTAIN;
     startRun(1, 0, game, 3);
     game.context.run = 0;

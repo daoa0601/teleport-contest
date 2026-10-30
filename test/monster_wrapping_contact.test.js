@@ -17,7 +17,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon } from './support/topology.js';
 for (const grip of ['new hold', 'failed hold', 'greased cloak', 'cancelled hold', 'existing cancelled hold']) {
     void test(`a couatl follows the wrapping rules for a ${grip}`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         couatl.mux = game.u.ux;
@@ -63,7 +63,7 @@ for (const { name, blind, greased, typeKnown, appearanceKnown } of [
     { name: 'unidentified oilskin cloak', blind: false, greased: false, typeKnown: false, appearanceKnown: false },
 ]) {
     void test(`slip feedback for ${name} ${appearanceKnown ? 'reveals' : 'does not reveal'} its appearance`, async () => {
-        freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+        await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         couatl.mux = game.u.ux;
@@ -90,7 +90,7 @@ for (const { name, blind, greased, typeKnown, appearanceKnown } of [
     });
 }
 void test('a missed bite prevents a couatl from starting its automatic hug', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     couatl.m_lev = 0;
@@ -106,7 +106,7 @@ void test('a missed bite prevents a couatl from starting its automatic hug', asy
     assert.ok(!game.u.ustuck);
 });
 void test('an unseen couatl is described as something when it starts a hold', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     couatl.minvis = true;
@@ -126,7 +126,7 @@ void test('an unseen couatl is described as something when it starts a hold', as
     assert.match(messages.join('\n'), /Something swings itself around you!/);
 });
 void test('hallucination can describe an unseen wrapping animal as someone or something', async () => {
-    freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000, uac: 10, hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { uhp: 1000, uhpmax: 1000, uac: 10, hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const couatl = await createMonsterAt('couatl', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     couatl.minvis = true;
@@ -151,7 +151,7 @@ void test('hallucination can describe an unseen wrapping animal as someone or so
     assert.match(text, /Something swings itself around you!/);
 });
 void test('an eel holding a breathing hero underwater triggers life saving', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = POOL;
     const eel = await createMonsterAt('giant eel', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -171,7 +171,7 @@ void test('an eel holding a breathing hero underwater triggers life saving', asy
     assert.ok(!game.program_state.gameover);
 });
 void test('an eel drowning the hero uses drowned in both final summary lines', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uhp: 100, uhpmax: 100, uac: 10 },
         flags: { verbose: true, bones: false, disclose: '-i -a -v -g -c -o', tombstone: false },
     });

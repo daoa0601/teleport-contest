@@ -24,7 +24,7 @@ async function nameMonsterAt(t, keys) {
     await rhack('#'.charCodeAt(0));
 }
 void test('erasing a unique monster name keeps its existing name', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const medusa = await createMonsterAt('Medusa', 11, 10, 0);
     await nameMonsterAt(t, ' ');
     assert.equal(game._pending_message, 'Medusa would rather keep her existing name.');
@@ -32,13 +32,13 @@ void test('erasing a unique monster name keeps its existing name', async (t) => 
     assert.equal(game.context.move, 0);
 });
 void test('erasing a rider monster name uses the gender-neutral pronoun', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     await createMonsterAt('Death', 11, 10, 0);
     await nameMonsterAt(t, ' ');
     assert.equal(game._pending_message, 'Death would rather keep its existing name.');
 });
 void test('naming an invisible unique monster by its stripped name is refused', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const medusa = await createMonsterAt('Medusa', 11, 10, 0);
     medusa.minvis = true;
     game.u.seeInvisibleTurns = 100;
@@ -47,14 +47,14 @@ void test('naming an invisible unique monster by its stripped name is refused', 
     assert.equal(medusa.mgivenname, undefined);
 });
 void test('naming Juiblex with its misspelled name is refused', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const juiblex = await createMonsterAt('Juiblex', 11, 10, 0);
     await nameMonsterAt(t, 'Jubilex');
     assert.equal(game._pending_message, "Juiblex doesn't like being called Jubilex.");
     assert.equal(juiblex.mgivenname, undefined);
 });
 void test('a ghost keeps the name it was created with', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const ghost = await createMonsterAt('ghost', 11, 10, 0);
     const creationName = ghost.mgivenname;
     await nameMonsterAt(t, 'Casper');
@@ -62,7 +62,7 @@ void test('a ghost keeps the name it was created with', async (t) => {
     assert.equal(ghost.mgivenname, creationName);
 });
 void test('blank input silently erases an ordinary monster name', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const wolf = await createMonsterAt('wolf', 11, 10, 0);
     setMonsterGivenName(wolf, 'Fang');
     await nameMonsterAt(t, ' ');
@@ -73,7 +73,7 @@ void test('blank input silently erases an ordinary monster name', async (t) => {
 // C do_name.c:x_monnam(): a named player monster carries its adjectives
 // after its own " the ", while l_monnam keeps the species with "called".
 void test('a named player monster places adjectives after its own the', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     game.u.seeInvisibleTurns = 100;
     const wizard = await createMonsterAt('wizard', 11, 10, 0);
     setMonsterGivenName(wizard, 'Gandalf the Grey');
@@ -85,7 +85,7 @@ void test('a named player monster places adjectives after its own the', async ()
 // the six bogus caller names, using the display stream for the choice and
 // the core stream for roguename().
 void test('hallucinated floor naming announces a bogus caller name', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true }, hero: { hallucinationTurns: 100 } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true }, hero: { hallucinationTurns: 100 } });
     await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');

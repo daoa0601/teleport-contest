@@ -15,7 +15,7 @@ import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('boiling wielded unholy water keeps surviving bottles carried through a werewolf transformation', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     setHeroLycanthropy(MONSTER_NAME.indexOf('werewolf'));
     grantIntrinsicProperty('fireResistance', 'outside');

@@ -21,7 +21,7 @@ async function anchoredMessages(attempts) {
     return messages.join('\n').match(/You are anchored by the [^.]*\./g) ?? [];
 }
 void test('a hero stuck in the floor is anchored by that surface', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     game.u.utrap = 5;
@@ -30,7 +30,7 @@ void test('a hero stuck in the floor is anchored by that surface', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [ux, uy]);
 });
 void test('a hallucinating hero is anchored by varying imaginary liquids', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await makeHallucinated(100, { talk: false });
     game.u.utrap = 5;

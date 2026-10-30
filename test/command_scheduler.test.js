@@ -114,7 +114,7 @@ void test('restore discards a timed command and accepts the next player action',
     gate.feed('9.');
     await rhack(0);
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Counter', storage), true);
+    assert.equal(await restoreGame('Counter', storage), true);
     const turn = game.moves;
     gate.feed('l');
     const result = await untilNextInput(gate, () => ({

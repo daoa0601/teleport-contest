@@ -28,7 +28,7 @@ const finishDeath: MonsterDeathHandler = (monster, options) =>
     finishEnvironmentalMonsterDeath(monster, game, options);
 
 void test('brain drain adds pending damage without settling the defender death early', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -49,7 +49,7 @@ void test('brain drain adds pending damage without settling the defender death e
 });
 
 void test('a cancelled mind flayer still drains a brain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -64,7 +64,7 @@ void test('a cancelled mind flayer still drains a brain', async () => {
 });
 
 void test('a brain meal extends an overdue pet hunger deadline without restoring starvation HP', async () => {
-    freshObjectRoom({ moves: 1000 });
+    await freshObjectRoom({ moves: 1000 });
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -93,7 +93,7 @@ void test('a brain meal extends an overdue pet hunger deadline without restoring
 });
 
 void test('a minion brain eater gains damage but no pet feeding effects', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -111,7 +111,7 @@ void test('a minion brain eater gains damage but no pet feeding effects', async 
 });
 
 void test('headless green slime stops the remaining brain attacks without infecting a monster attacker', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('green slime', 12, 10, TEST_MONSTER_FLAGS);
@@ -127,7 +127,7 @@ void test('headless green slime stops the remaining brain attacks without infect
 });
 
 void test('a tentacle on a worm tail causes no brain or physical damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('long worm', 12, 10, TEST_MONSTER_FLAGS);
@@ -142,7 +142,7 @@ void test('a tentacle on a worm tail causes no brain or physical damage', async 
 
 for (const helmetType of [HELMET, DUNCE_CAP]) {
     void test(`${helmetType === HELMET ? 'a greased helmet' : 'a dunce cap'} blocks brain drain but keeps tentacle damage`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
         const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -164,7 +164,7 @@ for (const helmetType of [HELMET, DUNCE_CAP]) {
 }
 
 void test('a tentacle that penetrates a monster dunce cap can eat its brain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -180,7 +180,7 @@ void test('a tentacle that penetrates a monster dunce cap can eat its brain', as
 
 for (const species of ['ghost', 'straw golem']) {
     void test(`${species} brains provide no extra damage or pet nutrition`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
         const defender = await createMonsterAt(species, 12, 10, TEST_MONSTER_FLAGS);
@@ -203,7 +203,7 @@ for (const species of ['ghost', 'straw golem']) {
 }
 
 void test('a mind flayer killed by an earlier contact does not continue eating brains', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
@@ -218,7 +218,7 @@ void test('a mind flayer killed by an earlier contact does not continue eating b
 });
 
 void test('eating Medusa brain leaves a real statue containing the attacker inventory', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('Medusa', 12, 10, TEST_MONSTER_FLAGS);
@@ -246,7 +246,7 @@ void test('eating Medusa brain leaves a real statue containing the attacker inve
 });
 
 void test('life saving stops a Medusa brain meal before extra damage and statue creation', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('Medusa', 12, 10, TEST_MONSTER_FLAGS);
@@ -269,7 +269,7 @@ void test('life saving stops a Medusa brain meal before extra damage and statue 
 });
 
 void test('unseen Medusa brain petrification gives the distinct lost-pet thought', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('Medusa', 12, 10, TEST_MONSTER_FLAGS);
@@ -289,7 +289,7 @@ void test('unseen Medusa brain petrification gives the distinct lost-pet thought
 
 for (const lifeSaving of [false, true]) {
     void test(`a Rider brain meal ${lifeSaving ? 'life-saves' : 'kills'} its eater but still adds damage to the Rider`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
         const defender = await createMonsterAt('Death', 12, 10, TEST_MONSTER_FLAGS);

@@ -15,7 +15,7 @@ for (const { role, category } of [
     { role: 'wizard', category: 'divination' },
 ] as const) {
     void test(`${role} sees light in the ${category} spell school`, async () => {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         forceLearnSpell(SPE_LIGHT);
         const input = resetInputState();
         const viewing = viewKnownSpells();
@@ -31,7 +31,7 @@ for (const { role, category } of [
 }
 
 void test('casting light as a Priest practices clerical spells', async () => {
-    freshObjectRoom({ role: 'priest', hero: { ulevel: 30, uen: 100, uenmax: 100 } });
+    await freshObjectRoom({ role: 'priest', hero: { ulevel: 30, uen: 100, uenmax: 100 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_WIS] = game.u.amax.a[A_WIS] = 25;
     await trainSpellSkill(SPE_PROTECTION, P_EXPERT);

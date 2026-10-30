@@ -84,7 +84,7 @@ void test('observing a nearby monster lets chain lightning mark its head after i
     await moveloop_core();
     await finishAtCommandInput(input, moveloop_core, /^$/);
     monster.minvis = 1;
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     assert.notEqual(glyphAt(monster.mx, monster.my)?.kind, 'invisible');
     await castChainLightning();
     assert.ok(monster.mhp < 500);

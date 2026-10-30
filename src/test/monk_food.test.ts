@@ -31,7 +31,7 @@ function acknowledgeMealMessages() {
 }
 
 void test('a carried meat corpse applies the live Monk conduct penalty', async () => {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
     requirePlayingGame(game);
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
@@ -62,7 +62,7 @@ void test('a carried meat corpse applies the live Monk conduct penalty', async (
 
 void test('the first bite of green slime starts the transformation countdown',
     async () => {
-        freshObjectRoom({ gameplaySeed: 45300n });
+        await freshObjectRoom({ gameplaySeed: 45300n });
         requirePlayingGame(game);
         const messages = acknowledgeMealMessages();
         const corpse = await addInventoryObject(CORPSE, {
@@ -89,7 +89,7 @@ void test('the first bite of green slime starts the transformation countdown',
     });
 
 void test('a food ration remains in the pack until its last bite', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requirePlayingGame(game);
     game.u.uhunger = 900;
     const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
@@ -115,7 +115,7 @@ void test('a food ration remains in the pack until its last bite', async () => {
 });
 
 void test('a green slime glob is a multi-turn slime meal', async () => {
-    freshObjectRoom({ gameplaySeed: 45300n });
+    await freshObjectRoom({ gameplaySeed: 45300n });
     requirePlayingGame(game);
     const messages = acknowledgeMealMessages();
     const glob = await addInventoryObject(GLOB_OF_GREEN_SLIME, {
@@ -143,7 +143,7 @@ void test('a green slime glob is a multi-turn slime meal', async () => {
 
 void test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
     async () => {
-        const level = freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
+        const level = await freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
         requirePlayingGame(game);
         game.u.ualign = { type: 0, record: 10, abuse: 0 };
         game.u.uconduct = {};
@@ -170,7 +170,7 @@ void test('a floor meat corpse keeps the same Monk penalty and floor lifecycle',
     });
 
 void test('ordinary carried meat uses the same Monk vegetarian rule', async () => {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
     requirePlayingGame(game);
     game.u.ualign = { type: 0, record: 10, abuse: 0 };
     game.u.uconduct = {};
@@ -192,7 +192,7 @@ void test('ordinary carried meat uses the same Monk vegetarian rule', async () =
 });
 
 void test('the vegetarian alignment penalty remains Monk-specific', async () => {
-    freshObjectRoom({ role: 'rogue', gameplaySeed: 45300n });
+    await freshObjectRoom({ role: 'rogue', gameplaySeed: 45300n });
     requirePlayingGame(game);
     game.u.ualign = { type: -1, record: 10, abuse: 0 };
     game.u.uconduct = {};
@@ -211,7 +211,7 @@ void test('the vegetarian alignment penalty remains Monk-specific', async () => 
 
 void test('rotten carried meat retains the preceding Monk guilt outcome',
     async () => {
-        freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
+        await freshObjectRoom({ role: 'monk', gameplaySeed: 45300n });
         requirePlayingGame(game);
         const messages = acknowledgeMealMessages();
         game.u.ualign = { type: 0, record: 10, abuse: 0 };

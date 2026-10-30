@@ -33,7 +33,7 @@ function nextToHero(pet) {
     return Math.max(Math.abs(pet.mx - game.u.ux), Math.abs(pet.my - game.u.uy)) <= 1;
 }
 void test('a tin whistle wakes nearby creatures and calls pets without moving or angering them', async () => {
-    freshObjectRoom({ right: 60, hero: { ulevel: 1 } });
+    await freshObjectRoom({ right: 60, hero: { ulevel: 1 } });
     requirePlayingGame(game);
     const near = await petAt('little dog', 13, 10);
     const far = await petAt('kitten', 40, 10);
@@ -60,7 +60,7 @@ void test('a tin whistle wakes nearby creatures and calls pets without moving or
     assert.equal(far.edog.whistletime, 0);
 });
 void test('an underwater tin whistle blows bubbles without waking or calling pets', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, uinwater: 1 } });
+    await freshObjectRoom({ hero: { ulevel: 1, uinwater: 1 } });
     requirePlayingGame(game);
     const pet = await petAt('little dog', 12, 10);
     pet.msleeping = 1;
@@ -72,14 +72,14 @@ void test('an underwater tin whistle blows bubbles without waking or calling pet
     assert.equal(pet.edog.whistletime, 0);
 });
 void test('a deaf hero feels air rushing past the nose when using a tin whistle', async () => {
-    freshObjectRoom({ hero: { deafTurns: 10 } });
+    await freshObjectRoom({ hero: { deafTurns: 10 } });
     requirePlayingGame(game);
     const whistle = await addInventoryObject(TIN_WHISTLE);
     await useWhistle(whistle);
     assert.match(game._pending_message, /rushing air tickle your nose/);
 });
 void test('a cursed ordinary whistle schedules a guard for the next vault turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.rooms.push(createRoom({ lx: 7, hx: 16, ly: 6, hy: 14, rtype: VAULT }));
     game.level.nroom = 1;
@@ -94,7 +94,7 @@ void test('a cursed ordinary whistle schedules a guard for the next vault turn',
 });
 for (const form of ['killer bee', 'air elemental']) {
     void test(`a ${form} body cannot use a whistle`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         installPolymorphedHero(form);
         const whistle = await addInventoryObject(MAGIC_WHISTLE);
@@ -104,7 +104,7 @@ for (const form of ['killer bee', 'air elemental']) {
     });
 }
 void test('strangulation prevents a whistle from waking creatures', async () => {
-    freshObjectRoom({ hero: { strangledTurns: 10 } });
+    await freshObjectRoom({ hero: { strangledTurns: 10 } });
     requirePlayingGame(game);
     const pet = await petAt('little dog', 12, 10);
     pet.msleeping = 1;
@@ -114,7 +114,7 @@ void test('strangulation prevents a whistle from waking creatures', async () => 
     assert.match(game._pending_message, /incapable of using the whistle/);
 });
 void test('an undiscovered magic whistle becomes known when a visible pet relocates', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('little dog', 15, 10);
     pet.msleeping = 1;
@@ -129,7 +129,7 @@ void test('an undiscovered magic whistle becomes known when a visible pet reloca
     assert.match(game._pending_message, /vanishes and reappears/);
 });
 void test('a discovered magic whistle summarizes two relocated pets', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await petAt('little dog', 15, 10);
     const kitten = await petAt('kitten', 14, 12);
@@ -141,7 +141,7 @@ void test('a discovered magic whistle summarizes two relocated pets', async () =
     assert.match(game._pending_message, /Two creatures shift locations/);
 });
 void test('blind magic whistling relocates pets without discovering the whistle', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setHeroBlindnessTurns(10);
     const pet = await petAt('little dog', 15, 10);
@@ -157,7 +157,7 @@ for (const [name, hero, message] of [
     ['stunned', { stunnedTurns: 10 }, /strange whistling sound/],
 ]) {
     void test(`a ${name} hero can summon a pet with a magic whistle`, async () => {
-        freshObjectRoom({ hero });
+        await freshObjectRoom({ hero });
         requirePlayingGame(game);
         const pet = await petAt('little dog', 15, 10);
         const whistle = await addInventoryObject(MAGIC_WHISTLE);
@@ -171,7 +171,7 @@ for (const [name, hero, message] of [
     });
 }
 void test('stasis blocks magic pet relocation after the whistle sound', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.flags.stasis_until = game.moves;
     const pet = await petAt('little dog', 15, 10);
@@ -183,7 +183,7 @@ void test('stasis blocks magic pet relocation after the whistle sound', async ()
     assert.match(game._pending_message, /strange whistling sound/);
 });
 void test('a cursed magic whistle can teleport the hero to a distant pet', async () => {
-    freshObjectRoom({ right: 60 });
+    await freshObjectRoom({ right: 60 });
     requirePlayingGame(game);
     const pet = await petAt('little dog', 40, 10);
     const whistle = await addInventoryObject(MAGIC_WHISTLE, { cursed: true });
@@ -199,7 +199,7 @@ void test('a cursed magic whistle can teleport the hero to a distant pet', async
     assert.match(humming, /high-pitched humming noise/);
 });
 void test('a no-teleport level prevents a cursed whistle from teleporting the hero', async () => {
-    freshObjectRoom({ right: 60 });
+    await freshObjectRoom({ right: 60 });
     requirePlayingGame(game);
     game.level.flags.noteleport = true;
     const pet = await petAt('little dog', 40, 10);
@@ -211,7 +211,7 @@ void test('a no-teleport level prevents a cursed whistle from teleporting the he
     assert.equal(pet.mx, 40);
 });
 void test('a cursed magic whistle can still summon pets normally', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('little dog', 15, 10);
     const whistle = await addInventoryObject(MAGIC_WHISTLE, { cursed: true });
@@ -222,7 +222,7 @@ void test('a cursed magic whistle can still summon pets normally', async () => {
     assert.match(game._pending_message, /shifts location/);
 });
 void test('magic whistling frees a pet from an old pit and fills it with its boulder', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('little dog', 15, 10);
     pet.mtrapped = 1;
@@ -237,7 +237,7 @@ void test('magic whistling frees a pet from an old pit and fills it with its bou
     assert.equal(boulder.where, 'gone');
 });
 void test('a summoned pet enters a real bear trap at its new square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('dog', 15, 10);
     for (let x = 9; x <= 11; x++) {
@@ -258,7 +258,7 @@ void test('a summoned pet enters a real bear trap at its new square', async () =
     assert.doesNotMatch(game._pending_message, /shifts location/);
 });
 void test('a pet killed by its summoned destination trap costs one luck and detaches its leash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('dog', 15, 10);
     pet.mhp = 1;
@@ -287,7 +287,7 @@ void test('a pet killed by its summoned destination trap costs one luck and deta
     assert.doesNotMatch(game._pending_message, /shifts location/);
 });
 void test('a leashed pet retains its real leash when summoned beside the hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('little dog', 15, 10);
     const leash = await addInventoryObject(LEASH, { leashmon: pet.m_id, cursed: true });
@@ -300,7 +300,7 @@ void test('a leashed pet retains its real leash when summoned beside the hero', 
     assert.equal(pet.mleashed, 1);
 });
 void test('a magic whistle leaves a real ridden pony on the hero square', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -314,7 +314,7 @@ void test('a magic whistle leaves a real ridden pony on the hero square', async 
 });
 for (const blind of [false, true]) {
     void test(`a blessed eucalyptus leaf can lose its blessing ${blind ? 'silently while blind' : 'with a brown glow'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
         requirePlayingGame(game);
         const leaf = await addInventoryObject(EUCALYPTUS_LEAF, { blessed: true, bknown: false, quan: 3 });
         initRng(172n);
@@ -329,7 +329,7 @@ for (const blind of [false, true]) {
     });
 }
 void test('an incapable hero can still wear off a blessed eucalyptus leaf after attempting to blow it', async () => {
-    freshObjectRoom({ hero: { strangledTurns: 10 } });
+    await freshObjectRoom({ hero: { strangledTurns: 10 } });
     requirePlayingGame(game);
     const leaf = await addInventoryObject(EUCALYPTUS_LEAF, { blessed: true });
     initRng(172n);
@@ -339,7 +339,7 @@ void test('an incapable hero can still wear off a blessed eucalyptus leaf after 
     assert.match(game._pending_message, /glows brown/);
 });
 void test('a blessed eucalyptus leaf summons a pet without being eaten', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('little dog', 15, 10);
     const leaf = await addInventoryObject(EUCALYPTUS_LEAF, { blessed: true });
@@ -351,7 +351,7 @@ void test('a blessed eucalyptus leaf summons a pet without being eaten', async (
     assert.equal(leaf.where, 'inventory');
 });
 void test('#apply uses a real tin whistle and consumes the action', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const whistle = await addInventoryObject(TIN_WHISTLE);
     await runExtendedCommand('apply', whistle.invlet);
@@ -379,7 +379,7 @@ function enterEndgame(level = 3) {
     ];
 }
 void test('ordinary overcrowding sends a summoned pet into real limbo', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await petAt('dog', 15, 10);
     leaveOnlyOccupiedFloor([pet]);
@@ -392,7 +392,7 @@ void test('ordinary overcrowding sends a summoned pet into real limbo', async ()
     assert.equal(pet.migrationDestination.dlevel, 8);
 });
 void test('endgame overcrowding replaces a foreign elemental before a home elemental or ordinary monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     enterEndgame();
     const pet = await petAt('dog', 15, 10);
@@ -410,7 +410,7 @@ void test('endgame overcrowding replaces a foreign elemental before a home eleme
     assert.match(game._pending_message, /feel besieged/);
 });
 void test('endgame overcrowding preserves the Wizard and migrates the pet to the next plane', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     enterEndgame();
     const pet = await petAt('dog', 15, 10);
@@ -428,7 +428,7 @@ void test('endgame overcrowding preserves the Wizard and migrates the pet to the
     assert.ok(pet.mstate & MON_ENDGAME_MIGR);
 });
 void test('endgame overcrowding preserves an Amulet carrier and removes another eligible monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     enterEndgame();
     const pet = await petAt('dog', 15, 10);
@@ -445,7 +445,7 @@ void test('endgame overcrowding preserves an Amulet carrier and removes another 
     assert.equal(pet.my, 10);
 });
 void test('Astral overcrowding with no eligible victim leaves the pet on its original square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     enterEndgame(1);
     const pet = await petAt('dog', 15, 10);

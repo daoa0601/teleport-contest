@@ -57,7 +57,7 @@ function venomTypeForAttack(attack: MonsterAttack) {
 async function settleVenom(venom: GameObject, x: number, y: number, state: GameState) {
     placeCreatedObject(venom, x, y);
     await stack_object(venom, state);
-    newsym(x, y);
+    await newsym(x, y);
 }
 
 async function breakVenomAtEndpoint(

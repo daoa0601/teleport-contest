@@ -34,7 +34,7 @@ export async function petRefusesHeroSwap(monster, state) {
     hero.ux = hero.ux0;
     hero.uy = hero.uy0;
     monster.mundetected = 0;
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
     hero.ux = x;
     hero.uy = y;
     const trap = monster.mtrapped ? state.level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my) : undefined;
@@ -60,7 +60,7 @@ export async function petRefusesHeroSwap(monster, state) {
         const name = trapName(trap.ttyp, { state });
         const which = trap.tseen ? `that ${name}` : withIndefiniteArticle(name);
         if (!trap.tseen) {
-            feelTrap(trap, state);
+            await feelTrap(trap, state);
         }
         await plineWithContinuation(`You stop.  ${monsterName(monster, { state, article: 'your', capitalized: true })} can't move out of ${which}.`);
         if (state.flags.tips !== false && !((state.context.tips ?? 0) & TIP_UNTRAP_MON)) {
@@ -87,8 +87,8 @@ export async function settlePetHeroDisplacement(monster, state) {
     monster.mtrapped = 0;
     monster.mx = hero.ux0;
     monster.my = hero.uy0;
-    newsym(hero.ux, hero.uy);
-    newsym(hero.ux0, hero.uy0);
+    await newsym(hero.ux, hero.uy);
+    await newsym(hero.ux0, hero.uy0);
     const givenName = !!MGIVENNAME(monster);
     const name = monsterName(monster, {
         state,

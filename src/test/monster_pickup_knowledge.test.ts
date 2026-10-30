@@ -17,7 +17,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 async function nearbyAnt() {
-    freshObjectRoom({ heroX: 10, heroY: 10 });
+    await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     return createMonsterAt('giant ant', 11, 10);
 }
@@ -190,7 +190,7 @@ void test('touch keeps knowledge when the unseen monster is holding the hero',
 
 void test('a swallowed crysknife pickup keeps its edge with no release', async () => {
     const { pickupAtHero } = await import('../js/pickup.js');
-    freshObjectRoom({ heroX: 10, heroY: 10 });
+    await freshObjectRoom({ heroX: 10, heroY: 10 });
     requirePlayingGame(game);
     const engulfer = await createMonsterAt('purple worm', 10, 10);
     engulfer.mx = 10;

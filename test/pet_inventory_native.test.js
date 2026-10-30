@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 for (const prize of ['mines', 'sokoban']) {
     void test(`a pet leaves the unclaimed ${prize} prize on the floor`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const dog = await createMonsterAt('little dog', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
         initializePet(dog);
@@ -25,7 +25,7 @@ for (const prize of ['mines', 'sokoban']) {
     });
 }
 void test('a pet leaves delivery mail on the floor even when devoted to fetching', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);

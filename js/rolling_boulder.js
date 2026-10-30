@@ -81,8 +81,8 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
     }
     unlinkObject(boulder, state);
     if (tookWholePile)
-        maybeUnhideAt(source.x, source.y, state);
-    newsym(source.x, source.y);
+        await maybeUnhideAt(source.x, source.y, state);
+    await newsym(source.x, source.y);
     vision_note_blocker_change(source.x, source.y);
     const digging = state.context.digging;
     if (digging?.pos.x === source.x && digging.pos.y === source.y)
@@ -170,7 +170,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                         return { survived: !death.killed, heroDied: death.heroDied };
                     },
                 });
-                newsym(position.x, position.y);
+                await newsym(position.x, position.y);
                 usedUp = true;
                 break;
             }
@@ -194,7 +194,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                         boulder.migration = { source: { ...state.u.uz }, destination: location, arrival: MIGR_RANDOM };
                         (state.migratingObjects ??= []).unshift(boulder);
                     }
-                    seeTrap(trap, state);
+                    await seeTrap(trap, state);
                     usedUp = true;
                     break;
                 }
@@ -254,13 +254,13 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
     }
     finally {
         if (transient)
-            newsym(transient.x, transient.y);
+            await newsym(transient.x, transient.y);
         activeLaunches.delete(state);
     }
     if (!usedUp && !state.program_state.gameover) {
         boulder.otrapped = false;
         await placeObject(boulder, resting.x, resting.y, state);
-        newsym(resting.x, resting.y);
+        await newsym(resting.x, resting.y);
     }
     return true;
     async function hear(sound) {
@@ -287,7 +287,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
         const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
         const harmless = !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
         if (mimic)
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
         monster.msleeping = 0;
         if (visible) {
             const ending = harmless

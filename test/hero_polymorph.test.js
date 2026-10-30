@@ -39,7 +39,7 @@ function requiredRace(predicate) {
     return race;
 }
 void test('a giant body is expelled and falls into the pit beneath the monster', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
     addTrap(level, PIT, game.u.ux, game.u.uy);
@@ -53,7 +53,7 @@ void test('a giant body is expelled and falls into the pit beneath the monster',
     assert.ok((game.u.utrap ?? 0) > 0);
 });
 void test('an unsolid body escapes an engulfer even without becoming huge', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
     await installSwallowedHero(worm);
@@ -63,7 +63,7 @@ void test('an unsolid body escapes an engulfer even without becoming huge', asyn
     assert.equal(game.u.ustuck, null);
 });
 void test('a small new body remains inside a large engulfer', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
     await installSwallowedHero(worm);
@@ -73,7 +73,7 @@ void test('a small new body remains inside a large engulfer', async () => {
     assert.equal(game.u.ustuck, worm);
 });
 void test('a grabbing body makes its holder release rather than swapping who holds whom', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const python = await createMonsterAt('python', game.u.ux + 1, game.u.uy);
     game.u.ustuck = python;
@@ -82,7 +82,7 @@ void test('a grabbing body makes its holder release rather than swapping who hol
     assert.equal(game.u.ustuck, null);
 });
 void test('returning to human form releases a monster held by the old body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const python = await createMonsterAt('python', game.u.ux + 1, game.u.uy);
     installPolymorphedHero('owlbear');
@@ -93,7 +93,7 @@ void test('returning to human form releases a monster held by the old body', asy
     assert.equal(game.u.ustuck, null);
 });
 void test('losing flight puts a swimming body into the water below', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     installPolymorphedHero('bat');
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
@@ -104,7 +104,7 @@ void test('losing flight puts a swimming body into the water below', async () =>
     assert.equal(game.u.uinwater, 1);
 });
 void test('losing a flying body over water makes the human seek dry land', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('bat');
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
@@ -119,7 +119,7 @@ for (const [trapType, form] of [
     [WEB, 'fog cloud'], [WEB, 'giant spider'], [BEAR_TRAP, 'newt'],
 ]) {
     void test(`a ${form} body escapes a ${trapType === WEB ? 'web' : 'bear trap'}`, async () => {
-        const level = freshObjectRoom({ flags: { debug: true } });
+        const level = await freshObjectRoom({ flags: { debug: true } });
         requireFixtureGame(game);
         const trap = addTrap(level, trapType, game.u.ux, game.u.uy);
         await triggerHeroTrap(trap);
@@ -138,7 +138,7 @@ for (const [trapType, form] of [
 // releases the trap through reset_utrap(TRUE), so a levitation source the
 // web had blocked comes back with float_up()'s message.
 void test('a slipping body escaping a web resumes blocked levitation', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const trap = addTrap(level, WEB, game.u.ux, game.u.uy);
     await triggerHeroTrap(trap);
@@ -158,7 +158,7 @@ void test('a slipping body escaping a web resumes blocked levitation', async () 
     resetInputState();
 });
 void test('a cloud slips out of punishment and leaves the iron ball behind', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const { ball, chain } = await installPunishedHero();
     pushKeys('polyself\nfog cloud\n                ');
@@ -169,7 +169,7 @@ void test('a cloud slips out of punishment and leaves the iron ball behind', asy
     assert.equal(chain.where, 'gone');
 });
 void test('passing through walls releases a buried ball without dragging it to the hero', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const x = game.u.ux - 1;
     const y = game.u.uy;
@@ -183,7 +183,7 @@ void test('passing through walls releases a buried ball without dragging it to t
     assert.ok(!game.uchain);
 });
 void test('a ghoul body cures illness and cannot be infected again', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     await startHeroSickness({ turns: 12, cause: 'tainted meat' });
     pushKeys('polyself\nghoul\n                ');
     await rhack('#'.charCodeAt(0));
@@ -193,7 +193,7 @@ void test('a ghoul body cures illness and cannot be infected again', async () =>
 });
 for (const form of ['fire elemental', 'green slime']) {
     void test(`becoming a ${form} stops the slime transformation`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         requireFixtureGame(game);
         startHeroSliming({ turns: 3 });
         pushKeys(`polyself\n${form}\n                `);
@@ -203,7 +203,7 @@ for (const form of ['fire elemental', 'green slime']) {
     });
 }
 void test('a petrifying hero becomes a stone golem instead of the chosen golem', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     startHeroPetrification();
     pushKeys('polyself\nrope golem\n                ');
@@ -213,7 +213,7 @@ void test('a petrifying hero becomes a stone golem instead of the chosen golem',
     assert.equal(game.u.mh, 100);
 });
 void test('a goblin retains ordinary strength but has the orc strength limit', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     game.u.acurr.a[A_STR] = 16;
     pushKeys('polyself\ngoblin\n                ');
@@ -225,7 +225,7 @@ void test('a goblin retains ordinary strength but has the orc strength limit', a
 // instead of the hero orc limit.
 for (const form of ['orc-captain', 'Uruk-hai']) {
     void test(`an ${form} body has full exceptional strength`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         requireFixtureGame(game);
         pushKeys(`polyself\n${form}\n                `);
         await rhack('#'.charCodeAt(0));
@@ -234,7 +234,7 @@ for (const form of ['orc-captain', 'Uruk-hai']) {
     });
 }
 void test('living giant strength exceeds undead giant strength', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     pushKeys('polyself\nhill giant\n                ');
     await rhack('#'.charCodeAt(0));
@@ -245,7 +245,7 @@ void test('living giant strength exceeds undead giant strength', async () => {
     assert.equal(game.u.acurr.a[A_STR], STR18(100));
 });
 void test('an adult dragon body has full health dice on the elemental planes', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     game.astral_level = createSpecialLevel({ dnum: 7, dlevel: 1 });
     game.u.uz = { dnum: 7, dlevel: 3 };
@@ -254,7 +254,7 @@ void test('an adult dragon body has full health dice on the elemental planes', a
     assert.equal(game.u.mhmax, 120);
 });
 void test('human renewal restarts the slime countdown even when already human', async () => {
-    freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
+    await freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
     requireFixtureGame(game);
     game.urace = requiredRace(race => race.name === 'human');
     game.u.umonster = game.u.umonnum = MONSTER_NAME.indexOf('archeologist');
@@ -267,7 +267,7 @@ void test('human renewal restarts the slime countdown even when already human', 
     assert.match(game._pending_message, /still slime on you/);
 });
 void test('a vampire taking silver damage loses monster health, not human health', async () => {
-    freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
+    await freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
     requireFixtureGame(game);
     const saber = await addInventoryObject(OBJECT_NAMES.indexOf('silver saber'));
     await setPrimaryWeapon(saber);
@@ -280,7 +280,7 @@ void test('a vampire taking silver damage loses monster health, not human health
     assert.ok(floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy).includes(saber));
 });
 void test('losing a shield during polymorph also loses its reflection', async () => {
-    freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
+    await freshObjectRoom({ role: 'archeologist', flags: { debug: true }, gameplaySeed: 2317n });
     requireFixtureGame(game);
     const shield = await addInventoryObject(SHIELD_OF_REFLECTION);
     wearHeroArmor(shield);
@@ -292,7 +292,7 @@ void test('losing a shield during polymorph also loses its reflection', async ()
     assert.ok(floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy).includes(shield));
 });
 void test('an artifact blast that kills a monster form preserves the human body', async () => {
-    freshObjectRoom({ role: 'archeologist', gameplaySeed: 2317n });
+    await freshObjectRoom({ role: 'archeologist', gameplaySeed: 2317n });
     requireFixtureGame(game);
     game.urace = requiredRace(race => race.name === 'human');
     installPolymorphedHero('vampire', { hitPoints: 1 });
@@ -305,7 +305,7 @@ void test('an artifact blast that kills a monster form preserves the human body'
     assert.equal(game.u.uhp, humanHealth);
 });
 void test('losing a form during equipment checks finishes the original item removal', async () => {
-    freshObjectRoom({ role: 'archeologist', gameplaySeed: 2317n });
+    await freshObjectRoom({ role: 'archeologist', gameplaySeed: 2317n });
     requireFixtureGame(game);
     game.urace = requiredRace(race => race.name === 'human');
     installPolymorphedHero('vampire', { hitPoints: 1 });
@@ -321,7 +321,7 @@ void test('losing a form during equipment checks finishes the original item remo
     assert.ok(floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy).includes(saber));
 });
 void test('declining death in wizard mode restores an unchanging monster body', async () => {
-    freshObjectRoom({ flags: { debug: true }, gameplaySeed: 2317n });
+    await freshObjectRoom({ flags: { debug: true }, gameplaySeed: 2317n });
     requireFixtureGame(game);
     installPolymorphedHero('vampire', { hitPoints: 1, maxHitPoints: 40 });
     game.u.unchanging = true;
@@ -333,7 +333,7 @@ void test('declining death in wizard mode restores an unchanging monster body', 
     assert.ok(game.u.mh > 0);
 });
 void test('an expired polymorph timer does not move damage into the human body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('vampire', { turns: 0, hitPoints: 40 });
     const humanHealth = game.u.uhp;
@@ -342,7 +342,7 @@ void test('an expired polymorph timer does not move damage into the human body',
     assert.equal(game.u.uhp, humanHealth);
 });
 void test('a cloud slips out of its suit, cloak, and shirt', async () => {
-    freshObjectRoom({ role: 'archeologist', flags: { debug: true } });
+    await freshObjectRoom({ role: 'archeologist', flags: { debug: true } });
     requireFixtureGame(game);
     const garments = [];
     for (const type of [LEATHER_ARMOR, CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT])
@@ -358,7 +358,7 @@ void test('a cloud slips out of its suit, cloak, and shirt', async () => {
     }
 });
 void test('a handless form releases a welded sword without dropping it', async () => {
-    freshObjectRoom({ role: 'archeologist', flags: { debug: true } });
+    await freshObjectRoom({ role: 'archeologist', flags: { debug: true } });
     requireFixtureGame(game);
     const sword = await addInventoryObject(LONG_SWORD, { cursed: true });
     await setPrimaryWeapon(sword);
@@ -371,7 +371,7 @@ void test('random polymorph can renew the human body instead of changing species
     let renewed = false;
     let changedSpecies = false;
     for (let seed = 1; seed <= 32; seed++) {
-        freshObjectRoom({ role: 'archeologist', gameplaySeed: BigInt(seed) });
+        await freshObjectRoom({ role: 'archeologist', gameplaySeed: BigInt(seed) });
         requireFixtureGame(game);
         game.urace = requiredRace(race => race.name === 'human');
         game.u.umonster = game.u.umonnum = MONSTER_NAME.indexOf('archeologist');
@@ -395,7 +395,7 @@ void test('random polymorph can renew the human body instead of changing species
     assert.ok(changedSpecies, 'random polymorph never changed species');
 });
 void test('a luminous form lights the dungeon until the hero changes back', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) {
@@ -406,20 +406,20 @@ void test('a luminous form lights the dungeon until the hero changes back', asyn
     }
     const x = game.u.ux + 2;
     const y = game.u.uy;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(x, y), false);
     pushKeys('polyself\ngold dragon\n                ');
     await rhack('#'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(x, y), true);
     resetInputState();
     pushKeys('polyself\ncaveman\n                ');
     await rhack('#'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(x, y), false);
 });
 void test('regaining sight in a new body glimpses squares lit by the old luminous form', async () => {
-    const level = freshObjectRoom({ flags: { debug: true }, recalculateVision: false });
+    const level = await freshObjectRoom({ flags: { debug: true }, recalculateVision: false });
     requireFixtureGame(game);
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) {
@@ -430,15 +430,15 @@ void test('regaining sight in a new body glimpses squares lit by the old luminou
     }
     const x = game.u.ux + 2;
     const y = game.u.uy;
-    vision_recalc(0);
+    await vision_recalc(0);
     pushKeys('polyself\nfire vortex\n                ');
     await rhack('#'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(glyphAt(x, y)?.kind, 'unexplored');
     resetInputState();
     pushKeys('polyself\nplains centaur\n                ');
     await rhack('#'.charCodeAt(0));
-    vision_recalc(0);
+    await vision_recalc(0);
     // polymon() restores sight while the vortex's light still exists.
     assert.equal(glyphAt(x, y)?.kind, 'terrain');
     assert.equal(cansee(x, y), false);

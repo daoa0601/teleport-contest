@@ -26,7 +26,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 void test('a disappearing steed dismounts the rider without recording a death', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const steed = await createSaddledSteed();
     game.u.usteed = steed;
@@ -43,7 +43,7 @@ void test('a disappearing steed dismounts the rider without recording a death', 
 });
 
 void test('removing a keeper after game over clears its room ownership and outstanding bill', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper, room, roomno } = await createStaffedShop({ keeperX: 12 });
     const purchase = await floorObject(POT_HEALING, 10, 10);
@@ -78,7 +78,7 @@ void test('removing a keeper after game over clears its room ownership and outst
 });
 
 void test('a fatal settling boulder during removal interrupts cleanup of an initially live game', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 1, uhpmax: 1 },
+    const level = await freshObjectRoom({ hero: { uhp: 1, uhpmax: 1 },
         flags: { disclose: '-i -a -v -c -o' } });
     requirePlayingGame(game);
     game.storage = memoryStorage();

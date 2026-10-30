@@ -149,7 +149,7 @@ export async function finishScheduledLevelChange(): Promise<void> {
                 trap.tx === game.u.ux && trap.ty === game.u.uy);
             if (portal) {
                 deleteTrap(portal, game);
-                newsym(game.u.ux, game.u.uy);
+                await newsym(game.u.ux, game.u.uy);
             }
         }
     }
@@ -295,7 +295,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
 
     // Losing sight of this level can use display randomness while the hero
     // hallucinates. Do it before generating the destination.
-    vision_recalc(2);
+    await vision_recalc(2);
 
     if (leavingTutorial || (oldDepth.dnum !== destinationDepth.dnum
         && In_endgame(destinationDepth))) discardMigrations(game);
@@ -352,7 +352,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             restoreCachedLevelMetadata(cached);
             restoreLevelTimers(game);
             await restoreCachedMonsterState(cached);
-            restoreLevelRegions(game, game.moves - cached.savedAt);
+            await restoreLevelRegions(game, game.moves - cached.savedAt);
             // getlev() redraws saved bubbles before goto_level() moves them.
             restoreElementalBubbles();
             // C getlev() reloads the level's saved light sources onto the
@@ -628,7 +628,7 @@ async function finishAstralArrival(): Promise<void> {
             monster.mpeaceful = monster.mtame = 0;
             setMonsterMalign(monster);
         }
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     await createPlayerMonsters(rn1(4, 3), true);
     await gainGuardianAngel(game);
@@ -668,7 +668,7 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         } else if (arrival === 'portal' && !In_endgame(game.u.uz)) {
             const portal = game.level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
             if (portal) {
-                seeTrap(portal);
+                await seeTrap(portal);
                 await placeHeroOnLevel(portal.tx, portal.ty);
             } else await placeHeroAtRandomArrival(game.level.downTeleportRegion);
         } else {
@@ -796,7 +796,7 @@ async function restoreCachedMonsterState(cached: CachedLevelState): Promise<void
     for (const monster of cached.level.monsters.slice().reverse()) {
         setShopResidency(monster, false, game);
         await restoreMonsterCover(monster, game);
-        if (elapsed > 0) catchUpMonster(monster, elapsed, game);
+        if (elapsed > 0) await catchUpMonster(monster, elapsed, game);
         await restoreMonsterShape(monster, game);
         if (game.program_state.gameover) return;
         if (elapsed > 0 && elapsed > rnd(10))

@@ -8,8 +8,8 @@ import { useHeroWereSummon } from '../js/were.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 
-function freshWerewolfAbilityRoom(energy: number) {
-    return freshMonsterAbilityRoom('werewolf', {
+async function freshWerewolfAbilityRoom(energy: number) {
+    return await freshMonsterAbilityRoom('werewolf', {
         top: 3,
         bottom: 17,
         gameplaySeed: 314,
@@ -18,7 +18,7 @@ function freshWerewolfAbilityRoom(energy: number) {
 }
 
 void test('a werewolf uses #monster to call tame wolves', async () => {
-    const level = freshWerewolfAbilityRoom(30);
+    const level = await freshWerewolfAbilityRoom(30);
     requireFixtureGame(game);
     await runMonsterAbilityCommand(' '.repeat(8));
 
@@ -31,7 +31,7 @@ void test('a werewolf uses #monster to call tame wolves', async () => {
 });
 
 void test('summoned werewolf allies respect monster-generation exclusion zones', async () => {
-    const level = freshWerewolfAbilityRoom(30);
+    const level = await freshWerewolfAbilityRoom(30);
     requireFixtureGame(game);
     level.exclusionZones.push({
         type: 'monster-generation', lx: 9, ly: 9, hx: 11, hy: 11,
@@ -48,7 +48,7 @@ void test('summoned werewolf allies respect monster-generation exclusion zones',
 });
 
 void test('a were-creature without enough energy cannot call help', async () => {
-    const level = freshWerewolfAbilityRoom(9);
+    const level = await freshWerewolfAbilityRoom(9);
     requireFixtureGame(game);
 
     const result = await useHeroWereSummon({

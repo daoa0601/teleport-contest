@@ -16,7 +16,7 @@ import { requireScreenRow } from './support/screen.js';
 
 for (const improving of [false, true]) {
     void test(`seduction ${improving ? 'gains' : 'loses'} constitution before exercising it at the load-change pager`, async () => {
-        const level = freshObjectRoom({ flags: { female: true },
+        const level = await freshObjectRoom({ flags: { female: true },
             hero: { acurr: { a: [12, 12, 12, 12, 3, 12] } } });
         requirePlayingGame(game);
         level.flags.noteleport = true;

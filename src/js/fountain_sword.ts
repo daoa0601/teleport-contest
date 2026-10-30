@@ -55,7 +55,7 @@ export async function dipFountainSword(object: GameObject, location: MapLocation
     location.looted = 0;
     location.blessedftn = 0;
     countLevelFeatures(game);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     if (inTown(game.level, game.u.ux, game.u.uy)) await angerWatchGuards(false);
     return true;
 }

@@ -12,7 +12,7 @@ function screenRow(row: number): string {
 }
 
 void test('a stunning kick reports the stagger before the status shows Stun', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     const abbot = await createMonsterAt('abbot', game.u.ux + 1, game.u.uy, NO_MINVENT);
     abbot.mpeaceful = false;

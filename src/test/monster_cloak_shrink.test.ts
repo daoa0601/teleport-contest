@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [cloakType, simpleName] of [[MUMMY_WRAPPING, 'wrapping'], [ROBE, 'robe']] as const) {
     void test(`a monster shrinking out of its ${simpleName} uses the cloak's simple name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const monster = await createMonsterAt('gnome', 11, 10, NO_MINVENT);
         await equipMonsterObject(monster, await knownObject(cloakType), W_ARMC);
         monster.mnum = MONSTER_NAME.indexOf('newt');

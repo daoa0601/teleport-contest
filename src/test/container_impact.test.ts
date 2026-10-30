@@ -47,7 +47,7 @@ async function chestWith(...contents: GameObject[]) {
 }
 
 void test('a glass potion breaks with a muffled shatter inside a chest', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await knownObject(POT_WATER);
     const chest = await chestWith(potion);
@@ -68,7 +68,7 @@ void test('a glass potion breaks with a muffled shatter inside a chest', async (
 });
 
 void test('a resisting glass item survives the impact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await knownObject(POT_WATER);
     const chest = await chestWith(potion);
@@ -86,7 +86,7 @@ void test('a resisting glass item survives the impact', async () => {
 });
 
 void test('a stack of glass items loses exactly one unit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const stack = await knownObject(POT_WATER, { quan: 3, quantity: 3 });
     const chest = await chestWith(stack);
@@ -105,7 +105,7 @@ void test('a stack of glass items loses exactly one unit', async () => {
 });
 
 void test('the newest content takes the first breakage roll', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const older = await knownObject(POT_WATER);
     const newer = await knownObject(POT_WATER);
@@ -126,7 +126,7 @@ void test('the newest content takes the first breakage roll', async () => {
 });
 
 void test('a cracking egg breaks one third of the time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const egg = await knownObject(EGG, { spe: 0, corpsenm: 0 });
     const chest = await chestWith(egg);
@@ -143,7 +143,7 @@ void test('a cracking egg breaks one third of the time', async () => {
 });
 
 void test('a mirror in the container costs two luck', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.uluck = 0;
     const mirror = await knownObject(MIRROR);
@@ -158,7 +158,7 @@ void test('a mirror in the container costs two luck', async () => {
 });
 
 void test('an egg laid by the hero costs one luck, a wild egg none', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.uluck = 0;
     const laid = await knownObject(EGG, { spe: 1, corpsenm: 0 });
@@ -169,7 +169,7 @@ void test('an egg laid by the hero costs one luck, a wild egg none', async () =>
     });
     assert.equal(game.u.uluck, -1);
 
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.uluck = 0;
     const wild = await knownObject(EGG, { spe: 0, corpsenm: 0 });
@@ -182,7 +182,7 @@ void test('an egg laid by the hero costs one luck, a wild egg none', async () =>
 });
 
 void test('bags of holding and tricks never spill breakage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const holding = await knownObject(BAG_OF_HOLDING);
     holding.contents = [];
@@ -207,7 +207,7 @@ void test('bags of holding and tricks never spill breakage', async () => {
 });
 
 void test('empty and non-container objects are left alone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const empty = await chestWith();
     const looseStack = await knownObject(POT_WATER);
@@ -228,7 +228,7 @@ void test('empty and non-container objects are left alone', async () => {
 });
 
 void test('an awake deaf hero hears nothing but the contents still break', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.deafTurns = 5;
     const potion = await knownObject(POT_WATER);
@@ -246,7 +246,7 @@ void test('an awake deaf hero hears nothing but the contents still break', async
 });
 
 void test('disabled acoustics silence the muffled sound', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags = { ...game.flags, acoustics: false };
     const potion = await knownObject(POT_WATER);
@@ -264,7 +264,7 @@ void test('disabled acoustics silence the muffled sound', async () => {
 });
 
 void test('an underwater hero barely hears the muffled sound', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.uinwater = 1;
     const potion = await knownObject(POT_WATER);
@@ -280,7 +280,7 @@ void test('an underwater hero barely hears the muffled sound', async () => {
 });
 
 void test('a sleeping hero dreams the muffled sound, deaf or not', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._helplessTurns = 5;
     game.u.usleep = 1;
@@ -295,7 +295,7 @@ void test('a sleeping hero dreams the muffled sound, deaf or not', async () => {
 
     assert.deepEqual(log.messages, ['You dream that you hear a muffled shatter.']);
 
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._helplessTurns = 5;
     game.u.usleep = 1;
@@ -310,7 +310,7 @@ void test('a sleeping hero dreams the muffled sound, deaf or not', async () => {
 });
 
 void test('glass gems ride out the impact unharmed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worthlessGlass = OBJECT_NAMES.indexOf('worthless piece of blue glass');
     const gem = await knownObject(worthlessGlass);

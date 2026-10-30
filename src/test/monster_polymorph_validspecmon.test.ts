@@ -20,7 +20,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // gas spore has no head and is retried, and the guard becomes the
 // salamander, not the cockatrice an unrestricted selection would return.
 void test('a polymorphed vault guard on the Rogue level keeps a usable body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const guard = await createMonsterAt('guard', 12, 10, NO_MINVENT);
     guard.isgd = 1;

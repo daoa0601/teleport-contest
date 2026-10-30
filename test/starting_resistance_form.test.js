@@ -6,7 +6,7 @@ import { uInitInventoryAttrs, uInitMisc } from '../js/u_init.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a Valkyrie retains her innate cold resistance in a dog body', async () => {
-    freshObjectRoom({ role: 'valkyrie', flags: { debug: true } });
+    await freshObjectRoom({ role: 'valkyrie', flags: { debug: true } });
     uInitMisc(1);
     await uInitInventoryAttrs();
     game.u.ux = game.u.ux0 = 10;

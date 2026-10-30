@@ -15,7 +15,7 @@ import { requireScreenRow } from './support/screen.js';
 
 for (const command of ['throw', 'fire'] as const) {
     void test(`${command} announces a greased quivered coin slipping and sends it in the new direction`, async () => {
-        const level = freshObjectRoom({ left: 1, right: 25, top: 1, bottom: 19 });
+        const level = await freshObjectRoom({ left: 1, right: 25, top: 1, bottom: 19 });
         const purse = await addInventoryObject(GOLD_PIECE, { quan: 3, greased: true });
         await setQuiverObject(purse);
         initRng(1n);
@@ -39,7 +39,7 @@ for (const command of ['throw', 'fire'] as const) {
 }
 
 void test('a greased unquivered purse uses the direct gold throw without slipping', async () => {
-    const level = freshObjectRoom({ right: 25 });
+    const level = await freshObjectRoom({ right: 25 });
     const purse = await addInventoryObject(GOLD_PIECE, { quan: 3, greased: true });
     initRng(1n);
 

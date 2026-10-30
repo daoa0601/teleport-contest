@@ -12,10 +12,10 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('seeing a monster teleport reveals the trap on the square it left', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const monster = await createMonsterAt('newt', 11, 10, MM_NOGRP | NO_MINVENT);
     const trap = addTrap(level, TELEP_TRAP, 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
 
     await teleportMonsterFromTrap(monster, trap);
     await flush_screen(1);
@@ -27,11 +27,11 @@ void test('seeing a monster teleport reveals the trap on the square it left', as
 });
 
 void test('an unseen monster teleport leaves its trap concealed', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const monster = await createMonsterAt('newt', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = true;
     const trap = addTrap(level, TELEP_TRAP, 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
 
     await teleportMonsterFromTrap(monster, trap);
     await flush_screen(1);
@@ -41,12 +41,12 @@ void test('an unseen monster teleport leaves its trap concealed', async () => {
 });
 
 void test('infravision reveals a teleport trap used by a warm monster in darkness', async () => {
-    const level = freshObjectRoom({ hero: { infravision: true } });
+    const level = await freshObjectRoom({ hero: { infravision: true } });
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     const monster = await createMonsterAt('hill orc', 14, 10, MM_NOGRP | NO_MINVENT);
     const trap = addTrap(level, TELEP_TRAP, 14, 10, { teledest: { x: 15, y: 10 } });
     const messages: string[] = [];

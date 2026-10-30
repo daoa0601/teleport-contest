@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const negated of [false, true]) {
     void test(`a shade's ${negated ? 'negated' : 'unblocked'} slowing touch ${negated ? 'leaves' : 'removes'} innate speed`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const shade = await createMonsterAt('shade', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         grantIntrinsicProperty('fast', 'outside');

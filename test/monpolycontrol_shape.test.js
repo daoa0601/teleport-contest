@@ -30,7 +30,7 @@ function messageLog() {
     return [...game._messageHistory, game._toplines, game._pending_message].join('\n');
 }
 async function setupShapechanger(form, cham) {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game._monPolycontrol = true;
     const monster = await createMonsterAt(form, 11, 10, NO_MINVENT);
@@ -129,7 +129,7 @@ void test('a rejected answer then Escape falls back to a random form', async () 
     assert.notEqual(MONSTER_NAME[monster.mnum], 'jackal');
 });
 void test('a newborn shapechanger is prompted for its first form under monpolycontrol', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game._monPolycontrol = true;
     initRng(9n);

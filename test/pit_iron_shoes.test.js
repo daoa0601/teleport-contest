@@ -20,7 +20,7 @@ for (const [footwear, description] of [
     [KICKING_BOOTS, 'kicking boots'],
 ]) {
     void test(`a spiked pit is blunted by ${description} named as worn`, async () => {
-        const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const shoes = await addInventoryObject(footwear);
         wearHeroArmor(shoes);
@@ -40,7 +40,7 @@ for (const [trapType, description, message] of [
     [SPIKED_PIT, 'spiked pit', 'Poor Silver lands on a set of sharp iron spikes!'],
 ]) {
     void test(`a named steed entering a ${description} is called poor by name`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requireFixtureGame(game);
         const steed = await createSaddledSteed('horse', { x: 10, y: 10 });
         setMonsterGivenName(steed, 'Silver');

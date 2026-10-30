@@ -271,7 +271,7 @@ export async function turnGolemToStone(monster: Monster, publish: MessagePublish
             ? `Now it's a ${monsterTypeName(monster.mnum)}.`
             : '... and returns to normal.');
     }
-    if (changed) newsym(monster.mx, monster.my);
+    if (changed) await newsym(monster.mx, monster.my);
     return { changed, heroDied: false };
 }
 
@@ -292,7 +292,7 @@ async function restoreShapechanger(monster: Monster, publish: MessagePublisher) 
     if (canSeeMonster(monster)) {
         await publish(`The ${oldName} turns into ${monsterTypeName(baseForm)}!`);
     }
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     return { changed: true, heroDied: false };
 }
 
@@ -340,7 +340,7 @@ async function reviveStonedVampire(monster: Monster, baseForm: number, publish: 
         await publish(`${monsterName(monster, { article: 'a', capitalized: true })} rises from the ${
             surfaceName(monster.mx, monster.my)} with renewed agility!`);
     }
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     return { changed: true, heroDied: false };
 }
 
@@ -471,8 +471,8 @@ export async function prepareMonsterPetrification(monster: Monster, {
     monster.mtrapped = 0;
     const remains = await createStoneRemains(monster, publish);
     if (game.program_state.gameover) return { heroDied: true };
-    unmap_invisible(monster.mx, monster.my, false);
-    if (cansee(monster.mx, monster.my)) newsym(monster.mx, monster.my);
+    await unmap_invisible(monster.mx, monster.my, false);
+    if (cansee(monster.mx, monster.my)) await newsym(monster.mx, monster.my);
     return { changed: true, survived: false, remains };
 }
 

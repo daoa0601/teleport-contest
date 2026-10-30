@@ -14,8 +14,8 @@ import { grantIntrinsicProperty, removeIntrinsicProperty } from '../js/propertie
 import { createMonsterAt } from './support/monsters.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-function town() {
-    freshObjectRoom({ left: 6, right: 19, flags: { verbose: true } });
+async function town() {
+    await freshObjectRoom({ left: 6, right: 19, flags: { verbose: true } });
     requireFixtureGame(game);
     game.level.flags.has_town = true;
     const input = resetInputState();
@@ -38,7 +38,7 @@ async function guard(species = 'watchman', x = 12, y = 10) {
 }
 for (const terrain of [HWALL, TREE, FOUNTAIN, DOOR]) {
     void test(`magical digging of town terrain ${terrain} immediately angers the watch`, async () => {
-        town();
+        await town();
         requireFixtureGame(game);
         const witness = await guard();
         const captain = await guard('watch captain', 16, 10);
@@ -54,7 +54,7 @@ for (const terrain of [HWALL, TREE, FOUNTAIN, DOOR]) {
     });
 }
 void test('a first tool warning stops digging, and resuming the same target leads to arrest', async () => {
-    const { messages } = town();
+    const { messages } = await town();
     requireFixtureGame(game);
     const witness = await guard();
     game.level.requireAt(11, 10).typ = HWALL;
@@ -72,7 +72,7 @@ void test('a first tool warning stops digging, and resuming the same target lead
     assert.match(messages.join(' '), /stop damaging that wall.*under arrest/s);
 });
 void test('open doorways and ordinary ground are not town vandalism', async () => {
-    town();
+    await town();
     requireFixtureGame(game);
     const witness = await guard();
     game.level.requireAt(11, 10).typ = ROOM;
@@ -84,7 +84,7 @@ void test('open doorways and ordinary ground are not town vandalism', async () =
     assert.equal(witness.mpeaceful, 1);
 });
 void test('watchmen must see the hero and be alive, peaceful, and on the map to witness digging', async () => {
-    town();
+    await town();
     requireFixtureGame(game);
     const witness = await guard();
     game.level.requireAt(11, 10).typ = HWALL;
@@ -106,7 +106,7 @@ void test('watchmen must see the hero and be alive, peaceful, and on the map to 
     assert.equal(await watchDigging(11, 10), true);
 });
 void test('the town boundary applies to the damaged feature rather than the hero', async () => {
-    town();
+    await town();
     requireFixtureGame(game);
     const witness = await guard();
     game.level.rooms = [createRoom({ lx: 8, hx: 11, ly: 8, hy: 12, nsubrooms: 1 })];
@@ -115,7 +115,7 @@ void test('the town boundary applies to the damaged feature rather than the hero
     assert.equal(witness.mpeaceful, 1);
 });
 void test('an arrest waits for its real message boundary before angering guards', async () => {
-    town();
+    await town();
     requireFixtureGame(game);
     const witness = await guard();
     game.level.requireAt(11, 10).typ = HWALL;

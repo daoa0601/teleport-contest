@@ -21,7 +21,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('erinyes begin seeing an invisible hero above five alignment abuse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('invisible', 'outside');
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     adjustHeroAlignment(-5);
@@ -33,7 +33,7 @@ void test('erinyes begin seeing an invisible hero above five alignment abuse', a
 });
 
 void test('erinyes survive underwater above ten alignment abuse', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     level.requireAt(12, 10).typ = WATER;
     adjustHeroAlignment(-10);
@@ -45,7 +45,7 @@ void test('erinyes survive underwater above ten alignment abuse', async () => {
 });
 
 void test('erinyes gain flight above fifteen abuse and a new game clears the upgrade', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     adjustHeroAlignment(-15);
     assert.equal(monsterFliesOrFloats(erinys), false);
@@ -54,7 +54,7 @@ void test('erinyes gain flight above fifteen abuse and a new game clears the upg
     adjustHeroAlignment(10);
     assert.equal(monsterFliesOrFloats(erinys), true, 'improving alignment does not undo accumulated abuse');
 
-    freshObjectRoom();
+    await freshObjectRoom();
     const newErinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
 
     assert.equal(monsterFliesOrFloats(newErinys), false);
@@ -62,7 +62,7 @@ void test('erinyes gain flight above fifteen abuse and a new game clears the upg
 
 for (const [abuse, expectedDamage] of [[20, 8], [21, 12], [35, 12], [36, 24]] satisfies [number, number][]) {
     void test(`an erinys at ${abuse} alignment abuse deals ${expectedDamage} unarmed weapon damage`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
         const golem = await createMonsterAt('iron golem', 13, 10, NO_MINVENT);
@@ -81,7 +81,7 @@ for (const [abuse, expectedDamage] of [[20, 8], [21, 12], [35, 12], [36, 24]] sa
 }
 
 void test('erinyes regenerate each turn above twenty-five alignment abuse', async () => {
-    freshObjectRoom({ moves: 1 });
+    await freshObjectRoom({ moves: 1 });
     requirePlayingGame(game);
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     erinys.mhp = 10;
@@ -113,7 +113,7 @@ for (const abuse of [30, 31]) {
 
 for (const abuse of [40, 41]) {
     void test(`a fleeing erinys ${abuse > 40 ? 'can' : 'cannot'} teleport at ${abuse} alignment abuse`, async () => {
-        freshObjectRoom({ right: 22 });
+        await freshObjectRoom({ right: 22 });
         requirePlayingGame(game);
         const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
         erinys.mflee = 1;
@@ -130,7 +130,7 @@ for (const abuse of [40, 41]) {
 }
 
 void test('the extra erinys spell attack increases kill experience above fifty alignment abuse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     erinys.m_lev = 10;
     adjustHeroAlignment(-50);
@@ -142,23 +142,23 @@ void test('the extra erinys spell attack increases kill experience above fifty a
 });
 
 void test('restoring a game rebuilds erinys flight from saved alignment abuse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     const species = erinys.mnum;
     const storage = memoryStorage();
     game.plname = 'Furies';
     adjustHeroAlignment(-16);
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.equal(monsterFliesOrFloats({ mnum: species }), false);
 
-    assert.equal(restoreGame('Furies', storage), true);
+    assert.equal(await restoreGame('Furies', storage), true);
 
     assert.equal(monsterFliesOrFloats({ mnum: species }), true);
 });
 
 void test('restoring a game without alignment abuse clears later erinys upgrades', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const erinys = await createMonsterAt('erinys', 12, 10, NO_MINVENT);
     const species = erinys.mnum;
     const storage = memoryStorage();
@@ -167,7 +167,7 @@ void test('restoring a game without alignment abuse clears later erinys upgrades
     adjustHeroAlignment(-16);
     assert.equal(monsterFliesOrFloats(erinys), true);
 
-    assert.equal(restoreGame('Furies', storage), true);
+    assert.equal(await restoreGame('Furies', storage), true);
 
     assert.equal(monsterFliesOrFloats({ mnum: species }), false);
 });

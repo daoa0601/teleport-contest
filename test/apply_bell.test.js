@@ -31,8 +31,8 @@ function screen() {
     assert.ok(game.nhDisplay);
     return game.nhDisplay.grid.map((row) => row.map((cell) => cell.ch).join('')).join('\n');
 }
-function freshBell(options = {}) {
-    freshObjectRoom({ left: 2, right: 35, ...options });
+async function freshBell(options = {}) {
+    await freshObjectRoom({ left: 2, right: 35, ...options });
     requirePlayingGame(game);
     delete game.air_level;
     delete game.water_level;
@@ -56,7 +56,7 @@ function invocationSquare() {
     trapAtHero(VIBRATING_SQUARE);
 }
 void test('ordinary ringing wakes within the hero level radius and recalls pets without thawing them', async () => {
-    freshBell({ hero: { ulevel: 1 } });
+    await freshBell({ hero: { ulevel: 1 } });
     requirePlayingGame(game);
     const near = await createMonsterAt('kitten', 12, 10, NO_MINVENT);
     initializePet(near, { state: game });
@@ -77,7 +77,7 @@ void test('ordinary ringing wakes within the hero level radius and recalls pets 
 });
 for (const gate of ['underwater', 'swallowed ordinary']) {
     void test(`${gate} muffles ringing without charges, discoveries, or wake effects`, async () => {
-        freshBell();
+        await freshBell();
         requirePlayingGame(game);
         const sleeper = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
         sleeper.msleeping = 1;
@@ -100,7 +100,7 @@ for (const gate of ['underwater', 'swallowed ordinary']) {
 }
 for (const charges of [0, 2]) {
     void test(`the invocation Bell with ${charges ? 'a charge' : 'no charges'} reveals its identity and ${charges ? 'records its ringing time' : 'stays silent'}`, async () => {
-        freshBell();
+        await freshBell();
         requirePlayingGame(game);
         invocationSquare();
         const bell = await addInventoryObject(BELL_OF_OPENING, {
@@ -120,7 +120,7 @@ for (const charges of [0, 2]) {
     });
 }
 void test('stairs at the invocation position use ordinary searching rather than invocation timing', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     invocationSquare();
     game.stairs = {
@@ -140,7 +140,7 @@ void test('stairs at the invocation position use ordinary searching rather than 
     assert.ok(requireGameLevel().requireAt(11, 10).doormask & D_CLOSED);
 });
 void test('uncursed charged ringing reveals secret doors and traps without opening a locked chest', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, {
         spe: 2,
@@ -159,7 +159,7 @@ void test('uncursed charged ringing reveals secret doors and traps without openi
     assert.equal(game.u.utrap || 0, 0);
 });
 void test('blessed ringing opens floor locks and doors, releases the hero, and leaves traps intact', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, blessed: true, known: false });
     const chest = await floorObject(CHEST, 11, 10, { olocked: true, otrapped: true });
@@ -178,7 +178,7 @@ void test('blessed ringing opens floor locks and doors, releases the hero, and l
     assert.equal(bell.known, true);
 });
 void test('blessed ringing removes punishment even when there is no nearby lock', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     await punishHero();
     const ball = game.uball;
@@ -191,7 +191,7 @@ void test('blessed ringing removes punishment even when there is no nearby lock'
     assert.equal(bell.known, true);
 });
 void test('adjacent trapped doors explode, damage and stun the hero, and become doorways', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, blessed: true });
     const nearDoor = requireGameLevel().requireAt(11, 10);
@@ -204,7 +204,7 @@ void test('adjacent trapped doors explode, damage and stun the hero, and become 
     assert.ok((game.u.stunnedTurns ?? 0) > 0);
 });
 void test('distant trapped doors wake nearby monsters without damaging the hero', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, blessed: true });
     const farDoor = requireGameLevel().requireAt(13, 10);
@@ -219,7 +219,7 @@ void test('distant trapped doors wake nearby monsters without damaging the hero'
     assert.equal(requireGameLevel().requireAt(13, 10).doormask, D_NODOOR);
 });
 void test('cursed charged ringing summons real undead without inventory and marks a graveyard', async () => {
-    freshBell({ gameplaySeed: 77n });
+    await freshBell({ gameplaySeed: 77n });
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, cursed: true, known: false });
     await useBell(bell);
@@ -232,7 +232,7 @@ void test('cursed charged ringing summons real undead without inventory and mark
 });
 void test('charged ringing expels a swallowed hero; a cursed Bell leaves the engulfment intact', async () => {
     for (const cursed of [false, true]) {
-        freshBell();
+        await freshBell();
         requirePlayingGame(game);
         const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
         game.u.uswallow = 1;
@@ -245,7 +245,7 @@ void test('charged ringing expels a swallowed hero; a cursed Bell leaves the eng
     }
 });
 void test('an unpaid Bell pays its usage fee before consuming a charge', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2 });
     const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
@@ -256,7 +256,7 @@ void test('an unpaid Bell pays its usage fee before consuming a charge', async (
     assert.equal(bell.spe, 1);
 });
 void test('release text pauses before lifting a hero out of a web', async () => {
-    const input = freshBell();
+    const input = await freshBell();
     requirePlayingGame(game);
     input.beforeRead = null;
     input.display = null;
@@ -276,7 +276,7 @@ void test('release text pauses before lifting a hero out of a web', async () => 
     assert.equal(game.u.utrap, 0);
 });
 void test('holding magic releases monsters while preserving the trap and can force a known bear trap closed', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const goblin = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     goblin.mhp = goblin.mhpmax = 100;
@@ -291,7 +291,7 @@ void test('holding magic releases monsters while preserving the trap and can for
     assert.equal(requireGameLevel().traps.length, 1);
 });
 void test('mounted forced web closure traps the hero without a duplicate hero web announcement', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const steed = await createSaddledSteed();
     game.u.usteed = steed;
@@ -303,7 +303,7 @@ void test('mounted forced web closure traps the hero without a duplicate hero we
     assert.ok(!screen().includes('You are caught'));
 });
 void test('falling magic activates ceiling rock traps but does not report an untrapped hero as held', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     trapAtHero(ROCKTRAP);
     const hp = game.u.uhp;
@@ -315,7 +315,7 @@ void test('falling magic activates ceiling rock traps but does not report an unt
 void test('ordinary cursed Bells can summon nymphs, shatter, speed them up, or briefly immobilize their ringer', async () => {
     const seen = new Set();
     for (let seed = 1; seed <= 180 && seen.size < 4; seed++) {
-        freshBell();
+        await freshBell();
         requirePlayingGame(game);
         const bell = await addInventoryObject(BELL, { cursed: true });
         initRng(BigInt(seed));
@@ -343,7 +343,7 @@ void test('ordinary cursed Bells can summon nymphs, shatter, speed them up, or b
 });
 for (const existingDelay of [0, 5]) {
     void test(`cursed Bell paralysis clears cancelled dressing's death reason with ${existingDelay} turns already pending`, async () => {
-        const input = freshBell({
+        const input = await freshBell({
             flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
         });
         requirePlayingGame(game);
@@ -373,7 +373,7 @@ for (const existingDelay of [0, 5]) {
     });
 }
 void test('one extinct nymph species suppresses all ordinary cursed Bell summoning', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     assert.ok(game.mvitals);
     game.mvitals[MONSTER_NAME.indexOf('wood nymph')] = { born: 0, died: 0, mvflags: G_GONE };
@@ -384,7 +384,7 @@ void test('one extinct nymph species suppresses all ordinary cursed Bell summoni
     assert.ok(game.inventory.includes(bell));
 });
 void test('applied Bell command consumes a charge and a turn while opening a real floor lock', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bell = await addInventoryObject(BELL_OF_OPENING, { spe: 2, blessed: true });
     const chest = await floorObject(CHEST, 11, 10, { olocked: true });
@@ -402,7 +402,7 @@ for (const species of [
     'cave spider',
 ]) {
     void test(`locking a web respects the ${species}'s body rather than holding every monster`, async () => {
-        freshBell();
+        await freshBell();
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
         const trap = addTrap(requireGameLevel(), WEB, 11, 10, { tseen: true });
@@ -414,7 +414,7 @@ for (const species of [
     });
 }
 void test('a fire-elemental hero burns an applied locking web instead of becoming trapped', async () => {
-    freshBell({ hero: { umonnum: MONSTER_NAME.indexOf('fire elemental'), mh: 30, mhmax: 30 } });
+    await freshBell({ hero: { umonnum: MONSTER_NAME.indexOf('fire elemental'), mh: 30, mhmax: 30 } });
     requirePlayingGame(game);
     const trap = trapAtHero(WEB);
     const result = await closeHoldingTrap(game.u);
@@ -423,7 +423,7 @@ void test('a fire-elemental hero burns an applied locking web instead of becomin
     assert.ok(!requireGameLevel().traps.includes(trap));
 });
 void test('a flying monster evades forced bear trap closure while the visible trap is learned', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const bat = await createMonsterAt('giant bat', 11, 10, NO_MINVENT);
     const trap = addTrap(requireGameLevel(), BEAR_TRAP, 11, 10, { tseen: false });
@@ -435,7 +435,7 @@ void test('a flying monster evades forced bear trap closure while the visible tr
     assert.ok(screen().includes('evades a bear trap'));
 });
 void test('magical finding removes known disguises and reveals genuine hiding species', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
     const spider = await createMonsterAt('cave spider', 12, 11, NO_MINVENT);
@@ -448,7 +448,7 @@ void test('magical finding removes known disguises and reveals genuine hiding sp
     assert.equal(spider.mundetected, 0);
 });
 void test('appearance knowledge alone does not turn a visible monster into a discovery', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     goblin.m_ap_type = 8;
@@ -463,7 +463,7 @@ void test('appearance knowledge alone does not turn a visible monster into a dis
 });
 for (const elementalPlane of [false, true]) {
     void test(`magical opening ${elementalPlane ? 'ignores cloud blockers on the Air plane' : 'respects intervening dungeon walls'}`, async () => {
-        freshBell();
+        await freshBell();
         requirePlayingGame(game);
         if (elementalPlane)
             game.air_level = createSpecialLevel(game.u.uz);
@@ -472,13 +472,13 @@ for (const elementalPlane of [false, true]) {
         for (let y = 6; y <= 14; y++)
             requireGameLevel().requireAt(12, y).typ = elementalPlane ? CLOUD : 0;
         vision_reset();
-        vision_recalc(0);
+        await vision_recalc(0);
         await openit();
         assert.equal(chest.olocked, !elementalPlane);
     });
 }
 void test('hallucinated detection discovers the real trap while presenting an imagined object', async () => {
-    freshBell();
+    await freshBell();
     requirePlayingGame(game);
     game.u.hallucinationTurns = 20;
     const trap = addTrap(requireGameLevel(), PIT, 11, 10, { tseen: false });
@@ -490,7 +490,7 @@ void test('hallucinated detection discovers the real trap while presenting an im
     assert.equal((requireGameLevel().objects?.[11]?.[10] || []).length, 0);
 });
 void test('a revelation flash restores an unexplored square without discovering a trap or reading input', async () => {
-    const input = freshBell();
+    const input = await freshBell();
     requirePlayingGame(game);
     input.beforeRead = () => {
         throw new Error('A revelation flash must not request input');

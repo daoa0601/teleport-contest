@@ -11,10 +11,10 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a hero polymorphed into a warg is drawn in dark gray', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('warg');
 
-    displaySelf();
+    await displaySelf();
     await flush_screen(1);
 
     const cell = game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1];

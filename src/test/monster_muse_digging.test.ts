@@ -16,7 +16,7 @@ import { createDungeon } from './support/topology.js';
 // an occupied square share one report; a diggable level opens a hole that
 // takes the digger off the level.
 void test('a digger on air reports its failed pit like an occupied square', async () => {
-    const level = freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     level.flags.hardfloor = true;
     level.requireAt(10, 10).typ = AIR;
@@ -38,7 +38,7 @@ void test('a digger on air reports its failed pit like an occupied square', asyn
 });
 
 void test('a digger opens a hole and falls through to the next level', async () => {
-    const level = freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     game.u.uz = { dnum: 0, dlevel: 5 };
@@ -64,7 +64,7 @@ void test('a digger opens a hole and falls through to the next level', async () 
 });
 
 void test('a blind hero hears an unseen digger crash through the floor', async () => {
-    const level = freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
     game.u.uz = { dnum: 0, dlevel: 5 };
@@ -73,7 +73,7 @@ void test('a blind hero hears an unseen digger crash through the floor', async (
     const wand = await addObjectToMonsterInventory(monster, await knownObject(WAN_DIGGING, { spe: 3 }), game);
     assert.ok(wand);
     await makeBlinded(10, { state: game, talk: false });
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages: string[] = [];
 
     await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {

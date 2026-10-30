@@ -16,7 +16,7 @@ function statusRow() {
 // through pickup's prinv() prefix, and the status line keeps the old
 // capacity until encumber_msg() later marks it dirty.
 void test('a burdening take-out leaves the old capacity on the status line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await floorObject(SACK, 10, 10, {
         olocked: false, otrapped: false, initialize: false,
     });

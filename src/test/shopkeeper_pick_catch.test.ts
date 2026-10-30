@@ -13,7 +13,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const [type, name] of [[PICK_AXE, 'pick-axe'], [DWARVISH_MATTOCK, 'mattock']] as const) {
     void test(`the shopkeeper catches a returned ${name}`, async () => {
-        const level = freshObjectRoom({ right: 20 });
+        const level = await freshObjectRoom({ right: 20 });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
         shopkeeper.eshk.shknam = 'Izchak';

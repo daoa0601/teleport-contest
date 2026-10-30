@@ -12,7 +12,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('forcing with no floor box preserves an interrupted door lock attempt', async () => {
-    const level = freshObjectRoom({ hero: { acurr: { a: [18, 18, 18, 3, 18, 18] } } });
+    const level = await freshObjectRoom({ hero: { acurr: { a: [18, 18, 18, 3, 18, 18] } } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;

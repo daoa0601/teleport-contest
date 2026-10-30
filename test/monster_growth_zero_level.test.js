@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const species of ['iron golem', 'air elemental']) {
     void test(`a level-zero ${species} gains a level after growing beyond four HP`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         game.air_level = { ...game.u.uz, flags: { town: false }, alignment: 0 };
         const attacker = await createMonsterAt(species, 11, 10, NO_MINVENT);

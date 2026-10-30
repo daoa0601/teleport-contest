@@ -16,7 +16,7 @@ import { installPagerInput } from './support/pager-input.js';
 void test('a renewed male Priest from a neuter form logs the role name', async () => {
     let unchangedLevels = 0;
     for (let seed = 1n; seed <= 40n; seed++) {
-        freshRoomWithPolymorphedHero('homunculus', { gameplaySeed: seed });
+        await freshRoomWithPolymorphedHero('homunculus', { gameplaySeed: seed });
         requirePlayingGame(game);
         const priest = roles.find(role => role.key === 'priest');
         if (!priest)

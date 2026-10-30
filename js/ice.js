@@ -44,8 +44,8 @@ export async function meltIce(x, y, { announce = plineWithContinuation, message 
     if (game.program_state.gameover)
         return;
     if (game.underwater)
-        vision_recalc(1);
-    newsym(x, y);
+        await vision_recalc(1);
+    await newsym(x, y);
     if (cansee(x, y) || game.u.ux === x && game.u.uy === y)
         await announce(message || 'The ice crackles and melts.', { noRepeat: true });
     let boulder = floorBoulderAt(x, y);
@@ -61,7 +61,7 @@ export async function meltIce(x, y, { announce = plineWithContinuation, message 
             if (game.program_state.gameover)
                 return;
         } while (isPoolAt(x, y) && (boulder = floorBoulderAt(x, y)));
-        newsym(x, y);
+        await newsym(x, y);
     }
     if (game.u.ux === x && game.u.uy === y) {
         await applyHeroLocationEffects(announce, { pick: true });

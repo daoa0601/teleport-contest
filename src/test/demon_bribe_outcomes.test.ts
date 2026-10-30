@@ -33,7 +33,7 @@ async function briber({
     hell?: boolean;
     demonSetup?: (demon: Monster) => Promise<void>;
 } = {}): Promise<BribeScene> {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, ...hero } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, ...hero } });
     if (hell) game.dungeons = [{
         dname: 'Gehennom', num_dunlevs: 20, entry_lev: 1, dunlev_ureached: 1,
         depth_start: 1,

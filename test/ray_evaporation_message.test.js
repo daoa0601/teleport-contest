@@ -8,7 +8,7 @@ import { game } from '../js/gstate.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('freezing lava keeps an ongoing beam visible across the hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = LAVAPOOL;
     let observedBeam = '';
     await runRay({
@@ -25,7 +25,7 @@ void test('freezing lava keeps an ongoing beam visible across the hero', async (
     assert.equal(observedBeam, '-');
 });
 void test('cold crossing adjacent lava squares announces cooling once', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = LAVAPOOL;
     level.requireAt(12, 10).typ = LAVAPOOL;
     await applyRayFloorFeatures('cold', 11, 10);
@@ -35,7 +35,7 @@ void test('cold crossing adjacent lava squares announces cooling once', async ()
     assert.equal(game._pending_message, 'The lava cools and solidifies.');
 });
 void test('repeated fire across a moat does not repeat the steam envelope announcement', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = MOAT;
     await applyRayFloorFeatures('fire', 11, 10);
     await applyRayFloorFeatures('fire', 11, 10);

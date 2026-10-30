@@ -10,7 +10,7 @@ for (const entry of [
     { type: COURT, message: 'You enter an opulent room!' },
 ]) {
     void test(`entering room type ${entry.type} announces it once`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const room = {
             lx: 8, hx: 18, ly: 8, hy: 12, rtype: entry.type,
             needfill: 0, rlit: 1, doorct: 0, fdoor: 0, irregular: false,
@@ -31,7 +31,7 @@ for (const entry of [
     });
 }
 void test('a court with a throne is announced as a throne room', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.rooms = [{
             lx: 8, hx: 18, ly: 8, hy: 12, rtype: COURT,
             needfill: 0, rlit: 1, doorct: 0, fdoor: 0, irregular: false,
@@ -58,7 +58,7 @@ for (const entry of [
         throneX: 19, throneRoomno: ROOMOFFSET, edge: false, hasThrone: false },
 ]) {
     void test(`a court ${entry.description} when announcing its furniture`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const room = {
             lx: 8, hx: 18, ly: 8, hy: 12, rtype: COURT,
             needfill: 0, rlit: 1, doorct: 0, fdoor: 0, irregular: entry.irregular,
@@ -90,7 +90,7 @@ for (const [type, flag] of [
     [ZOO, 'has_zoo'], [BARRACKS, 'has_barracks'], [BEEHIVE, 'has_beehive'],
 ]) {
     void test(`entering a ${flag} room retains the flag until its special subroom is entered`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const room = {
             lx: 8, hx: 18, ly: 8, hy: 12, rtype: type,
             needfill: 0, rlit: 1, doorct: 0, fdoor: 0, irregular: false,

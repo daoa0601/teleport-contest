@@ -17,7 +17,7 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('killing a peaceful unaligned high priest counts as murder for a neutral hero with negative alignment', async (t) => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { bones: false }, gameplaySeed: 731n,
         hero: { ualign: { type: A_NEUTRAL, record: -1 }, uluck: 0 },
     });

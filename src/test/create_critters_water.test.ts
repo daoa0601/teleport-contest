@@ -8,7 +8,7 @@ import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('creation in water places the monster at a wet square without revealing the hero to it', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n, hero: { uinwater: true } });
+    const level = await freshObjectRoom({ gameplaySeed: 1n, hero: { uinwater: true } });
     for (let x = 9; x <= 11; x++) {
         for (let y = 9; y <= 11; y++) level.requireAt(x, y).typ = POOL;
     }

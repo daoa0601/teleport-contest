@@ -58,7 +58,7 @@ export async function finishMonsterPitTrap(monster, event, { publish = plineWith
         return event;
     if (!event.falls) {
         if (event.inSight) {
-            seeTrap(event.trap, state);
+            await seeTrap(event.trap, state);
             await publish(`${monsterName(monster, { capitalized: true, state })} doesn't fall into the pit.`);
         }
         event.finished = true;
@@ -69,7 +69,7 @@ export async function finishMonsterPitTrap(monster, event, { publish = plineWith
         await publish(`${describeMonster(monster)} ${event.dragged ? 'is dragged' : 'falls'} into ${owner} pit!`);
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
             await publish("How pitiful.  Isn't that the pits?");
-        seeTrap(event.trap, state);
+        await seeTrap(event.trap, state);
     }
     const selfTouch = await monsterSelfTouch(monster, {
         prefix: 'Falling, ',

@@ -27,7 +27,7 @@ async function attemptDisplacement(aggressor: Monster, defender: Monster, option
 }
 
 void test('displacement swaps monsters and interrupts a quickmimic meal and sleep', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 13, 10);
     const defender = await createMonsterAt('little dog', 12, 10);
@@ -52,7 +52,7 @@ void test('displacement swaps monsters and interrupts a quickmimic meal and slee
 });
 
 void test('trying to displace a cockatrice petrifies an unprotected displacer', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 13, 10);
     const cockatrice = await createMonsterAt('cockatrice', 12, 10);
@@ -68,7 +68,7 @@ void test('trying to displace a cockatrice petrifies an unprotected displacer', 
 });
 
 void test('life saving stops contact petrification without swapping either monster', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 13, 10);
     const cockatrice = await createMonsterAt('cockatrice', 12, 10);
@@ -87,7 +87,7 @@ void test('life saving stops contact petrification without swapping either monst
 });
 
 void test('a female displacer beast moves another monster out of its way', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 13, 10);
     beast.female = true;
@@ -104,7 +104,7 @@ void test('a female displacer beast moves another monster out of its way', async
 });
 
 void test('a Rider uses its proper name when moving another monster aside', async () => {
-    freshObjectRoom({ context: { mon_moving: true } });
+    await freshObjectRoom({ context: { mon_moving: true } });
     requirePlayingGame(game);
     const rider = await createMonsterAt('Death', 13, 10);
     const jackal = await createMonsterAt('jackal', 12, 10);
@@ -121,7 +121,7 @@ void test('a Rider uses its proper name when moving another monster aside', asyn
 
 
 void test('an ordinary monster turn displaces a blocker rather than sharing its square', async () => {
-    freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
         heroX: 10, heroY: 10, context: { mon_moving: true } });
     requirePlayingGame(game);
     const beast = await createMonsterAt('displacer beast', 13, 10, MM_ANGRY | NO_MINVENT);

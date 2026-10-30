@@ -10,8 +10,8 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 
-function endingRoom(disclose: string) {
-    freshObjectRoom({ flags: { bones: false, disclose, tombstone: false } });
+async function endingRoom(disclose: string) {
+    await freshObjectRoom({ flags: { bones: false, disclose, tombstone: false } });
     game.storage = memoryStorage();
     game.iflags.toptenwin = false;
     const screens: string[] = [];
@@ -28,7 +28,7 @@ function endingRoom(disclose: string) {
 }
 
 void test('fatal damage identifies carried items even when all disclosure is disabled', async () => {
-    endingRoom('none');
+    await endingRoom('none');
     const potion = await addInventoryObject(POT_HEALING, {
         observed: false, typeKnown: false, known: false, bknown: false, dknown: false, rknown: false,
     });
@@ -43,7 +43,7 @@ void test('fatal damage identifies carried items even when all disclosure is dis
 });
 
 void test('quitting discloses and identifies nested container contents after the inventory', async () => {
-    const screens = endingRoom('+i -a -v -g -c -o');
+    const screens = await endingRoom('+i -a -v -g -c -o');
     const box = await addInventoryObject(LARGE_BOX, { cknown: false, lknown: false });
     const sack = await knownObject(SACK, { where: 'free', cknown: false, lknown: false });
     const wand = await knownObject(WAN_FIRE, {
@@ -68,7 +68,7 @@ void test('quitting discloses and identifies nested container contents after the
 });
 
 void test('disclosure identifies a contained tin without learning its preparation', async () => {
-    endingRoom('+i -a -v -g -c -o');
+    await endingRoom('+i -a -v -g -c -o');
     const box = await addInventoryObject(LARGE_BOX);
     const carriedTin = await addInventoryObject(TIN, { cknown: false });
     const containedTin = await knownObject(TIN, { where: 'free', cknown: false });

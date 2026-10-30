@@ -51,7 +51,7 @@ void test('a retained Lua player table follows movement and rejects direct chang
     assert.throws(() => core.execute('private_state = hero.uz'), /Unknown u table index/);
 });
 void test('closing a Lua state rejects new scripts and finishes disposal for both callers', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lifecycle = new LuaLifecycle();
     const core = await lifecycle.startCore(game);
     await core.executeAsync('box = obj.new("chest"); rock = obj.new("rock"); box:addcontent(rock)');
@@ -66,7 +66,7 @@ void test('closing a Lua state rejects new scripts and finishes disposal for bot
     await lifecycle.destroy();
 });
 void test('both lifecycle shutdown callers wait for owned Lua objects to be deleted', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lifecycle = new LuaLifecycle();
     const core = await lifecycle.startCore(game);
     await core.executeAsync('box = obj.new("chest"); rock = obj.new("rock"); box:addcontent(rock)');
@@ -83,7 +83,7 @@ void test('both lifecycle shutdown callers wait for owned Lua objects to be dele
     }
 });
 void test('failed themed-state replacement closes both old and unregistered states', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const lifecycle = new LuaLifecycle();
     const previous = await lifecycle.createThemedState(game, 0, 'themerms.lua');
     const replacementStates = [];

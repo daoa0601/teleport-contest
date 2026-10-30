@@ -13,12 +13,12 @@ for (const detected of [false, true]) {
         { highlight: true, inverse: true },
     ]) {
         void test(`a ${detected ? 'detected' : 'visible'} pet honors hilite_pet=${highlight} with use_inverse=${inverse}`, async () => {
-            freshObjectRoom({ hero: { monsterDetection: detected },
+            await freshObjectRoom({ hero: { monsterDetection: detected },
                 flags: { hilite_pet: highlight, use_inverse: inverse } });
             const pet = await createMonsterAt('little dog', 11, 10);
             pet.mtame = 10;
             pet.minvis = detected ? 1 : 0;
-            newsym(11, 10);
+            await newsym(11, 10);
             await flush_screen(1);
             assert.equal(requireScreenCell(10, 11).ch, 'd');
             assert.equal(requireScreenCell(10, 11).attr & ATR_INVERSE, highlight ? ATR_INVERSE : 0);

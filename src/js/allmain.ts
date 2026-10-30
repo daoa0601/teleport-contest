@@ -700,7 +700,7 @@ async function enterTutorial() {
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
     // maybe_do_tutorial() redraws after deferred_goto(), acknowledging the
     // arrival engraving before the normal command loop starts.
-    vision_recalc(0);
+    await vision_recalc(0);
     await docrt();
     findArmorClass(game);
     await redrawMap();
@@ -1184,7 +1184,7 @@ async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind:
     )) {
         if (event.kind === 'stationary-liquid') {
             if (game.vision_full_recalc) {
-                vision_recalc(0);
+                await vision_recalc(0);
                 // C vision_recalc() ends with notice_all_mons().
                 await noticeAllMonsters(game);
             }
@@ -1569,7 +1569,7 @@ async function finishInitialTurnMaintenanceAfterFumbling({
         game.u.invisibleTurns--;
         if (game.u.invisibleTurns === 0) {
             const stillInvisible = syncHeroInvisibility(game);
-            newsym(game.u.ux, game.u.uy);
+            await newsym(game.u.ux, game.u.uy);
             if (!stillInvisible && !propertyIsBlocked('invisible', game) && !heroIsBlind(game)) {
                 await plineWithContinuation(game.u.seeInvisible
                     ? 'You can no longer see through yourself.'
@@ -1848,7 +1848,7 @@ export async function finishHeroHelplessness(
         await recoverHeroFromFainting({ state });
         break;
     case 'end-mimic-meal':
-        finishMealMimicry(state);
+        await finishMealMimicry(state);
         break;
     case 'finish-digestion':
         await finishHeroDigestion(state);
@@ -2323,7 +2323,7 @@ async function presentMonsterGrowth(
     if (canSpotMonster(monster))
         await plineWithContinuation(growth.message);
     finishMonsterGrowth(monster, growth);
-    newsym(monster.mx, monster.my);
+    await newsym(monster.mx, monster.my);
     if (growth.genocided)
         await finishEnvironmentalMonsterDeath(monster, game);
 }
@@ -2921,10 +2921,10 @@ async function presentMonsterAttackEffects(
                             resolveDeferredHeroGeyser(action, heroAttack);
                         if (heroAttack.paralyzed) stopRun(game);
                         if (heroAttack.monsterDisappeared) {
-                            newsym(monster.mx, monster.my);
+                            await newsym(monster.mx, monster.my);
                             if (cansee(monster.mx, monster.my)
                                 && !canSpotMonster(monster)) {
-                                map_invisible(monster.mx, monster.my);
+                                await map_invisible(monster.mx, monster.my);
                             }
                         }
                         if (heroAttack.rehumanize) {
@@ -2958,7 +2958,7 @@ async function presentMonsterAttackEffects(
                     const revealDismissal = await plineWithContinuation(
                         heroAttack.revealUnderMessage ?? '',
                     );
-                    newsym(monster.mx, monster.my);
+                    await newsym(monster.mx, monster.my);
                     if (revealDismissal !== null
                         && revealDismissal !== undefined) {
                         paging.pagerOwned = true;
@@ -2982,7 +2982,7 @@ async function presentMonsterAttackEffects(
                     && heroAttack.effect !== 'engulf-refused'
                     && heroAttack.effect !== 'failed-grab'
                     && !canSpotMonster(monster))
-                    map_invisible(monster.mx, monster.my);
+                    await map_invisible(monster.mx, monster.my);
                 const publishEquipmentMessage: typeof plineWithContinuation = async (line, options) => {
                     const dismissal = await plineWithContinuation(line, options);
                     if (dismissal != null) paging.pagerOwned = true;
@@ -3368,10 +3368,10 @@ async function presentMonsterPostMove(
         && movement?.hideUnder?.message);
     if (movement?.moved || movement?.postMoveOldSquarePainted) {
         if (!movement.postMoveOldSquarePainted)
-            newsym(movement.oldx, movement.oldy);
+            await newsym(movement.oldx, movement.oldy);
         if (!movement.postMoveDestinationPainted
             && !deferredTrapDestination && !deferredHideUnderDestination)
-            newsym(movement.x, movement.y);
+            await newsym(movement.x, movement.y);
     }
     if (movement.deferredAfterMonsterTrap) {
         const event = movement.trap;
@@ -3384,7 +3384,7 @@ async function presentMonsterPostMove(
         movement = action.movement;
     }
     if (deferredTrapDestination && !movement.postMoveDestinationPainted)
-        newsym(movement.x, movement.y);
+        await newsym(movement.x, movement.y);
     await presentMonsterHiding(action);
     return !!game.program_state.gameover || !!movement.heroDied;
 }
@@ -3694,7 +3694,7 @@ async function presentMonsterAction(
         } else sawDrinking = await presentMonsterQuaff(monster, misc.object);
         const nameBeforeInvisibility = monsterName(monster, { state: game });
         await finishDeferredMonsterMiscItem(action, game);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         const stillSeen = canSpotMonster(monster);
         if (sawDrinking && monster.minvis) {
             if (stillSeen) {
@@ -3706,7 +3706,7 @@ async function presentMonsterAction(
                     `Suddenly you cannot see ${nameBeforeInvisibility}.`,
                 );
                 if (cansee(monster.mx, monster.my))
-                    map_invisible(monster.mx, monster.my);
+                    await map_invisible(monster.mx, monster.my);
             }
             learnObjectType(misc.object.otyp);
         } else if (sawDrinking && !monster.minvis) {
@@ -3795,7 +3795,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // C mon.c:movemon_singlemon() settles deferred visibility before the
         // actor's liquid checks, equipment changes, and movement decisions.
         if (game.vision_full_recalc) {
-            vision_recalc(0);
+            await vision_recalc(0);
             // C vision_recalc() ends with notice_all_mons().
             await noticeAllMonsters(game);
         }
@@ -4082,9 +4082,9 @@ export async function runMoveloopCore() {
         // from the same display RNG stream.
         if (hallucinatingNow) {
             await see_monsters();
-            see_objects();
-            see_traps();
-            if (g.u?.uswallow) swallowed(false);
+            await see_objects();
+            await see_traps();
+            if (g.u?.uswallow) await swallowed(false);
         } else if (g.u?.warning || g.u.warnOfMonster
             || (g.u?.unblind_telepat_range ?? -1) >= 0
             || g.level?.regions?.some(region => region.visible
@@ -4092,7 +4092,7 @@ export async function runMoveloopCore() {
             await see_monsters();
         }
         if (g.vision_full_recalc) {
-            vision_recalc(0);
+            await vision_recalc(0);
             g.vision_full_recalc = 0;
             await noticeAllMonsters(g);
         }
@@ -4146,7 +4146,7 @@ export async function runMoveloopCore() {
         if (!continuation.attemptedMove) return;
         await finishScheduledLevelChange();
         if (g.program_state.gameover) return;
-        if (g.vision_full_recalc) vision_recalc(0);
+        if (g.vision_full_recalc) await vision_recalc(0);
         markMultiStepStatusDirty(g);
         if (continuation.tookTime) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
@@ -4172,7 +4172,7 @@ export async function runMoveloopCore() {
 
     // C refreshes command-induced sight changes before monsters act again.
     // Falling into a pit narrows sight after domove()'s earlier refresh.
-    if (g.vision_full_recalc) vision_recalc(0);
+    if (g.vision_full_recalc) await vision_recalc(0);
     markMultiStepStatusDirty(g);
 
     // Advance turn

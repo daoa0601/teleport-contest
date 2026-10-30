@@ -41,7 +41,7 @@ function findFloorObjects(otyp, pred) {
 void test('a ridden steed takes the land mine blast and the saddle follows its corpse', async () => {
     let verified = false;
     for (let seed = 1n; seed <= 80n && !verified; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const steed = await createSaddledSteed();
         steed.mhp = 1; // any rnd(16) roll kills the steed
@@ -74,7 +74,7 @@ void test('a ridden steed takes the land mine blast and the saddle follows its c
 void test('a flying hero sitting on their own known mine gets the madeby_u trigger messages', async () => {
     let seen = false;
     for (let seed = 1n; seed <= 80n && !seen; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         grantIntrinsicProperty('flying', 'outside');
         game.u.uhp = game.u.uhpmax = 200;
@@ -100,7 +100,7 @@ void test('a flying hero sitting on their own known mine gets the madeby_u trigg
 void test('a flying hero discovering their own unseen mine gets the discovery variants', async () => {
     let seen = false;
     for (let seed = 1n; seed <= 80n && !seen; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         grantIntrinsicProperty('flying', 'outside');
         game.u.uhp = game.u.uhpmax = 200;
@@ -122,7 +122,7 @@ void test('a flying hero discovering their own unseen mine gets the discovery va
 // container has no map location (get_obj_location() without CONTAINED_TOO
 // fails), so the saddle stays where it is while the search still stops.
 void test('a saddle stays put when the steed corpse lies inside a container', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const steed = await createSaddledSteed();
     const saddle = await floorObject(SADDLE, 11, 10);

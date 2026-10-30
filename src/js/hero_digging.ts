@@ -238,10 +238,10 @@ function maybeHalfPhysical(damage: number, state: GameState): number {
         ? Math.ceil(damage / 2) : damage;
 }
 
-function feelNewsym(x: number, y: number, state: GameState): void {
+async function feelNewsym(x: number, y: number, state: GameState): Promise<void> {
     // C display.c feel_newsym(): blind heroes feel the changed location.
-    if (heroIsBlind(state)) feel_location(x, y);
-    else newsym(x, y);
+    if (heroIsBlind(state)) await feel_location(x, y);
+    else await newsym(x, y);
 }
 
 export async function placeTreeFruit(
@@ -293,7 +293,7 @@ async function mkcavepos(x: number, y: number, dist: number, waslit: boolean, ro
     if (visibilityRow)
         visibilityRow[x] = dist < 3 ? (IN_SIGHT | COULD_SEE) : COULD_SEE;
     location.typ = rockit ? STONE : ROOM;
-    feelNewsym(x, y, state);
+    await feelNewsym(x, y, state);
 }
 
 // C dig.c mkcavearea(): the Earth plane's collapsing/created cave.
@@ -340,7 +340,7 @@ async function mkcavearea(rockit: boolean, state: GameState): Promise<void> {
     if (!rockit && heroLocation.typ === CORR) {
         heroLocation.typ = ROOM;
         if (waslit) heroLocation.waslit = true;
-        newsym(hero.ux, hero.uy);
+        await newsym(hero.ux, hero.uy);
     }
     state.vision_full_recalc = 1;
 }
@@ -671,7 +671,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
 
         if (!cleanedUp) {
             vision_note_blocker_change(dpx, dpy);
-            feelNewsym(dpx, dpy, state);
+            await feelNewsym(dpx, dpy, state);
             if (digtxt && !digging.quiet) await pline(digtxt);
             if (dmgtxt) await payForShopDamage(dmgtxt, { state });
 
@@ -685,7 +685,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 location.doormask = D_NODOOR;
                 if (await triggerBoobyTrap('door', { state })) return false;
                 vision_note_blocker_change(dpx, dpy);
-                newsym(dpx, dpy);
+                await newsym(dpx, dpy);
             }
         }
         digging.lastdigtime = state.moves ?? 0;

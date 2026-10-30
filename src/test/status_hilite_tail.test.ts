@@ -16,9 +16,9 @@ function rule(fld: number, behavior: number, value: number, rel: number, color: 
     return { fld, behavior, value, rel, coloridx: color | (attr << 8), textmatch, set: true, anytype: 'int' };
 }
 
-function roomWithRules(rules: readonly StatusHiliteRule[], flags: Record<string, boolean> = { time: true }) {
+async function roomWithRules(rules: readonly StatusHiliteRule[], flags: Record<string, boolean> = { time: true }) {
     const thresholds = Array.from({ length: MAXBLSTATS }, (_, fld) => rules.filter(entry => entry.fld === fld));
-    freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 2 }, flags });
+    await freshObjectRoom({ iflags: { statusThresholds: thresholds, hiliteDelta: 2 }, flags });
     requirePlayingGame(game);
 }
 
@@ -37,7 +37,7 @@ void test('a gold symbol change re-evaluates status fields from gold onward', as
     // so gold and every later field is treated as changed (chg = 0) with its
     // temporary-highlight timer cleared.  Alignment precedes gold in
     // initblstats order, so its temporary highlight survives.
-    roomWithRules([
+    await roomWithRules([
         rule(BL_ALIGN, BL_TH_UPDOWN, 0, EQ_VALUE, CLR_RED),
         rule(BL_HP, BL_TH_UPDOWN, 0, EQ_VALUE, CLR_BLUE),
     ]);
@@ -62,7 +62,7 @@ void test('a title-only status change leaves the hitpoint bar in the title rule 
     // cell and wintty.c:4613-4615 overwrite it only when the HP field is
     // updated.  A rank-title change with unchanged HP leaves the bar in the
     // title rule's colour and drops inverse until hit points change again.
-    roomWithRules([rule(BL_TITLE, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN)],
+    await roomWithRules([rule(BL_TITLE, BL_TH_ALWAYS_HILITE, 0, NO_LTEQGT, CLR_GREEN)],
         { hitpointbar: true });
     await bot();
     const initial = requireScreenRow(22);
@@ -95,7 +95,7 @@ void test('toggling customsymbols redraws without refreshing the gold symbol pro
     // reset_needed_visuals() (options.c:8995-9001) reruns reset_customsymbols
     // and docrt() but skips the check_gold_symbol() that an opt_need_redraw
     // change would run.
-    freshObjectRoom({ flags: { customsymbols: true } });
+    await freshObjectRoom({ flags: { customsymbols: true } });
     requirePlayingGame(game);
     game.shownSymbols = { rogue: true, name: 'blank' };
     game.iflags.optionMessages = false;
@@ -113,7 +113,7 @@ void test('toggling mention_decor forgets the previous decoration', async () => 
     // iflags.prev_decor to STONE, so describe_decor() re-announces the
     // feature the hero is standing on instead of suppressing it as the
     // same terrain (pickup.c:392).
-    freshObjectRoom({ flags: { mention_decor: true } });
+    await freshObjectRoom({ flags: { mention_decor: true } });
     requirePlayingGame(game);
     const messages: string[] = [];
     const publish = async (message: string) => { messages.push(message); };

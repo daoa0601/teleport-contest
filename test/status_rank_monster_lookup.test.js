@@ -10,7 +10,7 @@ const requests = [
 ];
 for (const [request, body] of requests) {
     void test(`the rank request ${request} supplies the native body title ${body}`, async () => {
-        freshObjectRoom({ role: 'wizard' });
+        await freshObjectRoom({ role: 'wizard' });
         requirePlayingGame(game);
         const species = nameToMonster(request);
         if (species >= 0)

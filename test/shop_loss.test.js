@@ -20,7 +20,7 @@ function collector() {
     return { messages, publish: (text) => { messages.push(text); } };
 }
 async function lossShop({ shoptype } = {}) {
-    freshObjectRoom({ ...SHOP, role: 'caveman' });
+    await freshObjectRoom({ ...SHOP, role: 'caveman' });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({
         ...SHOP, keeperX: 12, keeperY: 10, doorX: 9, doorY: 10,
@@ -200,7 +200,7 @@ void test('a FREE no_charge container prices contents from the hero square', asy
     assert.equal(sackHome.no_charge, false);
 });
 void test('nothing settles outside a costly spot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const log = collector();
     const settled = await settleDestroyedShopCharges({

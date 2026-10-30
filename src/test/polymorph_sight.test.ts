@@ -11,11 +11,11 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('an eyeless hero keeps the old map glyph until sight returns after polymorph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('large mimic');
     assert.equal(heroIsBlind(), true);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
     const input = resetInputState();
     const pages: { top: string; hero: string }[] = [];

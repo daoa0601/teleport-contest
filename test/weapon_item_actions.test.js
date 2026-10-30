@@ -10,7 +10,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 async function samuraiWeapons() {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const primary = await addInventoryObject(KATANA);
     const alternate = await addInventoryObject(SHORT_SWORD);
     await setPrimaryWeapon(primary);
@@ -19,7 +19,7 @@ async function samuraiWeapons() {
 }
 for (const quantity of [1, 2]) {
     void test(`the fire action describes ${quantity === 1 ? 'a named launcher' : 'named stacked launchers'} by the simple object name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const bow = await addInventoryObject(BOW, { oname: 'LongShot', quan: quantity });
         const arrows = await addInventoryObject(ARROW, { quan: 4 });
         await setPrimaryWeapon(bow);

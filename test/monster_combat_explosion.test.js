@@ -18,7 +18,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function combatants(source, target = 'orc') {
-    freshObjectRoom({ heroX: 7, heroY: 10 });
+    await freshObjectRoom({ heroX: 7, heroY: 10 });
     const attacker = await createMonsterAt(source, 11, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt(target, 12, 10, MM_NOGRP | NO_MINVENT);
     attacker.mhp = attacker.mhpmax = 50;

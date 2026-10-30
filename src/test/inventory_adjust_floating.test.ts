@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('#adjust immediately compacts floating letters before announcing the moved item', async t => {
-    freshObjectRoom({ flags: { fixinv: false } });
+    await freshObjectRoom({ flags: { fixinv: false } });
     const dagger = await addInventoryObject(DAGGER);
     const club = await addInventoryObject(CLUB);
     const input = resetInputState();

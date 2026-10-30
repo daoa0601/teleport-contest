@@ -10,8 +10,8 @@ import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-function foodRoom() {
-    const level = freshObjectRoom({ left: 11, right: 16, top: 10, bottom: 10, heroX: 16 });
+async function foodRoom() {
+    const level = await freshObjectRoom({ left: 11, right: 16, top: 10, bottom: 10, heroX: 16 });
     for (let x = 0; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const cell = level.requireAt(x, y);
@@ -20,12 +20,12 @@ function foodRoom() {
         }
     }
     level.requireAt(13, 10).typ = STONE;
-    vision_recalc(0);
+    await vision_recalc(0);
     return level;
 }
 for (const species of ['rock mole', 'xorn']) {
     void test(`a pet ${species} seeks preferred food through rock it can cross`, async () => {
-        foodRoom();
+        await foodRoom();
         requirePlayingGame(game);
         const pet = await createMonsterAt(species, 14, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
         initializePet(pet);
@@ -40,12 +40,12 @@ for (const species of ['rock mole', 'xorn']) {
     });
 }
 void test('a tunnelling pet ignores food behind undiggable rock', async () => {
-    const level = foodRoom();
+    const level = await foodRoom();
     requirePlayingGame(game);
     const rock = level.requireAt(13, 10);
     rock.typ = STONE;
     rock.wall_info = W_NONDIGGABLE;
-    vision_recalc(0);
+    await vision_recalc(0);
     const pet = await createMonsterAt('rock mole', 14, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(pet);
     assert.ok(pet.edog);

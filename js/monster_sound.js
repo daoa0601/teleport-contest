@@ -89,7 +89,7 @@ export async function begForFood(monster, state) {
     }
     else if (sound >= MS_HUMANOID) {
         if (!canSpotMonster(monster))
-            map_invisible(monster.mx, monster.my);
+            await map_invisible(monster.mx, monster.my);
         await plineWithContinuation('"I\'m hungry."');
     }
     else if (canSpotMonster(monster)) {
@@ -124,7 +124,7 @@ export async function publishMonsterNoise(monster, state = game) {
     else if (hallucinating && looksLikeGecko(monster, state))
         sound = MS_SELL;
     if (!canSpotMonster(monster))
-        map_invisible(monster.mx, monster.my);
+        await map_invisible(monster.mx, monster.my);
     if (sound === MS_ORACLE)
         return consultOracle(monster, state);
     if (sound === MS_LEADER || sound === MS_NEMESIS || sound === MS_GUARDIAN) {

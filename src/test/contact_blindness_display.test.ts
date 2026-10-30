@@ -12,20 +12,20 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('a raven blinding the hero removes distant infravision projections', async () => {
-    const level = freshObjectRoom({ right: 25, hero: { uhp: 100, uhpmax: 100 } });
+    const level = await freshObjectRoom({ right: 25, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('infravision', 'race');
     for (let x = 7; x <= 25; x++) {
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
     }
-    vision_recalc(0);
+    await vision_recalc(0);
     await createMonsterAt('goblin', 20, 10, MM_NOGRP | NO_MINVENT);
     const raven = await createMonsterAt('raven', 11, 10, MM_NOGRP | NO_MINVENT);
     raven.mpeaceful = false;
     raven.m_lev = 20;
     raven.mux = game.u.ux;
     raven.muy = game.u.uy;
-    newsym(20, 10);
+    await newsym(20, 10);
     await flush_screen(1);
     assert.equal(cansee(20, 10), false);
     assert.equal(couldsee(20, 10), true);

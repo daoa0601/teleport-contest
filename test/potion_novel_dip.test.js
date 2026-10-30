@@ -9,7 +9,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('water erases a novel title and leaves an ordinary blank spellbook of the right weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     const novel = await addInventoryObject(SPE_NOVEL);

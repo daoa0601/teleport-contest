@@ -100,14 +100,14 @@ function inVladsTower() {
     return (game.u.uz ? game.dungeons[game.u.uz.dnum]?.dname : undefined) === "Vlad's Tower";
 }
 
-function removeThrone(x: number, y: number): void {
+async function removeThrone(x: number, y: number): Promise<void> {
     const location = game.level?.at?.(x, y);
     if (!location) return;
     location.typ = ROOM;
     location.flags = 0;
     location.looted = 0;
-    map_background(x, y, false);
-    newsym_force(x, y);
+    await map_background(x, y, false);
+    await newsym_force(x, y);
 }
 
 async function announceAttributeChange(attribute: number, amount: number, conditional: boolean) {
@@ -168,7 +168,7 @@ async function grantSeeInvisible() {
         }
     }
     grantIntrinsicProperty('seeInvisible', 'outside', game);
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
 }
 
 async function normalThroneEffect(
@@ -240,7 +240,7 @@ async function normalThroneEffect(
                 await makeConfused((game.u.confusionTurns ?? 0) + rnd(30), { talk: false });
             } else {
                 await plineWithContinuation('An image forms in your mind.');
-                mapLevel();
+                await mapLevel();
             }
         } else {
             await grantSeeInvisible();
@@ -275,7 +275,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
     case 3:
     case 4:
         await makeWish();
-        removeThrone(x, y);
+        await removeThrone(x, y);
         await plineWithContinuation(
             'The throne disintegrates, having spent its power.',
         );
@@ -417,7 +417,7 @@ export async function throneSitEffect({
     if (!special && !rn2(3)) {
         if (game.flags?.debug
             && await promptYesNo('Analyze throne?', 'n') !== 'y') return;
-        removeThrone(x, y);
+        await removeThrone(x, y);
         await plineWithContinuation(
             `The throne ${cansee(x, y) ? 'vanishes' : 'has vanished'} in a puff of logic.`,
         );

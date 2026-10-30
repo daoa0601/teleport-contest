@@ -81,7 +81,7 @@ export async function revealConcealedHeroToAttacker(
     const formName = () => monsterTypeName(species, state.flags.female);
 
     if (hero.uundetected) {
-        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+        if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
         hero.uundetected = 0;
 
         if ((flags1 & M1_HIDE) && species !== PM_TRAPPER) {
@@ -103,16 +103,16 @@ export async function revealConcealedHeroToAttacker(
                 && isPoolAt(oldx, oldy, state) && !isPoolAt(hero.ux, hero.uy, state);
             if (!spot || eelStays) {
                 await placeMonsterOnMap(monster, oldx, oldy); /* put back */
-                newsym(hero.ux, hero.uy);
+                await newsym(hero.ux, hero.uy);
                 await publish(`${monsterName(monster, { state, capitalized: true })} draws back as you drop!`);
                 return true;
             }
 
-            newsym(oldx, oldy); /* finish removal; the square is empty now */
+            await newsym(oldx, oldy); /* finish removal; the square is empty now */
             await placeMonsterOnMap(monster, hero.ux, hero.uy);
             let landing = spot;
             if (monster.wormno) {
-                advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
+                await advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
                 // the tail has not grown, so if it now occupies the landing
                 // square then one of the worm's original spots is free
                 if (state.level && monsterAtPosition(state.level, spot.x, spot.y)) {
@@ -126,7 +126,7 @@ export async function revealConcealedHeroToAttacker(
             const { arrival } = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
             if (arrival.died || state.program_state?.gameover) return true;
             setMonsterApparentHeroPosition(monster, state, random, calls);
-            newsym(hero.ux, hero.uy);
+            await newsym(hero.ux, hero.uy);
 
             if (symbol !== S_PIERCER) return true; /* lurkers don't attack */
 
@@ -172,14 +172,14 @@ export async function revealConcealedHeroToAttacker(
                     if (cover) cover.spe = savedSpe;
                 }
             }
-            newsym(hero.ux, hero.uy);
+            await newsym(hero.ux, hero.uy);
         }
         return true;
     }
 
     if (symbol === S_MIMIC && (hero.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING) {
         const sticky = heroFormSticks(state);
-        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+        if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
         if (sticky && !seenByHero) {
             await publish('It gets stuck on you.');
         } else {
@@ -188,7 +188,7 @@ export async function revealConcealedHeroToAttacker(
         if (sticky) setHeroGrip(monster, state);
         hero.m_ap_type = M_AP_NOTHING;
         hero.mappearance = 0;
-        newsym(hero.ux, hero.uy);
+        await newsym(hero.ux, hero.uy);
         return true;
     }
 

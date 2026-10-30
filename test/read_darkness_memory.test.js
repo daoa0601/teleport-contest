@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('darkness forgets a punishment ball and chain which are no longer visible', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -20,8 +20,8 @@ void test('darkness forgets a punishment ball and chain which are no longer visi
     assert.ok(ball && chain);
     await moveObject(ball, 8, 10);
     await moveObject(chain, 9, 10);
-    newsym(8, 10);
-    newsym(9, 10);
+    await newsym(8, 10);
+    await newsym(9, 10);
     assert.equal(level.requireAt(8, 10).remembered_glyph?.kind, 'object');
     assert.equal(level.requireAt(9, 10).remembered_glyph?.kind, 'object');
     const scroll = await addInventoryObject(SCR_LIGHT, { cursed: true, typeKnown: true });

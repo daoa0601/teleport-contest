@@ -32,7 +32,7 @@ async function nearbyThief(species = 'water nymph') {
     return thief;
 }
 void test('a nymph gives up on a boulder instead of carrying it away', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const boulder = await addInventoryObject(BOULDER);
     const thief = await nearbyThief();
@@ -46,7 +46,7 @@ void test('a nymph gives up on a boulder instead of carrying it away', async () 
 for (const species of ['water nymph', 'monkey']) {
     for (const cursed of [false, true]) {
         void test(`${species} ${cursed ? 'confronts a cursed' : 'takes an uncursed'} attached leash`, async () => {
-            freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+            await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
             requirePlayingGame(game);
             const pet = await createMonsterAt('kitten', 9, 10, NO_MINVENT);
             const leash = await addInventoryObject(LEASH, { cursed, leashmon: pet.m_id });
@@ -63,7 +63,7 @@ for (const species of ['water nymph', 'monkey']) {
     }
 }
 void test('a nymph takes a worn adornment ring before ordinary possessions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('adornment'));
     await wearHeroAccessory(ring, 'uleft');
@@ -77,7 +77,7 @@ void test('a nymph takes a worn adornment ring before ordinary possessions', asy
 });
 for (const deaf of [false, true]) {
     void test(`a nymph talks to a ${deaf ? 'deaf' : 'hearing'} fellow seducer instead of stealing`, async () => {
-        freshObjectRoom({ hero: { deafTurns: deaf ? 20 : 0 } });
+        await freshObjectRoom({ hero: { deafTurns: deaf ? 20 : 0 } });
         requirePlayingGame(game);
         setHeroSpecies(MONSTER_NAME.indexOf('wood nymph'), game);
         game.u.mh = game.u.mhmax = 40;
@@ -104,7 +104,7 @@ function theftMessages() {
     return messages;
 }
 void test('stealing the invoked Sceptre checks retaliation before its conflict power ends', async () => {
-    freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     const sceptre = await addInventoryItem(await artifactObject('The Sceptre of Might'));
@@ -118,7 +118,7 @@ void test('stealing the invoked Sceptre checks retaliation before its conflict p
     assert.ok(!thief.mavenge, 'The theft began under Conflict, before losing the carried power');
 });
 void test('item theft announces the lighter load before the nymph tries to teleport', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.flags.noteleport = true;
     const thief = await nearbyThief();
@@ -133,7 +133,7 @@ void test('item theft announces the lighter load before the nymph tries to telep
     assert.equal(game._encumbranceLevel, 0);
 });
 void test('an empty-handed nymph robbery leaves the searching occupation intact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.flags.noteleport = true;
     const thief = await nearbyThief();
@@ -147,7 +147,7 @@ void test('an empty-handed nymph robbery leaves the searching occupation intact'
     assert.ok(thief.mflee);
 });
 void test('a monkey cannot steal the last bite of a finished meal and flees before biting', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const thief = await nearbyThief('monkey');
     const messages = theftMessages();
@@ -174,7 +174,7 @@ void test('a monkey cannot steal the last bite of a finished meal and flees befo
 });
 for (const lifeSaving of [false, true]) {
     void test(`stealing a cockatrice corpse petrifies a nymph ${lifeSaving ? 'who is then life saved' : 'with the stolen corpse inside her statue'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         const corpse = await addInventoryItem(await untimedCorpse(MONSTER_NAME.indexOf('cockatrice')));
         const thief = await nearbyThief();
@@ -201,7 +201,7 @@ for (const lifeSaving of [false, true]) {
 }
 for (const carried of [false, true]) {
     void test(`a nymph unlocks punishment ${carried ? 'and steals a carried ball' : 'when the hero has no inventory'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const messages = theftMessages();
         await punishHero();
@@ -224,7 +224,7 @@ for (const carried of [false, true]) {
     });
 }
 void test('a nymph releases an empty-handed hero from a buried punishment ball', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await installHeroChainedToBuriedBall({ x: 9, y: 10 });
     const thief = await nearbyThief();
@@ -237,7 +237,7 @@ void test('a nymph releases an empty-handed hero from a buried punishment ball',
 });
 for (const possessions of ['nothing', 'gold', 'blind']) {
     void test(`a nymph announces an unsuccessful robbery with ${possessions} and flees`, async () => {
-        freshObjectRoom({ hero: { blindTurns: possessions === 'blind' ? 20 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: possessions === 'blind' ? 20 : 0 } });
         requirePlayingGame(game);
         const purse = possessions === 'gold' ? await addInventoryObject(GOLD_PIECE, { quan: 90 }) : null;
         const thief = await nearbyThief();
@@ -259,7 +259,7 @@ for (const possessions of ['nothing', 'gold', 'blind']) {
 void test('a hallucinating hero names an unseen monkey thief at random', async () => {
     const names = new Set();
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ hero: { hallucinationTurns: 50 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 50 } });
         requirePlayingGame(game);
         await addInventoryObject(BOULDER);
         const thief = await nearbyThief('monkey');

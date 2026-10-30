@@ -39,8 +39,8 @@ import { syncBlindness } from '../js/senses.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 
-function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
-    freshObjectRoom({
+async function prayerRoom({ hero = {}, flags = {}, ...room }: ObjectRoomOptions = {}) {
+    await freshObjectRoom({
         ...room,
         flags: { paranoia_bits: PARANOID_PRAY, ...flags },
         hero: { ublesscnt: 0, uluck: 0, ugangr: 0,
@@ -78,7 +78,7 @@ async function prayAndReadMessages(): Promise<string[]> {
 }
 
 void test('a successful ordinary prayer protects an injured hero while praying', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { paranoia_bits: PARANOID_PRAY },
         hero: { uhp: 1, uhpmax: 20, ulevel: 1, ublesscnt: 0,
             uluck: 0, ugangr: 0, ualign: { type: 0, record: 10 } },
@@ -115,7 +115,7 @@ void test('ordinary prayer heals after three world turns and then releases prote
 });
 
 void test('a modest prayer cures petrification before hunger', async () => {
-    prayerRoom({ hero: { uhunger: 10, ualign: { type: 0, record: 1 } } });
+    await prayerRoom({ hero: { uhunger: 10, ualign: { type: 0, record: 1 } } });
     requirePlayingGame(game);
     startHeroPetrification({ turns: 5 });
 
@@ -126,7 +126,7 @@ void test('a modest prayer cures petrification before hunger', async () => {
 });
 
 void test('#pray names the whole stack when releasing cursed loadstones', async () => {
-    prayerRoom({ hero: { uluck: 10 } });
+    await prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const stones = await addInventoryObject(LOADSTONE, { cursed: true, quan: 2, quantity: 2 });
     initRng(1n);
@@ -142,7 +142,7 @@ void test('#pray names the whole stack when releasing cursed loadstones', async 
 });
 
 void test('#pray rescues a hero whose only exit requires a forbidden diagonal boulder push', async () => {
-    prayerRoom({ left: 10, right: 10, top: 10, bottom: 10, hero: { ualign: { type: 0, record: 1 } } });
+    await prayerRoom({ left: 10, right: 10, top: 10, bottom: 10, hero: { ualign: { type: 0, record: 1 } } });
     requirePlayingGame(game);
     game.level.flags.sokoban_rules = true;
     game.level.requireAt(11, 11).typ = ROOM;
@@ -155,7 +155,7 @@ void test('#pray rescues a hero whose only exit requires a forbidden diagonal bo
 });
 
 void test('#pray restores the carried luck bonus when it uncurses a luckstone', async () => {
-    prayerRoom({ hero: { uluck: 10 } });
+    await prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const stone = await addInventoryObject(LUCKSTONE, { cursed: true });
     assert.equal(game.u.moreluck, -3);
@@ -168,7 +168,7 @@ void test('#pray restores the carried luck bonus when it uncurses a luckstone', 
 });
 
 void test('#pray announces the safe ground reached after rescuing a hero from lava', async () => {
-    prayerRoom({ hero: { utrap: 5, utraptype: TT_LAVA, ualign: { type: 0, record: 1 } } });
+    await prayerRoom({ hero: { utrap: 5, utraptype: TT_LAVA, ualign: { type: 0, record: 1 } } });
     requirePlayingGame(game);
     game.level.requireAt(10, 10).typ = LAVAPOOL;
     grantIntrinsicProperty('fireResistance', 'outside');
@@ -184,7 +184,7 @@ void test('#pray announces the safe ground reached after rescuing a hero from la
 });
 
 void test('Moloch\'s laughter during #pray visibly wakes a nearby sleeping monster', async () => {
-    prayerRoom();
+    await prayerRoom();
     requirePlayingGame(game);
     const altar = game.level.requireAt(10, 10);
     altar.typ = ALTAR;
@@ -203,7 +203,7 @@ void test('Moloch\'s laughter during #pray visibly wakes a nearby sleeping monst
 });
 
 void test('#pray stops a cursed figurine\'s transformation when granting an inventory cleansing', async () => {
-    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+    await prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     const figurine = await addInventoryObject(FIGURINE, {
         cursed: true, corpsenm: MONSTER_NAME.indexOf('wumpus'),
@@ -220,7 +220,7 @@ void test('#pray stops a cursed figurine\'s transformation when granting an inve
 
 for (const quantity of [1, 2]) {
     void test(`#pray names the species of ${quantity} cursed corpses during inventory cleansing`, async () => {
-        prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+        await prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
         const corpse = await addInventoryObject(CORPSE, {
             cursed: true, corpsenm: MONSTER_NAME.indexOf('newt'), quan: quantity,
         });
@@ -240,7 +240,7 @@ for (const quantity of [1, 2]) {
 }
 
 void test('#pray omits the ownership prefix when cleansing Medusa\'s corpse', async () => {
-    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+    await prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
     const corpse = await addInventoryObject(CORPSE, {
         cursed: true, corpsenm: MONSTER_NAME.indexOf('Medusa'),
     });
@@ -255,7 +255,7 @@ void test('#pray omits the ownership prefix when cleansing Medusa\'s corpse', as
 });
 
 void test('#pray makes a former pet\'s corpse glow when reviving it on an altar', async () => {
-    prayerRoom();
+    await prayerRoom();
     requirePlayingGame(game);
     const altar = game.level.requireAt(10, 10);
     altar.typ = ALTAR;
@@ -280,7 +280,7 @@ void test('#pray makes a former pet\'s corpse glow when reviving it on an altar'
 });
 
 void test('altar wrath considers a carried luckstone when deciding whether to reduce luck', async () => {
-    prayerRoom({ hero: { uluck: -6 } });
+    await prayerRoom({ hero: { uluck: -6 } });
     requirePlayingGame(game);
     const altar = game.level.requireAt(10, 10);
     altar.typ = ALTAR;
@@ -295,7 +295,7 @@ void test('altar wrath considers a carried luckstone when deciding whether to re
 });
 
 void test('divine lightning from #pray names the monster swallowing the hero', async () => {
-    prayerRoom({ hero: { ugangr: 5 } });
+    await prayerRoom({ hero: { ugangr: 5 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     setMonsterGivenName(worm, 'Gullet');
@@ -313,7 +313,7 @@ void test('divine lightning from #pray names the monster swallowing the hero', a
 });
 
 void test('#pray tells a permanently blind hero that cured deafness relieved their eyes', async () => {
-    prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 10 } } });
+    await prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 10 } } });
     requirePlayingGame(game);
     const altar = game.level.requireAt(10, 10);
     altar.typ = ALTAR;
@@ -329,7 +329,7 @@ void test('#pray tells a permanently blind hero that cured deafness relieved the
 });
 
 void test('a blind hero feels the deity\'s blessing over the weapon during #pray', async () => {
-    prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 20 } } });
+    await prayerRoom({ hero: { permaBlind: true, uluck: 10, ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger);
@@ -343,7 +343,7 @@ void test('a blind hero feels the deity\'s blessing over the weapon during #pray
 });
 
 void test('#pray names known gauntlets when curing slippery fingers before uncursing them', async () => {
-    prayerRoom({ hero: { uluck: 10 } });
+    await prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const gloves = await addInventoryObject(GAUNTLETS_OF_FUMBLING, { cursed: true });
     wearHeroArmor(gloves);
@@ -358,7 +358,7 @@ void test('#pray names known gauntlets when curing slippery fingers before uncur
 });
 
 void test('#pray does not reveal a blindfold\'s curse when another intrinsic also prevents sight', async () => {
-    prayerRoom({ hero: { ualign: { type: 0, record: 1 } } });
+    await prayerRoom({ hero: { ualign: { type: 0, record: 1 } } });
     requirePlayingGame(game);
     grantIntrinsicProperty('blinded', 'outside');
     const blindfold = await addInventoryObject(BLINDFOLD, { cursed: true, bknown: false });
@@ -374,7 +374,7 @@ void test('#pray does not reveal a blindfold\'s curse when another intrinsic als
 });
 
 void test('#pray brightens a lit artifact when blessing the wielded weapon', async () => {
-    prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
+    await prayerRoom({ hero: { uluck: 10, ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     initializeArtifacts();
     const sunsword = artifactByName('Sunsword');
@@ -394,7 +394,7 @@ void test('#pray brightens a lit artifact when blessing the wielded weapon', asy
 });
 
 void test('#pray crowns a lawful hero with Sunsword shining under its identified name', async () => {
-    prayerRoom({ role: 'valkyrie', hero: { uluck: 10, ualign: { type: 1, record: 20 } } });
+    await prayerRoom({ role: 'valkyrie', hero: { uluck: 10, ualign: { type: 1, record: 20 } } });
     requirePlayingGame(game);
     initializeArtifacts();
     const sunsword = artifactByName('Sunsword');
@@ -416,7 +416,7 @@ void test('#pray crowns a lawful hero with Sunsword shining under its identified
 });
 
 void test('prayer releases the cursed gloves trapping a levitation ring', async () => {
-    prayerRoom();
+    await prayerRoom();
     requirePlayingGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'));
     await wearHeroAccessory(ring, 'uleft');
@@ -431,7 +431,7 @@ void test('prayer releases the cursed gloves trapping a levitation ring', async 
 });
 
 void test('prayer rescues a hero embedded in rock without allowing passage through warded walls', async () => {
-    prayerRoom();
+    await prayerRoom();
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++) {
         for (let y = 6; y <= 14; y++) requireGameLevel().requireAt(x, y).typ = STONE;
@@ -449,7 +449,7 @@ void test('prayer rescues a hero embedded in rock without allowing passage throu
 
 for (const alignment of [0, 1]) {
     void test(`praying at ${alignment === 0 ? 'the hero\'s' : 'another god\'s'} altar makes water ${alignment === 0 ? 'holy' : 'unholy'}`, async () => {
-        prayerRoom();
+        await prayerRoom();
         requirePlayingGame(game);
         const altarSquare = requireGameLevel().requireAt(10, 10);
         altarSquare.typ = ALTAR;
@@ -466,7 +466,7 @@ for (const alignment of [0, 1]) {
 }
 
 void test('praying too soon brings a penalty without granting protection', async () => {
-    prayerRoom({ hero: { ublesscnt: 500 } });
+    await prayerRoom({ hero: { ublesscnt: 500 } });
     requirePlayingGame(game);
 
     await runExtendedCommand('pray', 'y\x1b');
@@ -478,7 +478,7 @@ void test('praying too soon brings a penalty without granting protection', async
 });
 
 void test('crowning a neutral fighter gives a usable Vorpal Blade and permanent resistances', async () => {
-    prayerRoom({ role: 'barbarian', hero: { ualign: { type: 0, record: 20 } } });
+    await prayerRoom({ role: 'barbarian', hero: { ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     initializeArtifacts();
     pushKey(27);
@@ -498,7 +498,7 @@ void test('crowning a neutral fighter gives a usable Vorpal Blade and permanent 
 });
 
 void test('a wizard receives a blessed death spellbook when crowned without an artifact weapon', async () => {
-    prayerRoom({ role: 'wizard', hero: { ualign: { type: 0, record: 20 } } });
+    await prayerRoom({ role: 'wizard', hero: { ualign: { type: 0, record: 20 } } });
     requirePlayingGame(game);
     initializeArtifacts();
     pushKey(27);
@@ -513,7 +513,7 @@ void test('a wizard receives a blessed death spellbook when crowned without an a
 });
 
 void test('divine protection improves armor class and protection from special attacks', async () => {
-    prayerRoom();
+    await prayerRoom();
     requirePlayingGame(game);
     for (const property of ['telepathy', 'fast', 'stealth'] as const)
         grantIntrinsicProperty(property, 'outside');
@@ -530,7 +530,7 @@ void test('divine protection improves armor class and protection from special at
 });
 
 void test('prayer grants breathing when a permanent poison cloud has no safe exit', async () => {
-    prayerRoom();
+    await prayerRoom();
     requirePlayingGame(game);
     const cells = [];
     for (let x = 7; x <= 16; x++) {

@@ -40,9 +40,9 @@ export async function clearDetectionMap(_state = game) {
     await cls();
     for (let x = 1; x < COLNO; x++)
         for (let y = 0; y < ROWNO; y++)
-            show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored' });
+            await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored' });
 }
-export function mapDetectedMonster(monster, showTail, state = game) {
+export async function mapDetectedMonster(monster, showTail, state = game) {
     // Ghosts retain their space symbol. The detected glyph makes that space
     // visible through tty inverse video, independently of pet highlighting.
     const detected = MONSTER_SYMBOL[monster.mnum] === 54;
@@ -53,14 +53,14 @@ export function mapDetectedMonster(monster, showTail, state = game) {
     const attribute = detected ? inverse ? 1 : 0
         : monster.mtame && state.flags.hilite_pet
             ? terminalAttrFromCAttr(state.iflags.wc2_petattr ?? C_ATR_INVERSE) : 0;
-    show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, false, attribute, glyph);
+    await show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, false, attribute, glyph);
     if (!showTail || monster.mnum !== LONG_WORM)
         return;
     const tail = transientMonsterGlyph({ mnum: LONG_WORM_TAIL, female: !!monster.female }, monster.mtame ? 'pet' : 'normal');
     for (const segment of [...(monster.wormSegments || [])].reverse()) {
         if (!segment.x)
             continue;
-        show_glyph_cell(segment.x, segment.y, tail.ch, tail.color, false, attribute, tail);
+        await show_glyph_cell(segment.x, segment.y, tail.ch, tail.color, false, attribute, tail);
     }
 }
 export async function browseDetectionMap(terrainMode, goal, { state = game, } = {}) {

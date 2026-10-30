@@ -26,7 +26,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import { requireScreenRow } from './support/screen.js';
 for (const restored of [false, true]) {
     void test(`a killed monster's armor is discovered as it drops${restored ? ' after save and restore' : ''}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         let monster = await createMonsterAt('goblin', 11, 10);
         await addObjectToMonsterInventory(monster, await mksobj(DWARVISH_CLOAK, false, false));
         await addObjectToMonsterInventory(monster, await mksobj(IRON_SHOES, false, false));
@@ -35,8 +35,8 @@ for (const restored of [false, true]) {
             game.plname = 'Armor observer';
             const storage = memoryStorage();
             assert.equal(await saveGame(storage), true);
-            freshObjectRoom();
-            assert.equal(restoreGame('Armor observer', storage), true);
+            await freshObjectRoom();
+            assert.equal(await restoreGame('Armor observer', storage), true);
             requirePlayingGame(game);
             const savedMonster = game.level.monsters.find(candidate => candidate.m_id === monsterId);
             assert.ok(savedMonster, 'The goblin must survive the save round trip');
@@ -69,7 +69,7 @@ for (const restored of [false, true]) {
 }
 for (const ending of ['ordinary', 'no corpse', 'petrification', 'level forbids remains']) {
     void test(`a swallowed hero ${ending === 'ordinary' ? 'lands in' : 'is released without landing in'} a pit after ${ending} death`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const engulfer = await createMonsterAt('trapper', 11, 10, NO_MINVENT);
         const trap = addTrap(level, PIT, 10, 10);
@@ -102,7 +102,7 @@ for (const ending of ['ordinary', 'no corpse', 'petrification', 'level forbids r
     });
 }
 void test('fatal lava splashed by a dead monster inventory stops corpse creation and hero rewards', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { uhp: 1, uhpmax: 1 },
         flags: { disclose: '-i -a -v -c -o' },
     });
@@ -128,7 +128,7 @@ void test('fatal lava splashed by a dead monster inventory stops corpse creation
 });
 for (const shifted of [false, true]) {
     void test(`killing ${shifted ? 'a shapechanger in' : ''} a luminous form darkens the room before the next command`, async () => {
-        const level = freshObjectRoom({ right: 20 });
+        const level = await freshObjectRoom({ right: 20 });
         requirePlayingGame(game);
         for (let x = 7; x <= 20; x++) {
             for (let y = 6; y <= 14; y++) {
@@ -140,7 +140,7 @@ for (const shifted of [false, true]) {
         if (shifted)
             emitter.cham = MONSTER_NAME.indexOf('chameleon');
         vision_reset();
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(15, 10), true);
         const input = resetInputState();
         installPagerInput(input, { expected: /fire elemental|chameleon|experience level/, limit: 4 });
@@ -155,14 +155,14 @@ for (const shifted of [false, true]) {
     });
 }
 void test('an invisible monster marker is gone while its death-drop message waits for input', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     level.flags.hero_memory = true;
     const giant = await createMonsterAt('fire giant', 11, 10, NO_MINVENT);
     giant.minvis = true;
     await equipMonsterObject(giant, await knownObject(BOULDER), 0);
     level.requireAt(11, 10).typ = LAVAPOOL;
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenRow(11)[10]?.ch, 'I');
     const input = resetInputState();
@@ -182,7 +182,7 @@ void test('an invisible monster marker is gone while its death-drop message wait
     }
 });
 void test('killing a leashed pet releases both ends of the leash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(pet);
     pet.mleashed = 1;

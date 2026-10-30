@@ -15,7 +15,7 @@ function topline() {
 import { freshObjectRoom } from './support/object-room.js';
 for (const blind of [false, true]) {
     void test(`warning reveals a hidden adjacent piercer to a ${blind ? 'blind' : 'sighted'} hero during the turn`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (blind)
             await makeBlinded(10, { talk: false });
@@ -26,7 +26,7 @@ for (const blind of [false, true]) {
         piercer.m_lev = 8;
         piercer.mcanmove = 0;
         piercer.mfrozen = 20;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(canSpotMonster(piercer), false);
         game._moveloopStarted = true;
         game._heroTimePending = true;
@@ -48,19 +48,19 @@ for (const blind of [false, true]) {
     });
 }
 void test('an engulfed hero\'s acknowledged danger sense message leaves the topline', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('warning', 'outside');
     const lurker = await createMonsterAt('lurker above', game.u.ux, game.u.uy);
     game.u.uswallow = 1;
     game.u.ustuck = lurker;
-    swallowed(true);
+    await swallowed(true);
     const piercer = await createMonsterAt('iron piercer', game.u.ux + 1, game.u.uy);
     piercer.mundetected = 1;
     piercer.mpeaceful = 0;
     piercer.m_lev = 8;
-    vision_recalc(0);
-    map_invisible(piercer.mx, piercer.my);
+    await vision_recalc(0);
+    await map_invisible(piercer.mx, piercer.my);
     assert.equal(canSpotMonster(piercer), false);
     await flush_screen(1);
     const input = resetInputState();

@@ -76,7 +76,7 @@ function monsterHelpless(monster: Monster): boolean {
     return !monster.mcanmove || !!monster.msleeping;
 }
 
-function recallMigratingWizard(): Promise<Monster | null> | null {
+async function recallMigratingWizard(): Promise<Monster | null> {
     // C wizard.c:resurrect() migrating_mons scan.  Returns a placed wizard
     // or null; placement failure re-queues the monster for later attempts.
     // Migration arrays append where C prepends to migrating_mons.
@@ -86,7 +86,7 @@ function recallMigratingWizard(): Promise<Monster | null> | null {
         if (monsterCarriesAmulet(candidate)) continue;
         let elapsed = (game.moves ?? 0) - (candidate.mlstmv ?? game.moves ?? 0);
         if (!(elapsed > 0)) continue;
-        catchUpMonster(candidate, elapsed, game);
+        await catchUpMonster(candidate, elapsed, game);
         if (elapsed >= 0x7fffffff) elapsed = 0x7fffffff - 1;
         elapsed = Math.trunc(elapsed / 50);
         if (candidate.msleeping && rn2(elapsed + 1)) candidate.msleeping = 0;

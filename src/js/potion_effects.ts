@@ -198,7 +198,7 @@ async function monsterDetection(source: GameObject, state: PlayingGameState) {
             timeout + (timeout >= 300 ? 1 : source.oclass === 10 ? rn1(40, 21) : rn2(100) + 100));
         let found = false;
         for (let x = 1; x < COLNO; x++) for (let y = 0; y < ROWNO; y++) {
-            unmap_invisible(x, y);
+            await unmap_invisible(x, y);
             if (monsterAtPosition(state.level, x, y)) found = true;
         }
         if (found) unknown = 0;

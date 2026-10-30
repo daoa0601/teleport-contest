@@ -23,7 +23,7 @@ for (const [name, type] of [
     ['hero lightning breath', 25],
 ] satisfies [string, number][]) {
     void test(`${name} keeps its beam over bars while the preceding hit is acknowledged`, async () => {
-        const level = freshObjectRoom({ right: 22, heroY: 12, flags: { verbose: true } });
+        const level = await freshObjectRoom({ right: 22, heroY: 12, flags: { verbose: true } });
         game.symset = 'DECgraphics';
         level.requireAt(11, 10).typ = IRONBARS;
         const target = await createMonsterAt('carnivorous ape', 10, 10, NO_MINVENT);
@@ -57,7 +57,7 @@ for (const [name, type] of [
 
 for (const kind of ['acid', 'lightning'] satisfies ('acid' | 'lightning')[]) {
     void test(`repeated ${kind} contact with indestructible bars announces their resistance once`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const bars = level.requireAt(11, 10);
         bars.typ = IRONBARS;
         bars.wall_info = W_NONDIGGABLE;
@@ -77,7 +77,7 @@ for (const kind of ['acid', 'lightning'] satisfies ('acid' | 'lightning')[]) {
 }
 
 void test('a bouncing breath redraws its trail across the hero, dissolved bars, and the breather', async () => {
-    const level = freshObjectRoom({ right: 12 });
+    const level = await freshObjectRoom({ right: 12 });
     game.symset = 'DECgraphics';
     level.requireAt(11, 10).typ = IRONBARS;
     await createMonsterAt('yellow dragon', 9, 10, NO_MINVENT);
@@ -105,7 +105,7 @@ void test('a bouncing breath redraws its trail across the hero, dissolved bars, 
 });
 
 void test('a lightning ray missing a blind elemental hero tingles in its body part', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     game.u.umonnum = MONSTER_NAME.indexOf('fire elemental');
     game.u.blindTurns = 20;
     const messages: string[] = [];

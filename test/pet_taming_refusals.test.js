@@ -20,7 +20,7 @@ async function topMessage() {
     return requireGameDisplay().grid[0]?.map((cell) => cell.ch).join('').trimEnd() ?? '';
 }
 void test('the Wizard of Yendor rejects taming before even becoming peaceful', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const wizard = await hostilePetCandidate('Wizard of Yendor');
     assert.equal(await tameMonster(wizard, await mksobj(TRIPE_RATION, false, false), {
         announce: true,
@@ -30,7 +30,7 @@ void test('the Wizard of Yendor rejects taming before even becoming peaceful', a
     assert.equal(await topMessage(), '');
 });
 void test('a quest nemesis keeps its hostility against taming food', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     assert.ok(game.urole?.neminum !== undefined && game.urole.neminum >= 0);
     const nemesis = await hostilePetCandidate(game.urole.neminum);
     assert.equal(await tameMonster(nemesis, await mksobj(TRIPE_RATION, false, false), {
@@ -41,7 +41,7 @@ void test('a quest nemesis keeps its hostility against taming food', async () =>
     assert.equal(await topMessage(), '');
 });
 void test('an angry shopkeeper is pacified by taming magic but never becomes a pet', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.mpeaceful = 0;
     assert.equal(await tameMonster(shopkeeper, await mksobj(SCR_TAMING, false, false)), false);
@@ -55,7 +55,7 @@ void test('an angry shopkeeper is pacified by taming magic but never becomes a p
 void test('a vault guard cannot be tamed even after calming down', async () => {
     // Guards are human, so is_human() would mask the isgd rule; a duty-bound
     // guard keeps its role data across polymorph, where the rule stands alone.
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const guard = await hostilePetCandidate('little dog');
     guard.isgd = 1;
     assert.equal(await tameMonster(guard, await mksobj(TRIPE_RATION, false, false), {
@@ -67,7 +67,7 @@ void test('a vault guard cannot be tamed even after calming down', async () => {
 });
 void test('a temple priest hears taming magic out without adopting the hero', async () => {
     // Priests are human too; only a polymorphed priest isolates ispriest().
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const priest = await createMonsterAt('little dog', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT | MM_EPRI);
     priest.ispriest = 1;
     assert.equal(await tameMonster(priest, await mksobj(TRIPE_RATION, false, false), {
@@ -79,7 +79,7 @@ void test('a temple priest hears taming magic out without adopting the hero', as
 void test('a minion keeps its own allegiance even in a tameable body', async () => {
     // The angelic servants that carry isminion are human-shaped; polymorph
     // keeps their allegiance data, so the rule needs a non-human subject.
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const minion = await createMonsterAt('little dog', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT | MM_EMIN);
     minion.isminion = 1;
     assert.equal(await tameMonster(minion, await mksobj(TRIPE_RATION, false, false), {
@@ -89,7 +89,7 @@ void test('a minion keeps its own allegiance even in a tameable body', async () 
     assert.equal(minion.mpeaceful, 1);
 });
 void test('a covetous overlord settles for peace instead of adoption', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const overlord = await hostilePetCandidate('Vlad the Impaler');
     assert.equal(await tameMonster(overlord, await mksobj(TRIPE_RATION, false, false), {
         announce: true,
@@ -99,7 +99,7 @@ void test('a covetous overlord settles for peace instead of adoption', async () 
     assert.match(await topMessage(), /Vlad the Impaler seems more amiable\.$/);
 });
 void test('humans refuse to be tamed by offered food', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const watchman = await hostilePetCandidate('watchman');
     assert.equal(await tameMonster(watchman, await mksobj(TRIPE_RATION, false, false), {
         announce: true,
@@ -108,7 +108,7 @@ void test('humans refuse to be tamed by offered food', async () => {
     assert.equal(watchman.mpeaceful, 1);
 });
 void test('a demon stays masterless while the hero is mortal flesh', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const devil = await hostilePetCandidate('horned devil');
     assert.equal(await tameMonster(devil, await mksobj(TRIPE_RATION, false, false), {
         announce: true,
@@ -119,14 +119,14 @@ void test('a demon stays masterless while the hero is mortal flesh', async () =>
 void test('the quest leader declines to become the hero\'s pet', async () => {
     // Every quest leader is human, so is_human() would refuse first; the
     // leader_m_id rule only stands alone once the leader has changed shape.
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const leader = await hostilePetCandidate('little dog');
     ensureQuestStatus(game).leader_m_id = leader.m_id;
     assert.equal(await tameMonster(leader, await mksobj(SCR_TAMING, false, false)), false);
     assert.ok(!leader.mtame);
 });
 void test('a fully tame pet greets renewed taming magic with a refreshed bond', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const dog = await createMonsterAt('little dog', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(dog);
     assert.ok(dog.edog);

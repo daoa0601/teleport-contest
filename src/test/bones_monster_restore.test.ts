@@ -66,7 +66,7 @@ void test('a pet prefers equipment dropped during bones restoration over equally
     const dropped = requireGameLevel().objects[16]?.[12]?.find(object => object.otyp === DAGGER);
     assert.ok(dropped, 'the restored chameleon must drop its dagger');
     requirePlayingGame(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     const pet = await createMonsterAt('rust monster', 14, 12, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     initializePet(pet);
     const input = resetInputState();

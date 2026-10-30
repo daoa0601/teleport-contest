@@ -22,7 +22,7 @@ for (const [species, quantity, wielded, expected] of [
     ['Oracle', 1, false, "Your Oracle's corpse rots away."],
 ]) {
     void test(`rotting ${wielded ? 'wielded ' : ''}${species} flesh names the corpse and its quantity`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         requirePlayingGame(game);
         const corpse = await corpseObject(MONSTER_NAME.indexOf(species), { quan: quantity, where: 'inventory' });
         game.inventory.push(corpse);
@@ -41,7 +41,7 @@ for (const [species, quantity, wielded, expected] of [
     });
 }
 void test('a visible floor corpse rots silently', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt')), 11, 10);
     stopAllObjectTimers(corpse);
@@ -52,7 +52,7 @@ void test('a visible floor corpse rots silently', async () => {
 });
 for (const stoneResistant of [false, true]) {
     void test(`rotting safe cover ${stoneResistant ? 'keeps a stone-resistant hero hidden' : 'exposes a hero'} above petrifying corpses`, async () => {
-        freshRoomWithPolymorphedHero('garter snake');
+        await freshRoomWithPolymorphedHero('garter snake');
         requirePlayingGame(game);
         const safeCorpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('newt')), game.u.ux, game.u.uy);
         const petrifyingCorpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('cockatrice')), game.u.ux, game.u.uy);
@@ -69,7 +69,7 @@ for (const stoneResistant of [false, true]) {
     });
 }
 void test('turn maintenance reports relief immediately after a heavy corpse rots', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const corpse = await corpseObject(MONSTER_NAME.indexOf('red dragon'), { where: 'inventory' });
     game.inventory.push(corpse);
@@ -90,7 +90,7 @@ void test('turn maintenance reports relief immediately after a heavy corpse rots
     assert.equal(game._encumbranceLevel, 0);
 });
 void test('turn maintenance reports relief when a corpse rots inside a carried sack', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const sack = await addInventoryObject(SACK);
     const corpse = await corpseObject(MONSTER_NAME.indexOf('red dragon'));
@@ -114,7 +114,7 @@ void test('turn maintenance reports relief when a corpse rots inside a carried s
     assert.equal(nearCapacity(game), 0);
 });
 void test('a slowed hero acknowledges corpse-weight relief before another monster round', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const corpse = await corpseObject(MONSTER_NAME.indexOf('human zombie'), { where: 'inventory' });
     game.inventory.push(corpse);

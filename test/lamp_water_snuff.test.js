@@ -13,18 +13,18 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('a doused lamp announces going out before its light leaves the map', async () => {
-    const level = freshObjectRoom({ right: 25 });
+    const level = await freshObjectRoom({ right: 25 });
     requirePlayingGame(game);
     for (let x = 7; x <= 25; x++)
         for (let y = 6; y <= 14; y++)
             level.requireAt(x, y).lit = false;
     const lamp = await addInventoryObject(OIL_LAMP, { age: 200 });
     beginObjectBurn(lamp);
-    vision_recalc(0);
+    await vision_recalc(0);
     const gx = game.u.ux + 2;
     const gy = game.u.uy;
     await createMonsterAt('goblin', gx, gy, MM_NOGRP | NO_MINVENT);
-    newsym(gx, gy);
+    await newsym(gx, gy);
     await flush_screen(1);
     assert.equal(cansee(gx, gy), true);
     assert.equal(requireScreenCell(gx - 1, gy + 1).ch, 'o');
@@ -40,7 +40,7 @@ void test('a doused lamp announces going out before its light leaves the map', a
     assert.equal(requireScreenCell(gx - 1, gy + 1).ch, 'o');
     input.feed(' ');
     assert.equal(await dousing, 'damaged');
-    vision_recalc(0);
+    await vision_recalc(0);
     await flush_screen(1);
     assert.match(game._pending_message, /Your oil lamp goes out!/);
     assert.equal(lamp.lamplit, false);

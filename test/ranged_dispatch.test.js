@@ -18,7 +18,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('throw rejects an object count above one before asking for direction', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     const darts = await addInventoryObject(DART, { quan: 10 });
     const input = resetInputState();
     await answerPrompts(rhack('t'.charCodeAt(0)), input, [
@@ -34,7 +34,7 @@ void test('throw rejects an object count above one before asking for direction',
 });
 void test('only the hero\'s own quest launcher adds a volley bonus', async () => {
     for (const role of ['knight', 'ranger']) {
-        freshObjectRoom({ role });
+        await freshObjectRoom({ role });
         installHeroWeaponSkills({ [P_BOW]: P_EXPERT });
         const diana = artifactByName('The Longbow of Diana');
         assert.ok(diana);
@@ -47,7 +47,7 @@ void test('only the hero\'s own quest launcher adds a volley bonus', async () =>
     }
 });
 void test('a swallowed hero throws the whole selected volley at the engulfer', async () => {
-    freshObjectRoom({ role: 'rogue', recalculateVision: false });
+    await freshObjectRoom({ role: 'rogue', recalculateVision: false });
     installHeroWeaponSkills({ [P_DAGGER]: P_EXPERT });
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mx = game.u.ux;
@@ -72,7 +72,7 @@ void test('a swallowed hero throws the whole selected volley at the engulfer', a
     assert.match(game._pending_message, /The 2nd dagger hits/);
 });
 void test('a volley continues outside after its first dagger kills the engulfer', async () => {
-    freshObjectRoom({ role: 'rogue', recalculateVision: false });
+    await freshObjectRoom({ role: 'rogue', recalculateVision: false });
     installHeroWeaponSkills({ [P_DAGGER]: P_EXPERT });
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mx = game.u.ux;
@@ -94,7 +94,7 @@ void test('a volley continues outside after its first dagger kills the engulfer'
     assert.equal(game.uquiver, daggers);
 });
 void test('repeating fire with an emptied quiver asks for ammunition again', async () => {
-    freshObjectRoom({ flags: { autoquiver: false, fireassist: false } });
+    await freshObjectRoom({ flags: { autoquiver: false, fireassist: false } });
     const dart = await addInventoryObject(DART);
     const rock = await addInventoryObject(ROCK, { invlet: 'l' });
     await setQuiverObject(dart);
@@ -112,7 +112,7 @@ void test('repeating fire with an emptied quiver asks for ammunition again', asy
     assert.equal(game.context.move, 0);
 });
 void test('a fire count announces the single quivered coin it throws', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 20 });
     await setQuiverObject(gold);
     game._commandCount = 2;
@@ -127,7 +127,7 @@ void test('a fire count announces the single quivered coin it throws', async () 
 });
 for (const refusal of ['welded weapon', 'shield']) {
     void test(`fireassist abandons its retry when swapping fails because of a ${refusal}`, async () => {
-        freshObjectRoom({ flags: { fireassist: true } });
+        await freshObjectRoom({ flags: { fireassist: true } });
         const club = await addInventoryObject(CLUB, { cursed: refusal === 'welded weapon' });
         const bow = await addInventoryObject(refusal === 'shield' ? OBJECT_NAMES.indexOf('halberd') : BOW);
         const arrows = await addInventoryObject(ARROW, { quan: 3 });
@@ -151,7 +151,7 @@ for (const refusal of ['welded weapon', 'shield']) {
     });
 }
 void test('fireassist abandons its retry when wielding a launcher fails', async () => {
-    freshObjectRoom({ flags: { fireassist: true, pushweapon: true } });
+    await freshObjectRoom({ flags: { fireassist: true, pushweapon: true } });
     const club = await addInventoryObject(CLUB, { cursed: true });
     await addInventoryObject(BOW);
     const arrows = await addInventoryObject(ARROW, { quan: 3 });
@@ -167,7 +167,7 @@ void test('fireassist abandons its retry when wielding a launcher fails', async 
     assert.equal(arrows.quan, 3);
 });
 void test('recoil ends a levitating hero volley after the first arrow', async () => {
-    freshObjectRoom({ role: 'ranger', left: 3, right: 25 });
+    await freshObjectRoom({ role: 'ranger', left: 3, right: 25 });
     installHeroWeaponSkills({ [P_BOW]: P_EXPERT });
     const bow = await addInventoryObject(BOW);
     const arrows = await addInventoryObject(ARROW, { quan: 10 });
@@ -187,7 +187,7 @@ void test('recoil ends a levitating hero volley after the first arrow', async ()
     assert.ok([...messages, game._pending_message].some(message => /You stop firing after the 1st shot\./.test(message)));
 });
 void test('an anchored levitating hero finishes the volley without recoiling', async () => {
-    freshObjectRoom({ role: 'ranger', hero: { utrap: 2, utraptype: TT_PIT } });
+    await freshObjectRoom({ role: 'ranger', hero: { utrap: 2, utraptype: TT_PIT } });
     installHeroWeaponSkills({ [P_BOW]: P_EXPERT });
     const bow = await addInventoryObject(BOW);
     const arrows = await addInventoryObject(ARROW, { quan: 10 });
@@ -207,7 +207,7 @@ for (const [type, launcher, missile] of [
     [ELVEN_ARROW, 'bow', 'arrow'], [CROSSBOW_BOLT, 'crossbow', 'bolt'],
 ]) {
     void test(`hand-thrown ${missile} feedback describes the missing ${launcher}`, async () => {
-        freshObjectRoom({ flags: { fireassist: false } });
+        await freshObjectRoom({ flags: { fireassist: false } });
         const ammunition = await addInventoryObject(type);
         await setQuiverObject(ammunition);
         const input = resetInputState();
@@ -220,7 +220,7 @@ for (const [type, launcher, missile] of [
     });
 }
 void test('a downward arrow does not announce a missing bow', async () => {
-    freshObjectRoom({ flags: { fireassist: false } });
+    await freshObjectRoom({ flags: { fireassist: false } });
     const arrow = await addInventoryObject(ARROW);
     await setQuiverObject(arrow);
     const input = resetInputState();
@@ -231,7 +231,7 @@ void test('a downward arrow does not announce a missing bow', async () => {
     assert.doesNotMatch(game._pending_message, /aren't wielding/);
 });
 void test('cancelling a quiver choice clears the command available for recall', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dart = await addInventoryObject(DART);
     const input = resetInputState();
     await answerPrompts(rhack('Q'.charCodeAt(0)), input, [
@@ -244,7 +244,7 @@ void test('cancelling a quiver choice clears the command available for recall', 
     assert.equal(game.context.move, 0);
 });
 void test('fire with an explicitly empty quiver clears recall without spending time', async () => {
-    freshObjectRoom({ flags: { autoquiver: false } });
+    await freshObjectRoom({ flags: { autoquiver: false } });
     const dart = await addInventoryObject(DART);
     const input = resetInputState();
     await answerPrompts(rhack('f'.charCodeAt(0)), input, [

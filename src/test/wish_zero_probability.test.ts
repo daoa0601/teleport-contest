@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('dragon scales wishes can select different colors despite zero generation probabilities', async () => {
     const selected = new Set<number>();
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
 
         const result = await readObjectName('dragon scales', { wizardWish: true });
 

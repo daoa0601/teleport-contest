@@ -10,7 +10,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a worn armor item offers takeoff and removes the selected piece', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const cloak = await addInventoryObject(ELVEN_CLOAK);
     wearHeroArmor(cloak);
     const input = resetInputState();
@@ -33,7 +33,7 @@ void test('a worn armor item offers takeoff and removes the selected piece', asy
 });
 
 void test('an inventory takeoff action cannot remove a suit covered by a cloak', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const cloak = await addInventoryObject(ELVEN_CLOAK);
     wearHeroArmor(suit);

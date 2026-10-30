@@ -70,7 +70,7 @@ void test('Samurai startup explains Japanese names even without an alternate app
 });
 
 void test('only Samurai discoveries use Japanese names', async () => {
-    freshObjectRoom({ role: 'caveman' });
+    await freshObjectRoom({ role: 'caveman' });
     recordObjectKnowledge(WOODEN_HARP);
 
     const lines = await discoveryLines();
@@ -80,7 +80,7 @@ void test('only Samurai discoveries use Japanese names', async () => {
 });
 
 void test('an unidentified Samurai harp can be called without revealing its magic identity', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     recordObjectEncounter(MAGIC_HARP);
     recordObjectCall(MAGIC_HARP, 'lullaby');
 
@@ -95,7 +95,7 @@ void test('an unidentified Samurai harp can be called without revealing its magi
 });
 
 void test('known sake keeps its explanation before a called name and shuffled appearance', async () => {
-    freshObjectRoom({ role: 'samurai', objectInitializationSeed: 52891n });
+    await freshObjectRoom({ role: 'samurai', objectInitializationSeed: 52891n });
     recordObjectKnowledge(POT_BOOZE);
     recordObjectCall(POT_BOOZE, 'nightcap');
 
@@ -126,15 +126,15 @@ void test('Rogues list their starting sack as encountered', async () => {
 });
 
 void test('saving discoveries retains preknowledge, encounter markers, and discovery order', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Discovery reader';
     recordObjectKnowledge(POT_WATER);
     recordObjectKnowledge(POT_HEALING);
     recordObjectEncounter(POT_HEALING);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
-    assert.equal(restoreGame('Discovery reader', storage), true);
+    await freshObjectRoom();
+    assert.equal(await restoreGame('Discovery reader', storage), true);
 
     const lines = await discoveryLines();
 
@@ -145,7 +145,7 @@ void test('saving discoveries retains preknowledge, encounter markers, and disco
 });
 
 void test('leaving the tutorial restores the discovery list while retaining learned type names', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectKnowledge(POT_WATER);
     await changeTutorialState();
     learnObjectType(POT_HEALING);

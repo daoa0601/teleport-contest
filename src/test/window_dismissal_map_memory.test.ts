@@ -18,17 +18,17 @@ import { requireScreenCell } from './support/screen.js';
 // sees the square again.  Corner menus repaint that memory untouched
 // (erase_menu_or_text() -> docorner()), while a full-screen NHW_TEXT
 // window's dismissal runs docrt() and recomputes it.
-function rememberWipedEngraving(): void {
+async function rememberWipedEngraving(): Promise<void> {
     const engraving = makeEngravingAt(11, 10, 'old writing');
     assert.ok(engraving);
-    newsym(11, 10);
+    await newsym(11, 10);
     deleteEngraving(engraving);
 }
 
 void test('dismissing the naming menu keeps a stale remembered engraving glyph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
-    rememberWipedEngraving();
+    await rememberWipedEngraving();
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '`');
 
@@ -41,9 +41,9 @@ void test('dismissing the naming menu keeps a stale remembered engraving glyph',
 });
 
 void test('closing the chronicle window recomputes a stale remembered engraving glyph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
-    rememberWipedEngraving();
+    await rememberWipedEngraving();
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '`');
     recordGameLogEvent('entered the dungeon');
@@ -55,7 +55,7 @@ void test('closing the chronicle window recomputes a stale remembered engraving 
 });
 
 void test('a corner-menu dismissal rests the cursor on its last cleared row', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.feed('name\r');
@@ -73,7 +73,7 @@ void test('a corner-menu dismissal rests the cursor on its last cleared row', as
 void test('a corner-menu dismissal rests the cursor past the glyphs it reprints', async () => {
     // row_refresh() reprints the mapped floor right of the menu edge on its
     // final row, so print_glyph() leaves the cursor just past that floor.
-    freshObjectRoom({ right: 50 });
+    await freshObjectRoom({ right: 50 });
     requirePlayingGame(game);
     const input = resetInputState();
     input.feed('name\r');
@@ -87,9 +87,9 @@ void test('a corner-menu dismissal rests the cursor past the glyphs it reprints'
 });
 
 void test('a corner-menu dismissal advances past mapped stone drawn as a blank', async () => {
-    freshObjectRoom({ right: 50 });
+    await freshObjectRoom({ right: 50 });
     requirePlayingGame(game);
-    map_background(51, 6);
+    await map_background(51, 6);
     await flush_screen(1);
     assert.equal(requireScreenCell(50, 7).ch, ' ');
 
@@ -106,9 +106,9 @@ void test('a corner-menu dismissal advances past mapped stone drawn as a blank',
 
 for (const color of [true, false]) {
     void test(`a corner-menu dismissal advances past a framed unexplored square with color ${color ? 'on' : 'off'}`, async () => {
-        freshObjectRoom({ flags: { color } });
+        await freshObjectRoom({ flags: { color } });
         requirePlayingGame(game);
-        prepareMapPositionHighlights((x, y) => x === 60 && y === 6);
+        await prepareMapPositionHighlights((x, y) => x === 60 && y === 6);
 
         const input = resetInputState();
         input.feed('name\r');
@@ -123,7 +123,7 @@ for (const color of [true, false]) {
 }
 
 void test('running into a disguised door mimic reveals it and takes the turn', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const doorway = level.requireAt(9, 9);
     doorway.typ = DOOR;
     doorway.doormask = D_NODOOR;
@@ -131,7 +131,7 @@ void test('running into a disguised door mimic reveals it and takes the turn', a
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = CmapSymbol.vcdoor;
     mimic.msleeping = 0;
-    newsym(9, 9);
+    await newsym(9, 9);
 
     await rhack('Y'.charCodeAt(0));
 

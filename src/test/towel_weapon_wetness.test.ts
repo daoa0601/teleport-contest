@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function towelFight(wetness: number) {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('minotaur', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.mhp = monster.mhpmax = 200;
     const towel = await addInventoryObject(TOWEL, { spe: wetness });
@@ -51,7 +51,7 @@ void test('fire drying a wielded towel makes its next attack announce improvised
 });
 
 void test('throwing a wet towel removes one unit of wetness before it lands', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const towel = await addInventoryObject(TOWEL, { spe: 2 });
     installPagerInput(resetInputState(), { expected: /towel/, limit: 10 });
 

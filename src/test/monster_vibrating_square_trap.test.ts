@@ -22,7 +22,7 @@ void test('a monster turn names the giant in lowercase beneath its vibrating fee
     giant.msleeping = 0;
     giant.movement = 12;
     const trap = addTrap(game.level, VIBRATING_SQUARE, 11, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     game._heroTimePending = true;
     installPagerInput(input, { expected: /vibration/, limit: 2 });
 

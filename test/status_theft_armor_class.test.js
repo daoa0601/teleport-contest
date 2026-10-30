@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a disenchanter hit retains the old armor class through its effectiveness message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const shield = await addInventoryObject(SMALL_SHIELD, { spe: 3 });
     wearHeroArmor(shield);
@@ -34,7 +34,7 @@ void test('a disenchanter hit retains the old armor class through its effectiven
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /AC:7\b/);
 });
 void test('a nymph stealing an accuracy ring preserves pending shield AC through its removal pager', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const shield = await addInventoryObject(SMALL_SHIELD, { spe: 3 });
     wearHeroArmor(shield);

@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C trap.c help_monster_out(): the hero reaches out with
 // makeplural(body_part(ARM)), so a polymorphed spider uses its pedipalps.
 void test('a spider hero helping a monster out of a pit names its own limbs', async () => {
-    const level = freshObjectRoom({ role: 'ranger' });
+    const level = await freshObjectRoom({ role: 'ranger' });
     requirePlayingGame(game);
     installPolymorphedHero('giant spider');
     const jackal = await createMonsterAt('jackal', 11, 10);

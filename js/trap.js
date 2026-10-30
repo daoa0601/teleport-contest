@@ -34,19 +34,19 @@ import { canSeeMonster, map_trap, newsym } from './display.js';
 import { dryTowel, wetTowel } from './towel.js';
 import { verbForSubject } from './object_grammar.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
-export function seeTrap(trap, state = game) {
+export async function seeTrap(trap, state = game) {
     if (trap.tseen)
         return;
     trap.tseen = true;
     if (state === game)
-        newsym(trap.tx, trap.ty);
+        await newsym(trap.tx, trap.ty);
 }
 // C trap.c:feeltrap(). Touch maps even a known trap without requiring sight.
-export function feelTrap(trap, state = game) {
+export async function feelTrap(trap, state = game) {
     trap.tseen = true;
     if (state === game) {
-        map_trap(trap, true);
-        newsym(trap.tx, trap.ty);
+        await map_trap(trap, true);
+        await newsym(trap.tx, trap.ty);
     }
 }
 const PM_IRON_GOLEM = 259;

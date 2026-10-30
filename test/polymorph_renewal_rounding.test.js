@@ -9,7 +9,7 @@ void test('renewal scales health and power deficits by the same proportion as bo
     const health = [];
     const power = [];
     for (const maximum of [80, 90, 100]) {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         requirePlayingGame(game);
         game.u.uhpmax = game.u.uenmax = maximum;
         game.u.uhp = game.u.uen = Math.trunc(maximum / 2);

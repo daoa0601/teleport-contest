@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('bones monsters inherit learned resistances but not the hero form resistances', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('fireResistance', 'form', game);
     grantIntrinsicProperty('shockResistance', 'outside', game);
     const monster = await createMonsterAt('human mummy', 12, 10, NO_MINVENT);

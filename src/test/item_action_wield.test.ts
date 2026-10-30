@@ -17,7 +17,7 @@ for (const { label, type, wet, kitten, expected } of [
         expected: null },
 ]) {
     void test(`the item menu gives native wielding advice for ${label}`, async () => {
-        freshObjectRoom({ hero: kitten
+        await freshObjectRoom({ hero: kitten
             ? { umonnum: MONSTER_NAME.indexOf('kitten'), mh: 10, mhmax: 10 } : {} });
         const item = await addInventoryObject(type, { spe: wet });
         const input = resetInputState();

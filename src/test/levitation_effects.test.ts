@@ -37,7 +37,7 @@ async function heartOfAhriman() {
 }
 
 void test('invoking the Heart of Ahriman starts levitation', async () => {
-    freshObjectRoom({ gameplaySeed: 71n });
+    await freshObjectRoom({ gameplaySeed: 71n });
     requirePlayingGame(game);
     const { artifact, object } = await heartOfAhriman();
     const log = collector();
@@ -53,7 +53,7 @@ void test('invoking the Heart of Ahriman starts levitation', async () => {
 });
 
 void test('a tired Heart of Ahriman refuses to levitate and cools down longer', async () => {
-    freshObjectRoom({ gameplaySeed: 72n });
+    await freshObjectRoom({ gameplaySeed: 72n });
     requirePlayingGame(game);
     const { artifact, object } = await heartOfAhriman();
     object.age = (game.moves ?? 0) + 500;
@@ -71,7 +71,7 @@ void test('a tired Heart of Ahriman refuses to levitate and cools down longer', 
 });
 
 void test('an independent levitation source makes the invocation nothing special', async () => {
-    freshObjectRoom({ gameplaySeed: 73n });
+    await freshObjectRoom({ gameplaySeed: 73n });
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'outside');
     const { artifact, object } = await heartOfAhriman();
@@ -88,7 +88,7 @@ void test('an independent levitation source makes the invocation nothing special
 });
 
 void test('turning the invoked Heart of Ahriman off lands the hero', async () => {
-    freshObjectRoom({ gameplaySeed: 74n });
+    await freshObjectRoom({ gameplaySeed: 74n });
     requirePlayingGame(game);
     const { artifact, object } = await heartOfAhriman();
     await invokeArtifactPower(object, artifact, { publish: collector().publish });
@@ -103,7 +103,7 @@ void test('turning the invoked Heart of Ahriman off lands the hero', async () =>
 });
 
 void test('losing the invoked artifact from inventory deactivates its levitation', async () => {
-    freshObjectRoom({ gameplaySeed: 75n });
+    await freshObjectRoom({ gameplaySeed: 75n });
     requirePlayingGame(game);
     const { artifact, object } = await heartOfAhriman();
     await invokeArtifactPower(object, artifact, { publish: collector().publish });
@@ -118,7 +118,7 @@ void test('losing the invoked artifact from inventory deactivates its levitation
 });
 
 void test('quaffing an uncursed levitation potion floats the hero with a timeout', async () => {
-    freshObjectRoom({ gameplaySeed: 76n });
+    await freshObjectRoom({ gameplaySeed: 76n });
     requirePlayingGame(game);
     const log = collector();
 
@@ -135,7 +135,7 @@ void test('quaffing an uncursed levitation potion floats the hero with a timeout
 });
 
 void test('a blessed levitation potion lasts longer and descends at will', async () => {
-    freshObjectRoom({ gameplaySeed: 77n });
+    await freshObjectRoom({ gameplaySeed: 77n });
     requirePlayingGame(game);
 
     const result = await applyLevitationPotion(
@@ -151,7 +151,7 @@ void test('a blessed levitation potion lasts longer and descends at will', async
 });
 
 void test('a cursed levitation potion bruises the hero against the ceiling', async () => {
-    freshObjectRoom({ gameplaySeed: 78n, hero: { uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ gameplaySeed: 78n, hero: { uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);
     const log = collector();
 
@@ -168,7 +168,7 @@ void test('a cursed levitation potion bruises the hero against the ceiling', asy
 });
 
 void test('a hard helmet blunts the cursed levitation ceiling impact', async () => {
-    freshObjectRoom({ gameplaySeed: 79n, hero: { uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ gameplaySeed: 79n, hero: { uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(ORCISH_HELM));
 
@@ -180,7 +180,7 @@ void test('a hard helmet blunts the cursed levitation ceiling impact', async () 
 });
 
 void test('a soft hat and half physical damage blunt the ceiling impact further', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 80n,
         hero: { uhp: 40, uhpmax: 40, halfPhysicalDamage: true },
     });
@@ -224,7 +224,7 @@ void test('a cursed levitation potion on an up staircase carries the hero up a l
 });
 
 void test('drinking levitation while already aloft does nothing observable', async () => {
-    freshObjectRoom({ gameplaySeed: 82n });
+    await freshObjectRoom({ gameplaySeed: 82n });
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'outside');
     const log = collector();
@@ -241,7 +241,7 @@ void test('drinking levitation while already aloft does nothing observable', asy
 });
 
 void test('a floor-trapped hero floats against the trap and takes no ceiling hit', async () => {
-    freshObjectRoom({ gameplaySeed: 83n, hero: { uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ gameplaySeed: 83n, hero: { uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);
     game.u.utrap = 4;
     game.u.utraptype = TT_BEARTRAP;

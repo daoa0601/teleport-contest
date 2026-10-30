@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('Magicbane displays increased power with its absorption message', async () => {
-    freshObjectRoom({ hero: { uen: 5, uenmax: 30, uenpeak: 30 } });
+    await freshObjectRoom({ hero: { uen: 5, uenmax: 30, uenpeak: 30 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('gnomish wizard', 12, 10,
         MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT);

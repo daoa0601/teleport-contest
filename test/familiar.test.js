@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { knownObject } from './support/game-objects.js';
 void test('the familiar spell creates a waking tame actor with no generated inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     initRng(42n);
     const monster = await makeFamiliar();
@@ -27,7 +27,7 @@ void test('the familiar spell creates a waking tame actor with no generated inve
     assert.notDeepEqual([monster.mx, monster.my], [game.u.ux, game.u.uy]);
 });
 void test('an unavailable familiar produces the native refusal without creating an actor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     for (let species = 0; species < SPECIAL_PM; species++)
         game.mvitals[species] = { born: 0, died: 0, mvflags: G_GENOD };
@@ -39,7 +39,7 @@ void test('an unavailable familiar produces the native refusal without creating 
     assert.equal(game.u.uconduct.pets ?? 0, 0);
 });
 void test('a figurine cannot bypass the special Nazgul birth limit and announces dust', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const species = MONSTER_NAME.indexOf('Nazgul');
     const figurine = await knownObject(FIGURINE, { corpsenm: species });

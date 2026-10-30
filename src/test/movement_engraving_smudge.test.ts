@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('stepping onto a teleport trap smudges the departure and final arrival dust', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, TELEP_TRAP, 11, 10, { teledest: { x: 13, y: 10 } });
     makeEngravingAt(10, 10, '?', null, game.moves, DUST);
     makeEngravingAt(11, 10, '?', null, game.moves, DUST);
@@ -33,7 +33,7 @@ void test('stepping onto a teleport trap smudges the departure and final arrival
 });
 
 void test('a teleport back to the departure square still smudges its dust', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     addTrap(level, TELEP_TRAP, 11, 10, { teledest: { x: 10, y: 10 } });
     makeEngravingAt(10, 10, '?', null, game.moves, DUST);
     pushKeys(' '.repeat(10));
@@ -46,7 +46,7 @@ void test('a teleport back to the departure square still smudges its dust', asyn
 });
 
 void test('resisting a teleport trap still smudges both ends of the step', async () => {
-    const level = freshObjectRoom({ hero: { antimagic: true } });
+    const level = await freshObjectRoom({ hero: { antimagic: true } });
     addTrap(level, TELEP_TRAP, 11, 10);
     makeEngravingAt(10, 10, '?', null, game.moves, DUST);
     makeEngravingAt(11, 10, '?', null, game.moves, DUST);
@@ -79,7 +79,7 @@ void test('a deferred hole fall cannot smudge either level from above the shaft'
 
 for (const levitating of [false, true]) {
     void test(`walking ${levitating ? 'above' : 'over'} dust respects floor reach and headstones`, async () => {
-        freshObjectRoom({ hero: { levitating } });
+        await freshObjectRoom({ hero: { levitating } });
         makeEngravingAt(10, 10, '?', null, game.moves, DUST);
         makeEngravingAt(11, 10, 'A grave', null, game.moves, HEADSTONE);
         pushKeys(' '.repeat(10));
@@ -93,7 +93,7 @@ for (const levitating of [false, true]) {
 }
 
 void test('a blocked step leaves departure dust intact', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = STONE;
     makeEngravingAt(10, 10, '?', null, game.moves, DUST);
 
@@ -105,7 +105,7 @@ void test('a blocked step leaves departure dust intact', async () => {
 
 for (const refused of [false, true]) {
     void test(`a ${refused ? 'refused' : 'successful'} pet swap ${refused ? 'preserves' : 'smudges'} departure dust`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
         initializePet(pet);
         if (refused) await floorObject(BOULDER, 10, 10);
@@ -121,7 +121,7 @@ for (const refused of [false, true]) {
 }
 
 void test('the first running step smudges dust but automatic continuation does not', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     makeEngravingAt(10, 10, '?', null, game.moves, DUST);
 
     await rhack('L'.charCodeAt(0));

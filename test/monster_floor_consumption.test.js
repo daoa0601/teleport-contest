@@ -17,8 +17,8 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-function mealRoom(verbose = false) {
-    freshObjectRoom({ flags: { verbose }, gameplaySeed: 7831n });
+async function mealRoom(verbose = false) {
+    await freshObjectRoom({ flags: { verbose }, gameplaySeed: 7831n });
     requirePlayingGame(game);
     return game;
 }
@@ -31,7 +31,7 @@ async function visibleMessage() {
 }
 for (const species of ['xorn', 'gelatinous cube', 'purple worm']) {
     void test(`the floor-consumption owner leaves a tame ${species}'s meal to pet feeding`, async () => {
-        const state = mealRoom();
+        const state = await mealRoom();
         const monster = await eater(species);
         initializePet(monster);
         const food = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('newt') });
@@ -46,7 +46,7 @@ for (const species of ['xorn', 'gelatinous cube', 'purple worm']) {
     });
 }
 void test('a metal eater consumes a whole stack, heals by the item type weight, and delays by stack weight', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('xorn');
     monster.mhp = 1;
     monster.mhpmax = 100;
@@ -62,7 +62,7 @@ void test('a metal eater consumes a whole stack, heals by the item type weight, 
     assert.equal(floorObjectsAt(state.level, 11, 10).length, 0);
 });
 void test('a rust monster strips rustproofing and continues to a later edible item', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('rust monster');
     const food = await floorObject(DAGGER, 11, 10);
     const dagger = await floorObject(DAGGER, 11, 10, { oerodeproof: true });
@@ -76,7 +76,7 @@ void test('a rust monster strips rustproofing and continues to a later edible it
     assert.equal(food.where, 'gone');
 });
 void test('a rust monster leaves unsuitable metals, choking jewelry, and poisoned weapons alone', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('rust monster');
     const gold = await floorObject(GOLD_PIECE, 11, 10);
     const amulet = await floorObject(AMULET_OF_STRANGULATION, 11, 10);
@@ -91,7 +91,7 @@ void test('a rust monster leaves unsuitable metals, choking jewelry, and poisone
     assert.equal(monster.meating ?? 0, 0);
 });
 void test('a metal meal can leave an actual generated pile of rocks', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('xorn');
     const coins = await floorObject(GOLD_PIECE, 11, 10, { quan: 200 });
     await consumeMonsterFloorObjects(monster, state, {
@@ -105,7 +105,7 @@ void test('a metal meal can leave an actual generated pile of rocks', async () =
     assert.ok((rocks[0]?.quan ?? 0) > 0);
 });
 void test('a cube eats organic objects instantly and carries the contents of its eaten container', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     const food = await floorObject(FOOD_RATION, 11, 10, { quan: 2 });
     const sack = await floorObject(SACK, 11, 10);
@@ -127,7 +127,7 @@ void test('a cube eats organic objects instantly and carries the contents of its
     assert.equal(floorObjectsAt(state.level, 11, 10).length, 0);
 });
 void test('a cube digests petrifying flesh but preserves prizes and engulfs slime', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     const boulder = await floorObject(BOULDER, 11, 10);
     const scare = await floorObject(SCR_SCARE_MONSTER, 11, 10);
@@ -149,7 +149,7 @@ void test('a cube digests petrifying flesh but preserves prizes and engulfs slim
     assert.equal(!!monster.dead, false);
 });
 void test('a cube changed before item handling leaves a dangerous corpse but engulfs its egg', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     const originalSpecies = monster.mnum;
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('rock mole'), state);
@@ -165,7 +165,7 @@ void test('a cube changed before item handling leaves a dangerous corpse but eng
     assert.ok(monster.mhp > 0);
 });
 void test('an organic object which resists digestion remains intact in a cube inventory', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     const sack = await floorObject(SACK, 11, 10);
     const ration = await knownObject(FOOD_RATION);
@@ -179,7 +179,7 @@ void test('an organic object which resists digestion remains intact in a cube in
     assert.equal(sack.contents?.length, 1);
 });
 void test('a corpse eater skips vegetable and petrifying bodies and eats only one unit', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('purple worm');
     const meat = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('newt'), quan: 3 });
     const lichen = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('lichen') });
@@ -194,7 +194,7 @@ void test('a corpse eater skips vegetable and petrifying bodies and eats only on
     assert.equal(floorObjectsAt(state.level, 11, 10).length, 3);
 });
 void test('a corpse eater revives a Rider instead of consuming it or the next corpse', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('purple worm');
     const meat = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('newt') });
     const rider = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('Death') });
@@ -205,7 +205,7 @@ void test('a corpse eater revives a Rider instead of consuming it or the next co
     assert.ok(state.level.monsters.some(actor => actor.mnum === MONSTER_NAME.indexOf('Death') && actor.mhp > 0));
 });
 void test('a cube stops eating the pile when a corpse changes its species', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     const ration = await floorObject(FOOD_RATION, 11, 10);
     const corpse = await floorObject(CORPSE, 11, 10, { corpsenm: MONSTER_NAME.indexOf('chameleon') });
@@ -220,7 +220,7 @@ void test('a cube stops eating the pile when a corpse changes its species', asyn
     assert.equal(ration.where, 'floor');
 });
 void test('post-move eating uses the original species while container handling uses the new body', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     const originalSpecies = monster.mnum;
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('rock mole'), state);
@@ -237,7 +237,7 @@ void test('post-move eating uses the original species while container handling u
     assert.equal(monster.minvent.includes(rock), false);
 });
 void test('a wraith corpse can grow a baby worm into a genocided adult and end item handling', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('baby purple worm');
     monster.m_lev = 14;
     const adult = MONSTER_NAME.indexOf('purple worm');
@@ -256,7 +256,7 @@ void test('a wraith corpse can grow a baby worm into a genocided adult and end i
     assert.notEqual(monsterAtPosition(state.level, monster.mx, monster.my), monster);
 });
 void test('eating petrifying tin immediately stones a metal eater without slowing it first', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('rock mole');
     const food = await floorObject(TIN, 11, 10, { corpsenm: MONSTER_NAME.indexOf('Medusa') });
     const result = await consumeMonsterFloorObjects(monster, state, {
@@ -271,7 +271,7 @@ void test('eating petrifying tin immediately stones a metal eater without slowin
     assert.equal(await visibleMessage(), 'The rock mole turns to stone!');
 });
 void test('life saving lets a metal eater survive its petrifying meal without losing speed', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('rock mole');
     const amulet = await knownObject(AMULET_OF_LIFE_SAVING);
     await equipMonsterObject(monster, amulet, W_AMUL);
@@ -291,7 +291,7 @@ void test('life saving lets a metal eater survive its petrifying meal without lo
     assert.equal(floorObjectsAt(state.level, 11, 10).some(object => object.otyp === STATUE), false);
 });
 void test('petrifying food turns a golem into stone even though that body resists petrification', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('xorn');
     const originalSpecies = monster.mnum;
     await changeMonsterForm(monster, MONSTER_NAME.indexOf('iron golem'), state);
@@ -308,7 +308,7 @@ void test('petrifying food turns a golem into stone even though that body resist
     assert.equal(floorObjectsAt(state.level, 11, 10).some(object => object.otyp === STATUE), false);
 });
 void test('a nurse corpse heals a wounded corpse eater and restores its sight', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('purple worm');
     monster.mhp = 1;
     monster.mhpmax = 100;
@@ -324,7 +324,7 @@ void test('a nurse corpse heals a wounded corpse eater and restores its sight', 
     assert.equal(monster.mblinded, 0);
 });
 void test('meal input is acknowledged before the object leaves its floor pile', async () => {
-    const state = mealRoom(true);
+    const state = await mealRoom(true);
     const monster = await eater('xorn');
     const dagger = await floorObject(DAGGER, 11, 10, { spe: 0 });
     const input = resetInputState();
@@ -349,7 +349,7 @@ void test('meal input is acknowledged before the object leaves its floor pile', 
     assert.equal(await visibleMessage(), 'The xorn eats a +0 dagger!');
 });
 void test('a quiet cube still enjoys a scroll whose shuffled label says YUM YUM', async () => {
-    const state = mealRoom();
+    const state = await mealRoom();
     const monster = await eater('gelatinous cube');
     assert.ok(state.objectDescriptions);
     state.objectDescriptions[SCR_IDENTIFY] = 'YUM YUM';

@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const ray of ['fire', 'cold', 'lightning', 'disintegration'] as const) {
     void test(`a ${ray} ray destroys the lock currently being picked`, async () => {
-        const level = freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
+        const level = await freshObjectRoom({ hero: { acurr: { a: [18, 3, 18, 18, 18, 18] } } });
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;

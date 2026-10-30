@@ -187,7 +187,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion, when
         }
         giveHeroResistancesToMonster(monster, game);
         setMonsterGivenName(monster, game.plname || 'player');
-        newsym(x, y);
+        await newsym(x, y);
         await dropHeroInventoryForBones(x, y, { carrier: monster });
         await addMummyWrapping(monster);
         await initializeMonsterArmor(monster);

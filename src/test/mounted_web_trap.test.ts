@@ -11,7 +11,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a strong mount determines how long a weak rider stays caught in a web', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const horse = await createSaddledSteed('horse');
     await runExtendedCommand('ride', 'l');
@@ -31,7 +31,7 @@ void test('a strong mount determines how long a weak rider stays caught in a web
 });
 
 void test('a hallucinating rider sees an imaginary mount in both web messages', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const horse = await createSaddledSteed('horse');
     horse.name = 'Bucephalus';

@@ -7,7 +7,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an experienced floating eye freezes the hero for its current level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const eye = await createMonsterAt('floating eye', 11, 10);
     eye.m_lev = 12;
 
@@ -19,7 +19,7 @@ void test('an experienced floating eye freezes the hero for its current level', 
 });
 
 void test('a floating eye uses its species level when freezing another monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('soldier', 10, 10);
     const eye = await createMonsterAt('floating eye', 11, 10);
     eye.m_lev = 12;

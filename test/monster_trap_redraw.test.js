@@ -17,12 +17,12 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRAP, 'falling-rock']]) {
     for (const invisible of [false, true]) {
         void test(`an exhausted ${name} trap redraws its square beneath a ${invisible ? 'hidden' : 'visible'} victim`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             const monster = await createMonsterAt('grid bug', 12, 10, NO_MINVENT);
             monster.minvis = invisible;
             const trap = addTrap(level, type, 11, 10, { once: true, tseen: true });
-            newsym(11, 10);
+            await newsym(11, 10);
             assert.equal(glyphAt(11, 10)?.kind, 'trap');
             placeMonsterAt(monster, 11, 10);
             const action = await triggerImmediateMonsterTrap(monster, game, { random: () => 0 });
@@ -33,12 +33,12 @@ for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRA
     }
 }
 void test('anti-magic damage redraws a surviving monster over a known trap', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('baby gray dragon', 12, 10, NO_MINVENT);
     monster.mhp = monster.mhpmax = 20;
     addTrap(level, ANTI_MAGIC, 11, 10, { tseen: true });
-    newsym(11, 10);
+    await newsym(11, 10);
     assert.equal(glyphAt(11, 10)?.kind, 'trap');
     placeMonsterAt(monster, 11, 10);
     const action = await triggerImmediateMonsterTrap(monster, game, { rollOne: () => 4 });
@@ -51,18 +51,18 @@ for (const killedByTrap of [false, true]) {
         ? 'anti-magic trap death refreshes the first hallucinated corpse appearance once'
         : 'ordinary monster death preserves the first hallucinated corpse appearance';
     void test(behavior, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         await floorObject(CORPSE, 11, 10, {
             corpsenm: MONSTER_NAME.indexOf('baby gray dragon'),
         });
         initRng(1n);
-        newsym(11, 10);
+        await newsym(11, 10);
         // make_corpse() shows the corpse; the anti-magic trap then refreshes it.
         if (killedByTrap)
-            newsym(11, 10);
+            await newsym(11, 10);
         const expected = glyphAt(11, 10);
         assert.ok(expected?.kind === 'object');
-        const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('baby gray dragon', 11, 10, NO_MINVENT);
         monster.mhp = 1;

@@ -22,8 +22,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 const WAND_CLASS = 11;
 const SCROLL_CLASS = 9;
-function blastRoom(options = {}) {
-    freshObjectRoom({ left: 5, right: 21, hero: { uhp: 500, uhpmax: 500 },
+async function blastRoom(options = {}) {
+    await freshObjectRoom({ left: 5, right: 21, hero: { uhp: 500, uhpmax: 500 },
         flags: { verbose: true }, gameplaySeed: 7n, ...options });
     requireFixtureGame(game);
     const input = resetInputState();
@@ -48,7 +48,7 @@ for (const [role, selfDamage] of [
     ['healer', 12], ['knight', 12], ['barbarian', 25],
 ]) {
     void test(`${role} reduces only their own broken-wand damage according to their role`, async () => {
-        blastRoom({ role });
+        await blastRoom({ role });
         requireFixtureGame(game);
         const jackal = await bystander('jackal', 11, 10);
         await explode(10, 10, -WAN_MAGIC_MISSILE, 25, WAND_CLASS, EXPL_MAGICAL);
@@ -58,7 +58,7 @@ for (const [role, selfDamage] of [
 }
 for (const wand of [WAN_LIGHT, WAN_SLEEP]) {
     void test(`${wand === WAN_LIGHT ? 'light' : 'sleep'} wand breakage produces a magical blast resisted by antimagic`, async () => {
-        blastRoom();
+        await blastRoom();
         requireFixtureGame(game);
         grantIntrinsicProperty('antimagic', 'outside');
         const jackal = await bystander('jackal', 11, 10);
@@ -71,7 +71,7 @@ for (const wand of [WAN_LIGHT, WAN_SLEEP]) {
     });
 }
 void test('a death wand field spares nonliving creatures but ignores ordinary disintegration resistance', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     grantIntrinsicProperty('disintegrationResistance', 'outside');
     const golem = await bystander('stone golem', 9, 10);
@@ -86,7 +86,7 @@ void test('a death wand field spares nonliving creatures but ignores ordinary di
     assert.equal(game.level.requireAt(10, 9).doormask, D_CLOSED);
 });
 void test('disintegration protects the hero from breath explosions and destroys adjacent doors', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     grantIntrinsicProperty('disintegrationResistance', 'outside');
     const door = game.level.requireAt(10, 9);
@@ -97,7 +97,7 @@ void test('disintegration protects the hero from breath explosions and destroys 
     assert.equal(game.level.requireAt(10, 9).doormask, D_NODOOR);
 });
 void test('a striking wand blast breaks doors while a miscellaneous wand leaves them intact', async () => {
-    const messages = blastRoom();
+    const messages = await blastRoom();
     requireFixtureGame(game);
     const door = game.level.requireAt(11, 10);
     door.typ = DOOR;
@@ -111,7 +111,7 @@ void test('a striking wand blast breaks doors while a miscellaneous wand leaves 
 });
 for (const [type, style] of [[PHYS_EXPL_TYPE, EXPL_NOXIOUS], [27, EXPL_NOXIOUS]]) {
     void test(`${type === PHYS_EXPL_TYPE ? 'physical' : 'acid'} blast damage is halved only for the hero`, async () => {
-        blastRoom();
+        await blastRoom();
         requireFixtureGame(game);
         grantIntrinsicProperty('halfPhysicalDamage', 'outside');
         const jackal = await bystander('jackal', 11, 10);
@@ -121,7 +121,7 @@ for (const [type, style] of [[PHYS_EXPL_TYPE, EXPL_NOXIOUS], [27, EXPL_NOXIOUS]]
     });
 }
 void test('a fire blast from inside an engulfer cannot burn the floor or a bystander', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     const swallower = await bystander('purple worm', 11, 10);
     const outside = await bystander('jackal', 9, 10);
@@ -140,7 +140,7 @@ void test('a fire blast from inside an engulfer cannot burn the floor or a bysta
     assert.equal(sleeper.msleeping, 1);
 });
 void test('a hero holding a victim takes double blast damage even when the victim dies first', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     await polymonHero(MONSTER_NAME.indexOf('large mimic'));
     game.u.mh = game.u.mhmax = 500;
@@ -151,7 +151,7 @@ void test('a hero holding a victim takes double blast damage even when the victi
     assert.equal(game.u.mh, 460);
 });
 void test('a zero-damage explosion wakes nearby sleepers without altering its floor or inventory', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     const sleeper = await bystander('jackal', 15, 10);
     sleeper.msleeping = 1;
@@ -164,7 +164,7 @@ void test('a zero-damage explosion wakes nearby sleepers without altering its fl
     assert.equal(potions.quan, 20);
 });
 void test('a hero polymorph explosion spares their body and carried gear', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     const potions = await addInventoryObject(POT_HEALING, { quantity: 30 });
     const jackal = await bystander('jackal', 11, 10);
@@ -174,7 +174,7 @@ void test('a hero polymorph explosion spares their body and carried gear', async
     assert.equal(jackal.mhp, 470);
 });
 void test('a scroll fire blast burns property without repeating the hero caught message', async () => {
-    const messages = blastRoom();
+    const messages = await blastRoom();
     requireFixtureGame(game);
     await floorObject(SCR_BLANK_PAPER, 10, 10, { quantity: 30 });
     await explode(10, 10, 11, 20, SCROLL_CLASS, EXPL_FIERY);
@@ -184,7 +184,7 @@ void test('a scroll fire blast burns property without repeating the hero caught 
     assert.ok(floorObjectsAt(requireGameLevel(game), 10, 10).reduce((sum, obj) => sum + obj.quan, 0) < 30);
 });
 void test('monster life saving completes before a wand blast reaches the hero', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     const jackal = await bystander('jackal', 9, 10, 1);
     const amulet = await equipMonsterObject(jackal, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
@@ -195,7 +195,7 @@ void test('monster life saving completes before a wand blast reaches the hero', 
     assert.equal(game.u.uhp, 480);
 });
 void test('a broken fire wand charges shop structural damage and burned floor stock', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10, doorX: 10, doorY: 9 });
     const door = game.level.requireAt(10, 9);
@@ -211,7 +211,7 @@ void test('a broken fire wand charges shop structural damage and burned floor st
     assert.equal(shopkeeper.mpeaceful, 0);
 });
 void test('poison explosions leave poisonous gas in every open blast square', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     grantIntrinsicProperty('poisonResistance', 'outside');
     await explode(10, 10, 26, 20, 0, EXPL_NOXIOUS);
@@ -221,7 +221,7 @@ void test('poison explosions leave poisonous gas in every open blast square', as
     assert.ok(clouds.some(region => region.cells.some(cell => cell.x === 11 && cell.y === 11)));
 });
 void test('acid blasts dissolve bars at a room edge into an open doorway', async () => {
-    blastRoom();
+    await blastRoom();
     requireFixtureGame(game);
     const bars = game.level.requireAt(11, 10);
     bars.typ = IRONBARS;
@@ -231,7 +231,7 @@ void test('acid blasts dissolve bars at a room edge into an open doorway', async
     assert.equal(bars.doormask, D_NODOOR);
 });
 void test('the explosion waits for unread prose before damaging a nearby monster', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 }, flags: { verbose: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 }, flags: { verbose: true } });
     requireFixtureGame(game);
     const jackal = await bystander('jackal', 9, 10);
     const input = resetInputState();
@@ -250,7 +250,7 @@ void test('the explosion waits for unread prose before damaging a nearby monster
     assert.equal(game.u.uhp, 480);
 });
 void test('a monster burning itself to cure slime credits the hero without breaking pacifism', async () => {
-    blastRoom({ context: { mon_moving: true } });
+    await blastRoom({ context: { mon_moving: true } });
     requireFixtureGame(game);
     const paper = await bystander('paper golem', 14, 10, 1);
     const jackal = await bystander('jackal', 13, 10, 1);

@@ -11,7 +11,7 @@ import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 for (const deaf of [false, true]) {
     void test(`picking up a stack gives a ${deaf ? 'list' : 'spoken per-item'} price`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         game.u.deafTurns = deaf ? 10 : 0;
         const daggers = await floorObject(DAGGER, 10, 10, { quan: 3 });
@@ -30,7 +30,7 @@ for (const deaf of [false, true]) {
     });
 }
 void test('a level without the shop flag does not bill a floor pickup', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     if (!game.level)
         throw new Error('The shop level must exist.');
@@ -41,7 +41,7 @@ void test('a level without the shop flag does not bill a floor pickup', async ()
     assert.equal(shopkeeper.eshk.billct, 0);
 });
 void test('contents that overflow a full bill are free, each with its own notice', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bill = Array.from({ length: 198 }, (_, index) => ({
         bo_id: 900000 + index, bquan: 1, useup: false, price: 1,
     }));
@@ -67,7 +67,7 @@ void test('contents that overflow a full bill are free, each with its own notice
     assert.deepEqual(daggers.map(dagger => dagger.unpaid ?? false), [true, false, false]);
 });
 void test('a chest with a nonzero spe still bills its contents', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = game.u.amax.a[A_STR] = 118;
     game.u.acurr.a[A_CON] = game.u.amax.a[A_CON] = 18;
@@ -94,7 +94,7 @@ const pickupQuoteCases = [
 ];
 for (const { name, prepare, expected } of pickupQuoteCases) {
     void test(name, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         prepare(shopkeeper);
         await floorObject(DAGGER, 10, 10);
@@ -107,7 +107,7 @@ for (const { name, prepare, expected } of pickupQuoteCases) {
     });
 }
 void test('picking up the hero\'s own sack quotes only its shop contents', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createStaffedShop();
     const sack = await floorObject(SACK, 10, 10, { initialize: false, cknown: true, no_charge: true });
     const dagger = await knownObject(DAGGER, { where: 'contained', container: sack });

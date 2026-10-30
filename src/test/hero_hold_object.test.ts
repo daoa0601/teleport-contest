@@ -12,8 +12,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
-function holdingRoom(verbose = true) {
-    freshObjectRoom({ gameplaySeed: 97n, flags: { verbose } });
+async function holdingRoom(verbose = true) {
+    await freshObjectRoom({ gameplaySeed: 97n, flags: { verbose } });
     installPagerInput(resetInputState(), {
         expected: /You catch|You steal|a -|b -/,
         limit: 4,
@@ -26,7 +26,7 @@ async function displayedMessage(): Promise<string> {
 }
 
 void test('a caught object announces its inventory letter after the catch prefix', async () => {
-    holdingRoom();
+    await holdingRoom();
     const dagger = await knownObject(DAGGER, { known: false, bknown: false, spe: 0 });
 
     const held = await holdAnotherObject(dagger, { holdMessage: 'You catch the dagger!' });
@@ -37,7 +37,7 @@ void test('a caught object announces its inventory letter after the catch prefix
 });
 
 void test('a priest sees the beatitude of a caught object', async () => {
-    freshObjectRoom({ role: 'priest', gameplaySeed: 97n });
+    await freshObjectRoom({ role: 'priest', gameplaySeed: 97n });
     installPagerInput(resetInputState(), { expected: /You catch/, limit: 4 });
     const dagger = await knownObject(DAGGER, { known: false, bknown: false, cursed: true, spe: 0 });
 
@@ -47,7 +47,7 @@ void test('a priest sees the beatitude of a caught object', async () => {
 });
 
 void test('successful acquisition with only a drop message prints an ordinary inventory line', async () => {
-    holdingRoom();
+    await holdingRoom();
     const dagger = await knownObject(DAGGER, { known: false, bknown: false, spe: 0 });
 
     await holdAnotherObject(dagger, { dropMessage: 'You drop the dagger!' });
@@ -56,7 +56,7 @@ void test('successful acquisition with only a drop message prints an ordinary in
 });
 
 void test('an empty hold prefix still requests an ordinary inventory announcement', async () => {
-    holdingRoom();
+    await holdingRoom();
     const dagger = await knownObject(DAGGER, { known: false, bknown: false, spe: 0 });
 
     await holdAnotherObject(dagger, { holdMessage: '' });
@@ -66,7 +66,7 @@ void test('an empty hold prefix still requests an ordinary inventory announcemen
 
 for (const verbose of [true, false]) {
     void test(`merged acquisition reports the new quantity${verbose ? ' and total' : ' without a total when terse'}`, async () => {
-        holdingRoom(verbose);
+        await holdingRoom(verbose);
         const carried = await addInventoryObject(DAGGER, { quantity: 3, known: false, bknown: false, spe: 0 });
         const caught = await knownObject(DAGGER, { quantity: 2, known: false, bknown: false, spe: 0 });
 
@@ -83,7 +83,7 @@ for (const verbose of [true, false]) {
 }
 
 void test('merging a caught weapon preserves the held weapon identity in the inventory description', async () => {
-    holdingRoom();
+    await holdingRoom();
     const carried = await addInventoryObject(DAGGER, { quantity: 2, known: false, bknown: false, spe: 0 });
     await setPrimaryWeapon(carried);
     const caught = await knownObject(DAGGER, { known: false, bknown: false, spe: 0 });
@@ -97,7 +97,7 @@ void test('merging a caught weapon preserves the held weapon identity in the inv
 });
 
 void test('nonconstant inventory letters are reassigned before announcing a caught object', async () => {
-    holdingRoom();
+    await holdingRoom();
     game.flags.fixinv = false;
     const lamp = await addInventoryObject(OIL_LAMP, { invlet: 'm' });
     const gold = await addInventoryObject(GOLD_PIECE, { quantity: 10 });
@@ -112,7 +112,7 @@ void test('nonconstant inventory letters are reassigned before announcing a caug
 });
 
 void test('a caller-supplied trailing space is retained before the native prinv separator', async () => {
-    holdingRoom();
+    await holdingRoom();
     const dagger = await knownObject(DAGGER, { known: false, bknown: false, spe: 0 });
 
     await holdAnotherObject(dagger, { holdMessage: 'You steal: ' });

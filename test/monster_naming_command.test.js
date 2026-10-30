@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 void test('the monster naming command assigns a normalized name without taking a turn', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const input = resetInputState();
     input.feed('name\r');
@@ -25,7 +25,7 @@ void test('the monster naming command assigns a normalized name without taking a
     assert.equal(game.context.move, 0);
 });
 void test('hallucination prevents monster naming before cursor selection', async (t) => {
-    freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ flags: { tips: false }, hero: { hallucinationTurns: 20 } });
     const input = resetInputState();
     input.feed('name\r');
     queueCommandKeys('#m');
@@ -34,7 +34,7 @@ void test('hallucination prevents monster naming before cursor selection', async
     assert.equal(game._pending_message, 'You would never recognize it anyway.');
 });
 void test('monster naming keeps printable high bytes and limits the normalized name', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const input = resetInputState();
     input.feed('name\r');
@@ -48,7 +48,7 @@ void test('monster naming keeps printable high bytes and limits the normalized n
     assert.equal(game.context.move, 0);
 });
 void test('unique monsters reject a different name', async (t) => {
-    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    await freshObjectRoom({ flags: { tips: false, verbose: true } });
     const medusa = await createMonsterAt('Medusa', 11, 10, NO_MINVENT);
     const input = resetInputState();
     input.feed('name\r');
@@ -65,14 +65,14 @@ for (const { lit, sensed } of [
     { lit: false, sensed: false }, { lit: true, sensed: false }, { lit: false, sensed: true },
 ]) {
     void test(`monster naming through a ${lit ? 'lit' : 'dark'} worm tail ${sensed ? 'with' : 'without'} detection`, async (t) => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             flags: { tips: false, verbose: true }, hero: { detectMonsters: sensed },
         });
         const worm = await createMonsterAt('long worm', 11, 10, NO_MINVENT | MM_NOTAIL);
-        initializeMonsterWormBody(worm, { segmentCount: 0 });
+        await initializeMonsterWormBody(worm, { segmentCount: 0 });
         worm.wormSegments = [{ x: 12, y: 10 }, { x: 13, y: 10 }];
         level.requireAt(13, 10).lit = lit;
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.ok(cansee(worm.mx, worm.my), 'The head remains visible');
         assert.equal(!!cansee(13, 10), lit, 'Only the selected tail square changes lighting');
         const input = resetInputState();

@@ -102,7 +102,7 @@ async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
             monsterMoving: false,
         });
     }
-    newsym(x, y);
+    await newsym(x, y);
 }
 function finishEarthquakeLiquidDeath(monster, options) {
     if (options.cause === 'drowning' || options.cause === 'lava-burning') {
@@ -243,7 +243,7 @@ async function openChasm(x, y, hadPitBeforeEarthquake) {
     else if (game.u?.ux === x && game.u?.uy === y)
         await dropHeroIntoChasm(hadPitBeforeEarthquake);
     else
-        newsym(x, y);
+        await newsym(x, y);
     return true;
 }
 async function wakeMonsterForEarthquake(monster) {
@@ -253,7 +253,7 @@ async function wakeMonsterForEarthquake(monster) {
         return true;
     if (monster.mundetected) {
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (monsterSpeciesHidesOnCeiling(monster.mnum)) {
             if (cansee(monster.mx, monster.my)) {
                 await plineWithContinuation(`${monsterName(monster, { article: 'a', capitalized: true })} is shaken loose from the ceiling!`);
@@ -324,7 +324,7 @@ async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
     }
     location.doormask = D_NODOOR;
     vision_note_blocker_change(x, y);
-    newsym(x, y);
+    await newsym(x, y);
     if (cansee(x, y))
         await plineWithContinuation('The door collapses.');
     if (roomsAt(game.level, x, y, SHOPBASE).length)

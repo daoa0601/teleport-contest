@@ -8,7 +8,7 @@ import { castNativeRay } from '../js/ray_attack.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('cooling lava preserves a cold beam across the hero during hit acknowledgment', async () => {
-    const level = freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     level.requireAt(9, 9).typ = LAVAPOOL;
     level.requireAt(11, 11).typ = LAVAPOOL;
     await flush_screen(1);

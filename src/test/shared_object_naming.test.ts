@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a Samurai sees sake when looking at a known potion on the floor', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const potion = await floorObject(POT_BOOZE, game.u.ux, game.u.uy, { bknown: false });
 
     await showFloorPile([potion]);
@@ -29,7 +29,7 @@ void test('a Samurai sees sake when looking at a known potion on the floor', asy
 });
 
 void test('Samurai weapon names and known enchantments apply on the floor too', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const sword = await knownObject(SHORT_SWORD, { spe: 2, bknown: false });
 
     assert.equal(await floorObjectDescription(sword), 'a +2 wakizashi');
@@ -37,7 +37,7 @@ void test('Samurai weapon names and known enchantments apply on the floor too', 
 });
 
 void test('named ya stacks retain their arrow noun in inventory and floor descriptions', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const arrows = await knownObject(YA, { quan: 3, spe: 1, oname: 'Needle', bknown: false });
 
     assert.equal(await inventoryItemDescription(arrows), '3 +1 ya named Needle');
@@ -45,7 +45,7 @@ void test('named ya stacks retain their arrow noun in inventory and floor descri
 });
 
 void test('holy water wording requires both type and blessing knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await knownObject(POT_WATER, {
         typeKnown: false, known: false, bknown: false, blessed: true,
     });
@@ -61,7 +61,7 @@ void test('holy water wording requires both type and blessing knowledge', async 
 });
 
 void test('identification override retains the blessing of globally unknown water', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await knownObject(POT_WATER, {
         typeKnown: false, known: false, bknown: false, blessed: true,
     });
@@ -72,7 +72,7 @@ void test('identification override retains the blessing of globally unknown wate
 });
 
 void test('fully identified Grimtooth uses its artifact identity without a poison prefix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const artifact = artifactByName('Grimtooth');
     assert.ok(artifact);
     const dagger = await knownObject(artifact.baseType, { spe: 0 });
@@ -84,7 +84,7 @@ void test('fully identified Grimtooth uses its artifact identity without a poiso
 });
 
 void test('dilution is visible only after the potion appearance has been observed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await knownObject(POT_BOOZE, {
         dknown: false, bknown: false, odiluted: true,
     });
@@ -96,7 +96,7 @@ void test('dilution is visible only after the potion appearance has been observe
 });
 
 void test('an unknown called ring uses the class noun without revealing its true type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await knownObject(RIN_PROTECTION, {
         typeKnown: false, known: false, bknown: false,
     });
@@ -107,7 +107,7 @@ void test('an unknown called ring uses the class noun without revealing its true
 });
 
 void test('a called potion retains its dilution but omits the appearance adjective', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await knownObject(POT_BOOZE, {
         typeKnown: false, known: false, bknown: false, odiluted: true,
     });
@@ -118,7 +118,7 @@ void test('a called potion retains its dilution but omits the appearance adjecti
 });
 
 void test('plural tins retain their known contents and individual name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const tins = await knownObject(TIN, {
         quan: 2, spe: 1, corpsenm: -1, bknown: false, oname: 'Lunch',
     });
@@ -128,7 +128,7 @@ void test('plural tins retain their known contents and individual name', async (
 });
 
 void test('figurines retain species and individual names after pluralization', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const figurines = await knownObject(FIGURINE, {
         quan: 2, corpsenm: MONSTER_NAME.indexOf('kitten'), spe: 0,
         bknown: false, oname: 'Keepsake',
@@ -138,7 +138,7 @@ void test('figurines retain species and individual names after pluralization', a
 });
 
 void test('named statues describe their subject on both the floor and in inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const statue = await knownObject(STATUE, {
         corpsenm: MONSTER_NAME.indexOf('kitten'), spe: 0,
         bknown: false, oname: 'Mittens',
@@ -149,7 +149,7 @@ void test('named statues describe their subject on both the floor and in invento
 });
 
 void test('known empty containers describe their traps, locks, and grease', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await knownObject(CHEST, {
         bknown: false, cknown: true, lknown: true, olocked: true,
         otrapped: true, tknown: true, greased: true, contents: [],
@@ -159,7 +159,7 @@ void test('known empty containers describe their traps, locks, and grease', asyn
 });
 
 void test('iron corrosion and known proofing use their native descriptions', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sword = await knownObject(LONG_SWORD, {
         bknown: false, spe: 1, oeroded2: 2, oerodeproof: true, rknown: false,
     });
@@ -171,7 +171,7 @@ void test('iron corrosion and known proofing use their native descriptions', asy
 });
 
 void test('a known erodeproof crysknife is fixed without ordinary erosion words', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const knife = await knownObject(CRYSKNIFE, {
         bknown: false, spe: 0, rknown: true, oerodeproof: true, oeroded: 2,
     });

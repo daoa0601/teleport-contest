@@ -16,8 +16,8 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshCasterRoom } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { ATR_INVERSE, ATR_NONE } from '../js/terminal.js';
-function freshSkills(role = 'wizard', { tips = false, debug = false } = {}) {
-    freshObjectRoom({ role, flags: { tips, debug } });
+async function freshSkills(role = 'wizard', { tips = false, debug = false } = {}) {
+    await freshObjectRoom({ role, flags: { tips, debug } });
     requirePlayingGame(game);
     const skills = ensureHeroSkills(game);
     assert.ok(skills);
@@ -35,7 +35,7 @@ async function dismissFeedback(input) {
     await flushPendingTopline();
 }
 void test('practice first becomes advanceable at its threshold and does not repeat its notice', async () => {
-    const skills = freshSkills();
+    const skills = await freshSkills();
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(1);
     await useHeroSkill(P_DAGGER, 19);
@@ -54,7 +54,7 @@ void test('practice first becomes advanceable at its threshold and does not repe
     assert.equal(game._pending_message || '', '');
 });
 void test('restricted and no-skill actions do not train or display confidence', async () => {
-    const skills = freshSkills('caveman');
+    const skills = await freshSkills('caveman');
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(10);
     await useHeroSkill(P_HEALING_SPELL, 100);
@@ -67,7 +67,7 @@ void test('restricted and no-skill actions do not train or display confidence', 
     assert.equal(game._pending_message || '', '');
 });
 void test('enough practice without a skill slot remains ineligible and gives no confidence notice', async () => {
-    freshSkills();
+    await freshSkills();
     requirePlayingGame(game);
     await useHeroSkill(P_DAGGER, 40);
     assert.equal(canAdvanceHeroSkill(P_DAGGER), false);
@@ -78,7 +78,7 @@ void test('enough practice without a skill slot remains ineligible and gives no 
     assert.equal(game._pending_message || '', '');
 });
 void test('gaining a level unlocks already-practiced skills and announces the shared eligibility change', async () => {
-    freshSkills();
+    await freshSkills();
     requirePlayingGame(game);
     await useHeroSkill(P_ATTACK_SPELL, 60);
     const level = game.u.ulevel;
@@ -97,7 +97,7 @@ void test('gaining a level unlocks already-practiced skills and announces the sh
     assert.equal(game._pending_message || '', '', 'an extra slot must not repeat existing eligibility');
 });
 void test('a Basic weapon needs two slots for advancement and practice uses its native unsigned range', async () => {
-    freshSkills();
+    await freshSkills();
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(2);
     await useHeroSkill(P_DAGGER, 20);
@@ -117,7 +117,7 @@ void test('a Basic weapon needs two slots for advancement and practice uses its 
     assert.equal(canAdvanceHeroSkill(P_DAGGER), false);
 });
 void test('the first confidence tip waits for acknowledgment and is shown only once', async () => {
-    freshSkills('wizard', { tips: true });
+    await freshSkills('wizard', { tips: true });
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(2);
     const input = resetInputState();
@@ -135,7 +135,7 @@ void test('the first confidence tip waits for acknowledgment and is shown only o
     assert.equal(game._pending_message, 'You feel more confident in your spell casting skills.');
 });
 void test('practice feedback preserves unread combat prose before displaying the training message', async () => {
-    freshSkills();
+    await freshSkills();
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(1);
     await pline('The goblin staggers and barely manages to keep its footing.');
@@ -148,7 +148,7 @@ void test('practice feedback preserves unread combat prose before displaying the
     assert.equal(game._pending_message, 'You feel more confident in your weapon skills.');
 });
 void test('ordinary enhancement trains the selected skill, spends slots, and changes combat ability', async () => {
-    freshSkills();
+    await freshSkills();
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(2);
     await useHeroSkill(P_DAGGER, 20);
@@ -181,7 +181,7 @@ void test('ordinary enhancement trains the selected skill, spends slots, and cha
     assert.equal(game.context.move, 0);
 });
 void test('Basic spells and martial skills require fewer slots than Basic weapons', async () => {
-    const skills = freshSkills('monk');
+    const skills = await freshSkills('monk');
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(1);
     assert.ok(skills != null, 'Expected skills to be initialized');
@@ -196,7 +196,7 @@ void test('Basic spells and martial skills require fewer slots than Basic weapon
     assert.match(game._pending_message, /more skilled in martial arts/);
 });
 void test('practice at a role maximum continues accumulating without offering advancement', async () => {
-    const skills = freshSkills('caveman');
+    const skills = await freshSkills('caveman');
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(3);
     await useHeroSkill(P_DAGGER, 20);
@@ -213,7 +213,7 @@ void test('practice at a role maximum continues accumulating without offering ad
     assert.equal(game._pending_message || '', '');
 });
 void test('the advancement limit blocks ordinary and Wizard speedy advancement', async () => {
-    freshSkills('wizard', { debug: true });
+    await freshSkills('wizard', { debug: true });
     requirePlayingGame(game);
     game.u.skillRecord = Array.from({ length: P_SKILL_LIMIT }, () => P_DAGGER);
     await adjustWeaponSkillSlots(100);
@@ -224,7 +224,7 @@ void test('the advancement limit blocks ordinary and Wizard speedy advancement',
     assert.equal(game._pending_message || '', '');
 });
 void test('waiting and maxed skills are annotated without becoming selectable', async () => {
-    freshSkills('caveman');
+    await freshSkills('caveman');
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(1);
     await useHeroSkill(P_DAGGER, 20);
@@ -250,7 +250,7 @@ void test('waiting and maxed skills are annotated without becoming selectable', 
     assert.equal(game.u.weaponSkills[P_BARE_HANDED_COMBAT].skill, P_BASIC);
 });
 void test('Wizard speedy enhancement is available to every role and still debits slots', async () => {
-    freshSkills('caveman', { debug: true });
+    await freshSkills('caveman', { debug: true });
     requirePlayingGame(game);
     const input = resetInputState();
     const enhancing = doenhance();
@@ -271,7 +271,7 @@ void test('Wizard speedy enhancement is available to every role and still debits
     assert.equal(game.u.weapon_slots, -1);
 });
 void test('advancing a Wizard school identifies its books without encountering them or exercising Wisdom', async () => {
-    freshSkills();
+    await freshSkills();
     requirePlayingGame(game);
     await adjustWeaponSkillSlots(1);
     await useHeroSkill(P_ATTACK_SPELL, 60);
@@ -285,7 +285,7 @@ void test('advancing a Wizard school identifies its books without encountering t
     assert.equal(game.u._exercise?.[2] || 0, 0);
 });
 void test('successful casting trains its real school until #enhance becomes available', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requirePlayingGame(game);
     game.flags.tips = false;
     forceLearnSpell(SPE_FORCE_BOLT);
@@ -303,7 +303,7 @@ void test('successful casting trains its real school until #enhance becomes avai
     assert.match(game._pending_message, /confident in your spell casting skills/);
 });
 void test('a hundred mounted moves grants real riding practice and its eligibility notice', async () => {
-    const skills = freshSkills('knight');
+    const skills = await freshSkills('knight');
     requirePlayingGame(game);
     game.u.usteed = await createSaddledSteed();
     await adjustWeaponSkillSlots(1);

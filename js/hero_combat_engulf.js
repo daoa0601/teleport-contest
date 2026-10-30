@@ -67,7 +67,7 @@ export async function resolveHeroCombatEngulf(defender, attack, { state = game, 
                 })}.`);
             }
             else
-                map_invisible(defender.mx, defender.my);
+                await map_invisible(defender.mx, defender.my);
             return { nativeResult: M_ATTK_HIT, heroDied: false };
         }
     }
@@ -88,7 +88,7 @@ export async function resolveHeroCombatEngulf(defender, attack, { state = game, 
     const display = await startHeroEngulfDisplay(defender, state, publish);
     if (damageType === AD_DGST && rider) {
         await publish('Unfortunately, digesting any of it is fatal.');
-        endHeroEngulfDisplay(display, state);
+        await endHeroEngulfDisplay(display, state);
         const cause = `unwisely tried to eat ${monsterTypeName(species, !!defender.female)}`;
         const died = await finishHeroDeath({ killer: cause, deathCause: cause, deathType: DIED });
         return { nativeResult: M_ATTK_MISS, heroDied: died };
@@ -98,14 +98,14 @@ export async function resolveHeroCombatEngulf(defender, attack, { state = game, 
             return await digestDefender(defender, species, state, { publish, random, rollDice });
         }
         finally {
-            endHeroEngulfDisplay(display, state);
+            await endHeroEngulfDisplay(display, state);
         }
     }
     try {
         damage = await engulfDamage(defender, damageType, damage, state, { publish, random, rollDice });
     }
     finally {
-        endHeroEngulfDisplay(display, state);
+        await endHeroEngulfDisplay(display, state);
     }
     defender.mhp -= damage;
     if (defender.mhp <= 0) {
@@ -265,9 +265,9 @@ async function startHeroEngulfDisplay(defender, state, publish) {
     const heroBody = { mnum: heroSpecies(state) };
     const digest = monsterDigests(heroBody);
     if (!heroIsInvisible(state)) {
-        map_location(state.u.ux, state.u.uy, true);
+        await map_location(state.u.ux, state.u.uy, true);
         const glyph = transientMonsterGlyph(heroBody);
-        show_glyph_cell(defender.mx, defender.my, glyph.ch, glyph.color, false, 0, glyph);
+        await show_glyph_cell(defender.mx, defender.my, glyph.ch, glyph.color, false, 0, glyph);
     }
     await publish(`You ${digest ? 'swallow' : monsterEnfolds(heroBody) ? 'enclose' : 'engulf'} ${monsterName(defender, { state })}${digest ? ' whole' : ''}!`);
     await flush_screen(1);
@@ -275,10 +275,10 @@ async function startHeroEngulfDisplay(defender, state, publish) {
     await state.animationFrame?.();
     return { x: defender.mx, y: defender.my };
 }
-function endHeroEngulfDisplay(display, state) {
+async function endHeroEngulfDisplay(display, state) {
     if (heroIsInvisible(state))
         return;
-    newsym(display.x, display.y);
-    newsym(state.u.ux, state.u.uy);
+    await newsym(display.x, display.y);
+    await newsym(state.u.ux, state.u.uy);
 }
 //# sourceMappingURL=hero_combat_engulf.js.map

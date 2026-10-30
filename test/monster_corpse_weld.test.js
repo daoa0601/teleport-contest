@@ -7,7 +7,7 @@ import { untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('polymorph permits replacing a cursed corpse because corpses do not weld', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const giant = await createMonsterAt('giant', 11, 10, NO_MINVENT);
     await equipMonsterObject(giant, await untimedCorpse(MONSTER_NAME.indexOf('cockatrice'), { cursed: true }), W_WEP);
     giant.weaponCheck = NO_WEAPON_WANTED;

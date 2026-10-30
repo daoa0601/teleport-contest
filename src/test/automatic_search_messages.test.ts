@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('automatic searching appends a discovery to the preceding weapon hit', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 811n });
+    const level = await freshObjectRoom({ gameplaySeed: 811n });
     const door = level.requireAt(9, 10);
     door.typ = SDOOR;
     installPagerInput(resetInputState(), { expected: /lash|hidden door/, limit: 40 });

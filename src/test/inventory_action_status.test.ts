@@ -25,7 +25,7 @@ function screenRow(row: number): string {
 // the next moveloop bot() redraws it. The item-action menu that opens right
 // after the tall inventory menu therefore frames over that damaged status.
 void test('an inventory item action frames over the damaged status window', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     // Eight class headings plus fourteen items: the inventory menu spans 23
     // rows including its (end) pager, deep enough to cover both status rows
     // but still short enough to stay a corner (overlay) menu.
@@ -81,7 +81,7 @@ void test('an inventory item action frames over the damaged status window', asyn
 // the still-suppressed bot() leaves the status blank until the main loop
 // redraws it. The follow-up picker menu therefore frames over blank status.
 void test('a full-screen drop-category menu leaves the status blank for the picker', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     // The "Just picked up:" entry with a called cloak widens the category
     // menu past the corner limit, forcing C's full-screen layout.
     const cloak = await addInventoryObject(CLOAK_OF_MAGIC_RESISTANCE, {
@@ -116,7 +116,7 @@ void test('a full-screen drop-category menu leaves the status blank for the pick
 // stays clear, so the dismissal's docrt()/docorner() redraws the wrecked
 // status window immediately rather than deferring to the next moveloop.
 void test('an unpaid-items overlay redraws the status window at dismissal', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const { shopkeeper, roomno } = await createStaffedShop();
     game.u.ushops = [roomno];
     const types = [DAGGER, CLOAK_OF_MAGIC_RESISTANCE, SCR_IDENTIFY, SCR_LIGHT,

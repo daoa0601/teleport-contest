@@ -11,7 +11,7 @@ import { AMULET_OF_YENDOR, DAGGER } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { knownObject } from './support/game-objects.js';
 void test('#migratemons stops reading the count at the first nonnumeric character', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 12 })];
     const oldest = await createMonsterAt('lichen', 11, 10);
@@ -23,7 +23,7 @@ void test('#migratemons stops reading the count at the first nonnumeric characte
     assert.equal(game._migratingMonsters?.length, 1);
 });
 void test('#migratemons lets a monster carry protected objects to its destination', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 12 })];
     const monster = await createMonsterAt('lichen', 11, 10);
@@ -41,7 +41,7 @@ void test('#migratemons lets a monster carry protected objects to its destinatio
     assert.equal(game.context.move, 0);
 });
 void test('a negative #migratemons count sends existing monsters to the next level', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 12 })];
     const first = await createMonsterAt('lichen', 11, 10);
@@ -57,7 +57,7 @@ void test('a negative #migratemons count sends existing monsters to the next lev
     assert.equal(game.context.move, 0);
 });
 void test('a negative #migratemons count starts with the most recently created monster', async () => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 12 })];
     const oldest = await createMonsterAt('lichen', 11, 10);

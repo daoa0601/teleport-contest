@@ -26,7 +26,7 @@ for (const [type, expected] of [
     [FAKE_AMULET_OF_YENDOR, 'a cheap plastic imitation of the Amulet of Yendor'],
 ] as const) {
     void test(`killer naming identifies ${expected} without exposing that identity during play`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const object = await knownObject(type, { known: false, dknown: false, typeKnown: false,
             bknown: true, blessed: true, rknown: true, greased: true, opoisoned: true,
@@ -62,7 +62,7 @@ for (const [blessed, cursed, expected] of [
     [false, true, 'a potion of unholy water'],
 ] as const) {
     void test(`death text preserves ${expected} beatitude without adding other identification details`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const water = await knownObject(POT_WATER, { blessed, cursed, known: false, dknown: false, typeKnown: false });
         assert.equal(killerObjectName(water), expected);
         assert.equal(water.known, false);
@@ -72,7 +72,7 @@ for (const [blessed, cursed, expected] of [
 }
 
 void test('quantity changes killer grammar to plural without inserting an inventory count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const daggers = await knownObject(DAGGER, { quantity: 3 });
     const water = await knownObject(POT_WATER, { quantity: 2, blessed: true });
     assert.equal(killerObjectName(daggers), 'daggers');
@@ -83,7 +83,7 @@ for (const [name, expected] of [
     ['Excalibur', 'Excalibur'], ['The Orb of Detection', 'the Orb of Detection'],
 ] as const) {
     void test(`an unknown artifact is named ${expected} directly rather than by its base object or user label`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const artifact = await artifactObject(name, { known: false, dknown: false,
             typeKnown: false, quantity: 4, oextra: { oname: 'Bogus' } });
         assert.equal(killerObjectName(artifact), expected);
@@ -102,7 +102,7 @@ for (const [species, quantity, expected] of [
     ['high cleric', 1, 'a high cleric corpse'],
 ] as const) {
     void test(`corpse death text uses ${expected}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const corpse = await knownObject(CORPSE, {
             corpsenm: MONSTER_NAME.indexOf(species), spe: 0, quantity,
             oname: 'an arch-lich', oextra: { omonst: saveMonsterTraits(await createMonsterAt('vampire', 12, 10)) },
@@ -112,7 +112,7 @@ for (const [species, quantity, expected] of [
 }
 
 void test('corpse gender and the neutral cleric name come from the object rather than saved revival traits', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('aligned cleric'), spe: 0 });
     assert.equal(killerObjectName(corpse), 'a cleric corpse');
     corpse.spe = CORPSTAT_FEMALE;
@@ -120,7 +120,7 @@ void test('corpse gender and the neutral cleric name come from the object rather
 });
 
 void test('player fruit names cannot impersonate another death cause', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     changePreferredFruit('a trap door');
     const mold = await knownObject(SLIME_MOLD, { spe: 1, oname: 'dragon breath' });
@@ -130,7 +130,7 @@ void test('player fruit names cannot impersonate another death cause', async () 
 });
 
 void test('identified physical details survive killer naming while inventory annotations do not', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     const statue = await knownObject(STATUE, { corpsenm: MONSTER_NAME.indexOf('Medusa'), spe: CORPSTAT_HISTORIC });
     const figurine = await knownObject(FIGURINE, { corpsenm: MONSTER_NAME.indexOf('newt') });
     const ball = await knownObject(HEAVY_IRON_BALL, { owt: 500, spe: 4, oeroded: 2 });
@@ -147,7 +147,7 @@ void test('identified physical details survive killer naming while inventory ann
 });
 
 void test('killer naming honors Samurai item names and diluted potions', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const ration = await knownObject(FOOD_RATION);
     const water = await knownObject(POT_WATER, { cursed: true, odiluted: true });
     assert.equal(killerObjectName(ration), 'a gunyoki');
@@ -155,7 +155,7 @@ void test('killer naming honors Samurai item names and diluted potions', async (
 });
 
 void test('known tins retain their real contents and preparation knowledge without inventing a preparation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const tin = await knownObject(TIN, { corpsenm: MONSTER_NAME.indexOf('newt'), spe: -4, cknown: false });
     assert.equal(killerObjectName(tin), 'a tin of newt meat');
     tin.cknown = true;

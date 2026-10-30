@@ -9,8 +9,8 @@ import { refreshProperty } from '../js/properties.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
-function dryBridgeOnWaterPlane() {
-    const level = freshObjectRoom();
+async function dryBridgeOnWaterPlane() {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.water_level = createSpecialLevel({ ...game.u.uz });
     const square = level.requireAt(10, 10);
@@ -18,7 +18,7 @@ function dryBridgeOnWaterPlane() {
     square.drawbridgemask = DB_FLOOR;
 }
 void test('descending above a dry raised-bridge bed on the Water Plane names the air bubble', async () => {
-    dryBridgeOnWaterPlane();
+    await dryBridgeOnWaterPlane();
     game.u.levitationTurns = 20;
     refreshProperty('levitation');
     const messages = [];
@@ -26,7 +26,7 @@ void test('descending above a dry raised-bridge bed on the Water Plane names the
     assert.ok(messages.includes('You are floating in a bubble of air.'));
 });
 void test('a loadstone cannot anchor the hero in an air bubble below a raised bridge', async () => {
-    dryBridgeOnWaterPlane();
+    await dryBridgeOnWaterPlane();
     await addInventoryObject(LOADSTONE);
     assert.equal(isSteadfast(game.u, game), false);
 });

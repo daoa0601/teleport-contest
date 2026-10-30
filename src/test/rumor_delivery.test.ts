@@ -16,7 +16,7 @@ function collectRumorPages(): string[] {
 }
 
 void test('a paper rumor introduces its text without announcing a cookie', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pages = collectRumorPages();
 
     await rumors.outRumor(1, BY_PAPER);
@@ -29,7 +29,7 @@ void test('a paper rumor introduces its text without announcing a cookie', async
 });
 
 void test('a blind hero cannot read a paper rumor', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
 
     await rumors.outRumor(1, BY_PAPER);
 
@@ -37,7 +37,7 @@ void test('a blind hero cannot read a paper rumor', async () => {
 });
 
 void test('paper rumors still print when the hero has fainted', async () => {
-    freshObjectRoom({ hero: { uhs: FAINTED } });
+    await freshObjectRoom({ hero: { uhs: FAINTED } });
     const pages = collectRumorPages();
 
     await rumors.outRumor(1, BY_PAPER);
@@ -46,7 +46,7 @@ void test('paper rumors still print when the hero has fainted', async () => {
 });
 
 void test('a cookie fortune is suppressed while the hero has fainted', async () => {
-    freshObjectRoom({ hero: { uhs: FAINTED } });
+    await freshObjectRoom({ hero: { uhs: FAINTED } });
 
     await rumors.outRumor(1, BY_COOKIE);
 
@@ -54,7 +54,7 @@ void test('a cookie fortune is suppressed while the hero has fainted', async () 
 });
 
 void test('other rumor delivery prints the rumor without a reading or speaker introduction', async () => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     const pages = collectRumorPages();
 
     await rumors.outRumor(1, BY_OTHER);

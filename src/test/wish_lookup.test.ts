@@ -20,7 +20,7 @@ for (const [request, type] of [
     ['grey dragon scales', GRAY_DRAGON_SCALES],
 ] as const) {
     void test(`a wish recognizes ${request}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
 
         const result = await readObjectName(request);
 
@@ -30,7 +30,7 @@ for (const [request, type] of [
 }
 
 void test('wishes recognize an assigned type call name within its class', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     recordObjectCall(POT_HEALING, 'restorative');
 
     const result = await readObjectName('potion called restorative');
@@ -40,7 +40,7 @@ void test('wishes recognize an assigned type call name within its class', async 
 });
 
 void test('a class-qualified unknown wish grants a random item of that class', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('wand of nonexistent magic');
 
@@ -49,7 +49,7 @@ void test('a class-qualified unknown wish grants a random item of that class', a
 });
 
 void test('a named subrange wish chooses an item in that range', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('boots');
 
@@ -58,7 +58,7 @@ void test('a named subrange wish chooses an item in that range', async () => {
 });
 
 void test('an unqualified unknown name cannot produce an object', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     assert.equal(await readObjectName('nonexistent magic'), null);
     assert.equal(game.inventory.length, 0);

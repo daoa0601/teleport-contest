@@ -10,7 +10,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('uncursing a dipped shining suit brightens its light after the water glows', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = FOUNTAIN;
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { cursed: true, lamplit: true });
     const input = resetInputState();

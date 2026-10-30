@@ -20,7 +20,7 @@ const damageBonuses = {
 } as const;
 
 void test('two-handed melee adds three halves of Strength while keeping ring damage unchanged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR18(50);
     game.u.udaminc = 2;
@@ -34,7 +34,7 @@ void test('two-handed melee adds three halves of Strength while keeping ring dam
 });
 
 void test('multiple weapon strikes take three quarters of Strength before the two-handed rule', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR18(50);
     const sword = await addInventoryObject(TWO_HANDED_SWORD);
@@ -44,7 +44,7 @@ void test('multiple weapon strikes take three quarters of Strength before the tw
 });
 
 void test('two-handed Strength penalties round away from zero and cannot turn a hit into a miss', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 3;
     const sword = await addInventoryObject(TWO_HANDED_SWORD);
@@ -56,7 +56,7 @@ void test('two-handed Strength penalties round away from zero and cannot turn a 
 });
 
 void test('launched arrows receive ring damage but no Strength, while kicked and unmatched arrows receive both', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR18(50);
     game.u.udaminc = 2;
@@ -71,7 +71,7 @@ void test('launched arrows receive ring damage but no Strength, while kicked and
 });
 
 void test('polymorphed heroes keep ring damage without human Strength bonuses', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('minotaur');
     game.u.acurr.a[A_STR] = 125;
@@ -83,7 +83,7 @@ void test('polymorphed heroes keep ring damage without human Strength bonuses', 
 });
 
 void test('damage skill recognizes the exact wielded weapon, not another dagger of the same type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installHeroWeaponSkills({ [P_DAGGER]: P_EXPERT, [P_TWO_WEAPON_COMBAT]: P_BASIC });
     const primary = await addInventoryObject(DAGGER);
     const alternate = await addInventoryObject(DAGGER);
@@ -99,7 +99,7 @@ void test('damage skill recognizes the exact wielded weapon, not another dagger 
 });
 
 void test('melee practice uses two-weapon combat while a thrown dagger trains its own skill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const skills = installHeroWeaponSkills({ [P_DAGGER]: P_EXPERT, [P_TWO_WEAPON_COMBAT]: P_BASIC });
     const primary = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(primary);
@@ -118,7 +118,7 @@ void test('melee practice uses two-weapon combat while a thrown dagger trains it
 });
 
 void test('a projectile uses its matching launcher for damage skill and training', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const skills = installHeroWeaponSkills({ [P_BOW]: P_EXPERT });
     const bow = await addInventoryObject(BOW);
     const arrow = await knownObject(ARROW);
@@ -133,7 +133,7 @@ void test('a projectile uses its matching launcher for damage skill and training
 });
 
 void test('applied polearms use their skill and ordinary Strength without two-handed scaling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR18(50);
     const skills = installHeroWeaponSkills({ [P_POLEARMS]: P_SKILLED });
@@ -150,7 +150,7 @@ void test('applied polearms use their skill and ordinary Strength without two-ha
 });
 
 void test('riding adds thrust to an ordinary weapon but not to a two-weapon strike', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installHeroWeaponSkills({ [P_DAGGER]: P_EXPERT, [P_TWO_WEAPON_COMBAT]: P_EXPERT, [P_RIDING]: P_EXPERT });
     game.u.usteed = await createSaddledSteed();
     const dagger = await addInventoryObject(DAGGER);
@@ -163,7 +163,7 @@ void test('riding adds thrust to an ordinary weapon but not to a two-weapon stri
 });
 
 void test('raw barehand preparation leaves bonuses and practice to the later damage stage', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 125;
     game.u.udaminc = 10;
@@ -184,7 +184,7 @@ void test('raw barehand preparation leaves bonuses and practice to the later dam
 });
 
 void test('contact flags can disable ring and Strength bonuses without disabling skill', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 125;
     game.u.udaminc = 10;

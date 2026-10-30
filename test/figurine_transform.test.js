@@ -99,7 +99,7 @@ async function transferFigurineToMonster(figurine, monster, timerSeed = 321) {
     return { timer };
 }
 void test('only a viable cursed carried figurine receives a fresh timer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const timer = figTimer(figurine);
@@ -115,7 +115,7 @@ void test('only a viable cursed carried figurine receives a fresh timer', async 
     assert.equal(objectTimers(genocided).length, 0);
 });
 void test('genocide before transformation consumes the figurine without a monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const vital = game.mvitals?.[PM_WUMPUS];
@@ -128,7 +128,7 @@ void test('genocide before transformation consumes the figurine without a monste
     assert.equal(game.level.monsters.length, 0);
 });
 void test('monster acquisition resets the deadline before visible pack transform', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const carrier = await ordinaryMonsterCarrier();
@@ -147,14 +147,14 @@ void test('monster acquisition resets the deadline before visible pack transform
     assert.equal(event.carrier, 'minvent');
     assert.equal(event.message, "You see a wumpus drop out of a leocrotta's pack!");
     assert.ok(carrier.minvent?.includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
     assert.equal(carrier.minvent?.includes(figurine), false);
     assert.equal(carrier.hasInventory, false);
     assert.equal('carrierMid' in figurine, false);
 });
 void test('invisible monster carrier is attributed to thin air', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const carrier = await ordinaryMonsterCarrier({ invisible: true });
@@ -163,11 +163,11 @@ void test('invisible monster carrier is attributed to thin air', async () => {
     assert.ok(event);
     assert.equal(event.message, 'You see a wumpus drop out of thin air!');
     assert.ok(carrier.minvent?.includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(carrier.hasInventory, false);
 });
 void test('invisible monster carrier in a pool is attributed to empty water', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const carrier = await ordinaryMonsterCarrier({ invisible: true });
@@ -176,11 +176,11 @@ void test('invisible monster carrier in a pool is attributed to empty water', as
     const event = await claimTransform(figurine, 1);
     assert.ok(event);
     assert.equal(event.message, 'You see a wumpus drop out of empty water!');
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
 });
 void test('overdue monster-inventory transform stays silent until deletion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const carrier = await ordinaryMonsterCarrier();
@@ -191,11 +191,11 @@ void test('overdue monster-inventory transform stays silent until deletion', asy
     assert.equal(event.overdue, true);
     assert.equal(event.message, null);
     assert.ok(carrier.minvent?.includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(carrier.minvent?.includes(figurine), false);
 });
 void test('blocked monster-carried figurine retains its carrier for retry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const carrier = await ordinaryMonsterCarrier();
@@ -219,7 +219,7 @@ void test('blocked monster-carried figurine retains its carrier for retry', asyn
     assert.equal(figTimer(figurine).deadline, event.retryDeadline);
 });
 void test('cursed carried figurine creates a hostile actor before pack prose', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const event = await claimTransform(figurine, 1);
@@ -231,12 +231,12 @@ void test('cursed carried figurine creates a hostile actor before pack prose', a
     assert.equal(event.monster.female, false);
     assert.ok(game.level.monsters.includes(event.monster));
     assert.ok(game.inventory.includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
     assert.equal(game.inventory.includes(figurine), false);
 });
 void test('a named floating-eye figurine keeps its name and floats from the pack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine({ species: PM_FLOATING_EYE });
     figurine.oextra = { ...(figurine.oextra || {}), oname: 'Iris' };
@@ -245,10 +245,10 @@ void test('a named floating-eye figurine keeps its name and floats from the pack
     assert.ok(event.monster);
     assert.equal(event.monster.name, 'Iris');
     assert.equal(event.message, 'You see an Iris float out of your pack!');
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
 });
 void test('zero disposition initializes a complete non-domestic figurine pet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const event = await claimTransform(figurine, 17);
@@ -263,10 +263,10 @@ void test('zero disposition initializes a complete non-domestic figurine pet', a
     assert.equal(event.monster.edog.apport, 12);
     assert.equal(event.monster.edog.hungrytime, game.moves + 1000);
     assert.equal(game.u.uconduct.pets, 1);
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
 });
 void test('one disposition preserves the familiar birth attitude without taming', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const event = await claimTransform(figurine, 19);
@@ -277,10 +277,10 @@ void test('one disposition preserves the familiar birth attitude without taming'
     assert.equal(event.monster.mpeaceful, 0);
     assert.equal(event.monster.mtame, 0);
     assert.equal(event.monster.pet, false);
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
 });
 void test('overdue blind inventory transform still presents tactile pack prose', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.blindTurns = 20;
     const { figurine } = await carriedFigurine();
@@ -290,14 +290,14 @@ void test('overdue blind inventory transform still presents tactile pack prose',
     assert.equal(event.overdue, true);
     assert.equal(event.message, 'You feel something drop from your pack!');
     assert.ok(game.inventory.includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
 });
 // C invent.c:freeinv_core(): the hero dropping a timed figurine stops its
 // FIG_TRANSFORM timer.  Advancing past the original deadline must not
 // transform anything: no monster appears and the figurine stays put.
 void test('dropping a carried figurine stops its transformation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     const { deadline } = figTimer(figurine);
@@ -317,12 +317,12 @@ void test('dropping a carried figurine stops its transformation', async () => {
 // (steal.c:mdrop_obj has no stop_timer): the floor figurine later
 // transforms where the carrier left it.
 void test('a monster-dropped figurine transforms on the floor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await droppedByCarrierFigurine();
     const x = figurine.ox, y = figurine.oy;
     game.u.ux = x + 2;
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await claimTransform(figurine, 1);
     assert.ok(event);
     assert.ok(event.monster);
@@ -332,19 +332,19 @@ void test('a monster-dropped figurine transforms on the floor', async () => {
     assert.equal(event.monster.my, y);
     assert.equal(event.redraw, true);
     assert.ok(objectsAt(x, y).includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
     assert.equal(objectsAt(x, y).includes(figurine), false);
 });
 void test('floor figurine under hero uses makemon adjacent placement', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await droppedByCarrierFigurine();
     const x = figurine.ox, y = figurine.oy;
     // the hero stands on the figurine's square for this placement case
     game.u.ux = x;
     game.u.uy = y;
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await claimTransform(figurine, 1);
     assert.ok(event);
     assert.ok(event.monster);
@@ -354,16 +354,16 @@ void test('floor figurine under hero uses makemon adjacent placement', async () 
     assert.equal(event.y, y);
     assert.notDeepEqual([event.monster.mx, event.monster.my], [game.u.ux, game.u.uy]);
     assert.equal(Math.max(Math.abs(event.monster.mx - x), Math.abs(event.monster.my - y)), 1);
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
 });
 void test('overdue visible floor transformation is silent before object deletion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await droppedByCarrierFigurine();
     const x = figurine.ox, y = figurine.oy;
     game.u.ux = x + 2;
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await claimTransform(figurine, 1, 25);
     assert.ok(event);
     assert.equal(event.transformed, true);
@@ -371,17 +371,17 @@ void test('overdue visible floor transformation is silent before object deletion
     assert.equal(event.message, null);
     assert.equal(event.redraw, false);
     assert.ok(objectsAt(x, y).includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
 });
 void test('obstructed floor figurine retains its square and schedules one retry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await droppedByCarrierFigurine();
     const x = figurine.ox, y = figurine.oy;
     game.u.ux = x + 2;
     terrainAt(x, y).typ = STONE;
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await claimTransform(figurine, 31);
     assert.ok(event);
     assert.equal(event.carrier, 'floor');
@@ -397,14 +397,14 @@ void test('obstructed floor figurine retains its square and schedules one retry'
     assert.equal(figTimer(figurine).deadline, event.retryDeadline);
 });
 void test('occupied floor square consumes figurine as construction failure', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     // the carrier keeps standing on the drop square: the natural
     // occupier for the construction-failure path
     const { figurine } = await droppedByCarrierFigurine({ relocate: false });
     const x = figurine.ox, y = figurine.oy;
     game.u.ux = x + 2;
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await claimTransform(figurine, 37);
     assert.ok(event);
     assert.equal(event.carrier, 'floor');
@@ -417,7 +417,7 @@ void test('occupied floor square consumes figurine as construction failure', asy
     assert.equal(game.level.monsters.length, 1);
 });
 void test('a floor figurine over water creates a monster which immediately drowns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await droppedByCarrierFigurine({
         species: PM_LEOCROTTA,
@@ -425,7 +425,7 @@ void test('a floor figurine over water creates a monster which immediately drown
     const x = figurine.ox, y = figurine.oy;
     game.u.ux = x + 2;
     terrainAt(x, y).typ = POOL;
-    vision_recalc(0);
+    await vision_recalc(0);
     const event = await claimTransform(figurine, 37);
     assert.ok(event);
     assert.equal(event.monster, null);
@@ -435,7 +435,7 @@ void test('a floor figurine over water creates a monster which immediately drown
     assert.equal(game.level.monsters.filter(monster => monster.mhp > 0).length, 1);
 });
 void test('carried figurine uses whole-map enexto fallback before retrying', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     for (let x = 1; x < COLNO; x++) {
@@ -452,11 +452,11 @@ void test('carried figurine uses whole-map enexto fallback before retrying', asy
     assert.equal(event.monster.mx, game.u.ux + 4);
     assert.equal(event.monster.my, game.u.uy);
     assert.ok(game.inventory.includes(figurine));
-    finishFigurineTimer(event, game);
+    await finishFigurineTimer(event, game);
     assert.equal(figurine.where, 'gone');
 });
 void test('blocked carried figurine retains identity and schedules a bounded retry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { figurine } = await carriedFigurine();
     for (let x = 1; x < COLNO; x++) {

@@ -25,8 +25,8 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function sink(room: ObjectRoomOptions = {}) {
-    const level = freshObjectRoom(room);
+async function sink(room: ObjectRoomOptions = {}) {
+    const level = await freshObjectRoom(room);
     requirePlayingGame(game);
     const location = level.requireAt(game.u.ux, game.u.uy);
     location.typ = SINK;
@@ -54,7 +54,7 @@ async function sip(seed: RngSeed) {
 
 for (const [seed, temperature] of [[26, 'very cold'], [9, 'very warm'], [44, 'hot']] as const) {
     void test(`ordinary ${temperature} tap water does not alter nutrition or health`, async () => {
-        sink();
+        await sink();
         requirePlayingGame(game);
         const hunger = game.u.uhunger;
         const result = await sip(seed);
@@ -67,7 +67,7 @@ for (const [seed, temperature] of [[26, 'very cold'], [9, 'very warm'], [44, 'ho
 }
 
 void test('levitation prevents drinking from the sink', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     grantIntrinsicProperty('levitation', 'outside');
     await sip(1);
@@ -76,7 +76,7 @@ void test('levitation prevents drinking from the sink', async () => {
 });
 
 void test('scalding water damages the current body and teaches visible monsters that fire hurts', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     const observer = await createMonsterAt('dog', 12, 10);
     observer.seen_resistance = M_SEEN_FIRE;
@@ -86,7 +86,7 @@ void test('scalding water damages the current body and teaches visible monsters 
 });
 
 void test('scalding water leaves the human body untouched while hurting a polymorphed body', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     installPolymorphedHero('dog');
     await sip(117);
@@ -95,7 +95,7 @@ void test('scalding water leaves the human body untouched while hurting a polymo
 });
 
 void test('fire resistance prevents scalding damage and is observed by a real nearby monster', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     grantIntrinsicProperty('fireResistance', 'outside');
     const observer = await createMonsterAt('dog', 12, 10);
@@ -107,7 +107,7 @@ void test('fire resistance prevents scalding damage and is observed by a real ne
 });
 
 void test('life saving recovers from fatal scalding water through the ordinary death owner', async () => {
-    sink({ hero: { uhp: 1 } });
+    await sink({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -118,7 +118,7 @@ void test('life saving recovers from fatal scalding water through the ordinary d
 });
 
 void test('the sink releases a real nearby sewer rat', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     await sip(17);
     const rat = game.level.monsters.find(monster => monster.mnum === MONSTER_NAME.indexOf('sewer rat'));
@@ -128,7 +128,7 @@ void test('the sink releases a real nearby sewer rat', async () => {
 });
 
 void test('a blind hero notices something squirmy when a sewer rat emerges', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     setHeroBlindnessTurns(20);
     await sip(17);
@@ -137,7 +137,7 @@ void test('a blind hero notices something squirmy when a sewer rat emerges', asy
 });
 
 void test('genocided sewer rats leave a dirty sink without creating a replacement species', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     assert.ok(game.mvitals !== undefined && game.mvitals !== null, 'Expected game.mvitals to be initialized');
     game.mvitals[MONSTER_NAME.indexOf('sewer rat')] = { born: 0, died: 0, mvflags: G_GENOD };
@@ -147,7 +147,7 @@ void test('genocided sewer rats leave a dirty sink without creating a replacemen
 });
 
 void test('a sink ring becomes a real floor object and can only be found once', async () => {
-    const location = sink();
+    const location = await sink();
     requirePlayingGame(game);
     await sip(1);
     assert.ok(game.level.objects[10] !== undefined && game.level.objects[10] !== null);
@@ -166,7 +166,7 @@ void test('a sink ring becomes a real floor object and can only be found once', 
 });
 
 void test('breaking a sink changes both feature counts and makes a looted ordinary fountain', async () => {
-    const location = sink();
+    const location = await sink();
     requirePlayingGame(game);
     location.looted = S_LRING;
     await sip(27);
@@ -178,7 +178,7 @@ void test('breaking a sink changes both feature counts and makes a looted ordina
 });
 
 void test('animated sink water creates a real water elemental', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     await sip(47);
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('water elemental')));
@@ -186,7 +186,7 @@ void test('animated sink water creates a real water elemental', async () => {
 });
 
 void test('genocided water elementals let animated sink water quiet down', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     assert.ok(game.mvitals !== undefined && game.mvitals !== null, 'Expected game.mvitals to be initialized');
     game.mvitals[MONSTER_NAME.indexOf('water elemental')] = { born: 0, died: 0, mvflags: G_GENOD };
@@ -196,7 +196,7 @@ void test('genocided water elementals let animated sink water quiet down', async
 });
 
 void test('awful tap water awards experience and can raise a level', async () => {
-    sink({ hero: { ulevel: 1, ulevelmax: 1, uexp: 19 } });
+    await sink({ hero: { ulevel: 1, ulevelmax: 1, uexp: 19 } });
     requirePlayingGame(game);
     await sip(16);
     assert.equal(game.u.ulevel, 2);
@@ -204,7 +204,7 @@ void test('awful tap water awards experience and can raise a level', async () =>
 });
 
 void test('sewage drains nutrition and causes a real vomiting delay', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     const hunger = game.u.uhunger;
     await sip(6);
@@ -214,7 +214,7 @@ void test('sewage drains nutrition and causes a real vomiting delay', async () =
 });
 
 void test('toxic tap water uses actual controlled polymorph input and form state', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     grantIntrinsicProperty('polymorphControl', 'outside');
     initRng(11n);
@@ -230,7 +230,7 @@ void test('toxic tap water uses actual controlled polymorph input and form state
 });
 
 void test('an unchanging amulet blocks the sink metamorphosis', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_UNCHANGING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -243,15 +243,15 @@ void test('an unchanging amulet blocks the sink metamorphosis', async () => {
 
 for (const [seed, sound] of [[3, 'clanking'], [14, 'snatches of song']] as const) {
     void test(`sink ${sound} follows hearing and acoustics settings`, async () => {
-        sink();
+        await sink();
         requirePlayingGame(game);
         await sip(seed);
         assert.match(game._pending_message, new RegExp(`You hear ${sound}`));
-        sink({ hero: { deafTurns: 20 } });
+        await sink({ hero: { deafTurns: 20 } });
         requirePlayingGame(game);
         await sip(seed);
         assert.equal(game._pending_message || '', '');
-        sink({ flags: { acoustics: false } });
+        await sink({ flags: { acoustics: false } });
         requirePlayingGame(game);
         await sip(seed);
         assert.equal(game._pending_message || '', '');
@@ -259,14 +259,14 @@ for (const [seed, sound] of [[3, 'clanking'], [14, 'snatches of song']] as const
 }
 
 void test('underwater sink sounds are barely heard', async () => {
-    sink({ hero: { uinwater: true } });
+    await sink({ hero: { uinwater: true } });
     requirePlayingGame(game);
     await sip(3);
     assert.match(game._pending_message, /You barely hear clanking/);
 });
 
 void test('an unaware deaf hero dreams of sink sounds', async () => {
-    sink({ hero: { deafTurns: 20 } });
+    await sink({ hero: { deafTurns: 20 } });
     requirePlayingGame(game);
     await putHeroToSleep(5);
     await sip(3);
@@ -274,7 +274,7 @@ void test('an unaware deaf hero dreams of sink sounds', async () => {
 });
 
 void test('sink stench creates a damaging gas cloud with native enclosure feedback', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     await sip(2);
     const cloud = game.level.regions[0];
@@ -286,7 +286,7 @@ void test('sink stench creates a damaging gas cloud with native enclosure feedba
 });
 
 void test('a breathless body gets a real sink cloud without another enclosure notice', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     installPolymorphedHero('iron golem');
     await sip(2);
@@ -295,7 +295,7 @@ void test('a breathless body gets a real sink cloud without another enclosure no
 });
 
 void test('an overlapping sink cloud does not announce enclosure again', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     await createPoisonGasCloud(game, 10, 10, 1, 4);
     resetInputState().feed(' ');
@@ -306,14 +306,14 @@ void test('an overlapping sink cloud does not announce enclosure again', async (
 });
 
 void test('a hallucinated drain hand replaces the ordinary sip', async () => {
-    sink({ hero: { hallucinationTurns: 30 } });
+    await sink({ hero: { hallucinationTurns: 30 } });
     requirePlayingGame(game);
     await sip(116);
     assert.match(game._pending_message, /a hand reaches up/);
 });
 
 void test('faucet oil uses the ordinary potion effect without creating inventory or floor leftovers', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     await sip(5);
     assert.match(game._pending_message, /That was smooth!/);
@@ -324,7 +324,7 @@ void test('faucet oil uses the ordinary potion effect without creating inventory
 });
 
 void test('observable faucet healing identifies the real potion and restores health', async () => {
-    sink({ hero: { uhp: 1 } });
+    await sink({ hero: { uhp: 1 } });
     requirePlayingGame(game);
     await sip(18);
     assert.ok(game.u.uhp > 1);
@@ -334,7 +334,7 @@ void test('observable faucet healing identifies the real potion and restores hea
 });
 
 void test('blind faucet healing works without identifying the unseen fluid', async () => {
-    sink({ hero: { uhp: 1, blindTurns: 20 } });
+    await sink({ hero: { uhp: 1, blindTurns: 20 } });
     requirePlayingGame(game);
     await sip(18);
     assert.ok(game.u.uhp > 1);
@@ -344,7 +344,7 @@ void test('blind faucet healing works without identifying the unseen fluid', asy
 });
 
 void test('hallucinated faucet healing works without identifying its uncertain appearance', async () => {
-    sink({ hero: { uhp: 1, hallucinationTurns: 20 } });
+    await sink({ hero: { uhp: 1, hallucinationTurns: 20 } });
     requirePlayingGame(game);
     await sip(18);
     assert.ok(game.u.uhp > 1);
@@ -354,7 +354,7 @@ void test('hallucinated faucet healing works without identifying its uncertain a
 });
 
 void test('ambiguous faucet juice resumes through the native stream naming prompt', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     initRng(38n);
     const input = resetInputState();
@@ -382,7 +382,7 @@ void test('ambiguous faucet juice resumes through the native stream naming promp
 });
 
 void test('water from the random faucet selection is rejected before a real juice effect', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     const hunger = game.u.uhunger;
     initRng(298n);
@@ -399,7 +399,7 @@ void test('water from the random faucet selection is rejected before a real juic
 });
 
 void test('quaffing from a sink consumes a turn through the ordinary command', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     initRng(26n);
     resetInputState().feed('y');
@@ -409,7 +409,7 @@ void test('quaffing from a sink consumes a turn through the ordinary command', a
 });
 
 void test('the quaff command reaches the real sink monster branch', async () => {
-    sink();
+    await sink();
     requirePlayingGame(game);
     initRng(47n);
     const input = resetInputState();

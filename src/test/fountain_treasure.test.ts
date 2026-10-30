@@ -14,8 +14,8 @@ import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function fountainUnderHero() {
-    freshObjectRoom();
+async function fountainUnderHero() {
+    await freshObjectRoom();
     requireFixtureGame(game);
     const fountain = game.level.requireAt(game.u.ux, game.u.uy);
     fountain.typ = FOUNTAIN;
@@ -28,7 +28,7 @@ function fountainUnderHero() {
 
 for (const command of ['drink', 'dip'] as const) {
     void test(`${command} discovers a real gem on the fountain floor`, async () => {
-        const fountain = fountainUnderHero();
+        const fountain = await fountainUnderHero();
         requireFixtureGame(game);
         const stone = command === 'dip' ? await addInventoryObject(ROCK) : null;
         const input = resetInputState();
@@ -52,7 +52,7 @@ for (const command of ['drink', 'dip'] as const) {
 }
 
 void test('dipping reveals coins before the discovery message waits for input', async () => {
-    const fountain = fountainUnderHero();
+    const fountain = await fountainUnderHero();
     requireFixtureGame(game);
     const stone = await addInventoryObject(ROCK);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', ...{ num_dunlevs: 20 } })];

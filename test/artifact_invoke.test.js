@@ -15,7 +15,7 @@ import { artifactObject } from './support/game-objects.js';
 import { dropInventoryObject, invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the Staff heals injuries and cures illness, slime, and blindness', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'healer',
         hero: {
             uhp: 4,
@@ -46,7 +46,7 @@ void test('the Staff heals injuries and cures illness, slime, and blindness', as
     assert.equal(game._pending_message, 'You feel better.  You feel better.');
 });
 void test('the Mitre restores a small energy deficit completely', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { uen: 4, uenmax: 20 },
         moves: 70,
     });
@@ -62,7 +62,7 @@ void test('the Mitre restores a small energy deficit completely', async () => {
     assert.equal(mitre.age, 170);
 });
 void test('the Longbow creates arrows through the normal inventory path', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'ranger',
         hero: { ualign: { type: -1, record: 10 } },
         moves: 90,
@@ -86,7 +86,7 @@ void test('the Longbow creates arrows through the normal inventory path', async 
     assert.equal(game.context.move, 1);
 });
 void test('the Eyes show magical enlightenment when invoked', async () => {
-    freshObjectRoom({ role: 'monk', moves: 110 });
+    await freshObjectRoom({ role: 'monk', moves: 110 });
     requirePlayingGame(game);
     game.plname = 'Seer';
     game.u._exercise = [0, 0, 0, 0, 0, 0];
@@ -112,7 +112,7 @@ void test('the Eyes show magical enlightenment when invoked', async () => {
     assert.equal(game.u._exercise[A_WIS], 0);
 });
 void test('the Sceptre turns conflict on', async () => {
-    freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } }, moves: 130 });
+    await freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } }, moves: 130 });
     requirePlayingGame(game);
     const sceptre = await artifactObject('The Sceptre of Might', {
         invlet: 'a',
@@ -125,7 +125,7 @@ void test('the Sceptre turns conflict on', async () => {
     assert.equal(game._pending_message, 'You feel like a rabble-rouser.');
 });
 void test('the Orb turns the hero invisible', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } }, moves: 150 });
+    await freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } }, moves: 150 });
     requirePlayingGame(game);
     const orb = await artifactObject('The Orb of Detection', {
         invlet: 'a',
@@ -138,7 +138,7 @@ void test('the Orb turns the hero invisible', async () => {
     assert.equal(game._pending_message, 'Your body takes on a strange transparency...');
 });
 void test('turning an invoked property off starts its cooldown', async () => {
-    freshObjectRoom({ moves: 170 });
+    await freshObjectRoom({ moves: 170 });
     requirePlayingGame(game);
     const orb = await artifactObject('The Orb of Detection');
     const artifact = artifactByName('The Orb of Detection');
@@ -162,7 +162,7 @@ void test('turning an invoked property off starts its cooldown', async () => {
     assert.equal(messages.at(-1), 'You feel that the crystal ball named the Orb of Detection is ignoring you.');
 });
 void test('another invisibility source stays active when the Orb is invoked', async () => {
-    freshObjectRoom({ moves: 190 });
+    await freshObjectRoom({ moves: 190 });
     requirePlayingGame(game);
     grantIntrinsicProperty('invisible', 'outside', game);
     syncHeroInvisibility(game);
@@ -179,7 +179,7 @@ void test('another invisibility source stays active when the Orb is invoked', as
     assert.deepEqual(messages, ['You feel a surge of power, but nothing seems to happen.']);
 });
 void test('dropping the invoked Orb ends its invisibility', async () => {
-    const level = freshObjectRoom({ role: 'archeologist', moves: 210 });
+    const level = await freshObjectRoom({ role: 'archeologist', moves: 210 });
     requirePlayingGame(game);
     const orb = await artifactObject('The Orb of Detection', {
         invlet: 'a',

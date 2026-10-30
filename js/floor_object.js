@@ -152,10 +152,10 @@ export async function moveObject(object, x, y, state = game) {
     const oldX = object.ox;
     const oldY = object.oy;
     remove_object(object, state);
-    maybeUnhideAt(oldX, oldY, state);
-    newsym(oldX, oldY);
+    await maybeUnhideAt(oldX, oldY, state);
+    await newsym(oldX, oldY);
     await placeObject(object, x, y, state);
-    newsym(x, y);
+    await newsym(x, y);
     return object;
 }
 export function detachFloorObjectUnit(object, state) {

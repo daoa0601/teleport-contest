@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { startLuaCore } from './support/lua-game.js';
 for (const tips of [false, true]) {
     void test(`#wizsmell advertises the configured targeting help key with tips ${tips ? 'enabled' : 'disabled'}`, async (t) => {
-        freshObjectRoom({ flags: { debug: true, tips, verbose: true } });
+        await freshObjectRoom({ flags: { debug: true, tips, verbose: true } });
         if (tips)
             await startLuaCore(t);
         game.commandBindings.bindSpecialKey('!'.charCodeAt(0), 'getpos.help');
@@ -37,12 +37,12 @@ for (const tips of [false, true]) {
     });
 }
 void test('#wizsmell sniffs an unseen monster and removes a stale invisible marker from an empty square', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10);
     dog.minvis = true;
-    newsym(11, 10);
-    map_invisible(12, 10);
+    await newsym(11, 10);
+    await map_invisible(12, 10);
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };
@@ -67,7 +67,7 @@ void test('#wizsmell sniffs an unseen monster and removes a stale invisible mark
     assert.equal(game.context.move, 0);
 });
 void test('#wizsmell reports when the current form cannot detect odors', async () => {
-    freshObjectRoom({ flags: { debug: true }, hero: {
+    await freshObjectRoom({ flags: { debug: true }, hero: {
             umonnum: nameToMonster('floating eye'), umonster: nameToMonster('cave dweller'),
         } });
     requirePlayingGame(game);

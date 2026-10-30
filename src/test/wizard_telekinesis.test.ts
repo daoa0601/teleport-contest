@@ -13,7 +13,7 @@ import { addTrap } from './support/level-state.js';
 
 for (const helpKey of ['?', '!']) {
     void test(`#wiztelekinesis shows the verbose targeting hint for help key ${helpKey}`, async () => {
-        freshObjectRoom({ flags: { debug: true, tips: false, verbose: true } });
+        await freshObjectRoom({ flags: { debug: true, tips: false, verbose: true } });
         game.commandBindings.bindSpecialKey(helpKey.charCodeAt(0), 'getpos.help');
         const prompts: string[] = [];
         resetInputState().beforeRead = () => { prompts.push(game._pending_message); };
@@ -32,7 +32,7 @@ for (const helpKey of ['?', '!']) {
 }
 
 void test('#wiztelekinesis hurtles a selected monster six squares without taking time', async () => {
-    freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('lichen', 11, 10);
 
@@ -46,7 +46,7 @@ void test('#wiztelekinesis hurtles a selected monster six squares without taking
 });
 
 void test('#wiztelekinesis can hurtle the hero without leaving a recovery delay after cancellation', async () => {
-    freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
 
     await runExtendedCommand('wiztelekinesis', '.l\x1b');
@@ -60,7 +60,7 @@ void test('#wiztelekinesis can hurtle the hero without leaving a recovery delay 
 
 for (const [terrain, death] of [[POOL, 'drowning'], [LAVAPOOL, 'burning']] as const) {
     void test(`#wiztelekinesis credits the hero for a goblin's ${death}`, async () => {
-        const level = freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+        const level = await freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
         requirePlayingGame(game);
         level.requireAt(17, 10).typ = terrain;
         const goblin = await createMonsterAt('goblin', 11, 10);
@@ -76,7 +76,7 @@ for (const [terrain, death] of [[POOL, 'drowning'], [LAVAPOOL, 'burning']] as co
 }
 
 void test('#wiztelekinesis gives no kill credit for a fire-resistant monster surrendering to lava', async () => {
-    const level = freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+    const level = await freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     level.requireAt(17, 10).typ = LAVAPOOL;
     const ant = await createMonsterAt('fire ant', 11, 10);
@@ -93,7 +93,7 @@ void test('#wiztelekinesis gives no kill credit for a fire-resistant monster sur
 
 for (const hurtleCockatrice of [false, true]) {
     void test(`#wiztelekinesis credits petrification of ${hurtleCockatrice ? 'the collision target' : 'the hurtled monster'}`, async () => {
-        const level = freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+        const level = await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', hurtleCockatrice ? 12 : 11, 10, NO_MINVENT);
         await createMonsterAt('cockatrice', hurtleCockatrice ? 11 : 12, 10, NO_MINVENT);
@@ -127,7 +127,7 @@ for (const hurtleCockatrice of [false, true]) {
 
 for (const trapType of [PIT, LANDMINE]) {
     void test(`#wiztelekinesis gives no hero kill credit when the hurtled monster dies in a ${trapType === PIT ? 'pit' : 'land mine'}`, async () => {
-        const level = freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+        const level = await freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
         requirePlayingGame(game);
         addTrap(level, trapType, 17, 10);
         const victim = await createMonsterAt(trapType === PIT ? 'goblin' : 'ogre', 11, 10, NO_MINVENT);

@@ -39,7 +39,7 @@ interface WeaponOptions {
     rollOne?: (sides: number) => number;
     animateReturn?: () => Promise<void>;
     // tmp_at(DISP_END, 0): erase a tether that did not make it back.
-    dropTether?: () => void;
+    dropTether?: () => void | Promise<void>;
 }
 
 export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, impactX: number, impactY: number, {
@@ -73,9 +73,9 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
             carried.owornmask = (carried.owornmask ?? 0) | W_WEP;
             carried.worn = true;
             carried.wielded = true;
-            if (cansee(x, y)) newsym(x, y);
+            if (cansee(x, y)) await newsym(x, y);
             // C return_from_mtoss() then falls through to its closing redraw.
-            if (cansee(x, y)) newsym(x, y);
+            if (cansee(x, y)) await newsym(x, y);
             return;
         }
 
@@ -115,7 +115,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
             }
         }
     } else {
-        dropTether?.();
+        await dropTether?.();
         await publishHeardMessage('a loud snap!', publish, state);
     }
 
@@ -124,7 +124,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
     if (!await shipObject(weapon, x, y, options)) {
         const landed = await landFloorObject(weapon, x, y, { ...options, verb: 'drop' });
         if (!landed) {
-            if (cansee(x, y)) newsym(x, y);
+            if (cansee(x, y)) await newsym(x, y);
             return;
         }
     }
@@ -137,5 +137,5 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
             await publish(objectWeight(weapon) > 9 ? 'Splash!' : 'Plop!');
     }
     if (objectShedsLight(weapon)) state.vision_full_recalc = 1;
-    if (cansee(x, y)) newsym(x, y);
+    if (cansee(x, y)) await newsym(x, y);
 }

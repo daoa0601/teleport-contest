@@ -307,7 +307,7 @@ export async function finishHeroThrownObjectLanding({
             await impact.show(x, y);
             await state.animationFrame?.();
         } finally {
-            impact.clear();
+            await impact.clear();
         }
         const { destroyed } = await breakObjectAtLocation(object, {
             x, y, fromInventory: true, inView: cansee(x, y),
@@ -366,7 +366,7 @@ export async function finishHeroThrownObjectLanding({
         await dropBall(x, y, { state, publish });
         if (state.program_state?.gameover) return null;
     }
-    if (cansee(x, y)) newsym(x, y);
+    if (cansee(x, y)) await newsym(x, y);
     if (objectShedsLight(landed ?? object)) state.vision_full_recalc = 1;
     return landed;
 }
@@ -470,7 +470,7 @@ async function flyPhysicalObject({
                         `${ownedObjectName(object, state)} gets stuck in a web!`,
                     );
                     web.tseen = true;
-                    newsym(x, y);
+                    await newsym(x, y);
                 }
                 stoppedBy = 'web';
                 break;
@@ -503,7 +503,7 @@ async function flyPhysicalObject({
                 // monster the hero cannot spot, on a square the hero can
                 // see, leaves a remembered "unseen monster" there.
                 if (cansee(x, y) && !canSpotMonster(contact))
-                    map_invisible(x, y);
+                    await map_invisible(x, y);
                 stoppedBy = 'monster';
                 break;
             }
@@ -536,15 +536,15 @@ async function flyPhysicalObject({
             // erase it before the object continues its flight.
             if (state.level?.at(x, y)?.remembered_glyph?.kind === 'invisible'
                 && cansee(x, y)) {
-                unmapObject(x, y);
-                newsym(x, y);
+                await unmapObject(x, y);
+                await newsym(x, y);
             }
             path.push({ x, y });
             if (display) await display.show({ x, y });
             if (movingLight && captureFlight) {
                 // bhit() keeps DISP_FLASH open across the next light recalc.
                 // Erase the previous projectile only when drawing this step.
-                if (capturedCell) newsym(capturedCell.x, capturedCell.y);
+                if (capturedCell) await newsym(capturedCell.x, capturedCell.y);
                 capturedCell = cansee(x, y) ? { x, y } : null;
                 await captureFlight(object, [{ x, y }], state, glyph, true);
             }
@@ -595,7 +595,7 @@ async function flyPhysicalObject({
         if (!movingLight && captureFlight)
             await captureFlight(object, path, state, glyph);
     } finally {
-        if (capturedCell) newsym(capturedCell.x, capturedCell.y);
+        if (capturedCell) await newsym(capturedCell.x, capturedCell.y);
         await cleanupTransientLight(state);
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
@@ -675,8 +675,8 @@ export async function captureThrownObjectFlight(
         for (const cell of flightPath) {
             if (cansee(cell.x, cell.y)) {
                 if (transientCell)
-                    newsym(transientCell.x, transientCell.y);
-                show_glyph_cell(
+                    await newsym(transientCell.x, transientCell.y);
+                await show_glyph_cell(
                     cell.x, cell.y, glyph.ch, glyph.color,
                     glyph.decgfx, glyph.attr, glyph,
                 );
@@ -692,6 +692,6 @@ export async function captureThrownObjectFlight(
         }
     } finally {
         if (transientCell && !retainGlyph)
-            newsym(transientCell.x, transientCell.y);
+            await newsym(transientCell.x, transientCell.y);
     }
 }

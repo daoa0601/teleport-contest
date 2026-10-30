@@ -8,7 +8,7 @@ import { DOOR, D_CLOSED, D_TRAPPED, D_NODOOR } from '../js/const.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 
 void test('a cursed Master Key cannot overcome a rogue fumbling while untrapping a door', async () => {
-    const level = freshObjectRoom({ role: 'rogue', gameplaySeed: 1n,
+    const level = await freshObjectRoom({ role: 'rogue', gameplaySeed: 1n,
         hero: { ualign: { type: -1, record: 10 }, ulevel: 30, uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('fumbling', 'outside', game);

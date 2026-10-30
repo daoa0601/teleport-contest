@@ -743,14 +743,14 @@ async function applyCloakOnEffects(object: GameObject, state: GameState): Promis
     case CLOAK_OF_PROTECTION: learnObjectType(object.otyp, state); break;
     case MUMMY_WRAPPING:
         if (armorHasOtherPropertySource('invisible', object, state) && !heroIsBlind(state)) {
-            newsym(state.u.ux, state.u.uy);
+            await newsym(state.u.ux, state.u.uy);
             await plineWithContinuation(`You can ${propertyIsActive('seeInvisible', state) ? 'no longer see through yourself' : 'see yourself'}!`);
         }
         break;
     case CLOAK_OF_INVISIBILITY:
         if (!armorHasOtherPropertySource('invisible', object, state) && !heroIsBlind(state)) {
             learnObjectType(object.otyp, state);
-            newsym(state.u.ux, state.u.uy);
+            await newsym(state.u.ux, state.u.uy);
             await plineWithContinuation(`Suddenly you can${propertyIsActive('seeInvisible', state) ? ' see through' : 'not see'} yourself.`);
         }
         break;
@@ -766,11 +766,11 @@ async function applyCloakOnEffects(object: GameObject, state: GameState): Promis
 async function applyCloakOffEffects(object: GameObject, state: GameState): Promise<void> {
     if (heroIsBlind(state)) return;
     if (object.otyp === MUMMY_WRAPPING && propertyIsActive('invisible', state)) {
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         await plineWithContinuation(`You can ${propertyIsActive('seeInvisible', state) ? 'see through yourself' : 'no longer see yourself'}.`);
     } else if (object.otyp === CLOAK_OF_INVISIBILITY && !armorHasOtherPropertySource('invisible', object, state)) {
         learnObjectType(object.otyp, state);
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         await plineWithContinuation(`Suddenly you can ${propertyIsActive('seeInvisible', state) ? 'no longer see through yourself' : 'see yourself'}.`);
     }
 }

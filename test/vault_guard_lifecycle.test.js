@@ -32,7 +32,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { isLavaAt, isPoolAt } from '../js/terrain_properties.js';
 async function guardCorridor({ blocked = true } = {}) {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const vault = createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT });
     level.rooms.push(vault);
@@ -206,7 +206,7 @@ void test('saving a parked guard preserves the obstruction and the pending resto
     game.plname = 'ParkedGuard';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('ParkedGuard', storage), true);
+    assert.equal(await restoreGame('ParkedGuard', storage), true);
     const restored = game.level.monsters.find(monster => monster.m_id === guard.m_id);
     assert.notEqual(restored, guard);
     assert.ok(restored !== undefined && restored !== null, 'Expected restored to be initialized');
@@ -217,7 +217,7 @@ void test('saving a parked guard preserves the obstruction and the pending resto
     assert.equal(game.level.requireAt(12, 10).typ, STONE);
 });
 void test('guard arrival preserves the vault wall restriction for restoration', async () => {
-    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    const level = await freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     const vault = createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT });
     level.rooms.push(vault);

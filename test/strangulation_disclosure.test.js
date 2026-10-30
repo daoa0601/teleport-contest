@@ -21,7 +21,7 @@ async function wearSetupAmulet(amulet) {
 // the disclosure questions start directly and the status line commits
 // HP to zero before the first one.
 void test('strangulation death starts the disclosure without a You die line', async () => {
-    freshObjectRoom({ flags: { bones: false } });
+    await freshObjectRoom({ flags: { bones: false } });
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     await wearSetupAmulet(amulet);

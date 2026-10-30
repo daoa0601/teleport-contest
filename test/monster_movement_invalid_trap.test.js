@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const type of [0, TRAPNUM]) {
     void test(`monster movement reports and avoids an invalid trap of type ${type}`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         requirePlayingGame(game);
         const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
         addTrap(level, type, 11, 10);
@@ -29,7 +29,7 @@ for (const type of [0, TRAPNUM]) {
     });
 }
 void test('movement waits for the trap diagnostic before discovering the hero later in the scan', async () => {
-    const level = freshObjectRoom({ heroX: 11, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 11, heroY: 10 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
     goblin.mux = 15;

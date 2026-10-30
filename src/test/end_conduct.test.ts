@@ -35,7 +35,7 @@ void test('an immediate quit keeps blind and nudist conducts without awarding ac
 });
 
 void test('quit disclosure reports broken conducts and achievements from game history', async () => {
-    freshObjectRoom({ flags: { debug: true, disclose: '-i -a -v -g +c -o', tombstone: false } });
+    await freshObjectRoom({ flags: { debug: true, disclose: '-i -a -v -g +c -o', tombstone: false } });
     requirePlayingGame(game);
     game.iflags.toptenwin = false;
     game.u.uconduct = { wishes: 2, wisharti: 2, weaphit: 1, literate: 3, polypiles: 4, polyselfs: 1, sokocheat: 2 };

@@ -216,16 +216,16 @@ async function detectFurniture() {
                 const previous = glyphAt(x, y)?.glyph;
                 if (IS_FURNITURE(level.requireAt(x, y).typ)) {
                     found++;
-                    magic_map_background(x, y, true);
+                    await magic_map_background(x, y, true);
                 }
                 else if (previous !== undefined && previous >= cmapToGlyph(CmapSymbol.upstair)
                     && previous < cmapToGlyph(CmapSymbol.pool)) {
                     found++;
                     const monster = level.monsters.find(monster => !monster.dead && monster.mx === x && monster.my === y);
                     if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE)
-                        revealMonsterAppearance(monster);
+                        await revealMonsterAppearance(monster);
                     if (!monster || !canSpotMonster(monster))
-                        map_invisible(x, y);
+                        await map_invisible(x, y);
                 }
                 if (glyphAt(x, y)?.glyph !== previous)
                     revealed++;

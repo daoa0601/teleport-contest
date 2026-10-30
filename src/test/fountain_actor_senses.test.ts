@@ -10,9 +10,9 @@ import { vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a blind hero feels a water demon and receives its wish without seeing its gender', async () => {
-    const level = freshObjectRoom({ hero: { blindTurns: 20, uz: { dnum: 0, dlevel: 1 }, ulevel: 1 } });
+    const level = await freshObjectRoom({ hero: { blindTurns: 20, uz: { dnum: 0, dlevel: 1 }, ulevel: 1 } });
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     level.requireAt(10, 10).typ = FOUNTAIN;
     const input = resetInputState();
     const messages: string[] = [];

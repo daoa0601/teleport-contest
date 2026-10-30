@@ -38,7 +38,7 @@ export async function useFigurine(object) {
     stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
     await consumeInventoryItem(object, game);
     if (heroIsBlind(game))
-        map_invisible(x, y);
+        await map_invisible(x, y);
     return { spentTime: true, object: null };
 }
 //# sourceMappingURL=figurine_apply.js.map

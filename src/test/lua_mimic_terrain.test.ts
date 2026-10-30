@@ -48,9 +48,9 @@ for (const { name, symbol, terrain } of [
         game.u.uy = y;
         game.in_mklev = false;
         vision_reset_new_level();
-        vision_recalc(0);
+        await vision_recalc(0);
 
-        newsym(x, y);
+        await newsym(x, y);
         await flush_screen(1);
 
         assert.equal(level.requireAt(x, y).disp_ch, symbol);

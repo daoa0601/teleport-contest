@@ -13,7 +13,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a visible missed trap arrow joins ammunition already lying at the hero', async () => {
-    const level = freshObjectRoom({ hero: { uac: -100 } });
+    const level = await freshObjectRoom({ hero: { uac: -100 } });
     requirePlayingGame(game);
     await floorObject(ARROW, game.u.ux, game.u.uy, {
         quan: 10, dknown: true, known: false, bknown: false,
@@ -30,11 +30,11 @@ void test('a visible missed trap arrow joins ammunition already lying at the her
     assert.equal(arrows[0]?.dknown, true);
 });
 void test('revealing an arrow trap displays its victim before announcing the hit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const centaur = await createMonsterAt('plains centaur', 12, 10, NO_MINVENT);
     centaur.mx = 11;
-    newsym(12, 10);
+    await newsym(12, 10);
     addTrap(level, ARROW_TRAP, 11, 10);
     await triggerImmediateMonsterTrap(centaur, game);
     const glyph = glyphAt(11, 10);

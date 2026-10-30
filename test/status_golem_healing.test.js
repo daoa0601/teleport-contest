@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('a red mold heals an iron golem and displays the restored HP', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPolymorphedHero('iron golem', { hitPoints: 10, maxHitPoints: 40 });
     const mold = await createMonsterAt('red mold', 11, 10, NO_MINVENT);
     await bot();

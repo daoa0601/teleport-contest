@@ -10,7 +10,7 @@ import { requireScreenRow } from './support/screen.js';
 
 for (const polymorphed of [false, true]) {
     void test(`regeneration displays restored ${polymorphed ? 'monster-form' : 'human'} HP`, async () => {
-        freshObjectRoom({ hero: { uhp: 10 } });
+        await freshObjectRoom({ hero: { uhp: 10 } });
         if (polymorphed) installPolymorphedHero('wolf', { hitPoints: 10, maxHitPoints: 40 });
         grantIntrinsicProperty('regeneration', 'outside');
         await bot();

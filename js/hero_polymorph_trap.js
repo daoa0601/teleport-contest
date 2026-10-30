@@ -22,7 +22,7 @@ const IRON = 11;
 const WAND_CLASS = 12;
 export async function triggerHeroPolymorphTrap(trap, viaSitting) {
     requirePlayingGame(game);
-    seeTrap(trap);
+    await seeTrap(trap);
     const steed = game.u.usteed;
     const locomotion = heroLocomotion('step');
     const verb = viaSitting ? 'trigger' : steed
@@ -61,7 +61,7 @@ export async function triggerHeroPolymorphTrap(trap, viaSitting) {
             return;
     }
     deleteTrap(trap);
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await plineWithContinuation(formatFeltMessage('a change coming over you.'));
     await polymorphHero();
 }

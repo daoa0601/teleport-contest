@@ -35,7 +35,7 @@ async function topMessage(): Promise<string> {
 }
 
 void test('a wild confused dog becomes tame and devours offered food with native nutrition', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const dog = await wildMonster();
     dog.mconf = 1;
     const food = await mksobj(TRIPE_RATION, false, false);
@@ -53,7 +53,7 @@ void test('a wild confused dog becomes tame and devours offered food with native
 });
 
 void test('an existing pet catches food before moving it to the floor or receiving nutrition', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet();
     assert.ok(dog.edog);
     const deadline = dog.edog.hungrytime;
@@ -77,7 +77,7 @@ void test('an existing pet catches food before moving it to the floor or receivi
 });
 
 void test('paralysis is shortened and indefinite sleep ends before an untamable target refuses food', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await wildMonster();
     const neighbor = await wildMonster('kitten', 12, 10);
     dog.mfrozen = 7;
@@ -98,7 +98,7 @@ void test('paralysis is shortened and indefinite sleep ends before an untamable 
 
 for (const condition of ['confused', 'paralyzed', 'eating'] as const) {
     void test(`an already tame ${condition} pet refuses to catch food`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dog = await pet();
         assert.ok(dog.edog);
         const deadline = dog.edog.hungrytime;
@@ -116,7 +116,7 @@ for (const condition of ['confused', 'paralyzed', 'eating'] as const) {
 }
 
 void test('a herbivore refuses meat but becomes tame when offered a carrot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pony = await wildMonster('pony');
     const meat = await mksobj(TRIPE_RATION, false, false);
 
@@ -131,7 +131,7 @@ void test('a herbivore refuses meat but becomes tame when offered a carrot', asy
 });
 
 void test('an ordinary ration is caught only once an existing pet is hungry', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const dog = await pet();
     assert.ok(dog.edog);
     const food = await mksobj(FOOD_RATION, false, false);
@@ -147,7 +147,7 @@ void test('an ordinary ration is caught only once an existing pet is hungry', as
 });
 
 void test('catching a corpse larger than the pet preserves the native warning and consumes it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet();
     assert.ok(dog.edog);
     dog.edog.hungrytime = game.moves;
@@ -166,7 +166,7 @@ void test('catching a corpse larger than the pet preserves the native warning an
 });
 
 void test('visible food stops in front of an unseen pet without revealing its identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet();
     dog.minvis = true;
     const food = await mksobj(TRIPE_RATION, false, false);
@@ -178,7 +178,7 @@ void test('visible food stops in front of an unseen pet without revealing its id
 });
 
 void test('catching a treat restores starvation strength and rewards a prior delivery', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const dog = await pet();
     assert.ok(dog.edog);
     dog.mhp = 3;
@@ -204,7 +204,7 @@ void test('catching a treat restores starvation strength and rewards a prior del
 });
 
 void test('blessed taming magic increases a weak bond without consuming the source scroll', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await pet();
     dog.mtame = 8;
     const scroll = await mksobj(SCR_TAMING, false, false);
@@ -218,7 +218,7 @@ void test('blessed taming magic increases a weak bond without consuming the sour
 });
 
 void test('taming magic pacifies a new pet and readies its real weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const goblin = await wildMonster('goblin');
     const weapon = await mksobj(DAGGER, false, false);
     await addObjectToMonsterInventory(goblin, weapon);
@@ -235,7 +235,7 @@ void test('taming magic pacifies a new pet and readies its real weapon', async (
 });
 
 void test('food refused during a full-moon night pacifies a dog but preserves its flight and hold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await wildMonster();
     dog.mflee = 1;
@@ -256,7 +256,7 @@ void test('food refused during a full-moon night pacifies a dog but preserves it
 });
 
 void test('ordinary food refusal still releases the hero from a fleeing grabber', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bear = await wildMonster('owlbear');
     bear.mflee = 1;
     bear.mfleetim = 12;
@@ -273,7 +273,7 @@ void test('ordinary food refusal still releases the hero from a fleeing grabber'
 });
 
 void test('Medusa refuses taming without becoming peaceful', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const medusa = await wildMonster('Medusa');
 
     assert.equal(await tameMonster(medusa), false);
@@ -283,7 +283,7 @@ void test('Medusa refuses taming without becoming peaceful', async () => {
 });
 
 void test('food is still caught when a new pet grows into a genocided form and dies', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bee = await wildMonster('killer bee');
     const queen = MONSTER_NAME.indexOf('queen bee');
     assert.ok(game.mvitals);

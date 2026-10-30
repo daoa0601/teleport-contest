@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';
 
 void test('cursing the secondary weapon during two-weapon combat drops it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const primary = await addInventoryObject(DAGGER, { spe: 1 });
     const secondary = await addInventoryObject(DAGGER);
@@ -30,7 +30,7 @@ void test('cursing the secondary weapon during two-weapon combat drops it', asyn
 });
 
 void test('unholy water announces the count of a dropped secondary weapon stack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const primary = await addInventoryObject(DAGGER, { spe: 1 });
     const secondary = await addInventoryObject(DAGGER, { quan: 3 });

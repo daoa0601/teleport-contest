@@ -34,7 +34,7 @@ async function floorMagicbane({ descriptionKnown = false } = {}) {
 
 for (const condition of ['sighted', 'blind', 'hallucinating'] as const) {
     void test(`looking at an unseen floor artifact while ${condition} preserves appearance knowledge`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const object = await floorMagicbane();
         if (condition === 'blind') setHeroBlindnessTurns(20);
@@ -56,7 +56,7 @@ for (const condition of ['sighted', 'blind', 'hallucinating'] as const) {
 }
 
 void test('blind floor inspection can find an artifact whose appearance was already known', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await floorMagicbane({ descriptionKnown: true });
     setHeroBlindnessTurns(20);
     pushKeys(' ');
@@ -68,7 +68,7 @@ void test('blind floor inspection can find an artifact whose appearance was alre
 });
 
 void test('an automatic pile count does not find an artifact, but explicit look does', async () => {
-    freshObjectRoom({ flags: { pickup: false, pile_limit: 2 } });
+    await freshObjectRoom({ flags: { pickup: false, pile_limit: 2 } });
     requireFixtureGame(game);
     const object = await floorMagicbane();
     await floorObject(APPLE, game.u.ux, game.u.uy);
@@ -88,7 +88,7 @@ void test('an automatic pile count does not find an artifact, but explicit look 
 });
 
 void test('feeling an unfamiliar potion does not reveal its shuffled appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const potion = await floorObject(POT_HEALING, game.u.ux, game.u.uy, {
         known: false, dknown: false, typeKnown: false, bknown: false,
@@ -103,7 +103,7 @@ void test('feeling an unfamiliar potion does not reveal its shuffled appearance'
 });
 
 void test('a generic here-menu entry does not inspect the first object in a pile', async () => {
-    const level = freshObjectRoom({ role: 'priest' });
+    const level = await freshObjectRoom({ role: 'priest' });
     requireFixtureGame(game);
     await floorObject(APPLE, game.u.ux, game.u.uy);
     const object = await floorMagicbane();
@@ -120,7 +120,7 @@ void test('a generic here-menu entry does not inspect the first object in a pile
 
 for (const limit of [0, 1] as const) {
     void test(`automatic one-object inspection with pile limit ${limit}`, async () => {
-        freshObjectRoom({ flags: { pickup: false, pile_limit: limit } });
+        await freshObjectRoom({ flags: { pickup: false, pile_limit: limit } });
         requireFixtureGame(game);
         const object = await floorMagicbane();
         pushKeys(' '.repeat(10));
@@ -151,7 +151,7 @@ async function boxedArtifact() {
 
 for (const condition of ['sighted', 'blind', 'hallucinating'] as const) {
     void test(`looking inside a container while ${condition} names its actual contents`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const { chest, object } = await boxedArtifact();
         if (condition === 'blind') setHeroBlindnessTurns(20);
@@ -168,7 +168,7 @@ for (const condition of ['sighted', 'blind', 'hallucinating'] as const) {
 }
 
 void test('cancelling a take-out menu still finds the named artifact in its container', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { chest, object } = await boxedArtifact();
 
     await applyInventoryObject(chest, 'o\x1b');
@@ -180,7 +180,7 @@ void test('cancelling a take-out menu still finds the named artifact in its cont
 
 for (const blind of [false, true] as const) {
     void test(`undisplayed container extraction ${blind ? 'while blind stays unobserved' : 'first names the item in inventory'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { chest, object } = await boxedArtifact();
         if (blind) setHeroBlindnessTurns(20);
 
@@ -197,7 +197,7 @@ for (const blind of [false, true] as const) {
 
 
 void test('a blind levitating hero cannot inspect or find a known floor artifact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await floorMagicbane({ descriptionKnown: true });
     setHeroBlindnessTurns(20);
@@ -213,7 +213,7 @@ void test('a blind levitating hero cannot inspect or find a known floor artifact
 
 for (const blind of [false, true] as const) {
     void test(`a ${blind ? 'blind' : 'sighted'} Cleric learns floor-item beatitude when it is named`, async () => {
-        freshObjectRoom({ role: 'priest' });
+        await freshObjectRoom({ role: 'priest' });
         const object = await floorMagicbane();
         if (blind) setHeroBlindnessTurns(20);
         pushKeys(' '.repeat(10));
@@ -227,7 +227,7 @@ for (const blind of [false, true] as const) {
 }
 
 void test('an identified floor artifact uses its personal noun and definite article', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const object = await floorMagicbane();
     fullyIdentifyObject(object);
@@ -241,7 +241,7 @@ void test('an identified floor artifact uses its personal noun and definite arti
 });
 
 void test('a blind content display finds a previously seen artifact only once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { chest, object } = await boxedArtifact();
     object.dknown = true;
@@ -258,7 +258,7 @@ void test('a blind content display finds a previously seen artifact only once', 
 });
 
 void test('put-in feedback first finds an uninspected item before linking it into the container', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await addInventoryObject(CHEST, {
         initialize: false, invlet: 'a', olocked: false, otrapped: false,
     });
@@ -280,7 +280,7 @@ void test('put-in feedback first finds an uninspected item before linking it int
 
 
 void test('the punishment chain does not count toward automatic pile suppression', async () => {
-    freshObjectRoom({ flags: { pickup: false, pile_limit: 3 } });
+    await freshObjectRoom({ flags: { pickup: false, pile_limit: 3 } });
     requireFixtureGame(game);
     pushKeys(' '.repeat(20));
     await punishHero(null, game);

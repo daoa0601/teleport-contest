@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const admission of ['ordinary', 'forceTrap', 'failedUntrap', 'forceBungle', 'fumbling']) {
     void test(`known bear-trap avoidance respects ${admission}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         if (admission === 'fumbling') {
             const boots = await addInventoryObject(FUMBLE_BOOTS);
@@ -46,7 +46,7 @@ for (const [airborne, forced, sitting] of [
     ['flying', false, true],
 ]) {
     void test(`${airborne} over a bear trap${forced ? ' when forced' : sitting ? ' when sitting' : ''}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         pushKeys(' '.repeat(80));
         if (airborne === 'levitation') {
@@ -71,7 +71,7 @@ for (const [airborne, forced, sitting] of [
     });
 }
 void test('hallucinated bear-trap feedback can use the current female role name', async () => {
-    freshObjectRoom({ role: 'caveman', flags: { female: true }, hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ role: 'caveman', flags: { female: true }, hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     pushKeys(' '.repeat(80));
     const boots = await addInventoryObject(LEVITATION_BOOTS);

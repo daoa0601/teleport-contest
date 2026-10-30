@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a grounded monster walking near a buried corpse hurries its zombification', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = placeCreatedObject(await corpseObject(MONSTER_NAME.indexOf('gnome')), 14, 10);
     await buryObject(corpse);

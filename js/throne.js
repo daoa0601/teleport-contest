@@ -74,15 +74,15 @@ function heroLuck() {
 function inVladsTower() {
     return (game.u.uz ? game.dungeons[game.u.uz.dnum]?.dname : undefined) === "Vlad's Tower";
 }
-function removeThrone(x, y) {
+async function removeThrone(x, y) {
     const location = game.level?.at?.(x, y);
     if (!location)
         return;
     location.typ = ROOM;
     location.flags = 0;
     location.looted = 0;
-    map_background(x, y, false);
-    newsym_force(x, y);
+    await map_background(x, y, false);
+    await newsym_force(x, y);
 }
 async function announceAttributeChange(attribute, amount, conditional) {
     const result = adjustAttribute(attribute, amount, game);
@@ -142,7 +142,7 @@ async function grantSeeInvisible() {
         }
     }
     grantIntrinsicProperty('seeInvisible', 'outside', game);
-    newsym(hero.ux, hero.uy);
+    await newsym(hero.ux, hero.uy);
 }
 async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
     switch (effect) {
@@ -206,7 +206,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
                 }
                 else {
                     await plineWithContinuation('An image forms in your mind.');
-                    mapLevel();
+                    await mapLevel();
                 }
             }
             else {
@@ -243,7 +243,7 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
         case 3:
         case 4:
             await makeWish();
-            removeThrone(x, y);
+            await removeThrone(x, y);
             await plineWithContinuation('The throne disintegrates, having spent its power.');
             break;
         case 5:
@@ -367,7 +367,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
         if (game.flags?.debug
             && await promptYesNo('Analyze throne?', 'n') !== 'y')
             return;
-        removeThrone(x, y);
+        await removeThrone(x, y);
         await plineWithContinuation(`The throne ${cansee(x, y) ? 'vanishes' : 'has vanished'} in a puff of logic.`);
     }
 }

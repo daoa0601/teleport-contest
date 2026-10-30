@@ -15,7 +15,7 @@ for (const { source, type, objectClass, style, cause } of [
     { source: 'a cold explosion', type: -22, objectClass: 0, style: EXPL_FROSTY, cause: 'killed by ball of cold' },
 ]) {
     void test(`death from ${source} uses the native death reason and killer article`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             hero: { uhp: 1, uhpmax: 100, urexp: 100 },
             flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
         });

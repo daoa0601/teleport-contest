@@ -23,7 +23,7 @@ import { createMonsterAt } from './support/monsters.js';
 // round trip, exactly as it does when its level is re-entered from the cache.
 void test('a cancelled shapechanger returns to its natural form across a save and restore', async () => {
     initRng(6102);
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'wizard',
         hero: { ualignbase: [0, 0] },
         flags: { female: false, initgend: 0 },
@@ -42,7 +42,7 @@ void test('a cancelled shapechanger returns to its natural form across a save an
     resetGame();
     initRng(6102);
     game.nhDisplay = new GameDisplay(null);
-    assert.equal(restoreGame('Cham', storage), true);
+    assert.equal(await restoreGame('Cham', storage), true);
     const level = game.level;
     assert.ok(level instanceof GameMap, 'Expected the saved level to be restored');
     const restored = level.monsters[0];
@@ -66,7 +66,7 @@ void test('a cancelled shapechanger returns to its natural form across a save an
 // dismisses the line at cls()'s message flush.
 void test('the restore shape pass senses only and paints nothing behind its message', async () => {
     initRng(6107);
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'wizard',
         hero: { ualignbase: [0, 0] },
         flags: { female: false, initgend: 0 },
@@ -81,7 +81,7 @@ void test('the restore shape pass senses only and paints nothing behind its mess
     resetGame();
     initRng(6107);
     game.nhDisplay = new GameDisplay(null);
-    assert.equal(restoreGame('Window', storage), true);
+    assert.equal(await restoreGame('Window', storage), true);
     const restored = game.level?.monsters[0];
     assert.ok(restored);
     const input = resetInputState();
@@ -109,7 +109,7 @@ void test('the restore shape pass senses only and paints nothing behind its mess
 // yet the messages after it still find the hero seeing nothing.
 void test('a light-emitting revert during the restore shape pass does not restore sight', async () => {
     initRng(6113);
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'wizard',
         hero: { ualignbase: [0, 0] },
         flags: { female: false, initgend: 0 },
@@ -129,7 +129,7 @@ void test('a light-emitting revert during the restore shape pass does not restor
     resetGame();
     initRng(6113);
     game.nhDisplay = new GameDisplay(null);
-    assert.equal(restoreGame('Glow', storage), true);
+    assert.equal(await restoreGame('Glow', storage), true);
     const input = resetInputState();
     installPagerInput(input, { expected: /turns into|welcome back/, limit: 4 });
     const sightAtRevert = [];

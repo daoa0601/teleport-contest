@@ -13,7 +13,7 @@ import { applyRayFloorFeatures } from '../js/zap.js';
 import { knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createSpecialLevel } from './support/topology.js';
-function secretDoor({ rogue = true, blind = true } = {}) {
+async function secretDoor({ rogue = true, blind = true } = {}) {
     const level = freshPlayableRoom({ heroX: 11, flags: { verbose: false, acoustics: false } });
     requirePlayingGame(game);
     if (rogue)
@@ -23,7 +23,7 @@ function secretDoor({ rogue = true, blind = true } = {}) {
     door.typ = SDOOR;
     door.doormask = D_LOCKED;
     vision_note_blocker_change(12, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), !blind);
     return door;
 }
@@ -32,7 +32,7 @@ for (const caller of [
     { name: 'probing', reveal: async () => { await zapMapAt(12, 10, await knownObject(WAN_PROBING)); } },
 ]) {
     void test(`${caller.name} revealing an unseen Rogue door gives a draft without verbose messages`, async () => {
-        const door = secretDoor();
+        const door = await secretDoor();
         door.arboreal_sdoor = 1;
         door.candig = true;
         await caller.reveal();
@@ -44,7 +44,7 @@ for (const caller of [
         assert.equal(game._pending_message, 'You feel a draft.');
     });
     void test(`${caller.name} gives a chaotic hallucinating hero a military draft reaction`, async () => {
-        secretDoor();
+        await secretDoor();
         requirePlayingGame(game);
         game.u.hallucinationTurns = 10;
         game.u.ualign.type = -1;
@@ -54,7 +54,7 @@ for (const caller of [
         assert.match(game._pending_message ?? '', /^You feel like (protesting|fleeing)\.$/);
     });
     void test(`${caller.name} lets a sleeping hero dream about an unseen Rogue doorway draft`, async () => {
-        secretDoor();
+        await secretDoor();
         await putHeroToSleep(3);
         await caller.reveal();
         await flush_screen(1);
@@ -62,7 +62,7 @@ for (const caller of [
     });
     for (const condition of ['deaf', 'levitating', 'underwater']) {
         void test(`${caller.name} still gives the unseen Rogue doorway draft when the hero is ${condition}`, async () => {
-            secretDoor();
+            await secretDoor();
             if (condition === 'deaf')
                 setPropertyTimeout('deaf', 10);
             else if (condition === 'levitating')
@@ -75,27 +75,27 @@ for (const caller of [
         });
     }
     void test(`${caller.name} gives a draft even when stone separates the hero from the Rogue doorway`, async () => {
-        secretDoor({ blind: false });
+        await secretDoor({ blind: false });
         requirePlayingGame(game);
         game.u.ux = 10;
         for (let y = 8; y <= 12; y++) {
             game.level.requireAt(11, y).typ = STONE;
             vision_note_blocker_change(11, y);
         }
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(cansee(12, 10), false);
         await caller.reveal();
         await flush_screen(1);
         assert.equal(game._pending_message, 'You feel a draft.');
     });
     void test(`${caller.name} announces a visible Rogue door instead of a draft`, async () => {
-        secretDoor({ blind: false });
+        await secretDoor({ blind: false });
         await caller.reveal();
         await flush_screen(1);
         assert.match(game._pending_message ?? '', /reveals a secret door\.$/);
     });
     void test(`${caller.name} revealing an unseen ordinary-level door gives no draft`, async () => {
-        const door = secretDoor({ rogue: false });
+        const door = await secretDoor({ rogue: false });
         await caller.reveal();
         await flush_screen(1);
         assert.equal(door.typ, DOOR);

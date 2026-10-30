@@ -135,12 +135,12 @@ export async function hitMonsterWithWand(monster: Monster, wand: GameObject, {
     }
     case WAN_CANCELLATION:
     case SPE_CANCELLATION:
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         await cancelMonster(monster, { state, attackLevel });
         break;
     case WAN_TELEPORTATION:
     case SPE_TELEPORT_AWAY:
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         reveal = !await teleportMonsterByHero(monster, { state });
         learned = canSpotMonster(monster);
         break;
@@ -210,7 +210,7 @@ export async function hitMonsterWithWand(monster: Monster, wand: GameObject, {
         wake = await fleshMonster(monster, state);
         break;
     case SPE_DRAIN_LIFE:
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
         await drainMonster(monster, attackLevel, state);
         break;
     case WAN_NOTHING:
@@ -226,7 +226,7 @@ export async function hitMonsterWithWand(monster: Monster, wand: GameObject, {
         if (!state.program_state?.gameover) await respondToImmediateMagic(monster, state);
         if (monster.isshk && !state.u.ushops?.length) hotPursuitShopkeeper(monster, state);
     }
-    if (reveal && alive(monster) && cansee(x, y) && !canSpotMonster(monster)) map_invisible(x, y);
+    if (reveal && alive(monster) && cansee(x, y) && !canSpotMonster(monster)) await map_invisible(x, y);
     if (learned) learnWand(wand, { state });
     return result;
 }
@@ -244,13 +244,13 @@ async function revealLockMimic(monster: Monster, state: PlayingGameState) {
 
 async function sleepMonsterWithMagic(monster: Monster, duration: number, state: PlayingGameState) {
     if (!monster.msleeping && !monster.mfrozen && [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster)))
-        revealMonsterAppearance(monster);
+        await revealMonsterAppearance(monster);
     if (monsterResistsSleep(monster) || monsterResistsEffect(monster, 12)) {
         await shieldeff(monster.mx, monster.my, state);
         return;
     }
-    if (!putMonsterToSleep(monster, duration)) return;
-    finishMonsterEating(monster, state);
+    if (!await putMonsterToSleep(monster, duration)) return;
+    await finishMonsterEating(monster, state);
     if (monster === state.u.ustuck && !state.u.uswallow && !heroFormSticks(state)) {
         await pline(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
         await releaseHeroFromMonster(monster, { state });
@@ -285,7 +285,7 @@ async function healMonsterWithMagic(monster: Monster, spell: GameObject, state: 
     if (canSeeMonster(monster)) {
         if (M_AP_TYPE(monster) === M_AP_OBJECT && monster.mappearance === 0) {
             await setMimicAppearance(monster);
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         } else if (M_AP_TYPE(monster) === M_AP_OBJECT) {
             const appearance = monster.mappearance;
             if (appearance === undefined) throw new Error('An object mimic requires an object appearance.');

@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('an explosion displays the hero injury on the next status flush', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await bot();
     pushKeys(' ');
 

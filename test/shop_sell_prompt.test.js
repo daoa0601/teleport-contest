@@ -25,7 +25,7 @@ for (const { label, callName, personalName, expected } of [
 ]) {
     for (const quantity of [1, 2]) {
         void test(`a credit offer for ${quantity === 1 ? 'a potion' : 'two potions'} with ${label} preserves the question`, async (t) => {
-            freshObjectRoom({ flags: { verbose: false } });
+            await freshObjectRoom({ flags: { verbose: false } });
             const potion = await addInventoryObject(POT_HEALING, {
                 quan: quantity, typeKnown: false, known: false,
                 oextra: { oname: personalName },
@@ -67,7 +67,7 @@ for (const { label, callName, personalName, expected } of [
 ]) {
     for (const quantity of [1, 2]) {
         void test(`dropping ${quantity === 1 ? 'a potion' : 'two potions'} with ${label} preserves the sale question`, async () => {
-            freshObjectRoom({ flags: { verbose: false } });
+            await freshObjectRoom({ flags: { verbose: false } });
             const potion = await addInventoryObject(POT_HEALING, {
                 quan: quantity, typeKnown: false, known: false,
                 oextra: { oname: personalName },
@@ -111,7 +111,7 @@ for (const { label, keeperName, callName, personalName, expected } of [
         expected: /for your bag and its contents\.  Sell them\?/ },
 ]) {
     void test(`dropping a filled bag with ${label} keeps its contents in the sale question`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         const bag = await addInventoryObject(BAG_OF_HOLDING, {
             initialize: false, typeKnown: false, known: false, cknown: true,
             oextra: { oname: personalName },

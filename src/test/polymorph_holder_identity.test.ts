@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const visible of [false, true]) {
     void test(`polymorph remembers ${visible ? 'a visible' : 'an unseen'} holder before becoming eyeless`, async () => {
-        freshObjectRoom({ flags: { debug: true } });
+        await freshObjectRoom({ flags: { debug: true } });
         if (visible) installPolymorphedHero('mind flayer');
         const python = await createMonsterAt('python', 11, 10);
         python.minvis = 1;

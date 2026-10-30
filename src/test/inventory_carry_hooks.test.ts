@@ -16,7 +16,7 @@ for (const [otyp, achievement] of [
 ]) {
     void test(`picking up invocation object ${otyp} records its achievement`, async t => {
         assert.ok(otyp !== undefined && achievement !== undefined);
-        freshObjectRoom();
+        await freshObjectRoom();
         await floorObject(otyp, game.u.ux, game.u.uy);
         const input = resetInputState();
         planInput(input, t, []);
@@ -27,7 +27,7 @@ for (const [otyp, achievement] of [
 }
 
 void test('picking up a container clears its contents no-charge flags outside a shop', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await floorObject(SACK, game.u.ux, game.u.uy, { cknown: true });
     const dagger = await knownObject(DAGGER, { no_charge: true });
     await addCreatedObjectToContainer(sack, dagger);
@@ -39,7 +39,7 @@ void test('picking up a container clears its contents no-charge flags outside a 
 });
 
 void test('recovering a thrown weapon fills an empty quiver even when autoquiver is off', async t => {
-    freshObjectRoom({ flags: { autoquiver: false, pickup_thrown: true } });
+    await freshObjectRoom({ flags: { autoquiver: false, pickup_thrown: true } });
     const dagger = await floorObject(DAGGER, game.u.ux, game.u.uy, { how_lost: LOST_THROWN });
     const input = resetInputState();
     planInput(input, t, []);

@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const protection of ['armor', 'half physical damage', 'half spell damage', 'cold resistance']) {
     void test(`Asmodeus casts level-scaled cold magic against ${protection}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
         requirePlayingGame(game);
         const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         asmodeus.mpeaceful = false;
@@ -47,7 +47,7 @@ for (const protection of ['armor', 'half physical damage', 'half spell damage', 
 }
 for (const failure of ['cancelled', 'cooldown', 'zero level', 'fumble', 'confused fumble']) {
     void test(`Asmodeus cannot cast cold magic with ${failure}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
         requirePlayingGame(game);
         const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         asmodeus.mpeaceful = false;
@@ -74,7 +74,7 @@ for (const failure of ['cancelled', 'cooldown', 'zero level', 'fumble', 'confuse
     });
 }
 void test('Asmodeus freezes the hero square even when the hero resists cold', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true, coldResistance: true, waterWalking: true } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true, coldResistance: true, waterWalking: true } });
     requirePlayingGame(game);
     const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     asmodeus.mpeaceful = false;
@@ -91,7 +91,7 @@ void test('Asmodeus freezes the hero square even when the hero resists cold', as
 });
 for (const blinded of [false, true]) {
     void test(`${blinded ? 'Blinded' : 'Sighted'} Asmodeus remembers cold resistance and curses instead of casting again`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true, coldResistance: true } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true, coldResistance: true } });
         requirePlayingGame(game);
         const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         asmodeus.mpeaceful = false;
@@ -118,7 +118,7 @@ for (const blinded of [false, true]) {
     });
 }
 void test('a blinded witness forgets cold resistance when a cold spell damages the hero', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, seeInvisible: true } });
     requirePlayingGame(game);
     const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     asmodeus.mpeaceful = false;
@@ -136,7 +136,7 @@ void test('a blinded witness forgets cold resistance when a cold spell damages t
     assert.equal(witness.seen_resistance, M_SEEN_FIRE, 'Native monstunseesu clears only the resistance disproved by the spell');
 });
 void test('Asmodeus wastes a cold spell at a false nearby target', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, seeInvisible: true, displaced: true } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, seeInvisible: true, displaced: true } });
     requirePlayingGame(game);
     const asmodeus = await createMonsterAt('Asmodeus', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     asmodeus.mpeaceful = false;
@@ -156,7 +156,7 @@ void test('Asmodeus wastes a cold spell at a false nearby target', async () => {
 });
 for (const antimagic of [false, true]) {
     void test(`an Angel's close-range missile shower ${antimagic ? 'bounces off antimagic' : 'uses fresh damage after the spell pre-roll'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, halfSpellDamage: true, antimagic } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: -1000, halfSpellDamage: true, antimagic } });
         requirePlayingGame(game);
         const angel = await createMonsterAt('Angel', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         angel.m_lev = 10;

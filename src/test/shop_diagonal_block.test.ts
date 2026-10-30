@@ -13,7 +13,7 @@ import { withMessagePages } from './support/planned-input.js';
 
 for (const direction of ['exit', 'entry'] as const) {
     void test(`a keeper blocks diagonal ${direction} through a broken entrance on a level of shops`, async () => {
-        freshObjectRoom({ left: 3, right: 68,
+        await freshObjectRoom({ left: 3, right: 68,
             hero: { ux: direction === 'exit' ? 9 : 8, uy: direction === 'exit' ? 11 : 10 } });
         requirePlayingGame(game);
         const { shopkeeper, roomno } = await createStaffedShop({ left: 9, keeperX: 9, doorX: 8 });

@@ -45,7 +45,7 @@ async function billedGlob() {
 }
 
 void test('a billed glob returned into shop stock leaves no charge for the absorbed identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     const stock = placeCreatedObject(await glob(), 12, 10);
     const incoming = await billedGlob();
@@ -58,7 +58,7 @@ void test('a billed glob returned into shop stock leaves no charge for the absor
 });
 
 void test('two billed globs combine their recorded charges, not their billed quantities', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { shopkeeper } = await createStaffedShop();
     const stock = placeCreatedObject(await glob(), 12, 10);
@@ -74,7 +74,7 @@ void test('two billed globs combine their recorded charges, not their billed qua
 });
 
 void test('a donated grown glob pays down shop debt and borrowed gold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     placeCreatedObject(await glob(), 12, 10);
     const incoming = await glob();
@@ -94,7 +94,7 @@ void test('a donated grown glob pays down shop debt and borrowed gold', async ()
 });
 
 void test('a glob donation clears a smaller debt and adds the remainder to credit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     placeCreatedObject(await glob(), 12, 10);
     const incoming = await glob();
@@ -112,7 +112,7 @@ void test('a glob donation clears a smaller debt and adds the remainder to credi
 });
 
 void test('player material absorbed by a billed glob increases its outstanding price', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await createStaffedShop();
     const stock = placeCreatedObject(await glob(), 12, 10);
@@ -129,7 +129,7 @@ void test('player material absorbed by a billed glob increases its outstanding p
 });
 
 void test('shop material mixed into a player glob remains owed through a used-up charge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     const owned = placeCreatedObject(await glob({ no_charge: true }), 12, 10);
     const incoming = await billedGlob();
@@ -150,7 +150,7 @@ void test('shop material mixed into a player glob remains owed through a used-up
 });
 
 void test('mixing a billed glob into a player glob prints the native demand even for a deaf hero', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     placeCreatedObject(await glob({ no_charge: true }), 12, 10);
     const incoming = await billedGlob();
@@ -164,7 +164,7 @@ void test('mixing a billed glob into a player glob prints the native demand even
 });
 
 void test('merging two player globs inside a staffed shop creates no charge or credit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     placeCreatedObject(await glob({ no_charge: true }), 12, 10);
     const incoming = await glob();
@@ -182,7 +182,7 @@ void test('merging two player globs inside a staffed shop creates no charge or c
 });
 
 void test('a recently dropped glob can join an ordinary floor glob', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const settled = placeCreatedObject(await glob(), 12, 10);
     const incoming = await glob({ how_lost: LOST_DROPPED });
     const weight = settled.owt + incoming.owt;
@@ -194,7 +194,7 @@ void test('a recently dropped glob can join an ordinary floor glob', async () =>
 });
 
 void test('absorbing a glob preserves the survivor name and rounds relative age', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.moves = 100;
     const settled = placeCreatedObject(await glob({ age: 10 }), 12, 10);
@@ -207,7 +207,7 @@ void test('absorbing a glob preserves the survivor name and rounds relative age'
 });
 
 void test('a partly eaten glob retains its full mass while adding the incoming nutrition', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const settled = await glob();
     const incoming = await glob();
     settled.owt *= 2;
@@ -223,7 +223,7 @@ void test('a partly eaten glob retains its full mass while adding the incoming n
 });
 
 void test('a shop that does not sell food gives no credit for an absorbed glob', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop({ shopType: SHOPBASE + 1 });
     const stock = placeCreatedObject(await glob(), 12, 10);
     const incoming = await glob();
@@ -241,7 +241,7 @@ void test('a shop that does not sell food gives no credit for an absorbed glob',
 });
 
 void test('a glob starts shrinking at the rounded average of the two prior deadlines', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.moves = 100;
     const settled = placeCreatedObject(await glob({ age: 0 }), 12, 10);
@@ -256,13 +256,13 @@ void test('a glob starts shrinking at the rounded average of the two prior deadl
     game.moves = 161;
     const timer = claimNextDueObjectTimer(game, game.moves);
     assert.ok(timer);
-    runClaimedGlobTimer(timer, game, game.moves);
+    await runClaimedGlobTimer(timer, game, game.moves);
 
     assert.equal(settled.owt, weight - 1);
 });
 
 void test('floor-to-floor absorption keeps ownership on the floor until billing is resolved', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const { shopkeeper } = await createStaffedShop();
     const settled = placeCreatedObject(await glob(), 12, 10);

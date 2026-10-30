@@ -390,7 +390,7 @@ async function sleepNaturalTarget(monster: Monster, context: HeroNaturalEffectCo
         await shieldeff(monster.mx, monster.my, state);
         return;
     }
-    if (!putMonsterToSleep(monster, duration)) return;
+    if (!await putMonsterToSleep(monster, duration)) return;
     if (!heroIsBlind(state)) await publish(`${subject(monster, context)} is put to sleep by you!`);
     if (state.u.ustuck === monster && !state.u.uswallow && !heroFormSticks(state)) {
         await publish(`${possessiveName(subject(monster, context))} grip relaxes.`);

@@ -9,7 +9,7 @@ import { freshObjectRoom } from './object-room.js';
 import { installPagerInput } from './pager-input.js';
 
 export async function prepareSpellCaster(species: string, level: number) {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, coldResistance: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, coldResistance: true } });
     requirePlayingGame(game);
     game.level.flags.rndmongen = false;
     const caster = await createMonsterAt(species, 11, 10, MM_NOWAIT | NO_MINVENT);

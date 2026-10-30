@@ -11,7 +11,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('normal ^T spends energy and nutrition after controlled teleport and pickup', async () => {
-    freshObjectRoom({ flags: { tips: false, pickup: true }, hero: { ulevel: 12, uen: 50, uhunger: 900 } });
+    await freshObjectRoom({ flags: { tips: false, pickup: true }, hero: { ulevel: 12, uen: 50, uhunger: 900 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('teleportation', 'outside');
     grantIntrinsicProperty('teleportControl', 'outside');
@@ -25,7 +25,7 @@ void test('normal ^T spends energy and nutrition after controlled teleport and p
     assert.equal(game.context.move, 1);
 });
 void test('normal ^T refuses insufficient energy without spending time or nutrition', async () => {
-    freshObjectRoom({ hero: { ulevel: 12, uen: 29, uhunger: 900 } });
+    await freshObjectRoom({ hero: { ulevel: 12, uen: 29, uhunger: 900 } });
     grantIntrinsicProperty('teleportation', 'outside');
     await rhack(20);
     assert.match(game._pending_message, /You lack the energy to teleport\./);
@@ -34,7 +34,7 @@ void test('normal ^T refuses insufficient energy without spending time or nutrit
     assert.equal(game.context.move, 0);
 });
 void test('normal ^T uses a seen fixed trap without intrinsic teleport or resource costs', async () => {
-    const level = freshObjectRoom({ flags: { tips: false }, hero: { uen: 0, uhunger: 900 } });
+    const level = await freshObjectRoom({ flags: { tips: false }, hero: { uen: 0, uhunger: 900 } });
     addTrap(level, TELEP_TRAP, 10, 10, { tseen: true, teledest: { x: 14, y: 10 } });
     pushKeys(' '.repeat(20));
     await rhack(20);
@@ -44,7 +44,7 @@ void test('normal ^T uses a seen fixed trap without intrinsic teleport or resour
     assert.equal(game.context.move, 1);
 });
 void test('teleporting out of an engulfer ends digestion without giving it an escape cooldown', async () => {
-    const level = freshObjectRoom({ flags: { debug: true, tips: false } });
+    const level = await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     game.u.ux = worm.mx;

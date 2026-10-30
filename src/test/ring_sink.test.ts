@@ -22,8 +22,8 @@ async function ringNamed(name: string, overrides: KnownObjectOverrides = {}) {
     return await knownObject(index, overrides);
 }
 
-function heroOnSink() {
-    freshObjectRoom({ gameplaySeed: 909n });
+async function heroOnSink() {
+    await freshObjectRoom({ gameplaySeed: 909n });
     requirePlayingGame(game);
     requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = SINK;
     return game.u;
@@ -47,7 +47,7 @@ function sinkSquares() {
 }
 
 void test('a slow digestion ring is regurgitated onto the floor', async () => {
-    heroOnSink();
+    await heroOnSink();
     const ring = await ringNamed('slow digestion');
     game.inventory = [ring];
     const log = collector();
@@ -63,7 +63,7 @@ void test('a slow digestion ring is regurgitated onto the floor', async () => {
 });
 
 void test('a levitation ring only makes the sink quiver and is consumed', async () => {
-    heroOnSink();
+    await heroOnSink();
     const ring = await ringNamed('levitation');
     game.inventory = [ring];
     const log = collector();
@@ -81,7 +81,7 @@ void test('a levitation ring only makes the sink quiver and is consumed', async 
 });
 
 void test('a teleportation ring moves the sink elsewhere on the level', async () => {
-    heroOnSink();
+    await heroOnSink();
     fillLevelWithRooms();
     const levelFlags = requireGameLevel().flags;
     levelFlags.nsinks = 1;
@@ -102,7 +102,7 @@ void test('a teleportation ring moves the sink elsewhere on the level', async ()
 });
 
 void test('a hunger ring destroys the floor pile around the drain', async () => {
-    heroOnSink();
+    await heroOnSink();
     const ring = await ringNamed('hunger');
     game.inventory = [ring];
     const potion = await ringNamed('levitation');
@@ -117,7 +117,7 @@ void test('a hunger ring destroys the floor pile around the drain', async () => 
 });
 
 void test('a blind hero still feels the levitation quiver, no drainpipe', async () => {
-    heroOnSink();
+    await heroOnSink();
     game.u.blindTurns = 5;
     const ring = await ringNamed('levitation');
     game.inventory = [ring];
@@ -133,7 +133,7 @@ void test('a blind hero still feels the levitation quiver, no drainpipe', async 
 });
 
 void test('a blind hero misses the visual-only adornment and hears the drainpipe', async () => {
-    heroOnSink();
+    await heroOnSink();
     game.u.blindTurns = 5;
     const ring = await ringNamed('adornment');
     game.inventory = [ring];
@@ -149,7 +149,7 @@ void test('a blind hero misses the visual-only adornment and hears the drainpipe
 });
 
 void test('a deaf hero hears nothing at all', async () => {
-    heroOnSink();
+    await heroOnSink();
     game.u.deafTurns = 5;
     const ring = await ringNamed('conflict');
     game.inventory = [ring];
@@ -162,7 +162,7 @@ void test('a deaf hero hears nothing at all', async () => {
 });
 
 void test('a polymorph ring replaces the sink with other furniture', async () => {
-    heroOnSink();
+    await heroOnSink();
     // C mksink() leaves nsinks one too high; set_levltyp() recounts it.
     requireGameLevel().flags.nsinks = 2;
     requireGameLevel().requireAt(game.u.ux, game.u.uy).looted = 1;
@@ -191,7 +191,7 @@ void test('a polymorph ring replaces the sink with other furniture', async () =>
 });
 
 void test('a hunger ring over an empty drain destroys nothing quietly', async () => {
-    heroOnSink();
+    await heroOnSink();
     const ring = await ringNamed('hunger');
     game.inventory = [ring];
     const log = collector();

@@ -14,7 +14,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
 import { A_CHA } from '../js/const.js';
 void test('a lower container quote cannot settle a higher agreed bill without enough funds', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requirePlayingGame(game);
     const sack = await addInventoryObject(SACK, { cknown: true });
     const daggers = await knownObject(DAGGER, { quan: 2 });
@@ -41,7 +41,7 @@ void test('a lower container quote cannot settle a higher agreed bill without en
     assert.equal(game.context.move, 0);
 });
 void test('a container purchase keeps an unaffordable bill entry and buys later affordable contents', async () => {
-    freshObjectRoom({ role: 'archeologist' });
+    await freshObjectRoom({ role: 'archeologist' });
     requirePlayingGame(game);
     const sack = await addInventoryObject(SACK, { cknown: true });
     const dagger = await knownObject(DAGGER);
@@ -69,7 +69,7 @@ void test('a container purchase keeps an unaffordable bill entry and buys later 
 });
 for (const buy of [false, true]) {
     void test(`${buy ? 'buying' : 'cancelling'} contained goods uses payment selection and spends time only for a purchase`, async (t) => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const sack = await addInventoryObject(SACK, { cknown: true });
         const dagger = await knownObject(DAGGER);
         await addCreatedObjectToContainer(sack, dagger);
@@ -97,7 +97,7 @@ for (const buy of [false, true]) {
 }
 for (const goldLocation of ['none', 'purse', 'sack']) {
     void test(`paying an empty resident bill takes a turn with gold kept in ${goldLocation}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         setHeroGoldAmount(game, goldLocation === 'purse' ? 37 : 0);
@@ -117,7 +117,7 @@ for (const goldLocation of ['none', 'purse', 'sack']) {
     });
 }
 void test('buying an unpaid sack and nested goods settles the whole group using credit before cash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
     const inner = await knownObject(SACK, { cknown: false });
     const daggers = await knownObject(DAGGER, { quan: 2 });
@@ -147,7 +147,7 @@ void test('buying an unpaid sack and nested goods settles the whole group using 
     assert.equal(game.context.move, 1);
 });
 void test('buying an unpaid sack with already paid contents names its unpaid ownership', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
     const dagger = await knownObject(DAGGER, { unpaid: false });
     await addCreatedObjectToContainer(sack, dagger);
@@ -170,7 +170,7 @@ void test('buying an unpaid sack with already paid contents names its unpaid own
     assert.equal(heroGoldAmount(game), 0);
 });
 void test('used goods are paid before buying the remaining stack inside a sack', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
     const daggers = await knownObject(DAGGER, { quan: 2 });
     await addCreatedObjectToContainer(sack, daggers);
@@ -189,7 +189,7 @@ void test('used goods are paid before buying the remaining stack inside a sack',
     assert.equal(daggers.container, sack);
 });
 void test('rejecting an unaffordable partly used stack still permits a later affordable purchase', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const daggers = await addInventoryObject(DAGGER, { quan: 2 });
     const sack = await addInventoryObject(SACK);
     const { shopkeeper } = await createStaffedShop({ bill: [
@@ -215,7 +215,7 @@ void test('rejecting an unaffordable partly used stack still permits a later aff
 });
 for (const stashedGold of [0, 37]) {
     void test(`a container purchase reports exhausted cash and credit with ${stashedGold} gold stashed away`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const first = await addInventoryObject(DAGGER, { quan: 2 });
         const sack = await addInventoryObject(SACK, { cknown: true });
         const contained = await knownObject(DAGGER);
@@ -254,7 +254,7 @@ for (const scenario of [
         gold: 25, stashed: 0, debt: 25 },
 ]) {
     void test(scenario.name, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const sack = await addInventoryObject(SACK);
         const dagger = await knownObject(DAGGER);
         await addCreatedObjectToContainer(sack, dagger);
@@ -293,7 +293,7 @@ for (const scenario of [
     { name: 'contained merchandise after paying a usage debt', contained: true, nested: false, stashed: 0, debt: 25 },
 ]) {
     void test(`insufficient funds refuse ${scenario.name} before item selection`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = scenario.contained ? await knownObject(DAGGER)
             : await addInventoryObject(DAGGER);
         const sack = scenario.contained ? await addInventoryObject(SACK, { cknown: true }) : null;
@@ -333,7 +333,7 @@ for (const scenario of [
     });
 }
 void test('contained merchandise must be affordable as a whole purchase', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
     const first = await knownObject(DAGGER);
     const second = await knownObject(DAGGER);
@@ -354,7 +354,7 @@ void test('contained merchandise must be affordable as a whole purchase', async 
     assert.equal(second.unpaid, true);
 });
 void test('unexamined container contents use the plural insufficient-funds message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: false });
     const dagger = await knownObject(DAGGER);
     await addCreatedObjectToContainer(sack, dagger);
@@ -375,7 +375,7 @@ for (const scenario of [
     { name: 'the used portion of a partly used stack is affordable', gold: 4, credit: 0, quantity: 2, billed: 3, expensiveItem: false },
 ]) {
     void test(`payment selection remains available when ${scenario.name}`, async (t) => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER, { quan: scenario.quantity });
         const { shopkeeper } = await createStaffedShop({ bill: [
                 { bo_id: dagger.o_id, bquan: scenario.billed, price: 4, useup: false },
@@ -398,7 +398,7 @@ for (const scenario of [
     });
 }
 void test('offering payment outside a peaceful shopkeeper\'s shop spends a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const sack = await addInventoryObject(SACK);
     const dagger = await knownObject(DAGGER);
     await addCreatedObjectToContainer(sack, dagger);
@@ -416,7 +416,7 @@ void test('offering payment outside a peaceful shopkeeper\'s shop spends a turn'
 });
 for (const condition of ['sleeping', 'paralyzed']) {
     void test(`paying an empty bill leaves a ${condition} shopkeeper helpless without spending a turn`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.msleeping = condition === 'sleeping' ? 1 : 0;
@@ -432,7 +432,7 @@ for (const condition of ['sleeping', 'paralyzed']) {
         assert.equal(heroGoldAmount(game), 37);
     });
     void test(`offering to pay a usage debt rouses a ${condition} shopkeeper and settles the debt`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const { shopkeeper } = await createStaffedShop();
         shopkeeper.eshk.shknam = 'Ada';
         shopkeeper.eshk.debit = 25;
@@ -450,7 +450,7 @@ for (const condition of ['sleeping', 'paralyzed']) {
     });
 }
 void test('counted walking into a peaceful shopkeeper pays the merchandise usage debt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.debit = 25;

@@ -240,7 +240,7 @@ export async function castNativeRay(nativeType: number, dice: number, direction:
         if (nativeType < 0) return { used: false, heroDied: false, hits: 0 };
         return hitSwallowingMonster(context);
     }
-    if (nativeType < 0) newsym(state.u.ux, state.u.uy);
+    if (nativeType < 0) await newsym(state.u.ux, state.u.uy);
     const savedHitPosition = state.bhitpos;
     try {
         return await traceRay(direction, originX, originY, context);
@@ -496,14 +496,14 @@ async function damageRayMonster(monster: Monster, nativeType: number, dice: numb
     if (damageType === AD_SLEE) {
         const duration = rollDice(dice, 25);
         if (MONSTER_SYMBOL[monster.mnum] === 13 && !monster.msleeping && !monster.mfrozen)
-            revealMonsterAppearance(monster, { includeMonsterDisguise: false });
+            await revealMonsterAppearance(monster, { includeMonsterDisguise: false });
         const resisted = monsterResistsSleep(monster)
             || monsterResistsEffect(monster, nativeType === 3 ? 12 : state.u.ulevel, random);
         if (resisted) await shieldeff(monster.mx, monster.my, state);
         const slept = !resisted && monster.mcanmove !== 0;
         if (slept) {
-            finishMonsterEating(monster, state);
-            putMonsterToSleep(monster, duration);
+            await finishMonsterEating(monster, state);
+            await putMonsterToSleep(monster, duration);
         }
         return { damage: 0, sleepEffect: true, resisted, slept };
     }

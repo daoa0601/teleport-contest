@@ -56,7 +56,7 @@ export async function pickUpMonsterFloorObject(
         unlinkObject(carried, state);
         await addObjectToMonsterInventory(monster, carried, state);
         checkMonsterGearNextTurn(monster);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         return true;
     }
     return false;

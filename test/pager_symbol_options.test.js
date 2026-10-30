@@ -9,7 +9,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const flags of [{ dark_room: false }, { color: false }]) {
     void test(`quick look omits the dark-room meaning when ${Object.keys(flags)[0]} is disabled`, async () => {
-        freshObjectRoom({ flags: { tips: false, ...flags } });
+        await freshObjectRoom({ flags: { tips: false, ...flags } });
         resetInputState().feed('l. ');
         await rhack(';'.charCodeAt(0));
         await flush_screen(1);
@@ -20,10 +20,10 @@ for (const flags of [{ dark_room: false }, { color: false }]) {
     });
 }
 void test('quick look includes the regional moat name among water-symbol meanings', async () => {
-    const level = freshObjectRoom({ flags: { tips: false } });
+    const level = await freshObjectRoom({ flags: { tips: false } });
     game.medusa_level = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: null };
     level.requireAt(11, 10).typ = MOAT;
-    newsym(11, 10);
+    await newsym(11, 10);
     const input = resetInputState();
     input.feed('l.');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [

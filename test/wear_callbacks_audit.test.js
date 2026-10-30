@@ -25,7 +25,7 @@ const AMULET_OF_CHANGE = OBJECT_NAMES.indexOf('amulet of change');
 const RIN_INCREASE_ACCURACY = OBJECT_NAMES.indexOf('increase accuracy');
 const RIN_INCREASE_DAMAGE = OBJECT_NAMES.indexOf('increase damage');
 void test('elven boots announce quiet walking and their noisy loss', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const boots = await addInventoryObject(ELVEN_BOOTS, { typeKnown: false, known: false });
     const worn = await dress('W', boots);
     assert.match(worn, /You walk very quietly\./);
@@ -35,7 +35,7 @@ void test('elven boots announce quiet walking and their noisy loss', async () =>
     assert.equal(boots.worn, false);
 });
 void test('levitating elven boots float imperceptibly instead of walking quietly', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('levitation', 'outside');
     const boots = await addInventoryObject(ELVEN_BOOTS, { typeKnown: false, known: false });
     const worn = await dress('W', boots);
@@ -43,7 +43,7 @@ void test('levitating elven boots float imperceptibly instead of walking quietly
     assert.equal(objectTypeKnown(boots), true);
 });
 void test('speed boots over intrinsic speed speed the hero up a bit more', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('fast', 'outside');
     const boots = await addInventoryObject(SPEED_BOOTS, { typeKnown: false, known: false });
     const worn = await dress('W', boots);
@@ -51,7 +51,7 @@ void test('speed boots over intrinsic speed speed the hero up a bit more', async
     assert.equal(objectTypeKnown(boots), true);
 });
 void test('a helm of brilliance adds its enchantment to intelligence and wisdom', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const helm = await addInventoryObject(HELM_OF_BRILLIANCE, {
         typeKnown: false, spe: 2, known: false,
     });
@@ -66,7 +66,7 @@ void test('a helm of brilliance adds its enchantment to intelligence and wisdom'
     assert.equal(currentAttribute(A_WIS), wisdom);
 });
 void test('a zero-enchantment helm of brilliance stays undiscovered while worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const helm = await addInventoryObject(HELM_OF_BRILLIANCE, {
         typeKnown: false, spe: 0, known: false,
     });
@@ -74,7 +74,7 @@ void test('a zero-enchantment helm of brilliance stays undiscovered while worn',
     assert.equal(objectTypeKnown(helm), false);
 });
 void test('gauntlets of dexterity raise dexterity by their enchantment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gauntlets = await addInventoryObject(GAUNTLETS_OF_DEXTERITY, {
         typeKnown: false, spe: 3, known: false,
     });
@@ -86,7 +86,7 @@ void test('gauntlets of dexterity raise dexterity by their enchantment', async (
     assert.equal(currentAttribute(A_DEX), dexterity);
 });
 void test('gauntlets of fumbling start a fumbling timeout and lose it on removal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gauntlets = await addInventoryObject(GAUNTLETS_OF_FUMBLING, { typeKnown: true, known: false });
     await dress('W', gauntlets);
     assert.ok(propertyTimeout('fumbling', game) > 0);
@@ -94,7 +94,7 @@ void test('gauntlets of fumbling start a fumbling timeout and lose it on removal
     assert.equal(propertyTimeout('fumbling', game), 0);
 });
 void test('a hallucinating hero wearing a dunce cap feels their brain hurt', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await makeHallucinated(50, { talk: false });
     const hat = await addInventoryObject(DUNCE_CAP, { cursed: false, known: false });
     const worn = await dress('W', hat);
@@ -102,7 +102,7 @@ void test('a hallucinating hero wearing a dunce cap feels their brain hurt', asy
     assert.doesNotMatch(worn, /corner|giddy/);
 });
 void test('an amulet of guarding is discovered and lowers armor class while worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_GUARDING, { typeKnown: false });
     findArmorClass(game);
     const bareArmorClass = game.u.uac ?? 10;
@@ -114,7 +114,7 @@ void test('an amulet of guarding is discovered and lowers armor class while worn
     assert.equal(game.u.uac, bareArmorClass);
 });
 void test('an amulet of change flips gender and disintegrates', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_CHANGE, { typeKnown: false });
     const wasFemale = !!game.flags.female;
     await dress('P', amulet);
@@ -125,7 +125,7 @@ void test('an amulet of change flips gender and disintegrates', async () => {
     assert.equal(objectTypeKnown(amulet), true);
 });
 void test('a blind hero still observes a known-type ring through its effect', async () => {
-    freshObjectRoom({ hero: { blindTurns: 40 } });
+    await freshObjectRoom({ hero: { blindTurns: 40 } });
     // The type is known from an earlier ring; this copy has never been seen.
     recordObjectKnowledge(OBJECT_NAMES.indexOf('stealth'), game);
     const unseen = await addInventoryObject(OBJECT_NAMES.indexOf('stealth'), {
@@ -141,7 +141,7 @@ void test('a blind hero still observes a known-type ring through its effect', as
     assert.equal(unseen.worn, true);
 });
 void test('rings of accuracy and damage adjust the combat bonuses of their hand', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const accuracy = await addInventoryObject(RIN_INCREASE_ACCURACY, { spe: 2, known: true });
     const damage = await addInventoryObject(RIN_INCREASE_DAMAGE, { spe: 1, known: true });
     resetInputState().feed(`${accuracy.invlet}r `);

@@ -17,7 +17,7 @@ async function look() {
     return game._pending_message;
 }
 void test('explicit look describes the altar deity, alignment, and high altar', async () => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requireFixtureGame(game);
     const altar = game.level.requireAt(10, 10);
     altar.typ = ALTAR;
@@ -27,7 +27,7 @@ void test('explicit look describes the altar deity, alignment, and high altar', 
     assert.equal(await look(), 'There is a high altar to Moloch (unaligned) here.');
 });
 void test('looking at melting ice describes its weakening surface', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(10, 10).typ = ICE;
     assert.equal(await look(), 'There is solid ice here.');
@@ -36,8 +36,8 @@ void test('looking at melting ice describes its weakening surface', async () => 
     game.moves += 50;
     assert.equal(await look(), 'There is slushy ice here.');
 });
-void test('distant or unseen levitating ice inspection cannot assess melting', () => {
-    freshObjectRoom();
+void test('distant or unseen levitating ice inspection cannot assess melting', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     for (const x of [10, 13]) {
         game.level.requireAt(x, 10).typ = ICE;
@@ -47,12 +47,12 @@ void test('distant or unseen levitating ice inspection cannot assess melting', (
     assert.equal(dungeonFeatureSentenceAt(10, 10), 'There is thin ice here.');
     setHeroBlindnessTurns(10);
     game.u.levitationTurns = 10;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(10, 10), false);
     assert.equal(dungeonFeatureSentenceAt(10, 10), 'There is ice here.');
 });
-void test('drawbridge features distinguish the span, portcullis, and exposed underlay', () => {
-    freshObjectRoom();
+void test('drawbridge features distinguish the span, portcullis, and exposed underlay', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     const span = game.level.requireAt(10, 10);
     span.typ = DRAWBRIDGE_DOWN;
@@ -73,8 +73,8 @@ void test('drawbridge features distinguish the span, portcullis, and exposed und
     span.drawbridgemask = DB_EAST | DB_FLOOR;
     assert.equal(dungeonFeatureSentenceAt(10, 10), '');
 });
-void test('the Juiblex moat exception applies to raised bridges, not raw moat squares', () => {
-    freshObjectRoom();
+void test('the Juiblex moat exception applies to raised bridges, not raw moat squares', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.juiblex_level = createSpecialLevel({ ...game.u.uz });
     const location = game.level.requireAt(10, 10);
@@ -85,7 +85,7 @@ void test('the Juiblex moat exception applies to raised bridges, not raw moat sq
     assert.equal(dungeonFeatureSentenceAt(10, 10), 'There is a pool of water here.');
 });
 void test('traversed ordinary stairs show absolute depth while unknown branch stairs hide their destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.dungeons = [
         createDungeon({ dname: 'The Dungeons of Doom', depth_start: 1 }),
@@ -105,7 +105,7 @@ void test('traversed ordinary stairs show absolute depth while unknown branch st
     assert.equal(await look(), 'There is a branch staircase down to the Dungeons of Doom here.');
 });
 void test('looking at an untraversed ladder describes its direction without a destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(10, 10).typ = LADDER;
     game.stairs = {
@@ -115,7 +115,7 @@ void test('looking at an untraversed ladder describes its direction without a de
     assert.equal(await look(), 'There is a ladder down here.');
 });
 void test('the traversed dungeon entrance describes departure or the Amulet destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.u.uz = { dnum: 0, dlevel: 1 };
     game.level.requireAt(10, 10).typ = STAIRS;
@@ -130,8 +130,8 @@ void test('the traversed dungeon entrance describes departure or the Amulet dest
     game.stairs.tolev.dlevel = 5;
     assert.equal(await look(), 'There is a branch staircase up to the end game here.');
 });
-void test('traversed Quest and Knox stairs use local levels and ladders keep their noun', () => {
-    freshObjectRoom();
+void test('traversed Quest and Knox stairs use local levels and ladders keep their noun', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.dungeons = [createDungeon({ dname: 'The Quest', depth_start: 9 })];
     game.quest_dnum = 0;
@@ -147,14 +147,14 @@ void test('traversed Quest and Knox stairs use local levels and ladders keep the
     assert.equal(dungeonFeatureSentenceAt(10, 10), 'There is a ladder down to level 11 here.');
 });
 void test('an underwater look suppresses the surrounding water feature', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(10, 10).typ = MOAT;
     game.u.uinwater = true;
     assert.equal(await look(), 'You see no objects here.');
 });
 void test('hallucinating over solid ice changes the liquid name without hiding its strength', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(10, 10).typ = ICE;
     game.u.hallucinationTurns = 10;

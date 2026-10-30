@@ -16,7 +16,7 @@ export async function useHeroVampireShift() {
             if (currentForm === undefined) throw new Error('vampire shape change did not install a body');
             const name = monsterTypeName(currentForm, !!game.u.mfemale);
             await plineWithContinuation(`You transform into ${withIndefiniteArticle(name)}.`);
-            newsym(game.u.ux, game.u.uy);
+            await newsym(game.u.ux, game.u.uy);
         }
     }
     return { spentTime: true, changed: previous !== game.u.umonnum };

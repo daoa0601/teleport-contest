@@ -10,7 +10,7 @@ import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('two-weapon refusal describes the plural Eyes artifact as one unsuitable weapon', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
     assert.ok(eyes.oartifact);
     game._artifactDiscoveries = [eyes.oartifact];

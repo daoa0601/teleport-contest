@@ -111,7 +111,7 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
     }
     setMonsterMalign(clone, state);
     if (state === game)
-        newsym(clone.mx, clone.my);
+        await newsym(clone.mx, clone.my);
     return clone;
 }
 // C potion.c:split_mon() for a monster.  The heat source is named before

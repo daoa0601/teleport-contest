@@ -12,7 +12,7 @@ import { runDueTimers } from '../js/timer_effects.js';
 import { addInventoryObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a troll unable to revive in a dropped locked box makes the hero feel less hassled', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const box = await addInventoryObject(LARGE_BOX, { invlet: 'a', olocked: true });
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('troll'), { age: game.moves });
@@ -28,7 +28,7 @@ void test('a troll unable to revive in a dropped locked box makes the hero feel 
     assert.ok(objectTimers(corpse).some(timer => timer.kind === OBJECT_TIMER_KIND.ROT_CORPSE));
 });
 void test('failed revival acknowledges earlier prose before scheduling rot in a dropped box', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const box = await addInventoryObject(LARGE_BOX, { invlet: 'a', olocked: true });
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('troll'), { age: game.moves });

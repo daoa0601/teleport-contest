@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const toolType of [CREDIT_CARD, LOCK_PICK, SKELETON_KEY]) {
     for (const target of ['door', 'box'] as const) {
         void test(`applying ${toolType === CREDIT_CARD ? 'a card' : toolType === LOCK_PICK ? 'a pick' : 'a key'} unlocks a ${target}`, async () => {
-            const level = freshObjectRoom({ role: 'rogue', hero: { acurr: { a: [18, 25, 18, 18, 18, 18] } } });
+            const level = await freshObjectRoom({ role: 'rogue', hero: { acurr: { a: [18, 25, 18, 18, 18, 18] } } });
             const tool = await addInventoryObject(toolType, { invlet: 'a' });
             const door = level.requireAt(11, 10);
             door.typ = DOOR;
@@ -38,7 +38,7 @@ for (const toolType of [CREDIT_CARD, LOCK_PICK, SKELETON_KEY]) {
 }
 
 void test('applying a key can lock an unlocked closed door', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -53,7 +53,7 @@ void test('applying a key can lock an unlocked closed door', async () => {
 });
 
 void test('a card refuses to lock a closed unlocked door', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -66,7 +66,7 @@ void test('a card refuses to lock a closed unlocked door', async () => {
 });
 
 void test('cancelling the apply direction spends no turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(SKELETON_KEY, { invlet: 'a' });
     pushKeys('a\x1b');
     await rhack('a'.charCodeAt(0));
@@ -74,7 +74,7 @@ void test('cancelling the apply direction spends no turn', async () => {
 });
 
 void test('declining a floor box learns its lock state and spends a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const box = await floorObject(CHEST, 10, 10, { olocked: true, lknown: false });
     await addInventoryObject(SKELETON_KEY, { invlet: 'a' });
     const input = resetInputState();
@@ -86,7 +86,7 @@ void test('declining a floor box learns its lock state and spends a turn', async
 });
 
 void test('an interrupted box attempt resumes without asking for another direction', async () => {
-    freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
+    await freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
     const box = await floorObject(CHEST, 10, 10, { olocked: true });
     await addInventoryObject(CREDIT_CARD, { invlet: 'a' });
     const input = resetInputState();
@@ -103,7 +103,7 @@ void test('an interrupted box attempt resumes without asking for another directi
 });
 
 void test('moving away from the floor box ends picking without unlocking it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const box = await floorObject(CHEST, 10, 10, { olocked: true });
     await addInventoryObject(SKELETON_KEY, { invlet: 'a' });
     const input = resetInputState();
@@ -117,7 +117,7 @@ void test('moving away from the floor box ends picking without unlocking it', as
 
 for (const target of ['box', 'door'] as const) {
     void test(`walking away and back requires a fresh ${target} lock attempt`, async () => {
-        const level = freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
+        const level = await freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;
@@ -148,7 +148,7 @@ for (const target of ['box', 'door'] as const) {
 }
 
 void test('checking a door through autounlock ignores a floor trap on that square', async () => {
-    const level = freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
+    const level = await freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;
@@ -165,7 +165,7 @@ void test('checking a door through autounlock ignores a floor trap on that squar
 
 for (const target of ['box', 'door'] as const) {
     void test(`the Master Key disarms a ${target} trap and leaves its lock locked`, async () => {
-        const level = freshObjectRoom({ role: 'rogue', hero: { ualign: { type: -1, record: 10 } } });
+        const level = await freshObjectRoom({ role: 'rogue', hero: { ualign: { type: -1, record: 10 } } });
         const artifact = artifactByName('The Master Key of Thievery');
         assert.ok(artifact);
         ensureQuestStatus().touched_artifact = true;

@@ -25,7 +25,7 @@ async function enterAt(x, y) {
     await checkSpecialRoom();
 }
 void test('checking the same shop twice does not greet the hero twice', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     await enterAt(10, 10);
@@ -33,7 +33,7 @@ void test('checking the same shop twice does not greet the hero twice', async ()
     assert.equal(shopkeeper.eshk.visitct, 1);
 });
 void test('restoring inside a shop preserves the completed entry', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     const id = shopkeeper.m_id;
@@ -41,7 +41,7 @@ void test('restoring inside a shop preserves the completed entry', async () => {
     await enterAt(10, 10);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('RoomSaver', storage), true);
+    assert.equal(await restoreGame('RoomSaver', storage), true);
     await checkSpecialRoom();
     const restored = game.level.monsters.find(monster => monster.m_id === id);
     assert.ok(restored != null);
@@ -49,7 +49,7 @@ void test('restoring inside a shop preserves the completed entry', async () => {
     assert.equal(restored.eshk.visitct, 1);
 });
 void test('a deserted shop reports its vacancy and does not repeat it on re-entry', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     await removeMonsterFromGame(shopkeeper);
@@ -61,7 +61,7 @@ void test('a deserted shop reports its vacancy and does not repeat it on re-entr
     assert.equal(game._lastPlineMessage, 'Outside the shop.');
 });
 void test('a blind hero without detection cannot be sure an empty shop is deserted', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     await removeMonsterFromGame(shopkeeper);
@@ -70,7 +70,7 @@ void test('a blind hero without detection cannot be sure an empty shop is desert
     assert.equal(game._lastPlineMessage, 'This shop seems to be untended.');
 });
 void test('shop vacancy memory is not carried through saving and restarting', async () => {
-    freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     await removeMonsterFromGame(shopkeeper);
@@ -78,9 +78,9 @@ void test('shop vacancy memory is not carried through saving and restarting', as
     game.plname = 'Vacancy';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
-    assert.equal(restoreGame('Vacancy', storage), true);
+    assert.equal(await restoreGame('Vacancy', storage), true);
     await enterAt(4, 10);
     await enterAt(10, 10);
     assert.equal(game._lastPlineMessage, 'This shop is deserted.');
@@ -104,7 +104,7 @@ void test('shops with the same room number on different levels each greet an arr
 });
 for (const restore of [false, true]) {
     void test(`a keeper returning to an occupied shop resumes serving the hero${restore ? ' after restore' : ''}`, async () => {
-        freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
+        await freshObjectRoom({ left: 3, hero: { ux: 4, uy: 10 } });
         requirePlayingGame(game);
         const { shopkeeper } = await createStaffedShop({ keeperX: 9 });
         const id = shopkeeper.m_id;
@@ -115,9 +115,9 @@ for (const restore of [false, true]) {
             game.plname = 'AbsentKeeper';
             const storage = memoryStorage();
             assert.equal(await saveGame(storage), true);
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
-            assert.equal(restoreGame('AbsentKeeper', storage), true);
+            assert.equal(await restoreGame('AbsentKeeper', storage), true);
         }
         const returningKeeper = game.level.monsters.find(monster => monster.m_id === id);
         assert.ok(returningKeeper);

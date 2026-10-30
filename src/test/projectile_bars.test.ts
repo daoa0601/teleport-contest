@@ -19,7 +19,7 @@ const KNIFE = OBJECT_NAMES.indexOf('knife');
 const RUBBER_HOSE = OBJECT_NAMES.indexOf('rubber hose');
 
 void test('a hard missile hitting bars announces a visible sleeper waking', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = IRONBARS;
     const sleeper = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
     sleeper.msleeping = 1;
@@ -44,7 +44,7 @@ for (const { objectType, blocked } of [
     { objectType: DAGGER, blocked: true },
 ]) {
     void test(`iron bars ${blocked ? 'stop' : 'admit'} projectile type ${objectType}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(12, 10).typ = IRONBARS;
         const object = await knownObject(objectType);
 
@@ -62,7 +62,7 @@ for (const { objectType, blocked } of [
 
 for (const objectType of [BLINDING_VENOM, ACID_VENOM]) {
     void test(`venom type ${objectType} splashes away when its flight strikes a bar`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         level.requireAt(12, 10).typ = IRONBARS;
         const venom = await knownObject(objectType);
         const messages: string[] = [];
@@ -82,7 +82,7 @@ for (const objectType of [BLINDING_VENOM, ACID_VENOM]) {
 
 for (const nondiggable of [false, true]) {
     void test(`an acid potion ${nondiggable ? 'cannot dissolve protected bars' : 'dissolves ordinary bars'}`, async () => {
-        const level = freshObjectRoom({ right: 20 });
+        const level = await freshObjectRoom({ right: 20 });
         const bars = level.requireAt(15, 10);
         bars.typ = IRONBARS;
         bars.edge = true;
@@ -103,7 +103,7 @@ for (const nondiggable of [false, true]) {
 }
 
 void test('a projectile impact wakes nearby sleepers even when the hero cannot hear it', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     level.requireAt(12, 10).typ = IRONBARS;
     game.u.deafTurns = 10;
     const nearby = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
@@ -124,7 +124,7 @@ void test('a projectile impact wakes nearby sleepers even when the hero cannot h
 });
 
 void test('a flimsy projectile makes a soft impact and leaves sleepers alone', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = IRONBARS;
     const sleeper = await createMonsterAt('goblin', 13, 10, NO_MINVENT);
     sleeper.msleeping = 1;
@@ -142,7 +142,7 @@ void test('a flimsy projectile makes a soft impact and leaves sleepers alone', a
 
 for (const heroCaused of [false, true]) {
     void test(`a ${heroCaused ? 'hero' : 'monster'} hammer impact ${heroCaused ? 'can break' : 'does not break'} the bars apart`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const bars = level.requireAt(12, 10);
         bars.typ = IRONBARS;
         const hammer = await knownObject(WAR_HAMMER);
@@ -159,7 +159,7 @@ for (const heroCaused of [false, true]) {
 }
 
 void test('a monster breaking a mirror on bars does not penalize hero luck', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = IRONBARS;
     game.u.uluck = 4;
     const mirror = await knownObject(MIRROR);
@@ -174,7 +174,7 @@ void test('a monster breaking a mirror on bars does not penalize hero luck', asy
 });
 
 void test('monster-caused breakage on shop bars does not charge or anger the shopkeeper', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     const { shopkeeper } = await createStaffedShop({
         left: 12, right: 18, keeperX: 17, keeperY: 11,
     });
@@ -194,7 +194,7 @@ void test('monster-caused breakage on shop bars does not charge or anger the sho
 });
 
 void test('a hero arrow still passes through adjacent bars and lands beyond them', async () => {
-    const level = freshObjectRoom({ right: 20 });
+    const level = await freshObjectRoom({ right: 20 });
     level.requireAt(11, 10).typ = IRONBARS;
     const arrow = await addInventoryObject(ARROW, { invlet: 'a' });
 

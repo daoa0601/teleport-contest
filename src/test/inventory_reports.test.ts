@@ -15,7 +15,7 @@ const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const RIN_STEALTH = OBJECT_NAMES.indexOf('stealth');
 
 void test('the weapon report describes the wielded object and its enchantment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { spe: 3 });
     await setPrimaryWeapon(dagger, game);
     await rhack(')'.charCodeAt(0));
@@ -24,7 +24,7 @@ void test('the weapon report describes the wielded object and its enchantment', 
 });
 
 void test('the armor report includes boots when no suit is worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const boots = await addInventoryObject(LOW_BOOTS, { spe: 2, owornmask: W_ARMF });
     game.uarmf = boots;
     await rhack('['.charCodeAt(0));
@@ -33,7 +33,7 @@ void test('the armor report includes boots when no suit is worn', async () => {
 });
 
 void test('the ring report lists both worn rings and opens the selected item actions', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const left = await addInventoryObject(RIN_PROTECTION, { owornmask: W_RINGL });
     const right = await addInventoryObject(RIN_STEALTH, { owornmask: W_RINGR });
     game.uleft = left;
@@ -48,7 +48,7 @@ void test('the ring report lists both worn rings and opens the selected item act
 });
 
 void test('the tools report includes a lit lamp', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(OIL_LAMP, { lamplit: true });
     await rhack('('.charCodeAt(0));
     assert.match(game._pending_message, /oil lamp.*\(lit\)/);
@@ -56,7 +56,7 @@ void test('the tools report includes a lit lamp', async () => {
 });
 
 void test('the menu-prefixed gold report displays coins as ordinary inventory', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(GOLD_PIECE, { quan: 20 });
     const input = resetInputState();
     let menu = '';
@@ -74,7 +74,7 @@ void test('the menu-prefixed gold report displays coins as ordinary inventory', 
 });
 
 void test('inventory in use includes empty hands beside an active tool', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(OIL_LAMP, { lamplit: true });
     const input = resetInputState();
     planInput(input, t, [
@@ -85,7 +85,7 @@ void test('inventory in use includes empty hands beside an active tool', async t
 });
 
 void test('typed inventory filters blessed items and preserves the chosen item action', async t => {
-    freshObjectRoom({ flags: { menu_style: 0 } });
+    await freshObjectRoom({ flags: { menu_style: 0 } });
     const dagger = await addInventoryObject(DAGGER, { blessed: true });
     await addInventoryObject(LOW_BOOTS);
     const input = resetInputState();
@@ -101,7 +101,7 @@ void test('typed inventory filters blessed items and preserves the chosen item a
 });
 
 void test('typed inventory do-again replays only the accepted class answer', async () => {
-    freshObjectRoom({ flags: { menu_style: 0 } });
+    await freshObjectRoom({ flags: { menu_style: 0 } });
     await addInventoryObject(DAGGER);
     const input = resetInputState();
     input.feed('Iv$');

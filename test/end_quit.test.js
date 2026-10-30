@@ -5,7 +5,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('#quit can leave the tutorial and resume the prior game', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._tutorialActive = true;
     game.u.ucamefrom = { dnum: 0, dlevel: 2 };
     game.u.uz = { dnum: 4, dlevel: 1 };

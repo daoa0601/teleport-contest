@@ -11,7 +11,7 @@ import { saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 void test('MM_EMIN gives the caller an unassigned minion record', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const angel = await makemonAt(MONSTER_NAME.indexOf('Angel'), 12, 10, MM_NOMSG | NO_MINVENT | MM_EMIN);
 
@@ -25,7 +25,7 @@ void test('MM_EMIN gives the caller an unassigned minion record', async () => {
 });
 
 void test('MM_EPRI gives the caller an unassigned shrine record', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const priest = await makemonAt(MONSTER_NAME.indexOf('aligned cleric'), 12, 10, MM_NOMSG | NO_MINVENT | MM_EPRI);
 
@@ -40,7 +40,7 @@ void test('MM_EPRI gives the caller an unassigned shrine record', async () => {
 });
 
 void test('MM_EDOG allocates pet state without taming the newborn', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const dog = await makemonAt(MONSTER_NAME.indexOf('little dog'), 12, 10, MM_NOMSG | NO_MINVENT | MM_EDOG);
 
@@ -50,7 +50,7 @@ void test('MM_EDOG allocates pet state without taming the newborn', async () => 
 });
 
 void test('MM_ESHK allocates a shop record without appointing a shopkeeper', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const human = await makemonAt(MONSTER_NAME.indexOf('human'), 12, 10, MM_NOMSG | NO_MINVENT | MM_ESHK);
 
@@ -59,7 +59,7 @@ void test('MM_ESHK allocates a shop record without appointing a shopkeeper', asy
 });
 
 void test('MM_EGD allocates guard state before a vault is assigned', async () => {
-    freshObjectRoom({ gameplaySeed: 1n });
+    await freshObjectRoom({ gameplaySeed: 1n });
 
     const guard = await makemonAt(MONSTER_NAME.indexOf('guard'), 12, 10, MM_NOMSG | NO_MINVENT | MM_EGD);
 
@@ -68,7 +68,7 @@ void test('MM_EGD allocates guard state before a vault is assigned', async () =>
 });
 
 void test('unassigned birth records survive saving before role initialization', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 1n });
+    const level = await freshObjectRoom({ gameplaySeed: 1n });
     game.plname = 'Unassigned';
     const flags = MM_EDOG | MM_EGD | MM_EMIN | MM_EPRI | MM_ESHK;
     const monster = await makemonAt(MONSTER_NAME.indexOf('human'), 12, 10, MM_NOMSG | NO_MINVENT | flags);
@@ -76,7 +76,7 @@ void test('unassigned birth records survive saving before role initialization', 
     const storage = memoryStorage();
 
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Unassigned', storage), true);
+    assert.equal(await restoreGame('Unassigned', storage), true);
 
     const restored = game.level?.monsters.find(actor => actor.m_id === monster.m_id);
     assert.ok(restored && restored.edog && restored.emin && restored.epri && restored.eshk && restored._egd);

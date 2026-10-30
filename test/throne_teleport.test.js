@@ -14,7 +14,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a throne teleport completes destination pickup without an at-will cost', async () => {
-    freshObjectRoom({ flags: { tips: false, pickup: true } });
+    await freshObjectRoom({ flags: { tips: false, pickup: true } });
     requirePlayingGame(game);
     game.level.requireAt(10, 10).typ = THRONE;
     const ring = await addInventoryObject(RIN_TELEPORT_CONTROL);
@@ -46,7 +46,7 @@ void test('a throne teleport completes destination pickup without an at-will cos
 });
 for (const lifeSaving of [false, true]) {
     void test(`a throne teleport ${lifeSaving ? 'survives' : 'dies from'} contact at its destination`, async () => {
-        freshObjectRoom({ flags: { tips: false, pickup: false } });
+        await freshObjectRoom({ flags: { tips: false, pickup: false } });
         requirePlayingGame(game);
         game.level.requireAt(10, 10).typ = THRONE;
         game.flags.disclose = '-i -a -v -c -o';

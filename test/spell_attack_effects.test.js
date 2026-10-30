@@ -18,8 +18,8 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { withMessagePages } from './support/planned-input.js';
-function spellRoom({ hero = {}, ...options } = {}) {
-    freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
+async function spellRoom({ hero = {}, ...options } = {}) {
+    await freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
         hero: { uhp: 500, uhpmax: 500, uen: 40, uenmax: 40, ...hero },
         flags: { verbose: true, tips: false }, gameplaySeed: 17n, ...options });
     requirePlayingGame(game);
@@ -39,7 +39,7 @@ async function target(species, x, y, hitPoints = 500) {
 }
 for (const [type, name] of [[SPE_FIREBALL, 'fireball'], [SPE_CONE_OF_COLD, 'cone of cold']]) {
     void test(`a skilled ${name} produces two to nine blasts around the selected center`, async () => {
-        const { input } = spellRoom();
+        const { input } = await spellRoom();
         requirePlayingGame(game);
         const pseudo = await knownObject(type, { initialize: false });
         const jackal = await target('jackal', 14, 10);
@@ -56,7 +56,7 @@ for (const [type, name] of [[SPE_FIREBALL, 'fireball'], [SPE_CONE_OF_COLD, 'cone
     });
 }
 void test('cancelling skilled spell targeting leaves nearby actors unharmed', async () => {
-    const { input } = spellRoom();
+    const { input } = await spellRoom();
     requirePlayingGame(game);
     const jackal = await target('jackal', 11, 10);
     const pseudo = await knownObject(SPE_FIREBALL, { initialize: false });
@@ -67,7 +67,7 @@ void test('cancelling skilled spell targeting leaves nearby actors unharmed', as
     assert.equal(game.u.uhp, 500);
 });
 void test('skilled targeting leaves the steed unmarked and refreshes its hallucination on exit', async () => {
-    spellRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await spellRoom({ role: 'knight', hero: { ulevel: 30 } });
     game.iflags.bgcolors = false;
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
@@ -90,7 +90,7 @@ void test('skilled targeting leaves the steed unmarked and refreshes its halluci
     assert.equal(result.targeted, false);
 });
 void test('a target farther than ten squares makes a skilled spell dissipate', async () => {
-    const { input } = spellRoom();
+    const { input } = await spellRoom();
     requirePlayingGame(game);
     const jackal = await target('jackal', 21, 10);
     const pseudo = await knownObject(SPE_FIREBALL, { initialize: false });
@@ -102,7 +102,7 @@ void test('a target farther than ten squares makes a skilled spell dissipate', a
 });
 for (const waterPlane of [false, true]) {
     void test(`skilled targeting rejects ${waterPlane ? 'the Plane of Water' : 'an underwater caster'}`, async () => {
-        spellRoom();
+        await spellRoom();
         requirePlayingGame(game);
         if (waterPlane)
             game.water_level = createSpecialLevel(game.u.uz);
@@ -116,10 +116,10 @@ for (const waterPlane of [false, true]) {
     });
 }
 void test('a skilled spell cannot lock onto a wall', async () => {
-    const { input } = spellRoom();
+    const { input } = await spellRoom();
     requirePlayingGame(game);
     game.level.requireAt(14, 10).typ = HWALL;
-    vision_recalc(0);
+    await vision_recalc(0);
     const pseudo = await knownObject(SPE_FIREBALL, { initialize: false });
     input.feed('llll.');
     const result = await castSkilledElementalSpell(pseudo);
@@ -128,7 +128,7 @@ void test('a skilled spell cannot lock onto a wall', async () => {
     assert.match(game._pending_message, /mind fails to lock/);
 });
 void test('aiming at a sensed monster behind stone drops the spell before the obstruction', async () => {
-    const { input } = spellRoom();
+    const { input } = await spellRoom();
     requirePlayingGame(game);
     const farTarget = await target('jackal', 14, 10);
     const nearTarget = await target('jackal', 11, 9);
@@ -145,7 +145,7 @@ void test('aiming at a sensed monster behind stone drops the spell before the ob
     assert.equal(game.u.uhp, 500);
 });
 void test('skilled targeting waits for an actual map selection before producing damage', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const jackal = await target('jackal', 14, 10);
     const pseudo = await knownObject(SPE_FIREBALL, { initialize: false });
@@ -165,7 +165,7 @@ void test('skilled targeting waits for an actual map selection before producing 
     assert.ok(jackal.mhp < 500);
 });
 void test('a swallowed skilled cold spell is cut short into repeated self-zaps', async () => {
-    const { input, messages } = spellRoom();
+    const { input, messages } = await spellRoom();
     requirePlayingGame(game);
     const swallower = await target('purple worm', 11, 10);
     await installSwallowedHero(swallower);
@@ -180,7 +180,7 @@ void test('a swallowed skilled cold spell is cut short into repeated self-zaps',
     assert.match(messages.join(' '), /spell is cut short/);
 });
 void test('chain lightning jumps between hostile monsters and charges power for each relay', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const first = await target('jackal', 13, 10);
     const second = await target('jackal', 16, 10);
@@ -193,7 +193,7 @@ void test('chain lightning jumps between hostile monsters and charges power for 
     assert.equal(game.u.uhp, 500);
 });
 void test('chain lightning stops at peaceful monsters without waking or harming them', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const peaceful = await target('jackal', 13, 10);
     const beyond = await target('jackal', 16, 10);
@@ -207,7 +207,7 @@ void test('chain lightning stops at peaceful monsters without waking or harming 
     assert.equal(game.u.uen, 40);
 });
 void test('a shock-resistant monster stops chain lightning without relaying its power', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const sphere = await target('shocking sphere', 13, 10);
     const beyond = await target('jackal', 16, 10);
@@ -217,7 +217,7 @@ void test('a shock-resistant monster stops chain lightning without relaying its 
     assert.equal(game.u.uen, 40);
 });
 void test('chain lightning can kill and continue from its dead target', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const first = await target('jackal', 13, 10, 1);
     const second = await target('jackal', 16, 10);
@@ -227,7 +227,7 @@ void test('chain lightning can kill and continue from its dead target', async ()
     assert.equal(game.u.uconduct.killer, 1);
 });
 void test('chain lightning inside a swallower keeps the native no-damage behavior', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const swallower = await target('purple worm', 11, 10);
     await installSwallowedHero(swallower);
@@ -241,18 +241,18 @@ for (const [terrain, reachable] of [
     [WATER, false], [LAVAWALL, false], [IRONBARS, false],
 ]) {
     void test(`chain lightning ${reachable ? 'crosses' : 'stops before'} terrain ${terrain} without changing it`, async () => {
-        spellRoom({ left: 10, right: 15, top: 10, bottom: 10 });
+        await spellRoom({ left: 10, right: 15, top: 10, bottom: 10 });
         requirePlayingGame(game);
         const monster = await target('jackal', 12, 10);
         game.level.requireAt(11, 10).typ = terrain;
-        vision_recalc(0);
+        await vision_recalc(0);
         await castChainLightning();
         assert.equal(monster.mhp < 500, reachable);
         assert.equal(game.level.requireAt(11, 10).typ, terrain);
     });
 }
 void test('chain lightning still shocks a reflecting monster', async () => {
-    spellRoom();
+    await spellRoom();
     requirePlayingGame(game);
     const monster = await target('jackal', 13, 10);
     await equipMonsterObject(monster, await knownObject(AMULET_OF_REFLECTION), W_AMUL);
@@ -262,11 +262,11 @@ void test('chain lightning still shocks a reflecting monster', async () => {
 });
 for (const previousHitAtTarget of [false, true]) {
     void test(`chain lightning ${previousHitAtTarget ? 'marks' : 'does not mark'} an invisible head using native prior hit coordinates`, async () => {
-        spellRoom();
+        await spellRoom();
         requirePlayingGame(game);
         const monster = await target('jackal', 13, 10);
         monster.minvis = 1;
-        newsym(13, 10);
+        await newsym(13, 10);
         game.bhitpos = previousHitAtTarget ? { x: 13, y: 10 } : { x: 0, y: 0 };
         await castChainLightning();
         assert.equal(glyphAt(13, 10)?.kind === 'invisible', previousHitAtTarget);
@@ -274,7 +274,7 @@ for (const previousHitAtTarget of [false, true]) {
     });
 }
 void test('one chain-lightning cast covers at most one hundred squares', async () => {
-    const { input } = spellRoom();
+    const { input } = await spellRoom();
     requirePlayingGame(game);
     const monsters = [];
     for (let x = 5; x <= 15 && monsters.length < 110; x++) {

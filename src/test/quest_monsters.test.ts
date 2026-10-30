@@ -9,8 +9,8 @@ import { saveGame, restoreGame } from '../js/save.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { memoryStorage } from './support/memory-storage.js';
 
-void test('the Healer quest generates the giant rats threatening its home', () => {
-    freshObjectRoom({ role: 'healer', gameplaySeed: 324n });
+void test('the Healer quest generates the giant rats threatening its home', async () => {
+    await freshObjectRoom({ role: 'healer', gameplaySeed: 324n });
     game.dungeons = [createDungeon({ dname: 'The Quest' })];
     game.u.uz = { dnum: 0, dlevel: 1 };
 
@@ -20,7 +20,7 @@ void test('the Healer quest generates the giant rats threatening its home', () =
 });
 
 void test('restore rejects a quest enemy species outside the monster table', async () => {
-    const level = freshObjectRoom({ role: 'healer' });
+    const level = await freshObjectRoom({ role: 'healer' });
     game.plname = 'QuestEnemy';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
@@ -31,6 +31,6 @@ void test('restore rejects a quest enemy species outside the monster table', asy
     saved.state.urole.enemy1num = MONSTER_NAME.length;
     storage.setItem('teleport-save:questenemy', encodeSavedGraph(saved));
 
-    assert.equal(restoreGame(game.plname, storage), false);
+    assert.equal(await restoreGame(game.plname, storage), false);
     assert.equal(game.level, level);
 });

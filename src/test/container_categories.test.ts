@@ -19,7 +19,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 
 async function filledChest() {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await addInventoryObject(CHEST, { olocked: false, otrapped: false, cknown: true });
     const club = await knownObject(CLUB, { where: 'contained', container: chest });
     const potion = await knownObject(POT_HEALING, { where: 'contained', container: chest });
@@ -137,7 +137,7 @@ for (const { artifact, sight, expected } of [
 }
 
 void test('a just-picked held container and another item still require an item selection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await addInventoryObject(CHEST, {
         olocked: false, otrapped: false, cknown: true, pickup_prev: true,
     });

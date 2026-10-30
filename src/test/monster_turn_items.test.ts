@@ -19,7 +19,7 @@ import { createDungeon } from './support/topology.js';
 import { resetInputState } from '../js/input.js';
 
 void test('an injured hostile monster drinks healing before approaching the hero', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     monster.mhp = 2;
@@ -37,7 +37,7 @@ void test('an injured hostile monster drinks healing before approaching the hero
 
 for (const species of ['hezrou', 'steam vortex']) {
     void test(`${species} leaves gas on the square it departs`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
 
@@ -51,7 +51,7 @@ for (const species of ['hezrou', 'steam vortex']) {
 }
 
 void test('a cancelled steam vortex leaves no vapor', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('steam vortex', 10, 10, MM_ANGRY | NO_MINVENT);
     monster.mcan = 1;
@@ -63,7 +63,7 @@ void test('a cancelled steam vortex leaves no vapor', async () => {
 });
 
 void test('a polymorphed fog cloud flowing through a closed door does not leave gas', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.u.umonnum = 106;
     game.u.mtimedone = 20;
@@ -77,7 +77,7 @@ void test('a polymorphed fog cloud flowing through a closed door does not leave 
 });
 
 void test('temporary speed does not prevent a caster from making its speed permanent', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('kobold shaman', 10, 10, NO_MINVENT);
     monster.mpeaceful = 1;
@@ -95,7 +95,7 @@ void test('temporary speed does not prevent a caster from making its speed perma
 });
 
 void test('a blind peaceful monster uses cursed extra healing to restore its sight', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 10, 10, NO_MINVENT);
     monster.mpeaceful = 1;
@@ -121,7 +121,7 @@ void test('a blind peaceful monster uses cursed extra healing to restore its sig
 });
 
 void test('a confused ki-rin uses its own horn without a carried tool', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('ki-rin', 10, 10, NO_MINVENT);
     monster.mconf = 1;
@@ -138,7 +138,7 @@ void test('a confused ki-rin uses its own horn without a carried tool', async ()
 });
 
 void test('a monster takes an item out of its carried bag and forgets its contents', async () => {
-    freshObjectRoom({ heroX: 12, heroY: 10 });
+    await freshObjectRoom({ heroX: 12, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 11, 10, MM_ANGRY | NO_MINVENT);
     const bag = await addObjectToMonsterInventory(monster, await knownObject(SACK, { cknown: true }), game);
@@ -159,7 +159,7 @@ void test('a monster takes an item out of its carried bag and forgets its conten
 });
 
 void test('a cursed bag of holding keeps its contents when a monster tries to loot it', async () => {
-    freshObjectRoom({ heroX: 12, heroY: 10 });
+    await freshObjectRoom({ heroX: 12, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 11, 10, MM_ANGRY | NO_MINVENT);
     const bag = await addObjectToMonsterInventory(monster, await knownObject(BAG_OF_HOLDING, { cursed: true }), game);
@@ -175,7 +175,7 @@ void test('a cursed bag of holding keeps its contents when a monster tries to lo
 });
 
 void test('a level teleport trap sends a monster into the legal dungeon range', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', depth_start: 1, num_dunlevs: 30 })];
     game.u.uz = { dnum: 0, dlevel: 25 };
@@ -194,7 +194,7 @@ void test('a level teleport trap sends a monster into the legal dungeon range', 
 });
 
 void test('the caster remains injured while its healing message waits for acknowledgement', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('kobold shaman', 10, 10, NO_MINVENT);
     monster.mpeaceful = 1;
@@ -219,7 +219,7 @@ void test('the caster remains injured while its healing message waits for acknow
 });
 
 void test('a confused caster loses its spell attempt but can still move', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('kobold shaman', 10, 10, NO_MINVENT);
     monster.mpeaceful = 1;

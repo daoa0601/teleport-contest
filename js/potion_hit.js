@@ -620,7 +620,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
                     if (targetSpotted && !heroIsHallucinating(state)) {
                         await publish(`${sentenceSubject(monster)} changes into a ${wereTransformationNoun(monster)}.`);
                     }
-                    transformedWere = !!(await transformWere(monster, state));
+                    transformedWere = !!await transformWere(monster, state);
                 }
             }
             else if (potion.cursed) {
@@ -636,7 +636,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
                     if (targetSpotted && !heroIsHallucinating(state)) {
                         await publish(`${sentenceSubject(monster)} changes into a ${wereTransformationNoun(monster)}.`);
                     }
-                    transformedWere = !!(await transformWere(monster, state));
+                    transformedWere = !!await transformWere(monster, state);
                 }
             }
         }
@@ -688,7 +688,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (!monster.invis_blkd) {
             await repaintMonster(monster);
             if (monster.wormno)
-                redrawMonsterWormSegments(monster);
+                await redrawMonsterWormSegments(monster);
         }
         const spottedAfter = !!spotMonster(monster);
         let invisibilityMessage = null;
@@ -750,7 +750,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         const appearance = M_AP_TYPE(monster);
         if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             && (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT))
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
         const inherentOrDefended = monsterHasSleepDefense(monster);
         const resisted = inherentOrDefended
             || monsterResistsPotion(monster, state);
@@ -758,7 +758,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (resisted) {
             await showShield?.(monster);
         }
-        else if (putMonsterToSleep(monster, duration)) {
+        else if (await putMonsterToSleep(monster, duration)) {
             slept = true;
             await publish(`${sentenceSubject(monster)} falls asleep.`);
             if (monster === state.u?.ustuck && !state.u?.uswallow
@@ -908,7 +908,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         curedBlindness,
     };
 }
-export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = target => newsym(target.mx, target.my), rememberInvisible = target => map_invisible(target.mx, target.my), wakeNearby = null, splitMonster = target => splitMonsterActor(target, state, { publish }), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
+export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = async (target) => await newsym(target.mx, target.my), rememberInvisible = async (target) => await map_invisible(target.mx, target.my), wakeNearby = null, splitMonster = target => splitMonsterActor(target, state, { publish }), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
     if (!monster || !potion
         || !SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
         return null;

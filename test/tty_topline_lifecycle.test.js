@@ -21,7 +21,7 @@ function topline() {
     return row.map(cell => cell.ch).join('').trimEnd();
 }
 void test('an answered prompt stays visible but a native redraw does not page it again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     const answer = promptKey('In what direction? ');
@@ -40,7 +40,7 @@ void test('an answered prompt stays visible but a native redraw does not page it
     assert.equal(topline(), '');
 });
 void test('an empty message window keeps its answered question through command input and clearing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('c');
     await promptKey('What do you want to zap? [c or ?*] ');
@@ -62,7 +62,7 @@ void test('an empty message window keeps its answered question through command i
     assert.equal(topline(), '');
 });
 void test('displaying a message window preserves an already answered question', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('c');
     await promptKey('What do you want to zap? [c or ?*] ');
@@ -74,7 +74,7 @@ void test('displaying a message window preserves an already answered question', 
     assert.equal(topline(), 'The wand glows.', 'New prose replaces the answered question without paging it.');
 });
 void test('displaying an answered question leaves it visible through silent commands until new text replaces it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.feed('c');
     await promptKey('What do you want to zap? [c or ?*] ');
@@ -100,7 +100,7 @@ void test('displaying an answered question leaves it visible through silent comm
     assert.equal(topline(), '', 'Ordinary prose is still cleared after the next command key.');
 });
 void test('successive key reads acknowledge each message without joining later prose to seen text', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     await pline('A bell rings nearby.');
@@ -121,7 +121,7 @@ void test('successive key reads acknowledge each message without joining later p
     assert.equal(await flushPendingTopline(), null);
 });
 void test('an unread message still waits for a valid pager acknowledgment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     await pline('A bell rings nearby.');
@@ -136,7 +136,7 @@ void test('an unread message still waits for a valid pager acknowledgment', asyn
     assert.equal(input.isBlocked, false);
 });
 void test('dismissing invalid throw-direction help returns without paging the answered query', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const dart = await addInventoryObject(DART);
     const input = resetInputState();
@@ -156,7 +156,7 @@ void test('dismissing invalid throw-direction help returns without paging the an
 });
 for (const key of ['h', '\x1b', '+']) {
     void test(`a direction query clears its message window before returning ${JSON.stringify(key)}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         const answer = readDirectionKey();
@@ -171,7 +171,7 @@ for (const key of ['h', '\x1b', '+']) {
     });
 }
 void test('a successful ordinary throw leaves no answered direction query on the screen', async () => {
-    freshObjectRoom({ left: 1, right: 30 });
+    await freshObjectRoom({ left: 1, right: 30 });
     requirePlayingGame(game);
     const dart = await addInventoryObject(DART);
     const input = resetInputState();
@@ -183,7 +183,7 @@ void test('a successful ordinary throw leaves no answered direction query on the
     assert.equal(dart.where, 'floor');
 });
 void test('suppressed combat prose keeps a long death topline stopped before the wizard survival question', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const giant = await createMonsterAt('stone giant', 11, 10, NO_MINVENT);
     const input = resetInputState();
@@ -209,7 +209,7 @@ void test('suppressed combat prose keeps a long death topline stopped before the
     assert.ok(game.u.uhp > 0, 'declining death restores the hero');
 });
 void test('death resumes output after escaped wrapped prose and a short hidden hit', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const giant = await createMonsterAt('stone giant', 11, 10, NO_MINVENT);
     const input = resetInputState();

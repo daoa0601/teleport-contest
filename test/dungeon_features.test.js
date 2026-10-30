@@ -10,7 +10,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createRoom } from './support/topology.js';
 void test('the overview describes a discovered temple and its coaligned altar', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 20, dunlev_ureached: 8 })];
     const room = createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, rtype: TEMPLE });
@@ -20,24 +20,24 @@ void test('the overview describes a discovered temple and its coaligned altar', 
     const altar = level.requireAt(12, 10);
     altar.typ = ALTAR;
     altar.flags = AM_NEUTRAL;
-    mapLevel({ exercise: false });
+    await mapLevel({ exercise: false });
     const text = await readDungeonOverview();
     assert.ok(text.includes(`A temple and an altar to ${deityName(game.u.ualign.type)}.`), text);
 });
 void test('the overview uses the short shop annotation and notices an absent keeper on entry', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 20, dunlev_ureached: 8 })];
     level.rooms = [createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, rtype: ARMORSHOP })];
     level.nroom = 1;
     level.requireAt(11, 10).roomno = ROOMOFFSET;
-    mapLevel({ exercise: false });
+    await mapLevel({ exercise: false });
     assert.match(await readDungeonOverview(), /An armor shop\./);
     game.u.urooms = [ROOMOFFSET];
     assert.match(await readDungeonOverview(), /An untended shop\./);
 });
 void test('remembered temple and altar knowledge survives saving', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Dungeon', num_dunlevs: 20, dunlev_ureached: 8 })];
     level.rooms = [createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, rtype: TEMPLE })];
@@ -46,12 +46,12 @@ void test('remembered temple and altar knowledge survives saving', async () => {
     const altar = level.requireAt(12, 10);
     altar.typ = ALTAR;
     altar.flags = AM_NEUTRAL;
-    mapLevel({ exercise: false });
+    await mapLevel({ exercise: false });
     await readDungeonOverview();
     game.plname = 'Surveyor';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Surveyor', storage), true);
+    assert.equal(await restoreGame('Surveyor', storage), true);
     assert.match(await readDungeonOverview(), /A temple and an altar to /);
 });
 //# sourceMappingURL=dungeon_features.test.js.map

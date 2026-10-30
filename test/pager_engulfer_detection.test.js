@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // while monster detection browses with u.uswallow cleared and
 // iflags.save_uswallow set, so the hero still learns what holds him.
 void test('a detected engulfer still says it is swallowing you', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const engulfer = await createMonsterAt('purple worm', 11, 10, MM_NOGRP | NO_MINVENT);
     engulfer.mx = game.u.ux;
     engulfer.my = game.u.uy;
@@ -18,7 +18,7 @@ void test('a detected engulfer still says it is swallowing you', async () => {
     game.u.uswallow = 1;
     const constraints = unconstrainMap();
     try {
-        mapDetectedMonster(engulfer, false);
+        await mapDetectedMonster(engulfer, false);
         const description = await farlookLocationDescription(game.u.ux, game.u.uy);
         assert.match(description, /purple worm, swallowing you$/);
     }

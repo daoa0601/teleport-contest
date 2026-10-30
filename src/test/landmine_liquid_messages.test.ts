@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a visible landmine announces waking monsters and water filling its hole', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const mine = addTrap(level, LANDMINE, 12, 10);
     level.requireAt(13, 10).typ = MOAT;
     const sleeper = await createMonsterAt('leprechaun', 14, 10, NO_MINVENT);
@@ -31,7 +31,7 @@ void test('a visible landmine announces waking monsters and water filling its ho
 });
 
 void test('a land mine still wounds a monster that its lava hole relocates', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const mine = addTrap(level, LANDMINE, 12, 10);
     level.requireAt(13, 10).typ = LAVAPOOL;
     const lich = await createMonsterAt('master lich', 12, 10, NO_MINVENT);
@@ -52,7 +52,7 @@ void test('a land mine still wounds a monster that its lava hole relocates', asy
 });
 
 void test('a land mine flooding a square in view shows a moved light before the next message', async () => {
-    const level = freshObjectRoom({ recalculateVision: false });
+    const level = await freshObjectRoom({ recalculateVision: false });
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++) {
             const square = level.requireAt(x, y);
@@ -62,7 +62,7 @@ void test('a land mine flooding a square in view shows a moved light before the 
     const mine = addTrap(level, LANDMINE, 12, 10);
     level.requireAt(13, 10).typ = MOAT;
     const vortex = await createMonsterAt('fire vortex', 14, 7, NO_MINVENT);
-    vision_recalc(0);
+    await vision_recalc(0);
     await flush_screen(1);
     const cell = () => requireGameDisplay(game).grid[13 + 1]?.[15 - 1]?.ch;
     assert.equal(cell(), ' ');

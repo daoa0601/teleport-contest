@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('restoring exposes a concealer whose saved hiding place has lost its cover', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     installPagerInput(resetInputState(), { expected: /snake|welcome back/, limit: 4 });
     const snake = await createMonsterAt('garter snake', 15, 10, MM_NOGRP | NO_MINVENT);
     const cover = await floorObject(ROCK, 15, 10);
@@ -24,7 +24,7 @@ void test('restoring exposes a concealer whose saved hiding place has lost its c
     remove_object(cover);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
 
     await restoregamePreamble();
 

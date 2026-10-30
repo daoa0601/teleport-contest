@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('a cancelled quantum mechanic still hits and reports that teleportation was negated', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const mechanic = await createMonsterAt('quantum mechanic', 11, 10, NO_MINVENT);
     mechanic.mpeaceful = 0;
@@ -23,7 +23,7 @@ void test('a cancelled quantum mechanic still hits and reports that teleportatio
 });
 for (const halfPhysicalDamage of [false, true]) {
     void test(`a quantum-mechanic hit preserves one HP with ${halfPhysicalDamage ? 'half' : 'full'} physical damage even when teleport is restricted`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             flags: { verbose: true }, hero: { uhp: 1, uhpmax: 40, halfPhysicalDamage },
         });
         requirePlayingGame(game);

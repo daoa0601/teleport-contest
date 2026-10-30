@@ -42,13 +42,13 @@ export async function wizSmell(): Promise<void> {
         const glyph = glyphAt(cursor.x, cursor.y);
         if (species === undefined) {
             await plineWithContinuation("You don't smell any monster there.");
-            if (glyph?.kind === 'invisible') unmap_invisible(cursor.x, cursor.y);
+            if (glyph?.kind === 'invisible') await unmap_invisible(cursor.x, cursor.y);
             continue;
         }
         if (self)
             await plineWithContinuation(`You surreptitiously sniff under your ${heroArmName(game)}.`);
         if (!await smellUnseenMonster(species, game))
             await plineWithContinuation(`${self ? 'You seem' : 'That monster seems'} to not give off any smell.`);
-        if (glyph?.kind !== 'monster') map_invisible(cursor.x, cursor.y);
+        if (glyph?.kind !== 'monster') await map_invisible(cursor.x, cursor.y);
     }
 }

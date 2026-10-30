@@ -66,7 +66,7 @@ export async function applyPotionLikeInvisibility({ state = game, blessed = fals
     }
     syncHeroInvisibility(state);
     // The hero's square is redrawn before the cursed message can page.
-    newsym(state.u.ux, state.u.uy);
+    await newsym(state.u.ux, state.u.uy);
     let aggravates = false;
     if (cursed) {
         await pline('For some reason, you feel your presence is known.');
@@ -93,7 +93,7 @@ export async function zapHeroInvisible(state = game, random = rn2) {
     state.u.invisibleTurns = Math.min(TIMEOUT, (state.u.invisibleTurns ?? 0) + 31 + random(15));
     syncHeroInvisibility(state);
     if (observed) {
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         await showInvisibilityMessage(state);
     }
     return observed;

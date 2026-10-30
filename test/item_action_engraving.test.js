@@ -12,7 +12,7 @@ for (const { type, text } of [
     { type: MAGIC_MARKER, text: 'Scribble graffiti on the floor' },
 ]) {
     void test(`the item menu ${text ? 'offers' : 'omits'} engraving for ${type === TIN_OPENER ? 'a tin opener' : type === TOWEL ? 'a towel' : 'a magic marker'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(type);
         const input = resetInputState();
         const menu = ddoinv();
@@ -38,7 +38,7 @@ for (const { appearance, verb } of [
     { appearance: 'diamond', verb: 'Engrave' },
 ]) {
     void test(`the item menu offers ${verb === 'Write' ? 'writing' : 'engraving'} for a shuffled ${appearance} ring`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const type = game.objectDescriptions?.findIndex(description => description === appearance);
         assert.ok(type !== undefined && type >= 0, `The initialized game needs a ${appearance} ring`);
         const ring = await addInventoryObject(type);

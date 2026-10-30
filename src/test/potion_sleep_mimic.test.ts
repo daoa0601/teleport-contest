@@ -9,7 +9,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('sleeping potion reveals a mimic even when the mimic resists sleep', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('small mimic', game.u.ux + 1, game.u.uy);
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = BOULDER;

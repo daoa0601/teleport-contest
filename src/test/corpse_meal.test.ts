@@ -12,8 +12,8 @@ import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function diningRoom() {
-    freshObjectRoom({ role: 'monk', gameplaySeed: 61n, hero: { uhunger: 200 } });
+async function diningRoom() {
+    await freshObjectRoom({ role: 'monk', gameplaySeed: 61n, hero: { uhunger: 200 } });
     requirePlayingGame(game);
     const input = resetInputState();
     const messages: string[] = [];
@@ -40,7 +40,7 @@ async function eatCorpse(name: string, input: InputGate) {
 }
 
 void test('an ordinary Monk finds meat terrible even though humans are omnivorous', async () => {
-    const { input, messages } = diningRoom();
+    const { input, messages } = await diningRoom();
     requirePlayingGame(game);
 
     await eatCorpse('lizard', input);
@@ -53,7 +53,7 @@ void test('an ordinary Monk finds meat terrible even though humans are omnivorou
 });
 
 void test('an ordinary Monk finds a vegan corpse delicious', async () => {
-    const { input, messages } = diningRoom();
+    const { input, messages } = await diningRoom();
     requirePlayingGame(game);
 
     await eatCorpse('lichen', input);
@@ -66,7 +66,7 @@ void test('an ordinary Monk finds a vegan corpse delicious', async () => {
 });
 
 void test('a Monk eats with the transformed body and regains the original diet on return', async () => {
-    const { input, messages } = diningRoom();
+    const { input, messages } = await diningRoom();
     requirePlayingGame(game);
     await polymonHero(MONSTER_NAME.indexOf('tiger'));
 

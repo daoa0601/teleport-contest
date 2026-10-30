@@ -9,7 +9,7 @@ import { freshMonsterAbilityRoom, installSwallowedHero } from './support/hero-st
 import { createMonsterAt } from './support/monsters.js';
 
 void test('a psychic blast does not reveal the species of an unseen telepath', async () => {
-    freshMonsterAbilityRoom('mind flayer', { energy: 20 });
+    await freshMonsterAbilityRoom('mind flayer', { energy: 20 });
     const eye = await createMonsterAt('floating eye', 14, 10);
     eye.mhp = eye.mhpmax = 100;
     eye.mcansee = 0;
@@ -19,7 +19,7 @@ void test('a psychic blast does not reveal the species of an unseen telepath', a
     assert.ok(wall);
     wall.typ = STONE;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     const messages: string[] = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
@@ -33,7 +33,7 @@ void test('a psychic blast does not reveal the species of an unseen telepath', a
 });
 
 void test('web fluid inside a named engulfer uses its proper name', async () => {
-    freshMonsterAbilityRoom('giant spider');
+    await freshMonsterAbilityRoom('giant spider');
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mgivenname = 'Wriggle';
     await installSwallowedHero(worm);

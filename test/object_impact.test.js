@@ -26,7 +26,7 @@ function zombifyRemaining(corpse, state = game) {
     return timer ? timer.deadline - (state.moves ?? 0) : null;
 }
 void test('a violent impact cuts a nearby zombie timer to two thirds', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await buriedZombieAt(11, 10, (game.moves ?? 0) + 30);
     const impactor = await heavyImpactorAt(10, 10, 300);
@@ -34,7 +34,7 @@ void test('a violent impact cuts a nearby zombie timer to two thirds', async () 
     assert.equal(zombifyRemaining(corpse), 20);
 });
 void test('quiet drops need ten times the weight to wake the dead', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await buriedZombieAt(11, 10, (game.moves ?? 0) + 30);
     const light = await heavyImpactorAt(10, 10, 99);
@@ -45,7 +45,7 @@ void test('quiet drops need ten times the weight to wake the dead', async () => 
     assert.equal(zombifyRemaining(corpse), 20);
 });
 void test('a light violent impact still counts as too quiet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await buriedZombieAt(11, 10, (game.moves ?? 0) + 30);
     const light = await heavyImpactorAt(10, 10, 9);
@@ -53,7 +53,7 @@ void test('a light violent impact still counts as too quiet', async () => {
     assert.equal(zombifyRemaining(corpse), 30);
 });
 void test('a flimsy object never disturbs zombies regardless of weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await buriedZombieAt(11, 10, (game.moves ?? 0) + 30);
     const sack = await knownObject(SACK);
@@ -63,7 +63,7 @@ void test('a flimsy object never disturbs zombies regardless of weight', async (
     assert.equal(zombifyRemaining(corpse), 30);
 });
 void test('buried zombies within one step react, further ones sleep', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const moves = game.moves ?? 0;
     const diagonal = await buriedZombieAt(11, 11, moves + 30);
@@ -76,7 +76,7 @@ void test('buried zombies within one step react, further ones sleep', async () =
     assert.equal(zombifyRemaining(far), 30);
 });
 void test('short timers floor at one remaining turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const moves = game.moves ?? 0;
     const one = await buriedZombieAt(11, 10, moves + 1);
@@ -87,7 +87,7 @@ void test('short timers floor at one remaining turn', async () => {
     assert.equal(zombifyRemaining(two), 1);
 });
 void test('due and overdue timers are restarted at one turn, not skipped', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const moves = game.moves ?? 0;
     assert.ok(moves > 5, 'fixture moves must exceed the overdue depth');
@@ -102,7 +102,7 @@ void test('due and overdue timers are restarted at one turn, not skipped', async
     assert.equal(zombifyRemaining(overdue), 1);
 });
 void test('only a zombify timer on a buried corpse qualifies', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const moves = game.moves ?? 0;
     const reviver = await buriedZombieAt(11, 10, moves + 30);
@@ -118,7 +118,7 @@ void test('only a zombify timer on a buried corpse qualifies', async () => {
     assert.equal(zombifyRemaining(untimed), null);
 });
 void test('direct disturbance shares the impactor coordinate semantics', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const corpse = await buriedZombieAt(12, 12, (game.moves ?? 0) + 90);
     disturbBuriedZombies(12, 11);

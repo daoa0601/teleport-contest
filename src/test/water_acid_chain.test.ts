@@ -10,7 +10,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('falling into water describes subsequent known acid bottles as another potion', async () => {
-    const level = freshObjectRoom({ hero: { uluck: -13, swimming: true } });
+    const level = await freshObjectRoom({ hero: { uluck: -13, swimming: true } });
     requirePlayingGame(game);
     level.requireAt(11, 10).typ = POOL;
     const first = await addInventoryObject(POT_ACID, { blessed: true });

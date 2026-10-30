@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 
 void test('a hurtled hero wakes visible sleeping neighbours after bumping a sleeper', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const flags = MM_ANGRY | MM_NOGRP | NO_MINVENT;
     const bumped = await createMonsterAt('leprechaun', 11, 10, flags);
     const goblin = await createMonsterAt('goblin', 12, 10, flags);
@@ -26,7 +26,7 @@ void test('a hurtled hero wakes visible sleeping neighbours after bumping a slee
     assert.equal(canSeeMonster(unseen), false);
     for (const monster of [bumped, goblin, newt]) {
         assert.equal(canSeeMonster(monster), true);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     const input = resetInputState();
     const messages: string[] = [];
@@ -50,7 +50,7 @@ void test('a hurtled hero wakes visible sleeping neighbours after bumping a slee
 
 for (const obstacle of ['wall', 'cockatrice']) {
     void test(`a fatal hurtle into a ${obstacle} ends before waking nearby sleepers`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { uhp: 1, uhpmax: 40 },
             flags: { bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
         });
@@ -73,13 +73,13 @@ for (const obstacle of ['wall', 'cockatrice']) {
 }
 
 void test('a hurtled hero bumps into a long worm tail and stops short of it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { ux, uy } = game.u;
     const worm = await createMonsterAt('long worm', ux + 1, uy + 1, MM_NOGRP | MM_NOTAIL | NO_MINVENT);
     worm.wormSegments = [{ x: ux + 1, y: uy }];
     worm.msleeping = 1;
-    newsym(ux + 1, uy);
-    newsym(ux + 1, uy + 1);
+    await newsym(ux + 1, uy);
+    await newsym(ux + 1, uy + 1);
     const input = resetInputState();
     const messages: string[] = [];
     input.beforeRead = () => { messages.push(game._pending_message); };

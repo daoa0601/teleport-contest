@@ -179,7 +179,7 @@ export async function explode(x: number, y: number, type: number, damage: number
     const hallucinate = monsterExplosion && heroIsHallucinating(state)
         && /(?:'s|s') explosion/i.test(killer || '');
     let description = monsterExplosion ? killer || source.name : source.name;
-    const cells = explosionCells(x, y, damageType, objectClass, Math.abs(style), state);
+    const cells = await explosionCells(x, y, damageType, objectClass, Math.abs(style), state);
     const visible = cells.some(cell => cansee(cell.x, cell.y));
     if (visible) {
         await paintExplosion(cells, state);
@@ -221,7 +221,7 @@ export async function explode(x: number, y: number, type: number, damage: number
             if (state.u.uswallow && state.u.ustuck === monster)
                 await engulferMessage(monster, damageType, objectClass, state, publish);
             else if (cansee(cell.x, cell.y)) {
-                if (monster.m_ap_type) revealMonsterAppearance(monster);
+                if (monster.m_ap_type) await revealMonsterAppearance(monster);
                 await publish(`${monsterName(monster, { state, capitalized: true })} is caught in the ${description}!`);
             }
             const seen = canSeeMonster(monster);
@@ -380,7 +380,7 @@ function monsterResists(monster: Monster, damageType: DamageType, objectClass: n
     return kind.resists(monster);
 }
 
-function explosionCells(x: number, y: number, damageType: DamageType, objectClass: number, style: number, state: PlayingGameState): ExplosionCell[] {
+async function explosionCells(x: number, y: number, damageType: DamageType, objectClass: number, style: number, state: PlayingGameState): Promise<ExplosionCell[]> {
     const cells: ExplosionCell[] = [];
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -391,8 +391,8 @@ function explosionCells(x: number, y: number, damageType: DamageType, objectClas
             const monster = occupant(cx, cy, state);
             const living = monster && monster.mhp > 0;
             if (living && monsterResists(monster, damageType, objectClass)) shield |= 1;
-            if (living && cansee(cx, cy) && !canSpotMonster(monster)) map_invisible(cx, cy);
-            else if (!living) unmap_invisible(cx, cy);
+            if (living && cansee(cx, cy) && !canSpotMonster(monster)) await map_invisible(cx, cy);
+            else if (!living) await unmap_invisible(cx, cy);
             const glyph = explosionGlyph(style, dx, dy);
             cells.push({ x: cx, y: cy, shield, glyph });
         }
@@ -401,7 +401,7 @@ function explosionCells(x: number, y: number, damageType: DamageType, objectClas
 }
 
 async function paintExplosion(cells: readonly ExplosionCell[], state: GameState) {
-    const paint = (cell: ExplosionCell) => show_glyph_cell(cell.x, cell.y,
+    const paint = async (cell: ExplosionCell) => await show_glyph_cell(cell.x, cell.y,
         cell.glyph.ch, cell.glyph.color, cell.glyph.decgfx, 0, cell.glyph);
     const flush = async () => {
         await flush_screen(1);
@@ -421,19 +421,19 @@ async function paintExplosion(cells: readonly ExplosionCell[], state: GameState)
             for (const ch of SHIELD_STATIC) {
                 const glyph = shieldGlyph(ch);
                 for (const cell of cells) {
-                    if (cell.shield) show_glyph_cell(cell.x, cell.y,
+                    if (cell.shield) await show_glyph_cell(cell.x, cell.y,
                         glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
                 }
                 await flush();
                 await state.animationFrame?.();
             }
-            for (const cell of cells) if (cell.shield) paint(cell);
+            for (const cell of cells) if (cell.shield) await paint(cell);
         } else {
             await state.animationFrame?.();
             await state.animationFrame?.();
         }
     } finally {
-        effect.clear();
+        await effect.clear();
     }
 }
 

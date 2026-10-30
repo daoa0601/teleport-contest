@@ -14,7 +14,7 @@ for (const objectType of [POT_OIL, EGG]) {
     for (const monsterTurn of [false, true]) {
         const source = objectType === POT_OIL ? 'burning oil' : 'a pyrolisk egg';
         void test(`${source} broken during the ${monsterTurn ? 'monster' : 'hero'} turn assigns blast credit by that turn`, async () => {
-            freshObjectRoom({ context: { mon_moving: monsterTurn } });
+            await freshObjectRoom({ context: { mon_moving: monsterTurn } });
             requireFixtureGame(game);
             const survivor = await createMonsterAt('soldier', 15, 10, MM_NOGRP | NO_MINVENT);
             survivor.mhp = survivor.mhpmax = 100;

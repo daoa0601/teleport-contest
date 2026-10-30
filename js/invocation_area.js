@@ -65,7 +65,7 @@ export async function makeInvocationArea({ state = game } = {}) {
     }
     await pline('You are standing at the top of a stairwell leading down!');
     await mkstairs(state.u.ux, state.u.uy, false, null);
-    newsym(state.u.ux, state.u.uy);
+    await newsym(state.u.ux, state.u.uy);
     state.vision_full_recalc = 1;
 }
 async function changeInvocationSquare({ x, y }, distance, state) {
@@ -111,7 +111,7 @@ async function changeInvocationSquare({ x, y }, distance, state) {
     const monster = monsterAtPosition(level, x, y);
     if (monster) {
         if (monster.m_ap_type)
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
         if (level.traps.some(candidate => candidate.tx === x && candidate.ty === y)) {
             const action = await triggerImmediateMonsterTrap(monster, state);
             await finishImmediateMonsterTrap(action, state);
@@ -122,7 +122,7 @@ async function changeInvocationSquare({ x, y }, distance, state) {
             });
     }
     vision_note_blocker_change(x, y);
-    newsym(x, y);
+    await newsym(x, y);
 }
 function finishInvocationLiquidDeath(monster, options) {
     if (options.cause === 'drowning' || options.cause === 'lava-burning')

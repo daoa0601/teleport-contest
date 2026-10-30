@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 // C dig.c zap_dig(): a closed door in the beam's way is razed outright.
 void test('a digging wand razes a closed door in its path', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
@@ -35,7 +35,7 @@ void test('an axe fells a tree and a pick cuts rock on the final swing', async (
         { tool: PICK_AXE, terrain: STONE, message: 'You succeed in cutting away some rock.' },
     ] as const;
     for (const expectation of cases) {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const location = level.requireAt(11, 10);
         location.typ = expectation.terrain;
         const tool = await addInventoryObject(expectation.tool, { spe: 0 });
@@ -58,7 +58,7 @@ void test('an axe fells a tree and a pick cuts rock on the final swing', async (
 
 // C dig.c dig(): elves and rangers lose alignment for felling a tree.
 void test('a ranger is penalized for cutting down a tree', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const ranger = roles.find(candidate => candidate.key === 'ranger');
     assert.ok(ranger);
     game.urole = ranger;

@@ -26,7 +26,7 @@ function screenText(): string {
 }
 
 async function deathShop({ debug = false, bones = false, outside = false } = {}) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         heroX: outside ? 20 : 10, right: 24,
         flags: { debug, bones, disclose: '-i -a -v -c -o', tombstone: false },
         hero: { uhp: 4, uhpmax: 12 },

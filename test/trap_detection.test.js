@@ -36,14 +36,14 @@ function visibleTrap(x, y) {
     assert.ok(glyph?.kind === 'trap', `Expected a visible trap at ${x},${y}`);
     return glyph;
 }
-function detectionRoom(options = {}) {
-    return freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });
+async function detectionRoom(options = {}) {
+    return await freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });
 }
 function dismissView() { pushKeys('.'); }
 void test('no traps produce strange feeling without clearing stale object memory or consuming the source', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
-    map_object(await uninitializedObject(GOLD_PIECE, { ox: 30, oy: 10 }), true, false);
+    await map_object(await uninitializedObject(GOLD_PIECE, { ox: 30, oy: 10 }), true, false);
     const source = { cursed: true, quantity: 2 };
     const result = await detectTraps(source);
     assert.equal(result.result, 1);
@@ -54,7 +54,7 @@ void test('no traps produce strange feeling without clearing stale object memory
     assert.equal(source.quantity, 2);
 });
 void test('the only floor trap under the hero itches without revealing the trap', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const trap = await maketrap(game.u.ux, game.u.uy, PIT);
     const result = await detectTraps({ cursed: false });
@@ -66,7 +66,7 @@ void test('the only floor trap under the hero itches without revealing the trap'
     assert.equal(game._lastPlineMessage, 'Your toes itch.');
 });
 void test('a trapped box nested in carried luggage is observed and its trap becomes known', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const sack = await addInventoryObject(SACK, { observed: false, dknown: false });
     const chest = await uninitializedObject(CHEST, { otrapped: true, tknown: false, dknown: false });
@@ -85,7 +85,7 @@ void test('a trapped box nested in carried luggage is observed and its trap beco
     assert.equal(game._lastPlineMessage, 'Your toes itch.');
 });
 void test('remote floor traps reveal all floor traps and cover a trapped container on the same square', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const remote = await maketrap(30, 10, ARROW_TRAP);
@@ -102,7 +102,7 @@ void test('remote floor traps reveal all floor traps and cover a trapped contain
     assert.equal(rememberedTrap(level, 30, 10).trapType, ARROW_TRAP);
 });
 void test('trap detection finds buried containers and chests nested in monster inventories', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     const buried = await floorObject(CHEST, 30, 10, { otrapped: true, tknown: false, dknown: false });
     addBuriedObject(buried, 30, 10);
@@ -124,7 +124,7 @@ void test('trap detection finds buried containers and chests nested in monster i
     assert.equal(rememberedTrap(level, 32, 10).trapType, TRAPPED_CHEST);
 });
 void test('a ridden steed carries its trapped chest at the hero location', async () => {
-    detectionRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await detectionRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const steed = await createSaddledSteed();
     const chest = await uninitializedObject(CHEST, { otrapped: true, tknown: false });
@@ -139,7 +139,7 @@ void test('a ridden steed carries its trapped chest at the hero location', async
     assert.equal(game._lastPlineMessage, 'Your toes itch.');
 });
 void test('cursed detection shows fake gold while leaving a floor trap concealed', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const trap = await maketrap(30, 10, PIT);
@@ -161,7 +161,7 @@ void test('cursed detection shows fake gold while leaving a floor trap concealed
     assert.equal(rememberedObject(level, 30, 10).otyp, GOLD_PIECE);
 });
 void test('hallucinating trap detection remembers imaginary objects without observing chest appearance', async () => {
-    const level = detectionRoom({ hero: { hallucinationTurns: 20 } });
+    const level = await detectionRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const trap = await maketrap(30, 10, PIT);
@@ -177,7 +177,7 @@ void test('hallucinating trap detection remembers imaginary objects without obse
     assert.equal((level.objects[30]?.[10] || []).length, 0);
 });
 void test('trapped doors are revealed but a secret door wall flag is not a trap', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     const secretDoorSquare = level.requireAt(30, 10);
     secretDoorSquare.typ = SDOOR;
@@ -198,7 +198,7 @@ void test('trapped doors are revealed but a secret door wall flag is not a trap'
     assert.equal(level.requireAt(32, 10).doormask, D_TRAPPED | D_CLOSED);
 });
 void test('trap browsing suspends underwater view until input finishes then restores it', async () => {
-    const level = detectionRoom({ hero: { uinwater: 1 } });
+    const level = await detectionRoom({ hero: { uinwater: 1 } });
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     level.requireAt(30, 10).typ = ROOM;
@@ -218,11 +218,11 @@ void test('trap browsing suspends underwater view until input finishes then rest
     assert.equal(rememberedTrap(level, 30, 10).trapType, PIT);
 });
 void test('itching messages describe the current body and beginner hallucination uses a normal feeling', async () => {
-    detectionRoom({ hero: { umonnum: MONSTER_NAME.indexOf('pony') } });
+    await detectionRoom({ hero: { umonnum: MONSTER_NAME.indexOf('pony') } });
     requirePlayingGame(game);
     await detectTraps(null);
     assert.equal(game._lastPlineMessage, 'Your rear hoof tips stop itching.');
-    detectionRoom({ flags: { beginner: true }, hero: { hallucinationTurns: 20 } });
+    await detectionRoom({ flags: { beginner: true }, hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     await detectTraps(null);
     assert.equal(game._lastPlineMessage, 'You have a normal feeling for a moment, then it passes.');

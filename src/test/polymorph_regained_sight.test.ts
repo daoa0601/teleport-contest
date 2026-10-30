@@ -7,7 +7,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 void test('gaining eyes through polymorph reveals the appearance of carried items', async () => {
-    freshRoomWithPolymorphedHero('yellow light', { flags: { debug: true } });
+    await freshRoomWithPolymorphedHero('yellow light', { flags: { debug: true } });
     const ring = await addInventoryObject(RIN_POLYMORPH_CONTROL, { observed: false, dknown: false });
     assert.equal(ring.dknown, false);
     pushKeys('polyself\ngoblin\n                        ');

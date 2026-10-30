@@ -86,7 +86,7 @@ async function chooseSpellCenter(state: PlayingGameState) {
     const valid = (x: number, y: number) =>
         Math.max(Math.abs(x - state.u.ux), Math.abs(y - state.u.uy)) <= 10
         && isok(x, y) && cansee(x, y) && !IS_STWALL(state.level.at(x, y)?.typ ?? 0);
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
     await showGetposInstructions(state);
@@ -164,7 +164,7 @@ export async function castChainLightning({ state = game }: { state?: GameState }
                             if (death.heroDied || state.program_state.gameover) return { heroDied: true };
                         } else {
                             await plineWithContinuation(`You shock ${monsterName(monster, { state })}${damage > 4 ? '!' : '.'}`);
-                            if (!canSeeMonster(monster) && !state.notonhead) map_invisible(zap.x, zap.y);
+                            if (!canSeeMonster(monster) && !state.notonhead) await map_invisible(zap.x, zap.y);
                         }
                     } else if (canSeeMonster(monster)) {
                         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} resists.`);
@@ -196,7 +196,7 @@ export async function castChainLightning({ state = game }: { state?: GameState }
         await state.animationFrame?.();
         await state.animationFrame?.();
     } finally {
-        if (!state.program_state.gameover) painted.clear();
+        if (!state.program_state.gameover) await painted.clear();
     }
     return { heroDied: false };
 }
@@ -219,7 +219,7 @@ async function propagateLightning(queue: LightningStep[], painted: TemporaryMapE
     if (queue.some(queued => queued.x === x && queued.y === y)) return;
     queue.push({ direction: zap.direction, x, y, strength });
     if (cansee(x, y)) {
-        paintRayCell(painted, x, y, dx, dy, displayedBeam);
+        await paintRayCell(painted, x, y, dx, dy, displayedBeam);
         await flush_screen(0);
     }
 }

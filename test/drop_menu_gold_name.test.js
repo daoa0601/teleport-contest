@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // "in quiver pouch" suffix from doname()'s W_QUIVER case.  A second object
 // class keeps query_category() from collapsing to a single category.
 void test('the drop-type menu names one picked up gold piece with an article', async (t) => {
-    freshObjectRoom({ flags: { menu_style: 2 } });
+    await freshObjectRoom({ flags: { menu_style: 2 } });
     await addInventoryObject(DAGGER);
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 1 });
     gold.pickup_prev = true;
@@ -30,7 +30,7 @@ void test('the drop-type menu names one picked up gold piece with an article', a
     assert.match(menu, /P - Just picked up: a gold piece/);
 });
 void test('quivered picked-up gold reports the quiver pouch', async (t) => {
-    freshObjectRoom({ flags: { menu_style: 2 } });
+    await freshObjectRoom({ flags: { menu_style: 2 } });
     await addInventoryObject(DAGGER);
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 3, owornmask: W_QUIVER });
     gold.pickup_prev = true;

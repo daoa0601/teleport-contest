@@ -33,7 +33,7 @@ for (const type of [BEAR_TRAP, SPIKED_PIT]) {
             trap: { tseen: true },
         });
         initRng(1n);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         const before = glyphAt(monster.mx, monster.my);
         assert.ok(before?.kind === 'monster');
         await tryMonsterTrapEscape(monster, game, { random: () => 1, publish: () => { } });
@@ -44,7 +44,7 @@ for (const type of [BEAR_TRAP, SPIKED_PIT]) {
         else
             assert.equal(trap.ttyp, PIT);
         assert.equal(glyphAt(monster.mx, monster.my)?.glyph, before.glyph, 'mintrap leaves the current appearance for dochug to refresh');
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         assert.notEqual(glyphAt(monster.mx, monster.my)?.glyph, before.glyph);
     });
 }
@@ -69,7 +69,7 @@ async function boulderCoveredPit() {
     });
     const boulder = await floorObject(BOULDER, room.monster.mx, room.monster.my);
     initRng(1n);
-    newsym(room.monster.mx, room.monster.my);
+    await newsym(room.monster.mx, room.monster.my);
     return { ...room, boulder };
 }
 //# sourceMappingURL=hallucinated_trap_escape.test.js.map

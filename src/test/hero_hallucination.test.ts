@@ -118,7 +118,7 @@ void test('saved Grayswandir still suppresses a dose that resumes on unwielding'
     game.plname = 'Hallu';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Hallu', storage), true);
+    assert.equal(await restoreGame('Hallu', storage), true);
     assert.equal(heroIsHallucinating(), false);
     await setPrimaryWeapon(null);
     assert.equal(heroIsHallucinating(), true);

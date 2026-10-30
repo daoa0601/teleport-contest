@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a fatal countdown warning remains visible after Escape stops ordinary prose', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     await plineWithContinuation('An ordinary message.');
     input.feed('\u001b');

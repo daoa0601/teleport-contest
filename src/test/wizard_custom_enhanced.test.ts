@@ -9,7 +9,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('#wizcustom removes and restores palette-only rows with customcolors', async () => {
-    start('symset:DECgraphics');
+    await start('symset:DECgraphics');
     for (const enabled of [false, true, false]) {
         applyNethackrc(`OPTIONS=${enabled ? '' : '!'}customcolors`);
         const rows = await listing();
@@ -23,7 +23,7 @@ for (const { set, mainWall } of [
     { set: 'Enhanced2', mainWall: '2551' },
 ]) {
     void test(`#wizcustom lists ${set} terrain, beam, swallow and explosion replacements`, async () => {
-        start(`symset:${set}`);
+        await start(`symset:${set}`);
         const rows = await listing();
 
         assert.match(rowFor(rows, 'G_fountain'), /'\\123' 12 000000096ff U\+2320 <226> <140> <160>/);
@@ -44,7 +44,7 @@ for (const { set, mainWall } of [
 }
 
 void test('#wizcustom keeps Unicode replacements when customcolors is disabled', async () => {
-    start('symset:Enhanced1,!customcolors');
+    await start('symset:Enhanced1,!customcolors');
     const rows = await listing();
 
     assert.match(rowFor(rows, 'G_fountain'), /00000000000 U\+2320 <226> <140> <160>/);
@@ -52,7 +52,7 @@ void test('#wizcustom keeps Unicode replacements when customcolors is disabled',
 });
 
 void test('#wizcustom keeps palette entries when customsymbols is disabled', async () => {
-    start('symset:Enhanced2,!customsymbols');
+    await start('symset:Enhanced2,!customsymbols');
     const rows = await listing();
 
     assert.match(rowFor(rows, 'G_fountain'), /000000096ff/);
@@ -61,7 +61,7 @@ void test('#wizcustom keeps palette entries when customsymbols is disabled', asy
 });
 
 void test('#wizcustom has no customized glyphs when both customization options are disabled', async () => {
-    start('symset:Enhanced1,!customcolors,!customsymbols');
+    await start('symset:Enhanced1,!customcolors,!customsymbols');
     const rows = await listing();
 
     assert.ok(rows.some(row => row.includes('#wizcustom:')));
@@ -69,7 +69,7 @@ void test('#wizcustom has no customized glyphs when both customization options a
 });
 
 void test('#wizcustom replaces enhanced glyphs when a different symbol set is loaded', async () => {
-    start('symset:Enhanced1');
+    await start('symset:Enhanced1');
     assert.match(rowFor(await listing(), 'G_fountain'), /U\+2320/);
     applyNethackrc('OPTIONS=symset:DECgraphics');
     const rows = await listing();
@@ -79,8 +79,8 @@ void test('#wizcustom replaces enhanced glyphs when a different symbol set is lo
     assert.doesNotMatch(rows.join('\n'), /U\+/);
 });
 
-function start(options: string): void {
-    freshObjectRoom({ flags: { debug: true } });
+async function start(options: string): Promise<void> {
+    await freshObjectRoom({ flags: { debug: true } });
     // A wide real terminal exposes the Unicode columns clipped by 80-column tty.
     game.nhDisplay = new GameDisplay(new Terminal(null, { rows: 24, cols: 160 }));
     applyNethackrc(`OPTIONS=${options}`);

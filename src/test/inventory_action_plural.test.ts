@@ -12,7 +12,7 @@ import { planInput } from './support/planned-input.js';
 
 for (const quivered of [false, true]) {
     void test(`the discovered Eyes have plural ${quivered ? 'un-ready' : 'unwield'} advice`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
         assert.ok(eyes.oartifact);
         assert.ok(eyes.invlet);

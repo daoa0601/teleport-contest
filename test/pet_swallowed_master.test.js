@@ -10,7 +10,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a sleeping pet wakes after its swallowed master browses the terrain', async () => {
-    freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10,
         flags: { debug: true, tips: false }, hero: { blindTurns: 100 } });
     requirePlayingGame(game);
     const vortex = await createMonsterAt('dust vortex', 10, 10, NO_MINVENT);

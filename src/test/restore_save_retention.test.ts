@@ -10,11 +10,11 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const mode of ['wizard', 'explore']) {
     for (const answer of ['y', 'n']) {
         void test(`${mode} recovery ${answer === 'y' ? 'keeps' : 'discards'} its save only after the keep-file answer`, async () => {
-            freshObjectRoom({ flags: { debug: mode === 'wizard', explore: mode === 'explore' } });
+            await freshObjectRoom({ flags: { debug: mode === 'wizard', explore: mode === 'explore' } });
             game.plname = 'Keeper';
             const storage = memoryStorage();
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame(game.plname, storage), true);
+            assert.equal(await restoreGame(game.plname, storage), true);
             const key = 'teleport-save:keeper';
             assert.notEqual(storage.getItem(key), null, 'Special-mode saves remain until the player answers');
             const input = resetInputState();

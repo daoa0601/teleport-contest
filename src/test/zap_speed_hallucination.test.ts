@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const condition of ['already fast', 'frozen', 'immobile'] as const) {
     void test(`speed magic on a target that is ${condition} preserves the next hallucinated name`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const target = await createMonsterAt(condition === 'immobile' ? 'brown mold' : 'pony', 11, 10);
         const nextTarget = await createMonsterAt('pony', 10, 11);
@@ -38,7 +38,7 @@ for (const condition of ['already fast', 'frozen', 'immobile'] as const) {
 }
 
 void test('speed magic names a hallucinated sleeping target only when it wakes up', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('pony', 11, 10);
     target.msleeping = 1;

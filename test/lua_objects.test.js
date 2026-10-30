@@ -12,7 +12,7 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 void test('Lua creates a blessed food ration and places it on the live map', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         ration = obj.new("blessed food ration")
@@ -25,7 +25,7 @@ void test('Lua creates a blessed food ration and places it on the live map', asy
     assert.equal(ration.cursed, false);
 });
 void test('Lua moves a container into inventory without breaking its contents or their handles', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         box = obj.new({id = "chest"})
@@ -55,7 +55,7 @@ void test('Lua moves a container into inventory without breaking its contents or
     assert.equal(core.getGlobal('contents_deleted'), true);
 });
 void test('a Lua handle follows its stack when the item merges into inventory', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         first = obj.new("3 rocks")
@@ -71,7 +71,7 @@ void test('a Lua handle follows its stack when the item merges into inventory', 
     assert.equal(core.getGlobal('combined_quantity'), 8);
 });
 void test('adding luckstones to an existing stack changes the carried luck balance', async (t) => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const core = await startLuaCore(t);
     await core.executeAsync(`
         u.giveobj(obj.new("3 cursed luckstones"))
@@ -82,7 +82,7 @@ void test('adding luckstones to an existing stack changes the carried luck balan
     assert.equal(game.u.moreluck, 3);
 });
 void test('Lua object reports describe the item without letting table edits change it', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         rocks = obj.new("3 rocks")
@@ -101,7 +101,7 @@ void test('Lua object reports describe the item without letting table edits chan
     assert.equal(core.getGlobal('removed'), true);
 });
 void test('stopping a burn timer from Lua extinguishes the lamp and preserves unused fuel', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync('lamp = obj.new("oil lamp"); lamp:placeobj(u.ux, u.uy)');
     const lamp = floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy)
@@ -121,7 +121,7 @@ void test('stopping a burn timer from Lua extinguishes the lamp and preserves un
     assert.equal(core.getGlobal('still_burning'), false);
 });
 void test('burying a lit lamp extinguishes it without consuming its remaining fuel', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync('lamp = obj.new("oil lamp"); lamp:placeobj(u.ux, u.uy)');
     const lamp = floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy)
@@ -136,7 +136,7 @@ void test('burying a lit lamp extinguishes it without consuming its remaining fu
     assert.ok(requireGameLevel(game).buriedObjects?.includes(lamp));
 });
 void test('Lua object names can select the current shuffled appearance', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         local wand = obj.new({id = "marble", class = "/"})
@@ -163,7 +163,7 @@ void test('the tutorial hunger callback supplies food once through the game loop
         .filter(object => object.otyp === FOOD_RATION).length, 1);
 });
 void test('Lua burial applies carried effects only to items which leave inventory', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         stone = obj.new("uncursed loadstone")
@@ -185,7 +185,7 @@ void test('Lua burial applies carried effects only to items which leave inventor
     assert.equal(game.u.uhave.bell, true);
 });
 void test('a studied spellbook reports its study tally through obj:totable() usecount', async (t) => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     const core = await startLuaCore(t);
     await core.executeAsync('spellbook = obj.new("blessed spellbook of light"); u.giveobj(spellbook)');
     const source = game.inventory.find(object => object.otyp === SPE_LIGHT);
@@ -201,7 +201,7 @@ void test('a studied spellbook reports its study tally through obj:totable() use
     assert.equal(core.getGlobal('studies'), 1);
 });
 void test('boxing an object off the floor keeps its last square in its Lua report', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         rock = obj.new("rock")
@@ -216,7 +216,7 @@ void test('boxing an object off the floor keeps its last square in its Lua repor
     assert.equal(core.getGlobal('rock_where'), 2); // OBJ_CONTAINED
 });
 void test('Lua object methods ignore extra arguments except where native code checks the count', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     await core.executeAsync(`
         first = obj.new("rock")
@@ -239,7 +239,7 @@ void test('Lua object methods ignore extra arguments except where native code ch
     await assert.rejects(core.executeAsync('obj.at(1)'));
 });
 void test('bury raises an error for two arguments before it inspects the object', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const core = await startLuaCore(t);
     // l_obj_bury accepts only one or three arguments and rejects anything
     // else before checking whether the handle refers to a real object.

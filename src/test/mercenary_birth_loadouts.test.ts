@@ -56,7 +56,7 @@ const MERCENARY_RANKS = [
 ] as const;
 
 async function bornAt(name: string, seed: bigint, x = 12, y = 10) {
-    freshObjectRoom({ gameplaySeed: seed });
+    await freshObjectRoom({ gameplaySeed: seed });
     const monster = await makemonAt(MONSTER_NAME.indexOf(name), x, y, MM_NOMSG);
     assert.ok(monster, `${name} must be born (seed ${seed})`);
     return monster;

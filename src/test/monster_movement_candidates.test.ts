@@ -25,7 +25,7 @@ async function canStep(monster: Monster, x: number, y: number) {
 
 for (const species of ['floating eye', 'air elemental']) {
     void test(`${species} ${species === 'floating eye' ? 'avoids' : 'crosses'} lava`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         level.requireAt(11, 10).typ = LAVAPOOL;
@@ -35,7 +35,7 @@ for (const species of ['floating eye', 'air elemental']) {
 }
 
 void test('a confused peaceful monster can stumble onto the hero square', async () => {
-    freshObjectRoom({ heroX: 11, heroY: 10 });
+    await freshObjectRoom({ heroX: 11, heroY: 10 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, NO_MINVENT);
     goblin.mpeaceful = 1;
@@ -47,7 +47,7 @@ void test('a confused peaceful monster can stumble onto the hero square', async 
 });
 
 void test('blindness lets a monster pass a scare-monster scroll', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
     await placeCreatedObject(await knownObject(SCR_SCARE_MONSTER), 11, 10);
@@ -59,7 +59,7 @@ void test('blindness lets a monster pass a scare-monster scroll', async () => {
 });
 
 void test('a blind unicorn need not avoid squares lined up with the hero', async () => {
-    freshObjectRoom({ heroX: 14, heroY: 10 });
+    await freshObjectRoom({ heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const unicorn = await createMonsterAt('white unicorn', 10, 10, MM_ANGRY | NO_MINVENT);
     unicorn.mux = 14;
@@ -72,7 +72,7 @@ void test('a blind unicorn need not avoid squares lined up with the hero', async
 });
 
 void test('a peaceful monster avoids the displaced image as well as the hero', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12, hero: { displaced: true } });
+    await freshObjectRoom({ heroX: 15, heroY: 12, hero: { displaced: true } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, NO_MINVENT);
     goblin.mpeaceful = 1;
@@ -83,7 +83,7 @@ void test('a peaceful monster avoids the displaced image as well as the hero', a
 });
 
 void test('displacement carries visible scare protection to the apparent hero square', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12, hero: { displaced: true } });
+    await freshObjectRoom({ heroX: 15, heroY: 12, hero: { displaced: true } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
     goblin.mux = 11;
@@ -97,7 +97,7 @@ void test('displacement carries visible scare protection to the apparent hero sq
 });
 
 void test('ordinary pets do not select other pets as melee destinations', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const first = await createMonsterAt('little dog', 10, 10, NO_MINVENT);
     const second = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
@@ -112,7 +112,7 @@ void test('ordinary pets do not select other pets as melee destinations', async 
 
 for (const species of ['goblin', 'green dragon', 'iron golem']) {
     void test(`${species} respects its actual poison-gas tolerance when moving`, async () => {
-        freshObjectRoom({ heroX: 15, heroY: 12 });
+        await freshObjectRoom({ heroX: 15, heroY: 12 });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         await createPoisonGasCloud(game, 11, 10, 1, 8);
@@ -122,7 +122,7 @@ for (const species of ['goblin', 'green dragon', 'iron golem']) {
 }
 
 void test('a monster already in poison gas can move within the cloud', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
     await createPoisonGasCloud(game, 10, 10, 1, 8);
@@ -132,7 +132,7 @@ void test('a monster already in poison gas can move within the cloud', async () 
 });
 
 void test('harmless steam does not block a breathing monster', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
     await createSteamCloud(game, 11, 10, 1);
@@ -141,7 +141,7 @@ void test('harmless steam does not block a breathing monster', async () => {
 });
 
 void test('Rogue-level doorways forbid diagonal movement even without a door', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
     const location = level.requireAt(11, 11);
@@ -157,7 +157,7 @@ void test('Rogue-level doorways forbid diagonal movement even without a door', a
 
 
 void test('poison resistance alone does not make a monster willing to enter poison gas', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const bee = await createMonsterAt('killer bee', 10, 10, MM_ANGRY | NO_MINVENT);
     await createPoisonGasCloud(game, 11, 10, 1, 8);
@@ -166,17 +166,17 @@ void test('poison resistance alone does not make a monster willing to enter pois
 });
 
 void test('a long worm body blocks crossing between its head and the next segment', async () => {
-    const level = freshObjectRoom({ left: 7, right: 18, heroX: 16, heroY: 13 });
+    const level = await freshObjectRoom({ left: 7, right: 18, heroX: 16, heroY: 13 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 12, 11, MM_ANGRY | NO_MINVENT);
-    removeMonsterWormBody(worm);
+    await removeMonsterWormBody(worm);
     placeMonsterAt(worm, worm.mx, worm.my);
     for (let x = 11; x <= 13; x++) {
         for (let y = 10; y <= 12; y++) level.requireAt(x, y).typ = STONE;
     }
     level.requireAt(12, 11).typ = ROOM;
     level.requireAt(11, 10).typ = ROOM;
-    initializeMonsterWormBody(worm, { segmentCount: 1 });
+    await initializeMonsterWormBody(worm, { segmentCount: 1 });
     assert.equal(worm.wormSegments?.length, 1);
     level.requireAt(12, 10).typ = ROOM;
     level.requireAt(11, 11).typ = ROOM;
@@ -200,7 +200,7 @@ for (const [trapName, type, resistant, vulnerable] of [
 ] satisfies [string, number, string, string][]) {
     for (const species of [resistant, vulnerable]) {
         void test(`${species} ${species === resistant ? 'can cross' : 'avoids'} a known ${trapName}`, async () => {
-            const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+            const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
             requirePlayingGame(game);
             const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
             const trap = addTrap(level, type, 11, 10);
@@ -212,7 +212,7 @@ for (const [trapName, type, resistant, vulnerable] of [
 }
 
 void test('a tracked fixed teleport remains a destination even after its type is learned', async () => {
-    const level = freshObjectRoom({ heroX: 11, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 11, heroY: 10 });
     requirePlayingGame(game);
     setTrack(game);
     game.u.ux = 15;

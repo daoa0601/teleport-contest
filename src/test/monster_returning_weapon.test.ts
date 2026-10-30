@@ -20,7 +20,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an uncaught returning candle is extinguished before landing', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     const candle = await knownObject(TALLOW_CANDLE, { age: 100 });
     beginObjectBurn(candle, game);
@@ -37,7 +37,7 @@ void test('an uncaught returning candle is extinguished before landing', async (
 });
 
 void test('an uncaught returning lamp requests new lighting at its landing position', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     const lamp = await knownObject(OIL_LAMP, { age: 100 });
     beginObjectBurn(lamp, game);
@@ -58,7 +58,7 @@ for (const { underlay, surface, splash } of [
     { underlay: DB_MOAT, surface: 'water', splash: true },
 ]) {
     void test(`a returning club landing on ${surface} below a raised bridge ${splash ? 'splashes' : 'does not splash'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
         const club = await knownObject(AKLYS);
         const landing = level.requireAt(12, 10);
@@ -81,7 +81,7 @@ for (const { type, name, splash } of [
     { type: WAR_HAMMER, name: 'a metal hammer', splash: true },
 ]) {
     void test(`${name} landing in lava below a raised bridge ${splash ? 'splashes' : 'does not splash'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
         const weapon = await knownObject(type, { oerodeproof: true });
         const landing = level.requireAt(12, 10);
@@ -100,7 +100,7 @@ for (const { type, name, splash } of [
 }
 
 async function armedSoldier() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     findArmorClass();
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
@@ -130,7 +130,7 @@ void test('an unseen thrower missing its returning club reports Something landin
 });
 
 void test('a monster chooses its tethered club before an expendable dagger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     setMonsterApparentHeroPosition(soldier, game, rn2);
@@ -165,7 +165,7 @@ void test('a monster catches its returning aklys and can use it again', async ()
 });
 
 void test('a caught aklys stays wielded without counting as worn armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     setMonsterApparentHeroPosition(soldier, game, rn2);
@@ -227,7 +227,7 @@ void test('a confused monster can be hit by its own returning club', async () =>
 // callers return only aklyses, which have no stock artifact. Exercise that
 // public return boundary with a real artifact and no attacking creature.
 void test('an uncaught returning artifact adds its elemental damage against its thrower', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const ogre = await createMonsterAt('ogre', 13, 10, NO_MINVENT);
     ogre.mconf = true;
     ogre.mhp = ogre.mhpmax = 40;

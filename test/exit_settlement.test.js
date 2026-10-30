@@ -22,8 +22,8 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 function screenText() {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
-function exitRoom({ outside = true, debug = false, bones = false } = {}) {
-    const level = freshObjectRoom({
+async function exitRoom({ outside = true, debug = false, bones = false } = {}) {
+    const level = await freshObjectRoom({
         heroX: outside ? 24 : 10, right: 26,
         flags: { debug, bones, disclose: '-i -a -v -c -o', tombstone: false },
         hero: {
@@ -41,7 +41,7 @@ function exitRoom({ outside = true, debug = false, bones = false } = {}) {
     return { state: game, level };
 }
 void test('quitting outside a shop pays stolen gold before disclosure and keeps other possessions', async () => {
-    const { state } = exitRoom();
+    const { state } = await exitRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '+QuitCreditor';
     shopkeeper.eshk.robbed = 37;
@@ -95,7 +95,7 @@ void test('quitting outside a shop pays stolen gold before disclosure and keeps 
     assert.equal(record.points, 123);
 });
 void test('escaping leaves shop debt and gold untouched through disclosure and scoring', async () => {
-    const { state } = exitRoom();
+    const { state } = await exitRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '+EscapeCreditor';
     shopkeeper.eshk.robbed = 37;
@@ -153,7 +153,7 @@ void test('escaping leaves shop debt and gold untouched through disclosure and s
     assert.equal(record.points, 160);
 });
 void test('ascension uses death-style shop settlement before the reward summary', async () => {
-    const { state } = exitRoom({ outside: false });
+    const { state } = await exitRoom({ outside: false });
     // A synthetic Astral shop distinguishes native paybill(1) from quit's
     // paybill(0): a second visible keeper comments only in the former case.
     state.dungeons.push(createDungeon({ dname: 'The Elemental Planes', depth_start: -5 }));
@@ -209,7 +209,7 @@ void test('ascension uses death-style shop settlement before the reward summary'
     assert.equal(record.points, 320);
 });
 void test('quitting with fatal HP settles as death without another death or recovery phase', async () => {
-    const { state, level } = exitRoom({ bones: true });
+    const { state, level } = await exitRoom({ bones: true });
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = '+FinalCreditor';
     shopkeeper.eshk.robbed = 37;
@@ -253,7 +253,7 @@ void test('quitting with fatal HP settles as death without another death or reco
     assert.equal(record.points, 121);
 });
 void test('a death summary counts loose and contained gold before bones removes the inventory', async () => {
-    const { state, level } = exitRoom({ debug: true, bones: true });
+    const { state, level } = await exitRoom({ debug: true, bones: true });
     const purse = setHeroGoldAmount(state, 40);
     assert.ok(purse);
     const bag = await addInventoryObject(SACK, { contents: [] });
@@ -303,7 +303,7 @@ for (const lifeSaving of [false, true]) {
     void test(lifeSaving
         ? 'own-species genocide consumes life saving but still ends the game without bones'
         : 'own-species genocide leaves no bones on an otherwise eligible dungeon level', async () => {
-        const { state, level } = exitRoom({ debug: true, bones: true });
+        const { state, level } = await exitRoom({ debug: true, bones: true });
         const dagger = await addInventoryObject(DAGGER);
         const amulet = lifeSaving ? await addInventoryObject(AMULET_OF_LIFE_SAVING) : null;
         if (amulet) {
@@ -379,7 +379,7 @@ for (const lifeSaving of [false, true]) {
     });
 }
 void test('the quit summary uses singular counts for one gold piece, one move, and one hit point', async () => {
-    const { state } = exitRoom();
+    const { state } = await exitRoom();
     state.u.uhpmax = 1;
     state.u.uhp = 1;
     state.moves = 1;

@@ -243,7 +243,7 @@ async function collideWithMonster(monster: Monster, x: number, y: number, option
         ? `You bump into ${name}.`
         : `You find ${name} by bumping into ${monsterObjectPronoun(monster, { noIt: true })}.`);
     await wakeMonster(monster);
-    if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+    if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
     await angerMonster(monster);
 
     // C dothrow.c:hurtle_step() instapetrify()s an unarmored hero.
@@ -397,8 +397,8 @@ async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, r
     const oldx = hero.ux;
     const oldy = hero.uy;
     await placeHeroOnLevel(x, y);
-    newsym(oldx, oldy);
-    vision_recalc(1);
+    await newsym(oldx, oldy);
+    await vision_recalc(1);
     await flush_screen(1);
     const previousLocation = game.level.at(oldx, oldy);
     const currentLocation = game.level.at(x, y);

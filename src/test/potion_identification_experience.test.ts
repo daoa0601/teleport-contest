@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const [roleName, score] of [['wizard', 990], ['knight', 1990]]) {
     void test(`identifying healing ends beginner feedback for a ${roleName} at its score threshold`, async () => {
         assert.ok(typeof score === 'number');
-        freshObjectRoom({ flags: { beginner: true }, hero: { urexp: score } });
+        await freshObjectRoom({ flags: { beginner: true }, hero: { urexp: score } });
         requirePlayingGame(game);
         const role = roles.find(candidate => candidate.key === roleName);
         assert.ok(role);

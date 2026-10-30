@@ -10,7 +10,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a throne curse dims a blessed shining suit when it removes the blessing', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = THRONE;
     const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { blessed: true, lamplit: true });
     const input = resetInputState();

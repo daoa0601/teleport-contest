@@ -113,14 +113,14 @@ void test('a quitting two-weapon fighter learns each skill limit and stone luck'
 });
 
 void test('a dead eel concealed in water was hiding in the pool', async () => {
-    freshRoomWithPolymorphedHero('giant eel').requireAt(game.u.ux, game.u.uy).typ = POOL;
+    (await freshRoomWithPolymorphedHero('giant eel')).requireAt(game.u.ux, game.u.uy).typ = POOL;
     game.u.uundetected = 1;
     const lines = await deadHeroAttributes();
     assert.ok(lines.includes('You were hiding in the pool of water.'));
 });
 
 void test('a dead hero disguised as gold was mimicking a gold piece', async () => {
-    freshRoomWithPolymorphedHero('jackal');
+    await freshRoomWithPolymorphedHero('jackal');
     game.u.m_ap_type = M_AP_OBJECT;
     game.u.mappearance = GOLD_PIECE;
     const lines = await deadHeroAttributes();
@@ -129,7 +129,7 @@ void test('a dead hero disguised as gold was mimicking a gold piece', async () =
 });
 
 void test('a dead handless hero was not wielding anything, contracted', async () => {
-    freshRoomWithPolymorphedHero('jackal');
+    await freshRoomWithPolymorphedHero('jackal');
     game.uwep = null;
     const lines = await deadHeroAttributes();
     assert.ok(lines.includes("You weren't wielding anything."));

@@ -35,8 +35,8 @@ export interface MonsterAbilityRoomOptions extends PolymorphedRoomOptions { ener
 const PM_WEREWOLF = 21;
 const PM_HUMAN_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
 
-export function freshCasterRoom({ role = 'wizard', energy = 40, ...room }: ObjectRoomOptions & { energy?: number } = {}) {
-    const level = freshObjectRoom({
+export async function freshCasterRoom({ role = 'wizard', energy = 40, ...room }: ObjectRoomOptions & { energy?: number } = {}) {
+    const level = await freshObjectRoom({
         ...room, role,
         hero: { ulevel: 30, uen: energy, uenmax: energy },
     });
@@ -89,17 +89,17 @@ export function installPolymorphedHero(formName: string, {
     return game.u;
 }
 
-export function freshRoomWithPolymorphedHero(formName: string, {
+export async function freshRoomWithPolymorphedHero(formName: string, {
     polymorph = {},
     ...room
 }: PolymorphedRoomOptions = {}) {
-    const level = freshObjectRoom(room);
+    const level = await freshObjectRoom(room);
     installPolymorphedHero(formName, polymorph);
     game.context.move = 0;
     return level;
 }
 
-export function freshMonsterAbilityRoom(formName: string, {
+export async function freshMonsterAbilityRoom(formName: string, {
     energy,
     polymorph = {},
     ...room
@@ -108,7 +108,7 @@ export function freshMonsterAbilityRoom(formName: string, {
         uen: energy,
         uenmax: energy,
     };
-    return freshRoomWithPolymorphedHero(formName, {
+    return await freshRoomWithPolymorphedHero(formName, {
         left: 2,
         right: 30,
         top: 4,
@@ -123,8 +123,8 @@ export function freshMonsterAbilityRoom(formName: string, {
     });
 }
 
-export function freshHeroConditionRoom(options: ObjectRoomOptions = {}) {
-    return freshObjectRoom({
+export async function freshHeroConditionRoom(options: ObjectRoomOptions = {}) {
+    return await freshObjectRoom({
         heroX: 13,
         heroY: 10,
         recalculateVision: false,
@@ -192,10 +192,10 @@ export async function installSwallowedHero(monster: Monster, turns = 10) {
     monster.mx = game.u.ux;
     monster.my = game.u.uy;
     monster.mtrapped = 0;
-    vision_recalc(2);
+    await vision_recalc(2);
     game.u.ustuck = monster;
     game.u.uswallow = 1;
     game.u.uswldtim = turns;
     game.vision_full_recalc = 1;
-    swallowed(true);
+    await swallowed(true);
 }

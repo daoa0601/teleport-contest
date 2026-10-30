@@ -15,14 +15,14 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a buried revival keeps the hallucinated appearance shown when its pit opens', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     initRng(17n);
     const emerging = await createMonsterAt('troll', 12, 10, NO_MINVENT | MM_NOWAIT);
     await maketrap(emerging.mx, emerging.my, PIT);
     const expected = glyphAt(emerging.mx, emerging.my);
     assert.ok(expected?.kind === 'monster');
 
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     const corpse = await untimedCorpse(emerging.mnum);
     addBuriedObject(corpse, 12, 10);
     initRng(17n);
@@ -38,7 +38,7 @@ void test('a buried revival keeps the hallucinated appearance shown when its pit
 
 void test('announcing a floor revival preserves the monster appearance shown as the corpse disappears', async () => {
     async function reviveOnFloor(announce: boolean) {
-        freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         const corpse = await untimedCorpse(MONSTER_NAME.indexOf('troll'));
         placeCreatedObject(corpse, 12, 10);
         initRng(17n);
@@ -60,7 +60,7 @@ void test('announcing a floor revival preserves the monster appearance shown as 
 
 for (const species of ['cave spider', 'small mimic']) {
     void test(`a revived ${species} appears without hiding or a disguise`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const corpse = await untimedCorpse(MONSTER_NAME.indexOf(species));
         placeCreatedObject(corpse, 12, 10);
 

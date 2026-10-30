@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // dig.c:use_pick_axe() lists likely directions in hack.h order, where
 // DIR_DOWN precedes DIR_UP; an engulfed hero is offered every direction.
 void test('an engulfed hero is offered down before up when digging', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pick = await uninitializedObject(PICK_AXE, {});
     game.u.uwep = pick;

@@ -12,7 +12,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a conflicted pet attacks its master instead of eating food beneath the hero', async () => {
-    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });
+    await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10, flags: { verbose: false } });
     requirePlayingGame(game);
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');
     const cat = await createMonsterAt('housecat', 11, 10, NO_MINVENT);

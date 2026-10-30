@@ -201,7 +201,7 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
         && (ACCESSIBLE(state.level.requireAt(x, y).typ) || heroPassesWalls(state))
         && !jumpRestriction(x, y, magic, state);
     await plineWithContinuation('Where do you want to jump?');
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip();
     if (firstUse) await showGetposTip();
     await showGetposInstructions(state);
@@ -259,8 +259,8 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
     if (state.program_state.gameover) return jumpResult(true, state);
     await moveHeroByTeleport(destination.x, destination.y, state, {
         finishArrival: async movement => {
-            newsym(movement.oldx, movement.oldy);
-            vision_recalc(0);
+            await newsym(movement.oldx, movement.oldy);
+            await vision_recalc(0);
             await redrawMap();
             await bot();
             return finishDestinationSpotEffects({ ...movement,

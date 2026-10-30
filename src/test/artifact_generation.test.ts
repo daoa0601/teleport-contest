@@ -27,7 +27,7 @@ async function generateArtifactOfType(otyp: number) {
 }
 
 void test('random artifact generation assigns a real, unique named identity', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initializeArtifacts();
     const magicbane = artifactByName('Magicbane');
@@ -51,7 +51,7 @@ void test('random artifact generation assigns a real, unique named identity', as
 });
 
 void test('named artifacts also exclude their identity from random generation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initializeArtifacts();
     const magicbane = artifactByName('Magicbane');
@@ -71,7 +71,7 @@ void test('named artifacts also exclude their identity from random generation', 
 });
 
 void test('saving preserves generated artifact identity and prevents another copy', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initializeArtifacts();
     const storage = memoryStorage();
@@ -83,7 +83,7 @@ void test('saving preserves generated artifact identity and prevents another cop
     placeCreatedObject(artifact, 10, 10);
 
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Artifact', storage), true);
+    assert.equal(await restoreGame('Artifact', storage), true);
 
     const restored = floorObjectsAt(requireGameLevel(), 10, 10)[0];
     assert.ok(restored);
@@ -103,7 +103,7 @@ for (const [enchantment, adjustEnchantment, expected] of [
     [1, false, 1],
 ] as const) {
     void test(`random Dragonbane generation adjusts +${enchantment} only when allowed (${adjustEnchantment})`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         initializeArtifacts();
         const dragonbane = artifactByName('Dragonbane');
@@ -124,7 +124,7 @@ for (const [enchantment, adjustEnchantment, expected] of [
 }
 
 void test('random Grimtooth generation supplies its permanent poison', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initializeArtifacts();
     const grimtooth = artifactByName('Grimtooth');
@@ -138,7 +138,7 @@ void test('random Grimtooth generation supplies its permanent poison', async () 
 });
 
 void test('random generation cannot create a quest artifact from its base armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     initializeArtifacts();
     const mitre = artifactByName('The Mitre of Holiness');

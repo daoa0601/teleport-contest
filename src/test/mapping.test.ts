@@ -18,7 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { addTrap } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 
-void test('mapping finds secret corridors but preserves other secrets', () => {
+void test('mapping finds secret corridors but preserves other secrets', async () => {
     const level = freshGameplayRoom();
     requirePlayingGame(game);
     level.flags.hero_memory = true;
@@ -27,7 +27,7 @@ void test('mapping finds secret corridors but preserves other secrets', () => {
     const hiddenTrap = addTrap(level, ARROW_TRAP, 32, 9, { tseen: false });
     addTrap(level, ARROW_TRAP, 33, 9, { tseen: true });
 
-    mapLevel();
+    await mapLevel();
 
     assert.equal(level.requireAt(30, 9).typ, CORR);
     assert.equal(level.requireAt(31, 9).typ, SDOOR);
@@ -36,29 +36,29 @@ void test('mapping finds secret corridors but preserves other secrets', () => {
 });
 
 void test('magic mapping preserves a remembered object on a distant fountain', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = FOUNTAIN;
     const potion = await mksobj(POT_HEALING, false, false);
     placeCreatedObject(potion, 30, 10);
-    map_object(potion, true);
+    await map_object(potion, true);
     assert.equal(cansee(30, 10), false);
 
-    mapLevel();
+    await mapLevel();
 
     assert.equal(level.requireAt(30, 10).lastseentyp, FOUNTAIN);
     assert.equal(level.requireAt(30, 10).remembered_glyph?.kind, 'object');
     assert.equal(level.requireAt(30, 10).disp_ch, '!');
 });
 
-void test('magic mapping preserves an unseen invisible-monster marker', () => {
-    const level = freshObjectRoom();
+void test('magic mapping preserves an unseen invisible-monster marker', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
-    map_invisible(30, 10);
+    await map_invisible(30, 10);
     assert.equal(cansee(30, 10), false);
 
-    mapLevel();
+    await mapLevel();
 
     assert.equal(level.requireAt(30, 10).remembered_glyph?.kind, 'invisible');
     assert.equal(level.requireAt(30, 10).disp_ch, 'I');
@@ -66,8 +66,8 @@ void test('magic mapping preserves an unseen invisible-monster marker', () => {
 });
 
 for (const darkRoom of [false, true]) {
-    void test(`magic mapping ${darkRoom ? 'shades' : 'leaves blank'} a never-lit room`, () => {
-        const level = freshObjectRoom();
+    void test(`magic mapping ${darkRoom ? 'shades' : 'leaves blank'} a never-lit room`, async () => {
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const location = level.requireAt(30, 10);
         location.typ = ROOM;
@@ -77,7 +77,7 @@ for (const darkRoom of [false, true]) {
         game.flags.color = true;
         assert.equal(cansee(30, 10), false);
 
-        mapLevel();
+        await mapLevel();
 
         assert.equal(location.disp_ch, darkRoom ? '.' : ' ');
         assert.equal(location.disp_color, darkRoom ? CLR_BLACK : NO_COLOR);
@@ -86,8 +86,8 @@ for (const darkRoom of [false, true]) {
     });
 }
 
-void test('magic mapping does not brighten unseen corridors with lit_corridor enabled', () => {
-    const level = freshObjectRoom();
+void test('magic mapping does not brighten unseen corridors with lit_corridor enabled', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const location = level.requireAt(30, 10);
     location.typ = CORR;
@@ -96,7 +96,7 @@ void test('magic mapping does not brighten unseen corridors with lit_corridor en
     game.flags.lit_corridor = true;
     assert.equal(cansee(30, 10), false);
 
-    mapLevel();
+    await mapLevel();
 
     assert.equal(location.disp_ch, '#');
     assert.equal(location.disp_color, NO_COLOR);
@@ -104,14 +104,14 @@ void test('magic mapping does not brighten unseen corridors with lit_corridor en
 });
 
 void test('far-look describes mapped darkness rather than an unseen replacement feature', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const location = level.requireAt(30, 10);
     location.typ = ROOM;
     location.waslit = false;
     game.flags.dark_room = false;
     game.flags.tips = false;
-    mapLevel();
+    await mapLevel();
     assert.equal(location.disp_ch, ' ');
     location.typ = FOUNTAIN;
     assert.equal(cansee(30, 10), false);
@@ -124,32 +124,32 @@ void test('far-look describes mapped darkness rather than an unseen replacement 
     assert.equal(game.context.move, 0);
 });
 
-void test('memory-only magic background mapping replaces a trap glyph without hiding the trap itself', () => {
-    const level = freshObjectRoom();
+void test('memory-only magic background mapping replaces a trap glyph without hiding the trap itself', async () => {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = CORR;
     const trap = addTrap(level, ARROW_TRAP, 30, 10, { tseen: true });
-    map_trap(trap, true);
+    await map_trap(trap, true);
     assert.equal(level.requireAt(30, 10).disp_ch, '^');
     assert.equal(cansee(30, 10), false);
 
-    magic_map_background(30, 10, false);
+    await magic_map_background(30, 10, false);
     assert.equal(level.requireAt(30, 10).disp_ch, '^');
-    newsym(30, 10);
+    await newsym(30, 10);
 
     assert.equal(level.requireAt(30, 10).disp_ch, '#');
     assert.equal(trap.tseen, true);
-    mapLevel();
+    await mapLevel();
     assert.equal(level.requireAt(30, 10).disp_ch, '^');
 });
 
-void test('magic background mapping replaces explicit unexplored memory', () => {
-    const level = freshObjectRoom();
+void test('magic background mapping replaces explicit unexplored memory', async () => {
+    const level = await freshObjectRoom();
     const location = level.requireAt(30, 10);
     location.typ = FOUNTAIN;
     location.remembered_glyph = { ch: ' ', color: NO_COLOR, kind: 'unexplored' };
 
-    magic_map_background(30, 10, false);
+    await magic_map_background(30, 10, false);
 
     const memory = level.requireAt(30, 10).remembered_glyph;
     assert.ok(memory?.kind === 'terrain');

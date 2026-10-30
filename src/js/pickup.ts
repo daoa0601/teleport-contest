@@ -135,16 +135,16 @@ export async function pickupAtHero(
         const selected = await choosePickupObjects(source, objects, count);
         attempted = (await takeSelectedObjects(source, selected)).attempted;
     }
-    reassessHeroCover(source);
+    await reassessHeroCover(source);
     game.context.move = attempted ? 1 : 0;
     game._pickupEncumbrance = 0;
 }
 
 // C pickup(): once picking up ends outside an engulfer, a hider re-checks its
 // cover; taking the whole pile leaves nothing to hide under.
-function reassessHeroCover(source: PickupSource): void {
+async function reassessHeroCover(source: PickupSource): Promise<void> {
     if (!source.monster && !game.program_state.gameover && heroFormHidesUnderObjects(game))
-        hideHeroUnder(game);
+        await hideHeroUnder(game);
 }
 
 export async function autopickupAtHero(): Promise<void> {
@@ -207,7 +207,7 @@ export async function autopickupAtHero(): Promise<void> {
         if (await autopickupAllows(object)) eligible.push(object);
     }
     const { picked } = await takeSelectedObjects(source, eligible);
-    reassessHeroCover(source);
+    await reassessHeroCover(source);
     if (!monster && !game.program_state?.gameover) await checkHere(source, picked > 0);
     game._pickupEncumbrance = 0;
 }
@@ -248,7 +248,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
             observeObjectForNaming(object);
             const question = await objectQuestion(object, {
                 prefix: 'Pick up ', suffix: '?', fallback: 'something',
-                format: async (item, state) => (await objectDescription(item, { state })), shortFormat: simpleObjectNameWithArticle,
+                format: async (item, state) => await objectDescription(item, { state }), shortFormat: simpleObjectNameWithArticle,
             });
             const response = await yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y', true,
                 { menuable: amount < 2 });
@@ -270,7 +270,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
         picked += result.picked;
         if (result.stopped) break;
     }
-    if (picked && !source.monster && !game.program_state.gameover) newsym_force(source.x, source.y);
+    if (picked && !source.monster && !game.program_state.gameover) await newsym_force(source.x, source.y);
     return { attempted };
 }
 
@@ -406,7 +406,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
             unlinkMonsterObject(source.monster, object);
         } else {
             remove_object(object);
-            newsym(source.x, source.y);
+            await newsym(source.x, source.y);
         }
         const shopRoom = !source.monster && object !== game.uball
             && costlySpot(source.x, source.y)
@@ -435,7 +435,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         }
     }
     if (batch && picked && !game.program_state?.gameover) {
-        if (!source.monster) newsym_force(source.x, source.y);
+        if (!source.monster) await newsym_force(source.x, source.y);
     }
     return { picked, attempted, stopped };
 }

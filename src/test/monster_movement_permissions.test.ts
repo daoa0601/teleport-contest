@@ -28,7 +28,7 @@ for (const [type, toolName] of [
     [SKELETON_KEY, 'skeleton key'], [LOCK_PICK, 'lock pick'], [CREDIT_CARD, 'credit card'],
 ] as const) {
     void test(`carrying a ${toolName} lets a humanoid select a locked door`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
@@ -43,7 +43,7 @@ for (const [type, toolName] of [
 }
 
 void test('a dog cannot operate a door even when carrying a real key', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     const dog = await createMonsterAt('dog', 10, 10, MM_ANGRY | NO_MINVENT);
     await addObjectToMonsterInventory(dog, await knownObject(SKELETON_KEY));
     const door = level.requireAt(11, 10);
@@ -57,7 +57,7 @@ void test('a dog cannot operate a door even when carrying a real key', async () 
 
 for (const species of ['hill giant', 'Death', 'Wizard of Yendor']) {
     void test(`${species} can select a locked door without a carried key`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
@@ -68,7 +68,7 @@ for (const species of ['hill giant', 'Death', 'Wizard of Yendor']) {
 }
 
 void test('a digging dwarf uses its remembered target distance and gives up digging under nearby Conflict', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     const dwarf = await createMonsterAt('dwarf', 10, 10, MM_ANGRY | NO_MINVENT);
     await equipMonsterObject(dwarf, await knownObject(PICK_AXE), W_WEP);
     level.requireAt(11, 10).typ = STONE;
@@ -88,7 +88,7 @@ void test('a digging dwarf uses its remembered target distance and gives up digg
 });
 
 void test('the Rogue level prevents a rock mole from selecting diggable rock', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const mole = await createMonsterAt('rock mole', 10, 10, MM_ANGRY | NO_MINVENT);
     level.requireAt(11, 10).typ = STONE;
@@ -99,7 +99,7 @@ void test('the Rogue level prevents a rock mole from selecting diggable rock', a
 });
 
 void test('phasing admits ordinary stone while respecting a wall that forbids passage', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     const ghost = await createMonsterAt('ghost', 10, 10, MM_ANGRY | NO_MINVENT);
     const rock = level.requireAt(11, 10);
     rock.typ = STONE;
@@ -110,7 +110,7 @@ void test('phasing admits ordinary stone while respecting a wall that forbids pa
 });
 
 void test('a carrier passes iron bars only when the held hero fits through them', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     const vortex = await createMonsterAt('fog cloud', 10, 10, MM_ANGRY | NO_MINVENT);
     level.requireAt(11, 10).typ = IRONBARS;
     assert.equal(await admits(vortex), true);
@@ -129,7 +129,7 @@ void test('a carrier passes iron bars only when the held hero fits through them'
 });
 
 void test('rusting bars cannot admit a corrosive monster when the level forbids destroying them', async () => {
-    const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+    const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
     const rustMonster = await createMonsterAt('rust monster', 10, 10, MM_ANGRY | NO_MINVENT);
     const bars = level.requireAt(11, 10);
     bars.typ = IRONBARS;
@@ -143,7 +143,7 @@ void test('rusting bars cannot admit a corrosive monster when the level forbids 
 // wall-passers; a rust monster's ability to squeeze through is not consulted.
 for (const species of ['rust monster', 'goblin', 'xorn']) {
     void test(`hurtling ${species} passes iron bars only by passing walls`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         level.requireAt(11, 10).typ = IRONBARS;
 
@@ -157,7 +157,7 @@ for (const species of ['rust monster', 'goblin', 'xorn']) {
 
 for (const species of ['human zombie', 'ghost', 'vampire bat']) {
     void test(`${species} follows undead and vampire-origin garlic restrictions`, async () => {
-        freshObjectRoom({ heroX: 15, heroY: 12 });
+        await freshObjectRoom({ heroX: 15, heroY: 12 });
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         if (species === 'vampire bat') monster.cham = MONSTER_NAME.indexOf('vampire');
         await floorObject(CLOVE_OF_GARLIC, 11, 10);
@@ -167,7 +167,7 @@ for (const species of ['human zombie', 'ghost', 'vampire bat']) {
 }
 
 void test('a unicorn may use a square aligned with the hero when teleportation is forbidden', async () => {
-    const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+    const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
     const unicorn = await createMonsterAt('white unicorn', 10, 10, MM_ANGRY | NO_MINVENT);
     unicorn.mux = 14;
     unicorn.muy = 10;
@@ -178,7 +178,7 @@ void test('a unicorn may use a square aligned with the hero when teleportation i
 });
 
 void test('a tame dog may cross scare-monster protection that a hostile goblin avoids', async () => {
-    freshObjectRoom({ heroX: 15, heroY: 12 });
+    await freshObjectRoom({ heroX: 15, heroY: 12 });
     const dog = await createMonsterAt('little dog', 10, 10, NO_MINVENT);
     initializePet(dog);
     const goblin = await createMonsterAt('goblin', 12, 10, MM_ANGRY | NO_MINVENT);

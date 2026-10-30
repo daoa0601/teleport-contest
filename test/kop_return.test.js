@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const KEYSTONE_KOP = MONSTER_NAME.indexOf('Keystone Kop');
 async function killKop(roll) {
-    freshObjectRoom({ right: 30 });
+    await freshObjectRoom({ right: 30 });
     requireFixtureGame(game);
     const kop = await createMonsterAt('Keystone Kop', 12, 10);
     await finishEnvironmentalMonsterDeath(kop, game, { noCorpse: true, rollOne: () => roll });

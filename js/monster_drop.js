@@ -79,7 +79,7 @@ export async function releaseMonsterInventory(monster, state = game, { isPet = f
             return dropped;
     }
     if (show && cansee(x, y))
-        newsym(x, y);
+        await newsym(x, y);
     return dropped;
 }
 export async function dropSpecialMonsterObjects(monster, state = game, { publish = plineWithContinuation, random = rn2, } = {}) {

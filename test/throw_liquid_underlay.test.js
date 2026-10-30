@@ -9,7 +9,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const bridge of [false, true]) {
     void test(`a thrown gem splashes when landing in ${bridge ? 'water below a raised bridge' : 'a moat'}`, async () => {
-        const level = freshObjectRoom({ right: 25 });
+        const level = await freshObjectRoom({ right: 25 });
         const square = level.requireAt(16, 10);
         square.typ = bridge ? DRAWBRIDGE_UP : MOAT;
         square.drawbridgemask = DB_MOAT;
@@ -27,7 +27,7 @@ for (const [type, terrain, description, sound] of [
     [POT_WATER, POOL, 'a potion into a pool', 'Splash!'],
 ]) {
     void test(`throwing ${description} downward while levitating makes one ${sound}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const square = level.requireAt(game.u.ux, game.u.uy);
         square.typ = terrain;
         square.drawbridgemask = DB_MOAT;

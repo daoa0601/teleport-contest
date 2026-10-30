@@ -104,7 +104,7 @@ async function reduceHeroMaximumHitPoints(
     }
     if (hero.uhpmax < minimum) {
         hero.uhpmax = Math.min(oldMaximum, minimum);
-        if (!heroHasDrainResistance(game) && (await loseHeroExperience(null, { publish })))
+        if (!heroHasDrainResistance(game) && await loseHeroExperience(null, { publish }))
             return true;
     }
     hero.uhp = Math.min(hero.uhp ?? hero.uhpmax, hero.uhpmax);
@@ -265,7 +265,7 @@ export async function finishMonsterFireTrap(
         await publish('You smell smoke.');
     }
     if (isIceAt(x, y, state)) await meltIce(x, y);
-    if (event.seeSquare && state.level?.traps?.includes(event.trap)) seeTrap(event.trap, state);
+    if (event.seeSquare && state.level?.traps?.includes(event.trap)) await seeTrap(event.trap, state);
 
     event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
     event.finished = true;

@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const resistant of [false, true]) {
     void test(`gas ${resistant ? 'teaches' : 'clears'} a watching monster's knowledge of poison resistance`, async () => {
-        freshObjectRoom({ hero: { poisonResistance: resistant, blindTurns: 5 } });
+        await freshObjectRoom({ hero: { poisonResistance: resistant, blindTurns: 5 } });
         const watcher = await createMonsterAt('soldier', 13, 10);
         watcher.seen_resistance = resistant ? 0 : M_SEEN_POISON;
         await createGasCloudSelection(game, [{ x: 10, y: 10 }], 5, 8, async () => {});

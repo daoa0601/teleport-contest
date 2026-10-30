@@ -28,7 +28,7 @@ const M1_METALLIVORE = 0x80000000;
 
 export async function heroCanEnterIronBars(x: number, y: number, state: PlayingGameState): Promise<boolean> {
     if (state.level.at(x, y)?.typ !== IRONBARS) return true;
-    if (state.blind) feel_location(x, y);
+    if (state.blind) await feel_location(x, y);
     if (heroPassesWalls(state)) return true;
     if (state.u.uinwater) {
         await pline('There is an obstacle there.');
@@ -104,7 +104,7 @@ export async function continueChewingTerrain(x: number, y: number, state: Playin
         await pline('You eat the boulder.');
         const anotherBoulder = state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         clearDiggingContext(state);
         return rock || location.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED)) || !!anotherBoulder;
     }
@@ -150,7 +150,7 @@ export async function continueChewingTerrain(x: number, y: number, state: Playin
         location.typ = CORR;
     }
     vision_note_blocker_change(x, y);
-    newsym(x, y);
+    await newsym(x, y);
     if (message) await pline(message);
     if (damage) await payForShopDamage(damage, { state });
     clearDiggingContext(state);

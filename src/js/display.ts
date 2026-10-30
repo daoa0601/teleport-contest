@@ -414,7 +414,7 @@ function rememberedGenericObject(glyph: DisplayGlyph | null | undefined): boolea
         && glyph.otyp > 0 && glyph.otyp < MAX_OBJECT_CLASSES;
 }
 
-export function see_nearby_objects() {
+export async function see_nearby_objects() {
     const r = Math.max(game.u?.xray_range ?? -1, 2);
     const nearDistance = r * r * 2 - r;
     for (let y = (game.u?.uy ?? 0) - r; y <= (game.u?.uy ?? 0) + r; y++) {
@@ -432,7 +432,7 @@ export function see_nearby_objects() {
             object.dknown = true;
             recordObjectEncounter(object.otyp);
             if (rememberedGenericObject(game.level?.at(x, y)?.remembered_glyph))
-                newsym_force(x, y);
+                await newsym_force(x, y);
         }
     }
 }
@@ -505,12 +505,12 @@ function rememberedGlyph(glyph: DisplayGlyph, loc: MapLocation, x: number, y: nu
         terrainName: 'dark part of a room', glyph: cmapToGlyph(CmapSymbol.darkroom) };
 }
 
-function showRememberedLocation(x: number, y: number, loc: MapLocation): void {
+async function showRememberedLocation(x: number, y: number, loc: MapLocation): Promise<void> {
     const memory = loc.remembered_glyph;
     if (!memory) return;
     const glyph = rememberedGlyph(memory, loc, x, y);
     loc.remembered_glyph = glyph;
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx,
+    await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx,
         objectGlyphAttr(glyph), glyph);
 }
 
@@ -1649,7 +1649,7 @@ function apparentObjectGlyph(monster: MimicAppearance) {
 
 // C refs: display.c map_background(), map_object(), and map_trap().  These
 // update hero memory independently from ordinary line-of-sight newsym().
-export function map_background(x: number, y: number, show = true) {
+export async function map_background(x: number, y: number, show = true) {
     const loc = game.level?.at(x, y);
     if (!loc) return;
     const glyph = terrain_glyph(loc, x, y);
@@ -1657,7 +1657,7 @@ export function map_background(x: number, y: number, show = true) {
         loc.remembered_glyph = {
             ...glyph, decgfx: glyph.dec,
         };
-    if (show) show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.dec, 0, glyph);
+    if (show) await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.dec, 0, glyph);
 }
 
 function requireDisplayLocation(x: number, y: number): MapLocation {
@@ -1668,7 +1668,7 @@ function requireDisplayLocation(x: number, y: number): MapLocation {
 
 // C display.c:magic_map_background(). Unlike ordinary mapping, this keeps
 // remembered objects and invisible markers and corrects never-seen lighting.
-export function magic_map_background(x: number, y: number, show = true) {
+export async function magic_map_background(x: number, y: number, show = true) {
     const location = requireDisplayLocation(x, y);
     let glyph: GlyphAppearance & { dec: boolean } & GlyphMetadata = terrain_glyph(location, x, y);
     if (!cansee(x, y) && !location.waslit) {
@@ -1692,11 +1692,11 @@ export function magic_map_background(x: number, y: number, show = true) {
         || ['unexplored', 'terrain', 'trap', 'engraving'].includes(remembered.kind))) {
         location.remembered_glyph = { ...glyph, decgfx: glyph.dec };
     }
-    if (show) show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.dec, 0, glyph);
+    if (show) await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.dec, 0, glyph);
     updateLastSeenTerrain(x, y);
 }
 
-export function map_object(object: FloorObjectGlyphSource | null | undefined, show = true, observe = true) {
+export async function map_object(object: FloorObjectGlyphSource | null | undefined, show = true, observe = true) {
     if (!object) return;
     if (observe && cansee(object.ox, object.oy))
         observeNearbyObject(object, object.ox, object.oy);
@@ -1710,7 +1710,7 @@ export function map_object(object: FloorObjectGlyphSource | null | undefined, sh
             ? randomHallucinatedObjectGlyph() : glyph;
     }
     if (show)
-        show_glyph_cell(object.ox, object.oy, glyph.ch, glyph.color, false,
+        await show_glyph_cell(object.ox, object.oy, glyph.ch, glyph.color, false,
             objectGlyphAttr(glyph), glyph);
 }
 
@@ -1748,7 +1748,7 @@ export async function flashGlyphAt(x: number, y: number, glyph: TransientGlyph, 
         : terrain_glyph(location, x, y);
     for (let frame = 0; frame < repeats * 2; frame++) {
         const shown = frame % 2 ? previous : glyph;
-        show_glyph_cell(x, y, shown.ch, shown.color,
+        await show_glyph_cell(x, y, shown.ch, shown.color,
             shown.decgfx ?? shown.dec, 0, shown);
         await flush_screen(1);
         await game.animationFrame?.();
@@ -1757,16 +1757,16 @@ export async function flashGlyphAt(x: number, y: number, glyph: TransientGlyph, 
 
 export type TrapGlyphSource = Pick<Trap, 'tx' | 'ty' | 'ttyp'> & Partial<Pick<Trap, 'tseen'>>;
 
-export function map_trap(trap: TrapGlyphSource | null | undefined, show = true) {
+export async function map_trap(trap: TrapGlyphSource | null | undefined, show = true) {
     if (!trap) return;
     const glyph = transientTrapGlyph(trap);
     const loc = game.level?.at(trap.tx, trap.ty);
     if (loc && game.level?.flags?.hero_memory)
         loc.remembered_glyph = glyph;
-    if (show) show_glyph_cell(trap.tx, trap.ty, glyph.ch, glyph.color, false, 0, glyph);
+    if (show) await show_glyph_cell(trap.tx, trap.ty, glyph.ch, glyph.color, false, 0, glyph);
 }
 
-export function map_engraving(engraving: Engraving | null | undefined, show = true) {
+export async function map_engraving(engraving: Engraving | null | undefined, show = true) {
     if (!engraving) return;
     const loc = game.level?.at(engraving.x, engraving.y);
     if (!loc) return;
@@ -1777,7 +1777,7 @@ export function map_engraving(engraving: Engraving | null | undefined, show = tr
     };
     if (game.level?.flags?.hero_memory) loc.remembered_glyph = glyph;
     if (show)
-        show_glyph_cell(engraving.x, engraving.y, ch, CLR_BRIGHT_BLUE, false, 0, glyph);
+        await show_glyph_cell(engraving.x, engraving.y, ch, CLR_BRIGHT_BLUE, false, 0, glyph);
 }
 
 function engravingAt(x: number, y: number) {
@@ -1807,7 +1807,7 @@ export function updateLastSeenTerrain(x: number, y: number) {
 
 // C display.c:_map_location(). This direct mapper intentionally bypasses
 // line of sight, but object observation and cloud visibility keep their gates.
-export function map_location(x: number, y: number, show = true) {
+export async function map_location(x: number, y: number, show = true) {
     const covered = terrainCoversObjectsAt(x, y);
     const level = requireGameLevel();
     const object = level.objects?.[x]?.[y]?.[0];
@@ -1816,24 +1816,24 @@ export function map_location(x: number, y: number, show = true) {
     const engraving = engravingAt(x, y);
     const typ = requireDisplayLocation(x, y).typ;
     if (object && !covered) {
-        map_object(object, show);
+        await map_object(object, show);
     } else if (trap?.tseen && !covered) {
-        map_trap(trap, show);
+        await map_trap(trap, show);
     } else if (engraving?.erevealed && !covered
         && (typ === ROOM || typ === CORR || typ === ICE)) {
-        map_engraving(engraving, show);
+        await map_engraving(engraving, show);
     } else {
-        map_background(x, y, show);
+        await map_background(x, y, show);
     }
     updateLastSeenTerrain(x, y);
-    if (show && !heroIsBlind() && visibleMapRegionAt(x, y)) showMapRegion(x, y);
+    if (show && !heroIsBlind() && visibleMapRegionAt(x, y)) await showMapRegion(x, y);
 }
 
 // C display.c:feel_newsym(). Known terrain changes update memory by touch
 // when the hero is blind.
-export function feel_newsym(x: number, y: number) {
-    if (heroIsBlind()) feel_location(x, y);
-    else newsym(x, y);
+export async function feel_newsym(x: number, y: number) {
+    if (heroIsBlind()) await feel_location(x, y);
+    else await newsym(x, y);
 }
 
 // Native suppress_map_output(): initialization and persistence can leave
@@ -1846,7 +1846,7 @@ function suppressMapOutput(): boolean {
 // nonliving layer before it tests for a concealed monster or trap.  This is
 // why a felt floor object can remain in hero memory after a later invisible
 // actor marker is installed elsewhere during the same search.
-export function feel_location(x: number, y: number) {
+export async function feel_location(x: number, y: number) {
     if (suppressMapOutput()) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
@@ -1859,7 +1859,7 @@ export function feel_location(x: number, y: number) {
         const engraving = engravingAt(x, y);
         if (engraving && [ENGRAVE, BURN, HEADSTONE].includes(engraving.engr_type))
             engraving.erevealed = true;
-        map_location(x, y, true);
+        await map_location(x, y, true);
         const ball = game.uball || game.u?.uball;
         const chain = game.uchain || game.u?.uchain;
         if (ball) {
@@ -1871,45 +1871,45 @@ export function feel_location(x: number, y: number) {
                 && top === ball) game.u.bc_felt = (game.u.bc_felt ?? 0) | BC_BALL;
             else game.u.bc_felt = (game.u.bc_felt ?? 0) & ~BC_BALL;
         }
-        darkenFeltFloor(x, y, loc);
+        await darkenFeltFloor(x, y, loc);
     } else {
         const boulder = game.level?.objects[x]?.[y]?.find(object => object.otyp === BOULDER);
         const closedDoor = loc.typ === DOOR && !!(loc.doormask & (D_CLOSED | D_LOCKED));
-        if (IS_OBSTRUCTED(loc.typ) || closedDoor) map_background(x, y, true);
-        else if (boulder) map_object(boulder, true);
-        else if (loc.typ === DOOR) map_background(x, y, true);
+        if (IS_OBSTRUCTED(loc.typ) || closedDoor) await map_background(x, y, true);
+        else if (boulder) await map_object(boulder, true);
+        else if (loc.typ === DOOR) await map_background(x, y, true);
         else if (IS_ROOM(loc.typ) || IS_POOL(loc.typ)) {
             const glyph = loc.remembered_glyph;
             // Native touch clears the ordinary boulder glyph, retaining pile memory.
             const forgottenBoulder = glyph?.glyph === GlyphOffset.object + BOULDER
                 || glyph?.kind === 'invisible';
-            if (forgottenBoulder && loc.typ !== ROOM) map_background(x, y, true);
+            if (forgottenBoulder && loc.typ !== ROOM) await map_background(x, y, true);
             else if (forgottenBoulder || glyph?.kind === 'terrain'
                 && glyph.glyph !== undefined && glyph.glyph >= cmapToGlyph(CmapSymbol.stone)
                 && glyph.glyph < cmapToGlyph(CmapSymbol.darkroom)) {
                 const dark = (game.flags.dark_room ?? true) && game.flags.color !== false
                     && !Is_rogue_level(game.u.uz);
-                rememberFeltRoom(x, y, loc, dark ? CmapSymbol.darkroom
+                await rememberFeltRoom(x, y, loc, dark ? CmapSymbol.darkroom
                     : loc.waslit ? CmapSymbol.room : CmapSymbol.stone);
             }
         } else {
-            map_background(x, y, true);
-            darkenFeltFloor(x, y, loc);
+            await map_background(x, y, true);
+            await darkenFeltFloor(x, y, loc);
         }
     }
     if (monster && (x !== game.u.ux || y !== game.u.uy) && canSenseMonster(monster)) {
         const located = senseWithTelepathy(monster) || heroWarnsOfMonster(monster);
-        displayMonsterAtCell(monster, x, y, {
+        await displayMonsterAtCell(monster, x, y, {
             wormTail: isWormTail(monster, x, y),
             showAppearance: located, detected: !located,
         });
     }
 }
 
-function rememberFeltRoom(
+async function rememberFeltRoom(
     x: number, y: number, location: MapLocation,
     symbol: CmapSymbol.stone | CmapSymbol.room | CmapSymbol.darkroom,
-): void {
+): Promise<void> {
     const dark = symbol === CmapSymbol.darkroom;
     // reglyph_darkroom() uses the floor symbol only with dark_room and color.
     const floor = symbol === CmapSymbol.room
@@ -1924,15 +1924,15 @@ function rememberFeltRoom(
         glyph: cmapToGlyph(symbol),
     };
     location.remembered_glyph = glyph;
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+    await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
 }
 
-function darkenFeltFloor(x: number, y: number, location: MapLocation): void {
+async function darkenFeltFloor(x: number, y: number, location: MapLocation): Promise<void> {
     const glyph = location.remembered_glyph;
     if (location.typ === ROOM && glyph?.glyph === cmapToGlyph(CmapSymbol.room)
         && (!location.waslit || (game.flags.dark_room ?? true) && game.flags.color !== false)) {
         // Grounded touch chooses darkroom even on Rogue levels or without color.
-        rememberFeltRoom(x, y, location,
+        await rememberFeltRoom(x, y, location,
             (game.flags.dark_room ?? true) ? CmapSymbol.darkroom : CmapSymbol.stone);
     } else if (location.typ === CORR && glyph?.glyph === cmapToGlyph(CmapSymbol.litcorr)
         && !location.waslit) {
@@ -1941,7 +1941,7 @@ function darkenFeltFloor(x: number, y: number, location: MapLocation): void {
                 terrainName: 'corridor' }
             : { ...glyph, color: NO_COLOR, glyph: cmapToGlyph(CmapSymbol.corr) };
         location.remembered_glyph = corridor;
-        show_glyph_cell(x, y, corridor.ch, corridor.color, corridor.decgfx, 0, corridor);
+        await show_glyph_cell(x, y, corridor.ch, corridor.color, corridor.decgfx, 0, corridor);
     }
 }
 
@@ -2032,7 +2032,7 @@ function rogueLevelGlyphColor(glyph: GlyphMetadata, x: number, y: number): numbe
     return NO_COLOR;
 }
 
-export function show_glyph_cell(
+export async function show_glyph_cell(
     x: number, y: number, ch: string, color: number = NO_COLOR, decgfx = false,
     attr = 0, glyph: GlyphMetadata | null = null,
 ) {
@@ -2118,7 +2118,7 @@ export async function shieldeff(x: number, y: number, g: GameState = game) {
     try {
         for (const ch of SHIELD_STATIC) {
             const glyph = shieldGlyph(ch);
-            show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+            await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
             await flush_screen(1);
             g.nhDisplay?.setCursor(
                 (g.u?.ux ?? 1) - 1,
@@ -2127,7 +2127,7 @@ export async function shieldeff(x: number, y: number, g: GameState = game) {
             await g.animationFrame?.();
         }
     } finally {
-        newsym(x, y);
+        await newsym(x, y);
     }
 }
 
@@ -2136,7 +2136,7 @@ export async function shieldeff(x: number, y: number, g: GameState = game) {
 // caller explicitly discovers that the square no longer contains that
 // threat.  It also remains authoritative on a physically visible square
 // whose monster still cannot be spotted.
-export function map_invisible(x: number, y: number) {
+export async function map_invisible(x: number, y: number) {
     if (game.u?.ux === x && game.u?.uy === y) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
@@ -2145,30 +2145,30 @@ export function map_invisible(x: number, y: number) {
             ch: 'I', color: NO_COLOR, decgfx: false, kind: 'invisible', glyph: GlyphOffset.invisible,
         };
     }
-    show_glyph_cell(x, y, 'I', NO_COLOR, false, 0,
+    await show_glyph_cell(x, y, 'I', NO_COLOR, false, 0,
         { kind: 'invisible', glyph: GlyphOffset.invisible });
 }
 
 // C display.c:unmap_object(). Clearing stale object or invisible-creature
 // memory restores a known trap, engraving, or background without revealing
 // another floor object that was hidden underneath it.
-export function unmapObject(x: number, y: number) {
+export async function unmapObject(x: number, y: number) {
     const loc = game.level?.at(x, y);
     if (!loc || !game.level?.flags.hero_memory) return;
     const covered = terrainCoversObjectsAt(x, y);
     const trap = game.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y);
     if (trap?.tseen && !covered) {
-        map_trap(trap, false);
+        await map_trap(trap, false);
     } else if (loc.seenv) {
         const engraving = engravingAt(x, y);
         const showsEngraving = loc.typ === ROOM
             || loc.typ === CORR || loc.typ === ICE;
         if (engraving && showsEngraving && !covered) {
             if (cansee(x, y)) engraving.erevealed = true;
-            map_engraving(engraving, false);
+            await map_engraving(engraving, false);
         } else {
-            map_background(x, y, false);
+            await map_background(x, y, false);
             if (!loc.waslit && loc.typ === ROOM)
                 loc.remembered_glyph = { ch: ' ', color: NO_COLOR,
                     decgfx: false, kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone };
@@ -2179,27 +2179,27 @@ export function unmapObject(x: number, y: number) {
     }
 }
 
-export function unmap_invisible(x: number, y: number, show = true) {
+export async function unmap_invisible(x: number, y: number, show = true) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind !== 'invisible') return false;
-    unmapObject(x, y);
-    if (show) newsym(x, y);
+    await unmapObject(x, y);
+    if (show) await newsym(x, y);
     return true;
 }
 
-export function displaySelf() {
+export async function displaySelf() {
     // display.h:maybe_display_usteed() gives a visible steed its own identity.
     const steed = game.u.usteed;
     const glyph = steed && monsterVisible(steed)
         ? displayMonsterGlyph(heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : steed.mnum,
             !!steed.female, 'ridden')
         : heroDisplayGlyph();
-    show_glyph_cell(game.u.ux, game.u.uy,
+    await show_glyph_cell(game.u.ux, game.u.uy,
         glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
 }
 
 // C display.c:newsym_force(). A forced redraw prints even an unchanged glyph.
-export function newsym_force(x: number, y: number): void {
-    newsym(x, y);
+export async function newsym_force(x: number, y: number): Promise<void> {
+    await newsym(x, y);
     const location = game.level?.at(x, y);
     if (location) location.gnew = 1;
 }
@@ -2216,13 +2216,13 @@ function monsterDisplayAttribute(state: 'normal' | 'pet' | 'detected') {
 
 // C show_mon_or_warn(): a located actor replaces remembered invisibility.
 // Its departure must reveal the lower layer rather than restore a stale I.
-function showMonsterOrWarning(x: number, y: number, glyph: DisplayGlyph, attr = 0) {
+async function showMonsterOrWarning(x: number, y: number, glyph: DisplayGlyph, attr = 0) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') {
-        unmapObject(x, y);
+        await unmapObject(x, y);
         const object = game.level?.objects[x]?.[y]?.[0];
-        if (cansee(x, y) && object) map_object(object, false);
+        if (cansee(x, y) && object) await map_object(object, false);
     }
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, attr, glyph);
+    await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, attr, glyph);
 }
 
 function visibleMapRegionAt(x: number, y: number) {
@@ -2231,11 +2231,11 @@ function visibleMapRegionAt(x: number, y: number) {
             cell.x === x && cell.y === y)) || null;
 }
 
-function showMapRegion(x: number, y: number) {
+async function showMapRegion(x: number, y: number) {
     const region = visibleMapRegionAt(x, y);
     if (!region) return;
     const poisonous = region.damage > 0;
-    show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : CLR_GRAY, false, 0,
+    await show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : CLR_GRAY, false, 0,
         { kind: 'terrain', terrainName: poisonous ? 'poison cloud' : 'cloud',
             glyph: cmapToGlyph(poisonous ? CmapSymbol.poisoncloud : CmapSymbol.cloud) });
 }
@@ -2257,7 +2257,7 @@ function monsterOverridesMapRegion(monster: Monster | null | undefined, x: numbe
     return ordinaryVisible && dx * dx + dy * dy <= range * (range + 1);
 }
 
-export function newsym(x: number, y: number) {
+export async function newsym(x: number, y: number) {
     if (suppressMapOutput()) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
@@ -2266,7 +2266,7 @@ export function newsym(x: number, y: number) {
     // not leak ordinary map glyphs back into the cleared viewport.
     if (game.u?.uswallow) {
         if (game.u.ux === x && game.u.uy === y)
-            displaySelf();
+            await displaySelf();
         return;
     }
     if (restrictedUnderwaterView()
@@ -2288,7 +2288,7 @@ export function newsym(x: number, y: number) {
         // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
         // overlays ordinary distant monsters but not sensed/warned or
         // adjacent otherwise-visible actors.
-        showMapRegion(x, y);
+        await showMapRegion(x, y);
         return;
     }
 
@@ -2297,10 +2297,10 @@ export function newsym(x: number, y: number) {
         // the hero.  When canspotself() is false, that layer is also the live
         // projection at the hero's coordinate.
         const spotSelf = canSpotHeroSelf();
-        if (physicallyVisible) map_location(x, y, !spotSelf);
-        else feel_location(x, y);
+        if (physicallyVisible) await map_location(x, y, !spotSelf);
+        else await feel_location(x, y);
         if (!spotSelf) return;
-        displaySelf();
+        await displaySelf();
         return;
     }
 
@@ -2313,39 +2313,39 @@ export function newsym(x: number, y: number) {
             // Seeing a monster caught in a physical trap also reveals it.
             if (trap && (trap.ttyp === BEAR_TRAP || is_pit(trap.ttyp) || trap.ttyp === WEB))
                 trap.tseen = true;
-            map_location(x, y, false);
+            await map_location(x, y, false);
         }
-        displayMonsterAtCell(monster, x, y, projection);
+        await displayMonsterAtCell(monster, x, y, projection);
         return;
     }
     const warning = isWormTail(monster, x, y) ? null : warningProjection(monster);
     if (warning) {
-        showMonsterOrWarning(x, y, { ...warning, decgfx: false, kind: 'warning',
+        await showMonsterOrWarning(x, y, { ...warning, decgfx: false, kind: 'warning',
             glyph: warning.glyph });
         return;
     }
     if (loc.remembered_glyph?.kind === 'invisible') {
-        map_invisible(x, y);
+        await map_invisible(x, y);
         return;
     }
 
     // Only update display/memory if cell is IN_SIGHT (lit and visible)
     if (physicallyVisible) {
-        map_location(x, y, true);
+        await map_location(x, y, true);
     } else if (loc.remembered_glyph) {
-        showRememberedLocation(x, y, loc);
+        await showRememberedLocation(x, y, loc);
     } else {
         // A living glyph is only an overlay.  When its actor vacates an
         // unseen, never-mapped square, restore unexplored space rather than
         // leaving a presentation-only duplicate behind.
-        show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+        await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
             { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
 }
 
 // C display.c:display_monster(). Sight updates and touch share this renderer,
 // while their callers choose independently which monsters can be projected.
-function displayMonsterAtCell(monster: Monster, x: number, y: number, projection: MonsterProjection): void {
+async function displayMonsterAtCell(monster: Monster, x: number, y: number, projection: MonsterProjection): Promise<void> {
     const loc = requireDisplayLocation(x, y);
     // A visible disguise enters memory even when a sense exposes its
     // owner. Reading glyphAt() must not reroll this display-only choice.
@@ -2354,7 +2354,7 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
         || game.protectionFromShapeChangers;
     if (projection.showAppearance) {
         if (M_AP_TYPE(monster) === M_AP_OBJECT) {
-            map_object({
+            await map_object({
                 ox: x, oy: y,
                 otyp: mimicAppearance(monster),
                 // Native uses zeroobj, whose class remains zero. A potion
@@ -2368,7 +2368,7 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
             const glyph = furnitureDisplayGlyph(mimicAppearance(monster));
             loc.remembered_glyph = glyph;
             if (!sensed) {
-                show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+                await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
                 loc.lastseentyp = cmapToType(mimicAppearance(monster));
                 return;
             }
@@ -2377,7 +2377,7 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
             const mnum = heroIsHallucinating()
                 ? rn2Display(MONSTER_COLOR.length) : mimicAppearance(monster);
             const glyph = displayMonsterGlyph(mnum, !!monster.female);
-            show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
+            await show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
             if (!sensed) return;
         }
     }
@@ -2387,10 +2387,10 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
     if (heroIsHallucinating()) {
         const displayMnum = rn2Display(MONSTER_COLOR.length);
         const glyph = displayMonsterGlyph(displayMnum, !!monster.female, monsterState);
-        showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monsterState));
+        await showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monsterState));
     } else {
         const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
-        showMonsterOrWarning(x, y, {
+        await showMonsterOrWarning(x, y, {
             ch: (tailGlyph ?? displayMonsterGlyph(monster.mnum)).ch,
             color: tailGlyph ? tailGlyph.color
                 : monster.mnum === 102 ? NO_COLOR
@@ -2419,8 +2419,8 @@ export async function see_monsters({ beforeGlow = null }: RedrawOptions = {}) {
     for (const monster of Array.from(game.level?.monsters || []).reverse()) {
         if (monster.dead || monster.mhp <= 0
             || ((monster.mstate ?? 0) & MON_STILL_ARRIVING)) continue;
-        newsym(monster.mx, monster.my);
-        if (monster.wormno) redrawMonsterWormSegments(monster);
+        await newsym(monster.mx, monster.my);
+        if (monster.wormno) await redrawMonsterWormSegments(monster);
         if (game.u.warnOfMonster
             && ((game.context.warntype?.obj ?? 0) & (MONSTER_FLAGS2[monster.mnum] ?? 0))) count++;
     }
@@ -2428,12 +2428,12 @@ export async function see_monsters({ beforeGlow = null }: RedrawOptions = {}) {
         await artifactWarningFeedback(count, { beforeGlow });
         game.warn_obj_cnt = count;
     }
-    if (!game.u?.usteed && game.u?.ux > 0) newsym(game.u.ux, game.u.uy);
+    if (!game.u?.usteed && game.u?.ux > 0) await newsym(game.u.ux, game.u.uy);
 }
 
 // C display.c:see_objects()/see_traps().  fobj is newest-first globally,
 // while only each square's pile-top is eligible for a redraw.
-export function see_objects() {
+export async function see_objects() {
     const objects: GameObject[] = [];
     for (const column of game.level?.objects || []) {
         if (!column) continue;
@@ -2442,13 +2442,13 @@ export function see_objects() {
         }
     }
     objects.sort((a, b) => (b._fobjOrder ?? 0) - (a._fobjOrder ?? 0));
-    for (const object of objects) newsym(object.ox, object.oy);
+    for (const object of objects) await newsym(object.ox, object.oy);
 }
 
-export function see_traps() {
+export async function see_traps() {
     for (const trap of game.level?.traps || []) {
         const loc = game.level?.at?.(trap.tx, trap.ty);
-        if (loc?.disp_glyph?.kind === 'trap') newsym(trap.tx, trap.ty);
+        if (loc?.disp_glyph?.kind === 'trap') await newsym(trap.tx, trap.ty);
     }
 }
 
@@ -2568,18 +2568,18 @@ let lastSwallowedY = 0;
 // the first draw clears the map, then eight stomach cells surround the hero.
 // When hallucinating, every stomach cell independently chooses a display-only
 // monster color.
-export function swallowed(first = false) {
+export async function swallowed(first = false) {
     if (!game.level || !game.u?.uswallow || !game.u?.ustuck) return;
     if (first) {
         for (let y = 0; y < ROWNO; y++)
             for (let x = 1; x < COLNO; x++)
-                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                     { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     } else if (lastSwallowedX > 0) {
         for (let y = lastSwallowedY - 1; y <= lastSwallowedY + 1; y++)
             for (let x = lastSwallowedX - 1; x <= lastSwallowedX + 1; x++)
                 if (x > 0 && x < COLNO && y >= 0 && y < ROWNO)
-                    show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                    await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                         { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
 
@@ -2589,7 +2589,7 @@ export function swallowed(first = false) {
     ];
     const hallucinating = heroIsHallucinating(game);
     for (const [index, [dx, dy]] of positions.entries()) {
-        if (index === 4) displaySelf();
+        if (index === 4) await displaySelf();
         const sx = x + dx, sy = y + dy;
         if (sx <= 0 || sx >= COLNO || sy < 0 || sy >= ROWNO) continue;
         const mnum = hallucinating
@@ -2604,7 +2604,7 @@ export function swallowed(first = false) {
             decgfx: appearance.dec, kind: 'effect',
             glyph: GlyphOffset.swallow + mnum * 8 + index,
         };
-        show_glyph_cell(sx, sy, glyph.ch, color, glyph.decgfx, 0, glyph);
+        await show_glyph_cell(sx, sy, glyph.ch, color, glyph.decgfx, 0, glyph);
     }
     lastSwallowedX = x;
     lastSwallowedY = y;
@@ -2635,16 +2635,16 @@ export async function under_water(mode: RestrictedDisplayMode): Promise<void> {
         const previous = view.position ?? { x: 0, y: 0 };
         for (let y = previous.y - 1; y <= previous.y + 1; y++)
             for (let x = previous.x - 1; x <= previous.x + 1; x++)
-                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                     { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
     for (let x = game.u.ux - 1; x <= game.u.ux + 1; x++) {
         for (let y = game.u.uy - 1; y <= game.u.uy + 1; y++) {
             if (!underwaterTerrain(x, y)) continue;
             if (heroIsBlind() && (x !== game.u.ux || y !== game.u.uy))
-                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                     { kind: 'unexplored', glyph: GlyphOffset.unexplored });
-            else newsym(x, y);
+            else await newsym(x, y);
         }
     }
     view.position = { x: game.u.ux, y: game.u.uy };
@@ -2659,7 +2659,7 @@ export async function under_ground(mode: RestrictedDisplayMode): Promise<void> {
         view.fullRedrawPending = false;
     } else if (mode === 2) {
         view.fullRedrawPending = true;
-    } else newsym(game.u.ux, game.u.uy);
+    } else await newsym(game.u.ux, game.u.uy);
 }
 
 async function redrawRestrictedMap(full: boolean): Promise<void> {
@@ -2680,14 +2680,14 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
     try {
         if (game.u?.uswallow) {
             await cls();
-            swallowed(true);
+            await swallowed(true);
             return;
         }
         if (restrictedUnderwaterView() || game.u?.uburied) {
             await redrawRestrictedMap(true);
             return;
         }
-        vision_recalc(2);
+        await vision_recalc(2);
         await noticeAllMonsters(game);
         await cls();
         for (let y = 0; y < ROWNO; y++)
@@ -2697,14 +2697,14 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
                 if (memory) {
                     // docrt_flags() displays memory unchanged. newsym() owns
                     // corrections after sight and monster senses are restored.
-                    show_glyph_cell(x, y, memory.ch, memory.color, memory.decgfx,
+                    await show_glyph_cell(x, y, memory.ch, memory.color, memory.decgfx,
                         objectGlyphAttr(memory), memory);
                 } else {
-                    show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                    await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                         { kind: 'unexplored', glyph: GlyphOffset.unexplored });
                 }
             }
-        vision_recalc(0);
+        await vision_recalc(0);
         await noticeAllMonsters(game);
         await see_monsters({ beforeGlow });
     } finally {
@@ -2718,7 +2718,7 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
 export async function redrawMap() {
     if (!game.level) return;
     if (game.u?.uswallow) {
-        swallowed(true);
+        await swallowed(true);
         return;
     }
     if (restrictedUnderwaterView() || game.u?.uburied) {
@@ -2738,19 +2738,19 @@ export async function redrawMap() {
                     || !isWormTail(monster, x, y) && monsterHasWarningProjection(monster)))) {
                 // newsym() displays Warning before correcting unseen floor
                 // memory, just as it does for an identified monster.
-                newsym(x, y);
+                await newsym(x, y);
             } else if (loc?.remembered_glyph) {
-                showRememberedLocation(x, y, loc);
+                await showRememberedLocation(x, y, loc);
             } else {
                 // Modal redraw reconstructs presentation from visibility and
                 // memory.  Clear any old transient actor/warning overlay when
                 // neither owner projects this square anymore.
-                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                     { kind: 'unexplored', glyph: GlyphOffset.unexplored });
             }
         }
     if (game.u?.ux > 0 && canSpotHeroSelf()) {
-        displaySelf();
+        await displaySelf();
     }
     // vision_recalc's newly visible cells were projected above; source docrt
     // then overlays fmon once more in linked-list order.
@@ -3157,7 +3157,7 @@ export async function cls() {
     // clear_glyph_buffer() forgets the display, preserving remembered terrain.
     for (let y = 0; y < ROWNO; y++)
         for (let x = 1; x < COLNO; x++)
-            show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+            await show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
                 { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     game.context.botl = true;
 }
@@ -3302,7 +3302,7 @@ export async function setTopline(msg: string) {
     }
     // C pline.c:vpline() resolves any pending blocker/light change before it
     // flushes the map or negotiates tty's previous-topline pager.
-    if (game.vision_full_recalc) vision_recalc(0);
+    if (game.vision_full_recalc) await vision_recalc(0);
     if (game.u.ux) await flush_screen(1);
     // Every caller models a tty_putstr(WIN_MESSAGE, ATR_NOHISTORY) prompt:
     // remember_topl() archives the negotiated line, and the prompt itself
@@ -3702,7 +3702,7 @@ export async function plineWithContinuation(msg: string, {
     }
     // vpline() flushes the map before tty decides whether older prose needs
     // acknowledgment. Direct message-window display does not do this.
-    if (game.vision_full_recalc) vision_recalc(0);
+    if (game.vision_full_recalc) await vision_recalc(0);
     if (game.u.ux) await flush_screen(1);
     const dismissal = await updateTopline(msg, { urgent });
     // C pline.c tracks the last individual message, not the joined tty line.

@@ -19,7 +19,7 @@ import { installPagerInput } from './support/pager-input.js';
 type Threat = 'petrification' | 'sliming' | 'vomiting';
 
 async function openTin(species: string, known = true) {
-    freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200 } });
+    await freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 200 } });
     requirePlayingGame(game);
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger);

@@ -10,9 +10,9 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
-function putStoneEast() {
+async function putStoneEast() {
     requireGameLevel().requireAt(11, 10).typ = STONE;
-    newsym(11, 10);
+    await newsym(11, 10);
 }
 async function addPick({ wielded = false } = {}) {
     const pick = await addInventoryObject(PICK_AXE, {
@@ -46,7 +46,7 @@ void test('autodig performs its first digging action before advancing the world 
     freshTurnRoom();
     requirePlayingGame(game);
     await addPick({ wielded: true });
-    putStoneEast();
+    await putStoneEast();
     game.flags.autodig = true;
     const startingMove = game.moves;
     pushKey('l');

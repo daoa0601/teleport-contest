@@ -8,7 +8,7 @@ import { LENSES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('puton resolves artifact contact before wearing the Eyes of the Overworld', async () => {
-    freshObjectRoom({ role: 'caveman', hero: { ualign: { type: -1, record: 0 }, uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ role: 'caveman', hero: { ualign: { type: -1, record: 0 }, uhp: 100, uhpmax: 100 } });
     const artifact = artifactByName('The Eyes of the Overworld');
     assert.ok(artifact);
     const lenses = await addInventoryObject(LENSES, { oartifact: artifact.id, oname: artifact.name });

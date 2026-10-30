@@ -19,7 +19,7 @@ const meals = [
 
 for (const meal of meals) {
     void test(`digesting ${meal.name} defers its AC benefit until armor is reassessed`, async () => {
-        freshObjectRoom({ flags: { verbose: true, tips: false }, hero: { ublessed: 0 } });
+        await freshObjectRoom({ flags: { verbose: true, tips: false }, hero: { ublessed: 0 } });
         requirePlayingGame(game);
         installPolymorphedHero('xorn');
         const armorBeforeEating = findArmorClass();

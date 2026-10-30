@@ -8,7 +8,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('repeated wizard wishes suppress verbose stack totals and restore verbosity', async () => {
-    freshObjectRoom({ flags: { debug: true, verbose: true } });
+    await freshObjectRoom({ flags: { debug: true, verbose: true } });
     requirePlayingGame(game);
 
     await runExtendedCommand('wizwish', 'rock\n');

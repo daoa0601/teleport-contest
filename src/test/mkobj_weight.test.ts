@@ -4,7 +4,7 @@ import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a wish for three half-eaten food rations weighs thirty units', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('3 partly eaten food rations', { wizardWish: true });
 
@@ -15,7 +15,7 @@ void test('a wish for three half-eaten food rations weighs thirty units', async 
 });
 
 void test('a wish for three half-eaten newt corpses weighs fifteen units', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('3 partly eaten newt corpses', { wizardWish: true });
 
@@ -26,7 +26,7 @@ void test('a wish for three half-eaten newt corpses weighs fifteen units', async
 });
 
 void test('a wish for 23 half-eaten human corpses caps their full weight before scaling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('23 partly eaten human corpses', { wizardWish: true });
 

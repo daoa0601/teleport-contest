@@ -30,7 +30,7 @@ void test('restoring a save removes an expired thick cloud without prolonging it
     await createGasCloudSelection(game, [{ x: 16, y: 10 }], 0, 8);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('CloudSaver', storage), true);
+    assert.equal(await restoreGame('CloudSaver', storage), true);
     assert.equal(game.level?.regions.length, 0);
 });
 //# sourceMappingURL=region_restore.test.js.map

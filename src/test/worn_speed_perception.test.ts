@@ -10,7 +10,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('visible speed changes retain an invisible monster’s perceived description', async () => {
-    freshObjectRoom({ hero: { seeInvisible: true } });
+    await freshObjectRoom({ hero: { seeInvisible: true } });
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     monster.minvis = monster.perminvis = 1;
     const boots = await addObjectToMonsterInventory(monster, await knownObject(SPEED_BOOTS));

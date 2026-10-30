@@ -29,7 +29,7 @@ for (const death of [
     { type: TURNED_SLIME, killer: 'green slime', verb: 'turned into slime', cause: 'turned to slime by a green slime', epitaph: /turned to slime/ },
 ]) {
     void test(`a ${death.killer} death uses its native cause on the tombstone and score entry`, async () => {
-        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+        await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
         game.storage = memoryStorage();
         game.u.urexp = 100;
         game.iflags.toptenwin = false;
@@ -46,7 +46,7 @@ for (const death of [
     });
 }
 void test('tasting petrifying flesh keeps the native action phrase on the tombstone and score entry', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     game.storage = memoryStorage();
     game.u.urexp = 100;
     game.iflags.toptenwin = false;
@@ -64,7 +64,7 @@ void test('tasting petrifying flesh keeps the native action phrase on the tombst
     assert.doesNotMatch(tombstone, /petrified by a/);
 });
 void test("Medusa's attacking gaze keeps her proper name on the tombstone and score entry", async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
     const medusa = await createMonsterAt('Medusa', 11, 10);
     medusa.mpeaceful = 0;
@@ -85,7 +85,7 @@ void test("Medusa's attacking gaze keeps her proper name on the tombstone and sc
     assert.doesNotMatch(tombstone, /petrified by a/);
 });
 void test("deliberately meeting Medusa's gaze keeps the native phrase on the tombstone and score entry", async () => {
-    freshMonsterAbilityRoom('umber hulk', {
+    await freshMonsterAbilityRoom('umber hulk', {
         energy: 30,
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true },
     });
@@ -107,7 +107,7 @@ void test("deliberately meeting Medusa's gaze keeps the native phrase on the tom
     assert.equal(loadScoreRecords()[0]?.death, "petrified by deliberately meeting Medusa's gaze");
 });
 void test('feeling a petrifying corpse keeps the native action phrase in the score entry', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { blindTurns: 3 },
         flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
     });
@@ -121,7 +121,7 @@ void test('feeling a petrifying corpse keeps the native action phrase in the sco
     assert.equal(loadScoreRecords()[0]?.death, 'petrified by touching a cockatrice corpse bare-handed');
 });
 void test('an invisible monster keeps its invisibility in the tombstone and score entry', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
     const xorn = await createMonsterAt('xorn', 11, 10);
     xorn.minvis = true;
@@ -141,7 +141,7 @@ void test('an invisible monster keeps its invisibility in the tombstone and scor
     assert.equal(loadScoreRecords()[0]?.death, 'killed by an invisible xorn');
 });
 void test('a named monster death sanitizes punctuation on the tombstone and score entry', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
     const xorn = await createMonsterAt('xorn', 11, 10);
     setMonsterGivenName(xorn, 'Bob,=Joe');
@@ -165,7 +165,7 @@ for (const { species, female, killer } of [
     { species: 'vampire leader', female: true, killer: 'a vampire lady in bat form' },
 ]) {
     void test(`death in vampire bat form attributes the killer to ${species}`, async () => {
-        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+        await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
         requirePlayingGame(game);
         const bat = await createMonsterAt('vampire bat', 11, 10);
         bat.cham = MONSTER_NAME.indexOf(species);
@@ -180,7 +180,7 @@ for (const { species, female, killer } of [
     });
 }
 void test('a death while fainted includes helplessness in the score but leaves the tombstone cause concise', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
     game.storage = memoryStorage();
     game.u.urexp = 100;
@@ -204,7 +204,7 @@ for (const restored of [false, true]) {
         const cause = restored ? 'restored paralysis has no saved cause'
             : `ongoing paralysis ${sameKiller ? 'omits' : 'keeps'} the ghoul attribution`;
         void test(`${cause} when ${sameKiller ? 'that ghoul' : 'another ghoul'} kills the hero`, async () => {
-            freshObjectRoom({
+            await freshObjectRoom({
                 hero: { uhp: 100, uhpmax: 100, uac: 10 },
                 flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
             });
@@ -229,7 +229,7 @@ for (const restored of [false, true]) {
             assert.ok((game._helplessTurns ?? 0) > 0, 'The ghoul must paralyze the hero before the fatal attack');
             if (restored) {
                 assert.equal(await saveGame(storage), true);
-                assert.equal(restoreGame('GhoulVictim', storage), true);
+                assert.equal(await restoreGame('GhoulVictim', storage), true);
                 input = resetInputState();
             }
             const fatalGhoul = requireGameLevel().monsters.find(monster => monster.m_id === killerId);
@@ -250,7 +250,7 @@ for (const { causeLength, expectedSuffix } of [
     { causeLength: 110, expectedSuffix: '' },
 ]) {
     void test(`a helpless death with a ${causeLength}-character cause fits the native score field`, async () => {
-        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+        await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
         requirePlayingGame(game);
         game.storage = memoryStorage();
         game.u.urexp = 100;
@@ -266,7 +266,7 @@ for (const { causeLength, expectedSuffix } of [
     });
 }
 void test('hurtling into a cockatrice petrifies the hero on the tombstone and score entry', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
     requirePlayingGame(game);
     game.storage = memoryStorage();
     game.u.urexp = 100;

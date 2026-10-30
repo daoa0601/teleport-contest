@@ -14,7 +14,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function itemRoom(type, properties = {}) {
-    const level = freshObjectRoom({ right: 24 });
+    const level = await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     const item = await addObjectToMonsterInventory(monster, await knownObject(type, {

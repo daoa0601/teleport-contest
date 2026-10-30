@@ -22,7 +22,7 @@ function savedRecord(value: unknown): Record<string, unknown> {
 
 for (const depth of [1, 2]) {
     void test(`restore rejects a ${depth === 1 ? 'direct' : 'nested'} contents cycle before replacing live objects`, async () => {
-        const level = freshObjectRoom({ moves: 27 });
+        const level = await freshObjectRoom({ moves: 27 });
         game.plname = 'Container reader';
         const hero = game.u;
         const outer = await addInventoryObject(SACK, { initialize: false });
@@ -52,7 +52,7 @@ for (const depth of [1, 2]) {
         savedInner.contents = [savedOuter];
         storage.setItem(key, encodeSavedGraph(snapshot));
 
-        assert.equal(restoreGame(game.plname, storage), false,
+        assert.equal(await restoreGame(game.plname, storage), false,
             'A container must not become one of its own descendants');
 
         assert.equal(game.level, level);
@@ -66,7 +66,7 @@ for (const depth of [1, 2]) {
 }
 
 void test('restore retains nested containers and monster carrier back-references', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.plname = 'Container owners';
     const outer = await addInventoryObject(SACK, { initialize: false });
     const inner = await knownObject(SACK, { initialize: false });
@@ -84,7 +84,7 @@ void test('restore retains nested containers and monster carrier back-references
     assert.equal(await saveGame(storage), true);
     resetGame();
 
-    assert.equal(restoreGame('Container owners', storage), true);
+    assert.equal(await restoreGame('Container owners', storage), true);
 
     const restoredOuter = game.inventory.find(object => object.o_id === outer.o_id);
     const restoredInner = restoredOuter?.contents?.[0];

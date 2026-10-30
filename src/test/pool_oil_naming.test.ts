@@ -18,7 +18,7 @@ import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('a known oil potion catches light with one potion prefix', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await addInventoryObject(POT_OIL);
     const messages: string[] = [];
 
@@ -30,7 +30,7 @@ void test('a known oil potion catches light with one potion prefix', async () =>
 
 for (const [identified, name] of [[true, 'potion of oil'], [false, 'amber potion']] as const) {
     void test(`visible ignition observes an unseen ${name} before identifying oil`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         assert.ok(game.objectDescriptions);
         game.objectDescriptions[POT_OIL] = 'amber';
         const potion = await floorObject(POT_OIL, 11, 10, {
@@ -48,7 +48,7 @@ for (const [identified, name] of [[true, 'potion of oil'], [false, 'amber potion
 }
 
 void test('ignition felt while blind does not reveal a potion appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     setHeroBlindnessTurns(10);
     const potion = await addInventoryObject(POT_OIL, {
         dknown: false, typeKnown: false, observed: false,
@@ -63,7 +63,7 @@ void test('ignition felt while blind does not reveal a potion appearance', async
 });
 
 void test('unseen ignition does not reveal a potion appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await floorObject(POT_OIL, 11, 10, {
         dknown: false, typeKnown: false,
     });
@@ -77,7 +77,7 @@ void test('unseen ignition does not reveal a potion appearance', async () => {
 });
 
 void test('igniting more oil credits Wisdom only for the first discovery', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const first = await floorObject(POT_OIL, 11, 10, { typeKnown: false });
     const second = await floorObject(POT_OIL, 12, 10, { typeKnown: false });
@@ -108,7 +108,7 @@ void test('a lamp for sale catches light in its shopkeeper\'s name', async () =>
 });
 
 void test('a pet\'s lamp catches light as the hero\'s pet\'s lamp', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
     pet.mtame = 10;
     const lamp = await addObjectToMonsterInventory(pet, await knownObject(OIL_LAMP, { age: 1500 }));

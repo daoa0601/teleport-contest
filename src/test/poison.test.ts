@@ -14,7 +14,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('surviving severe poison lowers maximum HP and attributes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const messages: string[] = [];
 
@@ -38,7 +38,7 @@ void test('surviving severe poison lowers maximum HP and attributes', async () =
 });
 
 void test('ordinary poison damages the current monster body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('minotaur');
 
@@ -53,7 +53,7 @@ void test('ordinary poison damages the current monster body', async () => {
 });
 
 void test('poison can destroy a monster body without killing the human underneath', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('minotaur', { hitPoints: 5 });
 
@@ -69,7 +69,7 @@ void test('poison can destroy a monster body without killing the human underneat
 });
 
 void test('severe poison lowers human maximum health even while polymorphed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('minotaur');
 
@@ -87,7 +87,7 @@ void test('severe poison lowers human maximum health even while polymorphed', as
 
 for (const reason of ['blast', 'gas cloud']) {
     void test(`half gas damage reduces poison from a ${reason}`, async () => {
-        freshObjectRoom({ hero: { halfGasDamage: true } });
+        await freshObjectRoom({ hero: { halfGasDamage: true } });
         requirePlayingGame(game);
 
         await poisonHero({
@@ -101,7 +101,7 @@ for (const reason of ['blast', 'gas cloud']) {
 }
 
 void test('severe poison can trigger life saving through low human health while polymorphed', async () => {
-    freshObjectRoom({ hero: { uhp: 10, uhpmax: 40 } });
+    await freshObjectRoom({ hero: { uhp: 10, uhpmax: 40 } });
     requirePlayingGame(game);
     installPolymorphedHero('minotaur', { hitPoints: 60 });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -121,7 +121,7 @@ void test('severe poison can trigger life saving through low human health while 
 });
 
 void test('deadly poison proceeds from its warning to the debug death question', async () => {
-    freshObjectRoom({ flags: { debug: true }, hero: { uhp: 5 } });
+    await freshObjectRoom({ flags: { debug: true }, hero: { uhp: 5 } });
     requirePlayingGame(game);
     const messages: string[] = [];
     resetInputState().display = { async readKey() {
@@ -141,7 +141,7 @@ void test('deadly poison proceeds from its warning to the debug death question',
 });
 
 void test('poison reports a newly burdensome load before the attribute-loss message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.program_state.in_moveloop = true;
     const capacity = weightCapacity(game);

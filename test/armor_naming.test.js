@@ -15,7 +15,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const type of [IRON_SHOES, KICKING_BOOTS]) {
     void test(`bear protection names a single pair of ${OBJECT_NAMES[type]}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         wearHeroArmor(await addInventoryObject(type));
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
@@ -27,7 +27,7 @@ for (const type of [IRON_SHOES, KICKING_BOOTS]) {
     });
 }
 void test('called shoes use the observed category without formatting changing knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const shoes = await knownObject(IRON_SHOES, {
         typeKnown: false,
@@ -44,7 +44,7 @@ void test('called shoes use the observed category without formatting changing kn
     assert.equal(objectName(shoes), 'pair of shoes called Work named Buster');
 });
 void test('unobserved shields conceal their type and call name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     for (const [name, noun] of [
         ['elven shield', 'shield'],
@@ -58,14 +58,14 @@ void test('unobserved shields conceal their type and call name', async () => {
     }
 });
 void test('Samurai armor names retain the concrete pair grammar', async () => {
-    freshObjectRoom({ role: 'samurai' });
+    await freshObjectRoom({ role: 'samurai' });
     requirePlayingGame(game);
     const gloves = await knownObject(OBJECT_NAMES.indexOf('leather gloves'));
     assert.equal(objectName(gloves), 'pair of yugake');
 });
 for (const blind of [false, true]) {
     void test(`bear-trap footwear feedback ${blind ? 'does not reveal unseen boots while blind' : 'observes boots in sight'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         setHeroBlindnessTurns(20);
         const boots = await addInventoryObject(IRON_SHOES, {

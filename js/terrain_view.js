@@ -67,7 +67,7 @@ async function revealTerrain(subset) {
             for (let y = 0; y < ROWNO; y++) {
                 const location = level.requireAt(x, y);
                 const glyph = terrainViewGlyph(location, x, y, subset, !!saved.swallowed);
-                show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
+                await show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx ?? false, 0, glyph);
             }
         await flush_screen(1);
         const kind = full ? 'underlying terrain' : subset & TER_OBJ

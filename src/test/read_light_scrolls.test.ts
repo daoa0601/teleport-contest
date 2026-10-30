@@ -17,7 +17,7 @@ import { createStaffedShop } from './support/shop.js';
 
 for (const cursed of [false, true]) {
     void test(`a ${cursed ? 'cursed' : 'blessed'} light scroll names an unpaid Sunsword before choosing its hallucinated glow`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         await createStaffedShop();
         const sword = await addInventoryItem(await artifactObject('Sunsword'));
@@ -54,7 +54,7 @@ for (const cursed of [false, true]) {
 
 for (const cursed of [false, true]) {
     void test(`a ${cursed ? 'cursed' : 'blessed'} light scroll changes worn gold armor's blessing and light radius`, async () => {
-        freshObjectRoom({ gameplaySeed: 17n });
+        await freshObjectRoom({ gameplaySeed: 17n });
         requirePlayingGame(game);
         const input = resetInputState();
         const messages: string[] = [];
@@ -81,7 +81,7 @@ for (const cursed of [false, true]) {
 
 for (const type of [OIL_LAMP, WAX_CANDLE]) {
     void test(`a cursed light scroll announces extinguishing a carried ${type === OIL_LAMP ? 'lamp' : 'candle'} before the darkness`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         const messages: string[] = [];

@@ -11,12 +11,12 @@ for (const { mask, color, name } of [
     { mask: AM_SHRINE, color: CLR_RED, name: 'an unaligned shrine' },
 ]) {
     void test(`${name} uses its native altar glyph color`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const altar = level.requireAt(11, 10);
         altar.typ = ALTAR;
         altar.flags = mask;
 
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         assert.equal(requireScreenCell(10, 11).color, color);

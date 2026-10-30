@@ -18,7 +18,7 @@ import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function engravingEncounter(x) {
-    freshObjectRoom({ left: 8, right: 15, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 8, right: 15, top: 10, bottom: 10,
         hero: { uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth');
@@ -86,7 +86,7 @@ void test('repeated sightings of a scary square do not extend an existing flight
 void test('bright armor usually frightens a gremlin but sometimes it stays brave', async () => {
     const reactions = new Set();
     for (let seed = 1; seed <= 32 && reactions.size < 2; seed++) {
-        freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+        await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
         requirePlayingGame(game);
         const gremlin = await createMonsterAt('gremlin', 11, 10, MM_ANGRY | NO_MINVENT);
         gremlin.mux = game.u.ux;
@@ -105,7 +105,7 @@ void test('bright armor usually frightens a gremlin but sometimes it stays brave
 });
 for (const lifesaving of [false, true]) {
     void test(`fearful expulsion ${lifesaving ? 'continues after life saving' : 'stops the actor after fatal landing'}`, async () => {
-        const level = freshObjectRoom({ hero: { uhp: 1, uhpmax: 80 } });
+        const level = await freshObjectRoom({ hero: { uhp: 1, uhpmax: 80 } });
         requirePlayingGame(game);
         const worm = await createMonsterAt('purple worm', 11, 10, MM_ANGRY | NO_MINVENT);
         addTrap(level, PIT, game.u.ux, game.u.uy);
@@ -134,7 +134,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('a frightened monster with no escape can still attack in panic', async () => {
-    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10,
         hero: { uhp: 200, uhpmax: 200, uac: 30 } });
     requirePlayingGame(game);
     makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth');
@@ -148,7 +148,7 @@ void test('a frightened monster with no escape can still attack in panic', async
     assert.ok(game.u.uhp < 200);
 });
 void test('a diagonally adjacent grid bug cannot reach a frightening engraving', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth');
     const bug = await createMonsterAt('grid bug', 11, 11, MM_ANGRY | NO_MINVENT);
@@ -160,7 +160,7 @@ void test('a diagonally adjacent grid bug cannot reach a frightening engraving',
 for (const species of ['couatl', 'Angel', 'Archon']) {
     for (const scarySquare of ['Elbereth', 'scroll']) {
         void test(`an ordinary ${species} ignores ${scarySquare}`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | NO_MINVENT);
             if (scarySquare === 'Elbereth')
@@ -182,7 +182,7 @@ for (const [form, alignment, frightened] of [
     ['goblin', 1, true],
 ]) {
     void test(`a polymorphed ${alignment > 0 ? 'lawful' : 'chaotic'} minion in ${form} form ${frightened ? 'fears' : 'ignores'} a scare scroll`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const minion = await createMonsterAt('aligned cleric', 11, 10, MM_ANGRY | NO_MINVENT);
         assert.equal(minion.isminion, 1);
@@ -201,7 +201,7 @@ for (const [form, alignment, frightened] of [
 }
 for (const species of ['vampire leader', 'Vlad the Impaler']) {
     void test(`${species} still fears an altar after taking vampire bat form`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.requireAt(game.u.ux, game.u.uy).typ = ALTAR;
         const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | NO_MINVENT);
@@ -217,7 +217,7 @@ for (const species of ['vampire leader', 'Vlad the Impaler']) {
     });
 }
 void test('an ordinary vampire bat does not fear an altar', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = ALTAR;
     const bat = await createMonsterAt('vampire bat', 11, 10, MM_ANGRY | NO_MINVENT);

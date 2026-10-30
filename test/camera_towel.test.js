@@ -44,7 +44,7 @@ async function aim(object, keys = 'l') {
     return useCamera(object);
 }
 void test('a camera refuses underwater without a charge or direction prompt', async () => {
-    freshObjectRoom({ hero: { uinwater: 1 } });
+    await freshObjectRoom({ hero: { uinwater: 1 } });
     requirePlayingGame(game);
     const object = await camera();
     const result = await useCamera(object);
@@ -53,14 +53,14 @@ void test('a camera refuses underwater without a charge or direction prompt', as
     assert.match(game._pending_message, /void the warranty/);
 });
 void test('cancelling the camera direction preserves charges and time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const object = await camera();
     assert.equal((await aim(object, '\x1b')).spentTime, false);
     assert.equal(object.spe, 3);
 });
 void test('an exhausted camera still asks a direction and spends time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const object = await camera({ spe: 0 });
     assert.equal((await aim(object)).spentTime, true);
@@ -72,7 +72,7 @@ for (const [key, surface] of [
     ['<', 'ceiling'],
 ]) {
     void test(`photographing the ${surface} consumes one charge`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const object = await camera();
         await aim(object, key);
@@ -82,7 +82,7 @@ for (const [key, surface] of [
     });
 }
 void test('a self photograph blinds the hero without injuring a human body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const object = await camera();
     const hp = game.u.uhp;
@@ -94,14 +94,14 @@ void test('a self photograph blinds the hero without injuring a human body', asy
     assert.match(game._pending_message, /blinded by the flash/);
 });
 void test('an already blind hero resists self-flash without extending blindness', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setHeroBlindnessTurns(42);
     await aim(await camera(), '.');
     assert.equal(game.u.blindTurns, 42);
 });
 void test('a cursed camera can flash the user despite aiming at a monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 12, 10, NO_MINVENT);
     target.msleeping = 1;
@@ -113,7 +113,7 @@ void test('a cursed camera can flash the user despite aiming at a monster', asyn
     assert.equal(object.spe, 2);
 });
 void test('the first flash wakes an eyed sleeping target without blinding it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 12, 10, NO_MINVENT);
     target.msleeping = 1;
@@ -126,7 +126,7 @@ void test('the first flash wakes an eyed sleeping target without blinding it', a
     assert.equal(requireMonsterVital(target.mnum).photographed, 1);
 });
 void test('a point-blank flash can permanently blind a waking hostile creature', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 11, 10, NO_MINVENT);
     target.msleeping = 0;
@@ -136,7 +136,7 @@ void test('a point-blank flash can permanently blind a waking hostile creature',
     assert.equal(target.mblinded, 0);
 });
 void test('a distant flash causes bounded temporary blindness without fear', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 16, 10, NO_MINVENT);
     target.msleeping = 0;
@@ -147,7 +147,7 @@ void test('a distant flash causes bounded temporary blindness without fear', asy
     assert.ok(!target.mflee);
 });
 void test('the camera beam stops at a closed terrain cell', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 14, 10, NO_MINVENT);
     target.msleeping = 1;
@@ -157,7 +157,7 @@ void test('the camera beam stops at a closed terrain cell', async () => {
     assert.equal(requireMonsterVital(target.mnum).photographed, undefined);
 });
 void test('flash passes through an invisible creature and reaches the visible one behind', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const hidden = await createMonsterAt('dog', 12, 10, NO_MINVENT);
     const target = await createMonsterAt('kitten', 14, 10, NO_MINVENT);
@@ -170,7 +170,7 @@ void test('flash passes through an invisible creature and reaches the visible on
     assert.equal(requireMonsterVital(target.mnum).photographed, 1);
 });
 void test('eyeless creatures resist the flash and keep their sight state', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const target = await createMonsterAt('acid blob', 12, 10, NO_MINVENT);
     target.msleeping = 0;
@@ -180,13 +180,13 @@ void test('eyeless creatures resist the flash and keep their sight state', async
     assert.match(game._pending_message, /flash of light shines on the acid blob/);
 });
 void test('a camera temporarily illuminates a dark target then remembers its location', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 16, 10, NO_MINVENT);
     for (let x = 7; x <= 22; x++)
         for (let y = 6; y <= 14; y++)
             requireGameLevel().requireAt(x, y).lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(target), false);
     target.msleeping = 1;
     await aim(await camera(), 'l '); // Native dark flash prose is acknowledged before light cleanup.
@@ -197,7 +197,7 @@ void test('a camera temporarily illuminates a dark target then remembers its loc
     assert.equal(requireGameLevel().requireAt(16, 10).remembered_glyph?.kind, 'invisible');
 });
 void test('a Tourist earns experience for the first photo of a species only', async () => {
-    freshObjectRoom({ role: 'tourist', hero: { ulevel: 1, uexp: 0, urexp: 0 } });
+    await freshObjectRoom({ role: 'tourist', hero: { ulevel: 1, uexp: 0, urexp: 0 } });
     requirePlayingGame(game);
     await createMonsterAt('lichen', 13, 10, NO_MINVENT);
     const object = await camera();
@@ -210,7 +210,7 @@ void test('a Tourist earns experience for the first photo of a species only', as
     assert.equal(game.context.lifelist.total_photographed, 1);
 });
 void test('photographing the starting pet awards no Tourist experience', async () => {
-    freshObjectRoom({ role: 'tourist', hero: { uexp: 0 } });
+    await freshObjectRoom({ role: 'tourist', hero: { uexp: 0 } });
     requirePlayingGame(game);
     const pet = await createMonsterAt('kitten', 13, 10, NO_MINVENT);
     pet.msleeping = 1;
@@ -222,7 +222,7 @@ void test('photographing the starting pet awards no Tourist experience', async (
     assert.equal(requireMonsterVital(pet.mnum).photographed, 1);
 });
 void test('hallucination prevents closeup and photographic records', async () => {
-    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requirePlayingGame(game);
     const target = await createMonsterAt('lichen', 13, 10, NO_MINVENT);
     await seeMonsterCloseup(target, { photo: true });
@@ -230,7 +230,7 @@ void test('hallucination prevents closeup and photographic records', async () =>
     assert.equal(requireMonsterVital(target.mnum).photographed, undefined);
 });
 void test('a flash does not blind a worm when only the tail is struck', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('long worm', 13, 10, NO_MINVENT);
     const object = await camera();
@@ -240,7 +240,7 @@ void test('a flash does not blind a worm when only the tail is struck', async ()
     assert.equal(target.mcansee, 1);
 });
 void test('camera light hurts a gremlin body and returns unreduced blindness duration', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('gremlin', { halfPhysicalDamage: true, hitPoints: 40 });
     const amount = await lightDamage(await camera(), true, 5);
@@ -248,7 +248,7 @@ void test('camera light hurts a gremlin body and returns unreduced blindness dur
     assert.equal(game.u.mh, 40 - Math.trunc((amount + 1) / 2));
 });
 void test('the Eyes block blindness while retaining the underlying flash timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const eyes = await artifactObject('The Eyes of the Overworld');
     await wearEyewear(eyes);
@@ -258,7 +258,7 @@ void test('the Eyes block blindness while retaining the underlying flash timeout
     assert.equal(heroIsBlind(), false);
 });
 void test('a clean towel takes no time and remains wet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const object = await towel({ spe: 4 });
     assert.equal((await useTowel(object)).spentTime, false);
@@ -266,7 +266,7 @@ void test('a clean towel takes no time and remains wet', async () => {
     assert.match(game._pending_message, /face and hands are already clean/);
 });
 void test('a wielded wet towel removes slippery hands and dries one step', async () => {
-    freshObjectRoom({ hero: { glibTurns: 12, glib: true } });
+    await freshObjectRoom({ hero: { glibTurns: 12, glib: true } });
     requirePlayingGame(game);
     const object = await towel({ spe: 1 });
     await setPrimaryWeapon(object);
@@ -280,7 +280,7 @@ void test('a wielded wet towel removes slippery hands and dries one step', async
 });
 for (const cursed of [false, true]) {
     void test(`applying a wielded dry ${cursed ? 'cursed ' : ''}towel does not announce drying`, async () => {
-        freshObjectRoom({ hero: { glibTurns: 8, glib: true } });
+        await freshObjectRoom({ hero: { glibTurns: 8, glib: true } });
         requirePlayingGame(game);
         const object = await towel({ cursed });
         await setPrimaryWeapon(object);
@@ -305,7 +305,7 @@ for (const cursed of [false, true]) {
     });
 }
 void test('cleaning hands leaves face grime for a second towel application', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8, ucreamed: 6 } });
+    await freshObjectRoom({ hero: { glibTurns: 8, ucreamed: 6 } });
     requirePlayingGame(game);
     setHeroBlindnessTurns(6);
     const object = await towel();
@@ -318,7 +318,7 @@ void test('cleaning hands leaves face grime for a second towel application', asy
     assert.equal(heroIsBlind(), false);
 });
 void test('removing face grime preserves blindness from another cause', async () => {
-    freshObjectRoom({ hero: { ucreamed: 6 } });
+    await freshObjectRoom({ hero: { ucreamed: 6 } });
     requirePlayingGame(game);
     setHeroBlindnessTurns(30);
     await useTowel(await towel());
@@ -327,7 +327,7 @@ void test('removing face grime preserves blindness from another cause', async ()
     assert.match(game._pending_message, /face feels clean now/);
 });
 void test('a towel being worn cannot clean the hero', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     const object = await towel();
     await wearEyewear(object);
@@ -336,7 +336,7 @@ void test('a towel being worn cannot clean the hero', async () => {
     assert.equal(game.u.glibTurns, 8);
 });
 void test('a welded two-handed weapon prevents towel use', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     const weapon = await addInventoryObject(TWO_HANDED_SWORD, { cursed: true });
     await setPrimaryWeapon(weapon);
@@ -345,7 +345,7 @@ void test('a welded two-handed weapon prevents towel use', async () => {
     assert.match(game._pending_message, /no free hand/);
 });
 void test('a cursed towel can make already slippery hands filthier', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     const object = await towel({ cursed: true, spe: 3 });
     initRng(4n); // Native rn2(3) selects slippery hands.
@@ -355,7 +355,7 @@ void test('a cursed towel can make already slippery hands filthier', async () =>
     assert.match(game._pending_message, /filthier than ever/);
 });
 void test('a cursed towel can add face grime and blindness', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const object = await towel({ cursed: true });
     initRng(2n); // Native rn2(3) selects face or eyewear.
@@ -366,7 +366,7 @@ void test('a cursed towel can add face grime and blindness', async () => {
     assert.equal(heroIsBlind(), true);
 });
 void test('a cursed towel can fall through to normal cleaning', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     const object = await towel({ cursed: true });
     initRng(1n); // Native rn2(3) selects ordinary cleaning.
@@ -379,7 +379,7 @@ for (const [type, name] of [
     [TOWEL, 'other towel'],
 ]) {
     void test(`a cursed towel pushes uncursed ${name} off and onto the floor`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const worn = await addInventoryObject(type);
         await wearEyewear(worn);
@@ -395,7 +395,7 @@ for (const [type, name] of [
     });
 }
 void test('a cursed towel only skews cursed eyewear and leaves it worn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const worn = await addInventoryObject(LENSES, { cursed: true });
     await wearEyewear(worn);
@@ -407,7 +407,7 @@ void test('a cursed towel only skews cursed eyewear and leaves it worn', async (
     assert.match(game._pending_message, /lenses (cock-eyed|crooked)/);
 });
 void test('gloved hands use the glove name when cleaning grease', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     game.uarmg = await addInventoryObject(LEATHER_GLOVES);
     await useTowel(await towel());
@@ -415,7 +415,7 @@ void test('gloved hands use the glove name when cleaning grease', async () => {
     assert.equal(game.u.glibTurns, 0);
 });
 void test('public apply uses a camera charge and a clean towel takes no turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const object = await camera();
     await applyInventoryObject(object, '>');
@@ -426,7 +426,7 @@ void test('public apply uses a camera charge and a clean towel takes no turn', a
     assert.equal(game.context.move, 0);
 });
 void test('a non-self cursed photograph can still awaken a monster', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('dog', 12, 10, NO_MINVENT);
     target.msleeping = 1;
@@ -437,7 +437,7 @@ void test('a non-self cursed photograph can still awaken a monster', async () =>
     assert.equal(heroIsBlind(), false);
 });
 void test('a photograph from inside a monster records the stomach instead of flashing it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
     resetInputState().feed(' '); // Native engulf announcement precedes the swallowed screen.
@@ -461,7 +461,7 @@ void test('a photograph from inside a monster records the stomach instead of fla
     assert.equal(heroIsBlind(), false);
 });
 void test('object-disguised mimics do not stop the light beam', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 12, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;
@@ -474,21 +474,21 @@ void test('object-disguised mimics do not stop the light beam', async () => {
     assert.equal(requireMonsterVital(mimic.mnum).photographed, undefined);
 });
 void test('a furniture-disguised mimic is exposed by the flash', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 12, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = 15; // Native closed-door appearance.
     mimic.msleeping = 0;
     mimic.mpeaceful = 0;
-    newsym(12, 10);
+    await newsym(12, 10);
     await aim(await camera(), 'l  '); // Reveal, blindness, and fear can cross two native prose boundaries.
     assert.equal(mimic.m_ap_type, 0);
     assert.equal(mimic.mcansee, 1); // Eyeless mimics resist flash blindness.
     assert.equal(requireMonsterVital(mimic.mnum).photographed, 1);
 });
 void test('light creatures do not become blind from a photograph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('yellow light', 12, 10, NO_MINVENT);
     target.msleeping = 0;
@@ -497,7 +497,7 @@ void test('light creatures do not become blind from a photograph', async () => {
     assert.equal(target.mblinded || 0, 0);
 });
 void test('Sunsword protects a monster from camera blindness', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     const target = await createMonsterAt('elf', 12, 10, NO_MINVENT);
     target.msleeping = 0;
@@ -507,7 +507,7 @@ void test('Sunsword protects a monster from camera blindness', async () => {
     assert.match(game._pending_message, /flash of light shines on/);
 });
 void test('Sunsword protects the hero from self-flash and gives observable resistance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await setPrimaryWeapon(await artifactObject('Sunsword'));
     const observed = await flashBurn(27);
@@ -517,7 +517,7 @@ void test('Sunsword protects the hero from self-flash and gives observable resis
     assert.equal(await flashBurn(27, true), false);
 });
 void test('light can destroy a gremlin through the ordinary kill owner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('gremlin', 12, 10, NO_MINVENT);
     target.mhp = 1;
@@ -533,7 +533,7 @@ void test('light can destroy a gremlin through the ordinary kill owner', async (
     assert.ok(game.u.uexp > 0);
 });
 void test('wand light also owns real gremlin damage through the shared flash effect', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('gremlin', 14, 10, NO_MINVENT);
     target.mhp = 50;
@@ -546,7 +546,7 @@ void test('wand light also owns real gremlin damage through the shared flash eff
     assert.equal(target.mcansee, 0);
 });
 void test('self-flash can rehumanize a gremlin without injuring the restored body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const hp = game.u.uhp;
     installPolymorphedHero('gremlin', { hitPoints: 1 });
@@ -559,7 +559,7 @@ void test('self-flash can rehumanize a gremlin without injuring the restored bod
     assert.equal(heroIsBlind(), true);
 });
 void test('a Tourist starting pet is recorded as photographed at actual creation', async () => {
-    freshObjectRoom({ role: 'tourist', hero: { ulevel: 1, uexp: 0 } });
+    await freshObjectRoom({ role: 'tourist', hero: { ulevel: 1, uexp: 0 } });
     requirePlayingGame(game);
     await camera();
     const pet = await makedog();
@@ -573,7 +573,7 @@ void test('a Tourist starting pet is recorded as photographed at actual creation
     assert.equal(game.u.uexp, 0);
 });
 void test('photographic discovery survives save and restore', async () => {
-    freshObjectRoom({ role: 'tourist' });
+    await freshObjectRoom({ role: 'tourist' });
     requirePlayingGame(game);
     const target = await createMonsterAt('lichen', 13, 10, NO_MINVENT);
     await aim(await camera());
@@ -581,13 +581,13 @@ void test('photographic discovery survives save and restore', async () => {
     game.plname = 'Photographer';
     await saveGame(storage);
     game.mvitals = [];
-    restoreGame('Photographer', storage);
+    await restoreGame('Photographer', storage);
     assert.equal(requireMonsterVital(target.mnum).photographed, 1);
     assert.ok(game.context.lifelist);
     assert.equal(game.context.lifelist.total_photographed, 1);
 });
 void test('a charged unpaid camera adds real shop usage debt before taking its picture', async () => {
-    freshObjectRoom({ hero: { deafTurns: 20 } });
+    await freshObjectRoom({ hero: { deafTurns: 20 } });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const object = await floorObject(EXPENSIVE_CAMERA, 10, 10, { spe: 3 });
@@ -604,7 +604,7 @@ void test('a charged unpaid camera adds real shop usage debt before taking its p
     assert.equal(game.inventory.includes(object), true);
 });
 void test('a towel does not strip grease from the gloves while cleaning slippery hands', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     game.uarmg = await addInventoryObject(LEATHER_GLOVES, { greased: true });
     await useTowel(await towel());
@@ -612,7 +612,7 @@ void test('a towel does not strip grease from the gloves while cleaning slippery
     assert.equal(game.uarmg.greased, true);
 });
 void test('a polymorphed hero cleans the current face and hands', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     installPolymorphedHero('dog');
     await useTowel(await towel());
@@ -620,7 +620,7 @@ void test('a polymorphed hero cleans the current face and hands', async () => {
     assert.equal(game.u.glibTurns, 0);
 });
 void test('cleaning grime inside a dust vortex immediately exposes the eyes again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('dust vortex', 11, 10, NO_MINVENT);
     resetInputState().feed(' ');
@@ -647,7 +647,7 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
     assert.equal(game.u.uswldtim, timer);
 });
 void test('an unchanging gremlin dies from self-flash through the ordinary hero-death owner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('gremlin', { hitPoints: 1, unchanging: true });
     game.storage = memoryStorage();
@@ -661,7 +661,7 @@ void test('an unchanging gremlin dies from self-flash through the ordinary hero-
     assert.equal(game.u.umortality, 1);
 });
 void test('using a wet towel updates the visible wetness name without changing weight', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8 } });
+    await freshObjectRoom({ hero: { glibTurns: 8 } });
     requirePlayingGame(game);
     const object = await towel({ spe: 3 });
     const weight = object.owt;
@@ -672,7 +672,7 @@ void test('using a wet towel updates the visible wetness name without changing w
     assert.equal(object.owt, weight);
 });
 void test('wizard towel names expose the remaining wetness', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const object = await towel({ spe: 4 });
     assert.equal(objectName(object), 'wet towel (4)');

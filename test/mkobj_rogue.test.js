@@ -4,7 +4,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { mkobj } from '../js/mklev.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('random Rogue-level loot uses only the seven Rogue object classes', async () => {
-    freshObjectRoom({ gameplaySeed: 140 });
+    await freshObjectRoom({ gameplaySeed: 140 });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     const classes = new Set([2, 3, 7, 8, 9, 11, 4]);

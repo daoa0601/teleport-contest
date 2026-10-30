@@ -19,14 +19,14 @@ import { requireFixtureGame } from './support/game-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function rockRoom() {
-    freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+async function rockRoom() {
+    await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
     requireFixtureGame(game);
     initRng(7n);
 }
 
 void test('rocks seen falling on the hero are still felt as rocks after blindness', async () => {
-    rockRoom();
+    await rockRoom();
     pushKeys(' '.repeat(10));
 
     await dropBoulderOnHero({ confused: true });
@@ -39,7 +39,7 @@ void test('rocks seen falling on the hero are still felt as rocks after blindnes
 });
 
 void test('rocks that fall on a blind hero are only felt as stones', async () => {
-    rockRoom();
+    await rockRoom();
     setHeroBlindnessTurns(20);
     pushKeys(' '.repeat(10));
 
@@ -52,13 +52,13 @@ void test('rocks that fall on a blind hero are only felt as stones', async () =>
 });
 
 void test('a helmet clang is only heard once fallen boulders hide the target', async () => {
-    freshObjectRoom({ right: 20, hero: { uhp: 200, uhpmax: 200 } });
+    await freshObjectRoom({ right: 20, hero: { uhp: 200, uhpmax: 200 } });
     requireFixtureGame(game);
     const { ux, uy } = game.u;
     const goblin = await createMonsterAt('goblin', ux + 3, uy, MM_NOGRP | NO_MINVENT);
     goblin.mhp = goblin.mhpmax = 100;
     await equipMonsterObject(goblin, await knownObject(ORCISH_HELM), W_ARMH);
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSpotMonster(goblin), true);
     // A boulder that already landed between them has not yet been seen
     // through; the next message's vision update hides the goblin.

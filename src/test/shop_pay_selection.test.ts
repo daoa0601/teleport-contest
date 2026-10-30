@@ -9,7 +9,7 @@ import { createStaffedShop } from './support/shop.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
 
 void test('payment names a visible shopkeeper who is too far away outside the shop', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop({ left: 12, keeperX: 14 });
     shopkeeper.eshk.shknam = 'Ada';
 
@@ -20,7 +20,7 @@ void test('payment names a visible shopkeeper who is too far away outside the sh
 });
 
 void test('an unseen resident cannot receive payment at a distance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop({ keeperX: 13 });
     shopkeeper.minvis = true;
     shopkeeper.eshk.debit = 25;
@@ -36,7 +36,7 @@ void test('an unseen resident cannot receive payment at a distance', async () =>
 });
 
 void test('payment asks whom to pay when several shopkeepers are visible', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._travelTipShown = true;
     game.flags.verbose = true;
     await createStaffedShop({ keeperX: 13 });
@@ -53,7 +53,7 @@ void test('payment asks whom to pay when several shopkeepers are visible', async
 });
 
 void test('prioritizing an angry neighbor does not clear another resident bill skipped during selection', async () => {
-    freshObjectRoom({ right: 22 });
+    await freshObjectRoom({ right: 22 });
     const local = await createStaffedShop({ keeperX: 9 });
     local.shopkeeper.eshk.credit = 19;
     const visitor = await createStaffedShop({ left: 15, right: 20, keeperX: 11 });

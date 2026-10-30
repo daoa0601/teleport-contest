@@ -10,12 +10,12 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('restoring expires a due ice timer before welcoming the hero without taking a turn', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(15, 10).typ = ICE;
     scheduleLevelTimer(15, 10, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game.moves);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const moves = game.moves;
     const input = resetInputState();
     input.beforeRead = () => {

@@ -29,7 +29,7 @@ const hero: PlacementSubject = { kind: 'hero' };
 const species = (name: string): PlacementSubject => ({ kind: 'species', mnum: MONSTER_NAME.indexOf(name) });
 
 void test('a monster can reuse its own square but must still fit its terrain and boulders', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const orc = await createMonsterAt('orc', 12, 10);
     const subject: PlacementSubject = { kind: 'monster', monster: orc };
@@ -45,9 +45,9 @@ void test('a monster can reuse its own square but must still fit its terrain and
 });
 
 void test('worms cannot reuse their own head or body squares', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const worm = await createMonsterAt('long worm', 12, 10);
-    placeMonsterWormTailRandomly(worm, 2);
+    await placeMonsterWormTailRandomly(worm, 2);
     assert.ok(worm.wormno);
     assert.ok(worm.wormSegments);
     assert.equal(worm.wormSegments.length, 2);
@@ -60,7 +60,7 @@ void test('worms cannot reuse their own head or body squares', async () => {
 });
 
 void test('object placement may share a monster square but generation cannot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const orc = await createMonsterAt('orc', 12, 10);
     assert.equal(goodPosition(12, 10, null), true);
     assert.equal(goodPosition(12, 10, null, { gpflags: GP_AVOID_MONPOS }), false);
@@ -72,7 +72,7 @@ void test('object placement may share a monster square but generation cannot', a
 });
 
 void test('hero-square exceptions retain actor identity and swallowed occupancy', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const engulfer = await createMonsterAt('purple worm', 12, 10);
     assert.equal(goodPosition(10, 10, hero), true);
@@ -87,7 +87,7 @@ void test('hero-square exceptions retain actor identity and swallowed occupancy'
 });
 
 void test('the ridden monster is allowed at the hero position', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requireFixtureGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -97,7 +97,7 @@ void test('the ridden monster is allowed at the hero position', async () => {
 });
 
 void test('ceiling clinging belongs to a live actor, not a species-only search', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const piercer = await createMonsterAt('rock piercer', 12, 10);
     piercer.mundetected = 1;
@@ -112,8 +112,8 @@ void test('ceiling clinging belongs to a live actor, not a species-only search',
     assert.equal(goodPosition(14, 10, subject), false);
 });
 
-void test('the Plane of Water has no surface for flying, while swimming still works', () => {
-    freshObjectRoom();
+void test('the Plane of Water has no surface for flying, while swimming still works', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(14, 10).typ = POOL;
     assert.equal(goodPosition(14, 10, species('bat')), true);
@@ -122,8 +122,8 @@ void test('the Plane of Water has no surface for flying, while swimming still wo
     assert.equal(goodPosition(14, 10, species('giant eel')), true);
 });
 
-void test('hero placement uses active flight and magical breathing, not breathlessness', () => {
-    freshObjectRoom();
+void test('hero placement uses active flight and magical breathing, not breathlessness', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(14, 10).typ = POOL;
     installPolymorphedHero('iron golem');
@@ -131,7 +131,7 @@ void test('hero placement uses active flight and magical breathing, not breathle
     grantIntrinsicProperty('magicalBreathing', 'outside');
     assert.equal(goodPosition(14, 10, hero), true);
 
-    freshObjectRoom();
+    await freshObjectRoom();
     game.level.requireAt(14, 10).typ = POOL;
     installPolymorphedHero('bat');
     assert.equal(heroTeleportDestinationOk(14, 10), true);
@@ -140,7 +140,7 @@ void test('hero placement uses active flight and magical breathing, not breathle
 });
 
 void test('lava admission keeps floating eyes away and requires protected water-walking boots', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.requireAt(14, 10).typ = LAVAPOOL;
     assert.equal(goodPosition(14, 10, species('floating eye')), false);
@@ -157,8 +157,8 @@ void test('lava admission keeps floating eyes away and requires protected water-
     assert.equal(goodPosition(14, 10, hero), false);
 });
 
-void test('raised drawbridges retain their liquid placement restrictions', () => {
-    freshObjectRoom();
+void test('raised drawbridges retain their liquid placement restrictions', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     const bridge = game.level.requireAt(14, 10);
     bridge.typ = DRAWBRIDGE_UP;
@@ -171,7 +171,7 @@ void test('raised drawbridges retain their liquid placement restrictions', () =>
 });
 
 void test('wall passers ignore a floor boulder but not a nonpasswall stone cell', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     await floorObject(BOULDER, 14, 10);
     const cell = game.level.requireAt(14, 10);
@@ -183,8 +183,8 @@ void test('wall passers ignore a floor boulder but not a nonpasswall stone cell'
     assert.equal(goodPosition(14, 10, species('ghost')), false);
 });
 
-void test('generation exclusions do not constrain ordinary placement', () => {
-    freshObjectRoom();
+void test('generation exclusions do not constrain ordinary placement', async () => {
+    await freshObjectRoom();
     requireFixtureGame(game);
     game.level.exclusionZones = [{ type: 'monster-generation', lx: 14, hx: 14, ly: 10, hy: 10 }];
     assert.equal(goodPosition(14, 10, species('orc')), true);
@@ -193,7 +193,7 @@ void test('generation exclusions do not constrain ordinary placement', () => {
 });
 
 void test('full actor scariness differs from a zeroed species dummy', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const orc = await createMonsterAt('orc', 12, 10);
     orc.mpeaceful = 1;
     makeEngravingAt(14, 10, 'eLbErEtH', null, 0, ENGRAVE);
@@ -205,15 +205,15 @@ void test('full actor scariness differs from a zeroed species dummy', async () =
 });
 
 for (const [type, time, avoids] of [[ENGRAVE, 0, true], [HEADSTONE, 0, false], [ENGRAVE, 100, false]] as const) {
-    void test(`species placement respects engraving completion and type (${type}, ${time})`, () => {
-        freshObjectRoom();
+    void test(`species placement respects engraving completion and type (${type}, ${time})`, async () => {
+        await freshObjectRoom();
         makeEngravingAt(14, 10, 'eLbErEtH', null, time, type);
         assert.equal(goodPosition(14, 10, species('orc'), { gpflags: GP_CHECKSCARY }), !avoids);
     });
 }
 
-void test('enexto with no species uses the original hero body, not the current polymorph', () => {
-    freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10 });
+void test('enexto with no species uses the original hero body, not the current polymorph', async () => {
+    await freshObjectRoom({ left: 10, right: 11, top: 10, bottom: 10 });
     requireFixtureGame(game);
     game.level.requireAt(11, 10).typ = POOL;
     installPolymorphedHero('giant eel');
@@ -222,7 +222,7 @@ void test('enexto with no species uses the original hero body, not the current p
 });
 
 void test('random object relocation rejects a raised bridge but can land under a monster', async () => {
-    freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
+    await freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
     requireFixtureGame(game);
     await createMonsterAt('orc', 12, 10);
     const bridge = game.level.requireAt(11, 10);
@@ -238,7 +238,7 @@ void test('random object relocation rejects a raised bridge but can land under a
 
 for (const terrain of [LAVAPOOL, DRAWBRIDGE_UP] as const) {
     void test(`water walking does not permit lava placement on the Plane of Water (${terrain})`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         const cell = game.level.requireAt(14, 10);
         cell.typ = terrain;

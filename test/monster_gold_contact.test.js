@@ -12,7 +12,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { resetInputState } from '../js/input.js';
 import { setQuiverObject } from '../js/weapon_slots.js';
 void test('a leprechaun steals a small purse, keeps the gold, and flees without cancelling claw damage', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.flags.noteleport = true;
     setHeroGoldAmount(game, 20);
@@ -32,7 +32,7 @@ void test('a leprechaun steals a small purse, keeps the gold, and flees without 
 });
 for (const amount of [20, 100]) {
     void test(`a leprechaun stealing from ${amount} readied coins ${amount === 20 ? 'empties the quiver' : 'leaves the remainder readied'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.flags.noteleport = true;
         const purse = setHeroGoldAmount(game, amount);
@@ -60,7 +60,7 @@ for (const amount of [20, 100]) {
 }
 for (const amount of [20, 1000]) {
     void test(`paying a seducer from ${amount} readied coins ${amount === 20 ? 'empties the quiver' : 'leaves the remainder readied'}`, async () => {
-        const level = freshObjectRoom({ flags: { female: true } });
+        const level = await freshObjectRoom({ flags: { female: true } });
         requirePlayingGame(game);
         level.flags.noteleport = true;
         const purse = setHeroGoldAmount(game, amount);

@@ -24,7 +24,7 @@ import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function blindPunishedHero() {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -32,7 +32,7 @@ async function blindPunishedHero() {
     await punishHero();
     await setBallAndChainFelt(false);
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
 }
 void test('losing sight preserves the floor memory beneath both attachments', async () => {
     await blindPunishedHero();
@@ -45,17 +45,17 @@ void test('losing sight preserves the floor memory beneath both attachments', as
 void test('feeling a pile detects only the exposed punishment attachment', async () => {
     await blindPunishedHero();
     requirePlayingGame(game);
-    feel_location(game.u.ux, game.u.uy);
+    await feel_location(game.u.ux, game.u.uy);
     assert.equal(game.u.bc_felt, BC_CHAIN);
     await floorObject(ROCK, game.u.ux, game.u.uy);
-    feel_location(game.u.ux, game.u.uy);
+    await feel_location(game.u.ux, game.u.uy);
     assert.equal(game.u.bc_felt, 0);
 });
 void test('feeling another square clears both attachment touch flags', async () => {
     await blindPunishedHero();
     requirePlayingGame(game);
     assert.equal(game.u.bc_felt, BC_CHAIN);
-    feel_location(11, 10);
+    await feel_location(11, 10);
     assert.equal(game.u.bc_felt, 0);
 });
 void test('a dragging teleport restores felt chain memory before relocating the hero', async () => {
@@ -63,7 +63,7 @@ void test('a dragging teleport restores felt chain memory before relocating the 
     requirePlayingGame(game);
     await rhack('l'.charCodeAt(0));
     await rhack('l'.charCodeAt(0));
-    feel_location(11, 10);
+    await feel_location(11, 10);
     assert.equal(game.u.bc_felt, BC_CHAIN);
     await moveHeroByTeleport(13, 10, game, { allowDrag: true });
     assert.deepEqual([punishmentAttachment('uball').ox, punishmentAttachment('uball').oy], [11, 10]);
@@ -74,7 +74,7 @@ void test('a dragging teleport restores felt chain memory before relocating the 
 void test('a distant blind teleport forgets the old chain and remembers the destination floor', async () => {
     await blindPunishedHero();
     requirePlayingGame(game);
-    feel_location(10, 10);
+    await feel_location(10, 10);
     await moveHeroByTeleport(14, 10);
     assert.equal(requireGameLevel().requireAt(10, 10).remembered_glyph?.kind, 'terrain');
     assert.equal(game.u.bglyph?.kind, 'terrain');
@@ -84,7 +84,7 @@ void test('a distant blind teleport forgets the old chain and remembers the dest
     assert.equal(game._helplessTurns ?? 0, 0);
 });
 void test('a carried ball stays in inventory when blindness records the chain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -93,7 +93,7 @@ void test('a carried ball stays in inventory when blindness records the chain', 
     assert.equal(punishmentAttachment('uball').where, 'inventory');
     await setBallAndChainFelt(false);
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     await rhack('l'.charCodeAt(0));
     await rhack('l'.charCodeAt(0));
     assert.equal(punishmentAttachment('uball').where, 'inventory');
@@ -104,10 +104,10 @@ void test('a carried ball stays in inventory when blindness records the chain', 
 void test('blind ball memory and floor identity survive save and restore', async () => {
     await blindPunishedHero();
     requirePlayingGame(game);
-    feel_location(10, 10);
+    await feel_location(10, 10);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     await rhack('l'.charCodeAt(0));
@@ -119,7 +119,7 @@ void test('blind ball memory and floor identity survive save and restore', async
 });
 for (const ballOnTop of [false, true]) {
     void test(`losing sight remembers the object beneath a ${ballOnTop ? 'ball-first' : 'chain-first'} pile`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
@@ -185,7 +185,7 @@ void test('feeling while levitating does not change which attachments are known 
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'));
     await wearHeroAccessory(ring, 'uleft');
     await floorObject(ROCK, 10, 10);
-    feel_location(10, 10);
+    await feel_location(10, 10);
     assert.equal(game.u.bc_felt, BC_CHAIN);
 });
 void test('an adjacent relocation can drag both attachments without imposing a walking delay', async () => {
@@ -205,12 +205,12 @@ void test('a distant relocation carries the pair even when its caller permits dr
     assert.equal(game._helplessTurns ?? 0, 0);
 });
 void test('new blind punishment remembers the felt chain rather than the hero overlay', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     await punishHero();
     assert.equal(game.u.bc_felt, BC_CHAIN);
     assert.equal(objectGlyphType(game.u.bglyph), IRON_CHAIN);
@@ -238,26 +238,26 @@ void test('placing an already placed chain reports the error without duplicating
     assert.equal(!!game.program_state.gameover, false);
 });
 void test('a boulder above newly imposed blind punishment hides both attachments from touch', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     await floorObject(BOULDER, 10, 10);
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     await punishHero();
     assert.equal(game.u.bc_felt, 0);
     assert.equal(objectGlyphType(game.u.bglyph), BOULDER);
     assert.equal(objectGlyphType(game.u.cglyph), BOULDER);
 });
 void test('a blind flying hero can still feel the punishment chain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     await polymonHero(MONSTER_NAME.indexOf('vampire bat'));
     setHeroBlindnessTurns(20);
-    vision_recalc(0);
+    await vision_recalc(0);
     await punishHero();
     assert.equal(game.u.bc_felt, BC_CHAIN);
     assert.equal(objectGlyphType(game.u.cglyph), IRON_CHAIN);

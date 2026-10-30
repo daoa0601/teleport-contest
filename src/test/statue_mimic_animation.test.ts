@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a mimic statue that comes to life beside the hero is shown as the mimic', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { ux, uy } = game.u;
     const statue = await floorObject(STATUE, ux, uy, { corpsenm: MONSTER_NAME.indexOf('small mimic') });
 

@@ -173,7 +173,7 @@ async function flashCreatedMonster(monster) {
     }
     finally {
         row[monster.mx] = saved;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
 }
 function monsterCensus() {

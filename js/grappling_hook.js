@@ -50,7 +50,7 @@ async function chooseTarget(hook, state) {
     const range = hookRange(hookSkill(hook, state));
     const valid = (x, y) => isok(x, y) && cansee(x, y)
         && squaredDistanceFromHero(x, y, state) <= range;
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse)
         await showGetposTip(state);
@@ -83,7 +83,7 @@ async function snagObject(x, y, state) {
         return false;
     await pline(`You snag an object from the ${surfaceName(x, y, state)}!`);
     await pickupFloorObject(object, 1);
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 async function pullTinyMonster(monster, destination, state) {

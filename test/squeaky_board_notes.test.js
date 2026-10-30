@@ -13,7 +13,7 @@ function topline() {
     return requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
 }
 void test('the hero hears an F note when stepping on a squeaky board', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const trap = addTrap(level, SQKY_BOARD, 11, 10, { tseen: false, tnote: 5 });
     await rhack('l'.charCodeAt(0));
     await flush_screen(1);
@@ -21,7 +21,7 @@ void test('the hero hears an F note when stepping on a squeaky board', async () 
     assert.equal(topline(), 'A board beneath you squeaks an F note loudly.');
 });
 void test('the hero hears a G sharp when stepping on a squeaky board', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const trap = addTrap(level, SQKY_BOARD, 11, 10, { tseen: false, tnote: 8 });
     await rhack('l'.charCodeAt(0));
     await flush_screen(1);

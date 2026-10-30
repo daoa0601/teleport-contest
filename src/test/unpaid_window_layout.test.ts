@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // measurement (strlen + 1, never tty_end_menu's strlen + 2) places the
 // corner, and dmore() falls back to the default "--More--" prompt.
 void test('the unpaid-items window measures putstr lines and pagers natively', async () => {
-    freshObjectRoom({ left: 4, right: 16, top: 4, bottom: 14 });
+    await freshObjectRoom({ left: 4, right: 16, top: 4, bottom: 14 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({
         left: 9, right: 13, top: 9, bottom: 11, keeperX: 12, keeperY: 10,

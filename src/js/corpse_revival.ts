@@ -368,7 +368,7 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
     if (useSavedTraits) {
         restoreMonsterTraits(monster, savedTraits);
         markQuestLeaderAlive(monster, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);
         if (monster.mtame && !monster.isminion)
             await makePetWary(monster, { wasDead: true, state });
@@ -382,9 +382,9 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
     }
     if (monster.mundetected) {
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
     return { monster, twitchMessage: null };
 }
 
@@ -420,7 +420,7 @@ async function displaceRevivalBlocker(corpse: CorpseObject, state: GameState, cu
     if (!occupant) return;
     const wasVisible = canSeeMonster(occupant);
     const name = monsterName(occupant, { capitalized: true, state });
-    if (!(await randomMonsterRelocation(occupant, { state, flags: RLOC_NOMSG }))) return;
+    if (!await randomMonsterRelocation(occupant, { state, flags: RLOC_NOMSG })) return;
     const nowVisible = canSeeMonster(occupant);
     if (wasVisible && !nowVisible) {
         await plineWithContinuation(`${name} vanishes.`);

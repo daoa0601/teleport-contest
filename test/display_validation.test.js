@@ -5,13 +5,13 @@ import { terrain_glyph } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, STATUE } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
-void test('saved memory accepts a native terrain glyph', () => {
-    const level = freshObjectRoom();
+void test('saved memory accepts a native terrain glyph', async () => {
+    const level = await freshObjectRoom();
     assert.equal(validSavedGlyph(terrain_glyph(level.requireAt(11, 10), 11, 10)), true);
 });
 for (const glyph of [-1, 0.5, Number.MAX_SAFE_INTEGER, 'floor']) {
-    void test(`saved memory rejects invalid glyph number ${glyph}`, () => {
-        const level = freshObjectRoom();
+    void test(`saved memory rejects invalid glyph number ${glyph}`, async () => {
+        const level = await freshObjectRoom();
         const terrain = terrain_glyph(level.requireAt(11, 10), 11, 10);
         assert.equal(validSavedGlyph({ ...terrain, glyph }), false);
     });

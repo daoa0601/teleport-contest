@@ -49,7 +49,7 @@ function acknowledgeWormMessages() {
     });
 }
 async function growingWorm() {
-    freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,
         heroX: 8, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
@@ -90,7 +90,7 @@ void test('save and restore preserve the worm body and next growth deadline', as
     assert.equal(await saveGame(storage), true);
     await runMonsterAction(worm, game);
     const translated = occupiedSquares(worm);
-    assert.equal(restoreGame('Grower', storage), true);
+    assert.equal(await restoreGame('Grower', storage), true);
     const restored = game.level.monsters.find(monster => monster.m_id === worm.m_id);
     assert.ok(restored);
     assert.deepEqual(occupiedSquares(restored), squares);
@@ -115,7 +115,7 @@ for (const newMoves of [1, 1000]) {
         const deadline = worm.wormGrowTime;
         const squares = occupiedSquares(worm);
         assert.equal(saveBonesLevel(), true);
-        freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,
+        await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,
             heroX: 8, heroY: 10, moves: newMoves,
             hero: { uz: { dnum: 0, dlevel: 7 } } });
         requirePlayingGame(game);
@@ -186,7 +186,7 @@ for (const grow of [false, true]) {
         await migrateMonsterOffLevel(worm, game, { dst: { dnum: 0, dlevel: 2 } });
         assert.equal(occupiedSquares(worm, source).length, 0);
         assert.equal(await saveGame(storage), true);
-        assert.equal(restoreGame('MigrantWorm', storage), true);
+        assert.equal(await restoreGame('MigrantWorm', storage), true);
         await gotoLevel({ dnum: 0, dlevel: 2 }, { arrival: 'stairs' });
         const arrived = game.level.monsters.find(monster => monster.m_id === worm.m_id);
         assert.ok(arrived);
@@ -243,7 +243,7 @@ for (const restoration of ['none', 'save', 'revisit']) {
             game.flags.verbose = false;
         }
         else {
-            freshObjectRoom({ left: 8, right: 22, top: 6, bottom: 14,
+            await freshObjectRoom({ left: 8, right: 22, top: 6, bottom: 14,
                 heroX: 18, heroY: 12 });
         }
         requirePlayingGame(game);
@@ -266,7 +266,7 @@ for (const restoration of ['none', 'save', 'revisit']) {
             const storage = memoryStorage();
             game.plname = 'BridgeWorm';
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame('BridgeWorm', storage), true);
+            assert.equal(await restoreGame('BridgeWorm', storage), true);
             const restored = game.level.monsters.find(monster => monster.m_id === elemental.m_id);
             assert.ok(restored, 'The saved worm is restored');
             worm = restored;
@@ -283,7 +283,7 @@ for (const restoration of ['none', 'save', 'revisit']) {
     });
 }
 void test('a slotless worm stays head-only after another worm releases its body slot', async () => {
-    freshObjectRoom({ left: 2, right: 76, top: 2, bottom: 18,
+    await freshObjectRoom({ left: 2, right: 76, top: 2, bottom: 18,
         heroX: 2, heroY: 2 });
     requirePlayingGame(game);
     const worms = [];

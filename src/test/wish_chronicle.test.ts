@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // explicit "nothing" logs "declined to make a wish". #chronicle shows these
 // entries, so the chronicle must carry them.
 void test('a first wish records a chronicle entry with the wish and its grant', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     pushKeys('food ration\r');
 
@@ -27,7 +27,7 @@ void test('a first wish records a chronicle entry with the wish and its grant', 
 // zap.c:makewish() mungspaces() the typed line before livelogging it, so
 // stray and repeated spaces never reach the chronicle text.
 void test('the chronicle wish text collapses stray spaces', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     pushKeys('  food \t ration  \r');
 
@@ -40,7 +40,7 @@ void test('the chronicle wish text collapses stray spaces', async () => {
 });
 
 void test('declining a wish with nothing records the refusal', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     pushKeys('nothing\r');
 
@@ -56,7 +56,7 @@ void test('declining a wish with nothing records the refusal', async () => {
 // doname() -> xname() sets dknown for a sighted hero before formatting, so a
 // wished-for unidentified potion is logged by its appearance.
 void test('a sighted wish chronicles the granted potion by its appearance', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     pushKeys('potion of healing\r');
 

@@ -120,7 +120,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
                     await pline('"You\'ve been warned, knave!"');
                 guard.mpeaceful = 0;
                 await moveMonsterNextToHero(guard, state, { flags: RLOC_NOMSG, random });
-                restoreEntry(guard, oldx, oldy, state);
+                await restoreEntry(guard, oldx, oldy, state);
                 return null;
             }
             if (!heroHasInvoluntaryDelay(state))
@@ -130,7 +130,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
         if (!heroInVault) {
             if (carryingGold) {
                 await randomMonsterRelocation(guard, { state, flags: RLOC_MSG, random });
-                restoreEntry(guard, oldx, oldy, state);
+                await restoreEntry(guard, oldx, oldy, state);
                 guard.mpeaceful = 0;
                 await letHeroKnow(guard, state);
                 return null;
@@ -201,7 +201,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
                     deleteEngravingAt(x, y, level);
                     vision_note_blocker_change(x, y);
                     if (cansee(x, y))
-                        newsym(x, y);
+                        await newsym(x, y);
                     appendCorridor(guard, x, y, typ, cell.flags);
                 }
                 await moveMonsterAside(guard, x, y, state, random);
@@ -215,7 +215,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
         const cell = level.requireAt(x, y);
         vision_note_blocker_change(x, y);
         if (cansee(x, y))
-            newsym(x, y);
+            await newsym(x, y);
         if (x === egd.gdx && y === egd.gdy && guard.mx === egd.gdx && guard.my === egd.gdy) {
             const destination = await guardDestination(state, guard);
             if (!destination || destination.x === egd.gdx && destination.y === egd.gdy) {
@@ -237,7 +237,7 @@ export async function moveVaultGuard(guard, state = game, random, calls = []) {
                 await pline(`${monsterName(guard, { state, capitalized: true })} picks up some gold.`);
         }
         else
-            newsym(x, y);
+            await newsym(x, y);
         await restoreFakeCorridor(guard, state);
         return result(MMOVE_MOVED);
     }
@@ -270,7 +270,7 @@ export async function noticeVaultEscape(guard, state) {
 function guardName(guard, state) {
     return monsterName(guard, { state, capitalized: true, suppressIt: true });
 }
-function restoreEntry(guard, x, y, state) {
+async function restoreEntry(guard, x, y, state) {
     const entry = guard._egd.fakecorr[0];
     if (!entry)
         throw new Error('A vault guard cannot restore its missing entry.');
@@ -279,7 +279,7 @@ function restoreEntry(guard, x, y, state) {
     setVaultTerrainFlags(cell, entry.flags);
     vision_note_blocker_change(x, y);
     deleteEngravingAt(x, y, requireGameLevel(state));
-    newsym(x, y);
+    await newsym(x, y);
 }
 async function restoreFakeCorridor(guard, state) {
     if (await clearVaultCorridor(guard, false, state)) {
@@ -316,7 +316,7 @@ async function moveMonsterAside(guard, x, y, state, random) {
         return;
     if (!heroIsDeaf(state))
         await pline('"Out of my way, scum!"');
-    if (!(await randomMonsterRelocation(occupant, { state, flags: RLOC_ERR | RLOC_MSG, random }))
+    if (!await randomMonsterRelocation(occupant, { state, flags: RLOC_ERR | RLOC_MSG, random })
         || monsterAtPosition(requireGameLevel(state), x, y))
         await sendMonsterToLimbo(occupant, state);
     vision_note_blocker_change(x, y);
@@ -379,7 +379,7 @@ async function pickGoldAtGuard(guard, state) {
     unlinkObject(gold, state);
     await linkObjectToMonsterInventory(guard, gold, { state });
     if (cansee(guard.mx, guard.my))
-        newsym(guard.mx, guard.my);
+        await newsym(guard.mx, guard.my);
 }
 async function pickCorridorGold(guard, x, y, state, random) {
     const oldx = guard.mx, oldy = guard.my, seen = cansee(x, y);
@@ -404,20 +404,20 @@ async function pickCorridorGold(guard, x, y, state, random) {
             }
             if (distance(best.x, best.y) < distance(oldx, oldy)) {
                 await placeMonsterOnMap(guard, best.x, best.y);
-                newsym(oldx, oldy);
-                newsym(best.x, best.y);
+                await newsym(oldx, oldy);
+                await newsym(best.x, best.y);
             }
         }
         unlinkObject(gold, state);
         await linkObjectToMonsterInventory(guard, gold, { state });
-        newsym(x, y);
+        await newsym(x, y);
     }
     else {
         if (x !== oldx || y !== oldy) {
             await moveMonsterAside(guard, x, y, state, random);
             if (seen) {
                 await placeMonsterOnMap(guard, x, y);
-                newsym(oldx, oldy);
+                await newsym(oldx, oldy);
             }
         }
         await pickGoldAtGuard(guard, state);
@@ -429,8 +429,8 @@ async function pickCorridorGold(guard, x, y, state, random) {
     if (guard.mx !== oldx || guard.my !== oldy) {
         const x = guard.mx, y = guard.my;
         await placeMonsterOnMap(guard, oldx, oldy);
-        newsym(x, y);
-        newsym(oldx, oldy);
+        await newsym(x, y);
+        await newsym(oldx, oldy);
     }
 }
 async function moveGoldIntoVault(gold, guard, state, random) {
@@ -439,11 +439,11 @@ async function moveGoldIntoVault(gold, guard, state, random) {
         throw new Error('An appointed vault guard must have an assigned vault');
     const oldx = gold.ox, oldy = gold.oy;
     remove_object(gold, state);
-    newsym(oldx, oldy);
+    await newsym(oldx, oldy);
     const x = vault.lx + random(2), y = vault.ly + random(2);
     await placeObject(gold, x, y, state);
     await stack_object(gold, state);
-    newsym(x, y);
+    await newsym(x, y);
 }
 export async function wallifyVault(guard, state, random = rn2) {
     const level = requireGameLevel(state), vault = guard._egd.vault;
@@ -464,7 +464,7 @@ export async function wallifyVault(guard, state, random = rn2) {
             if (occupant && occupant !== guard) {
                 if (occupant.mtame)
                     await publishMonsterYelp(occupant);
-                if (!(await randomMonsterRelocation(occupant, { state, flags: RLOC_MSG, random })))
+                if (!await randomMonsterRelocation(occupant, { state, flags: RLOC_MSG, random }))
                     await sendMonsterToLimbo(occupant, state);
             }
             const gold = goldAt(x, y, state);
@@ -487,7 +487,7 @@ export async function wallifyVault(guard, state, random = rn2) {
             const row = state.viz_array?.[y], oldVision = row?.[x] ?? 0;
             if (row)
                 row[x] = IN_SIGHT | COULD_SEE;
-            newsym(x, y);
+            await newsym(x, y);
             if (row)
                 row[x] = oldVision;
             vision_note_blocker_change(x, y);

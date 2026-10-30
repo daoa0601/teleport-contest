@@ -19,7 +19,7 @@ for (const { species, tame, name, description } of [
     { species: 'Famine', tame: false, name: '', description: 'peaceful Famine' },
 ]) {
     void test(`swapping places names the monster as ${description}`, async () => {
-        freshObjectRoom({ flags: { pickup: false } });
+        await freshObjectRoom({ flags: { pickup: false } });
         const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
         if (tame) initializePet(monster);
         else monster.mpeaceful = 1;

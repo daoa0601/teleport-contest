@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const toolType of [CREDIT_CARD, LOCK_PICK, SKELETON_KEY]) {
     for (const detected of [false, true]) {
         void test(`a ${detected ? 'detected' : 'hidden'} door mimic can absorb a wielded lock tool (${toolType})`, async () => {
-            const level = freshObjectRoom({ hero: { detectMonsters: detected } });
+            const level = await freshObjectRoom({ hero: { detectMonsters: detected } });
             const doorway = level.requireAt(11, 10);
             doorway.typ = DOOR;
             doorway.doormask = D_NODOOR;
@@ -27,7 +27,7 @@ for (const toolType of [CREDIT_CARD, LOCK_PICK, SKELETON_KEY]) {
                 invlet: 'a', wielded: true, owornmask: W_WEP,
             });
             game.uwep = game.u.uwep = tool;
-            newsym(11, 10);
+            await newsym(11, 10);
             initRng(46n);
             pushKeys('al' + ' '.repeat(5));
 

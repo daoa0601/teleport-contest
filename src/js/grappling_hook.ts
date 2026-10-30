@@ -81,7 +81,7 @@ async function chooseTarget(hook: GameObject, state: GameState) {
     const range = hookRange(hookSkill(hook, state));
     const valid = (x: number, y: number) => isok(x, y) && cansee(x, y)
         && squaredDistanceFromHero(x, y, state) <= range;
-    prepareMapPositionHighlights(valid);
+    await prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) await showGetposTip(state);
     await showGetposInstructions(state);
@@ -115,7 +115,7 @@ async function snagObject(x: number, y: number, state: GameState) {
 
     await pline(`You snag an object from the ${surfaceName(x, y, state)}!`);
     await pickupFloorObject(object, 1);
-    newsym(x, y);
+    await newsym(x, y);
     return true;
 }
 

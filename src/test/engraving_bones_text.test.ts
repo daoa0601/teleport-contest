@@ -11,14 +11,14 @@ import { createDungeon } from './support/topology.js';
 
 for (const eightBit of [false, true]) {
     void test(`bones clean control characters from engraving text with eight-bit input ${eightBit ? 'enabled' : 'disabled'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const storage = memoryStorage();
         game.storage = storage;
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
         makeEngravingAt(12, 10, 'A\x01B\u0081C\u00e9D\x7f', null, 0, BURN);
         assert.equal(saveBonesLevel(), true);
 
-        freshObjectRoom();
+        await freshObjectRoom();
         game.storage = storage;
         game.flags.debug = true;
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];

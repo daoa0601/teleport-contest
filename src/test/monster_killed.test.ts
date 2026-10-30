@@ -51,7 +51,7 @@ for (const [species, invisible, message] of [
     ['iron golem', true, 'It is destroyed by the magic missile!'],
 ] as const) {
     void test(`a killed ${invisible ? 'unspotted' : 'visible'} ${species} receives its native death description`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 12, 10, NO_MINVENT);
         monster.minvis = invisible;
@@ -71,7 +71,7 @@ for (const [species, invisible, message] of [
 
 for (const lifeSaving of [false, true]) {
     void test(`an unseen pet ${lifeSaving ? 'survives with its amulet without a sad feeling' : 'causes a sad feeling only when truly lost'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const dog = await createMonsterAt('little dog', 12, 10, NO_MINVENT);
         initializePet(dog);
@@ -79,7 +79,7 @@ for (const lifeSaving of [false, true]) {
             ? await equipMonsterObject(dog, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL)
             : null;
         setHeroBlindnessTurns(10);
-        vision_recalc(0);
+        await vision_recalc(0);
         assert.equal(monsterKillLineVisible(dog), false);
         const messages = acknowledgeDeathMessages();
         initRng(1n);
@@ -103,7 +103,7 @@ for (const lifeSaving of [false, true]) {
 }
 
 void test('digestion suppresses a corpse without destroying the victim inventory', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 12, 10, NO_MINVENT);
     const club = await knownObject(CLUB);
@@ -122,7 +122,7 @@ void test('digestion suppresses a corpse without destroying the victim inventory
 
 for (const burns of [false, true]) {
     void test(`a pet paper golem ${burns ? 'burns completely without leaving scrolls' : 'leaves blank scrolls after an ordinary death'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const paper = await createMonsterAt('paper golem', 12, 10, NO_MINVENT);
         initializePet(paper);
@@ -153,7 +153,7 @@ for (const [species, damageType, name, epitaph] of [
     ['wood golem', AD_DCAY, 'Willow', 'rot'],
 ] as const) {
     void test(`a pet ${species} falls to pieces and receives its ${epitaph} epitaph`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const golem = await createMonsterAt(species, 12, 10, NO_MINVENT);
         initializePet(golem);
@@ -180,7 +180,7 @@ for (const [species, damageType, name, epitaph] of [
 }
 
 void test('disintegration lets a shifted vampire pet recover without remains or grief', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const vampire = await createMonsterAt('vampire leader', 12, 10, NO_MINVENT | MM_FEMALE);
     initializePet(vampire);
@@ -207,7 +207,7 @@ void test('disintegration lets a shifted vampire pet recover without remains or 
 });
 
 void test('kill narration waits at the pager before detaching the victim and dropping inventory', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('hill giant', 12, 10, NO_MINVENT);
     const club = await knownObject(CLUB);
@@ -244,7 +244,7 @@ void test('kill narration waits at the pager before detaching the victim and dro
 
 for (const swallowed of [false, true]) {
     void test(`a dead ${swallowed ? 'engulfer' : 'holder'} releases the hero and clears its trap`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const monster = await createMonsterAt(swallowed ? 'purple worm' : 'python', 12, 10, NO_MINVENT);
         game.u.ustuck = monster;
@@ -267,7 +267,7 @@ for (const swallowed of [false, true]) {
 }
 
 void test('a fatal death explosion ends the Conflict attack before awarding growth', async () => {
-    freshObjectRoom({ hero: { uhp: 1, ulevel: 30 }, flags: { verbose: false, disclose: '-i -a -v -c -o' } });
+    await freshObjectRoom({ hero: { uhp: 1, ulevel: 30 }, flags: { verbose: false, disclose: '-i -a -v -c -o' } });
     requirePlayingGame(game);
     game.storage = memoryStorage();
     await wearHeroAccessory(await addInventoryObject(RIN_CONFLICT), 'uleft');

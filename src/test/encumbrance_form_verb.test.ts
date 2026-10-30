@@ -16,7 +16,7 @@ for (const [form, verb] of [
     ['gray ooze', 'tremble'],
 ] as const) {
     void test(`a strained ${form} hero ${verb}s under a lightened load`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         if (form !== 'human') installPolymorphedHero(form);
         while (nearCapacity(game) < 3) await addInventoryObject(ROCK);
         if (nearCapacity(game) !== 3) return assert.fail(`load ended at capacity ${nearCapacity(game)}`);

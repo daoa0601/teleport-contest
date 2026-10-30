@@ -5,7 +5,7 @@ import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('submersion protects the hero from gas without poison resistance', async () => {
-    freshObjectRoom({ hero: { uinwater: 1, blindTurns: 5 } });
+    await freshObjectRoom({ hero: { uinwater: 1, blindTurns: 5 } });
     await createGasCloudSelection(game, [{ x: 10, y: 10 }], 5, 8, async () => {});
     const hp = game.u.uhp;
     const messages: string[] = [];

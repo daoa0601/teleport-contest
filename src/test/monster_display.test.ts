@@ -28,18 +28,18 @@ import { floorObject } from './support/game-objects.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('Warning replaces invisible memory, so a departing monster leaves the floor', async () => {
-    const level = freshObjectRoom({ hero: { warning: true } });
+    const level = await freshObjectRoom({ hero: { warning: true } });
     const xorn = await createMonsterAt('xorn', 11, 10, MM_NOGRP | NO_MINVENT);
     xorn.minvis = 1;
     xorn.mpeaceful = false;
     xorn.m_lev = 8;
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '2');
     placeMonsterAt(xorn, 13, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '.');
@@ -47,17 +47,17 @@ void test('Warning replaces invisible memory, so a departing monster leaves the 
 });
 
 void test('telepathy replaces invisible memory on an unseen monster square', async () => {
-    const level = freshObjectRoom({ hero: { telepathy: true } });
+    const level = await freshObjectRoom({ hero: { telepathy: true } });
     const goblin = await createMonsterAt('goblin', 11, 10, MM_NOGRP | NO_MINVENT);
     await makeBlinded(10, { talk: false });
     assert.equal(cansee(11, 10), false);
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, 'o');
     placeMonsterAt(goblin, 13, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '.');
@@ -65,22 +65,22 @@ void test('telepathy replaces invisible memory on an unseen monster square', asy
 });
 
 void test('zero hit points do not remove a monster glyph before map detachment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gargoyle = await createMonsterAt('gargoyle', 11, 10, MM_NOGRP | NO_MINVENT);
     gargoyle.mhp = 0;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, 'g');
 });
 
 void test('an invisible marker takes precedence over a visible cloud', async () => {
-    freshObjectRoom();
-    map_invisible(11, 10);
+    await freshObjectRoom();
+    await map_invisible(11, 10);
     await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, 'I');
@@ -94,12 +94,12 @@ for (const { name, type, revealed } of [
     { name: 'a magic trap', type: MAGIC_TRAP, revealed: false },
 ]) {
     void test(`seeing a trapped monster ${revealed ? 'reveals' : 'does not reveal'} ${name}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const goblin = await createMonsterAt('goblin', 11, 10, MM_NOGRP | NO_MINVENT);
         const trap = addTrap(level, type, 11, 10);
         goblin.mtrapped = 1;
 
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         assert.equal(requireScreenCell(10, 11).ch, 'o');
@@ -108,14 +108,14 @@ for (const { name, type, revealed } of [
 }
 
 void test('acknowledging a death message preserves the map until its pending glyphs are flushed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const goblin = await createMonsterAt('goblin', 11, 10, MM_NOGRP | NO_MINVENT);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     await plineWithContinuation('The goblin dies.');
     placeMonsterAt(goblin, 13, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     input.beforeRead = () => {
         assert.equal(requireScreenCell(10, 11).ch, 'o');
     };
@@ -128,12 +128,12 @@ void test('acknowledging a death message preserves the map until its pending gly
 });
 
 void test('a hit acknowledgment preserves a projectile until the map flush resumes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
-    show_glyph_cell(10, 10, ')', NO_COLOR);
+    await show_glyph_cell(10, 10, ')', NO_COLOR);
     await flush_screen(1);
     await plineWithContinuation('You are hit by a knife.');
-    newsym(10, 10);
+    await newsym(10, 10);
     input.beforeRead = () => {
         assert.equal(requireScreenCell(9, 11).ch, ')');
     };
@@ -146,10 +146,10 @@ void test('a hit acknowledgment preserves a projectile until the map flush resum
 });
 
 void test('a map flush without hero positioning leaves the cursor after the last changed glyph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await flush_screen(1);
-    show_glyph_cell(11, 10, '*', NO_COLOR);
-    show_glyph_cell(12, 10, '*', NO_COLOR);
+    await show_glyph_cell(11, 10, '*', NO_COLOR);
+    await show_glyph_cell(12, 10, '*', NO_COLOR);
 
     await flush_screen(0);
 
@@ -158,7 +158,7 @@ void test('a map flush without hero positioning leaves the cursor after the last
 });
 
 void test('a map flush without changed glyphs preserves the existing cursor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
@@ -169,13 +169,13 @@ void test('a map flush without changed glyphs preserves the existing cursor', as
 });
 
 void test('restoring a glyph before flushing still redraws it and advances the cursor', async () => {
-    freshObjectRoom();
-    newsym(9, 10);
+    await freshObjectRoom();
+    await newsym(9, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
-    show_glyph_cell(9, 10, '*', NO_COLOR);
-    newsym(9, 10);
+    await show_glyph_cell(9, 10, '*', NO_COLOR);
+    await newsym(9, 10);
 
     await flush_screen(0);
 
@@ -184,12 +184,12 @@ void test('restoring a glyph before flushing still redraws it and advances the c
 });
 
 void test('showing the same buffered glyph does not move the cursor', async () => {
-    freshObjectRoom();
-    newsym(9, 10);
+    await freshObjectRoom();
+    await newsym(9, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
-    newsym(9, 10);
+    await newsym(9, 10);
 
     await flush_screen(0);
 
@@ -197,9 +197,9 @@ void test('showing the same buffered glyph does not move the cursor', async () =
 });
 
 void test('a species change redraws a monster even when its character and color stay the same', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, 'd');
     assert.equal(requireScreenCell(10, 11).color, CLR_BROWN);
@@ -207,7 +207,7 @@ void test('a species change redraws a monster even when its character and color 
     display.setCursor(20, 0);
 
     setMonsterSpecies(monster, nameToMonster('coyote'));
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, 'd');
@@ -216,14 +216,14 @@ void test('a species change redraws a monster even when its character and color 
 });
 
 void test('redrawing an unchanged monster preserves the cursor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
@@ -234,11 +234,11 @@ for (const { name, type, ch } of [
     { name: 'statue', type: STATUE, ch: 'd' },
 ]) {
     void test(`a ${name} species change redraws even when its appearance stays the same`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const object = await floorObject(type, 11, 10, {
             corpsenm: nameToMonster('jackal'), initialize: false,
         });
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         const initialColor = requireScreenCell(10, 11).color;
         assert.equal(requireScreenCell(10, 11).ch, ch);
@@ -246,7 +246,7 @@ for (const { name, type, ch } of [
         display.setCursor(20, 0);
 
         object.corpsenm = nameToMonster('coyote');
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(0);
 
         assert.equal(requireScreenCell(10, 11).ch, ch);
@@ -256,17 +256,17 @@ for (const { name, type, ch } of [
 }
 
 void test('a statue gender change redraws its unchanged map symbol', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const statue = await floorObject(STATUE, 11, 10, {
         corpsenm: nameToMonster('jackal'), spe: CORPSTAT_MALE, initialize: false,
     });
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     statue.spe = CORPSTAT_FEMALE;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, 'd');
@@ -274,15 +274,15 @@ void test('a statue gender change redraws its unchanged map symbol', async () =>
 });
 
 void test('a monster gender change redraws its unchanged map symbol', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     monster.female = !monster.female;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, 'd');
@@ -290,14 +290,14 @@ void test('a monster gender change redraws its unchanged map symbol', async () =
 });
 
 void test('changing hero gender redraws the unchanged hero symbol', async () => {
-    freshObjectRoom({ flags: { female: false } });
-    newsym(game.u.ux, game.u.uy);
+    await freshObjectRoom({ flags: { female: false } });
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     changeHeroSex();
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, '@');
@@ -305,16 +305,16 @@ void test('changing hero gender redraws the unchanged hero symbol', async () => 
 });
 
 void test('a polymorphed hero redraws when the current body changes gender', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { umonnum: nameToMonster('jackal'), mtimedone: 20, mfemale: false },
     });
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     game.u.mfemale = true;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'd');
@@ -322,17 +322,17 @@ void test('a polymorphed hero redraws when the current body changes gender', asy
 });
 
 void test('changing the saved human gender preserves a polymorphed body glyph', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { female: false },
         hero: { umonnum: nameToMonster('jackal'), mtimedone: 20, mfemale: false },
     });
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     game.flags.female = true;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'd');
@@ -340,14 +340,14 @@ void test('changing the saved human gender preserves a polymorphed body glyph', 
 });
 
 void test('showrace redraws the human hero even when the race and role symbols match', async () => {
-    freshObjectRoom({ flags: { showrace: false } });
-    newsym(game.u.ux, game.u.uy);
+    await freshObjectRoom({ flags: { showrace: false } });
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     game.flags.showrace = true;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, '@');
@@ -355,36 +355,36 @@ void test('showrace redraws the human hero even when the race and role symbols m
 });
 
 void test('a ridden glyph follows the steed gender rather than the hero gender', async () => {
-    freshObjectRoom({ flags: { female: false } });
+    await freshObjectRoom({ flags: { female: false } });
     const steed = await createMonsterAt('pony', 11, 10, MM_NOGRP | NO_MINVENT);
     game.u.usteed = steed;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     changeHeroSex();
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(0);
     assert.deepEqual([display.cursorCol, display.cursorRow], [20, 0]);
 
     steed.female = !steed.female;
-    newsym(game.u.ux, game.u.uy);
+    await newsym(game.u.ux, game.u.uy);
     await flush_screen(0);
     assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'u');
     assert.deepEqual([display.cursorCol, display.cursorRow], [game.u.ux, game.u.uy + 1]);
 });
 
 void test('taming redraws a monster even with pet highlighting disabled', async () => {
-    freshObjectRoom({ flags: { hilite_pet: false } });
+    await freshObjectRoom({ flags: { hilite_pet: false } });
     const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     monster.mtame = 10;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, 'd');
@@ -393,17 +393,17 @@ void test('taming redraws a monster even with pet highlighting disabled', async 
 });
 
 void test('seeing a previously detected monster redraws even with inverse disabled', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true }, flags: { use_inverse: false } });
+    await freshObjectRoom({ hero: { detectMonsters: true }, flags: { use_inverse: false } });
     const monster = await createMonsterAt('jackal', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = 1;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, 'd');
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     game.u.seeInvisible = true;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, 'd');
@@ -412,18 +412,18 @@ void test('seeing a previously detected monster redraws even with inverse disabl
 });
 
 void test('rotating a closed door redraws its unchanged map symbol', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
     door.horizontal = false;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     door.horizontal = true;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, '+');
@@ -431,13 +431,13 @@ void test('rotating a closed door redraws its unchanged map symbol', async () =>
 });
 
 void test('recognizing a gray potion redraws its unchanged map symbol', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.ok(game.objectColors);
     game.objectColors[POT_HEALING] = CLR_GRAY;
     const potion = await floorObject(POT_HEALING, 14, 10, {
         dknown: false, initialize: false,
     });
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(1);
     assert.equal(potion.dknown, false);
     assert.equal(requireScreenCell(13, 11).color, CLR_GRAY);
@@ -445,7 +445,7 @@ void test('recognizing a gray potion redraws its unchanged map symbol', async ()
     display.setCursor(20, 0);
 
     game.u.ux = 12;
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(0);
 
     assert.equal(potion.dknown, true);
@@ -455,17 +455,17 @@ void test('recognizing a gray potion redraws its unchanged map symbol', async ()
 });
 
 void test('different unobserved potions share one generic map glyph', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const potion = await floorObject(POT_HEALING, 14, 10, {
         dknown: false, initialize: false,
     });
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     potion.otyp = POT_SPEED;
-    newsym(14, 10);
+    await newsym(14, 10);
     await flush_screen(0);
 
     assert.equal(potion.dknown, false);
@@ -474,17 +474,17 @@ void test('different unobserved potions share one generic map glyph', async () =
 });
 
 void test('converting an altar redraws its unchanged map symbol', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const altar = level.requireAt(11, 10);
     altar.typ = ALTAR;
     altar.flags = AM_NEUTRAL;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     altar.flags = AM_LAWFUL;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, '_');
@@ -493,17 +493,17 @@ void test('converting an altar redraws its unchanged map symbol', async () => {
 });
 
 void test('shrine status does not change an altar glyph', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const altar = level.requireAt(11, 10);
     altar.typ = ALTAR;
     altar.flags = AM_LAWFUL;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     altar.flags |= AM_SHRINE;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, '_');
@@ -511,17 +511,17 @@ void test('shrine status does not change an altar glyph', async () => {
 });
 
 void test('replacing a raised bridge with its exposed ice preserves the cursor', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const bridge = level.requireAt(11, 10);
     bridge.typ = DRAWBRIDGE_UP;
     bridge.drawbridgemask = DB_ICE;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(20, 0);
 
     bridge.typ = ICE;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(0);
 
     assert.equal(requireScreenCell(10, 11).ch, '.');
@@ -532,13 +532,13 @@ void test('replacing a raised bridge with its exposed ice preserves the cursor',
 for (const symset of ['ASCII', 'DECgraphics']) {
     for (const typ of [ICE, DRAWBRIDGE_UP]) {
         void test(`${symset} ice ${typ === ICE ? 'terrain' : 'under a raised bridge'} uses inverse video without color`, async () => {
-            const level = freshObjectRoom({ flags: { color: false } });
+            const level = await freshObjectRoom({ flags: { color: false } });
             game.symset = symset;
             const location = level.requireAt(11, 10);
             location.typ = typ;
             location.drawbridgemask = DB_ICE;
 
-            newsym(11, 10);
+            await newsym(11, 10);
             await flush_screen(1);
 
             const cell = requireScreenCell(10, 11);
@@ -550,10 +550,10 @@ for (const symset of ['ASCII', 'DECgraphics']) {
 }
 
 void test('monochrome ice respects disabling inverse video', async () => {
-    const level = freshObjectRoom({ flags: { color: false, use_inverse: false } });
+    const level = await freshObjectRoom({ flags: { color: false, use_inverse: false } });
     level.requireAt(11, 10).typ = ICE;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     const cell = requireScreenCell(10, 11);
@@ -572,18 +572,18 @@ for (const { name, typ, mask, ch, color } of [
     { name: 'closed bridge wall', typ: DBWALL, mask: 0, ch: '#', color: CLR_BROWN },
 ]) {
     void test(`${name} displays its native terrain symbol after a monster leaves`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         game.symset = 'DECgraphics';
         const location = level.requireAt(11, 10);
         location.typ = typ;
         location.drawbridgemask = mask;
         const bat = await createMonsterAt('bat', 11, 10, MM_NOGRP | NO_MINVENT);
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, 'B');
 
         placeMonsterAt(bat, 12, 10);
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         const cell = requireScreenCell(10, 11);

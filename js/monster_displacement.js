@@ -49,10 +49,10 @@ export async function displaceMonster(aggressor, defender, state = game, { quiet
     defender.mundetected = 0;
     const appearanceType = M_AP_TYPE(defender);
     if (appearanceType && appearanceType !== M_AP_MONSTER)
-        revealMonsterAppearance(defender);
+        await revealMonsterAppearance(defender);
     defender.msleeping = 0;
     defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    finishMonsterEating(defender, state);
+    await finishMonsterEating(defender, state);
     const aggressorSpotted = canSpotMonster(aggressor);
     const bothSpotted = aggressorSpotted
         && canSpotMonster(defender);
@@ -75,17 +75,17 @@ export async function displaceMonster(aggressor, defender, state = game, { quiet
     }
     removeMonsterFromMapAt(from.x, from.y, state);
     removeMonsterFromMapAt(to.x, to.y, state);
-    const segments = defender.wormno ? clearMonsterWormFromMap(defender) : 0;
+    const segments = defender.wormno ? await clearMonsterWormFromMap(defender) : 0;
     await placeMonsterOnMap(aggressor, to.x, to.y);
     await placeMonsterOnMap(defender, from.x, from.y);
     if (defender.wormno)
-        placeMonsterWormTailRandomly(defender, segments, { state, random });
+        await placeMonsterWormTailRandomly(defender, segments, { state, random });
     updateMonsterRegions(aggressor, state);
     updateMonsterRegions(defender, state);
     if (bothSpotted && !quietly)
         await publish(displacementMessage(aggressor, defender, false, state, random));
-    newsym(from.x, from.y);
-    newsym(to.x, to.y);
+    await newsym(from.x, from.y);
+    await newsym(to.x, to.y);
     await flush_screen(0);
     return M_ATTK_HIT;
 }

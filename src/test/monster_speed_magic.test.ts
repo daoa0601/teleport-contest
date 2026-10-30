@@ -26,7 +26,7 @@ async function createJackal({ peaceful = false, speed = 0 } = {}) {
 
 
 void test('slowing an engulfing cloud releases the hero', async () => {
-    freshCasterRoom({ energy: 30 });
+    await freshCasterRoom({ energy: 30 });
     requirePlayingGame(game);
     await learnSpell(SPE_SLOW_MONSTER);
     const cloud = await createMonsterAt('fog cloud', game.u.ux + 1, game.u.uy);
@@ -60,7 +60,7 @@ void test('a speed-monster wand hastens a peaceful target without angering it',
 
 void test('slow monster removes permanent speed and angers a peaceful target',
     async () => {
-        freshCasterRoom({ energy: 30 });
+        await freshCasterRoom({ energy: 30 });
     requirePlayingGame(game);
         await learnSpell(SPE_SLOW_MONSTER);
         const monster = await createJackal({ peaceful: true, speed: 2 });
@@ -74,7 +74,7 @@ void test('slow monster removes permanent speed and angers a peaceful target',
     });
 
 void test('slow monster aimed at yourself removes intrinsic speed', async () => {
-    freshCasterRoom({ energy: 30 });
+    await freshCasterRoom({ energy: 30 });
     requirePlayingGame(game);
     await learnSpell(SPE_SLOW_MONSTER);
     grantIntrinsicProperty('fast', 'role', game);

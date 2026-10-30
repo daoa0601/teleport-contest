@@ -34,7 +34,7 @@ import { createStaffedShop } from './support/shop.js';
 function occupationKey() { return game._occupation?.key; }
 
 void test('a failed spellbook reading announces that the reader can move again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book(SPE_LIGHT, { blessed: false, cursed: true });
     const input = resetInputState();
@@ -71,7 +71,7 @@ async function finishStudy() {
 }
 
 void test('learning installs the native delay and completes only after the final occupation call', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book();
     const result = await studyBook(source);
@@ -102,7 +102,7 @@ void test('learning installs the native delay and completes only after the final
 });
 
 void test('an interrupted book resumes its remaining work without another admission roll', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book(SPE_FIREBALL);
     await studyBook(source);
@@ -125,7 +125,7 @@ void test('an interrupted book resumes its remaining work without another admiss
 });
 
 void test('saving an interrupted study restores the actual inventory book and remaining delay', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Reader';
     const source = await book(SPE_FIREBALL);
@@ -139,7 +139,7 @@ void test('saving an interrupted study restores the actual inventory book and re
     await stopHeroOccupation();
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Reader', storage), true);
+    assert.equal(await restoreGame('Reader', storage), true);
     const restored = game.inventory.find(object => object.o_id === source.o_id);
     assert.equal(game.context.spbook.book, restored);
     assert.ok(restored != null, 'Expected restored to be initialized');
@@ -150,7 +150,7 @@ void test('saving an interrupted study restores the actual inventory book and re
 });
 
 void test('the live destruction owner clears retained study identity', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book();
     await studyBook(source);
@@ -164,7 +164,7 @@ void test('the live destruction owner clears retained study identity', async t =
 });
 
 void test('cancelling an interrupted book to blank prevents resumption and discovers blank paper', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book(SPE_FIREBALL);
     await studyBook(source);
@@ -183,7 +183,7 @@ void test('cancelling an interrupted book to blank prevents resumption and disco
 });
 
 void test('a newly cursed active book slams shut before study can resume', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book();
     await studyBook(source);
@@ -205,7 +205,7 @@ void test('a newly cursed active book slams shut before study can resume', async
 });
 
 void test('declining to reread a known spell spends no turn and leaves its question at the next command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book();
     forceLearnSpell(SPE_LIGHT);
@@ -239,7 +239,7 @@ void test('declining to reread a known spell spends no turn and leaves its quest
 });
 
 void test('a Wizard can decline a difficult uncursed book after the native ability warning', async t => {
-    freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'wizard', hero: { ulevel: 1 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_INT] = 3;
     const source = await book(SPE_FINGER_OF_DEATH, { blessed: false });
@@ -261,7 +261,7 @@ void test('a Wizard can decline a difficult uncursed book after the native abili
 // delay is spent immobilized, and only the 1-in-3 crumble roll destroys it.
 for (const [seed, kept] of [[1n, true], [4n, false]] as const) {
     void test(`an uncursed book beyond its reader ${kept ? 'survives its failure curse' : 'crumbles after its failure curse'}`, async () => {
-        freshObjectRoom({ role: 'caveman', hero: { ulevel: 1, uhp: 40, uhpmax: 40 } });
+        await freshObjectRoom({ role: 'caveman', hero: { ulevel: 1, uhp: 40, uhpmax: 40 } });
         requirePlayingGame(game);
         game.u.acurr.a[A_INT] = 3;
         game.u.amax.a[A_INT] = 3;
@@ -297,7 +297,7 @@ for (const [seed, kept] of [[1n, true], [4n, false]] as const) {
 void test('lenses accelerate actual study without changing the spell or book identity', async t => {
     const elapsed = [];
     for (const lenses of [false, true]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const source = await book(SPE_FIREBALL);
         if (lenses) await wearEyewear(await addInventoryObject(LENSES));
@@ -317,7 +317,7 @@ void test('lenses accelerate actual study without changing the spell or book ide
 
 for (const [remembered, studied, expectedBlank] of [[false, 2, false], [false, 3, true], [true, 3, false], [true, 4, true]] as const) {
     void test(`${remembered ? 'refreshing' : 'learning'} a book studied ${studied} times follows the native fading threshold`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const source = await book(SPE_LIGHT, { spestudied: studied });
         if (remembered) {
@@ -346,7 +346,7 @@ for (const [remembered, studied, expectedBlank] of [[false, 2, false], [false, 3
 }
 
 void test('successful shop study accrues its real usage fee while retaining the stock and bill', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const source = await book();
@@ -363,7 +363,7 @@ void test('successful shop study accrues its real usage fee while retaining the 
 });
 
 void test('a dull book puts a low-Wisdom reader to sleep before study is installed', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_WIS] = 3;
     const source = await book();
@@ -380,7 +380,7 @@ void test('a dull book puts a low-Wisdom reader to sleep before study is install
 });
 
 void test('sleep resistance keeps a dull book studyable', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.acurr.a[A_WIS] = 3;
     const source = await book();
@@ -396,7 +396,7 @@ void test('sleep resistance keeps a dull book studyable', async t => {
 // Each seed selects one source cursed_book branch for a real level-seven book.
 for (const [effect, seed] of [['teleport', 7], ['aggravation', 2], ['blindness', 25], ['gold loss', 14], ['confusion', 9], ['explosion', 6]] as const) {
     void test(`the cursed book ${effect} branch applies its actual owning effect`, async t => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         const source = await book(SPE_FINGER_OF_DEATH, { blessed: false, cursed: true });
         const before = { x: game.u.ux, y: game.u.uy };
@@ -446,7 +446,7 @@ for (const [effect, seed] of [['teleport', 7], ['aggravation', 2], ['blindness',
 }
 
 void test('magic resistance shields the reader but an exploding book is still destroyed', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('antimagic', 'outside');
     const source = await book(SPE_FINGER_OF_DEATH, { cursed: true, blessed: false });
@@ -458,7 +458,7 @@ void test('magic resistance shields the reader but an exploding book is still de
 });
 
 void test('confused first reading tears the real book only after its warning is acknowledged', async t => {
-    freshObjectRoom({ hero: { confusionTurns: 10 } });
+    await freshObjectRoom({ hero: { confusionTurns: 10 } });
     requirePlayingGame(game);
     const source = await book();
     recordObjectKnowledge(source.otyp);
@@ -479,7 +479,7 @@ void test('confused first reading tears the real book only after its warning is 
 });
 
 void test('confusion during study repeats the next line and spends the uninterrupted remaining delay', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book(SPE_FIREBALL);
     await studyBook(source);
@@ -501,7 +501,7 @@ void test('confusion during study repeats the next line and spends the uninterru
 });
 
 void test('a resumed already-cursed book applies its curse after successful learning', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const source = await book(SPE_LIGHT);
     await studyBook(source);
@@ -526,7 +526,7 @@ void test('a resumed already-cursed book applies its curse after successful lear
 });
 
 void test('actual scheduler turns complete study and age newly learned spell knowledge once', async t => {
-    freshObjectRoom({ role: 'wizard' });
+    await freshObjectRoom({ role: 'wizard' });
     requirePlayingGame(game);
     const source = await book();
     const input = acknowledge(t);
@@ -556,7 +556,7 @@ void test('actual scheduler turns complete study and age newly learned spell kno
 void test('worn lenses provide the native comprehension bonus for an uncursed book', async t => {
     const admitted = [];
     for (const lenses of [false, true]) {
-        freshObjectRoom({ hero: { ulevel: 1 } });
+        await freshObjectRoom({ hero: { ulevel: 1 } });
         requirePlayingGame(game);
         game.u.acurr.a[A_INT] = 16; // Level-one book: ability18, or20 with lenses.
         const source = await book(SPE_LIGHT, { blessed: false });

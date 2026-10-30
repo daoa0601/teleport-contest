@@ -26,7 +26,7 @@ import { initRng } from '../js/rng.js';
 import { installPagerInput } from './support/pager-input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 void test('a steed does not retaliate after an elemental attacker explodes and is life saved', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 500, uhpmax: 500 } });
     requirePlayingGame(game);
     const horse = await createSaddledSteed('horse');
     await runExtendedCommand('ride', 'l');
@@ -50,7 +50,7 @@ void test('a steed does not retaliate after an elemental attacker explodes and i
 void test('a nearby orc can attack the steed and receive its immediate retaliation', async () => {
     let steedFight = false;
     for (let seed = 1; seed <= 8 && !steedFight; seed++) {
-        freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100, uac: 100 } });
+        await freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100, uac: 100 } });
         requirePlayingGame(game);
         const horse = await createSaddledSteed('horse');
         await runExtendedCommand('ride', 'l');
@@ -73,7 +73,7 @@ void test('a nearby orc can attack the steed and receive its immediate retaliati
     assert.ok(steedFight, 'the steed must be able to retaliate during the attacker turn');
 });
 void test('an animal body cannot mount a saddled pony', async () => {
-    freshObjectRoom({ role: 'knight' });
+    await freshObjectRoom({ role: 'knight' });
     requirePlayingGame(game);
     await createSaddledSteed();
     installPolymorphedHero('bat');
@@ -83,7 +83,7 @@ void test('an animal body cannot mount a saddled pony', async () => {
     assert.match(game._pending_message, /won't fit on a saddle/);
 });
 void test('a non-knight loses a barely tame mount before getting on', async () => {
-    freshObjectRoom({ role: 'barbarian', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'barbarian', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     pony.mtame = 1;
@@ -93,7 +93,7 @@ void test('a non-knight loses a barely tame mount before getting on', async () =
     assert.equal(game.context.move, 0);
 });
 void test('slipping from a cursed saddle damages the active monster body', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await createSaddledSteed('pony', { saddle: { cursed: true } });
     installPolymorphedHero('vampire', { hitPoints: 1 });
@@ -105,7 +105,7 @@ void test('slipping from a cursed saddle damages the active monster body', async
     assert.equal(game.context.move, 0);
 });
 void test('mount and voluntary dismount preserve the live pony identity', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const steed = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -123,7 +123,7 @@ void test('mount and voluntary dismount preserve the live pony identity', async 
     assert.match(game._pending_message, /pony with no name/);
 });
 void test('an unsaddled pony rejects riding without time or state mutation', async () => {
-    const level = freshObjectRoom({ role: 'knight' });
+    const level = await freshObjectRoom({ role: 'knight' });
     requirePlayingGame(game);
     const target = await createMonsterAt('pony', 11, 10);
     initializePet(target, { state: game });
@@ -136,7 +136,7 @@ void test('an unsaddled pony rejects riding without time or state mutation', asy
     assert.match(game._pending_message, /not saddled/);
 });
 void test('a saddled but untamed pony refuses the mount without injuring the hero', async () => {
-    const level = freshObjectRoom({ role: 'knight' });
+    const level = await freshObjectRoom({ role: 'knight' });
     requirePlayingGame(game);
     const target = await createMonsterAt('pony', 11, 10);
     await putSaddleOnMonster(await knownObject(SADDLE), target);
@@ -149,7 +149,7 @@ void test('a saddled but untamed pony refuses the mount without injuring the her
     assert.match(game._pending_message, /would mind/);
 });
 void test('chat derives a pony response from its current tame and hunger state', async () => {
-    const level = freshObjectRoom({ role: 'knight' });
+    const level = await freshObjectRoom({ role: 'knight' });
     requirePlayingGame(game);
     const target = await createMonsterAt('pony', 11, 10);
     initializePet(target, { state: game });
@@ -162,7 +162,7 @@ void test('chat derives a pony response from its current tame and hunger state',
     assert.match(game._pending_message, /pony whickers\.$/i);
 });
 void test('riding moves the pony with the hero and trains riding skill', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -179,7 +179,7 @@ void test('riding moves the pony with the hero and trains riding skill', async (
     assert.equal(game.u.weaponSkills[P_RIDING]?.advance, practice + 1);
 });
 void test('a sleeping pony prevents walking but not an attack from the saddle', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -195,7 +195,7 @@ void test('a sleeping pony prevents walking but not an attack from the saddle', 
     assert.equal(game.u.usteed, pony);
 });
 void test('changing into a bat forces a dismount even when the saddle is cursed', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -210,7 +210,7 @@ void test('changing into a bat forces a dismount even when the saddle is cursed'
     assert.equal(game.u.uhp, health);
 });
 void test('a medium humanoid form can stay on the same pony', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -221,7 +221,7 @@ void test('a medium humanoid form can stay on the same pony', async () => {
     assert.equal(pony.my, game.u.uy);
 });
 void test('dismounting leaves the pony in the bear trap without striking it again', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -237,7 +237,7 @@ void test('dismounting leaves the pony in the bear trap without striking it agai
     assert.equal(trap.tseen, true);
 });
 void test('a mount becoming too small drops its saddle and throws the rider', async () => {
-    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -259,7 +259,7 @@ void test('a mount becoming too small drops its saddle and throws the rider', as
     assert.equal(messages[0], 'Your pony turns into a saddled grid bug!');
 });
 void test('a mount becoming a horse keeps its rider and saddle', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -278,7 +278,7 @@ void test('a mount becoming a horse keeps its rider and saddle', async () => {
     assert.ok(messages.some(message => /adjust yourself.*new horse/.test(message)));
 });
 void test('removing a worn saddle makes the rider fall', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -296,7 +296,7 @@ void test('removing a worn saddle makes the rider fall', async () => {
 });
 for (const lifesaving of [false, true]) {
     void test(`environmental steed death ${lifesaving ? 'keeps a life-saved steed mounted' : 'dismounts without a saddle-removal accident'}`, async () => {
-        freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+        await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
         requirePlayingGame(game);
         const steed = await createSaddledSteed();
         if (lifesaving)
@@ -319,7 +319,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('a hallucinating hero is told to find a designated driver', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await createSaddledSteed();
     game.u.hallucinationTurns = 20;
@@ -329,7 +329,7 @@ void test('a hallucinating hero is told to find a designated driver', async () =
     assert.equal(game.context.move, 0);
 });
 void test('a hero with a wounded left leg cannot mount', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await createSaddledSteed();
     game.u._woundedLegTurns = 5;
@@ -340,7 +340,7 @@ void test('a hero with a wounded left leg cannot mount', async () => {
     assert.equal(game.context.move, 0);
 });
 void test('involuntary levitation keeps the hero from reaching the steed', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await createSaddledSteed();
     grantIntrinsicProperty('levitation', 'outside');
@@ -350,7 +350,7 @@ void test('involuntary levitation keeps the hero from reaching the steed', async
     assert.equal(game.context.move, 0);
 });
 void test('a hero levitating at will mounts and the steed floats up to them', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await createSaddledSteed();
     grantIntrinsicProperty('levitation', 'potion');
@@ -360,7 +360,7 @@ void test('a hero levitating at will mounts and the steed floats up to them', as
     assert.equal(game.context.move, 1);
 });
 void test('eroded metallic armor is too stiff to mount from', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     await createSaddledSteed();
     const mail = await addInventoryObject(RING_MAIL);

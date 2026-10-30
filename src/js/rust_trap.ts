@@ -96,7 +96,7 @@ export async function beginMonsterRustTrap(
     };
     // C trapeffect_rust_trap(): seetrap() redraws the square, showing the
     // monster on its new spot before the gush message.
-    if (event.inSight) seeTrap(trap, state);
+    if (event.inSight) await seeTrap(trap, state);
     if (event.completelyRusted) {
         event.startsToFall = !!wornMonsterLifeSaver(monster);
         monster.mhp = 0;

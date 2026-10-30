@@ -50,7 +50,7 @@ async function shrineEncounter(species = 'goblin') {
     game.u.ualign = { type: alignment, record: 10 };
     updateHeroRoomMembership(game);
     vision_reset();
-    vision_recalc(0);
+    await vision_recalc(0);
     game.nhDisplay = new GameDisplay(null);
     const monster = await createMonsterAt(species, spot.x + 1, spot.y,
         MM_ANGRY | NO_MINVENT);

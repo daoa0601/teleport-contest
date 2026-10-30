@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('splitting an egg stack preserves native precedence between hatching and rot', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     installPagerInput(input, { expected: /hatch/, limit: 3 });
     const egg = await floorObject(EGG, 12, 10, {

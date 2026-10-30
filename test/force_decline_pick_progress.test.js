@@ -10,7 +10,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a declined force keeps pick progress alive without its chest target', async () => {
-    freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
+    await freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
     const chest = await floorObject(CHEST, 10, 10, { olocked: true });
     await addInventoryObject(CREDIT_CARD, { invlet: 'a' });
     const input = resetInputState();

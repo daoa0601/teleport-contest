@@ -19,7 +19,7 @@ for (const scenario of [
     { name: 'burned text', type: BURN, line: 'Some text has been burned into the floor here.  You read: "Elbereth".' },
 ] as const) {
     void test(`arrival reads ${scenario.name}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requireFixtureGame(game);
         if (scenario.terrain !== undefined) {
             game.level.requireAt(game.u.ux, game.u.uy).typ = scenario.terrain;
@@ -34,7 +34,7 @@ for (const scenario of [
 // C read_engr_at(): a blind reader feels carvable words (ENGRAVE, BURN,
 // HEADSTONE) instead of reading them.
 void test('a blind hero feels the engraved words', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth', null, 0, ENGRAVE);
     await makeBlinded(50, { talk: false });
@@ -50,7 +50,7 @@ void test('a blind hero feels the engraved words', async () => {
 // C read_engr_at() DUST case: the sense requires sight, so a blind hero
 // crossing dust learns nothing at all.
 void test('a blind hero notices nothing written in the dust', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     makeEngravingAt(game.u.ux, game.u.uy, 'Elbereth', null, 0, DUST);
     await makeBlinded(50, { talk: false });

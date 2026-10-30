@@ -10,15 +10,15 @@ import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 void test('restoring a bare-handed hero repeats the first-fight reminder', async () => {
-    freshObjectRoom({ role: 'monk', flags: { verbose: true } });
+    await freshObjectRoom({ role: 'monk', flags: { verbose: true } });
     await createMonsterAt('newt', 11, 10);
     game._unweapon = false;
     game.u.uhitinc = -100;
     game.plname = 'Returning fighter';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
-    vision_recalc(0);
+    assert.equal(await restoreGame(game.plname, storage), true);
+    await vision_recalc(0);
     pushKeys(' '.repeat(20));
 
     await rhack('l'.charCodeAt(0));

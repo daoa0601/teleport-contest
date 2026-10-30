@@ -15,7 +15,7 @@ import { planInput } from './support/planned-input.js';
 void test('first map naming keeps the verbose instruction pager after the tip', async t => {
     for (const target of ['monster', 'floor object']) {
         await t.test(target, async t => {
-            freshObjectRoom({ flags: { tips: true, verbose: true } });
+            await freshObjectRoom({ flags: { tips: true, verbose: true } });
             await startLuaCore(t);
             const soldier = target === 'monster'
                 ? await createMonsterAt('soldier', 11, 10, NO_MINVENT) : null;

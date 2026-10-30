@@ -11,7 +11,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const setting of ['apply_key', 'applykey', 'untrap+apply key']) {
     void test(`autounlock:${setting} offers the carried key when opening a locked door`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;

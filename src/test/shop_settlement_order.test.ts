@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 
 void test('the newest hostile shopkeeper claims possessions first when the hero quits outside all shops', async () => {
-    freshObjectRoom({ left: 3, right: 30, hero: { ux: 4, uy: 10 } });
+    await freshObjectRoom({ left: 3, right: 30, hero: { ux: 4, uy: 10 } });
     requirePlayingGame(game);
     const earlier = await createStaffedShop();
     const later = await createStaffedShop({ left: 20, right: 25, keeperX: 21, doorX: 19 });

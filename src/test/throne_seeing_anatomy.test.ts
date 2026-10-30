@@ -9,7 +9,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a blind eyeless hero feels the throne sight reward in its current anatomy', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = THRONE;
     installPolymorphedHero('gelatinous cube');
     setHeroBlindnessTurns(30);

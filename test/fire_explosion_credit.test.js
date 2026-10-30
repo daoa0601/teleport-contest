@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const burningOil of [false, true]) {
     for (const monsterTurn of [false, true]) {
         void test(`${burningOil ? 'burning oil' : 'a pyrolisk egg'} defaults to the active ${monsterTurn ? 'monster' : 'hero'} turn for kill credit`, async () => {
-            freshObjectRoom({ context: { mon_moving: monsterTurn } });
+            await freshObjectRoom({ context: { mon_moving: monsterTurn } });
             requireFixtureGame(game);
             const victim = await createMonsterAt('jackal', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
             victim.mhp = 1;

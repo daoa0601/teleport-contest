@@ -18,7 +18,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 async function puddingFight(species = 'black pudding', weaponType = DAGGER) {
-    const level = freshObjectRoom({ gameplaySeed: 47n, context: { mon_moving: true } });
+    const level = await freshObjectRoom({ gameplaySeed: 47n, context: { mon_moving: true } });
     requirePlayingGame(game);
     const aggressor = await createMonsterAt('goblin', 11, 11, BIRTH_FLAGS);
     const defender = await createMonsterAt(species, 11, 10, BIRTH_FLAGS);

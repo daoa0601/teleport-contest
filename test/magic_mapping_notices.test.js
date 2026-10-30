@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const wizard of [false, true]) {
     void test(`${wizard ? 'wizard' : 'scroll'} mapping redraws without announcing monsters`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             flags: { debug: true, tips: false, spot_monsters: true },
         });
         requirePlayingGame(game);

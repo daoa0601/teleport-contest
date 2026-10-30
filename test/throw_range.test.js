@@ -13,7 +13,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('underwater throws stop one square from the hero', async () => {
-    freshObjectRoom({ right: 35 });
+    await freshObjectRoom({ right: 35 });
     game.underwater = true;
     const dagger = await addInventoryObject(DAGGER);
     await throwInventoryObject(dagger);
@@ -22,7 +22,7 @@ void test('underwater throws stop one square from the hero', async () => {
     assert.equal(dagger.oy, 10);
 });
 void test('an underwater rock throw uses the same one-square range as weapons', async () => {
-    freshObjectRoom({ right: 35 });
+    await freshObjectRoom({ right: 35 });
     game.underwater = true;
     const rock = await addInventoryObject(ROCK);
     await throwInventoryObject(rock);
@@ -36,7 +36,7 @@ for (const surface of [
     { name: 'floor beneath a raised drawbridge', type: DRAWBRIDGE_UP, underneath: DB_FLOOR, skips: false },
 ]) {
     void test(`a rock ${surface.skips ? 'skips' : 'does not skip'} over ${surface.name}`, async () => {
-        const level = freshObjectRoom({ right: 35 });
+        const level = await freshObjectRoom({ right: 35 });
         requirePlayingGame(game);
         game.u.acurr.a[A_STR] = 18;
         for (let x = 11; x <= 19; x++)
@@ -63,7 +63,7 @@ for (const surface of [
     });
 }
 void test('a giant throws a boulder twenty squares regardless of its weight', async () => {
-    freshObjectRoom({ right: 35 });
+    await freshObjectRoom({ right: 35 });
     installPolymorphedHero('hill giant');
     const boulder = await addInventoryObject(BOULDER);
     await throwInventoryObject(boulder);
@@ -72,7 +72,7 @@ void test('a giant throws a boulder twenty squares regardless of its weight', as
     assert.equal(boulder.oy, 10);
 });
 void test('Mjollnir travels half the ordinary hammer range for a non-Valkyrie', async () => {
-    freshObjectRoom({ right: 35, role: 'caveman' });
+    await freshObjectRoom({ right: 35, role: 'caveman' });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = STR19(25);
     const hammer = await addInventoryItem(await artifactObject('Mjollnir'));

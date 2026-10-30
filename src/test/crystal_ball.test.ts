@@ -16,7 +16,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 
 void test('invoking a crystal ball while blind spends a turn without using a charge', async t => {
-    freshObjectRoom({ hero: { blindTurns: 10 } });
+    await freshObjectRoom({ hero: { blindTurns: 10 } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: 3 });
     const input = resetInputState();
     input.feed('invoke\r');
@@ -29,7 +29,7 @@ void test('invoking a crystal ball while blind spends a turn without using a cha
 
 for (const command of ['apply', 'invoke']) {
     void test(`${command} looks for objects through a charged crystal ball`, async t => {
-        freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+        await freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
         const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 3 });
         const input = resetInputState();
         if (command === 'invoke') input.feed('invoke\r');
@@ -49,7 +49,7 @@ for (const command of ['apply', 'invoke']) {
 // C detect.c:object_detect() describes a gem-class search with
 // def_oc_syms[GEM_CLASS].name, which is "rocks", not "gems".
 void test('a gem-class crystal-ball search under the hero senses rocks', async t => {
-    freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    await freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     await floorObject(OBJECT_NAMES.indexOf('ruby'), game.u.ux, game.u.uy);
     const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });
     const input = resetInputState();
@@ -65,7 +65,7 @@ void test('a gem-class crystal-ball search under the hero senses rocks', async t
 });
 
 void test('cancelling a crystal-ball search preserves its charges and takes one turn', async t => {
-    freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    await freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });
     const input = resetInputState();
     input.feed('invoke\r');
@@ -80,7 +80,7 @@ void test('cancelling a crystal-ball search preserves its charges and takes one 
 });
 
 void test('verbose crystal-ball help is acknowledged before a cancelled search', async t => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });
     const input = resetInputState();
     planInput(input, t, [
@@ -98,7 +98,7 @@ void test('verbose crystal-ball help is acknowledged before a cancelled search',
 });
 
 void test('a cancelled crystal ball implodes when used without harming the hero', async t => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: -1 });
     const hp = game.u.uhp;
     const input = resetInputState();
@@ -116,7 +116,7 @@ void test('a cancelled crystal ball implodes when used without harming the hero'
 });
 
 void test('a hallucinating hero gazes into an empty crystal ball without a search prompt', async t => {
-    freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 10 } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: 0 });
     const input = resetInputState();
     input.feed('invoke\r');
@@ -131,7 +131,7 @@ void test('a hallucinating hero gazes into an empty crystal ball without a searc
 void test('a cursed charged crystal ball can confuse, blind, hallucinate, or explode', async t => {
     const outcomes = new Set<string>();
     for (let seed = 1; seed <= 80 && outcomes.size < 5; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         const ball = await addInventoryObject(CRYSTAL_BALL, { cursed: true, spe: 2 });
         initRng(seed);
         const hp = game.u.uhp;
@@ -166,7 +166,7 @@ void test('a cursed charged crystal ball can confuse, blind, hallucinate, or exp
 });
 
 void test('a charged hallucinated vision consumes one charge without identifying the ball', async t => {
-    freshObjectRoom({ hero: { hallucinationTurns: 10, acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    await freshObjectRoom({ hero: { hallucinationTurns: 10, acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2, known: false, typeKnown: false });
     const input = resetInputState();
     input.feed('invoke\r');
@@ -178,7 +178,7 @@ void test('a charged hallucinated vision consumes one charge without identifying
 });
 
 void test('an unknown search symbol shows a distant special level and identifies the ball', async t => {
-    freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    await freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     const destination = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: 0 };
     game.oracle_level = destination;
     game.medusa_level = destination;
@@ -198,7 +198,7 @@ void test('an unknown search symbol shows a distant special level and identifies
 });
 
 void test('searching for furniture reveals a distant altar and exposes a furniture mimic', async t => {
-    const level = freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    const level = await freshObjectRoom({ flags: { verbose: false }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
     const altar = level.requireAt(30, 10);
     altar.typ = ALTAR;
     altar.seenv = 0;
@@ -206,7 +206,7 @@ void test('searching for furniture reveals a distant altar and exposes a furnitu
     level.requireAt(14, 10).typ = ROOM;
     mimic.m_ap_type = M_AP_FURNITURE;
     mimic.mappearance = CmapSymbol.fountain;
-    newsym(14, 10);
+    await newsym(14, 10);
     const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });
     const input = resetInputState();
     input.feed('invoke\r');

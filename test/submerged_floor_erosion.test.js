@@ -8,7 +8,7 @@ import { cansee } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an iron chain rusting below the water surface is silent', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(12, 10).typ = POOL;
     const chain = await floorObject(IRON_CHAIN, 10, 10, { blessed: false });
     unlinkObject(chain);

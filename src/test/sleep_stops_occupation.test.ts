@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C timeout.c fall_asleep() begins with stop_occupation(), which reports
 // the interrupted activity before the hero is helpless.
 void test('falling asleep in a gas trap interrupts and reports the current occupation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
     const trap = addTrap(game.level, SLP_GAS_TRAP, game.u.ux, game.u.uy);
@@ -32,7 +32,7 @@ void test('falling asleep in a gas trap interrupts and reports the current occup
 });
 
 void test('a sleep ray reports the interrupted occupation through the ray publisher', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
     const messages: string[] = [];

@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('the final petrification stage offers an explorer recovery after its statue announcement', async () => {
-    freshObjectRoom({ flags: { explore: true }, hero: { stonedTurns: 1, stoned: true } });
+    await freshObjectRoom({ flags: { explore: true }, hero: { stonedTurns: 1, stoned: true } });
     const input = resetInputState();
     const messages = [];
     input.display = { async readKey() {

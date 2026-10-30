@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('a Knight\'s starting pony has at least three hit points', async () => {
     let lowest = Infinity;
     for (let seed = 1n; seed <= 400n; seed++) {
-        freshObjectRoom({ role: 'knight', hero: { uz: { dnum: 0, dlevel: 1 }, ulevel: 1 } });
+        await freshObjectRoom({ role: 'knight', hero: { uz: { dnum: 0, dlevel: 1 }, ulevel: 1 } });
         initRng(seed);
         const pet = await makedog();
         assert.ok(pet);

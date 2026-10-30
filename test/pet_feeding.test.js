@@ -29,7 +29,7 @@ async function visibleMessage() {
     return requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';
 }
 void test('a pet eating at its square restores its hunger deadline and maximum HP without healing old damage', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     requirePlayingGame(game);
     const pet = await createPet();
     assert.ok(pet.edog);
@@ -57,7 +57,7 @@ void test('a pet eating at its square restores its hunger deadline and maximum H
     assert.equal(game.level.objects[11]?.[10]?.length, 1);
 });
 void test('a moving pet consumes food only after its eating message crosses the older message pager', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     requirePlayingGame(game);
     const pet = await createPet('little dog', 12, 10);
     const food = await floorObject(TRIPE_RATION, 11, 10);
@@ -75,7 +75,7 @@ void test('a moving pet consumes food only after its eating message crosses the 
     assert.match(await visibleMessage(), /Your little dog eats an uncursed tripe ration\./);
 });
 void test('partly eaten food and devouring reduce a meal and its chewing time', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const pet = await createPet('tiger');
     assert.ok(pet.edog);
     pet.edog.hungrytime = 100;
@@ -89,7 +89,7 @@ void test('partly eaten food and devouring reduce a meal and its chewing time', 
     assert.equal(corpse.where, 'gone');
 });
 void test('a blind carnivore eats a carrot and regains sight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createPet();
     pet.mcansee = 0;
@@ -106,7 +106,7 @@ void test('a blind carnivore eats a carrot and regains sight', async () => {
     assert.match(await visibleMessage(), /can see again/);
 });
 void test('a metallivore consumes an entire coin stack with weight-independent coin nutrition', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const pet = await createPet('xorn');
     assert.ok(pet.edog);
     pet.edog.hungrytime = 100;
@@ -117,7 +117,7 @@ void test('a metallivore consumes an entire coin stack with weight-independent c
     assert.equal(gold.where, 'gone');
 });
 void test('a gelatinous cube preserves swallowed contents when eating a container', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createPet('gelatinous cube');
     const sack = await floorObject(SACK, 11, 10);
     const rock = await knownObject(ROCK);
@@ -131,7 +131,7 @@ void test('a gelatinous cube preserves swallowed contents when eating a containe
     assert.equal(getObjectLocation(rock)?.y, pet.my);
 });
 void test('royal jelly grows a killer bee into a queen and delays its next move', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createPet('killer bee');
     const jelly = await floorObject(LUMP_OF_ROYAL_JELLY, 11, 10, { blessed: true, quan: 2 });
     const input = resetInputState();
@@ -143,7 +143,7 @@ void test('royal jelly grows a killer bee into a queen and delays its next move'
     assert.equal(jelly.quan, 1);
 });
 void test('food carried by the hero rewards apport using the pet\'s last delivery distance and time', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const pet = await createPet();
     assert.ok(pet.edog);
     pet.edog.apport = 5;
@@ -154,7 +154,7 @@ void test('food carried by the hero rewards apport using the pet\'s last deliver
     assert.equal(pet.edog.apport, 15);
 });
 void test('a nurse corpse heals a wounded pet as well as relieving its hunger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createPet();
     pet.mhp = 2;
     pet.mhpmax = 20;
@@ -168,7 +168,7 @@ void test('a nurse corpse heals a wounded pet as well as relieving its hunger', 
     assert.equal(corpse.where, 'gone');
 });
 void test('a rust monster spits out rustproof metal after removing its coating', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const pet = await createPet('rust monster');
     const dagger = await floorObject(DAGGER, 11, 10, { oerodeproof: true });
     const input = resetInputState();
@@ -180,7 +180,7 @@ void test('a rust monster spits out rustproof metal after removing its coating',
 });
 for (const terrain of [POOL, LAVAPOOL]) {
     void test(`a flying pet cannot reach food below ${terrain === POOL ? 'water' : 'lava'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const pet = await createPet('vampire bat', 12, 10);
         const location = level.at(11, 10);
@@ -197,7 +197,7 @@ for (const terrain of [POOL, LAVAPOOL]) {
     });
 }
 void test('a salamander can retrieve food from lava without eating it', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createPet('salamander', 12, 10);
     assert.ok(pet.edog);
@@ -218,7 +218,7 @@ void test('a salamander can retrieve food from lava without eating it', async ()
     assert.equal(pet.meating ?? 0, 0);
 });
 void test('a rock-throwing pet reaches food underneath a boulder', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createPet('hill giant', 12, 10);
     const food = await floorObject(TRIPE_RATION, 11, 10);
@@ -230,7 +230,7 @@ void test('a rock-throwing pet reaches food underneath a boulder', async () => {
     assert.equal(pet.meating, 2);
 });
 void test('a tame minion follows its hero without eating nearby food', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const angel = await createMonsterAt('Angel', 12, 10, MM_EMIN | NO_MINVENT);
     angel.isminion = true;
@@ -244,7 +244,7 @@ void test('a tame minion follows its hero without eating nearby food', async () 
     assert.equal(angel.meating ?? 0, 0);
 });
 void test('an enormous coin meal clamps overflowing nutrition and delay instead of starving the pet', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const pet = await createPet('xorn');
     assert.ok(pet.edog);
     pet.edog.hungrytime = 100;
@@ -256,7 +256,7 @@ void test('an enormous coin meal clamps overflowing nutrition and delay instead 
     assert.equal(gold.where, 'gone');
 });
 void test('a pet names newly generated food after seeing it without relying on an inventory label', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createPet();
     const food = await mksobj(TRIPE_RATION, true, false);

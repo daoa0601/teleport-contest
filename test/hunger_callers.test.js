@@ -39,7 +39,7 @@ for (const type of [POT_FRUIT_JUICE, POT_BOOZE]) {
     void test(`${type === POT_FRUIT_JUICE ? 'fruit juice' : 'booze'} bypasses choking and fullness delays`, async () => {
         // dodrink rejects a strangled hero before selection. A full stomach
         // alone exercises peffects' direct nutrition gain without choking.
-        freshObjectRoom({ hero: { uhunger: 1980, uhs: SATIATED } });
+        await freshObjectRoom({ hero: { uhunger: 1980, uhs: SATIATED } });
         requireFixtureGame(game);
         const potion = await addInventoryObject(type, { blessed: true });
         recordObjectKnowledge(type);
@@ -55,7 +55,7 @@ for (const type of [POT_FRUIT_JUICE, POT_BOOZE]) {
     });
 }
 void test('fruit juice restores hunger-weakened Strength through newuhs', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             uhunger: 35, uhs: WEAK, atemp: { a: [-1, 0, 0, 0, 0, 0] },
         } });
     requireFixtureGame(game);
@@ -70,7 +70,7 @@ void test('fruit juice restores hunger-weakened Strength through newuhs', async 
     assert.match(game._lastPlineMessage, /only feel hungry now/);
 });
 void test('the final nausea turn can cause a real faint instead of only changing nutrition', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             uhunger: 20, uhs: WEAK, atemp: { a: [-1, 0, 0, 0, 0, 0] },
         } });
     requireFixtureGame(game);
@@ -83,7 +83,7 @@ void test('the final nausea turn can cause a real faint instead of only changing
     assert.equal(game._helplessTurns, 10);
 });
 void test('laying an egg spends nutrition after placing the real egg and can cause fainting', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requireFixtureGame(game);
     const input = acknowledgeMessages();
     await polymonHero(MONSTER_NAME.indexOf('cockatrice'));
@@ -102,7 +102,7 @@ void test('laying an egg spends nutrition after placing the real egg and can cau
     assert.equal(game._helplessTurns, 10);
 });
 void test('a cancelled wizard teleport still spends nutrition through the hunger owner', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { debug: true, tips: false },
         hero: { uhunger: 100, uhs: HUNGRY },
     });
@@ -115,8 +115,8 @@ void test('a cancelled wizard teleport still spends nutrition through the hunger
     assert.equal(game.u.uhs, FAINTED);
     assert.deepEqual([game.u.ux, game.u.uy], [10, 10]);
 });
-function controlledTeleportRoom() {
-    freshObjectRoom({
+async function controlledTeleportRoom() {
+    await freshObjectRoom({
         flags: { pickup: true },
         hero: { ulevel: 12, uen: 50, uhunger: 100, uhs: HUNGRY },
     });
@@ -125,7 +125,7 @@ function controlledTeleportRoom() {
     acknowledgeMessages();
 }
 void test('teleport at will completes actual pickup before nutrition causes a faint', async () => {
-    controlledTeleportRoom();
+    await controlledTeleportRoom();
     requireFixtureGame(game);
     const gem = await floorObject(DIAMOND, 12, 10);
     const result = await teleportHeroAtWill({ chooseDestination: async () => ({ x: 12, y: 10 }) });
@@ -135,7 +135,7 @@ void test('teleport at will completes actual pickup before nutrition causes a fa
     assert.equal(game.u.uhs, FAINTED);
 });
 void test('a fatal teleport landing never spends its later nutrition cost', async () => {
-    controlledTeleportRoom();
+    await controlledTeleportRoom();
     requireFixtureGame(game);
     game.storage = memoryStorage();
     const blindfold = await addInventoryObject(BLINDFOLD);

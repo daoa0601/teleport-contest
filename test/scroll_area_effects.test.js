@@ -22,8 +22,8 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-function room(t, answers = [], options = {}) {
-    freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
+async function room(t, answers = [], options = {}) {
+    await freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 15,
         hero: { uhp: 500, uhpmax: 500 }, flags: { verbose: true, tips: false },
         gameplaySeed: 17n, ...options });
     requirePlayingGame(game);
@@ -45,7 +45,7 @@ function floorRocks() {
     return rocks;
 }
 void test('confused fire consumes one scroll and burns the hero without an explosion', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     game.u.confusionTurns = 10;
     const source = await scroll(SCR_FIRE, { quan: 2 });
@@ -59,7 +59,7 @@ void test('confused fire consumes one scroll and burns the hero without an explo
     assert.match(game._pending_message, /burn your hands/);
 });
 void test('confused fire underwater is harmless even without fire resistance', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     game.u.confusionTurns = 10;
     game.u.uinwater = true;
@@ -68,12 +68,12 @@ void test('confused fire underwater is harmless even without fire resistance', a
     assert.match(game._pending_message, /A little water around you vaporizes/);
 });
 void test('confused fire resistance is visible to nearby monsters', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     game.u.confusionTurns = 10;
     grantIntrinsicProperty('fireResistance', 'outside');
     const monster = await createMonsterAt('jackal', 11, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     await applyAreaScrollEffect(await scroll(SCR_FIRE));
     assert.equal(game.u.uhp, 500);
     assert.ok(monster.seen_resistance != null, 'Expected monster.seen_resistance to be initialized');
@@ -81,7 +81,7 @@ void test('confused fire resistance is visible to nearby monsters', async (t) =>
     assert.match(game._pending_message, /pretty fire in your hands/);
 });
 void test('life saving survives fatal confused fire after its scroll has been consumed', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /amulet of life saving.*being worn/, keys: ' ' },
         { prompt: /scroll catches fire and you burn your hands/, keys: ' ' },
         { prompt: /You die.*But wait.*medallion begins to glow/, keys: ' ' },
@@ -99,12 +99,12 @@ void test('life saving survives fatal confused fire after its scroll has been co
     assert.equal(game.inventory.includes(source), false);
 });
 void test('blessed fire targets a distant explosion after consuming its scroll', async (t) => {
-    const input = room(t);
+    const input = await room(t);
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 14, 10);
     monster.mhp = monster.mhpmax = 500;
     const source = await scroll(SCR_FIRE, { blessed: true });
-    vision_recalc(0);
+    await vision_recalc(0);
     input.display = null;
     const effect = applyAreaScrollEffect(source);
     await input.waitUntilBlocked();
@@ -119,7 +119,7 @@ void test('blessed fire targets a distant explosion after consuming its scroll',
     assert.ok(monster.mhp <= 485 && monster.mhp >= 475);
 });
 void test('cancelling blessed fire targeting returns the explosion to the reader', async (t) => {
-    const input = room(t);
+    const input = await room(t);
     requirePlayingGame(game);
     const source = await scroll(SCR_FIRE, { blessed: true });
     input.feed(' \x1b');
@@ -129,7 +129,7 @@ void test('cancelling blessed fire targeting returns the explosion to the reader
 });
 for (const [blessed, cursed, expected] of [[false, false, 9], [true, false, 8], [false, true, 1]]) {
     void test(`earth drops ${expected} boulders for blessed=${blessed}, cursed=${cursed}`, async (t) => {
-        room(t);
+        await room(t);
         requirePlayingGame(game);
         const result = await applyAreaScrollEffect(await scroll(SCR_EARTH, { blessed, cursed }));
         assert.equal(result.known, true);
@@ -139,7 +139,7 @@ for (const [blessed, cursed, expected] of [[false, false, 9], [true, false, 8], 
     });
 }
 void test('blessed earth skips blocked squares and penalizes Sokoban creation once', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     game.level.flags.sokoban_rules = true;
     game.level.requireAt(9, 9).typ = STONE;
@@ -153,7 +153,7 @@ void test('blessed earth skips blocked squares and penalizes Sokoban creation on
     assert.equal(game.u.uconduct.sokocheat, 1);
 });
 void test('an earth boulder fills a real pit instead of remaining on its surface', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     const pit = addTrap(game.level, PIT, 11, 10);
     await applyAreaScrollEffect(await scroll(SCR_EARTH, { blessed: true }));
@@ -162,7 +162,7 @@ void test('an earth boulder fills a real pit instead of remaining on its surface
     assert.equal(floorRocks().length, 7);
 });
 void test('earth helmets protect from ordinary falling boulders but not cursed ones', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /ceiling rumbles above you.*hit by a boulder/, keys: ' ' },
         { prompt: /wearing a hard helmet/, keys: ' ' },
     ]);
@@ -175,7 +175,7 @@ void test('earth helmets protect from ordinary falling boulders but not cursed o
     assert.ok(game.u.uhp < 496);
 });
 void test('confused earth drops piles of rocks and solid monsters receive helmet protection', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /ceiling rumbles around you.*hobgoblin is hit by \d+ rocks/, keys: ' ' },
     ]);
     requirePlayingGame(game);
@@ -183,7 +183,7 @@ void test('confused earth drops piles of rocks and solid monsters receive helmet
     const monster = await createMonsterAt('hobgoblin', 11, 10);
     monster.mhp = monster.mhpmax = 100;
     await equipMonsterObject(monster, await knownObject(HELMET), W_ARMH);
-    vision_recalc(0);
+    await vision_recalc(0);
     await applyAreaScrollEffect(await scroll(SCR_EARTH, { blessed: true }));
     assert.equal(monster.mhp, 98);
     assert.equal(floorRocks().length, 8);
@@ -193,7 +193,7 @@ void test('confused earth drops piles of rocks and solid monsters receive helmet
     }
 });
 void test('an insubstantial swallower lets the cursed earth boulder fall through onto the hero', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     const monster = await createMonsterAt('fog cloud', 11, 10);
     monster.mhp = monster.mhpmax = 100;
@@ -204,7 +204,7 @@ void test('an insubstantial swallower lets the cursed earth boulder fall through
     assert.equal(floorRocks().length, 1);
 });
 void test('an insubstantial hero remains unharmed while an earth boulder reaches the floor', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     setHeroSpecies(MONSTER_NAME.indexOf('fog cloud'));
     game.u.mh = game.u.mhmax = 100;
@@ -213,7 +213,7 @@ void test('an insubstantial hero remains unharmed while an earth boulder reaches
     assert.equal(floorRocks().length, 1);
 });
 void test('earth has no effect on the Rogue level', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     const result = await applyAreaScrollEffect(await scroll(SCR_EARTH));
@@ -223,7 +223,7 @@ void test('earth has no effect on the Rogue level', async (t) => {
 });
 for (const [blessed, cursed, size, damage] of [[false, true, 5, 4], [false, false, 15, 8], [true, false, 25, 12]]) {
     void test(`stinking cloud creates ${size} real poisonous cells`, async (t) => {
-        const input = room(t);
+        const input = await room(t);
         requirePlayingGame(game);
         const source = await scroll(SCR_STINKING_CLOUD, { blessed, cursed });
         input.feed(' lll.');
@@ -241,7 +241,7 @@ for (const [blessed, cursed, size, damage] of [[false, true, 5, 4], [false, fals
 }
 for (const keys of ['\x1b', 'llllll.']) {
     void test(`cancelled or out-of-range stinking cloud creates no region (${JSON.stringify(keys)})`, async (t) => {
-        const input = room(t);
+        const input = await room(t);
         requirePlayingGame(game);
         const source = await scroll(SCR_STINKING_CLOUD);
         input.feed(` ${keys}`);
@@ -252,7 +252,7 @@ for (const keys of ['\x1b', 'llllll.']) {
     });
 }
 void test('cloud targeting leaves the steed unmarked and refreshes its hallucination on exit', async (t) => {
-    room(t, [], { role: 'knight', hero: { ulevel: 30 } });
+    await room(t, [], { role: 'knight', hero: { ulevel: 30 } });
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');
@@ -274,7 +274,7 @@ void test('cloud targeting leaves the steed unmarked and refreshes its hallucina
     assert.equal(game.level.regions.length, 0);
 });
 void test('cloud spreads through corridors and doors and announces a newly enveloped reader', async (t) => {
-    const input = room(t);
+    const input = await room(t);
     requirePlayingGame(game);
     for (let x = 5; x <= 25; x++)
         for (let y = 5; y <= 15; y++)
@@ -284,7 +284,7 @@ void test('cloud spreads through corridors and doors and announces a newly envel
     const doorSquare = game.level.requireAt(9, 10);
     doorSquare.typ = DOOR;
     doorSquare.doormask = D_CLOSED;
-    vision_recalc(0);
+    await vision_recalc(0);
     input.feed(' .');
     await applyAreaScrollEffect(await scroll(SCR_STINKING_CLOUD, { cursed: true }));
     assert.ok(game.level.regions[0] != null);
@@ -293,7 +293,7 @@ void test('cloud spreads through corridors and doors and announces a newly envel
     assert.match(game._pending_message, /enveloped in a cloud of noxious gas/);
 });
 void test('blessed amnesia retains spells and forgets trained skills and monster recognition', async (t) => {
-    room(t, [
+    await room(t, [
         { prompt: /more skilled in dagger/, keys: ' ' },
         { prompt: /forget your training in dagger/, keys: ' ' },
     ], { role: 'rogue' });
@@ -322,7 +322,7 @@ void test('blessed amnesia retains spells and forgets trained skills and monster
     assert.equal(held.meverseen, 1);
 });
 void test('ordinary amnesia clears retained study and keeps the spell entries when memory is lost', async (t) => {
-    room(t);
+    await room(t);
     requirePlayingGame(game);
     forceLearnSpell(SPE_FORCE_BOLT);
     forceLearnSpell(SPE_HEALING);

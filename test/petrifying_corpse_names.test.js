@@ -12,7 +12,7 @@ import { installPagerInput } from './support/pager-input.js';
 const COCKATRICE = MONSTER_NAME.indexOf('cockatrice');
 // Runs a fatal contact and returns the paged messages and the score entry.
 async function fatalContact(contact, overrides = {}) {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
     requirePlayingGame(game);
     const corpse = await corpseObject(COCKATRICE, overrides);
     game.storage = memoryStorage();

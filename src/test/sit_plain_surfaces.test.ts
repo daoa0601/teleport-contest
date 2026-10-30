@@ -14,7 +14,7 @@ for (const [surface, typ, line] of [
     ['grave', GRAVE, 'You sit on the grave.'],
 ] as const) {
     void test(`sitting on the ${surface} announces the seat`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         level.requireAt(10, 10).typ = typ;
         resetInputState().feed(' '.repeat(10));
@@ -29,7 +29,7 @@ for (const [surface, typ, line] of [
 
 // sit.c:dosit() IS_SINK: a humanoid wets the rump; a blob wets the underside.
 void test('sitting on a sink wets the humanoid rump', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = SINK;
     resetInputState().feed(' '.repeat(10));

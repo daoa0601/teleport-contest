@@ -10,14 +10,14 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('selection redraw moves the flush cursor even when the selected glyph has not changed', async () => {
-    freshObjectRoom();
-    newsym(11, 10);
-    newsym(12, 10);
+    await freshObjectRoom();
+    await newsym(11, 10);
+    await newsym(12, 10);
     await flush_screen(1);
     const display = requireGameDisplay(game);
     display.setCursor(0, 0);
 
-    selection_force_newsyms(new SpecialSelection().add(11, 10).selection);
+    await selection_force_newsyms(new SpecialSelection().add(11, 10).selection);
     await flush_screen(0);
 
     assert.equal(display.cursorCol, 11, 'printing advances past the selected square');
@@ -25,7 +25,7 @@ void test('selection redraw moves the flush cursor even when the selected glyph 
 });
 
 void test('an unknown gradient type reports its fallback and draws a radial selection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const display = requireGameDisplay(game);
     let reportedFallback = false;
     const input = resetInputState();

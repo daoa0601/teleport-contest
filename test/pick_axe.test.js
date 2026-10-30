@@ -14,7 +14,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function diggingRoom(otyp = PICK_AXE, { wielded = true } = {}) {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     resetInputState();
     const tool = await addInventoryObject(otyp, { invlet: 'a', spe: 0 });
@@ -22,14 +22,14 @@ async function diggingRoom(otyp = PICK_AXE, { wielded = true } = {}) {
         game.uwep = game.u.uwep = tool;
     return tool;
 }
-function targetTerrain(typ) {
+async function targetTerrain(typ) {
     requireGameLevel().requireAt(11, 10).typ = typ;
-    newsym(11, 10);
+    await newsym(11, 10);
 }
 void test('applying an unwielded pick spends a turn wielding before asking a direction', async () => {
     const pick = await diggingRoom(PICK_AXE, { wielded: false });
     requirePlayingGame(game);
-    targetTerrain(STONE);
+    await targetTerrain(STONE);
     await applyInventoryObject(pick);
     assert.equal(game.uwep, pick);
     assert.equal(game.context.move, 1);
@@ -60,7 +60,7 @@ void test('a pick cannot be swung while the hero is caught in a web', async () =
 void test('a pick cannot cut down a tree', async () => {
     const pick = await diggingRoom();
     requirePlayingGame(game);
-    targetTerrain(TREE);
+    await targetTerrain(TREE);
     await applyInventoryObject(pick, 'l');
     assert.match(game._pending_message, /You need an axe to cut down a tree/);
     assert.equal(requireGameLevel().requireAt(11, 10).typ, TREE);
@@ -69,7 +69,7 @@ void test('a pick cannot cut down a tree', async () => {
 void test('an axe cannot dig through rock', async () => {
     const axe = await diggingRoom(AXE);
     requirePlayingGame(game);
-    targetTerrain(STONE);
+    await targetTerrain(STONE);
     await applyInventoryObject(axe, 'l');
     assert.match(game._pending_message, /You need a pick to dig rock/);
     assert.equal(requireGameLevel().requireAt(11, 10).typ, STONE);
@@ -160,7 +160,7 @@ void test('digging sideways from a pit joins it to the neighboring pit', async (
 void test('hitting iron bars wakes a nearby sleeping monster', async () => {
     const pick = await diggingRoom();
     requirePlayingGame(game);
-    targetTerrain(IRONBARS);
+    await targetTerrain(IRONBARS);
     const monster = await createMonsterAt('jackal', 12, 10);
     monster.msleeping = 1;
     await applyInventoryObject(pick, 'l   ');
@@ -173,7 +173,7 @@ void test('applying a pick at a hostile monster uses melee instead of digging', 
     const monster = await createMonsterAt('jackal', 11, 10);
     monster.mhp = monster.mhpmax = 500;
     game.u.uhitinc = 100;
-    newsym(11, 10);
+    await newsym(11, 10);
     initRng(2n);
     await applyInventoryObject(pick, 'l   ');
     assert.ok(monster.mhp < 500);
@@ -182,7 +182,7 @@ void test('applying a pick at a hostile monster uses melee instead of digging', 
 void test('autodig starts work without moving into the rock', async () => {
     await diggingRoom();
     requirePlayingGame(game);
-    targetTerrain(STONE);
+    await targetTerrain(STONE);
     game.flags.autodig = true;
     await rhack('l'.charCodeAt(0));
     assert.match(game._pending_message, /You start digging/);
@@ -193,7 +193,7 @@ void test('autodig starts work without moving into the rock', async () => {
 void test('pick direction input honors a configured movement key', async () => {
     const pick = await diggingRoom();
     requirePlayingGame(game);
-    targetTerrain(STONE);
+    await targetTerrain(STONE);
     game.commandBindings.bindKey('x'.charCodeAt(0), 'moveeast');
     await applyInventoryObject(pick, 'x');
     assert.match(game._pending_message, /You start digging/);

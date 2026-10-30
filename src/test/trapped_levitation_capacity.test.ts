@@ -11,7 +11,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('levitation still supports a load while the hero is stuck in the floor', async () => {
-    freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
+    await freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
     grantIntrinsicProperty('levitation', 'outside');
     // This load is Stressed at ordinary capacity and Burdened with levitation.
     await addInventoryObject(ROCK, { quan: 120 });
@@ -26,7 +26,7 @@ void test('levitation still supports a load while the hero is stuck in the floor
 });
 
 void test('an injured hero without levitation cannot struggle against the floor under a stressed load', async () => {
-    freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
+    await freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
     await addInventoryObject(ROCK, { quan: 120 });
     assert.equal(nearCapacity(game), MOD_ENCUMBER);
     pushKeys(' '.repeat(5));
@@ -36,8 +36,8 @@ void test('an injured hero without levitation cannot struggle against the floor 
     assert.equal(game.u.utrap, 2, 'the stamina restriction prevents the escape attempt');
 });
 
-void test('terrain that blocks levitation also blocks its carrying benefit', () => {
-    freshObjectRoom();
+void test('terrain that blocks levitation also blocks its carrying benefit', async () => {
+    await freshObjectRoom();
     const ordinaryCapacity = weightCapacity(game);
     grantIntrinsicProperty('levitation', 'outside');
     setPropertyTerrainBlocked('levitation', true);
@@ -50,7 +50,7 @@ for (const blockedBy of ['nothing', 'terrain', 'floor trap']) {
         ? 'flight prevents wounded-leg carrying penalties during levitation boot wear'
         : `flight blocked by ${blockedBy} keeps wounded-leg carrying penalties during boot wear`;
     void test(behavior, async () => {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
             _woundedLegSide: 'both',
             utrap: blockedBy === 'floor trap' ? 1 : 0,
             utraptype: TT_INFLOOR,

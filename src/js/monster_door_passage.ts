@@ -57,8 +57,8 @@ export async function shiftMonsterForDoor(monster: Monster, state: PlayingGameSt
         return { died: false, heroDied: false };
     if (wasSeen || wasSpotted) {
         await placeMonsterOnMap(monster, previousPosition.x, previousPosition.y);
-        newsym(destination.x, destination.y);
-        newsym(previousPosition.x, previousPosition.y);
+        await newsym(destination.x, destination.y);
+        await newsym(previousPosition.x, previousPosition.y);
     }
     const change = await changeMonsterForm(monster, PM_FOG_CLOUD, state, {
         showMessage: wasSeen, publish, creditHero: false,
@@ -68,8 +68,8 @@ export async function shiftMonsterForDoor(monster: Monster, state: PlayingGameSt
     const heroDied = !!change?.heroDied || !!state.program_state.gameover;
     if (!died && (wasSeen || wasSpotted)) {
         await placeMonsterOnMap(monster, destination.x, destination.y);
-        newsym(previousPosition.x, previousPosition.y);
-        newsym(destination.x, destination.y);
+        await newsym(previousPosition.x, previousPosition.y);
+        await newsym(destination.x, destination.y);
     }
     return { died, heroDied };
 }
@@ -146,9 +146,9 @@ export async function resolveMonsterDoorPassage(monster: Monster, state: Playing
     } else return { status: 'continue', heroDied: false };
 
     location.doormask = mask;
-    newsym(x, y);
+    await newsym(x, y);
     vision_note_blocker_change(x, y);
-    vision_recalc(0);
+    await vision_recalc(0);
     const seesDoor = wasDoorVisible || cansee(x, y);
     if (trapped) {
         const trap = await triggerMonsterDoorTrap(monster, seesDoor, { state, random, rollOne, publish });

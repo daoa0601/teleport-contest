@@ -67,7 +67,7 @@ export async function revealMimicIdentity(monster: Monster, {
         }
     }
     if (identity) await publish(`${omitWait ? prefix.replace(/^Wait!  /, '') : prefix}${identity}!`);
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
 }
 
 export function isObjectOrFurnitureMimic(monster: Monster | null | undefined, state: GameState = game): monster is Monster {
@@ -124,5 +124,5 @@ export async function stumbleOntoMimic(
         setHeroGrip(monster, state);
     }
     await wakeMonster(monster, { attacked: false });
-    if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+    if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
 }

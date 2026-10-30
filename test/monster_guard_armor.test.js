@@ -7,7 +7,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('vault guards stop receiving optional armor once their earlier armor is sufficient', async () => {
     let adequatelyArmored = 0;
     for (let seed = 1; seed <= 128; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const guard = await createMonsterAt('guard', 13, 10);
         const earlyProtection = guard.minvent.reduce((bonus, object) => {
             const slot = armorSlotFor(object.otyp);
@@ -26,7 +26,7 @@ void test('vault guards stop receiving optional armor once their earlier armor i
 });
 void test('every equipped vault guard carries a cursed tin whistle', async () => {
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const guard = await createMonsterAt('guard', 13, 10);
         assert.ok(guard.minvent.some(object => object.otyp === TIN_WHISTLE && object.cursed), `guard lacks its cursed whistle at seed ${seed}`);
     }

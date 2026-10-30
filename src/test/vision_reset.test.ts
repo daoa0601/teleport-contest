@@ -8,9 +8,9 @@ import {
 } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-void test('initializing vision starts without sight from the previous game', () => {
-    freshObjectRoom();
-    vision_recalc(0);
+void test('initializing vision starts without sight from the previous game', async () => {
+    await freshObjectRoom();
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), true);
 
     init_vision_globals();
@@ -20,7 +20,7 @@ void test('initializing vision starts without sight from the previous game', () 
 });
 
 void test('resetting a level refreshes sight before the next message', async () => {
-    const level = freshObjectRoom({ top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ top: 10, bottom: 10 });
     assert.equal(cansee(12, 10), true);
     level.requireAt(11, 10).typ = STONE;
 

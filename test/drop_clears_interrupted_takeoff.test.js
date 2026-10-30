@@ -32,7 +32,7 @@ async function interruptBulkTakeoff(armorInvlet) {
     return newt;
 }
 void test('a refused drop ends an interrupted bulk takeoff', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const mail = await addInventoryObject(RING_MAIL);
     await wearHeroArmor(mail);
     await interruptBulkTakeoff(mail.invlet ?? 'a');
@@ -43,7 +43,7 @@ void test('a refused drop ends an interrupted bulk takeoff', async () => {
     assert.equal(wornObjectDescription(mail), ' (being worn)');
 });
 void test('a cancelled drop prompt also clears the interrupted takeoff', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const mail = await addInventoryObject(RING_MAIL);
     await wearHeroArmor(mail);
     await interruptBulkTakeoff(mail.invlet ?? 'a');
@@ -52,7 +52,7 @@ void test('a cancelled drop prompt also clears the interrupted takeoff', async (
     assert.equal(game.context.takeoff, undefined, 'drop(NULL) is ECMD_FAIL, so dodrop still resets occupations');
 });
 void test('after a refused drop a new takeoff-all restarts the full removal', async () => {
-    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
+    await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const mail = await addInventoryObject(RING_MAIL);
     await wearHeroArmor(mail);
     const newt = await interruptBulkTakeoff(mail.invlet ?? 'a');

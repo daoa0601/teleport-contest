@@ -136,7 +136,7 @@ void test('the tutorial entry pager leaves the displayed map unchanged', async (
 });
 
 void test('entering the tutorial stores equipment and returning restores the same items', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await startLuaCore(t);
     const sword = await addInventoryObject(SHORT_SWORD);
@@ -172,7 +172,7 @@ void test('entering the tutorial stores equipment and returning restores the sam
 });
 
 void test('returning from the tutorial restores the hero and turn without undoing the current level change', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await startLuaCore(t);
     installHeroWeaponSkills({ [P_SHORT_SWORD]: P_BASIC });
@@ -239,7 +239,7 @@ void test('the tutorial stores starting spells and restores monster statistics w
 });
 
 void test('discarding tutorial state frees the stored items and their timers', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await startLuaCore(t);
     const lamp = await addInventoryObject(OIL_LAMP, { age: 10 });
@@ -338,7 +338,7 @@ void test('tutorial entry stores starting gear and its exit portal restores norm
 });
 
 void test('inconsistent tutorial gamestate requests report impossible like nhlua.c', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.storage = memoryStorage();
     const input = resetInputState();

@@ -6,7 +6,7 @@ import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { floorObjects } from './support/level-state.js';
 void test('a large scattered stack splits into pieces within the native integer limit', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const quantity = 32770;
     const gold = await floorObject(GOLD_PIECE, 14, 10, { quan: quantity });
     const directions = [0, 4, 6];

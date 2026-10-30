@@ -14,8 +14,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createMonsterAt } from './support/monsters.js';
-function freshRoom() {
-    freshObjectRoom({ left: 2, right: 30 });
+async function freshRoom() {
+    await freshObjectRoom({ left: 2, right: 30 });
     installPagerInput(resetInputState(), {
         expected: /candle|lamp|candelabrum|flame/,
         limit: 8,
@@ -32,13 +32,13 @@ async function burnFor(turns) {
 // light.c:snuff_light_source() selects the newest source there, so only
 // that object's timer is cancelled and its unused fuel restored.
 void test('an engulfed older candelabrum keeps its burnout timer after the newer lamp is snuffed', async () => {
-    freshRoom();
+    await freshRoom();
     const worm = await createMonsterAt('purple worm', 15, 10, NO_MINVENT);
     const holder = await floorObject(CANDELABRUM_OF_INVOCATION, 15, 10, { spe: 3, age: 16 });
     const lamp = await floorObject(OIL_LAMP, 15, 10, { age: 1 });
     assert.equal(beginObjectBurn(holder), true);
     assert.equal(beginObjectBurn(lamp), true);
-    vision_recalc(0);
+    await vision_recalc(0);
     unlinkObject(holder, game);
     await addObjectToMonsterInventory(worm, holder);
     const warning = await burnFor(1);
@@ -53,13 +53,13 @@ void test('an engulfed older candelabrum keeps its burnout timer after the newer
     assert.equal(holder.spe, 0);
 });
 void test('an engulfed older lamp still flickers while the snuffed newer candelabrum retains its candles', async () => {
-    freshRoom();
+    await freshRoom();
     const worm = await createMonsterAt('purple worm', 15, 10, NO_MINVENT);
     const lamp = await floorObject(OIL_LAMP, 15, 10, { age: 151 });
     const holder = await floorObject(CANDELABRUM_OF_INVOCATION, 15, 10, { spe: 3, age: 76 });
     assert.equal(beginObjectBurn(lamp), true);
     assert.equal(beginObjectBurn(holder), true);
-    vision_recalc(0);
+    await vision_recalc(0);
     unlinkObject(lamp, game);
     await addObjectToMonsterInventory(worm, lamp);
     const warning = await burnFor(1);

@@ -12,7 +12,7 @@ import { requireScreenRow } from './support/screen.js';
 // Wisdom through adjattrib() before do_enlightenment_effect(); every message
 // shares the tty top line until it needs --More--.
 void test('a blessed enlightenment potion reports its attribute gains before self-knowledge', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
     game.u.acurr.a[A_INT] = game.u.amax.a[A_INT] = 10;
     game.u.acurr.a[A_WIS] = game.u.amax.a[A_WIS] = 10;

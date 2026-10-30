@@ -185,7 +185,7 @@ void test('a fire trap burns scrolls lying under the monster', async () => {
     assert.deepEqual(floorObjectsAt(game.level, 11, 10), []);
 });
 void test('an unseen monster fire trap identifies floor oil and credits Wisdom after a carried potion explodes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('fire giant', 11, 10, NO_MINVENT);
     monster.mhp = monster.mhpmax = 20;

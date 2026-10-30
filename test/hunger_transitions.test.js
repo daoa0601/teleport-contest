@@ -42,7 +42,7 @@ function acknowledgeMessages() {
     return input;
 }
 void test('spending nutrition reaches Hungry and ends running', async () => {
-    freshObjectRoom({ hero: { uhunger: 151, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 151, uhs: NOT_HUNGRY } });
     requireFixtureGame(game);
     startRun(1, 0);
     await spendHeroNutrition(1);
@@ -51,7 +51,7 @@ void test('spending nutrition reaches Hungry and ends running', async () => {
     assert.match(game._lastPlineMessage, /beginning to feel hungry/);
 });
 void test('hunger temporarily weakens Strength even through sustain ability', async () => {
-    freshObjectRoom({ hero: { uhunger: 51, uhs: HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 51, uhs: HUNGRY } });
     requireFixtureGame(game);
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('sustain ability'));
     await wearHeroAccessory(ring, 'uleft');
@@ -67,7 +67,7 @@ void test('hunger temporarily weakens Strength even through sustain ability', as
     assert.match(game._lastPlineMessage, /only feel hungry now/);
 });
 void test('zero nutrition expenditure still checks the current hunger state', async () => {
-    freshObjectRoom({ hero: { uhunger: 150, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 150, uhs: NOT_HUNGRY } });
     requireFixtureGame(game);
     await spendHeroNutrition(0);
     assert.equal(game.u.uhunger, 150);
@@ -75,7 +75,7 @@ void test('zero nutrition expenditure still checks the current hunger state', as
     assert.match(game._lastPlineMessage, /beginning to feel hungry/);
 });
 void test('fainting from hunger makes the hero temporarily deaf and unable to act', async () => {
-    freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
+    await freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
     requireFixtureGame(game);
     await spendHeroNutrition(1);
     assert.equal(game.u.uhs, FAINTED);
@@ -85,7 +85,7 @@ void test('fainting from hunger makes the hero temporarily deaf and unable to ac
     assert.match(_statusLine2(), /Fainted.*Deaf/);
 });
 void test('hunger does not replace an existing involuntary delay', async () => {
-    freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
+    await freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
     requireFixtureGame(game);
     game._helplessTurns = 20;
     game._helplessReason = 'paralyzed';
@@ -96,14 +96,14 @@ void test('hunger does not replace an existing involuntary delay', async () => {
     assert.equal(!!game.deaf, false);
 });
 void test('ordinary turn metabolism owns the Hungry transition', async () => {
-    freshObjectRoom({ hero: { uhunger: 151, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 151, uhs: NOT_HUNGRY } });
     requireFixtureGame(game);
     await getHungry();
     assert.equal(game.u.uhs, HUNGRY);
     assert.match(game._lastPlineMessage, /beginning to feel hungry/);
 });
 void test('a complete meal suppresses intermediate hunger recovery messages', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             uhunger: 1, uhs: WEAK, atemp: { a: [-1, 0, 0, 0, 0, 0] },
         } });
     requireFixtureGame(game);
@@ -123,7 +123,7 @@ void test('a complete meal suppresses intermediate hunger recovery messages', as
     assert.equal(game.inventory.includes(food), false);
 });
 void test('a meal ending Hungry reports recovery only after its final bite', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             uhunger: 30, uhs: WEAK, atemp: { a: [-1, 0, 0, 0, 0, 0] },
         } });
     requireFixtureGame(game);
@@ -137,7 +137,7 @@ void test('a meal ending Hungry reports recovery only after its final bite', asy
     assert.equal(game.u.atemp.a[A_STR], 0);
 });
 void test('nutrition gained outside a meal warns about fullness and takes two turns', async () => {
-    freshObjectRoom({ hero: { uhunger: 1490, uhs: SATIATED } });
+    await freshObjectRoom({ hero: { uhunger: 1490, uhs: SATIATED } });
     requireFixtureGame(game);
     await gainHeroNutrition(10);
     assert.match(game._lastPlineMessage, /hard time getting all of it down/);
@@ -145,7 +145,7 @@ void test('nutrition gained outside a meal warns about fullness and takes two tu
     assert.equal(game._helplessDoneMessage, "You're finally finished.");
 });
 void test('an initially full eater can decline more bites when the fullness warning appears', async () => {
-    freshObjectRoom({ hero: { uhunger: 1450, uhs: SATIATED } });
+    await freshObjectRoom({ hero: { uhunger: 1450, uhs: SATIATED } });
     requireFixtureGame(game);
     const food = await addInventoryObject(FOOD_RATION, { age: game.moves });
     const input = acknowledgeMessages();
@@ -167,7 +167,7 @@ void test('an initially full eater can decline more bites when the fullness warn
     assert.match(game._lastPlineMessage, /stop eating/);
 });
 void test('rotten food keeps its pre-meal weight until the meal records it', async () => {
-    freshObjectRoom({ hero: { uhunger: 1450, uhs: SATIATED } });
+    await freshObjectRoom({ hero: { uhunger: 1450, uhs: SATIATED } });
     requireFixtureGame(game);
     initRng(1n);
     // Cursed food is rotten; its first bite halves the remaining nutrition.
@@ -193,7 +193,7 @@ void test('rotten food keeps its pre-meal weight until the meal records it', asy
     assert.doesNotMatch(_statusLine2(), /Burdened/);
 });
 void test('a breathless hero survives choking through the shared vomiting owner', async () => {
-    freshObjectRoom({ hero: { uhunger: 1999, uhs: SATIATED } });
+    await freshObjectRoom({ hero: { uhunger: 1999, uhs: SATIATED } });
     requireFixtureGame(game);
     acknowledgeMessages();
     await polymonHero(MONSTER_NAME.indexOf('iron golem'));
@@ -203,7 +203,7 @@ void test('a breathless hero survives choking through the shared vomiting owner'
     assert.equal(game._helplessReason, 'vomiting');
 });
 void test('starvation uses the ordinary final death path', async () => {
-    freshObjectRoom({ hero: { uhunger: -221, uhs: FAINTING } });
+    await freshObjectRoom({ hero: { uhunger: -221, uhs: FAINTING } });
     requireFixtureGame(game);
     game.storage = memoryStorage();
     acknowledgeMessages();
@@ -215,7 +215,7 @@ void test('starvation uses the ordinary final death path', async () => {
     assert.equal(game._deathKiller, 'starvation');
 });
 void test('choking life saving resets nutrition even when the hero is overfull', async () => {
-    freshObjectRoom({ hero: { uhunger: 1999, uhs: SATIATED, strangledTurns: 6 } });
+    await freshObjectRoom({ hero: { uhunger: 1999, uhs: SATIATED, strangledTurns: 6 } });
     requireFixtureGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -228,7 +228,7 @@ void test('choking life saving resets nutrition even when the hero is overfull',
     assert.equal(amulet.where, 'gone');
 });
 void test('a fully conscious human can die from choking through ordinary death disclosure', async () => {
-    freshObjectRoom({ hero: { uhunger: 1999, uhs: SATIATED, strangledTurns: 6 } });
+    await freshObjectRoom({ hero: { uhunger: 1999, uhs: SATIATED, strangledTurns: 6 } });
     requireFixtureGame(game);
     game.storage = memoryStorage();
     acknowledgeMessages();
@@ -238,7 +238,7 @@ void test('a fully conscious human can die from choking through ordinary death d
     assert.equal(game.u.uhunger, 2000);
 });
 void test('premature revival ends a faint without ending another involuntary delay', async () => {
-    freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
+    await freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
     requireFixtureGame(game);
     acknowledgeMessages();
     await spendHeroNutrition(1);
@@ -252,7 +252,7 @@ void test('premature revival ends a faint without ending another involuntary del
     assert.equal(game._helplessTurns, 12);
 });
 void test('fainting onto a wielded cockatrice corpse petrifies even through gloves', async () => {
-    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+    await freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
         hero: { uhunger: 1, uhs: WEAK } });
     requireFixtureGame(game);
     game.storage = memoryStorage();
@@ -276,7 +276,7 @@ void test('fainting onto a wielded cockatrice corpse petrifies even through glov
     assert.equal(loadScoreRecords()[0]?.death, 'petrified by a cockatrice corpse, while fainted from lack of food');
 });
 void test('restore keeps fainting hunger, deafness, and weakness but loses the recovery callback', async () => {
-    freshObjectRoom({ hero: { uhunger: 51, uhs: HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 51, uhs: HUNGRY } });
     requireFixtureGame(game);
     acknowledgeMessages();
     await spendHeroNutrition(51);
@@ -284,7 +284,7 @@ void test('restore keeps fainting hunger, deafness, and weakness but loses the r
     game.plname = 'SavedFaint';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('SavedFaint', storage), true);
+    assert.equal(await restoreGame('SavedFaint', storage), true);
     assert.equal(game.u.uhs, FAINTED);
     assert.equal(game.u.deafTurns, 10);
     assert.equal(currentAttribute(A_STR), strength);
@@ -296,7 +296,7 @@ void test('restore keeps fainting hunger, deafness, and weakness but loses the r
     assert.equal(game._pending_message, '');
 });
 void test('falling into water revives a fainted hero before crawling out', async () => {
-    const level = freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
+    const level = await freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });
     requireFixtureGame(game);
     acknowledgeMessages();
     await spendHeroNutrition(1);
@@ -310,7 +310,7 @@ void test('falling into water revives a fainted hero before crawling out', async
     assert.equal(!!game.program_state.gameover, false);
 });
 void test('a real vault guard revives the fainted hero before asking for a name', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 9, right: 10, top: 9, bottom: 10,
         hero: { uhunger: 1, uhs: WEAK },
     });
@@ -347,7 +347,7 @@ void test('a real vault guard revives the fainted hero before asking for a name'
     assert.ok(level.monsters.some(monster => monster.isgd));
 });
 void test('the real moveloop waits for recovery prose before unfaint changes the state', async () => {
-    freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK, umovement: 0 } });
+    await freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK, umovement: 0 } });
     requireFixtureGame(game);
     await spendHeroNutrition(1);
     game._moveloopStarted = true;

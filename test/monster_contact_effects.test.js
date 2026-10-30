@@ -19,7 +19,7 @@ function visibleText() {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
 async function contactAttacker(species) {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
     monster.mpeaceful = 0;
@@ -136,7 +136,7 @@ for (const resistant of [true, false]) {
             wall.typ = STONE;
             vision_note_blocker_change(13, y);
         }
-        vision_recalc(0);
+        await vision_recalc(0);
         await performMonsterHeroAttack(attacker, game, {
             random: limit => limit === 10 ? 9 : 0,
             rollOne: () => 1, rollDice: () => 3,

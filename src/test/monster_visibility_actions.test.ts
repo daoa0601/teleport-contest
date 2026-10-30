@@ -17,7 +17,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('kicking a detected invisible worm tail names the worm', async () => {
-    freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10, heroX: 8, heroY: 10 });
+    await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10, heroX: 8, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10,
         MM_ANGRY | MM_NOTAIL | NO_MINVENT);
@@ -29,7 +29,7 @@ void test('kicking a detected invisible worm tail names the worm', async () => {
     game.u.ux = tail.x + 1;
     worm.minvis = 1;
     grantIntrinsicProperty('detectMonsters', 'potion');
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.ok(cansee(tail.x, tail.y));
     resetInputState();
     initRng(2n);
@@ -40,7 +40,7 @@ void test('kicking a detected invisible worm tail names the worm', async () => {
 });
 
 void test('detecting an invisible monster does not let the hero see a speed change', async () => {
-    freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10, heroX: 8, heroY: 10 });
+    await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10, heroX: 8, heroY: 10 });
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 12, 10, MM_ANGRY | NO_MINVENT);
     jackal.minvis = 1;
@@ -60,7 +60,7 @@ void test('detecting an invisible monster does not let the hero see a speed chan
 
 
 void test('terse force-bolt feedback does not name even a visible target', async () => {
-    freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 8, right: 22, top: 10, bottom: 10,
         heroX: 8, heroY: 10, flags: { verbose: false } });
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 12, 10, MM_ANGRY | NO_MINVENT);
@@ -80,7 +80,7 @@ void test('terse force-bolt feedback does not name even a visible target', async
 
 for (const perception of ['visible', 'terse', 'detected invisible']) {
     void test(`death-ray miss feedback for a ${perception} target`, async () => {
-        freshObjectRoom({ left: 8, right: 30, top: 9, bottom: 11,
+        await freshObjectRoom({ left: 8, right: 30, top: 9, bottom: 11,
             flags: { verbose: perception !== 'terse' } });
         requirePlayingGame(game);
         const soldier = await createMonsterAt('soldier', 12, 10, MM_ANGRY | NO_MINVENT);

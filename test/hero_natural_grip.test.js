@@ -16,7 +16,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 async function gripScene(form = 'lichen', defender = 'goblin') {
-    freshObjectRoom({ gameplaySeed: 97n, flags: { verbose: true } });
+    await freshObjectRoom({ gameplaySeed: 97n, flags: { verbose: true } });
     installPolymorphedHero(form);
     const monster = await createMonsterAt(defender, 11, 10, NO_MINVENT);
     requirePlayingGame(game);

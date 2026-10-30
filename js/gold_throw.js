@@ -130,7 +130,7 @@ export async function resolveGoldMonsterContact({ state, monster, gold, wakeMons
     const wasSleeping = !!monster.msleeping;
     const value = quantity(gold) * (OBJECT_COST[gold.otyp] ?? 1);
     monster.msleeping = 0;
-    finishMonsterEating(monster, state);
+    await finishMonsterEating(monster, state);
     if (!monster.isgd && rn2(4) === 0)
         await angerMonster?.(monster);
     if (cansee(monster.mx, monster.my)) {
@@ -163,7 +163,7 @@ async function settleGoldOnFloor(state, gold, x, y, dz = 0) {
     // decides whether the landing spot belongs to the resident keeper.
     await sellHeroDroppedObject(gold, x, y, state);
     const survivor = await stack_object(gold, state) || gold;
-    newsym(x, y);
+    await newsym(x, y);
     return survivor;
 }
 async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallowed = false, wakeMonster = null, }) {

@@ -20,7 +20,7 @@ const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 // -multi is captured, so steal.c:steal() always sees olddelay 0: an animal
 // thief still runs out of patience with armor the hero is already doffing.
 void test('a monkey can give up on boots the hero is already taking off', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const boots = await addInventoryObject(LOW_BOOTS);
     wearHeroArmor(boots);
@@ -44,7 +44,7 @@ void test('a monkey can give up on boots the hero is already taking off', async 
 // With olddelay always 0, steal.c:steal() restarts the suit's full oc_delay
 // instead of the turns still owed on the interrupted doffing.
 void test('a seduced hero restarts the full delay of a started suit removal', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);
@@ -88,7 +88,7 @@ void test('a seduced hero restarts the full delay of a started suit removal', as
 // C allmain.c counts negative multi down after movemon(); a nymph acting in
 // that monster phase still restarts the whole suit delay.
 void test('a nymph acting during suit removal restarts the full delay', async () => {
-    freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
+    await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(suit);

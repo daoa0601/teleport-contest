@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('consuming one mail scroll provides no nutrition and reports unsatisfying junk mail', async () => {
-    freshObjectRoom({ hero: { uhunger: 200, uhs: NOT_HUNGRY } });
+    await freshObjectRoom({ hero: { uhunger: 200, uhs: NOT_HUNGRY } });
     requirePlayingGame(game);
     installPolymorphedHero('fire elemental');
     const mail = await addInventoryObject(OBJECT_NAMES.indexOf('mail'), { quantity: 2 });

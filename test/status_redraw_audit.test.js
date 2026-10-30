@@ -14,7 +14,7 @@ function status(row = 23) {
     return requireScreenRow(row).map(cell => cell.ch).join('');
 }
 void test('wearing and removing a strength ring updates displayed strength', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), { spe: 2 });
     await bot();
     await wearHeroAccessory(ring, 'uleft');
@@ -25,7 +25,7 @@ void test('wearing and removing a strength ring updates displayed strength', asy
     assert.match(status(22), /St:12\b/);
 });
 void test('a strangulation amulet displays its condition until removed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     await bot();
     pushKeys(' '.repeat(10));
@@ -37,7 +37,7 @@ void test('a strangulation amulet displays its condition until removed', async (
     assert.doesNotMatch(status(), /\bStrngl\b/);
 });
 void test('a leather drum displays deafness after its deafening row', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const drum = await addInventoryObject(LEATHER_DRUM);
     await bot();
     pushKeys('y' + ' '.repeat(10));
@@ -46,7 +46,7 @@ void test('a leather drum displays deafness after its deafening row', async () =
     assert.match(status(), /\bDeaf\b/);
 });
 void test('curing timed deafness removes the displayed condition', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await makeDeaf(5, { talk: false });
     await bot();
     await makeDeaf(0, { talk: false });
@@ -54,7 +54,7 @@ void test('curing timed deafness removes the displayed condition', async () => {
     assert.doesNotMatch(status(), /\bDeaf\b/);
 });
 void test('a levitation ring displays Lev while worn and clears it on landing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'));
     await bot();
     pushKeys(' '.repeat(10));

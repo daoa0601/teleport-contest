@@ -18,7 +18,7 @@ import { applyInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('thrown venom leaves sight available until its pending blindness is applied', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     assert.equal(cansee(11, 10), true);
 
     const effect = prepareHeroThrownBlindness(BLINDING_VENOM, game, () => 12);
@@ -38,7 +38,7 @@ void test('thrown venom leaves sight available until its pending blindness is ap
 });
 
 void test('the Eyes of the Overworld keep sight after a cream pie covers the hero', async () => {
-    freshObjectRoom({ role: 'monk' });
+    await freshObjectRoom({ role: 'monk' });
     ensureQuestStatus().touched_artifact = true;
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
     await applyInventoryObject(eyes);
@@ -61,7 +61,7 @@ for (const [species, message] of [
     ['Cyclops', 'Your eye stings.'],
 ] as const) {
     void test(`venom in already-blind ${species || 'human'} eyes uses the current anatomy`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
@@ -78,7 +78,7 @@ for (const [species, message] of [
 }
 
 void test('a pie covers the body of an already-blind floating eye', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -94,7 +94,7 @@ void test('a pie covers the body of an already-blind floating eye', async () => 
 });
 
 void test('eye count follows the body rather than its current blindness', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
@@ -116,7 +116,7 @@ for (const [species, message] of [
     ['floating eye', 'Your cornea feels better.'],
 ] as const) {
     void test(`prayer heals blind ${species || 'human'} eyes with matching anatomy`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');

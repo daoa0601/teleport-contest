@@ -24,7 +24,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
 
 async function escort() {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.flags.rndmongen = false;
     const vault = createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT });
@@ -91,13 +91,13 @@ void test('recovering unseen gold gives a telepathically sensed guard the same h
         game.u.blindTurns = 20;
         game.u.telepathy = true;
         game.u.hallucinationTurns = 20;
-        vision_recalc(0);
+        await vision_recalc(0);
         const coins = pickup
             ? await floorObject(GOLD_PIECE, guard.mx, guard.my, { quan: 71 })
             : await knownObject(GOLD_PIECE, { quan: 71 });
         if (!pickup) await addObjectToMonsterInventory(guard, coins);
         initRng(1n);
-        newsym(guard.mx, guard.my);
+        await newsym(guard.mx, guard.my);
         assert.equal(cansee(guard.mx, guard.my), false);
 
         await runMonsterAction(guard, game);

@@ -24,8 +24,8 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const species = (name) => MONSTER_NAME.indexOf(name);
-function room({ seed = 41n, hero = {} } = {}) {
-    freshObjectRoom({ gameplaySeed: seed, hero });
+async function room({ seed = 41n, hero = {} } = {}) {
+    await freshObjectRoom({ gameplaySeed: seed, hero });
     requirePlayingGame(game);
     const input = resetInputState();
     installPagerInput(input, {
@@ -43,7 +43,7 @@ for (const [dragon, property, message] of [
     ['green dragon', 'poisonResistance', 'feel healthy'],
 ]) {
     void test(`${dragon} flesh conveys lasting ${property}`, async () => {
-        room();
+        await room();
         requirePlayingGame(game);
         await grantCorpseIntrinsic(species(dragon));
         assert.equal(game.u[property], true);
@@ -52,14 +52,14 @@ for (const [dragon, property, message] of [
     });
 }
 void test('resisting fire does not mean that a baby dragon conveys that resistance', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     await grantCorpseIntrinsic(species('baby red dragon'));
     assert.equal(!!game.u.fireResistance, false);
     assert.equal(game._pending_message || '', '');
 });
 void test('a corpse adds a permanent source despite existing resistance from the hero form', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     grantIntrinsicProperty('poisonResistance', 'form');
     await grantCorpseIntrinsic(species('green dragon'));
@@ -67,14 +67,14 @@ void test('a corpse adds a permanent source despite existing resistance from the
     assert.match(game._pending_message, /especially healthy/);
 });
 void test('a repeated permanent grant stays quiet', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     grantIntrinsicProperty('fireResistance', 'outside');
     await grantCorpseIntrinsic(species('red dragon'));
     assert.equal(game._pending_message || '', '');
 });
 void test('a grant waits for its message before installing the permanent source', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     const input = resetInputState();
     await plineWithContinuation('An earlier message leaves very little room for the next sentence.');
@@ -90,7 +90,7 @@ void test('a grant waits for its message before installing the permanent source'
     assert.equal(game.u.fireResistance, true);
 });
 void test('floating-eye flesh reveals a living monster to a blind hero', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 14, 10);
     setHeroBlindnessTurns(20);
@@ -102,7 +102,7 @@ void test('floating-eye flesh reveals a living monster to a blind hero', async (
 void test('a tengu offers poison resistance or one teleport ability, never two at once', async () => {
     const seen = new Set();
     for (let seed = 1; seed <= 24; seed++) {
-        room({ seed: BigInt(seed) });
+        await room({ seed: BigInt(seed) });
         requirePlayingGame(game);
         await grantCorpseIntrinsic(species('tengu'));
         const granted = ['poisonResistance', 'teleportation', 'teleportControl'].filter((property) => hasIntrinsicProperty(property, 'outside'));
@@ -115,7 +115,7 @@ void test('a tengu offers poison resistance or one teleport ability, never two a
 void test('a hill giant can improve strength or grant nothing', async () => {
     let gains = 0, unchanged = 0;
     for (let seed = 1; seed <= 12; seed++) {
-        room({ seed: BigInt(seed) });
+        await room({ seed: BigInt(seed) });
         requirePlayingGame(game);
         const before = game.u.acurr.a[A_STR];
         await grantCorpseIntrinsic(species('hill giant'));
@@ -129,7 +129,7 @@ void test('a hill giant can improve strength or grant nothing', async () => {
     assert.ok(gains > 0 && unchanged > 0);
 });
 void test('yellow-dragon flesh grants exactly one temporary resistance', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     await grantCorpseIntrinsic(species('yellow dragon'));
     const granted = ['acidResistance', 'stoneResistance'].filter((property) => game.u[property]);
@@ -142,7 +142,7 @@ void test('yellow-dragon flesh grants exactly one temporary resistance', async (
     assert.equal(hasIntrinsicProperty(property, 'outside'), false);
 });
 void test('temporary corpse resistance extends existing protection and saturates its timer', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     for (const property of ['acidResistance', 'stoneResistance']) {
         game.u[`${property}Turns`] = TIMEOUT - 1;
@@ -153,7 +153,7 @@ void test('temporary corpse resistance extends existing protection and saturates
     assert.equal(game._pending_message || '', '');
 });
 void test('depleted magical energy receives a small buzz without increasing its maximum', async () => {
-    room({ hero: { uen: 0, uenmax: 12, uenpeak: 12 } });
+    await room({ hero: { uen: 0, uenmax: 12, uenpeak: 12 } });
     requirePlayingGame(game);
     await corpseEnergyBuzz();
     assert.ok(game.u.uen >= 1 && game.u.uen <= 3);
@@ -163,7 +163,7 @@ void test('depleted magical energy receives a small buzz without increasing its 
 void test('a buzz can raise maximum energy by one but never exceeds it', async () => {
     let increased = 0, unchanged = 0;
     for (let seed = 1; seed <= 20; seed++) {
-        room({ seed: BigInt(seed), hero: { uen: 12, uenmax: 12, uenpeak: 12 } });
+        await room({ seed: BigInt(seed), hero: { uen: 12, uenmax: 12, uenpeak: 12 } });
         requirePlayingGame(game);
         await corpseEnergyBuzz();
         assert.equal(game.u.uen, game.u.uenmax);
@@ -178,7 +178,7 @@ void test('a buzz can raise maximum energy by one but never exceeds it', async (
     assert.ok(increased > 0 && unchanged > 0);
 });
 void test('acid resistance expires while an independent permanent source survives', async () => {
-    room({ hero: { acidResistanceTurns: 1, stoneResistanceTurns: 1 } });
+    await room({ hero: { acidResistanceTurns: 1, stoneResistanceTurns: 1 } });
     requirePlayingGame(game);
     refreshProperty('acidResistance');
     grantIntrinsicProperty('stoneResistance', 'outside');
@@ -194,7 +194,7 @@ for (const [flesh, property] of [
     ['cockatrice', 'stoneResistance'],
 ]) {
     void test(`${property} stays active throughout a dangerous meal and expires when it stops`, async () => {
-        const input = room();
+        const input = await room();
         requirePlayingGame(game);
         game.u[`${property}Turns`] = 1;
         refreshProperty(property);
@@ -215,7 +215,7 @@ for (const [flesh, property] of [
     });
 }
 void test('sleeping through resistance expiry suppresses its warning', async () => {
-    room({ hero: { acidResistanceTurns: 1 } });
+    await room({ hero: { acidResistanceTurns: 1 } });
     requirePlayingGame(game);
     refreshProperty('acidResistance');
     await putHeroToSleep(10);
@@ -224,7 +224,7 @@ void test('sleeping through resistance expiry suppresses its warning', async () 
     assert.equal(game._pending_message || '', '');
 });
 void test('prayer freezes corpse resistance through the ordinary turn loop', async () => {
-    const input = room({ hero: { acidResistanceTurns: 3, invulnerable: true } });
+    const input = await room({ hero: { acidResistanceTurns: 3, invulnerable: true } });
     requirePlayingGame(game);
     refreshProperty('acidResistance');
     game._moveloopStarted = true;
@@ -236,7 +236,7 @@ void test('prayer freezes corpse resistance through the ordinary turn loop', asy
     assert.equal(game.u.acidResistanceTurns, 3);
 });
 void test('the ordinary turn loop expires corpse resistance', async () => {
-    const input = room({ hero: { acidResistanceTurns: 1 } });
+    const input = await room({ hero: { acidResistanceTurns: 1 } });
     requirePlayingGame(game);
     refreshProperty('acidResistance');
     game._moveloopStarted = true;
@@ -249,7 +249,7 @@ void test('the ordinary turn loop expires corpse resistance', async () => {
     assert.equal(game.u.acidResistance, false);
 });
 void test('stone resistance ending while wielding flesh uses life saving and releases the corpse', async () => {
-    room({ hero: { stoneResistanceTurns: 1 } });
+    await room({ hero: { stoneResistanceTurns: 1 } });
     requirePlayingGame(game);
     refreshProperty('stoneResistance');
     const corpse = await addInventoryObject(CORPSE, { corpsenm: species('cockatrice') });
@@ -265,7 +265,7 @@ void test('stone resistance ending while wielding flesh uses life saving and rel
     assert.ok(game.inventory.includes(corpse));
 });
 void test('gloves keep wielded petrifying flesh safe when temporary resistance ends', async () => {
-    room({ hero: { stoneResistanceTurns: 1 } });
+    await room({ hero: { stoneResistanceTurns: 1 } });
     requirePlayingGame(game);
     refreshProperty('stoneResistance');
     const corpse = await addInventoryObject(CORPSE, { corpsenm: species('cockatrice') });
@@ -277,7 +277,7 @@ void test('gloves keep wielded petrifying flesh safe when temporary resistance e
     assert.equal(game.u.stoneResistance, false);
 });
 void test('strength gain stays quiet when gloves already fix effective strength', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
     await flushPendingTopline();
@@ -287,7 +287,7 @@ void test('strength gain stays quiet when gloves already fix effective strength'
     assert.equal(game._pending_message || '', '');
 });
 void test('exceptional strength has larger random gains below 18/85 and single gains above it', async () => {
-    room();
+    await room();
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = game.u.amax.a[A_STR] = 18;
     await gainHeroStrength();

@@ -50,7 +50,7 @@ void test('a gained level retains the HP and power that losing it removes', asyn
     const attributes = [10, 10, 10, 10, 10, 10];
     attributes[A_CON] = 14;
     attributes[A_WIS] = 12;
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { female: false },
         hero: {
             ulevel: 1, ulevelmax: 1,
@@ -88,7 +88,7 @@ void test('a gained level retains the HP and power that losing it removes', asyn
     assert.equal(game.u.uenmax, 5);
 });
 void test('losexp removes the exact retained level HP and power increments', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             ulevel: 20, uhp: 10, uhpmax: 99, uen: 213, uenmax: 213,
             uexp: newExperienceThreshold(19),
             uhpinc: Array.from({ length: 30 }, () => 0), ueninc: Array.from({ length: 30 }, () => 0),
@@ -109,7 +109,7 @@ void test('losexp removes the exact retained level HP and power increments', asy
     });
 });
 void test('losexp preserves the source maximum-HP floor', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             ulevel: 2, uhp: 3, uhpmax: 12, uen: 4, uenmax: 4,
             uexp: 40, uhpinc: [0, 9], ueninc: [0, 6],
         } });
@@ -122,7 +122,7 @@ void test('losexp preserves the source maximum-HP floor', async () => {
     ], [1, 1, 10, 0, 0]);
 });
 void test('level drain applies the HP floor before subtracting the lost level health', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
             ulevel: 2, uhp: 20, uhpmax: 20,
             uhpinc: [0, 11],
         } });
@@ -134,7 +134,7 @@ void test('level drain applies the HP floor before subtracting the lost level he
 });
 for (const lifesaving of [false, true]) {
     void test(`named level-one drain ${lifesaving ? 'resumes HP and power loss after life saving' : 'is fatal before HP and power loss'}`, async () => {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
                 ulevel: 1, uhp: 100, uhpmax: 100, uen: 20, uenmax: 20,
                 uexp: 5, uhpinc: [0, 2], ueninc: [0, 3],
             } });
@@ -156,7 +156,7 @@ for (const lifesaving of [false, true]) {
     });
 }
 void test('unnamed level-one loss clears experience without killing a healthy hero', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, uhp: 20, uhpmax: 20, uexp: 5 } });
+    await freshObjectRoom({ hero: { ulevel: 1, uhp: 20, uhpmax: 20, uexp: 5 } });
     requireFixtureGame(game);
     pushKeys(' '.repeat(30));
     const died = await loseHeroExperience();
@@ -167,7 +167,7 @@ void test('unnamed level-one loss clears experience without killing a healthy he
 });
 for (const wielded of [false, true]) {
     void test(`Stormbringer ${wielded ? 'defends its wielder from level drain' : 'does not defend a hero merely carrying it'}`, async () => {
-        freshObjectRoom({ role: 'wizard', hero: {
+        await freshObjectRoom({ role: 'wizard', hero: {
                 ulevel: 4, uhp: 30, uhpmax: 30, uexp: 100,
                 ualign: { type: -1, record: 0 },
             } });
@@ -186,7 +186,7 @@ for (const wielded of [false, true]) {
 }
 for (const unchanging of [false, true]) {
     void test(`level drain destroying a monster form ${unchanging ? 'can kill an unchanging hero' : 'returns the hero to human form'}`, async () => {
-        freshObjectRoom({ hero: { ulevel: 4, uhp: 30, uhpmax: 30, uexp: 100 } });
+        await freshObjectRoom({ hero: { ulevel: 4, uhp: 30, uhpmax: 30, uexp: 100 } });
         requireFixtureGame(game);
         installPolymorphedHero('giant ant', { hitPoints: 1, maxHitPoints: 20 });
         if (unchanging)
@@ -207,7 +207,7 @@ for (const unchanging of [false, true]) {
 void test('losing an elven experience ability also loses its resistance', async () => {
     const elf = races.find(race => race.name === 'elf');
     assert.ok(elf);
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'wizard', race: elf,
         hero: { ulevel: 4, uhp: 30, uhpmax: 30 },
     });
@@ -220,7 +220,7 @@ void test('losing an elven experience ability also loses its resistance', async 
     assert.equal(game.u.sleepResistance, false);
 });
 void test('wizard level reduction uses the full loss owner even with drain resistance', async () => {
-    freshObjectRoom({ flags: { debug: true, verbose: true }, hero: {
+    await freshObjectRoom({ flags: { debug: true, verbose: true }, hero: {
             ulevel: 4, ulevelmax: 4, uhp: 30, uhpmax: 30,
             uhpinc: [0, 1, 2, 3], uen: 20, uenmax: 20,
             ueninc: [0, 1, 2, 3],
@@ -237,7 +237,7 @@ void test('wizard level reduction uses the full loss owner even with drain resis
 });
 void test('level drain lowers both monster HP values and the hidden human HP', async () => {
     for (const seed of [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n]) {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
                 ulevel: 4, uhp: 30, uhpmax: 30, uhpinc: [0, 0, 0, 2],
             } });
         requireFixtureGame(game);
@@ -252,7 +252,7 @@ void test('level drain lowers both monster HP values and the hidden human HP', a
     }
 });
 void test('a form resistance does not hide permanent ability gain or loss feedback', async () => {
-    freshObjectRoom({ role: 'monk', hero: { ulevel: 11, uhp: 40, uhpmax: 40 } });
+    await freshObjectRoom({ role: 'monk', hero: { ulevel: 11, uhp: 40, uhpmax: 40 } });
     requireFixtureGame(game);
     installPolymorphedHero('fire ant', { hitPoints: 40 });
     assert.equal(game.u.fireResistance, true);
@@ -266,7 +266,7 @@ void test('a form resistance does not hide permanent ability gain or loss feedba
     assert.equal(game.u.ulevel, 10);
 });
 void test('one large experience award gains one level and keeps only that level range', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, uexp: 0, urexp: 0 } });
+    await freshObjectRoom({ hero: { ulevel: 1, uexp: 0, urexp: 0 } });
     requireFixtureGame(game);
     const messages = [];
     addExperience(1000);
@@ -279,7 +279,7 @@ void test('one large experience award gains one level and keeps only that level 
     assert.ok(gameLogEvents().some(event => event.text === 'gained experience level 2'));
 });
 void test('gaining a level heals the monster body without increasing its maximum HP', async () => {
-    freshObjectRoom({ hero: { ulevel: 4, uhp: 30, uhpmax: 30 } });
+    await freshObjectRoom({ hero: { ulevel: 4, uhp: 30, uhpmax: 30 } });
     requireFixtureGame(game);
     installPolymorphedHero('giant ant', { hitPoints: 9, maxHitPoints: 10 });
     pushKeys(' '.repeat(30));
@@ -292,7 +292,7 @@ void test('gaining a level heals the monster body without increasing its maximum
 });
 void test('extra levels at the maximum give capped health and power but no new level', async () => {
     const attributes = [18, 18, 18, 18, 18, 18];
-    freshObjectRoom({ role: 'wizard', hero: {
+    await freshObjectRoom({ role: 'wizard', hero: {
             ulevel: 30, uhp: 1190, uhpmax: 1200, uen: 590, uenmax: 600,
             uexp: 170000000, acurr: { a: attributes },
         } });
@@ -310,7 +310,7 @@ void test('extra levels at the maximum give capped health and power but no new l
     assert.equal(gameLogEvents().length, 0);
 });
 void test('a new rank is logged once and regaining it logs the experience level', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { ulevel: 2 } });
+    await freshObjectRoom({ role: 'archeologist', hero: { ulevel: 2 } });
     const messages = [];
     const publish = async (message) => messages.push(message);
     await gainExperienceLevel({ publish });
@@ -323,7 +323,7 @@ void test('a new rank is logged once and regaining it logs the experience level'
     assert.ok(messages.includes('Welcome back to experience level 3.'));
 });
 void test('the complete gain owner grants the new role ability and its feedback', async () => {
-    freshObjectRoom({ role: 'caveman', hero: { ulevel: 6 } });
+    await freshObjectRoom({ role: 'caveman', hero: { ulevel: 6 } });
     requireFixtureGame(game);
     assert.ok(!game.u.fast);
     const messages = [];
@@ -333,7 +333,7 @@ void test('the complete gain owner grants the new role ability and its feedback'
     assert.ok(messages.includes('You feel quick!'));
 });
 void test('awful sink water awards score and checks the next experience level', async () => {
-    const level = freshObjectRoom({ hero: { ulevel: 1, uexp: 19, urexp: 0 } });
+    const level = await freshObjectRoom({ hero: { ulevel: 1, uexp: 19, urexp: 0 } });
     requireFixtureGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = SINK;
     pushKeys('y' + ' '.repeat(40));
@@ -343,8 +343,8 @@ void test('awful sink water awards score and checks the next experience level', 
     assert.equal(game.u.uexp, 20);
     assert.equal(game.u.urexp, 4);
 });
-void test('maximum-level random experience gains add to existing experience', () => {
-    freshObjectRoom({ hero: { ulevel: 30, uexp: 170000000 } });
+void test('maximum-level random experience gains add to existing experience', async () => {
+    await freshObjectRoom({ hero: { ulevel: 30, uexp: 170000000 } });
     initRng(1n);
     const gained = randomExperience({ gaining: true });
     const replacement = randomExperience();

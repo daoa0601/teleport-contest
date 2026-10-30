@@ -35,12 +35,12 @@ async function hiddenSnake(x = 12) {
     await floorObject(APPLE, x, 10);
     assert.equal(await hideMonsterUnder(snake), true);
     snake.minvis = false;
-    newsym(x, 10);
+    await newsym(x, 10);
     return snake;
 }
 
 void test('attacking an unnoticed concealed defender reveals it with an indefinite name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const snake = await hiddenSnake();
     assert.equal(glyphAt(12, 10)?.kind, 'object');
 
@@ -52,7 +52,7 @@ void test('attacking an unnoticed concealed defender reveals it with an indefini
 });
 
 void test('a defender seen hiding immediately emerges from hiding before combat', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const snake = await createMonsterAt('garter snake', 12, 10, NO_MINVENT);
     await floorObject(APPLE, 12, 10);
@@ -70,7 +70,7 @@ void test('a defender seen hiding immediately emerges from hiding before combat'
 });
 
 void test('an intervening message changes recent-hider revelation to a simple notice', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const snake = await createMonsterAt('garter snake', 12, 10, NO_MINVENT);
     await floorObject(APPLE, 12, 10);
@@ -86,7 +86,7 @@ void test('an intervening message changes recent-hider revelation to a simple no
 });
 
 void test('an unaware hero dreams about the species rather than the hidden pet name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const snake = await hiddenSnake();
     initializePet(snake);
     setMonsterGivenName(snake, 'Ribbon');
@@ -99,7 +99,7 @@ void test('an unaware hero dreams about the species rather than the hidden pet n
 });
 
 void test('sensing a concealed defender suppresses its surprise message without leaving it hidden', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const snake = await hiddenSnake();
     grantIntrinsicProperty('detectMonsters', 'outside');
 
@@ -110,7 +110,7 @@ void test('sensing a concealed defender suppresses its surprise message without 
 });
 
 void test('combat feedback reveals both concealed actors while keeping admission visibility fixed', async () => {
-    freshObjectRoom({ moves: 100 });
+    await freshObjectRoom({ moves: 100 });
     const attacker = await hiddenSnake(12);
     const defender = await hiddenSnake(13);
     const visible = canSeeMonsterCombat(attacker, defender);
@@ -125,7 +125,7 @@ void test('combat feedback reveals both concealed actors while keeping admission
 });
 
 void test('a missed attack reveals an ordinary mimic appearance before naming it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await floorObject(APPLE, 13, 10);
     const mimic = await createMonsterAt('small mimic', 13, 10, NO_MINVENT);
     const attacker = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
@@ -141,12 +141,12 @@ void test('a missed attack reveals an ordinary mimic appearance before naming it
 });
 
 void test('combat reveals a borrowed monster appearance even after Escape suppresses messages', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     const dog = await createMonsterAt('little dog', 13, 10, NO_MINVENT);
     initializePet(dog);
     dog.meating = 4;
-    newsym(dog.mx, dog.my);
+    await newsym(dog.mx, dog.my);
     initRng(1n);
     await answerPrompts(beginMonsterMealMimicry(dog), input, [{
         prompt: /You see a kitten appear where your little dog was!.*--More--/s,
@@ -170,7 +170,7 @@ void test('combat reveals a borrowed monster appearance even after Escape suppre
 });
 
 void test('a visible attack marks a still-unseen participant on the map', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
     const defender = await createMonsterAt('jackal', 13, 10, NO_MINVENT);
     defender.minvis = true;

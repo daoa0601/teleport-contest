@@ -18,7 +18,7 @@ import { installHeroWeaponSkills } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function arena(species = 'shade', role = 'wizard') {
-    freshObjectRoom({ role, hero: { ulevel: 30, uhp: 200, uhpmax: 200 } });
+    await freshObjectRoom({ role, hero: { ulevel: 30, uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     game.u.acurr.a[A_STR] = 12;
     game.u.amax.a[A_STR] = 12;

@@ -34,7 +34,7 @@ async function hiddenHiderAt(x: number, y: number) {
 }
 
 void test('a floor object deleted through delobj reveals the hider beneath', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const chest = await knownObject(OBJECT_NAMES.indexOf('chest'));
     placeCreatedObject(chest, 12, 10);
@@ -48,7 +48,7 @@ void test('a floor object deleted through delobj reveals the hider beneath', asy
 });
 
 void test('the Amulet of Yendor survives delobj', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await knownObject(AMULET_OF_YENDOR);
     placeCreatedObject(amulet, 10, 10);
@@ -62,7 +62,7 @@ void test('the Amulet of Yendor survives delobj', async () => {
 });
 
 void test('an ordinary deletion still removes the object entirely', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const potion = await knownObject(OBJECT_NAMES.indexOf('gain energy'));
     placeCreatedObject(potion, 10, 10);
@@ -74,7 +74,7 @@ void test('an ordinary deletion still removes the object entirely', async () => 
 });
 
 void test('being eaten food stops being the meal when deleted', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ration = await addInventoryObject(OBJECT_NAMES.indexOf('food ration'));
     assert.ok(ration.invlet);
@@ -88,7 +88,7 @@ void test('being eaten food stops being the meal when deleted', async () => {
 });
 
 void test('an attached leash is released through the leash owner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const leash = await knownObject(OBJECT_NAMES.indexOf('leash'));
     const monster = await createMonsterAt('housecat', 11, 10);
@@ -104,7 +104,7 @@ void test('an attached leash is released through the leash owner', async () => {
 });
 
 void test('nested billed content survives container destruction on the bill', async () => {
-    freshObjectRoom({ hero: { ux: 10, uy: 10 } });
+    await freshObjectRoom({ hero: { ux: 10, uy: 10 } });
     requirePlayingGame(game);
     game.u.ux = 10;
     game.u.uy = 10;
@@ -137,7 +137,7 @@ void test('nested billed content survives container destruction on the bill', as
 
 for (const [name, type] of [['magic lamp', MAGIC_LAMP], ['oil lamp', OIL_LAMP]] as const) {
     void test(`deleting a lit ${name} removes its light before the next message`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         for (let x = 8; x <= 18; x++) {
             for (let y = 8; y <= 12; y++)

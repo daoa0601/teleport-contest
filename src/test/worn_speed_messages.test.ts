@@ -7,7 +7,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('creation and slime speed changes remain silent', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     for (const amount of [2, -2, -4]) {
         monster.mspeed = monster.permspeed = amount === 2 ? 0 : 2;
@@ -19,7 +19,7 @@ void test('creation and slime speed changes remain silent', async () => {
 });
 
 void test('petrification slowing obeys verbose while ordinary speed changes do not', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     monster.mspeed = monster.permspeed = 2;
 

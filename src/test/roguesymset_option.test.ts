@@ -36,8 +36,8 @@ void test('a bare roguesymset element fails silently like parseoptions()', () =>
     assert.equal(bare.configErrors[0]?.errors.length, 0);
 });
 
-void test('the rogue set choice survives into the live state', () => {
-    freshObjectRoom({ flags: { verbose: false } });
+void test('the rogue set choice survives into the live state', async () => {
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=roguesymset:RogueEpyx');
 

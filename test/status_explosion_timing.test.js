@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('an explosion displays the hero injury on the next status flush', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await bot();
     pushKeys(' ');
     await explode(game.u.ux, game.u.uy, PHYS_EXPL_TYPE, 5, MON_EXPLODE, EXPL_NOXIOUS);

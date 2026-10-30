@@ -29,7 +29,7 @@ void test('a Lua shapechanger in a fire-elemental body illuminates nearby dark f
     game.u.ux = 10;
     game.u.uy = 10;
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(14, 10), false);
     initRng(2n);
     await lua.executeAsync(`des.monster({ id = "chameleon", x = 6, y = 4,
@@ -72,7 +72,7 @@ for (const female of [undefined, false, true]) {
     });
 }
 void test('Lua class and random monster requests default to male after birth', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await init_dungeons();
     await startLuaCore(t);
@@ -94,7 +94,7 @@ void test('Lua class and random monster requests default to male after birth', a
     }
 });
 void test('Lua honors explicit gender for a named species but preserves a fixed species gender', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await init_dungeons();
     await startLuaCore(t);

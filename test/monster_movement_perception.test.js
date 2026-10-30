@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 const RIN_STEALTH = OBJECT_NAMES.indexOf('stealth');
 for (const ringSlot of [null, 'inventory', 'uleft', 'uright']) {
     void test(`fixed teleport tracks respect a stealth ring ${ringSlot || 'not present'}`, async () => {
-        const level = freshObjectRoom({ heroX: 10, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 10, heroY: 10 });
         requirePlayingGame(game);
         initTrack(game);
         if (ringSlot) {
@@ -38,7 +38,7 @@ for (const ringSlot of [null, 'inventory', 'uleft', 'uright']) {
 }
 for (const blockedBy of ['fog genocide', 'protection from shape changers']) {
     void test(`a vampire cannot fog under a locked door with ${blockedBy}`, async () => {
-        const level = freshObjectRoom({ heroX: 15, heroY: 12 });
+        const level = await freshObjectRoom({ heroX: 15, heroY: 12 });
         requirePlayingGame(game);
         const wolf = await createMonsterAt('wolf', 10, 10, MM_ANGRY | NO_MINVENT);
         wolf.cham = MONSTER_NAME.indexOf('vampire');
@@ -63,7 +63,7 @@ void test('a xorn locates an invisible gold carrier for its adjacent attack', as
     let noGoldMisses = 0;
     for (let seed = 1; seed <= 8; seed++) {
         for (const gold of [0, 100]) {
-            freshObjectRoom({ heroX: 10, heroY: 10,
+            await freshObjectRoom({ heroX: 10, heroY: 10,
                 hero: { invisibleTurns: 50, uhp: 200, uhpmax: 200, uac: 100 } });
             requirePlayingGame(game);
             setHeroGoldAmount(game, gold);

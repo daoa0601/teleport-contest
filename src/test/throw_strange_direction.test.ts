@@ -15,7 +15,7 @@ import { requireScreenRow } from './support/screen.js';
 // direction!" and dothrow.c throw_obj() returns ECMD_CANCEL with the
 // message left on the topline and the missile still carried.
 void test('a throw direction key unbound by the QWERTZ layout is rejected visibly', async () => {
-    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { tips: false, verbose: false } });
     applyNethackrc('OPTIONS=number_pad:-1,!cmdassist');
     const dart = await addInventoryObject(DART, { invlet: 'a' });
 

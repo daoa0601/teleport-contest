@@ -113,7 +113,7 @@ void test('whole-game saving and cached level travel retain absolute stair and h
     hole.dst = { dnum: 0, dlevel: 8 };
     cacheDestinations([7, 8], 6);
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Traveler', storage), true);
+    assert.equal(await restoreGame('Traveler', storage), true);
     game.flags.verbose = false;
     installPagerInput(resetInputState(), { expected: /stairs|hole|fall|shaft/, limit: 4 });
     game.u.ux = 12;

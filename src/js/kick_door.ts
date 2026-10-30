@@ -51,7 +51,7 @@ export async function kickDoor(x: number, y: number, average: number, responses:
             await exerciseAttribute(A_STR, true);
             door.doormask = D_BROKEN;
         }
-        feel_newsym(x, y);
+        await feel_newsym(x, y);
         // Preserve the keeper's pre-break visibility until shop billing.
         vision_note_blocker_change(x, y);
         if (shopDoor) {
@@ -60,7 +60,7 @@ export async function kickDoor(x: number, y: number, average: number, responses:
         }
         await witnessDoorKick(x, y, true);
     } else {
-        if (heroIsBlind()) feel_location(x, y);
+        if (heroIsBlind()) await feel_location(x, y);
         await exerciseAttribute(A_STR, true);
         await pline(heroIsDeaf() || rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
         await witnessDoorKick(x, y, false);

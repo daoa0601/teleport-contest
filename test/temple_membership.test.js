@@ -22,8 +22,8 @@ void test('the priest quest temple is recognized throughout its Lua-created inte
             assert.equal(templeRoomAt(game, x, y)?.room, temple, `temple square ${x},${y}`);
     }
 });
-void test('an irregular temple does not own holes in its bounding rectangle', () => {
-    freshObjectRoom();
+void test('an irregular temple does not own holes in its bounding rectangle', async () => {
+    await freshObjectRoom();
     requirePlayingGame(game);
     const temple = createRoom({
         lx: 8, hx: 12, ly: 8, hy: 12, rtype: TEMPLE, irregular: true,

@@ -279,7 +279,7 @@ export async function finishEggHatchTimer(event, state = game, currentTurn = sta
             event.redraw = true;
     }
     if (event.redraw)
-        newsym(event.x, event.y);
+        await newsym(event.x, event.y);
     event.finishPending = false;
     event.finished = true;
     return event;

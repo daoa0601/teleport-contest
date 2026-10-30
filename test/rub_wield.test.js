@@ -69,7 +69,7 @@ void test('a welded primary weapon prevents wielding a lamp to rub it', async ()
 });
 for (const peaceful of [false, true]) {
     void test(`killing a ${peaceful ? 'peaceful' : 'hostile'} djinni released from a lamp applies its final attitude to alignment`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const lamp = await addInventoryObject(MAGIC_LAMP, {
             spe: 1, age: 200, invlet: 'a', wielded: true, owornmask: W_WEP,

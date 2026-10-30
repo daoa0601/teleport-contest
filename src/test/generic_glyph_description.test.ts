@@ -13,7 +13,7 @@ import { createStaffedShop } from './support/shop.js';
 import { farlookText } from './support/farlook.js';
 
 void test('a generic spellbook glyph farlooks without a shop price', async () => {
-    freshObjectRoom({ flags: { tips: false, help: false } });
+    await freshObjectRoom({ flags: { tips: false, help: false } });
     requirePlayingGame(game);
     const { roomno } = await createStaffedShop({
         left: 9, right: 17, top: 6, bottom: 14, keeperX: 17, keeperY: 10,
@@ -21,7 +21,7 @@ void test('a generic spellbook glyph farlooks without a shop price', async () =>
     game.u.ushops = [roomno];
     const book = await floorObject(SPE_MAGIC_MAPPING, 15, 6, { dknown: false });
     assert.equal(book.dknown, false);
-    newsym(15, 6);
+    await newsym(15, 6);
     await flush_screen(1);
 
     const text = await farlookText('lllllkkkk.');

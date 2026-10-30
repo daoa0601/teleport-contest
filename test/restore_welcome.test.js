@@ -13,8 +13,8 @@ import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
-function restoringWizard() {
-    freshObjectRoom({ role: 'wizard', hero: { ualignbase: [0, 0] }, flags: { female: false, initgend: 0 } });
+async function restoringWizard() {
+    await freshObjectRoom({ role: 'wizard', hero: { ualignbase: [0, 0] }, flags: { female: false, initgend: 0 } });
     game.plname = game.displayName = 'Ada';
     const input = resetInputState();
     const messages = [];
@@ -31,34 +31,34 @@ async function restoredMessages(messages) {
     return messages.join('\n');
 }
 void test('a converted restored hero is greeted with the permanent current alignment', async () => {
-    const messages = restoringWizard();
+    const messages = await restoringWizard();
     game.u.ualignbase = [1, 0];
     game.u.ualign = { type: 1, record: 0 };
     const text = await restoredMessages(messages);
     assert.match(text, /Hello Ada, the lawful human Wizard, welcome back to NetHack!/);
 });
 void test('a restored hero wearing an opposite alignment is described as adrift', async () => {
-    const messages = restoringWizard();
+    const messages = await restoringWizard();
     game.u.ualign = { type: -1, record: 0 };
     const text = await restoredMessages(messages);
     assert.match(text, /the adrift chaotic human Wizard, welcome back/);
 });
 void test('a polymorphed restored hero is greeted using the innate body gender', async () => {
-    const messages = restoringWizard();
+    const messages = await restoringWizard();
     installPolymorphedHero('wolf');
     game.u.mfemale = true;
     const text = await restoredMessages(messages);
     assert.match(text, /the female human Wizard, welcome back/);
 });
 void test('a hallucinating restored hero hears the studio announcement before the greeting', async () => {
-    const messages = restoringWizard();
+    const messages = await restoringWizard();
     setPropertyTimeout('hallucination', 100);
     const text = await restoredMessages(messages);
     const announcement = text.indexOf('NetHack is filmed in front of an undead studio audience.');
     assert.ok(announcement >= 0 && text.indexOf('Hello Ada') > announcement, text);
 });
 void test('a doomed restored monster body is reminded of self-genocide instead of welcomed', async () => {
-    const messages = restoringWizard();
+    const messages = await restoringWizard();
     requireFixtureGame(game);
     installPolymorphedHero('wolf');
     const vital = game.mvitals[game.urace.mnum];
@@ -69,7 +69,7 @@ void test('a doomed restored monster body is reminded of self-genocide instead o
     assert.doesNotMatch(text, /welcome back/);
 });
 void test('restoring reminds the hero of heat, smoke, and the level annotation after the greeting', async () => {
-    const messages = restoringWizard();
+    const messages = await restoringWizard();
     requireFixtureGame(game);
     game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 20, flags: { hellish: true } })];
     game.level.flags.temperature = 1;
@@ -82,7 +82,7 @@ void test('restoring reminds the hero of heat, smoke, and the level annotation a
     assert.ok(greeting >= 0 && heat > greeting && smoke > heat && annotation > smoke, text);
 });
 void test('welcome runs its Lua hook first and records the same identity in the chronicle', async (t) => {
-    restoringWizard();
+    await restoringWizard();
     game.plname = 'ada';
     const core = await startLuaCore(t);
     core.execute(`

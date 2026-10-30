@@ -7,7 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an erinys strengthened to native level fifty uses the fixed special-monster hit points', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 0, record: 0, abuse: 43 } }, gameplaySeed: 1n });
+    await freshObjectRoom({ hero: { ualign: { type: 0, record: 0, abuse: 43 } }, gameplaySeed: 1n });
 
     const erinys = await makemonAt(MONSTER_NAME.indexOf('erinys'), 12, 10, MM_NOMSG | NO_MINVENT);
 

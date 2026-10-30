@@ -42,7 +42,7 @@ export async function summonMonsterInsects(caster: Monster, state: PlayingGameSt
         monster.mpeaceful = 0;
         monster.mtame = 0;
         setMonsterMalign(monster, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         created.push(monster);
     }
 

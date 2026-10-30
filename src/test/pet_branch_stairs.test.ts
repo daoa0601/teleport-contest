@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 
 void test('a whistled pet stays beside its master on branch stairs without needing a food lure', async () => {
-    const level = freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
     level.requireAt(10, 10).typ = STAIRS;
     game.stairs = { sx: 10, sy: 10, up: false, isladder: false,
         tolev: { dnum: 1, dlevel: 1 }, next: null, u_traversed: false };

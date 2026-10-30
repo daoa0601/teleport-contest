@@ -97,7 +97,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     if (projectedFatalLine && announcesDeath && deathType !== STONING) {
         // You("die...") runs vpline(): pending vision changes and the raw
         // injury reach the map before tty pages older prose.
-        if (game.vision_full_recalc) vision_recalc(0);
+        if (game.vision_full_recalc) await vision_recalc(0);
         await flush_screen(1);
         await waitForCurrentMonsterMore();
     }

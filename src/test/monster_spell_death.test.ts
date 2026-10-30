@@ -77,7 +77,7 @@ async function attackingPriest(seed = 9n, species = 'aligned cleric') {
     game.storage = memoryStorage();
     game.flags.disclose = '-i -a -v -c -o';
     updateHeroRoomMembership(game);
-    vision_recalc(0);
+    await vision_recalc(0);
     initRng(seed);
     return { input, priest };
 }
@@ -89,7 +89,7 @@ void test('a blind deaf telepath observes the priest summoning insects during co
     game.u.telepathy = true;
     game.u.deafTurns = 10;
     await makeBlinded(10, { state: game, talk: false });
-    vision_recalc(0);
+    await vision_recalc(0);
     initRng(2n);
     const messages: string[] = [];
 

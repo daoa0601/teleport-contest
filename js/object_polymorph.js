@@ -73,13 +73,13 @@ export async function polymorphFloorObject(object, { state = game } = {}) {
         const learned = cansee(object.ox, object.oy);
         await do_osshock(object, { state });
         if (cover)
-            maybeUnhideAt(state.u.ux, state.u.uy, state);
+            await maybeUnhideAt(state.u.ux, state.u.uy, state);
         return { affected: true, learned };
     }
     const replacement = await poly_obj(object, STRANGE_OBJECT, { state });
     if (!replacement)
         throw new Error(`Floor polymorph lost replacement for object ${object.o_id}`);
-    newsym(replacement.ox, replacement.oy);
+    await newsym(replacement.ox, replacement.oy);
     return { affected: true, learned: false };
 }
 export function obj_unpolyable(object, { state = game } = {}) {
@@ -502,7 +502,7 @@ export async function stone_to_flesh_obj(object, { state = game } = {}) {
         await plineWithContinuation(vegetarian
             ? 'You smell the odor of meat.' : 'You smell a delicious smell.', { noRepeat: true });
     }
-    newsym(x, y);
+    await newsym(x, y);
     return affected;
 }
 async function animateStoneObject(object, x, y, golem, state) {

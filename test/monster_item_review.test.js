@@ -23,7 +23,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 for (const condition of ['sleeping', 'paralyzed']) {
     void test(`a bugler stops selecting reveille for a killed ${condition} soldier`, async () => {
-        freshObjectRoom({ heroX: 14, heroY: 10 });
+        await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const bugler = await createMonsterAt('soldier', 10, 10, MM_ANGRY | NO_MINVENT);
         bugler.mhp = 1;
@@ -41,7 +41,7 @@ for (const condition of ['sleeping', 'paralyzed']) {
 }
 for (const branch of [true, false]) {
     void test(`an Amulet carrier escapes ${branch ? 'branch' : 'ordinary'} stairs to their destination`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         game.dungeons = [
             createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 }),
@@ -72,7 +72,7 @@ for (const branch of [true, false]) {
 }
 for (const visible of [true, false]) {
     void test(`a monster's new pit is ${visible ? 'revealed in sight' : 'unknown out of sight'}`, async () => {
-        const level = freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         level.flags.hardfloor = true;
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
@@ -81,7 +81,7 @@ for (const visible of [true, false]) {
         assert.ok(wand);
         if (!visible) {
             await makeBlinded(10, { state: game, talk: false });
-            vision_recalc(0);
+            await vision_recalc(0);
         }
         const messages = [];
         await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
@@ -97,7 +97,7 @@ for (const visible of [true, false]) {
 }
 for (const force of [true, false]) {
     void test(`a cursed leash ${force ? 'releases for forced' : 'blocks ordinary'} level teleport`, async () => {
-        const level = freshObjectRoom({ heroX: 14, heroY: 10 });
+        const level = await freshObjectRoom({ heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
         game.u.uz = { dnum: 0, dlevel: 25 };
@@ -116,7 +116,7 @@ for (const force of [true, false]) {
 }
 for (const [distance, alreadyKnown] of [[1, false], [10, false], [10, true]]) {
     void test(`rummaging ${distance === 1 ? 'nearby' : 'at a distance'} preserves ${alreadyKnown ? 'known' : 'unknown'} bag appearance correctly`, async () => {
-        freshObjectRoom({ right: 30, heroX: 10, heroY: 10 });
+        await freshObjectRoom({ right: 30, heroX: 10, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10 + distance, 10, NO_MINVENT);
         const bag = await addObjectToMonsterInventory(monster, await knownObject(SACK, {
@@ -138,7 +138,7 @@ for (const [distance, alreadyKnown] of [[1, false], [10, false], [10, true]]) {
 void test('hallucination changes the perceived bottle occupant while the actual ghost frightens the drinker', async () => {
     const descriptions = new Set();
     for (let seed = 1; seed <= 8; seed++) {
-        freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
+        await freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const monster = await createMonsterAt('orc', 10, 10, NO_MINVENT);
         const potion = await addObjectToMonsterInventory(monster, await knownObject(POT_HEALING), game);
@@ -163,7 +163,7 @@ void test('hallucination changes the perceived bottle occupant while the actual 
 });
 for (const condition of ['blind deaf', 'blind telepath deaf', 'invisible caster deaf', 'invisible caster hearing']) {
     void test(`insect summoning feedback respects a hero who is ${condition}`, async () => {
-        freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
+        await freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
         requirePlayingGame(game);
         const monster = await createMonsterAt('aligned cleric', 10, 10, MM_ANGRY | NO_MINVENT);
         monster.m_lev = 10;
@@ -171,7 +171,7 @@ for (const condition of ['blind deaf', 'blind telepath deaf', 'invisible caster 
         monster.muy = game.u.uy;
         if (condition.startsWith('blind')) {
             await makeBlinded(10, { state: game, talk: false });
-            vision_recalc(0);
+            await vision_recalc(0);
         }
         else
             monster.minvis = true;

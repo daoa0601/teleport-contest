@@ -10,7 +10,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a deaf hero gets the hearing refusal from an awake animal', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10);
     dog.msleeping = 0;
     dog.mstrategy = STRAT_WAITFORU;
@@ -25,7 +25,7 @@ void test('a deaf hero gets the hearing refusal from an awake animal', async () 
 
 for (const disguise of ['hidden', 'object'] as const) {
     void test(`chat does not rouse a ${disguise} monster`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const mimic = await createMonsterAt('small mimic', 11, 10);
         mimic.msleeping = 0;
         mimic.mstrategy = STRAT_WAITFORU;
@@ -40,7 +40,7 @@ for (const disguise of ['hidden', 'object'] as const) {
 }
 
 void test('chatting down to an awake mounted horse gets its answer and spends a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const horse = await createSaddledSteed('horse', { x: 10, y: 10 });
     game.u.usteed = horse;
     horse.msleeping = 0;
@@ -52,7 +52,7 @@ void test('chatting down to an awake mounted horse gets its answer and spends a 
 });
 
 void test('chatting upward gives the native refusal without spending a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await runExtendedCommand('chat', '<');
 
@@ -61,7 +61,7 @@ void test('chatting upward gives the native refusal without spending a turn', as
 });
 
 void test('chatting at a long worm tail rouses its waiting head without a reply', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const worm = await createMonsterAt('long worm', 13, 10);
     worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
     worm.mstrategy = STRAT_WAITFORU;
@@ -74,7 +74,7 @@ void test('chatting at a long worm tail rouses its waiting head without a reply'
 });
 
 void test('an unseen eating worm reveals its head when addressed through its tail', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const worm = await createMonsterAt('long worm', 13, 10);
     worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
     worm.msleeping = 0;
@@ -91,7 +91,7 @@ void test('an unseen eating worm reveals its head when addressed through its tai
 
 
 void test('chatting at a statue gets no reaction', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const statue = await knownObject(STATUE, {});
     statue.ox = 11;
     statue.oy = 10;
@@ -104,7 +104,7 @@ void test('chatting at a statue gets no reaction', async () => {
 });
 
 void test('a blind hero gets no answer from a statue', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const statue = await knownObject(STATUE, {});
     statue.ox = 11;
     statue.oy = 10;
@@ -118,7 +118,7 @@ void test('a blind hero gets no answer from a statue', async () => {
 });
 
 void test('a hallucinating hero mistakes the statue for a monster', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const statue = await knownObject(STATUE, {});
     statue.ox = 11;
     statue.oy = 10;
@@ -132,7 +132,7 @@ void test('a hallucinating hero mistakes the statue for a monster', async () => 
 });
 
 void test('chatting at a wall is like talking to a wall', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = 5;
 
     await runExtendedCommand('chat', 'l');
@@ -142,7 +142,7 @@ void test('chatting at a wall is like talking to a wall', async () => {
 });
 
 void test('a secret door hides behind the wall chat answer', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = SDOOR;
 
     await runExtendedCommand('chat', 'l');
@@ -151,7 +151,7 @@ void test('a secret door hides behind the wall chat answer', async () => {
 });
 
 void test('a blind hero only talks to a wall it has mapped', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const wall = level.requireAt(11, 10);
     wall.typ = 5;
     wall.lastseentyp = 5;
@@ -163,7 +163,7 @@ void test('a blind hero only talks to a wall it has mapped', async () => {
 });
 
 void test('a blind hero cannot talk to an unmapped wall', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     const wall = level.requireAt(11, 10);
     wall.typ = 5;
     wall.lastseentyp = 0;
@@ -176,7 +176,7 @@ void test('a blind hero cannot talk to an unmapped wall', async () => {
 });
 
 void test('a deaf hero keeps the wall chat to itself', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = 5;
     game.u.deafTurns = 5;
 
@@ -186,7 +186,7 @@ void test('a deaf hero keeps the wall chat to itself', async () => {
 });
 
 void test('a hallucinating hero gets a wall with personality', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = 5;
     game.u.hallucinationTurns = 20;
 
@@ -197,7 +197,7 @@ void test('a hallucinating hero gets a wall with personality', async () => {
 });
 
 void test('chatting to yourself is a bad habit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     await runExtendedCommand('chat', '.');
 
@@ -206,7 +206,7 @@ void test('chatting to yourself is a bad habit', async () => {
 });
 
 void test('chatting while swallowed reaches no one outside', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.u.uswallow = 1;
 
     await runExtendedCommand('chat', 'l');
@@ -216,7 +216,7 @@ void test('chatting while swallowed reaches no one outside', async () => {
 });
 
 void test('a silent hero cannot speak', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.u.umonnum = 0; // giant ant: MS_SILENT
 
     await runExtendedCommand('chat', 'l');

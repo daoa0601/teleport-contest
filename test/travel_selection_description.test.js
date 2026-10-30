@@ -17,12 +17,12 @@ function topline() {
 // calls even for an unseen vampire, must preserve that already-read line.
 for (const pick of ['.', ',', ';', ':']) {
     void test(`displaying the message window after travel picked with ${pick} keeps the wall description`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             flags: { tips: false, verbose: false },
         });
         level.requireAt(12, 10).typ = VWALL;
-        vision_recalc(0);
-        newsym(12, 10);
+        await vision_recalc(0);
+        await newsym(12, 10);
         const input = resetInputState();
         input.feed(`ll${pick}`);
         await rhack('_'.charCodeAt(0));
@@ -33,13 +33,13 @@ for (const pick of ['.', ',', ';', ':']) {
     });
 }
 void test('displaying the message window keeps a reachable dark-room travel description', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { tips: false, verbose: false },
     });
     const floor = level.requireAt(12, 10);
     floor.lit = floor.waslit = false;
-    vision_recalc(0);
-    newsym(12, 10);
+    await vision_recalc(0);
+    await newsym(12, 10);
     const input = resetInputState();
     input.feed('ll,');
     await rhack('_'.charCodeAt(0));
@@ -49,13 +49,13 @@ void test('displaying the message window keeps a reachable dark-room travel desc
     assert.equal(game.u.ux, 11, 'travel begins toward the reachable floor');
 });
 void test('displaying the message window keeps the stone travel description', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         flags: { tips: false, verbose: false },
     });
     const stone = level.requireAt(12, 10);
     stone.typ = STONE;
-    vision_recalc(0);
-    newsym(12, 10);
+    await vision_recalc(0);
+    await newsym(12, 10);
     const input = resetInputState();
     input.feed('ll,');
     await rhack('_'.charCodeAt(0));
@@ -64,7 +64,7 @@ void test('displaying the message window keeps the stone travel description', as
     assert.equal(topline(), 'stone (no travel path)');
 });
 void test('travel clears the selection prompt when autodescribe is off', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { tips: false, verbose: false },
         iflags: { autodescribe: false },
     });
@@ -77,10 +77,10 @@ void test('travel clears the selection prompt when autodescribe is off', async (
     assert.equal(game.u.ux, 11);
 });
 void test('an empty message window leaves the travel description while reading the next command', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false } });
     level.requireAt(12, 10).typ = VWALL;
-    vision_recalc(0);
-    newsym(12, 10);
+    await vision_recalc(0);
+    await newsym(12, 10);
     const input = resetInputState();
     input.feed('ll.');
     await rhack('_'.charCodeAt(0));

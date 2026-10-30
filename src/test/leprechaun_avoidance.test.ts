@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a leprechaun carrying gold retreats from a penniless adjacent hero instead of attacking', async () => {
-    freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10, heroX: 14, heroY: 10 });
+    await freshObjectRoom({ left: 10, right: 14, top: 10, bottom: 10, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
     const leprechaun = await createMonsterAt('leprechaun', 13, 10, MM_ANGRY | NO_MINVENT);
     leprechaun.msleeping = 0;
@@ -26,7 +26,7 @@ void test('a leprechaun carrying gold retreats from a penniless adjacent hero in
 
 for (const heroGold of [100, 200]) {
     void test(`a leprechaun carrying 100 gold pieces still approaches a hero carrying ${heroGold}`, async () => {
-        freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
+        await freshObjectRoom({ left: 8, right: 18, top: 8, bottom: 12, heroX: 13, heroY: 10 });
         requirePlayingGame(game);
         const leprechaun = await createMonsterAt('leprechaun', 10, 10, MM_ANGRY | NO_MINVENT);
         await addObjectToMonsterInventory(leprechaun, await knownObject(GOLD_PIECE, { quantity: 100 }), game);

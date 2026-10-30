@@ -11,7 +11,7 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('changing between mimic bodies preserves the disguise chosen by #monster', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     installPolymorphedHero('small mimic');
     await runMonsterAbilityCommand();
     assert.equal(game.u.m_ap_type, M_AP_OBJECT);
@@ -26,7 +26,7 @@ void test('changing between mimic bodies preserves the disguise chosen by #monst
 });
 
 void test('a hidden snake is exposed when its new body cannot hide under objects', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     installPolymorphedHero('garter snake');
     await floorObject(ROCK, game.u.ux, game.u.uy);
     await runMonsterAbilityCommand();

@@ -265,7 +265,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
     else if (trap && is_magical_trap(trap.ttyp)) {
         await explode(digX, digY, 0, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL, { state });
         deleteTrap(trap, state);
-        newsym(digX, digY);
+        await newsym(digX, digY);
     }
     else if (isPoolOrLava(digX, digY, state)) {
         await plineWithContinuation(`The ${liquidName(isLavaAt(digX, digY, state) ? LAVAPOOL : POOL, state)} sloshes furiously for a moment, then subsides.`);
@@ -404,9 +404,9 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     trap.madeby_u = herosFault;
     trap.tseen = 0;
     if (cansee(x, y))
-        seeTrap(trap, state);
+        await seeTrap(trap, state);
     else if (madeByYou)
-        feelTrap(trap, state);
+        await feelTrap(trap, state);
     const trapWord = trapName(ttyp, { ignoreHallucination: true, state });
     const through = ttyp === HOLE ? 'through' : 'in';
     if (madeByYou) {
@@ -707,7 +707,7 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
     location.emptygrave = 0;
     location.disturbed = 0;
     deleteEngravingAt(digX, digY, state.level);
-    newsym(digX, digY);
+    await newsym(digX, digY);
 }
 // C hack.c:spot_checks().  Stale ice timers and ice-held object state must go
 // when terrain stopped being ice.

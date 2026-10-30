@@ -20,13 +20,13 @@ function fileErrors(rc: string) {
 // it also reaches the Rogue level; the BOULDER= statement (cfgfiles.c
 // cnf_line_BOULDER()) fills the primary set only.
 void test('the boulder option overrides the Rogue level boulder symbol', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=boulder:\\57');
     game.rogue_level = { ...game.u.uz };
 
     await floorObject(BOULDER, 11, 10, { dknown: true });
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '9');
@@ -34,20 +34,20 @@ void test('the boulder option overrides the Rogue level boulder symbol', async (
 });
 
 void test('the BOULDER statement leaves the Rogue level boulder symbol alone', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     applyNethackrc('BOULDER=57');
     game.rogue_level = { ...game.u.uz };
 
     await floorObject(BOULDER, 11, 10, { dknown: true });
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).ch, '`');
     delete game.rogue_level;
 
     // Off the Rogue level the statement still applies.
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '9');
 });
@@ -79,7 +79,7 @@ void test('the boulder option refuses clashing symbols', () => {
 // look pass, so the default '`' stops meaning boulder while the override
 // character gains the meaning.
 void test('typed look moves the boulder meaning to the override symbol', async () => {
-    freshObjectRoom({ flags: { tips: false, help: false } });
+    await freshObjectRoom({ flags: { tips: false, help: false } });
     applyNethackrc('OPTIONS=boulder:0');
     const first = resetInputState();
     first.feed('/?0\n');
@@ -145,7 +145,7 @@ async function editViaFullMenu(option: string, response: string): Promise<void> 
 // every boulder glyph, so a boulder already on the map changes symbol at
 // once when the option is set from the options menu.
 void test('changing the boulder option mid-game redraws displayed boulders', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     // A remembered boulder outside the room: doredraw() repaints it from
     // glyph memory, not from a live projection of the floor.
@@ -169,7 +169,7 @@ void test('changing the boulder option mid-game redraws displayed boulders', asy
 // optfn_boulder() get_val falls back to the active set's rock-class
 // symbol, which Blank replaces with \032 on the Rogue level.
 void test('the options menu boulder row follows the displayed rock symbol', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     game.rogue_level = { ...game.u.uz };
     applyNethackrc('OPTIONS=roguesymset:Blank');

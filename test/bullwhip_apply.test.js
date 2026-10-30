@@ -149,7 +149,7 @@ void test('a whip revives a Rider corpse with remote acquisition feedback', asyn
     const rider = MONSTER_NAME.indexOf('Death');
     assert.ok(rider >= 0, 'Death must have a monster species.');
     const corpse = await floorObject(CORPSE, 10, 10, { corpsenm: rider });
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };

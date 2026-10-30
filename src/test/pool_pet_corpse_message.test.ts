@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a pet swap is announced before the hero touches the corpse on its square', async () => {
-    freshObjectRoom({ flags: { explore: true, pickup: true, pickup_types: '' } });
+    await freshObjectRoom({ flags: { explore: true, pickup: true, pickup_types: '' } });
     requirePlayingGame(game);
     const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(kitten, { state: game });

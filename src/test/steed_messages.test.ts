@@ -13,7 +13,7 @@ import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('wizard riding offers to heal a leg even when both legs are wounded', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     await woundHeroLegs('both', 20);
     const input = resetInputState();
     const messages: string[] = [];
@@ -37,7 +37,7 @@ void test('wizard riding offers to heal a leg even when both legs are wounded', 
 });
 
 async function mountedSteed(species: string, female = false) {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
     const steed = await createSaddledSteed(species);
     steed.female = female;
     await runExtendedCommand('ride', 'l');
@@ -105,7 +105,7 @@ void test('hallucination independently changes a waking steed\'s subject and ref
 
 for (const { female, pronoun } of [{ female: false, pronoun: 'he' }, { female: true, pronoun: 'she' }]) {
     void test(`a trapped ${female ? 'female' : 'male'} steed is described as ${pronoun}`, async () => {
-        const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+        const level = await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
         const steed = await createSaddledSteed('forest centaur');
         steed.female = female;
         steed.mtrapped = 1;

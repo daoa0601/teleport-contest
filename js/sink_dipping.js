@@ -104,7 +104,7 @@ export async function sinkBacksUp(x = game.u.ux, y = game.u.uy) {
     if (!sight)
         await pline(formatSeenMessage('a ring shining in its midst.'));
     placeCreatedObject(await mkobj(4, true), x, y);
-    newsym(x, y);
+    await newsym(x, y);
     await exerciseAttribute(A_DEX, true);
     await exerciseAttribute(A_WIS, true);
     location.looted = (location.looted ?? 0) | S_LRING;

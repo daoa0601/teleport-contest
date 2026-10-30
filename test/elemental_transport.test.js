@@ -167,7 +167,7 @@ void test('restoring a water level applies the initial border bounce to its bubb
     game.plname = 'BubbleSaver';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('BubbleSaver', storage), true);
+    assert.equal(await restoreGame('BubbleSaver', storage), true);
     const restored = game.level.elementalBubbles?.[0];
     assert.ok(restored);
     assert.equal(restored.x, 4, 'restoration paints the bubble without translating it');

@@ -9,7 +9,7 @@ import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 void test('an hallucinating acid-blob hero perceives changing liquids in its acid splash', async () => {
     const liquids = new Set();
     for (let seed = 1; seed <= 8; seed++) {
-        freshRoomWithPolymorphedHero('acid blob', { gameplaySeed: seed,
+        await freshRoomWithPolymorphedHero('acid blob', { gameplaySeed: seed,
             hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
         const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);

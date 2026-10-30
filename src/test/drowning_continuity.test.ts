@@ -18,7 +18,7 @@ void test('swimming within a pool checks inventory only on the one-in-five water
     let wet = 0;
     let dry = 0;
     for (let seed = 1n; seed <= 20n; seed++) {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             heroX: 11,
             hero: { swimming: true, breathless: true, uinwater: 1,
                 ux0: 10, uy0: 10, dx: 1, dy: 0 },
@@ -46,7 +46,7 @@ void test('swimming within a pool checks inventory only on the one-in-five water
 
 for (const relocation of ['teleport', 'hurtle'] as const) {
     void test(`${relocation} from another pool retains the direction used by the next drowning check`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { swimming: true, breathless: true, uinwater: 1,
                 ux0: 10, uy0: 10, dx: 0, dy: -1 },
         });
@@ -73,7 +73,7 @@ for (const relocation of ['teleport', 'hurtle'] as const) {
 
 for (const direction of ['.', '<', '>'] as const) {
     void test(`a ${direction} direction after entering water checks the current pool itself`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { swimming: true, breathless: true, uinwater: 1,
                 ux0: 9, uy0: 10, dx: 1, dy: 0 },
         });
@@ -94,7 +94,7 @@ for (const direction of ['.', '<', '>'] as const) {
 }
 
 void test('a direction prompt can make a different pool count as continuous after teleporting', async () => {
-    const level = freshObjectRoom({ hero: { swimming: true, breathless: true, uinwater: 1 } });
+    const level = await freshObjectRoom({ hero: { swimming: true, breathless: true, uinwater: 1 } });
     level.requireAt(10, 10).typ = POOL;
     level.requireAt(14, 10).typ = level.requireAt(14, 11).typ = POOL;
     resetInputState().feed('k');
@@ -114,7 +114,7 @@ void test('a direction prompt can make a different pool count as continuous afte
 });
 
 void test('turning a run stores its new direction before another pool check', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { swimming: true, breathless: true, uinwater: 1,
             ux0: 9, uy0: 10, dx: 1, dy: 0 },
     });
@@ -136,7 +136,7 @@ void test('turning a run stores its new direction before another pool check', as
 });
 
 void test('a blocked travel guess clears the stale direction for the next pool check', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { swimming: true, breathless: true, uinwater: 1,
             ux0: 9, uy0: 10, dx: 1, dy: 0 },
     });
@@ -159,7 +159,7 @@ void test('a blocked travel guess clears the stale direction for the next pool c
 });
 
 void test('cancelling a pick-axe direction retains the zero vector left by its direction hints', async () => {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         hero: { swimming: true, breathless: true, uinwater: 1,
             ux0: 9, uy0: 10, dx: 1, dy: 0 },
     });

@@ -17,15 +17,15 @@ async function givePetrifyingWeapon(monster) {
     await equipMonsterObject(monster, await knownObject(LEATHER_GLOVES), W_ARMG);
     return await equipMonsterObject(monster, await untimedCorpse(MONSTER_NAME.indexOf('cockatrice')), W_WEP);
 }
-function freshMonsterFight() {
-    freshObjectRoom({
+async function freshMonsterFight() {
+    await freshObjectRoom({
         heroX: 18, left: 10, right: 20, top: 10, bottom: 10,
         flags: { verbose: false },
     });
     requirePlayingGame(game);
 }
 void test('a corpse weapon starts petrification without also dealing the initial hit damage', async () => {
-    freshObjectRoom({ flags: { verbose: false } });
+    await freshObjectRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     goblin.mpeaceful = false;
@@ -38,7 +38,7 @@ void test('a corpse weapon starts petrification without also dealing the initial
     assert.equal(game.u.uhp, health);
 });
 void test('a corpse weapon leaves the defeated monster and its equipment in a statue', async () => {
-    freshMonsterFight();
+    await freshMonsterFight();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 10, 10, NO_MINVENT);
     initializePet(soldier, { state: game });
@@ -57,7 +57,7 @@ void test('a corpse weapon leaves the defeated monster and its equipment in a st
 });
 for (const gloves of [false, true]) {
     void test(`an unarmed monster ${gloves ? 'wearing gloves survives' : 'without gloves petrifies from'} touching a cockatrice`, async () => {
-        freshMonsterFight();
+        await freshMonsterFight();
         requirePlayingGame(game);
         const soldier = await createMonsterAt('soldier', 10, 10, NO_MINVENT);
         initializePet(soldier, { state: game });
@@ -80,7 +80,7 @@ for (const gloves of [false, true]) {
 }
 for (const protection of ['lizard corpse', 'life-saving amulet']) {
     void test(`a ${protection} saves the defender from a corpse weapon without extra hit damage`, async () => {
-        freshMonsterFight();
+        await freshMonsterFight();
         requirePlayingGame(game);
         const soldier = await createMonsterAt('soldier', 10, 10, NO_MINVENT);
         initializePet(soldier, { state: game });
@@ -102,7 +102,7 @@ for (const protection of ['lizard corpse', 'life-saving amulet']) {
     });
 }
 void test('life saving protects an attacker without passing its interrupted hit to the defender', async () => {
-    freshMonsterFight();
+    await freshMonsterFight();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 10, 10, NO_MINVENT);
     initializePet(soldier, { state: game });
@@ -121,7 +121,7 @@ void test('life saving protects an attacker without passing its interrupted hit 
 });
 for (const form of ['flesh golem', 'stone golem']) {
     void test(`a corpse weapon cannot petrify a hero in ${form} form`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         installPolymorphedHero(form);
         const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
@@ -136,7 +136,7 @@ for (const form of ['flesh golem', 'stone golem']) {
 }
 for (const cancelled of [false, true]) {
     void test(`a ${cancelled ? 'cancelled' : 'normal'} cockatrice ${cancelled ? 'only bites' : 'petrifies'} another monster`, async () => {
-        freshMonsterFight();
+        await freshMonsterFight();
         requirePlayingGame(game);
         const cockatrice = await createMonsterAt('cockatrice', 10, 10, NO_MINVENT);
         initializePet(cockatrice, { state: game });
@@ -155,7 +155,7 @@ for (const cancelled of [false, true]) {
     });
 }
 void test('a corpse weapon turns a flesh golem defender into a living stone golem', async () => {
-    freshMonsterFight();
+    await freshMonsterFight();
     requirePlayingGame(game);
     const captain = await createMonsterAt('captain', 10, 10, NO_MINVENT);
     initializePet(captain, { state: game });

@@ -123,7 +123,7 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
             const innateSight = requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & 0x01000000;
             if (heroIsInvisible(state) && !oldIntrinsic && !extrinsicProperty(property, state)
                 && !innateSight && !heroIsBlind(state)) {
-                newsym(state.u.ux, state.u.uy);
+                await newsym(state.u.ux, state.u.uy);
                 await pline('Suddenly you can see yourself.');
                 learnObjectType(object.otyp, state);
             }
@@ -131,7 +131,7 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
             syncHeroInvisibility(state);
             if (!oldIntrinsic && !extrinsicProperty(property, state) && !invisibilityIsBlocked(state)
                 && !state.u.seeInvisible && !heroIsBlind(state)) {
-                newsym(state.u.ux, state.u.uy);
+                await newsym(state.u.ux, state.u.uy);
                 await pline(`Your body takes on a ${heroIsHallucinating(state) ? 'normal' : 'strange'} transparency...`);
                 learnObjectType(object.otyp, state);
             }

@@ -5,7 +5,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a wizard terrain wish can make a blessed looted fountain', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('blessed looted fountain', { wizardWish: true });
     assert.ok(result?.noWish, 'Terrain creation should complete without an inventory object');
     const fountain = requireGameLevel().requireAt(game.u.ux, game.u.uy);
@@ -15,14 +15,14 @@ void test('a wizard terrain wish can make a blessed looted fountain', async () =
     assert.equal(requireGameLevel().flags.nfountains, 1);
 });
 void test('a wizard terrain wish can create a pit at the hero location', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('pit', { wizardWish: true });
     assert.ok(result?.noWish);
     assert.ok(requireGameLevel().traps.some(trap => trap.tx === game.u.ux
         && trap.ty === game.u.uy && trap.ttyp === PIT));
 });
 void test('a door wish keeps its wall orientation and requested trap and lock', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const location = requireGameLevel().requireAt(game.u.ux, game.u.uy);
     location.typ = HWALL;
     location.horizontal = true;
@@ -33,7 +33,7 @@ void test('a door wish keeps its wall orientation and requested trap and lock', 
     assert.equal(location.doormask, D_LOCKED | D_TRAPPED);
 });
 void test('an altar wish honors an explicit alignment', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('lawful altar', { wizardWish: true });
     assert.ok(result?.noWish);
     const altar = requireGameLevel().requireAt(game.u.ux, game.u.uy);

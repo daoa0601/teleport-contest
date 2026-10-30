@@ -16,7 +16,7 @@ for (const [role, target, expected] of [
     ['caveman', 30, 'Pioneer'],
 ]) {
     void test(`a raised ${role} hero is titled ${expected}`, async () => {
-        freshObjectRoom({ role, flags: { debug: true }, hero: { ulevel: 1 } });
+        await freshObjectRoom({ role, flags: { debug: true }, hero: { ulevel: 1 } });
         requireFixtureGame(game);
         initRng(1n);
         await runExtendedCommand('levelchange', `${target}\n` + ' '.repeat(60));
@@ -25,7 +25,7 @@ for (const [role, target, expected] of [
     });
 }
 void test('a drained hero returns to the starting rank title', async () => {
-    freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 4 } });
+    await freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 4 } });
     requireFixtureGame(game);
     initRng(1n);
     await runExtendedCommand('levelchange', `2\n` + ' '.repeat(60));
@@ -33,7 +33,7 @@ void test('a drained hero returns to the starting rank title', async () => {
     assert.match(_statusLine1(), /the Troglodyte(?:\x1b\[\d+C| )/);
 });
 void test('crossing a rank boundary reports the attained rank', async () => {
-    freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 1 } });
+    await freshObjectRoom({ role: 'caveman', flags: { debug: true }, hero: { ulevel: 1 } });
     requireFixtureGame(game);
     initRng(1n);
     await runExtendedCommand('levelchange', `10\n` + ' '.repeat(60));

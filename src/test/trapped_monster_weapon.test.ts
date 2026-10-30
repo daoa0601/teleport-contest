@@ -12,7 +12,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a trapped archer does not spend its turn readying a melee weapon against a distant hero', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('sergeant', 12, 12, NO_MINVENT);
     soldier.mpeaceful = 0;

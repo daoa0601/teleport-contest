@@ -22,7 +22,7 @@ import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 async function freshGiantFight() {
-    freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+    await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
     requireFixtureGame(game);
     const giant = await createMonsterAt('hill giant', 10, 10, NO_MINVENT);
     initializePet(giant, { state: game });
@@ -68,7 +68,7 @@ void test('a knocked monster passes over one pit and falls into the pit where it
 });
 
 void test('a knocked flying monster lands above a hole without revealing it', async () => {
-    freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+    await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
     requireFixtureGame(game);
     const giant = await createMonsterAt('hill giant', 10, 10, NO_MINVENT);
     initializePet(giant, { state: game });
@@ -100,7 +100,7 @@ void test('a knocked monster petrifies when it collides with a cockatrice', asyn
 
 for (const loadstone of [false, true] as const) {
     void test(`a small hero ${loadstone ? 'carrying a loadstone stands firm' : 'is knocked back'} when hit by a giant`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requireFixtureGame(game);
         installPolymorphedHero('kobold');
         if (loadstone) await addInventoryObject(LOADSTONE);
@@ -116,7 +116,7 @@ for (const loadstone of [false, true] as const) {
 }
 
 void test('a cursed saddle makes the mount and rider move together when struck', async () => {
-    freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { verbose: false } });
+    await freshObjectRoom({ role: 'knight', hero: { ulevel: 30 }, flags: { verbose: false } });
     requireFixtureGame(game);
     const pony = await createSaddledSteed('pony');
     await runExtendedCommand('ride', 'l');
@@ -135,7 +135,7 @@ void test('a cursed saddle makes the mount and rider move together when struck',
 });
 
 void test('a blow aimed toward an occupied square says back and leaves the hero in place', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('kobold');
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
@@ -156,7 +156,7 @@ void test('a blow aimed toward an occupied square says back and leaves the hero 
 });
 
 void test('a boulder behind the hero does not prevent a knockback blow', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('kobold');
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
@@ -176,7 +176,7 @@ void test('a boulder behind the hero does not prevent a knockback blow', async (
 });
 
 void test('a monster landing in a lethal pit survives through its worn life-saving amulet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const defender = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     defender.mhp = 1;
@@ -205,7 +205,7 @@ void test('a monster landing in a lethal pit survives through its worn life-savi
 });
 
 void test('a lizard hurled into lava burns without leaving its otherwise guaranteed corpse', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requireFixtureGame(game);
     const defender = await createMonsterAt('lizard', 11, 10, NO_MINVENT);
     game.level.requireAt(12, 10).typ = LAVAPOOL;
@@ -223,7 +223,7 @@ void test('a lizard hurled into lava burns without leaving its otherwise guarant
 
 for (const doorway of [false, true]) {
     void test(`a hero's blow ${doorway ? 'cannot knock a monster out of an open doorway' : 'knocks a small monster back along a corridor'}`, async () => {
-        const level = freshObjectRoom({ heroX: 10, heroY: 10, right: 20 });
+        const level = await freshObjectRoom({ heroX: 10, heroY: 10, right: 20 });
         requireFixtureGame(game);
         if (doorway) {
             const door = level.requireAt(11, 10);
@@ -242,7 +242,7 @@ for (const doorway of [false, true]) {
 
 for (const form of ['rock mole', 'kobold'] as const) {
     void test(`a giant ${form === 'rock mole' ? 'knocks a rock-eating hero toward solid rock' : 'cannot knock a hero into solid rock'}`, async () => {
-        freshObjectRoom({ left: 10 });
+        await freshObjectRoom({ left: 10 });
         requireFixtureGame(game);
         installPolymorphedHero(form);
         const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
@@ -263,7 +263,7 @@ for (const form of ['rock mole', 'kobold'] as const) {
 }
 
 void test('a giant knocks a rock-eating hero diagonally toward a closed door', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requireFixtureGame(game);
     installPolymorphedHero('rock mole');
     const door = level.requireAt(9, 9);
@@ -285,7 +285,7 @@ void test('a giant knocks a rock-eating hero diagonally toward a closed door', a
 });
 
 void test("a hero's blow cannot knock a monster out of a Rogue-level doorway", async () => {
-    const level = freshObjectRoom({ heroX: 10, heroY: 10, right: 20 });
+    const level = await freshObjectRoom({ heroX: 10, heroY: 10, right: 20 });
     level.flags.is_rogue_level = true;
     requireFixtureGame(game);
     const door = level.requireAt(11, 10);

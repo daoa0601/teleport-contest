@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 void test('buying an unfamiliar mundane weapon identifies its type and explains the purchase', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { typeKnown: false });
     assert.equal(objectTypeKnown(dagger), false);
     dagger.unpaid = true;

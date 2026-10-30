@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a chest gas trap displays its new impairments before returning', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const chest = await addInventoryObject(CHEST, { otrapped: true });
     await bot();
 

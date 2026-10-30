@@ -21,7 +21,7 @@ function acknowledgeMessages(expected = /fire|magic|wand|horn|medallion|die|But 
     installPagerInput(input, { expected, limit: 100 });
 }
 void test('a self-directed wand damages the current monster body', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('ettin', { hitPoints: 200 });
     const wand = await addInventoryObject(WAN_FIRE, { spe: 2 });
@@ -35,7 +35,7 @@ void test('a self-directed wand damages the current monster body', async () => {
     assert.equal(game.context.move, 1);
 });
 void test('the zap command honors a rebound self-direction key', async () => {
-    freshObjectRoom({ hero: { sleepResistance: true } });
+    await freshObjectRoom({ hero: { sleepResistance: true } });
     requirePlayingGame(game);
     game.commandBindings.bindSpecialKey('~'.charCodeAt(0), 'getdir.self');
     const wand = await addInventoryObject(WAN_SLEEP, { spe: 2 });
@@ -46,7 +46,7 @@ void test('the zap command honors a rebound self-direction key', async () => {
     assert.equal(game._helplessTurns, undefined);
 });
 void test('life saving permits a death-wand self-zap to complete its turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
@@ -64,7 +64,7 @@ void test('life saving permits a death-wand self-zap to complete its turn', asyn
     assert.equal(game.context.move, 1);
 });
 void test('cancelling a horn direction spends a charge without discovering its type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const horn = await addInventoryObject(FIRE_HORN, { spe: 2, typeKnown: false });
     acknowledgeMessages();
@@ -75,7 +75,7 @@ void test('cancelling a horn direction spends a charge without discovering its t
     assert.equal(game.context.move, 1);
 });
 void test('cancelling a direction spends a charge without describing an unseen glow', async () => {
-    freshObjectRoom({ hero: { blindTurns: 20 } });
+    await freshObjectRoom({ hero: { blindTurns: 20 } });
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_SLEEP, { spe: 2 });
     pushKeys(`${wand.invlet}\x1b`);
@@ -86,7 +86,7 @@ void test('cancelling a direction spends a charge without describing an unseen g
     assert.ok(!requireScreenRow(0).map(cell => cell.ch).join('').includes('glows'));
 });
 void test('a heavy load rejects zapping before selection or charge consumption', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_SLEEP, { spe: 2 });
     await addInventoryObject(BOULDER, { quan: 10 });
@@ -96,7 +96,7 @@ void test('a heavy load rejects zapping before selection or charge consumption',
     assert.equal(game._pending_message, "You can't do that while carrying so much stuff.");
 });
 void test('a charged shop wand accrues usage debt even when its direction is cancelled', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const wand = await addInventoryObject(WAN_SLEEP, { spe: 2, unpaid: true });
@@ -108,7 +108,7 @@ void test('a charged shop wand accrues usage debt even when its direction is can
     assert.equal(wand.unpaid, true);
 });
 void test('discovering a directionless wand awards score once and ends beginner status at the threshold', async () => {
-    freshObjectRoom({ hero: { urexp: 1995 }, flags: { beginner: true } });
+    await freshObjectRoom({ hero: { urexp: 1995 }, flags: { beginner: true } });
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_LIGHT, { spe: 3, typeKnown: false });
     acknowledgeMessages(/A lit field surrounds you!/);
@@ -127,7 +127,7 @@ void test('discovering a directionless wand awards score once and ends beginner 
 });
 void test('physical protection halves self-wand damage but leaves magical horn damage intact', async () => {
     async function damageFrom(type, protectedHero) {
-        freshObjectRoom({ hero: { uhp: 200, uhpmax: 200, halfPhysicalDamage: protectedHero } });
+        await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200, halfPhysicalDamage: protectedHero } });
         requirePlayingGame(game);
         const object = await addInventoryObject(type, { spe: 2 });
         acknowledgeMessages();

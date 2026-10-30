@@ -18,7 +18,7 @@ function status(row = 23): string {
 }
 
 void test('wearing and removing a strength ring updates displayed strength', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), { spe: 2 });
     await bot();
 
@@ -32,7 +32,7 @@ void test('wearing and removing a strength ring updates displayed strength', asy
 });
 
 void test('a strangulation amulet displays its condition until removed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_STRANGULATION);
     await bot();
     pushKeys(' '.repeat(10));
@@ -47,7 +47,7 @@ void test('a strangulation amulet displays its condition until removed', async (
 });
 
 void test('a leather drum displays deafness after its deafening row', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const drum = await addInventoryObject(LEATHER_DRUM);
     await bot();
     pushKeys('y' + ' '.repeat(10));
@@ -59,7 +59,7 @@ void test('a leather drum displays deafness after its deafening row', async () =
 });
 
 void test('curing timed deafness removes the displayed condition', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await makeDeaf(5, { talk: false });
     await bot();
 
@@ -70,7 +70,7 @@ void test('curing timed deafness removes the displayed condition', async () => {
 });
 
 void test('a levitation ring displays Lev while worn and clears it on landing', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('levitation'));
     await bot();
     pushKeys(' '.repeat(10));

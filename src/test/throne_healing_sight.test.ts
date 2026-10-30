@@ -10,10 +10,10 @@ import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('throne healing announces restored eyesight and updates visibility', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = THRONE;
     setHeroBlindnessTurns(30);
-    vision_recalc(0);
+    await vision_recalc(0);
     const input = resetInputState();
     const messages: string[] = [];
     input.beforeRead = () => { messages.push(game._pending_message); };

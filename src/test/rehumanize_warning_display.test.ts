@@ -12,14 +12,14 @@ import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('returning from an eyeless body keeps the unseen attacker through the announcement pager', async () => {
-    freshRoomWithPolymorphedHero('earth elemental', { hero: { warning: true } });
-    vision_recalc(0);
+    await freshRoomWithPolymorphedHero('earth elemental', { hero: { warning: true } });
+    await vision_recalc(0);
     const monster = await createMonsterAt('xorn', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.minvis = 1;
     monster.mpeaceful = false;
     monster.m_lev = 8;
     await plineWithContinuation('You feel your borrowed body beginning to fade away.');
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     const input = resetInputState();
     let acknowledgments = 0;
     input.beforeRead = () => {
@@ -37,13 +37,13 @@ void test('returning from an eyeless body keeps the unseen attacker through the 
 });
 
 void test('returning from a luminous eyeless body refreshes sight before the announcement pager', async () => {
-    freshRoomWithPolymorphedHero('fire elemental', { hero: { warning: true } });
-    vision_recalc(0);
+    await freshRoomWithPolymorphedHero('fire elemental', { hero: { warning: true } });
+    await vision_recalc(0);
     const monster = await createMonsterAt('xorn', 11, 10, MM_NOGRP | NO_MINVENT);
     monster.mpeaceful = false;
     monster.m_lev = 8;
     await plineWithContinuation('You feel your borrowed body beginning to fade away.');
-    map_invisible(11, 10);
+    await map_invisible(11, 10);
     const input = resetInputState();
     let acknowledgments = 0;
     input.beforeRead = () => {

@@ -7,7 +7,7 @@ import { OBJECT_NAMES, WAN_WISHING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a wished mail scroll uses its nonmagical description while unidentified', async () => {
-    freshObjectRoom({ flags: { debug: true, verbose: false } });
+    await freshObjectRoom({ flags: { debug: true, verbose: false } });
     requirePlayingGame(game);
     const wand = await addInventoryObject(WAN_WISHING, { spe: 2 });
     const input = resetInputState();

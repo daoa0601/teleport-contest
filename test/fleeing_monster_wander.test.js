@@ -8,7 +8,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const wanders of [true, false]) {
     void test(`a fleeing bat ${wanders ? 'can wander toward the hero' : 'retreats when it keeps its direction'}`, async () => {
-        freshObjectRoom({ left: 2, right: 25, heroX: 20, heroY: 10 });
+        await freshObjectRoom({ left: 2, right: 25, heroX: 20, heroY: 10 });
         requirePlayingGame(game);
         const bat = await createMonsterAt('bat', 12, 10, NO_MINVENT | MM_ANGRY);
         bat.mflee = 1;

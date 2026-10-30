@@ -356,7 +356,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster, state = game, {
             observeDistantObjectForNaming(weapon, state);
             const description = await inventoryItemDescription(weapon);
             await publish(`${monsterSentenceSubject(monster)} drops ${description}.`);
-            newsym(monster.mx, monster.my);
+            await newsym(monster.mx, monster.my);
         }
         // C possibly_unwield(): raw extraction after setmnotwielded(),
         // not extract_from_minvent() and its separate release.

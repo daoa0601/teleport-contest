@@ -14,7 +14,7 @@ function topline() {
 // C allmain.c:446-451 announces the Amulet's wish with urgent_pline(), which
 // overrides the message suppression an Escape at --More-- leaves behind.
 void test('the Amulet wish announcement overrides Escape message suppression', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._moveloopStarted = true;
     game.u.umovement = 12;

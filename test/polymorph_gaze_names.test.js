@@ -5,7 +5,7 @@ import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('a confusing gaze addresses a named target by its proper name', async () => {
-    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    await freshMonsterAbilityRoom('umber hulk', { energy: 30 });
     const jackal = await createMonsterAt('jackal', 11, 10);
     jackal.mgivenname = 'Jack';
     jackal.mpeaceful = 0;

@@ -29,7 +29,7 @@ export async function zapMapAt(x, y, source, { state = game } = {}) {
     if ((state.u.dz ?? 0) > 0)
         await zapEngraving(x, y, source, state);
     else if (!state.u.dz)
-        learned = (await zapDrawbridge(x, y, source, state)) || learned;
+        learned = await zapDrawbridge(x, y, source, state) || learned;
     if (state.program_state.gameover)
         return;
     if (source.otyp === WAN_PROBING)
@@ -48,7 +48,7 @@ async function cancelMagicTrap(x, y, source, state) {
         if (!cansee(x, y))
             return false;
         trap.tseen = 1;
-        newsym(x, y);
+        await newsym(x, y);
         return true;
     }
     if (![TELEP_TRAP, LEVEL_TELEP, MAGIC_TRAP, ANTI_MAGIC, POLY_TRAP].includes(trap.ttyp))
@@ -56,7 +56,7 @@ async function cancelMagicTrap(x, y, source, state) {
     const visible = cansee(x, y);
     await explode(x, y, -WAN_CANCELLATION, 20 + d(3, 6), TRAP_EXPLODE, EXPL_MAGICAL, { state });
     deleteTrap(trap, state);
-    newsym(x, y);
+    await newsym(x, y);
     return visible;
 }
 async function zapEngraving(x, y, source, state) {
@@ -78,7 +78,7 @@ async function zapEngraving(x, y, source, state) {
             break;
         case WAN_TELEPORTATION:
         case SPE_TELEPORT_AWAY:
-            relocateEngraving(engraving, state);
+            await relocateEngraving(engraving, state);
             break;
         case SPE_STONE_TO_FLESH:
             if (engraving.engr_type !== ENGRAVE)
@@ -94,14 +94,14 @@ async function zapEngraving(x, y, source, state) {
     }
 }
 // C engrave.c:rloc_engr(). Engravings need an ordinary, unoccupied floor.
-function relocateEngraving(engraving, state) {
+async function relocateEngraving(engraving, state) {
     for (let tries = 200; tries > 0; tries--) {
         const x = 2 + rn2(COLNO - 3), y = rn2(ROWNO);
         if (engravingAt(x, y, state.level) || !goodPosition(x, y, null, { state }))
             continue;
         engraving.x = x;
         engraving.y = y;
-        newsym(x, y);
+        await newsym(x, y);
         return;
     }
 }
@@ -158,14 +158,14 @@ function sameGlyph(left, right) {
 async function probeTerrain(x, y, trap, learned, state) {
     const location = state.level.requireAt(x, y);
     const oldType = location.lastseentyp, oldGlyph = glyphAt(x, y, state);
-    showMapSpot(x, y, { state });
+    await showMapSpot(x, y, { state });
     learned ||= oldType !== location.lastseentyp || !sameGlyph(oldGlyph, glyphAt(x, y, state));
     const surface = location.typ === DRAWBRIDGE_UP
         ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
     if (surface === SDOOR) {
         revealSecretDoor(x, y);
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         if (cansee(x, y)) {
             await pline('Probing reveals a secret door.');
             learned = true;
@@ -176,7 +176,7 @@ async function probeTerrain(x, y, trap, learned, state) {
     else if (surface === SCORR) {
         location.typ = CORR;
         vision_note_blocker_change(x, y);
-        newsym(x, y);
+        await newsym(x, y);
         await pline('Probing exposes a secret corridor.');
         learned = true;
     }
@@ -187,7 +187,7 @@ async function probeTerrain(x, y, trap, learned, state) {
     if (trap) {
         const seen = trap.tseen, hallucinating = heroIsHallucinating(state);
         trap.tseen = 1;
-        newsym(x, y);
+        await newsym(x, y);
         if (!seen || hallucinating) {
             const name = trapName(trap.ttyp, { state });
             const definite = hallucinating ? !rn2(4)

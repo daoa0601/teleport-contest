@@ -11,7 +11,7 @@ import { minimalObjectName, objectCombatName, objectName } from '../js/objnam.js
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('ordinary rocks are recognized without acquiring type knowledge', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const rocks = await mksobj(ROCK, false, false);
     rocks.quan = 3;
     await addCreatedInventoryItem(rocks);
@@ -23,7 +23,7 @@ for (const [type, appearance, noun] of [
     [LOADSTONE, 'gray', 'stone'],
 ]) {
     void test(`unknown ${noun} names distinguish unseen, observed, and user-called objects`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const object = await knownObject(type, { typeKnown: false, dknown: false, known: false });
         assert.ok(game.objectDescriptions);
         game.objectDescriptions[type] = appearance;
@@ -44,7 +44,7 @@ for (const [type, name] of [
     [LOADSTONE, 'loadstone'],
 ]) {
     void test(`discovery names ${name} consistently without adding a second stone suffix`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const object = await knownObject(type, { typeKnown: false, known: false, bknown: false });
         recordObjectCall(type, 'Keepsake');
         learnObjectType(type);
@@ -55,7 +55,7 @@ for (const [type, name] of [
     });
 }
 void test('named gemstones pluralize the noun while preserving the individual name once', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const rubies = await knownObject(RUBY, { typeKnown: false, bknown: false, quan: 2, oname: 'Ember' });
     const jades = await knownObject(JADE, { typeKnown: false, bknown: false, quan: 3, oname: 'River' });
     learnObjectType(RUBY);
@@ -66,7 +66,7 @@ void test('named gemstones pluralize the noun while preserving the individual na
     assert.equal(await inventoryItemDescription(jades), '3 jade stones named River');
 });
 void test('inventory displays real gem identities and quantities after appearance and discovery changes', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const unknown = await addInventoryObject(EMERALD, { typeKnown: false, bknown: false, quan: 2 });
     const jade = await addInventoryObject(JADE, { typeKnown: false, bknown: false, quan: 3 });
     const diamond = await addInventoryObject(DIAMOND, { typeKnown: false, bknown: false });
@@ -87,7 +87,7 @@ void test('inventory displays real gem identities and quantities after appearanc
     assert.ok(inventory.includes(`${diamond.invlet} - a diamond`));
 });
 void test('identification override names an unseen gem without teaching its appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const jade = await knownObject(JADE, { typeKnown: false, dknown: false });
     game.iflags.override_ID = true;
     assert.equal(objectName(jade), 'jade stone');

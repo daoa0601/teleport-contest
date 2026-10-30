@@ -39,7 +39,7 @@ export async function summonMonsterInsects(caster, state) {
         monster.mpeaceful = 0;
         monster.mtame = 0;
         setMonsterMalign(monster, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         created.push(monster);
     }
     const newSeen = spottedMonsterCount(state);

@@ -17,7 +17,7 @@ function screenText(): string {
 }
 
 void test('question-mark selection shows one suggested object on the message line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER);
     const food = await addInventoryObject(FOOD_RATION, { bknown: false });
     const input = resetInputState();
@@ -34,7 +34,7 @@ void test('question-mark selection shows one suggested object on the message lin
 });
 
 void test('dismissing a single suggestion repeats the object question', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const food = await addInventoryObject(FOOD_RATION, { bknown: false });
     const input = resetInputState();
 
@@ -48,7 +48,7 @@ void test('dismissing a single suggestion repeats the object question', async ()
 });
 
 void test('Escape at a single suggestion cancels with normal Never mind feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(FOOD_RATION, { bknown: false });
     const input = resetInputState();
 
@@ -63,7 +63,7 @@ void test('Escape at a single suggestion cancels with normal Never mind feedback
 });
 
 void test('full inventory remains a window even when only one object is carried', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
 
@@ -75,7 +75,7 @@ void test('full inventory remains a window even when only one object is carried'
 });
 
 void test('asterisk lists full inventory rather than treating its lone entry as a suggestion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const food = await addInventoryObject(FOOD_RATION);
     const input = resetInputState();
 
@@ -89,7 +89,7 @@ void test('asterisk lists full inventory rather than treating its lone entry as 
 
 for (const mode of ['forced inventory', 'menu prefix', 'wizard identification'] as const) {
     void test(`${mode} keeps a single filtered item in a menu`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const dagger = await addInventoryObject(DAGGER);
         if (mode === 'forced inventory') game.flags.force_invmenu = true;
         else if (mode === 'menu prefix') game.iflags.menu_requested = true;
@@ -108,7 +108,7 @@ for (const mode of ['forced inventory', 'menu prefix', 'wizard identification'] 
 }
 
 void test('a count entered before question mark survives single-item selection', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 8 });
     const input = resetInputState();
 
@@ -125,7 +125,7 @@ void test('a count entered before question mark survives single-item selection',
 });
 
 void test('a nonselectable filtered item prints its description without asking for a key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const food = await addInventoryObject(FOOD_RATION, { bknown: false });
     const input = resetInputState();
 
@@ -138,7 +138,7 @@ void test('a nonselectable filtered item prints its description without asking f
 });
 
 void test('a wield menu offers empty hands alongside its one suggested weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     const input = resetInputState();
 
@@ -152,7 +152,7 @@ void test('a wield menu offers empty hands alongside its one suggested weapon', 
 });
 
 void test('an inventory menu adds one selector prefix to its empty-hands description', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(DAGGER);
     const input = resetInputState();
     const selection = selectInventoryObject({ extraChoice: 'bare hands' });
@@ -168,7 +168,7 @@ void test('an inventory menu adds one selector prefix to its empty-hands descrip
 });
 
 void test('empty hands can be selected from an otherwise empty inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
 
     await answerPrompts(rhack('w'.charCodeAt(0)), input, [
@@ -181,7 +181,7 @@ void test('empty hands can be selected from an otherwise empty inventory', async
 });
 
 void test('an empty quiver suggests its lone missile without adding the downplayed empty choice', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dart = await addInventoryObject(DART);
     const input = resetInputState();
 
@@ -195,7 +195,7 @@ void test('an empty quiver suggests its lone missile without adding the downplay
 });
 
 void test('an occupied quiver offers its empty choice alongside one suggested missile', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dart = await addInventoryObject(DART);
     game.uquiver = dart;
     const input = resetInputState();
@@ -210,7 +210,7 @@ void test('an occupied quiver offers its empty choice alongside one suggested mi
 });
 
 void test('empty-quiver fire describes its extra choice as hands', async () => {
-    freshObjectRoom({ flags: { autoquiver: false } });
+    await freshObjectRoom({ flags: { autoquiver: false } });
     await addInventoryObject(POT_HEALING);
     const input = resetInputState();
 
@@ -225,7 +225,7 @@ void test('empty-quiver fire describes its extra choice as hands', async () => {
 });
 
 void test('wielding falls back to downplayed noncoin objects when no weapons are suggested', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     await addInventoryObject(GOLD_PIECE, { quan: 50 });
     const food = await addInventoryObject(FOOD_RATION);
     const input = resetInputState();

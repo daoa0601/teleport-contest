@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
 
 void test('a monkey stealing a blindfold is named once the hero can see it', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const blindfold = await addInventoryObject(BLINDFOLD);
     await applyInventoryObject(blindfold);
@@ -39,7 +39,7 @@ void test('a monkey stealing a blindfold is named once the hero can see it', asy
 });
 
 void test('a nymph names herself again after blindfold removal produces sight feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const blindfold = await addInventoryObject(BLINDFOLD);
     await applyInventoryObject(blindfold);

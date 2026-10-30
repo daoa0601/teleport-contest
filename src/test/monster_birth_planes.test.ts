@@ -16,7 +16,7 @@ for (const [plane, rejected, allowed] of [
     ['water', 'earth elemental', 'water elemental'],
 ] as const) {
     void test(`random creation on the ${plane} plane rejects ${rejected}`, async () => {
-        freshObjectRoom({ gameplaySeed: 1n, hero: { ulevel: 30 } });
+        await freshObjectRoom({ gameplaySeed: 1n, hero: { ulevel: 30 } });
         game.astral_level = { dnum: 0, dlevel: 1, flags: { town: false }, alignment: null };
         game.sanctum_level = { dnum: 1, dlevel: 1, flags: { town: false }, alignment: null };
         const location = { dnum: 0, dlevel: 8, flags: { town: false }, alignment: null };

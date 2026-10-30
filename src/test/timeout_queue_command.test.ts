@@ -54,7 +54,7 @@ async function captureTimeoutWindow(): Promise<CapturedWindow> {
 }
 
 void test('#timeout reports the time, an empty queue, and no timed properties', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const { text } = await captureTimeoutWindow();
 
@@ -68,7 +68,7 @@ void test('#timeout reports the time, an empty queue, and no timed properties', 
 });
 
 void test('#timeout overlays the map in a corner window and restores it', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     await flush_screen(1);
     const { rows, before } = await captureTimeoutWindow();
@@ -89,7 +89,7 @@ void test('#timeout overlays the map in a corner window and restores it', async 
 });
 
 void test('#timeout aligns timed properties to the longest name in table order', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     setPropertyTimeout('confusion', 7);
     setPropertyTimeout('levitation', 20);
@@ -106,7 +106,7 @@ void test('#timeout aligns timed properties to the longest name in table order',
 });
 
 void test('#timeout marks properties that need #wizintrinsic to time out', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     setPropertyTimeout('confusion', 7);
     setPropertyTimeout('coldResistance', 9);
@@ -122,7 +122,7 @@ void test('#timeout marks properties that need #wizintrinsic to time out', async
 });
 
 void test('#timeout lists object and spot timers in queue order', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const corpse = await corpseObject(MONSTER_NAME.indexOf('kobold'), { where: 'inventory' });
     game.inventory.push(corpse);
@@ -146,7 +146,7 @@ void test('#timeout lists object and spot timers in queue order', async () => {
 });
 
 void test('#timeout appends the swallow and vault counters', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     game.u.uswldtim = 3;
     game.u.uinvault = 2;

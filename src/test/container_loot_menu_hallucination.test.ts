@@ -18,7 +18,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 // stream advanced by the number of menu entries shown.
 
 async function hallucinatedRockAppearanceAfterLoot(menuEntries: readonly number[]): Promise<number> {
-    const level = freshObjectRoom({ hero: { hallucinationTurns: 99 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 99 } });
     const sack = await floorObject(SACK, 10, 10);
     const contents: GameObject[] = [];
     for (const otyp of menuEntries) {

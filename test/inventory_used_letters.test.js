@@ -8,7 +8,7 @@ import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const sortpack of [true, false]) {
     void test(`the used-letter menu preserves carried order with full loot sorting and sortpack ${sortpack}`, async () => {
-        freshObjectRoom({ flags: { sortloot: 'f', sortpack, inv_order: [7, 2] } });
+        await freshObjectRoom({ flags: { sortloot: 'f', sortpack, inv_order: [7, 2] } });
         const club = await knownObject(CLUB, { where: 'inventory', invlet: 'z' });
         const dagger = await knownObject(DAGGER, { where: 'inventory', invlet: 'a' });
         const food = await knownObject(FOOD_RATION, { where: 'inventory', invlet: 'b' });

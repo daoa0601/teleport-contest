@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // C wizcmds.c:wiz_show_nhuuid(): the recorder build defines no NHUUID, so
 // svn.nhuuid stays empty and the native line names an empty identifier.
 void test('#wizshownhuuid reports an empty NHUUID', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
 
     await runExtendedCommand('wizshownhuuid');

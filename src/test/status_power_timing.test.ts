@@ -15,7 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
 void test('a mind blast displays its power cost with its concentration feedback', async () => {
-    freshMonsterAbilityRoom('mind flayer', { energy: 30 });
+    await freshMonsterAbilityRoom('mind flayer', { energy: 30 });
     await bot();
 
     await useHeroMindBlast();
@@ -25,7 +25,7 @@ void test('a mind blast displays its power cost with its concentration feedback'
 });
 
 void test('energy drain displays the reduced power before its feedback', async () => {
-    freshObjectRoom({ hero: { uen: 30, uenmax: 30 } });
+    await freshObjectRoom({ hero: { uen: 30, uenmax: 30 } });
     await bot();
 
     await plineWithContinuation(drainHeroEnergy(game, 5));
@@ -35,7 +35,7 @@ void test('energy drain displays the reduced power before its feedback', async (
 });
 
 void test('energy drain clears and displays residual power when the maximum is depleted', async () => {
-    freshObjectRoom({ hero: { uen: 5, uenmax: 0 } });
+    await freshObjectRoom({ hero: { uen: 5, uenmax: 0 } });
     await bot();
 
     await plineWithContinuation(drainHeroEnergy(game, 5));
@@ -46,7 +46,7 @@ void test('energy drain clears and displays residual power when the maximum is d
 });
 
 void test('breath displays its power cost at the direction prompt even when cancelled', async () => {
-    freshMonsterAbilityRoom('red dragon', { energy: 30 });
+    await freshMonsterAbilityRoom('red dragon', { energy: 30 });
     await bot();
     const input = resetInputState();
 
@@ -65,7 +65,7 @@ void test('breath displays its power cost at the direction prompt even when canc
 
 for (const blessing of ['blessed', 'uncursed', 'cursed'] as const) {
     void test(`a ${blessing} gain-energy potion displays its changed current and maximum power`, async () => {
-        freshObjectRoom({ hero: { uen: 10, uenmax: 30 } });
+        await freshObjectRoom({ hero: { uen: 10, uenmax: 30 } });
         requirePlayingGame(game);
         const potion = await knownObject(POT_GAIN_ENERGY, {
             blessed: blessing === 'blessed', cursed: blessing === 'cursed',
@@ -83,7 +83,7 @@ for (const blessing of ['blessed', 'uncursed', 'cursed'] as const) {
 
 for (const blessing of ['blessed', 'uncursed', 'cursed'] as const) {
     void test(`a ${blessing} charging scroll read while confused displays its changed power on the next screen flush`, async () => {
-        freshObjectRoom({ hero: {
+        await freshObjectRoom({ hero: {
             uen: blessing === 'uncursed' ? 1 : 30,
             uenmax: 30,
             confusionTurns: 10,

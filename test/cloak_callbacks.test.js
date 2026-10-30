@@ -10,7 +10,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an elven cloak identifies its new stealth and announces its loss on takeoff', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('elven cloak'), { typeKnown: false });
     pushKeys(`${cloak.invlet}     `);
@@ -23,7 +23,7 @@ void test('an elven cloak identifies its new stealth and announces its loss on t
     assert.match(messages(), /sure are noisy/);
 });
 void test('an elven cloak adds no stealth discovery when the hero already has intrinsic stealth', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     grantIntrinsicProperty('stealth', 'outside');
     const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('elven cloak'), { typeKnown: false });
@@ -35,7 +35,7 @@ void test('an elven cloak adds no stealth discovery when the hero already has in
     assert.doesNotMatch(messages(), /quietly|noisy/);
 });
 void test('wearing a cloak of protection discovers its type without another visible effect', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('cloak of protection'), { typeKnown: false });
     pushKeys(cloak.invlet);
@@ -44,7 +44,7 @@ void test('wearing a cloak of protection discovers its type without another visi
     assert.equal(cloak.known, true);
 });
 void test('an alchemy smock grants both poison and acid resistance and removes both', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     const smock = await addInventoryObject(OBJECT_NAMES.indexOf('alchemy smock'));
     pushKeys(`${smock.invlet}     `);
@@ -56,7 +56,7 @@ void test('an alchemy smock grants both poison and acid resistance and removes b
     assert.equal(propertyIsActive('acidResistance'), false);
 });
 void test('mummy wrapping blocks and then restores intrinsic invisibility with visible feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     grantIntrinsicProperty('invisible', 'outside');
     const wrapping = await addInventoryObject(OBJECT_NAMES.indexOf('mummy wrapping'));
@@ -69,7 +69,7 @@ void test('mummy wrapping blocks and then restores intrinsic invisibility with v
     assert.match(messages(), /You can no longer see yourself\./);
 });
 void test('a sighted hero identifies an invisibility cloak from becoming transparent', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     grantIntrinsicProperty('seeInvisible', 'outside');
     const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('cloak of invisibility'), { typeKnown: false });
@@ -81,7 +81,7 @@ void test('a sighted hero identifies an invisibility cloak from becoming transpa
     assert.match(messages(), /Suddenly you can no longer see through yourself\./);
 });
 void test('an oilskin cloak announces its tight fit', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages = captureMessages();
     const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('oilskin cloak'));
     pushKeys(`${cloak.invlet}     `);
@@ -90,7 +90,7 @@ void test('an oilskin cloak announces its tight fit', async () => {
 });
 for (const blind of [false, true]) {
     void test(`wearing an unseen named oilskin cloak ${blind ? 'conceals its name while blind' : 'reveals its name in the fit message'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: 50 } });
+        await freshObjectRoom({ hero: { blindTurns: 50 } });
         const messages = captureMessages();
         const cloak = await addInventoryObject(OBJECT_NAMES.indexOf('oilskin cloak'), {
             observed: false, dknown: false, oname: 'Shelter',

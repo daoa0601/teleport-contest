@@ -16,8 +16,8 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
-function bonesRoom(storage) {
-    freshObjectRoom({ flags: { debug: true } });
+async function bonesRoom(storage) {
+    await freshObjectRoom({ flags: { debug: true } });
     game.storage = storage;
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
 }
@@ -27,9 +27,9 @@ for (const owner of ['inventory', 'floor', 'mixed', 'cached', 'bones']) {
         if (owner === 'cached')
             freshConnectedLevels();
         else if (owner === 'bones')
-            bonesRoom(storage);
+            await bonesRoom(storage);
         else
-            freshObjectRoom();
+            await freshObjectRoom();
         requirePlayingGame(game);
         game.flags.verbose = false;
         const lamp = owner === 'inventory'
@@ -48,16 +48,16 @@ for (const owner of ['inventory', 'floor', 'mixed', 'cached', 'bones']) {
         }
         else if (owner === 'bones') {
             assert.equal(saveBonesLevel(), true);
-            bonesRoom(storage);
+            await bonesRoom(storage);
             resetInputState().feed('yn');
             await mklev();
             assert.equal(game._restoredBones, true);
         }
         else {
             assert.equal(await saveGame(storage), true);
-            assert.equal(restoreGame(game.plname, storage), true);
+            assert.equal(await restoreGame(game.plname, storage), true);
         }
-        vision_recalc(0);
+        await vision_recalc(0);
         const messages = [];
         const input = resetInputState();
         input.beforeRead = () => { messages.push(game._pending_message); };

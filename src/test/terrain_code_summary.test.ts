@@ -12,7 +12,7 @@ import { requireScreenRow } from './support/screen.js';
 // both the '{' character, so a level with one fountain and two sinks reads
 // "D:0,L:8 {:1 {:2" on the closing line of the typ-code dump.
 void test('the terrain typ-code summary counts sinks with the sink symbol', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
     const flags = game.level && 'nfountains' in game.level.flags ? game.level.flags : null;
     if (!flags) throw new Error('Terrain summary test requires level flags');

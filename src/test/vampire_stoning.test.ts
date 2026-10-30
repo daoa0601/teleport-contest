@@ -11,14 +11,14 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a shapeshifted vampire lord falls as its bat form and rises instead of petrifying', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { ux, uy } = game.u;
     const lord = MONSTER_NAME.indexOf('vampire leader');
     const bat = await createMonsterAt('vampire bat', ux + 1, uy, NO_MINVENT);
     bat.cham = lord;
     bat.female = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages: string[] = [];
 
     const result = await prepareMonsterPetrification(bat, {

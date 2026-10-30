@@ -13,11 +13,11 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const symset of ['ASCII', 'DECgraphics']) {
     void test(`ordinary map rendering shows harmless gas in gray with ${symset} symbols`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.symset = symset;
         await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
 
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         const cell = requireGameDisplay().grid[11]?.[10];
@@ -28,7 +28,7 @@ for (const symset of ['ASCII', 'DECgraphics']) {
 }
 
 void test('a newly created gas cloud redraws its visible floor before any later vision refresh', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     await flush_screen(1);
 
@@ -43,7 +43,7 @@ void test('a newly created gas cloud redraws its visible floor before any later 
 });
 
 void test('gas crossing iron bars preserves their visible and remembered terrain', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = IRONBARS;
     game.symset = 'DECgraphics';
     const cloud = await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
@@ -51,7 +51,7 @@ void test('gas crossing iron bars preserves their visible and remembered terrain
     cloud.damage = 8;
     cloud.heroFault = false;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireGameDisplay().grid[11]?.[10]?.ch, '#');
@@ -61,7 +61,7 @@ void test('gas crossing iron bars preserves their visible and remembered terrain
 });
 
 void test('poison gas blindness updates sight before the next coughing message', async () => {
-    freshObjectRoom({ hero: { poisonResistance: true } });
+    await freshObjectRoom({ hero: { poisonResistance: true } });
     pushKeys(' '.repeat(20));
     await createPoisonGasCloud(game, game.u.ux, game.u.uy, 1, 8);
     assert.equal(cansee(11, 10), true);
@@ -75,7 +75,7 @@ void test('poison gas blindness updates sight before the next coughing message',
 });
 
 void test('selection gas announces the hero only when a cloud first envelops them', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const messages: string[] = [];
     const publish = async (message: string) => { messages.push(message); };
     const cells = [{ x: game.u.ux, y: game.u.uy }];

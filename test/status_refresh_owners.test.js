@@ -24,7 +24,7 @@ for (const load of [
     { description: 'overload', rocks: 400, message: 'You collapse under your load.' },
 ]) {
     void test(`a step blocked by ${load.description} refreshes pending status`, async () => {
-        freshObjectRoom({ flags: { time: true }, hero: { uhp: 5, uen: 1, uenmax: 1 } });
+        await freshObjectRoom({ flags: { time: true }, hero: { uhp: 5, uen: 1, uenmax: 1 } });
         await addInventoryObject(ROCK, { quan: load.rocks });
         await reportHeroEncumbrance(game);
         clearMessageWindow();
@@ -45,14 +45,14 @@ for (const load of [
     });
 }
 void test('walking run display advances the turn counter', async () => {
-    freshObjectRoom({ moves: 1, flags: { time: true, runmode: 'walk' } });
+    await freshObjectRoom({ moves: 1, flags: { time: true, runmode: 'walk' } });
     await bot();
     game.moves = 2;
     await captureRunmodeDelay(game, true, 2);
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /T:2\b/);
 });
 void test('casting displays its reduced spell power', async () => {
-    freshCasterRoom();
+    await freshCasterRoom();
     requirePlayingGame(game);
     await learnSpell(SPE_HASTE_SELF);
     await bot();
@@ -75,7 +75,7 @@ void test('instant armor removal retains AC during feedback and updates it at th
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /AC:10\b/);
 });
 void test('a map flush preserves status rows erased by line input until a status update', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 6, rows: 24 }));
     await bot();
     pushKeys('\n');
@@ -88,7 +88,7 @@ void test('a map flush preserves status rows erased by line input until a status
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /^Dl:8/);
 });
 void test('the save sentinel skips status drawing and consumes the redraw request', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.u.uhp = 1;
     await bot();
     game.u.uhp = -1;

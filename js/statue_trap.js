@@ -78,7 +78,7 @@ async function createStatueMonster(statue, x, y, state, magic) {
     if (useSavedTraits) {
         restoreMonsterTraits(monster, savedTraits);
         markQuestLeaderAlive(monster, state);
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);
         if (monster.mtame && !monster.isminion)
             await makePetWary(monster, { wasDead: true, state });
@@ -125,7 +125,7 @@ async function describeAnimation(statue, monster, x, y, state, shatter, magic) {
         : 'something';
     await pline(`You find ${description} posing as a statue.`);
     if (!canSpotMonster(monster) && heroIsBlind(state))
-        map_invisible(x, y);
+        await map_invisible(x, y);
     await stopHeroOccupation(state);
 }
 function nameReleasedMonster(monster, statue) {
@@ -162,7 +162,7 @@ export async function animateStatue(statue, x, y, { state = game, shatter = fals
     }
     nameReleasedMonster(monster, statue);
     // C animate_statue(): a mimic shows itself; other hiders stop hiding.
-    if (!revealMonsterAppearance(monster).revealed)
+    if (!(await revealMonsterAppearance(monster)).revealed)
         monster.mundetected = 0;
     monster.msleeping = 0;
     if (!magic) {
@@ -208,7 +208,7 @@ export async function activateStatueTrapAt(x, y, { state = game, shatter = false
         if (monster || !result.unique)
             break;
     }
-    feel_newsym(x, y);
+    await feel_newsym(x, y);
     return monster;
 }
 //# sourceMappingURL=statue_trap.js.map

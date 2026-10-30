@@ -36,7 +36,7 @@ export async function hitMonsterWithForce(monster: Monster, source: 'wand' | 'sp
     const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
     const targetCellWasVisible = cansee(options.x ?? monster.mx, options.y ?? monster.my);
     if (monsterHasMagicResistance(monster)) {
-        revealMonsterAppearance(monster, {
+        await revealMonsterAppearance(monster, {
             includeMonsterDisguise: false,
         });
         await shieldeff(monster.mx, monster.my, state);
@@ -57,7 +57,7 @@ export async function hitMonsterWithForce(monster: Monster, source: 'wand' | 'sp
         return false;
     }
 
-    revealMonsterAppearance(monster);
+    await revealMonsterAppearance(monster);
     let damage = options.rollDice(2, 12);
     if (state.urole?.key === 'knight' && state.u?.uhave?.questart)
         damage *= 2;
@@ -107,6 +107,6 @@ export async function hitFloorObjectWithForce(object: GameObject, {
         heroCaused: !state.context?.mon_moving,
     });
     learned &&= result.destroyed;
-    if (result.destroyed) newsym(x, y);
+    if (result.destroyed) await newsym(x, y);
     return { affected: 0, learned };
 }

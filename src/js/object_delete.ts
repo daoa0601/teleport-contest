@@ -142,8 +142,8 @@ export async function delobjCore(
     else unlinkObject(object, state);
     if (updateMap) {
         /* floor object's coordinates are always up to date */
-        maybeUnhideAt(object.ox, object.oy, state);
-        newsym(object.ox, object.oy);
+        await maybeUnhideAt(object.ox, object.oy, state);
+        await newsym(object.ox, object.oy);
     }
     await deleteObject(object, state);
 }

@@ -13,7 +13,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('a skilled thrower catches and rewields a boomerang after its curved flight', async () => {
-    freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
+    await freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 25;
     const boom = await addInventoryWeapon(BOOMERANG);
@@ -26,7 +26,7 @@ void test('a skilled thrower catches and rewields a boomerang after its curved f
 });
 for (const rightHanded of [true, false]) {
     void test(`a ${rightHanded ? 'right' : 'left'} handed boomerang bends before a wall`, async () => {
-        const level = freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
+        const level = await freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
         requirePlayingGame(game);
         game.u.rightHanded = rightHanded;
         const bendY = rightHanded ? 9 : 11;
@@ -37,7 +37,7 @@ for (const rightHanded of [true, false]) {
     });
 }
 void test('a fired boomerang rejoins its quivered stack after a catch', async () => {
-    freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
+    await freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
     requirePlayingGame(game);
     game.u.acurr.a[A_DEX] = 25;
     const boom = await addInventoryWeapon(BOOMERANG, { quan: 3 });
@@ -49,7 +49,7 @@ void test('a fired boomerang rejoins its quivered stack after a catch', async ()
     assert.equal(game.inventory.length, 1);
 });
 void test('a boomerang can strike monsters on both sides of its curved flight', async () => {
-    freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
+    await freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
     requirePlayingGame(game);
     game.u.rightHanded = true;
     game.u.acurr.a[A_DEX] = 25;
@@ -64,7 +64,7 @@ void test('a boomerang can strike monsters on both sides of its curved flight', 
     assert.equal(boom.where, 'inventory');
 });
 void test('a fumbling thrower can be hit by the returning boomerang', async () => {
-    const level = freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
+    const level = await freshObjectRoom({ left: 4, right: 20, top: 3, bottom: 17 });
     requirePlayingGame(game);
     game.u.fumbling = true;
     game.u.uac = 20;

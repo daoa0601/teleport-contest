@@ -44,9 +44,9 @@ export async function rotCorpse(corpse, state = game) {
         }
         else if (state.u.ux === x && state.u.uy === y && state.u.uundetected
             && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x80)) {
-            hideHeroUnder(state);
+            await hideHeroUnder(state);
         }
-        newsym(x, y);
+        await newsym(x, y);
     }
 }
 //# sourceMappingURL=corpse_rot.js.map

@@ -180,11 +180,11 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
                 : { publish: announce, finishDeath: silentHeroStoning(finishMonsterDeath), creditHero: true };
             if (touchPetrifies(occupant.mnum) && !monsterWearsTorsoArmor(monster)) {
                 await petrifyMonsterImmediately(monster, contact);
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
             }
             if (touchPetrifies(monster.mnum) && !monsterWearsTorsoArmor(occupant)) {
                 await petrifyMonsterImmediately(occupant, contact);
-                newsym(occupant.mx, occupant.my);
+                await newsym(occupant.mx, occupant.my);
             }
         } else if (nextX === state.u.ux && nextY === state.u.uy) {
             // C Some_Monnam(): an unseen hurtler is "Someone" or "Something".
@@ -194,7 +194,7 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
                 await petrifyMonsterImmediately(monster, {
                     publish: announce, finishDeath: silentHeroStoning(finishMonsterDeath), creditHero: true,
                 });
-                newsym(monster.mx, monster.my);
+                await newsym(monster.mx, monster.my);
             }
             const torsoArmor = state.inventory.some(object => (object.owornmask ?? 0) & (W_ARM | W_ARMC | W_ARMU));
             if (touchPetrifies(monster.mnum) && !torsoArmor) {
@@ -211,15 +211,15 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
     updateMonsterRegions(monster, state, { x: nextX, y: nextY });
     monster.mx = nextX;
     monster.my = nextY;
-    newsym(oldX, oldY);
+    await newsym(oldX, oldY);
     if (monster === state.u.usteed) {
         state.u.ux0 = state.u.ux;
         state.u.uy0 = state.u.uy;
         state.u.ux = nextX;
         state.u.uy = nextY;
-        vision_recalc(0);
+        await vision_recalc(0);
     }
-    newsym(nextX, nextY);
+    await newsym(nextX, nextY);
     await flush_screen(1);
     await state.animationFrame?.();
     setMonsterApparentHeroPosition(monster, state, random);
@@ -291,7 +291,7 @@ export async function hurtleMonster(monster: Monster, dx: number, dy: number, di
         return { moved: false, dead: false };
     if (monster.mundetected) {
         monster.mundetected = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
     }
     monster.m_ap_type = 0;
     monster.mappearance = 0;

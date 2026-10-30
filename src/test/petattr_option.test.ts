@@ -69,15 +69,15 @@ async function selectFullOption(name: string, answer: string): Promise<{ row: st
 for (const { name, cell, key } of attributes) {
     for (const projection of ['visible', 'sensed', 'detection map']) {
         void test(`${projection} pet uses configured petattr:${name}`, async () => {
-            freshObjectRoom({ flags: { hilite_pet: true, use_inverse: false },
+            await freshObjectRoom({ flags: { hilite_pet: true, use_inverse: false },
                 hero: { monsterDetection: projection === 'sensed' } });
             applyNethackrc(`OPTIONS=petattr:${name}`);
             const pet = await createMonsterAt('little dog', 11, 10);
             pet.mtame = 10;
             pet.minvis = projection === 'sensed' ? 1 : 0;
 
-            if (projection === 'detection map') mapDetectedMonster(pet, false);
-            else newsym(11, 10);
+            if (projection === 'detection map') await mapDetectedMonster(pet, false);
+            else await newsym(11, 10);
             await flush_screen(1);
 
             assert.equal(requireScreenCell(10, 11).ch, 'd');
@@ -87,7 +87,7 @@ for (const { name, cell, key } of attributes) {
     }
 
     void test(`full options shows petattr:${name} and its preselected attribute`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc(`OPTIONS=petattr:${name}`);
 
         const { row, picker } = await selectFullOption('petattr', '\x1b');
@@ -98,10 +98,10 @@ for (const { name, cell, key } of attributes) {
     });
 
     void test(`full options changes petattr to ${name} and redraws the pet without a turn`, async () => {
-        freshObjectRoom({ flags: { hilite_pet: true } });
+        await freshObjectRoom({ flags: { hilite_pet: true } });
         const pet = await createMonsterAt('little dog', 11, 10);
         pet.mtame = 10;
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         const { picker } = await selectFullOption('petattr', key);
@@ -119,11 +119,11 @@ void test('NETHACKOPTIONS overrides config pet highlighting in native right-to-l
     const config = parseNethackrc('OPTIONS=petattr:underline', {
         nethackOptions: 'petattr:bold,!hilite_pet',
     });
-    freshObjectRoom({ flags: config.flags, iflags: config.iflags });
+    await freshObjectRoom({ flags: config.flags, iflags: config.iflags });
     const pet = await createMonsterAt('little dog', 11, 10);
     pet.mtame = 10;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(10, 11).attr, ATR_BOLD);
@@ -131,7 +131,7 @@ void test('NETHACKOPTIONS overrides config pet highlighting in native right-to-l
 });
 
 void test('petattr:none clears hilite_pet and enabling it restores inverse', async () => {
-    freshObjectRoom({ flags: { hilite_pet: true } });
+    await freshObjectRoom({ flags: { hilite_pet: true } });
     applyNethackrc('OPTIONS=petattr:none');
     assert.equal(game.flags.hilite_pet, false);
     const pet = await createMonsterAt('little dog', 11, 10);
@@ -147,7 +147,7 @@ void test('petattr:none clears hilite_pet and enabling it restores inverse', asy
 });
 
 void test('disabling and enabling hilite_pet preserves the chosen pet attribute', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=petattr:underline');
     await selectFullOption('hilite_pet', '\x1b');
     assert.equal(game.flags.hilite_pet, false);
@@ -159,12 +159,12 @@ void test('disabling and enabling hilite_pet preserves the chosen pet attribute'
 
 for (const value of ['sparkly', 'bold+inverse', 'bold&underline']) {
     void test(`invalid petattr:${value} reports an error and preserves highlighting`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc('OPTIONS=petattr:underline');
         const pet = await createMonsterAt('little dog', 11, 10);
         pet.mtame = 10;
         const result = applyNethackrc(`OPTIONS=petattr:${value}`);
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
 
         assert.equal(result.configErrors[0]?.errors[0]?.message,
@@ -186,11 +186,11 @@ for (const { value, name, cell } of [
     { value: 'Re-VerSe', name: 'inverse', cell: ATR_INVERSE },
 ]) {
     void test(`petattr:${value} renders its attribute and shows the canonical name ${name}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         applyNethackrc(`OPTIONS=petattr:${value}`);
         const pet = await createMonsterAt('little dog', 11, 10);
         pet.mtame = 10;
-        newsym(11, 10);
+        await newsym(11, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).attr, cell);
 
@@ -202,11 +202,11 @@ for (const { value, name, cell } of [
 
 void test('configuration can enable hilite_pet after petattr:none', async () => {
     const config = parseNethackrc('OPTIONS=hilite_pet,petattr:none');
-    freshObjectRoom({ flags: config.flags, iflags: config.iflags });
+    await freshObjectRoom({ flags: config.flags, iflags: config.iflags });
     const pet = await createMonsterAt('little dog', 11, 10);
     pet.mtame = 10;
 
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
 
     assert.equal(game.flags.hilite_pet, true);
@@ -214,11 +214,11 @@ void test('configuration can enable hilite_pet after petattr:none', async () => 
 });
 
 void test('an explicit hilite_pet disable keeps the configured attribute for later', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=!hilite_pet,petattr:bold');
     const pet = await createMonsterAt('little dog', 11, 10);
     pet.mtame = 10;
-    newsym(11, 10);
+    await newsym(11, 10);
     await flush_screen(1);
     assert.equal(game.flags.hilite_pet, false);
     assert.equal(requireScreenCell(10, 11).attr, 0);
@@ -230,7 +230,7 @@ void test('an explicit hilite_pet disable keeps the configured attribute for lat
 });
 
 void test('cancelling petattr leaves hilite_pet disabled and the stored attribute intact', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     applyNethackrc('OPTIONS=!hilite_pet,petattr:blink');
 
     const { row } = await selectFullOption('petattr', '\x1b');

@@ -8,7 +8,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 
 void test('Fort Ludios status identifies the branch instead of a numbered dungeon level', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'Fort Ludios' })];
     game.knox_level = createSpecialLevel(game.u.uz);
@@ -25,7 +25,7 @@ function statusText() {
 }
 
 void test('fatal injury displays zero health while retaining the actual damage', async () => {
-    freshObjectRoom({ hero: { uhp: -7, uhpmax: 20 } });
+    await freshObjectRoom({ hero: { uhp: -7, uhpmax: 20 } });
     requirePlayingGame(game);
 
     await flush_screen(1);
@@ -35,7 +35,7 @@ void test('fatal injury displays zero health while retaining the actual damage',
 });
 
 void test('the status line shows the current monster body rather than human health', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
         uhp: 15, uhpmax: 20, mtimedone: 100, umonnum: 0, mh: 3, mhmax: 8,
     } });
     requirePlayingGame(game);
@@ -47,7 +47,7 @@ void test('the status line shows the current monster body rather than human heal
 });
 
 void test('large health and power fit the native four-digit status fields', async () => {
-    freshObjectRoom({ hero: {
+    await freshObjectRoom({ hero: {
         uhp: 10020, uhpmax: 10030, uen: 12000, uenmax: 13000,
     } });
     requirePlayingGame(game);

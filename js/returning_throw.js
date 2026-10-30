@@ -35,7 +35,7 @@ export function throwerIsImpaired(state) {
 export async function finishReturningThrow({ state, object, impact, impaired, twoWeapons, oldSlot, tetherDisplay, }) {
     requirePlayingGame(state);
     if (rn2(100) === 0) {
-        tetherDisplay?.clear();
+        await tetherDisplay?.clear();
         await plineWithContinuation(`${definiteObjectAction(object, 'fail', state)} to return!`);
         return false;
     }
@@ -52,7 +52,7 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
         await setPrimaryWeapon(returned, state);
         setTwoWeaponCombat(twoWeapons, state);
         if (cansee(impact.x, impact.y))
-            newsym(impact.x, impact.y);
+            await newsym(impact.x, impact.y);
         return true;
     }
     let damage = rn2(2);

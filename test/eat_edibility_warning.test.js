@@ -10,7 +10,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const quantity of [1, 2]) {
     void test(`food detection warns about ${quantity === 1 ? 'a corpse' : 'corpses'} using its ordinary object name`, async () => {
-        freshObjectRoom({ hero: { uedibility: 1 } });
+        await freshObjectRoom({ hero: { uedibility: 1 } });
         requirePlayingGame(game);
         const corpse = await addInventoryObject(CORPSE, {
             corpsenm: MONSTER_NAME.indexOf('cockatrice'), quantity, age: game.moves,

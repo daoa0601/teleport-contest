@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('walking into a hidden hider reveals it under its cover', async () => {
-    freshObjectRoom({ gameplaySeed: 4n });
+    await freshObjectRoom({ gameplaySeed: 4n });
 
     const box = await knownObject(LARGE_BOX, { bknown: false, typeKnown: false });
     await placeObject(box, 11, 10);
@@ -35,7 +35,7 @@ void test('walking into a hidden hider reveals it under its cover', async () => 
 });
 
 void test('striking an invisible worm tail marks the struck square', async () => {
-    freshObjectRoom({ gameplaySeed: 4n });
+    await freshObjectRoom({ gameplaySeed: 4n });
     requireFixtureGame(game);
 
     const worm = await createMonsterAt('long worm', 12, 10);
@@ -60,12 +60,12 @@ void test('striking an invisible worm tail marks the struck square', async () =>
 });
 
 void test('remembering an invisible worm head does not reveal its tail', async () => {
-    freshObjectRoom({ gameplaySeed: 4n });
+    await freshObjectRoom({ gameplaySeed: 4n });
     requireFixtureGame(game);
     const worm = await createMonsterAt('long worm', 12, 10);
     worm.minvis = 1;
     worm.wormSegments = [{ x: 11, y: 10 }];
-    map_invisible(12, 10);
+    await map_invisible(12, 10);
 
     pushKey('l'.charCodeAt(0));
     await rhack('l'.charCodeAt(0));
@@ -76,13 +76,13 @@ void test('remembering an invisible worm head does not reveal its tail', async (
 });
 
 void test('stumbling onto a sleeping monster-disguised mimic wakes it and establishes its hold', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mimic = await createMonsterAt('large mimic', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     mimic.m_ap_type = M_AP_MONSTER;
     mimic.mappearance = MONSTER_NAME.indexOf('hill giant');
     mimic.msleeping = 1;
     mimic.mpeaceful = false;
-    newsym(mimic.mx, mimic.my);
+    await newsym(mimic.mx, mimic.my);
     const health = mimic.mhp;
     const messages: string[] = [];
     const input = resetInputState();

@@ -10,8 +10,8 @@ import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
 
-function installGremlinHero(terrain: number) {
-    const level = freshRoomWithPolymorphedHero('gremlin', {
+async function installGremlinHero(terrain: number) {
+    const level = await freshRoomWithPolymorphedHero('gremlin', {
         left: 7,
         right: 16,
         top: 6,
@@ -32,7 +32,7 @@ function installGremlinHero(terrain: number) {
 }
 
 void test('a gremlin can multiply while standing on a pool', async () => {
-    const level = installGremlinHero(POOL);
+    const level = await installGremlinHero(POOL);
     requireFixtureGame(game);
     await runMonsterAbilityCommand(' '.repeat(4));
 
@@ -45,7 +45,7 @@ void test('a gremlin can multiply while standing on a pool', async () => {
 });
 
 void test('a gremlin cannot multiply away from water', async () => {
-    const level = installGremlinHero(ROOM);
+    const level = await installGremlinHero(ROOM);
     requireFixtureGame(game);
     await runMonsterAbilityCommand();
 

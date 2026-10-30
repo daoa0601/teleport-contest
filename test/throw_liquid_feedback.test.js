@@ -15,7 +15,7 @@ for (const landing of [
     { name: 'a wooden club into lava', type: CLUB, terrain: LAVAPOOL, sound: null, survives: false },
 ]) {
     void test(`throwing ${landing.name} ${landing.sound ? `makes a ${landing.sound}` : 'burns without a splash'}`, async () => {
-        const level = freshObjectRoom({ right: 20 });
+        const level = await freshObjectRoom({ right: 20 });
         for (let x = 11; x <= 20; x++)
             level.requireAt(x, 10).typ = landing.terrain;
         const object = await addInventoryObject(landing.type);
@@ -38,7 +38,7 @@ for (const landing of [
 }
 for (const condition of ['deaf', 'underwater']) {
     void test(`throwing a touchstone into water makes no sound while ${condition}`, async () => {
-        const level = freshObjectRoom({ right: 20, hero: { deafTurns: condition === 'deaf' ? 20 : 0 } });
+        const level = await freshObjectRoom({ right: 20, hero: { deafTurns: condition === 'deaf' ? 20 : 0 } });
         for (let x = 11; x <= 20; x++)
             level.requireAt(x, 10).typ = POOL;
         game.underwater = game.u.uinwater = condition === 'underwater';

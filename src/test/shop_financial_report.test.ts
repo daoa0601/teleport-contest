@@ -9,7 +9,7 @@ import { createStaffedShop } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 
 void test('the gold command reports shop credit and usage debt after the wallet', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.eshk.shknam = 'Ada';
     shopkeeper.eshk.credit = 12;

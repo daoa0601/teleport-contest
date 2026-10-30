@@ -171,7 +171,7 @@ export async function kickFloorObject(x: number, y: number, {
         }
         await publish(`${subject} ${plural ? 'come' : 'comes'} loose.`);
         remove_object(object, state);
-        newsym(x, y);
+        await newsym(x, y);
         const shop = roomsAt(state.level, x, y, SHOPBASE)[0];
         if (costly && (!costlySpot(state.u.ux, state.u.uy, state)
             || shop === undefined || !state.u.urooms?.includes(shop))) {
@@ -184,7 +184,7 @@ export async function kickFloorObject(x: number, y: number, {
             impactDisturbsZombies(object, true, state);
             await stack_object(object, state);
         }
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
         return true;
     }
 
@@ -233,7 +233,7 @@ export async function kickFloorObject(x: number, y: number, {
                 mayHitHero: true, mayHitMonsters: true, heroCaused: true,
                 publish, random, rollOne,
             });
-            newsym(x, y);
+            await newsym(x, y);
             return true;
         }
         if (quantity(object) > 300) {
@@ -255,7 +255,7 @@ export async function kickFloorObject(x: number, y: number, {
     state._kickedObject = moving;
     try {
         await snuffThrownCandle(moving, state, publish);
-        newsym(x, y);
+        await newsym(x, y);
         const flight = await flyKickedObject({
             state,
             object: moving,
@@ -301,7 +301,7 @@ export async function kickFloorObject(x: number, y: number, {
         await placeObject(moving, flight.x, flight.y, state);
         impactDisturbsZombies(moving, true, state);
         await stack_object(moving, state);
-        newsym(flight.x, flight.y);
+        await newsym(flight.x, flight.y);
         return true;
     } finally {
         if (state._kickedObject === moving) state._kickedObject = null;

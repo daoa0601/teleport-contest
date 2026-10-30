@@ -200,6 +200,6 @@ export async function dissolveBars(x: number, y: number, state: GameState = game
     location.typ = location.edge === true || location.edge === 1 ? DOOR
         : specialLevelAt(state.u.uz, state) || roomsAt(level, x, y).length ? ROOM : CORR;
     location.flags = location.doormask = location.wall_info = 0;
-    newsym(x, y);
+    await newsym(x, y);
     if (state.u.ux === x && state.u.uy === y) await switchHeroTerrain(state);
 }

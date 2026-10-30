@@ -15,7 +15,7 @@ void test('a killed acid blob cannot affect whether the rolling boulder fills th
     for (let seed = 1n; seed <= 16n; seed++) {
         const poolTypes: number[] = [];
         for (const withBlob of [false, true]) {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             const pool = level.requireAt(14, 10);
             pool.typ = POOL;
@@ -39,7 +39,7 @@ void test('a killed acid blob cannot affect whether the rolling boulder fills th
 
 for (const hallucinating of [false, true]) {
     void test(`seeing a boulder hit ${hallucinating ? 'while hallucinating leaves its appearance unknown' : 'reveals its appearance'}`, async () => {
-        freshObjectRoom({ hero: { hallucinationTurns: hallucinating ? 100 : 0 } });
+        await freshObjectRoom({ hero: { hallucinationTurns: hallucinating ? 100 : 0 } });
         requirePlayingGame(game);
         const orc = await createMonsterAt('orc', 13, 10, NO_MINVENT);
         orc.mhp = orc.mhpmax = 100;
@@ -57,7 +57,7 @@ for (const hallucinating of [false, true]) {
 for (const verbose of [false, true]) {
     for (const hit of [false, true]) {
         void test(`a boulder ${hit ? 'hit' : 'miss'} ${verbose ? 'names a visible target' : 'uses it when verbose is disabled'}`, async () => {
-            freshObjectRoom({ flags: { verbose } });
+            await freshObjectRoom({ flags: { verbose } });
             requirePlayingGame(game);
             const wolf = await createMonsterAt('wolf', 13, 10, NO_MINVENT);
             wolf.mhp = wolf.mhpmax = 100;

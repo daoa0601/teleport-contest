@@ -16,7 +16,7 @@ import { CORR } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('blind automatic floor inspection names the ground in a corridor', async () => {
-    const level = freshObjectRoom({ flags: { pickup: false }, hero: { blindTurns: 10 } });
+    const level = await freshObjectRoom({ flags: { pickup: false }, hero: { blindTurns: 10 } });
     level.requireAt(10, 10).typ = CORR;
     await floorObject(APPLE, 10, 10);
     const input = resetInputState();
@@ -30,14 +30,14 @@ void test('blind automatic floor inspection names the ground in a corridor', asy
 });
 
 void test('walking onto a floor pile redraws the hero before acknowledging an older message', async () => {
-    freshObjectRoom({ heroX: 10, heroY: 10, flags: { pickup: false } });
+    await freshObjectRoom({ heroX: 10, heroY: 10, flags: { pickup: false } });
     await floorObject(APPLE, 11, 10);
     await floorObject(FOOD_RATION, 11, 10);
     await flush_screen(1);
     await pline('You hear a creature in the corridor.');
     await placeHeroOnLevel(11, 10);
-    newsym(10, 10);
-    vision_recalc(1);
+    await newsym(10, 10);
+    await vision_recalc(1);
     const input = resetInputState();
 
     const inspection = autopickupAtHero();

@@ -8,7 +8,7 @@ import { LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 
 void test('a disenchanter describes a pair of gloves as one item when draining it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
     const gloves = await addInventoryObject(LEATHER_GLOVES, { spe: 3 });
     const messages: string[] = [];
@@ -23,7 +23,7 @@ void test('a disenchanter describes a pair of gloves as one item when draining i
 
 for (const blind of [false, true]) {
     void test(`disenchantment ${blind ? 'preserves an unseen ring name while blind' : 'reveals the known type of an unseen ring'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 10 : 0 } });
         const disenchanter = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
         const ring = await addInventoryObject(OBJECT_NAMES.indexOf('gain strength'), {
             spe: 3, dknown: false, observed: false,

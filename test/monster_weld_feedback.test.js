@@ -9,7 +9,7 @@ import { artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a balrog unable to release a welded dagger uses its perceived possessive pronoun', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const balrog = await createMonsterAt('balrog', 11, 10, NO_MINVENT);
     const dagger = await equipMonsterObject(balrog, await knownObject(DAGGER, { cursed: true }), W_WEP);
     await addObjectToMonsterInventory(balrog, await knownObject(LONG_SWORD));
@@ -23,7 +23,7 @@ void test('a balrog unable to release a welded dagger uses its perceived possess
     assert.equal(messages[1], "The balrog's dagger is welded to its foreclaw!");
 });
 void test('an undiscovered artifact keeps its object description when a monster makes it shine', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const giant = await createMonsterAt('giant', 11, 10, NO_MINVENT);
     const sword = await artifactObject('Sunsword', { known: false, typeKnown: false, bknown: false });
     await addObjectToMonsterInventory(giant, sword);
@@ -35,7 +35,7 @@ void test('an undiscovered artifact keeps its object description when a monster 
     assert.match(light ?? '', /^The long sword named Sunsword shines /);
 });
 void test('a welded weapon blocking a pick-axe ends with an uncapitalized monster name', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dwarf = await createMonsterAt('dwarf', 11, 10, NO_MINVENT);
     await equipMonsterObject(dwarf, await knownObject(DAGGER, { cursed: true }), W_WEP);
     await addObjectToMonsterInventory(dwarf, await knownObject(PICK_AXE));

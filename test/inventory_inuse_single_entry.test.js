@@ -15,7 +15,7 @@ const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 // its comparison.  A single in-use entry keeps orderclass 0, so the
 // "Inventory in use" menu lists it without any class heading.
 void test('a lone wielded weapon is listed without a class heading', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger, game);
     const input = resetInputState();
@@ -34,7 +34,7 @@ void test('a lone wielded weapon is listed without a class heading', async (t) =
 // With more than one entry, sortloot() runs, every entry is classified, and
 // each group renders under its heading (weapons before armor).
 void test('wielded weapon plus worn boots produce both class headings', async (t) => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger, game);
     const boots = await addInventoryObject(LOW_BOOTS, { owornmask: W_ARMF });

@@ -24,7 +24,7 @@ async function soldierWithLance(x, y) {
     return soldier;
 }
 void test('a monster swinging an unidentified Snickersnee describes the named katana', async () => {
-    freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
+    await freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
     soldier.mux = game.u.ux;
@@ -40,7 +40,7 @@ void test('a monster swinging an unidentified Snickersnee describes the named ka
     assert.equal(soldier.mw, weapon);
 });
 void test('an unfamiliar polearm keeps its visible appearance in the thrust and miss messages', async () => {
-    freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
+    await freshObjectRoom({ hero: { uac: 10 }, flags: { verbose: true } });
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 12, 10, NO_MINVENT);
     soldier.mux = game.u.ux;
@@ -56,7 +56,7 @@ void test('an unfamiliar polearm keeps its visible appearance in the thrust and 
     assert.equal(objectTypeKnown(polearm), false, 'watching an attack does not identify the weapon type');
 });
 void test('a monster can strike at a knight\'s move distance without throwing its lance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await soldierWithLance(12, 11);
     requirePlayingGame(game);
@@ -82,14 +82,14 @@ for (const { obstacle, x, y, name } of [
     { x: 12, y: 10, obstacle: true, name: 'behind a wall' },
 ]) {
     void test(`a monster cannot reach the hero with a polearm ${name}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const soldier = await soldierWithLance(x, y);
         requirePlayingGame(game);
         if (obstacle) {
             game.level.requireAt(11, 10).typ = STONE;
             vision_reset();
-            vision_recalc(0);
+            await vision_recalc(0);
         }
         const health = game.u.uhp;
         const messages = [];
@@ -103,7 +103,7 @@ for (const { obstacle, x, y, name } of [
     });
 }
 void test('a polearm damages the hero\'s current monster body, not saved human health', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     installPolymorphedHero('minotaur', { hitPoints: 60 });
     const soldier = await soldierWithLance(12, 11);

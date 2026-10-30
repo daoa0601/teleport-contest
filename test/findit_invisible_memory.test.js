@@ -18,7 +18,7 @@ void test('clearing an unseen-monster marker during magical searching reveals th
     requirePlayingGame(game);
     const statue = await floorObject(STATUE, 10, 9);
     // The hero senses an unseen monster on the statue's square.
-    map_invisible(10, 9);
+    await map_invisible(10, 9);
     assert.equal(game.level.requireAt(10, 9).remembered_glyph?.kind, 'invisible');
     await findit();
     const remembered = game.level.requireAt(10, 9).remembered_glyph;

@@ -14,14 +14,14 @@ import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function surroundHeroWithStone(level: GameMap): void {
+async function surroundHeroWithStone(level: GameMap): Promise<void> {
     for (let x = game.u.ux - 2; x <= game.u.ux + 2; x++) {
         for (let y = game.u.uy - 2; y <= game.u.uy + 2; y++) {
             if (x !== game.u.ux || y !== game.u.uy)
                 level.requireAt(x, y).typ = STONE;
         }
     }
-    vision_recalc(0);
+    await vision_recalc(0);
 }
 
 function assertTravelStopped(): void {
@@ -34,11 +34,11 @@ function assertTravelStopped(): void {
 
 for (const continuation of [false, true]) {
     void test(`a failed ${continuation ? 'continued' : 'first'} travel step still checks slippery ice`, async () => {
-        const level = freshObjectRoom({ flags: { tips: false } });
+        const level = await freshObjectRoom({ flags: { tips: false } });
         game._travelTarget = { x: 14, y: 10 };
         if (continuation) await rhack(31);
         const { ux, uy } = game.u;
-        surroundHeroWithStone(level);
+        await surroundHeroWithStone(level);
         level.requireAt(ux, uy).typ = ICE;
         game.u.umoved = false;
         initRng(4n);
@@ -58,11 +58,11 @@ for (const continuation of [false, true]) {
 
 for (const continuation of [false, true]) {
     void test(`a swimming hero still encounters friction after a failed ${continuation ? 'continued' : 'first'} travel step`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         game._travelTarget = { x: 14, y: 10 };
         if (continuation) await rhack(31);
         const { ux, uy } = game.u;
-        surroundHeroWithStone(level);
+        await surroundHeroWithStone(level);
         level.requireAt(ux, uy).typ = POOL;
         game.u.uinwater = 1;
         grantIntrinsicProperty('swimming', 'outside');
@@ -81,10 +81,10 @@ for (const continuation of [false, true]) {
 }
 
 void test('a failed travel search can still send a stunned hero into a reachable square', async () => {
-    const level = freshObjectRoom({ hero: { stunnedTurns: 10 } });
-    surroundHeroWithStone(level);
+    const level = await freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    await surroundHeroWithStone(level);
     level.requireAt(9, 10).typ = ROOM;
-    vision_recalc(0);
+    await vision_recalc(0);
     game._travelTarget = { x: 14, y: 10 };
     initRng(1n);
 
@@ -99,7 +99,7 @@ void test('a failed travel search can still send a stunned hero into a reachable
 });
 
 void test('a travel guess rejects known water before friction can divert the step', async () => {
-    const level = freshObjectRoom({ hero: { uinwater: 1 } });
+    const level = await freshObjectRoom({ hero: { uinwater: 1 } });
     for (let x = 9; x <= 11; x++)
         for (let y = 9; y <= 11; y++) level.requireAt(x, y).typ = POOL;
     grantIntrinsicProperty('magicalBreathing', 'outside');
@@ -117,12 +117,12 @@ void test('a travel guess rejects known water before friction can divert the ste
 });
 
 void test('a travel guess rejects a known trap and still checks slippery ice', async () => {
-    const level = freshObjectRoom({ hero: { utrap: 0 }, flags: { mention_walls: true } });
-    surroundHeroWithStone(level);
+    const level = await freshObjectRoom({ hero: { utrap: 0 }, flags: { mention_walls: true } });
+    await surroundHeroWithStone(level);
     level.requireAt(10, 10).typ = ICE;
     level.requireAt(11, 10).typ = ROOM;
     addTrap(level, PIT, 11, 10, { tseen: true });
-    vision_recalc(0);
+    await vision_recalc(0);
     game._travelTarget = { x: 30, y: 10 };
     initRng(4n);
 
@@ -140,7 +140,7 @@ void test('a travel guess rejects a known trap and still checks slippery ice', a
 
 for (const typeKnown of [false, true]) {
     void test(`travel previews ${typeKnown ? 'accept identified' : 'reject unidentified'} water-walking boots`, async () => {
-        const level = freshObjectRoom({ context: { run: 8 } });
+        const level = await freshObjectRoom({ context: { run: 8 } });
         level.requireAt(11, 10).typ = POOL;
         wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown }));
 
@@ -149,7 +149,7 @@ for (const typeKnown of [false, true]) {
 }
 
 void test('a travel movement preview permits known lava walking only from lava', async () => {
-    const level = freshObjectRoom({ context: { run: 8 } });
+    const level = await freshObjectRoom({ context: { run: 8 } });
     level.requireAt(11, 10).typ = LAVAPOOL;
     grantIntrinsicProperty('fireResistance', 'outside');
     wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { oerodeproof: true, rknown: true }));
@@ -160,8 +160,8 @@ void test('a travel movement preview permits known lava walking only from lava',
 });
 
 for (const property of ['levitation', 'flying']) {
-    void test(`a travel movement preview with ${property} permits liquid surfaces and rejects liquid walls`, () => {
-        const level = freshObjectRoom({ context: { run: 8 } });
+    void test(`a travel movement preview with ${property} permits liquid surfaces and rejects liquid walls`, async () => {
+        const level = await freshObjectRoom({ context: { run: 8 } });
         if (property === 'levitation') grantIntrinsicProperty('levitation', 'outside');
         else grantIntrinsicProperty('flying', 'outside');
         level.requireAt(11, 10).typ = POOL;
@@ -176,8 +176,8 @@ for (const property of ['levitation', 'flying']) {
     });
 }
 
-void test('a travel movement preview leaves unknown liquid for ordinary movement to discover', () => {
-    const level = freshObjectRoom({ context: { run: 8 } });
+void test('a travel movement preview leaves unknown liquid for ordinary movement to discover', async () => {
+    const level = await freshObjectRoom({ context: { run: 8 } });
     const pool = level.requireAt(11, 10);
     pool.typ = POOL;
     pool.seenv = 0;
@@ -185,8 +185,8 @@ void test('a travel movement preview leaves unknown liquid for ordinary movement
     assert.equal(heroTestMove(11, 10), true);
 });
 
-void test('travel previews allow the current square and vibrating squares', () => {
-    const level = freshObjectRoom({ context: { run: 8 } });
+void test('travel previews allow the current square and vibrating squares', async () => {
+    const level = await freshObjectRoom({ context: { run: 8 } });
     level.requireAt(10, 10).typ = POOL;
     addTrap(level, PIT, 10, 10, { tseen: true });
     addTrap(level, VIBRATING_SQUARE, 11, 10, { tseen: true });
@@ -195,8 +195,8 @@ void test('travel previews allow the current square and vibrating squares', () =
     assert.equal(heroTestMove(11, 10), true, 'a vibrating square is no obstacle');
 });
 
-void test('ordinary movement previews leave known hazards to the movement checks', () => {
-    const level = freshObjectRoom();
+void test('ordinary movement previews leave known hazards to the movement checks', async () => {
+    const level = await freshObjectRoom();
     level.requireAt(11, 10).typ = POOL;
     addTrap(level, PIT, 10, 11, { tseen: true });
 
@@ -205,7 +205,7 @@ void test('ordinary movement previews leave known hazards to the movement checks
 });
 
 void test('a guessed route toward an unreachable target still checks ice before moving', async () => {
-    const level = freshObjectRoom({ top: 10, bottom: 10 });
+    const level = await freshObjectRoom({ top: 10, bottom: 10 });
     level.requireAt(10, 10).typ = ICE;
     game._travelTarget = { x: 30, y: 10 };
     initRng(4n);
@@ -221,7 +221,7 @@ void test('a guessed route toward an unreachable target still checks ice before 
 });
 
 void test('choosing the final travel step stops repetition even if stun sends the hero elsewhere', async () => {
-    freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    await freshObjectRoom({ hero: { stunnedTurns: 10 } });
     game._travelTarget = { x: 11, y: 10 };
     initRng(1n);
 
@@ -235,7 +235,7 @@ void test('choosing the final travel step stops repetition even if stun sends th
 });
 
 void test('a final continued step retains running checks after stun changes its destination', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._travelTarget = { x: 12, y: 10 };
     await rhack(31);
     game.u.stunnedTurns = 10;
@@ -256,7 +256,7 @@ void test('a final continued step retains running checks after stun changes its 
 });
 
 void test('counted travel completes its last step after the count ends running', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._travelTarget = { x: 14, y: 10 };
     resetInputState().feed('2\x1f');
     await rhack(0);
@@ -269,7 +269,7 @@ void test('counted travel completes its last step after the count ends running',
 });
 
 void test('a final travel step retains the running check that prevents automatic door opening', async () => {
-    const level = freshObjectRoom({ flags: { autoopen: true } });
+    const level = await freshObjectRoom({ flags: { autoopen: true } });
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;

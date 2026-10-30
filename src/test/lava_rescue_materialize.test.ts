@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // prints the verbose arrival line (teleport.c:545-547) before the landing
 // effects run.
 void test('a lava life-save rescue announces the materialize line', async () => {
-    freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
+    await freshObjectRoom({ flags: { debug: true, bones: false, disclose: '-i -a -v -g -c -o' } });
     const level = game.level;
     if (!level) throw new Error('the object room level is missing');
     level.requireAt(10, 10).typ = LAVAPOOL;

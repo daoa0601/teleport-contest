@@ -12,14 +12,14 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 void test('restoring a pet with no delivery incentive gives it the native minimum apport', async () => {
-    freshObjectRoom({ flags: { debug: true } });
+    await freshObjectRoom({ flags: { debug: true } });
     const pet = await createMonsterAt('little dog', 14, 10, MM_NOGRP | NO_MINVENT);
     initializePet(pet);
     assert.ok(pet.edog);
     pet.edog.apport = 0;
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
     const restored = requireGameLevel().monsters.find(monster => monster.m_id === pet.m_id);
     assert.ok(restored);
     const status = await monsterStatusLine(restored);
@@ -27,18 +27,18 @@ void test('restoring a pet with no delivery incentive gives it the native minimu
 });
 void test('a bones pet retains its remaining feeding interval on the new hero clock', async () => {
     const storage = memoryStorage();
-    const bonesRoom = (moves) => {
-        freshObjectRoom({ moves, flags: { debug: true } });
+    const bonesRoom = async (moves) => {
+        await freshObjectRoom({ moves, flags: { debug: true } });
         game.storage = storage;
         game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     };
-    bonesRoom(100);
+    await bonesRoom(100);
     const pet = await createMonsterAt('little dog', 14, 10, MM_NOGRP | NO_MINVENT);
     initializePet(pet);
     assert.ok(pet.edog);
     pet.edog.hungrytime = game.moves + 5000;
     assert.equal(saveBonesLevel(), true);
-    bonesRoom(20);
+    await bonesRoom(20);
     resetInputState().feed('yn');
     await mklev();
     assert.equal(game._restoredBones, true);

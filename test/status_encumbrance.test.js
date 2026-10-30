@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { addTrap } from './support/level-state.js';
 void test('status recalculates carrying capacity when inventory changes before a turn ends', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game._encumbranceLevel = 1;
     await addInventoryObject(SPLINT_MAIL, { quan: 3 });
@@ -20,7 +20,7 @@ void test('status recalculates carrying capacity when inventory changes before a
     assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /Burdened/);
 });
 void test('an ordinary pickup retains load status until a trap requests a status update', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     await bot();
     await addInventoryObject(SPLINT_MAIL, { quan: 3 });
     await flush_screen(1);

@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a fleeing leprechaun buries its purse after teleporting out of the hero sight', async () => {
-    const level = freshObjectRoom({ right: 65 });
+    const level = await freshObjectRoom({ right: 65 });
     requirePlayingGame(game);
     for (let y = 6; y <= 14; y++) level.requireAt(40, y).typ = STONE;
     const leprechaun = await createMonsterAt('leprechaun', 11, 10, NO_MINVENT);
@@ -20,7 +20,7 @@ void test('a fleeing leprechaun buries its purse after teleporting out of the he
     const gold = await knownObject(GOLD_PIECE, { quan: 300 });
     await addObjectToMonsterInventory(leprechaun, gold);
     vision_reset_new_level();
-    vision_recalc(0);
+    await vision_recalc(0);
     const random = (limit: number) => limit === 40 ? 0 : limit === 77 ? 60
         : limit === 21 ? 10 : Math.min(1, limit - 1);
 

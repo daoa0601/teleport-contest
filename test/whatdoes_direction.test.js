@@ -22,7 +22,7 @@ async function askWhatdoes(key) {
     await operation;
 }
 void test('asking about west movement selects the west side of a doorway for area filtering', async () => {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: false },
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: false },
         hero: { dx: 1, dy: 0, dz: 1 } });
     for (let y = 6; y <= 14; y++)
         level.requireAt(10, y).typ = HWALL;
@@ -31,8 +31,8 @@ void test('asking about west movement selects the west side of a doorway for are
     doorway.doormask = D_ISOPEN;
     await createMonsterAt('kitten', 8, 10);
     await createMonsterAt('jackal', 12, 10);
-    newsym(8, 10);
-    newsym(12, 10);
+    await newsym(8, 10);
+    await newsym(12, 10);
     game.iflags.getloc_filter = 2;
     await askWhatdoes('h');
     resetInputState().feed('m.');
@@ -46,7 +46,7 @@ void test('asking about west movement selects the west side of a doorway for are
 });
 for (const [key, dx, dy, dz] of [['H', -1, 0, 0], ['\x0c', 1, 0, 0], ['>', 0, 0, 1], ['s', 1, -1, 0]]) {
     void test(`asking about ${key === '\x0c' ? '^L' : key} updates the remembered direction without taking a turn`, async () => {
-        freshObjectRoom({ hero: { dx: 1, dy: -1, dz: 1 } });
+        await freshObjectRoom({ hero: { dx: 1, dy: -1, dz: 1 } });
         await askWhatdoes(key);
         assert.equal(game.u.dx, dx);
         assert.equal(game.u.dy, dy);

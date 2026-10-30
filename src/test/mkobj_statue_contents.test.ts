@@ -5,7 +5,7 @@ import { SPE_NOVEL, STATUE } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a spellbook generated inside a statue belongs to that statue', async () => {
-    freshObjectRoom({ gameplaySeed: 160 });
+    await freshObjectRoom({ gameplaySeed: 160 });
     let books = 0;
 
     for (let count = 0; count < 100; count++) {

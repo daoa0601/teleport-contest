@@ -45,7 +45,7 @@ async function recallGame(mode: 'single' | 'combination', moves: string, storage
 }
 
 void test('single-mode ^P recalls the joined line, wraps to the newest, and takes no time', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -67,7 +67,7 @@ void test('single-mode ^P recalls the joined line, wraps to the newest, and take
 });
 
 void test('an unknown command replaces the line without being remembered', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -87,7 +87,7 @@ void test('an unknown command replaces the line without being remembered', async
 });
 
 void test('a recalled line is cleared after the next silent command key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
     await pline('The door creaks open.');
@@ -107,7 +107,7 @@ void test('a recalled line is cleared after the next silent command key', async 
 });
 
 void test('msg_window:full lists the ring oldest-first with the pending line last', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 'f';
     const input = resetInputState();
@@ -130,7 +130,7 @@ void test('msg_window:full lists the ring oldest-first with the pending line las
 });
 
 void test('the first recall from an untouched long line prompt pages its text', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -151,7 +151,7 @@ void test('the first recall from an untouched long line prompt pages its text', 
 });
 
 void test('msg_window:reversed leads with the pending line and runs newest-first', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 'r';
     const input = resetInputState();
@@ -171,7 +171,7 @@ void test('msg_window:reversed leads with the pending line and runs newest-first
 });
 
 void test('msg_window:combination pages two single lines before the full window', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 'c';
     const input = resetInputState();
@@ -246,7 +246,7 @@ void test('menu search remembers the message it replaces before recalling it', a
 });
 
 void test('a wrapped recall pages with --More-- and ^P keeps the walk going', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -272,7 +272,7 @@ void test('a wrapped recall pages with --More-- and ^P keeps the walk going', as
 // through update_topl()'s word wrap, so recalling the editor line mid-edit
 // renders it with topl_putsym()'s hard column wrap (topl.c:136-138).
 void test('a long getlin answer recalls with the hard column wrap', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -294,7 +294,7 @@ void test('a long getlin answer recalls with the hard column wrap', async () => 
 });
 
 void test('single-mode ^P in a question discards the first following key and records the answer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -323,7 +323,7 @@ void test('single-mode ^P in a question discards the first following key and rec
 });
 
 void test('a full recall ring skips its oldest entry and wraps to the pending line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.msg_history = 200; // the ring clamps to MAX_MSG_HISTORY
     game.iflags.prevmsg_window = 's';
@@ -347,7 +347,7 @@ void test('a full recall ring skips its oldest entry and wraps to the pending li
 });
 
 void test('a full ring omits its oldest entry from the reversed window', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.msg_history = 200;
     game.iflags.prevmsg_window = 'r';
@@ -372,7 +372,7 @@ void test('a full ring omits its oldest entry from the reversed window', async (
 });
 
 void test('save and restore carry the recall ring', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     await pline('One forgotten turn.');
@@ -383,7 +383,7 @@ void test('save and restore carry the recall ring', async () => {
 
     assert.equal(await saveGame(storage), true, 'save_msghistory() flushes the pending line');
     resetGame();
-    assert.equal(restoreGame('Prevmsg', storage), true);
+    assert.equal(await restoreGame('Prevmsg', storage), true);
     // jsmain attaches the terminal before dorecover(); reattach it here.
     game.nhDisplay = new GameDisplay(null);
     await pline('Three follows.'); // remembers the restored pending line
@@ -397,7 +397,7 @@ void test('save and restore carry the recall ring', async () => {
 
 
 void test('the # editor files the line before its prompt and keeps its own text out of history', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.extmenu = false;
     game.iflags.prevmsg_window = 's';
@@ -424,7 +424,7 @@ void test('the # editor files the line before its prompt and keeps its own text 
 });
 
 void test('a line prompt records the answer typed into it', async t => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const input = resetInputState();
     await addInventoryObject(ARROW, { invlet: 'a', quan: 4, oextra: { oname: 'First Flight' } });
@@ -447,7 +447,7 @@ void test('a line prompt records the answer typed into it', async t => {
 });
 
 void test('a free-form question answers ^P like any key and records it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -489,7 +489,7 @@ void test('a free-form question answers ^P like any key and records it', async (
 });
 
 void test('a hidden message that does not fit still files the stopped line', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -516,7 +516,7 @@ void test('a hidden message that does not fit still files the stopped line', asy
 });
 
 void test('the split count files its yn answer and only the conditional final count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -545,7 +545,7 @@ void test('the split count files its yn answer and only the conditional final co
 });
 
 void test('Escape in a split count files a zero count', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -583,7 +583,7 @@ void test('startup clamps msghistory like tty window creation', async () => {
 });
 
 void test('a wrapped entry recalled from a question pages with --More--', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -615,7 +615,7 @@ void test('a wrapped entry recalled from a question pages with --More--', async 
 });
 
 void test('a history window replaces a repainted question without paging it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 'f';
     const input = resetInputState();
@@ -648,7 +648,7 @@ void test('a history window replaces a repainted question without paging it', as
 });
 
 void test('the adjust destination records the answer after the prompt space', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -671,7 +671,7 @@ void test('the adjust destination records the answer after the prompt space', as
 });
 
 void test('a long extended-command line pages on its first recall', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.extmenu = false;
     game.iflags.prevmsg_window = 's';
@@ -695,7 +695,7 @@ void test('a long extended-command line pages on its first recall', async () => 
 });
 
 void test('the first recall from an unanswered question pages a wrapped entry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();
@@ -731,7 +731,7 @@ void test('^P in the extended-command editor drops the auto-completed suffix', a
 });
 
 void test('a direction prompt files its question with the answered key', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.iflags.prevmsg_window = 's';
     const input = resetInputState();

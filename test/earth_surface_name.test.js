@@ -5,8 +5,8 @@ import { game } from '../js/gstate.js';
 import { surfaceName } from '../js/terrain_name.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
-void test('the Plane of Earth has ground where an ordinary room has a floor', () => {
-    const level = freshObjectRoom();
+void test('the Plane of Earth has ground where an ordinary room has a floor', async () => {
+    const level = await freshObjectRoom();
     level.requireAt(10, 10).typ = ROOM;
     assert.equal(surfaceName(10, 10), 'floor');
     game.earth_level = createSpecialLevel({ dnum: 4, dlevel: 1 });

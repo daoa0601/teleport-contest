@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const existingTrap of [null, WEB, PIT]) {
     void test(`a failed web rescue ${existingTrap === PIT ? 'preserves another trap under the hero' : existingTrap === WEB ? 'spreads into the web under the hero' : 'spreads a new web under the hero'}`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         requirePlayingGame(game);
         const targetWeb = addTrap(level, WEB, 11, 10, { tseen: true });
         const monster = await createMonsterAt('goblin', 11, 10);

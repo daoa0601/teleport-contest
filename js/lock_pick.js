@@ -256,7 +256,7 @@ async function pickDoorLock(tool, x, y, automatic, state) {
         const previousGlyph = glyphAt(x, y)?.glyph;
         recordMappedOverviewState();
         const previousTerrain = door.lastseentyp;
-        feel_location(x, y);
+        await feel_location(x, y);
         const learned = glyphAt(x, y)?.glyph !== previousGlyph || door.lastseentyp !== previousTerrain;
         const portcullis = door.typ === DBWALL && findDrawbridgeAt(x, y, state) !== null;
         await pline(`You ${heroIsBlind(state) ? 'feel' : 'see'} no ${portcullis ? 'lock on the drawbridge' : 'door there'}.`);
@@ -375,7 +375,7 @@ export async function continuePicking(occupation, state = game) {
                 vision_note_blocker_change(occupation.x, occupation.y);
                 if (roomsAt(state.level, occupation.x, occupation.y, SHOPBASE).length)
                     addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, state);
-                newsym(occupation.x, occupation.y);
+                await newsym(occupation.x, occupation.y);
             }
             else
                 door.doormask = door.doormask & D_LOCKED ? D_CLOSED : D_LOCKED;

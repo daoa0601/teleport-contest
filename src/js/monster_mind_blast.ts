@@ -40,7 +40,7 @@ export async function useMonsterMindBlast(
         const sensed = canSenseMonster(monster);
         const telepathic = !!state.u.telepathy || propertyIsActive('telepathy', state);
         if (sensed || (telepathic && random(2) !== 0) || random(10) === 0) {
-            revealHeroToPsychicBlast(state);
+            await revealHeroToPsychicBlast(state);
             await publish(`It locks on to your ${sensed ? 'telepathy' : telepathic ? 'latent telepathy' : 'mind'}!`);
             let damage = rollOne(15);
             if (heroHasHalfSpellDamage(state)) damage = Math.trunc((damage + 1) / 2);
@@ -65,13 +65,13 @@ export async function useMonsterMindBlast(
     return false;
 }
 
-function revealHeroToPsychicBlast(state: PlayingGameState): void {
+async function revealHeroToPsychicBlast(state: PlayingGameState): Promise<void> {
     if (state.u.uundetected) {
         state.u.uundetected = false;
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
     } else if (state.u.m_ap_type && state.u.m_ap_type !== M_AP_MONSTER) {
         state.u.m_ap_type = M_AP_NOTHING;
         state.u.mappearance = 0;
-        newsym(state.u.ux, state.u.uy);
+        await newsym(state.u.ux, state.u.uy);
     }
 }

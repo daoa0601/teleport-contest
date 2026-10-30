@@ -19,7 +19,7 @@ import { freshObjectRoom } from './support/object-room.js';
 for (const peaceful of [true, false]) {
     for (const changesAlignment of [false, true]) {
         void test(`killing a pony born ${peaceful ? 'peaceful' : 'hostile'} and co-aligned ${changesAlignment ? 'retains its birth alignment value after the hero changes alignment' : 'adjusts the hero alignment record'}`, async () => {
-            freshObjectRoom({ gameplaySeed: 3n });
+            await freshObjectRoom({ gameplaySeed: 3n });
             requirePlayingGame(game);
             const pony = await createMonsterAt('pony', 11, 10,
                 NO_MINVENT | (peaceful ? 0 : MM_ANGRY));
@@ -36,7 +36,7 @@ for (const peaceful of [true, false]) {
 }
 
 void test('killing a chameleon born in coyote form gives the lawful hero credit for that form', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         gameplaySeed: 1n,
         hero: { ualign: { type: A_LAWFUL, record: 0 } },
     });
@@ -53,7 +53,7 @@ void test('killing a chameleon born in coyote form gives the lawful hero credit 
 });
 
 void test('killing a co-aligned ape forced hostile by group creation rewards the hero', async () => {
-    const level = freshObjectRoom({ gameplaySeed: 470n });
+    const level = await freshObjectRoom({ gameplaySeed: 470n });
     requirePlayingGame(game);
     game.in_mklev = true;
     const leader = await makemonAt(null, 12, 10, NO_MINVENT | MM_NOMSG);
@@ -72,7 +72,7 @@ void test('killing a co-aligned ape forced hostile by group creation rewards the
 });
 
 async function stockCourt(alignment: AlignmentValue, seed: bigint) {
-    const level = freshObjectRoom({
+    const level = await freshObjectRoom({
         left: 10, right: 12, top: 10, bottom: 11, gameplaySeed: seed,
         hero: { ualign: { type: alignment, record: 0 } },
     });
@@ -149,7 +149,7 @@ void test('killing a co-aligned elemental forced hostile by nasty summoning rewa
 
 for (const species of ['little dog', 'kitten', 'pony']) {
     void test(`killing a co-aligned starting ${species} applies both tame and peaceful alignment penalties`, async () => {
-        freshObjectRoom({ role: species === 'pony' ? 'knight'
+        await freshObjectRoom({ role: species === 'pony' ? 'knight'
             : species === 'little dog' ? 'caveman' : 'wizard' });
         requirePlayingGame(game);
         game.preferred_pet = species === 'kitten' ? 'c' : 'd';

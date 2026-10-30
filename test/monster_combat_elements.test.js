@@ -21,7 +21,7 @@ for (const [label, type, expectedDamage] of [
     ['rust', AD_RUST, 8], ['corrosion', AD_CORR, 8], ['decay', AD_DCAY, 8],
 ]) {
     void test(`cancelled ${label} contact preserves its native damage rule`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const attacker = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
         const defender = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
         attacker.mcan = 1;
@@ -43,7 +43,7 @@ for (const [label, type, expectedDamage] of [
     });
 }
 void test('magic-cancelling armor blocks fire before it damages or ignites inventory', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('fire ant', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 80;
@@ -66,7 +66,7 @@ for (const [species, type, expectedHp, slow] of [
     ['flesh golem', AD_COLD, 10, true], ['iron golem', AD_ELEC, 10, true],
 ]) {
     void test(`${species} reacts to elemental ${type} through its golem body`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const attacker = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
         const defender = await createMonsterAt(species, 13, 10, MM_NOGRP | NO_MINVENT);
         defender.mhp = 10;
@@ -91,7 +91,7 @@ for (const [label, species, type, objectType, extraDamage] of [
     ['exploding wand', 'energy vortex', AD_ELEC, WAN_FIRE, 0],
 ]) {
     void test(`resistance keeps the native ${label} inventory damage rule`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const attacker = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
         const defender = await createMonsterAt(species, 13, 10, MM_NOGRP | NO_MINVENT);
         defender.mhp = defender.mhpmax = 80;
@@ -110,7 +110,7 @@ for (const [label, species, type, objectType, extraDamage] of [
     });
 }
 void test('fire contact lights a surviving carried lamp and starts its burn timer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('fire ant', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 80;
@@ -125,7 +125,7 @@ void test('fire contact lights a surviving carried lamp and starts its burn time
     assert.ok(objectTimers(lamp).some(timer => timer.kind === OBJECT_TIMER_KIND.BURN_OBJECT));
 });
 void test('destroying a burning carried potion clears its carrier and burn timer', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('fire ant', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 100;
@@ -149,7 +149,7 @@ void test('destroying a burning carried potion clears its carrier and burn timer
     assert.equal(defender.minvent.includes(oil), false);
 });
 void test('a partly shattered potion stack keeps its carrier and loses carried weight', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('winter wolf', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('winter wolf', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 80;
@@ -172,7 +172,7 @@ for (const [species, type] of [
     ['wood golem', AD_DCAY], ['leather golem', AD_DCAY],
 ]) {
     void test(`${species} is destroyed directly by its elemental weakness and grants monster growth`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const attacker = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
         attacker.m_lev = 1;
@@ -203,7 +203,7 @@ for (const [label, type, armorType, field] of [
     ['decay', AD_DCAY, LEATHER_ARMOR, 'oeroded2'],
 ]) {
     void test(`${label} erodes worn armor and clears waiting without hurting the body`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const attacker = await createMonsterAt('orc', 12, 10, MM_NOGRP | NO_MINVENT);
         const defender = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
         defender.mhp = defender.mhpmax = 80;
@@ -221,7 +221,7 @@ for (const [label, type, armorType, field] of [
     });
 }
 void test('acid harms the body and can corrode worn armor and the wielded weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('acid blob', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('orc', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 80;
@@ -241,7 +241,7 @@ void test('acid harms the body and can corrode worn armor and the wielded weapon
     assert.equal(messages[1], 'It burns the orc!');
 });
 void test('an acid-resistant body takes no contact damage', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('acid blob', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('black naga', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 80;
@@ -255,7 +255,7 @@ void test('an acid-resistant body takes no contact damage', async () => {
     assert.deepEqual(messages, ['The black naga is covered in acid, but it seems harmless.']);
 });
 void test('an elemental resistance message resumes after a pending combat page', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const attacker = await createMonsterAt('winter wolf', 12, 10, MM_NOGRP | NO_MINVENT);
     const defender = await createMonsterAt('winter wolf', 13, 10, MM_NOGRP | NO_MINVENT);
     defender.mhp = defender.mhpmax = 80;

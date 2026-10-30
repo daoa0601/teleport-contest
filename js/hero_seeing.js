@@ -6,7 +6,7 @@ import { TIMEOUT } from './const.js';
 import { mimicBlocksLight, vision_note_blocker_change } from './vision.js';
 export async function refreshHeroSeeing({ state = game } = {}) {
     await refreshInvisibleMonsters({ state });
-    newsym(state.u.ux, state.u.uy);
+    await newsym(state.u.ux, state.u.uy);
 }
 // see_monsters() includes the hero. Rings add a second hero redraw only
 // when the ring makes the hero visible or invisible to themselves.

@@ -25,6 +25,6 @@ export async function useUpFloorObject(object, count, { state = game, publish = 
     await delobj(consumed, state);
     if (state.u.ux === x && state.u.uy === y
         && state.u.uundetected && heroFormHidesUnderObjects(state))
-        hideHeroUnder(state);
+        await hideHeroUnder(state);
 }
 //# sourceMappingURL=floor_consumption.js.map

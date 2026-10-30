@@ -14,15 +14,15 @@ import { vision_recalc } from '../js/vision.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-function bridgeRoom(under = DB_MOAT) {
-    freshObjectRoom();
+async function bridgeRoom(under = DB_MOAT) {
+    await freshObjectRoom();
     requireFixtureGame(game);
     const bridge = game.level.requireAt(12, 10);
     bridge.typ = DRAWBRIDGE_UP;
     bridge.drawbridgemask = DB_NORTH | under;
     const wall = game.level.requireAt(12, 9);
     wall.typ = DBWALL;
-    vision_recalc(0);
+    await vision_recalc(0);
     pushKeys(' '.repeat(100));
     return { bridge, wall };
 }
@@ -35,7 +35,7 @@ function meltTimer() {
         && timer.x === 12 && timer.y === 10);
 }
 void test('fire melts the ice under a raised bridge without removing its portcullis', async () => {
-    const { bridge, wall } = bridgeRoom();
+    const { bridge, wall } = await bridgeRoom();
     requireFixtureGame(game);
     await freezeBridge();
     await applyRayFloorFeatures('fire', 12, 10, game, { publish: async () => { } });
@@ -46,7 +46,7 @@ void test('fire melts the ice under a raised bridge without removing its portcul
 });
 for (const lowered of [false, true]) {
     void test(`the ice timer thaws a ${lowered ? 'lowered' : 'raised'} drawbridge`, async () => {
-        const { bridge } = bridgeRoom();
+        const { bridge } = await bridgeRoom();
         requireFixtureGame(game);
         await freezeBridge();
         const timer = meltTimer();
@@ -62,7 +62,7 @@ for (const lowered of [false, true]) {
     });
 }
 void test('more cold firms existing raised-bridge ice rather than shortening its lifetime', async () => {
-    bridgeRoom();
+    await bridgeRoom();
     requireFixtureGame(game);
     await freezeBridge();
     const oldDeadline = game.moves + 1900;
@@ -73,14 +73,14 @@ void test('more cold firms existing raised-bridge ice rather than shortening its
     assert.ok(!timer || timer.deadline >= oldDeadline, 'cold can prolong ice or make it permanent');
 });
 void test('cold cannot create ice under a drawbridge filled with dry ground', async () => {
-    const { bridge } = bridgeRoom(DB_FLOOR);
+    const { bridge } = await bridgeRoom(DB_FLOOR);
     await freezeBridge();
     assert.equal((bridge.drawbridgemask ?? 0) & DB_UNDER, DB_FLOOR);
     assert.equal(meltTimer(), undefined);
 });
 for (const under of [DB_FLOOR, DB_LAVA]) {
     void test(`fire does not evaporate nonexistent water under a bridge over ${under === DB_FLOOR ? 'ground' : 'lava'}`, async () => {
-        const { bridge } = bridgeRoom(under);
+        const { bridge } = await bridgeRoom(under);
         requireFixtureGame(game);
         const messages = [];
         await applyRayFloorFeatures('fire', 12, 10, game, {
@@ -92,7 +92,7 @@ for (const under of [DB_FLOOR, DB_LAVA]) {
     });
 }
 void test('a boulder fills thawed water below a raised drawbridge without erasing the bridge', async () => {
-    const { bridge, wall } = bridgeRoom();
+    const { bridge, wall } = await bridgeRoom();
     await freezeBridge();
     const boulder = await floorObject(BOULDER, 12, 10);
     initRng(1n);

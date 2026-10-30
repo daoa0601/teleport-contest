@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('zapping speed at a named monster identifies the target in its feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const jackal = await createMonsterAt('jackal', 11, 10);
     setMonsterGivenName(jackal, 'Fido');

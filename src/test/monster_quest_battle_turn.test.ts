@@ -13,7 +13,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 
 for (const adjacent of [false, true]) {
     void test(`a waiting quest nemesis records ${adjacent ? 'close combat' : 'leaving close combat'} before ending its turn`, async () => {
-        freshObjectRoom({ hero: { invisibleTurns: 20 } });
+        await freshObjectRoom({ hero: { invisibleTurns: 20 } });
         requirePlayingGame(game);
         const nemesis = await createMonsterAt('Cyclops', adjacent ? 11 : 14, 10, MM_ANGRY | NO_MINVENT);
         nemesis.msleeping = 0;
@@ -33,7 +33,7 @@ for (const adjacent of [false, true]) {
 }
 
 void test('a quest nemesis sharing the hero square counts as close combat', async () => {
-    freshObjectRoom({ hero: { invisibleTurns: 20 } });
+    await freshObjectRoom({ hero: { invisibleTurns: 20 } });
     requirePlayingGame(game);
     // quest.c:quest_stat_check() takes monnear(mtmp, u.ux, u.uy), whose
     // dist2() < 3 test holds at distance zero: a nemesis holding the

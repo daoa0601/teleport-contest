@@ -53,7 +53,7 @@ export async function removeMonsterFromGame(monster: Monster | null | undefined)
         if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
         finishShopkeeperDeparture(monster);
     }
-    if (monster.wormno) removeMonsterWormBody(monster);
+    if (monster.wormno) await removeMonsterWormBody(monster);
     monster.dead = true;
     if (game.u.usteed === monster) await dismountHero(DISMOUNT_GENERIC);
     return { removed: true, dropped, discarded, x, y };

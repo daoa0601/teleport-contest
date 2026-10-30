@@ -115,7 +115,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
     if (!spotted && !glyph.warning && !glyph.invisible
         && !hiddenUnderVisibleCover) {
         await plineWithContinuation("Wait!  There's something there you can't see!");
-        map_invisible(struck.x, struck.y);
+        await map_invisible(struck.x, struck.y);
         // An unseen mimic sticks to the hero before being woken, exactly
         // as if it had been stumbled upon while visible.
         if (hasUnrevealedAppearance(monster, state) && !state.u.ustuck
@@ -128,7 +128,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
     }
     if (unrevealedAppearance && !sensed && !glyph.warning) {
         if (glyph.invisible) {
-            revealMonsterAppearance(monster);
+            await revealMonsterAppearance(monster);
             return { proceed: true, spentTime: false };
         }
         await stumbleOntoMimic(monster, state);
@@ -139,11 +139,11 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
         && !glyph.warning && (hidesUnder(monster) || isEel(monster))) {
         monster.mundetected = 0;
         monster.msleeping = 0;
-        newsym(monster.mx, monster.my);
+        await newsym(monster.mx, monster.my);
         if (glyph.invisible) {
             // C seemimic() redraws the square even without a disguise to drop.
-            if (!revealMonsterAppearance(monster).revealed)
-                newsym(monster.mx, monster.my);
+            if (!(await revealMonsterAppearance(monster)).revealed)
+                await newsym(monster.mx, monster.my);
             return { proceed: true, spentTime: false };
         }
         if (!senseWithTelepathy(monster) && !heroDetectsMonsters()) {

@@ -10,7 +10,7 @@ import { installPagerInput } from './support/pager-input.js';
 
 for (const condition of ['normal', 'confused', 'cancelled', 'cooldown'] as const) {
     void test(`Yeenoghu's confusion strike against a ${condition} hero causes no HP damage`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10,
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10,
             confusionTurns: condition === 'confused' ? 7 : 0 } });
         requirePlayingGame(game);
         const demon = await createMonsterAt('Yeenoghu', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);

@@ -31,8 +31,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
-function foodRoom(options: ObjectRoomOptions = {}) {
-    const level = freshObjectRoom(options);
+async function foodRoom(options: ObjectRoomOptions = {}) {
+    const level = await freshObjectRoom(options);
     requirePlayingGame(game);
     installPagerInput(resetInputState(), {
         expected: /food|egg|garlic|wafer|ration|cookie|fortune|jelly|read|blind|vision|spins|unconscious|conscious|hear|Blecch|feel|Splat|fire|flame|explosion|vortex|burn|dark/i,
@@ -42,7 +42,7 @@ function foodRoom(options: ObjectRoomOptions = {}) {
 }
 
 void test('biting a pyrolisk egg consumes it before its fire explosion', async () => {
-    const level = foodRoom();
+    const level = await foodRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('fireResistance', 'potion');
     const egg = await addInventoryObject(EGG, { corpsenm: MONSTER_NAME.indexOf('pyrolisk') });
@@ -58,7 +58,7 @@ void test('biting a pyrolisk egg consumes it before its fire explosion', async (
 });
 
 void test('a stale egg extends nausea even when the hero is already vomiting', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     game.u.vomiting = true;
     game.u.vomitingTurns = 12;
@@ -73,7 +73,7 @@ void test('a stale egg extends nausea even when the hero is already vomiting', a
 
 void test('tripe rewards an ordinary human with experience but animal forms enjoy it', async () => {
     for (const form of ['human', 'large dog']) {
-        foodRoom({ role: 'wizard' });
+        await foodRoom({ role: 'wizard' });
         requirePlayingGame(game);
         if (form !== 'human') installPolymorphedHero(form);
         const tripe = await addInventoryObject(TRIPE_RATION);
@@ -91,7 +91,7 @@ void test('tripe rewards an ordinary human with experience but animal forms enjo
 void test('lembas preference follows the polymorphed species instead of the birth race', async () => {
     const race = races.find(candidate => candidate.name === 'orc');
     assert.ok(race);
-    foodRoom({ race });
+    await foodRoom({ race });
     requirePlayingGame(game);
     installPolymorphedHero('elf');
     const wafer = await addInventoryObject(LEMBAS_WAFER);
@@ -102,7 +102,7 @@ void test('lembas preference follows the polymorphed species instead of the birt
 });
 
 void test('garlic nauseates undead forms without frightening nearby monsters', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     installPolymorphedHero('vampire');
     const ant = await createMonsterAt('giant ant', 11, 10, NO_MINVENT);
@@ -117,7 +117,7 @@ void test('garlic nauseates undead forms without frightening nearby monsters', a
 });
 
 void test('an ordinary garlic bite frightens nearby creatures that can smell', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     const ant = await createMonsterAt('giant ant', 11, 10, NO_MINVENT);
     const blob = await createMonsterAt('acid blob', 10, 11, NO_MINVENT);
@@ -132,7 +132,7 @@ void test('an ordinary garlic bite frightens nearby creatures that can smell', a
 
 void test('the configured native build gives apples Mac feedback and pears UNIX feedback', async () => {
     for (const [type, message] of [[APPLE, 'Delicious!  Must be a Macintosh!'], [PEAR, 'Core dumped.']] as const) {
-        foodRoom();
+        await foodRoom();
         requirePlayingGame(game);
         const fruit = await addInventoryObject(type);
 
@@ -143,7 +143,7 @@ void test('the configured native build gives apples Mac feedback and pears UNIX 
 });
 
 void test('a ration names the current form stomach', async () => {
-    foodRoom({ hero: { uhunger: 500 } });
+    await foodRoom({ hero: { uhunger: 500 } });
     requirePlayingGame(game);
     installPolymorphedHero('giant spider');
     const ration = await addInventoryObject(FOOD_RATION);
@@ -154,7 +154,7 @@ void test('a ration names the current form stomach', async () => {
 });
 
 void test('carrots do not clear the blindness of a swallowing dust vortex', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     const vortex = await createMonsterAt('dust vortex', 11, 10, NO_MINVENT);
     game.u.uswallow = 1;
@@ -168,7 +168,7 @@ void test('carrots do not clear the blindness of a swallowing dust vortex', asyn
 });
 
 void test('fortune cookies record the first reading once, while blind reading breaks no literacy conduct', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     const eatCookie = async () => {
         const cookie = await addInventoryObject(FORTUNE_COOKIE);
@@ -201,7 +201,7 @@ void test('fortune cookies record the first reading once, while blind reading br
 });
 
 void test('royal jelly still strengthens a killer bee when queen bees are genocided', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     installPolymorphedHero('killer bee');
     const queen = MONSTER_NAME.indexOf('queen bee');
@@ -217,7 +217,7 @@ void test('royal jelly still strengthens a killer bee when queen bees are genoci
 
 
 void test('rotten food confuses a fungus using its native sensation', async () => {
-    foodRoom();
+    await foodRoom();
     requirePlayingGame(game);
     installPolymorphedHero('brown mold');
     game.u.confusionTurns = 3;
@@ -233,7 +233,7 @@ void test('rotten food confuses a fungus using its native sensation', async () =
 });
 
 void test('rotten food extends masked blindness while the Eyes preserve sight', async () => {
-    foodRoom({ role: 'monk' });
+    await foodRoom({ role: 'monk' });
     requirePlayingGame(game);
     game.u.ualign.type = 0;
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
@@ -254,7 +254,7 @@ void test('rotten food extends masked blindness while the Eyes preserve sight', 
 });
 
 void test('a blind hero who faints from rotten food feels the actual surface', async () => {
-    const level = foodRoom();
+    const level = await foodRoom();
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = ICE;
     setHeroBlindnessTurns(30);

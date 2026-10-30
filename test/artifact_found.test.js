@@ -87,7 +87,7 @@ void test('visible artifact pickup logs its floor origin once, including after s
     const storage = memoryStorage();
     game.plname = 'Found';
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('Found', storage), true);
+    assert.equal(await restoreGame('Found', storage), true);
     const monster = requireGameLevel().monsters.find((monster) => monster.minvent?.some((object) => object.oartifact));
     assert.ok(monster);
     assert.ok(monster.minvent);
@@ -115,7 +115,7 @@ for (const known of [false, true]) {
     });
 }
 void test('seeing a monster drop an artifact records the carrier, not the landing square', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('archeologist', 14, 10, NO_MINVENT);
     const artifact = artifactByName('Magicbane');
@@ -133,7 +133,7 @@ void test('seeing a monster drop an artifact records the carrier, not the landin
 });
 for (const blind of [false, true]) {
     void test(`inventory ${blind ? 'does not reveal an unseen artifact while blind' : 'finds an unseen carried artifact'}`, async () => {
-        freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
+        await freshObjectRoom({ hero: { blindTurns: blind ? 20 : 0 } });
         requirePlayingGame(game);
         const artifact = artifactByName('Magicbane');
         assert.ok(artifact);
@@ -150,7 +150,7 @@ for (const blind of [false, true]) {
     });
 }
 void test('wishing for an artifact prevents a later inventory find log', async () => {
-    freshObjectRoom({ role: 'wizard', flags: { debug: true } });
+    await freshObjectRoom({ role: 'wizard', flags: { debug: true } });
     requirePlayingGame(game);
     pushKeys(' Magicbane\n');
     await makeWish();
@@ -177,7 +177,7 @@ void test('wishing for an artifact prevents a later inventory find log', async (
     assert.equal(foundEvents().length, 0);
 });
 void test('formatting an artifact name alone does not find it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const artifact = artifactByName('Magicbane');
     assert.ok(artifact);
@@ -188,7 +188,7 @@ void test('formatting an artifact name alone does not find it', async () => {
     assert.equal(foundEvents().length, 0);
 });
 void test('uncreating an artifact lets its replacement be found', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const artifact = artifactByName('Magicbane');
     assert.ok(artifact);
@@ -231,7 +231,7 @@ for (const [alignment, name] of [
 ]) {
     for (const condition of ['sighted', 'blind', 'hallucinating']) {
         void test(`crowning with an unseen ${name} while ${condition} preserves native observation`, async () => {
-            freshObjectRoom({
+            await freshObjectRoom({
                 role: 'barbarian',
                 hero: {
                     ualign: { type: alignment, record: 20 },

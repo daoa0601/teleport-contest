@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 async function headOnlyWorm() {
-    freshObjectRoom({ left: 8, right: 20, top: 10, bottom: 10,
+    await freshObjectRoom({ left: 8, right: 20, top: 10, bottom: 10,
         heroX: 8, heroY: 10 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('long worm', 14, 10,

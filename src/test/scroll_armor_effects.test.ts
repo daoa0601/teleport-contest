@@ -58,7 +58,7 @@ async function wornArmor(type: number, properties: KnownObjectOverrides = {}) {
 }
 
 void test('enchant armor improves the exposed torso layer and uncurses it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const suit = await wornArmor(RING_MAIL, { spe: 0 });
     const cloak = await wornArmor(ELVEN_CLOAK, { spe: 0, cursed: true });
@@ -79,7 +79,7 @@ void test('enchant armor improves the exposed torso layer and uncurses it', asyn
 });
 
 void test('blessed enchant armor blesses mundane armor and applies its native power range', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await wornArmor(LEATHER_ARMOR, { cursed: true });
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR, { blessed: true });
@@ -92,7 +92,7 @@ void test('blessed enchant armor blesses mundane armor and applies its native po
 });
 
 void test('confused enchant armor repairs and proofs a shield without changing its blessing or enchantment', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 10 } });
+    await freshObjectRoom({ hero: { confusionTurns: 10 } });
     requirePlayingGame(game);
     const shield = await wornArmor(SMALL_SHIELD, { spe: 2, cursed: true, oeroded: 2, oeroded2: 1 });
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR, { blessed: true });
@@ -110,7 +110,7 @@ void test('confused enchant armor repairs and proofs a shield without changing i
 });
 
 void test('blind confused enchant armor repairs damage without learning proofing', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 10, blindTurns: 20 } });
+    await freshObjectRoom({ hero: { confusionTurns: 10, blindTurns: 20 } });
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL, { oeroded: 2, rknown: true });
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR);
@@ -125,7 +125,7 @@ void test('blind confused enchant armor repairs damage without learning proofing
 });
 
 void test('cursed confused enchant armor removes proofing while retaining damage', async () => {
-    freshObjectRoom({ hero: { confusionTurns: 10 } });
+    await freshObjectRoom({ hero: { confusionTurns: 10 } });
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL, { oerodeproof: true, oeroded: 1 });
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR, { cursed: true });
@@ -139,7 +139,7 @@ void test('cursed confused enchant armor removes proofing while retaining damage
 });
 
 void test('enchantment hardens dragon scales into mail while preserving their worn resistance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scales = await wornArmor(GRAY_DRAGON_SCALES, { spe: 2, cursed: true });
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR, { blessed: true });
@@ -157,7 +157,7 @@ void test('enchantment hardens dragon scales into mail while preserving their wo
 });
 
 void test('gold scales remain lit as enchantment hardens them and increases their light radius', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scales = await wornArmor(GOLD_DRAGON_SCALES);
     const radius = objectLightRadius(scales);
@@ -173,7 +173,7 @@ void test('gold scales remain lit as enchantment hardens them and increases thei
 });
 
 void test('enchanting dexterity gauntlets updates effective Dexterity and removal ends the bonus', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const gloves = await wornArmor(OBJECT_NAMES.indexOf('gauntlets of dexterity'), { spe: 1 });
     const base = game.u.acurr.a[A_DEX];
@@ -191,7 +191,7 @@ void test('over-enchantment can dissolve mundane armor while elven armor remains
     let dissolved = 0;
     let survived = 0;
     for (let seed = 1; seed <= 18; seed++) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const armor = await wornArmor(RING_MAIL, { spe: 4 });
         const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR);
@@ -209,7 +209,7 @@ void test('over-enchantment can dissolve mundane armor while elven armor remains
     requirePlayingGame(game);
     assert.ok(dissolved > 0);
     assert.ok(survived > 0);
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const cloak = await wornArmor(ELVEN_CLOAK, { spe: 4 });
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR);
@@ -220,7 +220,7 @@ void test('over-enchantment can dissolve mundane armor while elven armor remains
 });
 
 void test('destroy armor erodes worn armor through grease', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL, { greased: true });
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR);
@@ -240,7 +240,7 @@ void test('destroy armor erodes worn armor through grease', async () => {
 });
 
 void test('ordinary destroy armor cannot erode proofed armor and consumes the source as a strange feeling', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL, { oerodeproof: true, oeroded: 1 });
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR);
@@ -255,7 +255,7 @@ void test('ordinary destroy armor cannot erode proofed armor and consumes the so
 });
 
 void test('failed armor magic consumes one scroll in its own strange-feeling branch', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR, { quan: 3 });
 
@@ -270,7 +270,7 @@ void test('failed armor magic consumes one scroll in its own strange-feeling bra
 
 void test('confused destroy armor toggles proofing without repairing or enchanting armor', async () => {
     for (const cursed of [false, true]) {
-        freshObjectRoom({ hero: { confusionTurns: 10 } });
+        await freshObjectRoom({ hero: { confusionTurns: 10 } });
         requirePlayingGame(game);
         const armor = await wornArmor(RING_MAIL, { spe: 2, oeroded: 1, oerodeproof: !cursed });
         const scroll = await addInventoryObject(SCR_DESTROY_ARMOR, { cursed });
@@ -286,7 +286,7 @@ void test('confused destroy armor toggles proofing without repairing or enchanti
 
 void test('cursed destroy armor disenchants cursed armor down to -7 and adds stun', async () => {
     for (const spe of [-6, -7]) {
-        freshObjectRoom({ hero: { stunnedTurns: 3 } });
+        await freshObjectRoom({ hero: { stunnedTurns: 3 } });
         requirePlayingGame(game);
         const armor = await wornArmor(RING_MAIL, { cursed: true, spe });
         const scroll = await addInventoryObject(SCR_DESTROY_ARMOR, { cursed: true });
@@ -304,7 +304,7 @@ void test('cursed destroy armor disenchants cursed armor down to -7 and adds stu
 });
 
 void test('blessed destroy armor can select a suit covered by a cloak', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const suit = await wornArmor(RING_MAIL);
     const cloak = await wornArmor(ELVEN_CLOAK);
@@ -324,7 +324,7 @@ void test('blessed destroy armor can select a suit covered by a cloak', async ()
 });
 
 void test('cancelling blessed armor selection still disintegrates the originally chosen armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const suit = await wornArmor(RING_MAIL);
     const cloak = await wornArmor(ELVEN_CLOAK);
@@ -344,7 +344,7 @@ void test('cancelling blessed armor selection still disintegrates the originally
 });
 
 void test('blessed destroy armor disintegrates its sole cursed armor instead of eroding it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL, { cursed: true });
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR, { blessed: true });
@@ -356,7 +356,7 @@ void test('blessed destroy armor disintegrates its sole cursed armor instead of 
 });
 
 void test('losing gloves to destroy armor resolves petrification and life saving before completing destruction', async () => {
-    freshObjectRoom({ hero: { glibTurns: 8, glib: true } });
+    await freshObjectRoom({ hero: { glibTurns: 8, glib: true } });
     requirePlayingGame(game);
     const gloves = await wornArmor(LEATHER_GLOVES);
     const corpse = await addInventoryObject(CORPSE, { corpsenm: 10 });
@@ -379,7 +379,7 @@ void test('losing gloves to destroy armor resolves petrification and life saving
 });
 
 void test('destroying armor interrupts an unfinished dressing action', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await addInventoryObject(RING_MAIL);
     assert.ok(armor.invlet);
@@ -396,7 +396,7 @@ void test('destroying armor interrupts an unfinished dressing action', async () 
 });
 
 void test('destroy armor charges the original price of eroded unpaid armor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop();
     const armor = await floorObject(RING_MAIL, 10, 10, { spe: 0 });
@@ -419,7 +419,7 @@ void test('destroy armor charges the original price of eroded unpaid armor', asy
 });
 
 void test('armor mutation waits until the previous visible message has been acknowledged', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL);
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR);
@@ -439,7 +439,7 @@ void test('armor mutation waits until the previous visible message has been ackn
 });
 
 void test('armor dispatcher uses the existing enchant weapon owner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const sword = await addInventoryWeapon(LONG_SWORD);
     await setPrimaryWeapon(sword);
@@ -453,7 +453,7 @@ void test('armor dispatcher uses the existing enchant weapon owner', async () =>
 });
 
 void test('reading enchant armor discovers the scroll and consumes one quantity through the ordinary command', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL);
     const scroll = await addInventoryObject(SCR_ENCHANT_ARMOR, { quan: 2, typeKnown: false });

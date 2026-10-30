@@ -14,7 +14,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function briber({ gold, hero, hell, demonSetup, } = {}) {
-    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, ...hero } });
+    const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, ...hero } });
     if (hell)
         game.dungeons = [{
                 dname: 'Gehennom', num_dunlevs: 20, entry_lev: 1, dunlev_ureached: 1,

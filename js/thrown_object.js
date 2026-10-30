@@ -189,7 +189,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
             await state.animationFrame?.();
         }
         finally {
-            impact.clear();
+            await impact.clear();
         }
         const { destroyed } = await breakObjectAtLocation(object, {
             x, y, fromInventory: true, inView: cansee(x, y),
@@ -246,7 +246,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
             return null;
     }
     if (cansee(x, y))
-        newsym(x, y);
+        await newsym(x, y);
     if (objectShedsLight(landed ?? object))
         state.vision_full_recalc = 1;
     return landed;
@@ -327,7 +327,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                 if (cansee(x, y)) {
                     await publish(`${ownedObjectName(object, state)} gets stuck in a web!`);
                     web.tseen = true;
-                    newsym(x, y);
+                    await newsym(x, y);
                 }
                 stoppedBy = 'web';
                 break;
@@ -364,7 +364,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                 // monster the hero cannot spot, on a square the hero can
                 // see, leaves a remembered "unseen monster" there.
                 if (cansee(x, y) && !canSpotMonster(contact))
-                    map_invisible(x, y);
+                    await map_invisible(x, y);
                 stoppedBy = 'monster';
                 break;
             }
@@ -394,8 +394,8 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             // erase it before the object continues its flight.
             if (state.level?.at(x, y)?.remembered_glyph?.kind === 'invisible'
                 && cansee(x, y)) {
-                unmapObject(x, y);
-                newsym(x, y);
+                await unmapObject(x, y);
+                await newsym(x, y);
             }
             path.push({ x, y });
             if (display)
@@ -404,7 +404,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                 // bhit() keeps DISP_FLASH open across the next light recalc.
                 // Erase the previous projectile only when drawing this step.
                 if (capturedCell)
-                    newsym(capturedCell.x, capturedCell.y);
+                    await newsym(capturedCell.x, capturedCell.y);
                 capturedCell = cansee(x, y) ? { x, y } : null;
                 await captureFlight(object, [{ x, y }], state, glyph, true);
             }
@@ -453,7 +453,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     }
     finally {
         if (capturedCell)
-            newsym(capturedCell.x, capturedCell.y);
+            await newsym(capturedCell.x, capturedCell.y);
         await cleanupTransientLight(state);
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
@@ -524,8 +524,8 @@ export async function captureThrownObjectFlight(object, flightPath, state = game
         for (const cell of flightPath) {
             if (cansee(cell.x, cell.y)) {
                 if (transientCell)
-                    newsym(transientCell.x, transientCell.y);
-                show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
+                    await newsym(transientCell.x, transientCell.y);
+                await show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, glyph.attr, glyph);
                 transientCell = cell;
                 transientCursor = lastDirtyMapCursor()
                     ?? [cell.x, cell.y + 1];
@@ -539,7 +539,7 @@ export async function captureThrownObjectFlight(object, flightPath, state = game
     }
     finally {
         if (transientCell && !retainGlyph)
-            newsym(transientCell.x, transientCell.y);
+            await newsym(transientCell.x, transientCell.y);
     }
 }
 //# sourceMappingURL=thrown_object.js.map

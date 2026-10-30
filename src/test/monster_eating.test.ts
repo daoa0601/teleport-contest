@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('paralysis interrupts a quickmimic meal and preserves the borrowed appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 12, 10);
     initializePet(pet, { state: game });
@@ -29,7 +29,7 @@ void test('paralysis interrupts a quickmimic meal and preserves the borrowed app
 });
 
 void test('cancellation ends a non-mimic meal and its borrowed appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 12, 10);
     initializePet(pet, { state: game });

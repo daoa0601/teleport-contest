@@ -19,8 +19,8 @@ const OBJECT_DETECTION = OBJECT_NAMES.indexOf('object detection');
 const GOLD_DETECTION = OBJECT_NAMES.indexOf('gold detection');
 // objects.h generic slot shown for a potion whose appearance is unobserved.
 const POTION_CLASS = 8;
-function detectionRoom(options = {}) {
-    const level = freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });
+async function detectionRoom(options = {}) {
+    const level = await freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });
     requirePlayingGame(game);
     level.flags.hero_memory = true;
     return level;
@@ -38,7 +38,7 @@ function visibleMonsterAt(x, y) {
 }
 function dismissViews() { pushKeys(' '.repeat(16)); }
 void test('blessed food detection grants edibility even when only carried food exists', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const box = await uninitializedObject(LARGE_BOX);
     game.inventory.push(box);
@@ -50,7 +50,7 @@ void test('blessed food detection grants edibility even when only carried food e
     assert.match(game._lastPlineMessage, /nose twitches then starts to tingle/);
 });
 void test('food detection leaves a quantum cat unresolved and does not detect its possible corpse', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const box = placeCreatedObject(await unopenedCatBox(), 30, 10);
     const result = await detectFood(await uninitializedObject(FOOD_DETECTION, {}));
@@ -60,7 +60,7 @@ void test('food detection leaves a quantum cat unresolved and does not detect it
     assert.notEqual(game.level.requireAt(30, 10).remembered_glyph?.kind, 'object');
 });
 void test('cursed food detection finds a nested potion without observing it', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const box = await floorObject(LARGE_BOX, 30, 10);
     const potion = await uninitializedObject(POT_HEALING, { dknown: false });
@@ -75,9 +75,9 @@ void test('cursed food detection finds a nested potion without observing it', as
     assert.equal(box.contents?.includes(potion), true);
 });
 void test('food detection clears a rotted-food memory without revealing a replacement object', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
-    map_object(await uninitializedObject(APPLE, { ox: 30, oy: 10 }), true, false);
+    await map_object(await uninitializedObject(APPLE, { ox: 30, oy: 10 }), true, false);
     await floorObject(POT_HEALING, 30, 10, { dknown: false });
     const result = await detectFood(await uninitializedObject(FOOD_DETECTION, {}));
     assert.equal(result.result, 0);
@@ -86,7 +86,7 @@ void test('food detection clears a rotted-food memory without revealing a replac
     assert.match(game._lastPlineMessage, /lack of food nearby/);
 });
 void test('gold detection finds coins nested in a monster inventory without emptying the container', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const monster = await createMonsterAt('newt', 30, 10);
@@ -104,7 +104,7 @@ void test('gold detection finds coins nested in a monster inventory without empt
     assert.equal(box.contents?.includes(coins), true);
 });
 void test('blessed treasure detection observes nested and buried objects, then remembers only the floor top', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     const buried = await floorObject(APPLE, 30, 10, { dknown: false });
     addBuriedObject(buried, 30, 10);
@@ -120,7 +120,7 @@ void test('blessed treasure detection observes nested and buried objects, then r
     assert.equal(rememberedObjectAt(30, 10).otyp, LARGE_BOX);
 });
 void test('cursed object detection reveals a mimic disguise with its own object color', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 30, 10);
     mimic.m_ap_type = M_AP_OBJECT;
@@ -136,7 +136,7 @@ void test('cursed object detection reveals a mimic disguise with its own object 
     assert.equal(glyph.color, game.objectColors?.[POT_HEALING] ?? OBJECT_COLOR[POT_HEALING]);
 });
 void test('cursed object detection draws a gem disguise through the strange-object slot', async () => {
-    detectionRoom();
+    await detectionRoom();
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 30, 10);
     mimic.m_ap_type = M_AP_OBJECT;
@@ -151,7 +151,7 @@ void test('cursed object detection draws a gem disguise through the strange-obje
     assert.equal(glyph.color, OBJECT_COLOR[0]);
 });
 void test('cursed monster detection wakes sleeping and frozen actors without making them peaceful', async () => {
-    detectionRoom({ right: 40 });
+    await detectionRoom({ right: 40 });
     requirePlayingGame(game);
     const sleeper = await createMonsterAt('newt', 30, 10);
     sleeper.msleeping = 1;
@@ -171,7 +171,7 @@ void test('cursed monster detection wakes sleeping and frozen actors without mak
 // C detect.c monster_detect(): the wake-up warning is a separate pline, so
 // tty pauses on the first message when both cannot share the top line.
 void test('cursed monster detection pauses before warning that monsters sensed the hero', async () => {
-    detectionRoom({ right: 40 });
+    await detectionRoom({ right: 40 });
     requirePlayingGame(game);
     const sleeper = await createMonsterAt('newt', 30, 10);
     sleeper.msleeping = 1;
@@ -198,7 +198,7 @@ void test('cursed monster detection pauses before warning that monsters sensed t
     ]);
 });
 void test('monster detection keeps its map and suspension until browsing has finished', async () => {
-    const level = detectionRoom({ right: 40 });
+    const level = await detectionRoom({ right: 40 });
     requirePlayingGame(game);
     const monster = await createMonsterAt('newt', 30, 10);
     game.u.uburied = 1;
@@ -217,7 +217,7 @@ void test('monster detection keeps its map and suspension until browsing has fin
     assert.notEqual(level.requireAt(30, 10).remembered_glyph?.kind, 'monster');
 });
 void test('ordinary clairvoyance reveals local topology and remembers a distant monster without observing objects', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     level.requireAt(18, 10).typ = SCORR;
     level.requireAt(19, 10).typ = SDOOR;
@@ -235,7 +235,7 @@ void test('ordinary clairvoyance reveals local topology and remembers a distant 
     assert.equal(potion.dknown, false);
 });
 void test('skilled clairvoyance observes only the top object in each pile', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     await floorObject(APPLE, 18, 10, { dknown: false });
     const potion = await floorObject(POT_HEALING, 18, 10, { dknown: false });
@@ -248,7 +248,7 @@ void test('skilled clairvoyance observes only the top object in each pile', asyn
     assert.equal(rememberedObjectAt(18, 10).otyp, POT_HEALING);
 });
 void test('detection underwater restores the restricted viewport while retaining detected object memory', async () => {
-    const level = detectionRoom({ hero: { uinwater: 1 } });
+    const level = await detectionRoom({ hero: { uinwater: 1 } });
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     level.requireAt(game.u.ux + 1, game.u.uy).typ = POOL;
@@ -261,7 +261,7 @@ void test('detection underwater restores the restricted viewport while retaining
     assert.equal(glyphAt(game.u.ux, game.u.uy)?.kind, 'monster');
 });
 void test('detected ghosts retain their blank species symbol with visible highlighting', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     await createMonsterAt('ghost', 30, 10);
@@ -276,7 +276,7 @@ void test('detected ghosts retain their blank species symbol with visible highli
     await effect;
 });
 void test('monster browsing cycles to detected creatures without restoring ordinary vision', async () => {
-    const level = detectionRoom();
+    const level = await detectionRoom();
     requirePlayingGame(game);
     level.requireAt(30, 10).typ = ROOM;
     const newt = await createMonsterAt('newt', 30, 10);

@@ -10,12 +10,12 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('a striking beam sees the monster beyond a boulder as soon as the boulder fractures', async () => {
-    freshObjectRoom({ right: 30, top: 10, bottom: 10, flags: { verbose: true } });
+    await freshObjectRoom({ right: 30, top: 10, bottom: 10, flags: { verbose: true } });
     requirePlayingGame(game);
     await floorObject(BOULDER, 11, 10);
     const jackal = await createMonsterAt('jackal', 12, 10);
     jackal.mhp = jackal.mhpmax = 1000;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(cansee(12, 10), false);
     const wand = await addInventoryObject(WAN_STRIKING, { spe: 2 });
     const input = resetInputState();

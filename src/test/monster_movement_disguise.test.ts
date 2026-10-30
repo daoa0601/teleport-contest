@@ -15,7 +15,7 @@ for (const concealment of ['hidden', 'strange object', 'gold']) {
     void test(`a rat can wander away from a hero concealed as ${concealment}`, async () => {
         let away = 0;
         for (let seed = 1; seed <= 12; seed++) {
-            freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10, heroX: 15, heroY: 10 });
+            await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10, heroX: 15, heroY: 10 });
             requirePlayingGame(game);
             if (concealment === 'hidden') game.u.uundetected = true;
             else {
@@ -41,7 +41,7 @@ for (const concealment of ['hidden', 'strange object', 'gold']) {
 }
 
 void test('a gold-loving orc still pursues a hero disguised as gold', async () => {
-    freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10, heroX: 15, heroY: 10 });
+    await freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10, heroX: 15, heroY: 10 });
     requirePlayingGame(game);
     game.u.m_ap_type = M_AP_OBJECT;
     game.u.mappearance = GOLD_PIECE;

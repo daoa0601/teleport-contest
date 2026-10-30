@@ -10,7 +10,7 @@ import { growMonster } from '../js/monster_growth.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a pet that grows after a kill is introduced as your adult companion', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(dog);
     dog.m_lev = 3;
@@ -26,7 +26,7 @@ void test('a pet that grows after a kill is introduced as your adult companion',
     assert.ok(messages.includes('Your little dog grows up into a dog.'), messages.join('\n'));
 });
 void test('growth into a male form explains the change of gender', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const kop = await createMonsterAt('Keystone Kop', 11, 10, NO_MINVENT);
     kop.female = true;
     kop.m_lev = 1;
@@ -42,7 +42,7 @@ void test('growth into a male form explains the change of gender', async () => {
     assert.ok(messages.includes('The Keystone Kop changes into a male Kop Sergeant.'), messages.join('\n'));
 });
 void test('fatal growth describes the old body before changing its gender', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const bee = await createMonsterAt('killer bee', 11, 10, NO_MINVENT);
     bee.m_lev = 8;
     requireMonsterVital(MONSTER_NAME.indexOf('queen bee')).mvflags |= G_GENOD;

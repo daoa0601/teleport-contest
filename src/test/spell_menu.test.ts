@@ -28,8 +28,8 @@ import { GameDisplay } from '../js/game_display.js';
 const spellType = (name: string) => OBJECT_NAMES.findIndex((candidate, type) =>
     candidate === name && OBJECT_SPELL_CATEGORY[type]);
 
-function learnSpells(types: readonly number[], role: RoleKey = 'wizard') {
-    freshObjectRoom({ role, moves: 1 });
+async function learnSpells(types: readonly number[], role: RoleKey = 'wizard') {
+    await freshObjectRoom({ role, moves: 1 });
     requirePlayingGame(game);
     ensureHeroSkills(game);
     for (const type of types) forceLearnSpell(type);
@@ -64,7 +64,7 @@ async function answerMenu(input: InputGate, key: string) {
 }
 
 void test('selection without memorized spells explains why no menu opens', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     assert.equal(await selectSpellToCast(), null);
@@ -73,7 +73,7 @@ void test('selection without memorized spells explains why no menu opens', async
 });
 
 void test('stunning rejects selection before opening a spell menu', async () => {
-    learnSpells([SPE_FORCE_BOLT]);
+    await learnSpells([SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     await makeStunned(5, { talk: false });
 
@@ -83,7 +83,7 @@ void test('stunning rejects selection before opening a spell menu', async () => 
 });
 
 void test('a full casting menu acknowledges pending prose and returns the memorized entry', async () => {
-    const [spell] = learnSpells([SPE_FORCE_BOLT]);
+    const [spell] = await learnSpells([SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     await pline('You finish your preparations.');
     const input = resetInputState();
@@ -103,7 +103,7 @@ void test('a full casting menu acknowledges pending prose and returns the memori
 });
 
 void test('spell viewing and sorting highlight their prompts without highlighting choices', async () => {
-    learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
+    await learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     const input = resetInputState();
     const viewing = viewKnownSpells();
@@ -167,7 +167,7 @@ void test('recording a spell menu compresses long highlighted gaps while the liv
 
 void test('uppercase casting letters select spells on later pages without aliasing lowercase letters', async () => {
     const types = OBJECT_SPELL_CATEGORY.flatMap((category, type) => category ? [type] : []);
-    const spells = learnSpells(types);
+    const spells = await learnSpells(types);
     requirePlayingGame(game);
     const input = resetInputState();
     const selection = selectSpellToCast();
@@ -182,7 +182,7 @@ void test('uppercase casting letters select spells on later pages without aliasi
 });
 
 void test('menu search can select a spell on a different page', async () => {
-    learnSpells(OBJECT_SPELL_CATEGORY.flatMap((category, type) => category ? [type] : []));
+    await learnSpells(OBJECT_SPELL_CATEGORY.flatMap((category, type) => category ? [type] : []));
     requirePlayingGame(game);
     const wanted = game.spells.find(spell => OBJECT_NAMES[spell.otyp] === 'polymorph');
     const input = resetInputState();
@@ -196,7 +196,7 @@ void test('menu search can select a spell on a different page', async () => {
 
 void test('traditional selection preserves uppercase letters and displays their range', async () => {
     const types = OBJECT_SPELL_CATEGORY.flatMap((category, type) => category ? [type] : []).slice(0, 28);
-    const spells = learnSpells(types);
+    const spells = await learnSpells(types);
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=menustyle:traditional');
     const input = resetInputState();
@@ -210,7 +210,7 @@ void test('traditional selection preserves uppercase letters and displays their 
 });
 
 void test('traditional invalid choices acknowledge their explanation before retrying', async () => {
-    const [spell] = learnSpells([SPE_HEALING]);
+    const [spell] = await learnSpells([SPE_HEALING]);
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=menustyle:traditional');
     const input = resetInputState();
@@ -226,7 +226,7 @@ void test('traditional invalid choices acknowledge their explanation before retr
 });
 
 void test('traditional selection stops after ten invalid choices', async () => {
-    learnSpells([SPE_HEALING]);
+    await learnSpells([SPE_HEALING]);
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=menustyle:traditional');
     const input = resetInputState();
@@ -244,7 +244,7 @@ void test('traditional selection stops after ten invalid choices', async () => {
 
 for (const help of ['?', '*']) {
     void test(`traditional ${help} opens the ordinary spell menu`, async () => {
-        const [spell] = learnSpells([SPE_HEALING]);
+        const [spell] = await learnSpells([SPE_HEALING]);
         requirePlayingGame(game);
         applyNethackrc('OPTIONS=menustyle:traditional');
         const input = resetInputState();
@@ -259,7 +259,7 @@ for (const help of ['?', '*']) {
 }
 
 void test('traditional Escape cancels without consuming a turn', async () => {
-    learnSpells([SPE_HEALING]);
+    await learnSpells([SPE_HEALING]);
     requirePlayingGame(game);
     applyNethackrc('OPTIONS=menustyle:traditional');
     resetInputState().feed('\x1b');
@@ -270,7 +270,7 @@ void test('traditional Escape cancels without consuming a turn', async () => {
 });
 
 void test('viewing a single spell is read-only until a dismissal key', async () => {
-    const [spell] = learnSpells([SPE_HEALING]);
+    const [spell] = await learnSpells([SPE_HEALING]);
     requirePlayingGame(game);
     const input = resetInputState();
     const view = viewKnownSpells();
@@ -285,7 +285,7 @@ void test('viewing a single spell is read-only until a dismissal key', async () 
 });
 
 void test('swapping spells changes their casting letters and preserves the entries', async () => {
-    const [healing, bolt] = learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
+    const [healing, bolt] = await learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     const input = resetInputState();
     const view = viewKnownSpells();
@@ -304,7 +304,7 @@ void test('swapping spells changes their casting letters and preserves the entri
 });
 
 void test('accepting a preselected swap exits viewing without changing spell letters', async () => {
-    const [healing] = learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
+    const [healing] = await learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     const input = resetInputState();
     input.feed('a\n');
@@ -317,7 +317,7 @@ void test('accepting a preselected swap exits viewing without changing spell let
 
 for (const deselect of ['a', '\x1b', '-\n', '\\\n']) {
     void test(`deselecting a swap (${JSON.stringify(deselect)}) returns to viewing`, async () => {
-        const [healing] = learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
+        const [healing] = await learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
         requirePlayingGame(game);
         const input = resetInputState();
         const view = viewKnownSpells();
@@ -341,7 +341,7 @@ for (const [choice, first, second] of [
     ['g', 'fireball', 'force bolt'],
 ] as const) {
     void test(`spell sorting ${choice} changes the displayed order while preserving casting letters`, async () => {
-        const [original] = learnSpells([
+        const [original] = await learnSpells([
             SPE_TURN_UNDEAD, SPE_SLEEP, SPE_HEALING, SPE_FIREBALL, SPE_FORCE_BOLT, spellType('detect food'),
         ]);
         requirePlayingGame(game);
@@ -369,7 +369,7 @@ for (const [choice, first, second] of [
 }
 
 void test('retaining a sorted order reassigns casting letters and keeps knowledge with each spell', async () => {
-    const [healing, bolt] = learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
+    const [healing, bolt] = await learnSpells([SPE_HEALING, SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     assert.ok(healing != null, 'Expected healing to be initialized');
     healing.know = 3000;
@@ -393,7 +393,7 @@ void test('retaining a sorted order reassigns casting letters and keeps knowledg
 });
 
 void test('maintain current ordering keeps a display sort after swapping entries', async () => {
-    learnSpells([SPE_HEALING, SPE_FORCE_BOLT, SPE_DIG]);
+    await learnSpells([SPE_HEALING, SPE_FORCE_BOLT, SPE_DIG]);
     requirePlayingGame(game);
     const input = resetInputState();
     const view = viewKnownSpells();
@@ -415,7 +415,7 @@ void test('maintain current ordering keeps a display sort after swapping entries
 });
 
 void test('retention ranges become more precise as the real spell skill improves', async () => {
-    learnSpells([SPE_FORCE_BOLT]);
+    await learnSpells([SPE_FORCE_BOLT]);
     requirePlayingGame(game);
     game.moves = 10201; // 9800 turns of the initial 20000-turn memory remain.
     for (const [skill, range] of [[2, '41%-50%'], [3, '46%-50%'], [4, '49%-50%']] as const) {
@@ -430,7 +430,7 @@ void test('retention ranges become more precise as the real spell skill improves
 });
 
 void test('restricted spell skills show the unskilled retention range and expired spells show gone', async () => {
-    learnSpells([SPE_HEALING], 'caveman');
+    await learnSpells([SPE_HEALING], 'caveman');
     requirePlayingGame(game);
     game.moves = 10201;
     const input = resetInputState();
@@ -448,7 +448,7 @@ void test('restricted spell skills show the unskilled retention range and expire
 });
 
 void test('the advanced menustyle option changes subsequent casting prompts', async () => {
-    learnSpells([SPE_HEALING]);
+    await learnSpells([SPE_HEALING]);
     requirePlayingGame(game);
     const input = resetInputState();
     let phase = 'find option';

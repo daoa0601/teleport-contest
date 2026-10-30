@@ -9,7 +9,7 @@ import { makeBlinded } from '../js/sight_change.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an unseen pet is discovered by contact instead of displaced', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
     initializePet(kitten);
     await makeBlinded(5, { talk: false });

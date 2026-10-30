@@ -7,7 +7,7 @@ import { GOLD_PIECE } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a leprechaun birth gives its gold stack the weight of all its coins', async () => {
     for (let seed = 1; seed <= 16; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const leprechaun = await makemonAt(MONSTER_NAME.indexOf('leprechaun'), 12, 10, MM_NOMSG);
         assert.ok(leprechaun);
         const gold = leprechaun.minvent.find(item => item.otyp === GOLD_PIECE);

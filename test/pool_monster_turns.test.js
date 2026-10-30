@@ -11,7 +11,7 @@ import { floorObject } from './support/game-objects.js';
 void test('a lich can harass the hero while another monster blocks its desired book', async () => {
     let arrivals = 0;
     for (let seed = 1; seed <= 20; seed++) {
-        freshObjectRoom({ right: 40, hero: { coldResistance: true, uac: -1000 } });
+        await freshObjectRoom({ right: 40, hero: { coldResistance: true, uac: -1000 } });
         requirePlayingGame(game);
         const lich = await createMonsterAt('master lich', 30, 10, NO_MINVENT);
         lich.mspec_used = 100;
@@ -25,7 +25,7 @@ void test('a lich can harass the hero while another monster blocks its desired b
     assert.ok(arrivals > 0, 'An occupied book square must still allow the lich to teleport beside the hero');
 });
 void test('a lich teleports onto an unoccupied book and takes ownership before moving', async () => {
-    freshObjectRoom({ right: 40 });
+    await freshObjectRoom({ right: 40 });
     requirePlayingGame(game);
     const lich = await createMonsterAt('master lich', 30, 10, NO_MINVENT);
     lich.mspec_used = 100;

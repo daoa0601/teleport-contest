@@ -22,8 +22,8 @@ import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { runExtendedCommand } from './support/commands.js';
-function combatRoom(options = {}) {
-    freshObjectRoom({ role: 'barbarian', ...options });
+async function combatRoom(options = {}) {
+    await freshObjectRoom({ role: 'barbarian', ...options });
     requirePlayingGame(game);
     const messages = [];
     const input = resetInputState();
@@ -48,7 +48,7 @@ async function equipPair(primaryType = DAGGER, secondaryType = SHORT_SWORD) {
     return { primary, secondary };
 }
 void test('X begins two-weapon combat and the named command can always end it', async () => {
-    const messages = combatRoom();
+    const messages = await combatRoom();
     requirePlayingGame(game);
     await equipPair();
     await rhack('X'.charCodeAt(0));
@@ -60,7 +60,7 @@ void test('X begins two-weapon combat and the named command can always end it', 
     assert.match(await text(messages), /You switch to your primary weapon\./);
 });
 void test('a Caveman cannot begin two-weapon combat', async () => {
-    const messages = combatRoom({ role: 'caveman' });
+    const messages = await combatRoom({ role: 'caveman' });
     requirePlayingGame(game);
     await equipPair();
     await rhack('X'.charCodeAt(0));
@@ -70,7 +70,7 @@ void test('a Caveman cannot begin two-weapon combat', async () => {
 });
 for (const [form, capable] of [['ettin', true], ['human', false]]) {
     void test(`polymorphing into ${form} ${capable ? 'permits' : 'prevents'} two-weapon combat`, async () => {
-        const messages = combatRoom();
+        const messages = await combatRoom();
         requirePlayingGame(game);
         installPolymorphedHero(form);
         await equipPair();
@@ -83,7 +83,7 @@ for (const [form, capable] of [['ettin', true], ['human', false]]) {
     });
 }
 void test('an empty secondary hand cannot enter two-weapon combat', async () => {
-    const messages = combatRoom();
+    const messages = await combatRoom();
     requirePlayingGame(game);
     await setPrimaryWeapon(await addInventoryObject(DAGGER));
     await rhack('X'.charCodeAt(0));
@@ -94,7 +94,7 @@ for (const [primaryType, secondaryType, rejected] of [
     [BOW, DAGGER, 'primary'], [DAGGER, SACK, 'secondary'],
 ]) {
     void test(`an unsuitable ${rejected} object cannot enter two-weapon combat`, async () => {
-        const messages = combatRoom();
+        const messages = await combatRoom();
         requirePlayingGame(game);
         await equipPair(primaryType, secondaryType);
         await rhack('X'.charCodeAt(0));
@@ -103,7 +103,7 @@ for (const [primaryType, secondaryType, rejected] of [
     });
 }
 void test('a two-handed weapon cannot enter two-weapon combat', async () => {
-    const messages = combatRoom();
+    const messages = await combatRoom();
     requirePlayingGame(game);
     await equipPair(BATTLE_AXE);
     await rhack('X'.charCodeAt(0));
@@ -111,7 +111,7 @@ void test('a two-handed weapon cannot enter two-weapon combat', async () => {
     assert.match(await text(messages), /isn't one-handed\./);
 });
 void test('a shield prevents two-weapon combat', async () => {
-    const messages = combatRoom();
+    const messages = await combatRoom();
     requirePlayingGame(game);
     await equipPair();
     await wearHeroArmor(await addInventoryObject(SMALL_SHIELD));
@@ -120,7 +120,7 @@ void test('a shield prevents two-weapon combat', async () => {
     assert.match(await text(messages), /can't use two weapons while wearing a shield/);
 });
 void test('a secondary artifact refuses two-weapon combat before it can slip', async () => {
-    const messages = combatRoom({ hero: { glibTurns: 10 } });
+    const messages = await combatRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     await setPrimaryWeapon(await addInventoryObject(DAGGER));
     const wish = await readObjectName('cursed Sting', { wizardWish: true });
@@ -134,7 +134,7 @@ void test('a secondary artifact refuses two-weapon combat before it can slip', a
 });
 for (const slippery of [false, true]) {
     void test(`a cursed secondary drops ${slippery ? 'without revealing the curse when hands are slippery' : 'and reveals its curse'}`, async () => {
-        const messages = combatRoom({ hero: { glibTurns: slippery ? 10 : 0 } });
+        const messages = await combatRoom({ hero: { glibTurns: slippery ? 10 : 0 } });
         requirePlayingGame(game);
         await setPrimaryWeapon(await addInventoryObject(DAGGER));
         const secondary = await addInventoryObject(SHORT_SWORD, { cursed: true, bknown: false });
@@ -150,7 +150,7 @@ for (const slippery of [false, true]) {
 }
 for (const action of ['wield', 'swap', 'bare hands']) {
     void test(`a welded primary refuses ${action} without ending legal two-weapon combat`, async () => {
-        const messages = combatRoom();
+        const messages = await combatRoom();
         requirePlayingGame(game);
         const primary = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
         const secondary = await addInventoryObject(SHORT_SWORD);
@@ -172,7 +172,7 @@ for (const action of ['wield', 'swap', 'bare hands']) {
 }
 for (const [role, canContinue] of [['caveman', false], ['barbarian', true]]) {
     void test(`returning to the ${role} body ${canContinue ? 'retains' : 'announces the end of'} two-weapon combat`, async () => {
-        const messages = combatRoom({ role });
+        const messages = await combatRoom({ role });
         requirePlayingGame(game);
         installPolymorphedHero('ettin');
         const { primary, secondary } = await equipPair();
@@ -193,7 +193,7 @@ for (const [role, canContinue] of [['caveman', false], ['barbarian', true]]) {
 }
 for (const source of ['malignant aura', 'confused remove curse']) {
     void test(`${source} drops a newly cursed active offhand without learning its BUC`, async () => {
-        const messages = combatRoom();
+        const messages = await combatRoom();
         requirePlayingGame(game);
         const { secondary } = await equipPair();
         secondary.bknown = false;
@@ -213,7 +213,7 @@ for (const source of ['malignant aura', 'confused remove curse']) {
     });
 }
 void test('a fountain curse drops an active offhand at the dip boundary', async () => {
-    const messages = combatRoom();
+    const messages = await combatRoom();
     requirePlayingGame(game);
     await setPrimaryWeapon(await addInventoryObject(DAGGER));
     const secondary = await addInventoryObject(SHORT_SWORD, { oerodeproof: true, bknown: false });
@@ -231,7 +231,7 @@ void test('a fountain curse drops an active offhand at the dip boundary', async 
     assert.match(await text(messages), /Your left hand spasms and drops your short sword!/);
 });
 void test('slippery hands drop an uncursed secondary without spending a turn', async () => {
-    const messages = combatRoom({ hero: { glibTurns: 10 } });
+    const messages = await combatRoom({ hero: { glibTurns: 10 } });
     requirePlayingGame(game);
     const { secondary } = await equipPair();
     await rhack('X'.charCodeAt(0));
@@ -243,7 +243,7 @@ void test('slippery hands drop an uncursed secondary without spending a turn', a
 });
 for (const key of ['w', 'x']) {
     void test(`a handless form cannot use ${key} even with an empty inventory`, async () => {
-        const messages = combatRoom();
+        const messages = await combatRoom();
         requirePlayingGame(game);
         installPolymorphedHero('wolf');
         await rhack(key.charCodeAt(0));
@@ -252,7 +252,7 @@ for (const key of ['w', 'x']) {
     });
 }
 void test('two-weapon combat resumes from a save and can be toggled off', async () => {
-    const messages = combatRoom();
+    const messages = await combatRoom();
     requirePlayingGame(game);
     await equipPair();
     await rhack('X'.charCodeAt(0));
@@ -260,7 +260,7 @@ void test('two-weapon combat resumes from a save and can be toggled off', async 
     game.plname = 'TwoWeapons';
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('TwoWeapons', storage), true);
+    assert.equal(await restoreGame('TwoWeapons', storage), true);
     await rhack('X'.charCodeAt(0));
     assert.equal(game.u.twoweap, false);
     assert.match(await text(messages), /You switch to your primary weapon\./);

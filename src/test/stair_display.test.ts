@@ -51,7 +51,7 @@ for (const [type, noun, ordinaryColor] of [
 ] as const) {
     for (const [direction, flags, symbol] of [['up', LA_UP, '<'], ['down', LA_DOWN, '>']] as const) {
         void test(`${noun} ${direction} uses its terrain direction and known branch appearance`, async () => {
-            const level = freshObjectRoom();
+            const level = await freshObjectRoom();
             requirePlayingGame(game);
             const location = level.requireAt(11, 10);
             location.typ = type;
@@ -62,7 +62,7 @@ for (const [type, noun, ordinaryColor] of [
                 isladder: type === LADDER, tolev: { dnum: 1, dlevel: 1 },
                 u_traversed: false, next: null };
 
-            newsym(11, 10);
+            await newsym(11, 10);
             await flush_screen(1);
             const ordinary = terrain_glyph(location, 11, 10);
             assert.equal(ordinary.ch, symbol);
@@ -70,7 +70,7 @@ for (const [type, noun, ordinaryColor] of [
             assert.equal(ordinary.terrainName, `${noun} ${direction}`);
 
             game.stairs.u_traversed = true;
-            newsym(11, 10);
+            await newsym(11, 10);
             await flush_screen(1);
             const branch = terrain_glyph(location, 11, 10);
             assert.equal(branch.ch, symbol);

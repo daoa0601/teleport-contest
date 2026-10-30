@@ -8,14 +8,14 @@ import { explode } from '../js/explosion.js';
 import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function blastRoom() {
-    freshObjectRoom({ left: 5, right: 21, hero: { uhp: 100, uhpmax: 100 }, flags: { verbose: true } });
+async function blastRoom() {
+    await freshObjectRoom({ left: 5, right: 21, hero: { uhp: 100, uhpmax: 100 }, flags: { verbose: true } });
     const messages: string[] = [];
     return messages;
 }
 
 void test('prayer protection does not spare the hero from a blast', async () => {
-    const messages = blastRoom();
+    const messages = await blastRoom();
     game.u.invulnerable = true;
 
     await explode(10, 10, PHYS_EXPL_TYPE, 12, MON_EXPLODE, EXPL_NOXIOUS,
@@ -26,7 +26,7 @@ void test('prayer protection does not spare the hero from a blast', async () => 
 });
 
 void test('the timed invulnerability property still nullifies blast damage', async () => {
-    const messages = blastRoom();
+    const messages = await blastRoom();
     game.u.invulnerableTurns = 5;
 
     await explode(10, 10, PHYS_EXPL_TYPE, 12, MON_EXPLODE, EXPL_NOXIOUS,

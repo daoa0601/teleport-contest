@@ -23,7 +23,7 @@ async function topline() {
     return row.map(cell => cell.ch).join('').trimEnd();
 }
 void test('attacking from a completed Elbereth engraving breaks the protection and costs alignment', async () => {
-    freshObjectRoom({ hero: { uhitinc: 30, ualign: { type: 0, record: 10 } } });
+    await freshObjectRoom({ hero: { uhitinc: 30, ualign: { type: 0, record: 10 } } });
     requirePlayingGame(game);
     const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     target.mpeaceful = 0;
@@ -38,7 +38,7 @@ void test('attacking from a completed Elbereth engraving breaks the protection a
 });
 for (const peaceful of [false, true]) {
     void test(`an Elbereth-immune human ${peaceful ? 'still punishes hypocrisy while peaceful' : 'does not punish an attack while hostile'}`, async () => {
-        freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
+        await freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
         requirePlayingGame(game);
         const target = await createMonsterAt('human', 11, 10, NO_MINVENT);
         target.mpeaceful = peaceful ? 1 : 0;
@@ -54,7 +54,7 @@ for (const peaceful of [false, true]) {
 }
 for (const engravingCase of ['headstone', 'unfinished', 'extra text']) {
     void test(`an attack does not treat a ${engravingCase} engraving as Elbereth protection`, async () => {
-        freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
+        await freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
         requirePlayingGame(game);
         const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         target.mpeaceful = 0;
@@ -65,7 +65,7 @@ for (const engravingCase of ['headstone', 'unfinished', 'extra text']) {
     });
 }
 void test('non-attack anger leaves the hero engraving and its protection alone', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
     requirePlayingGame(game);
     const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     target.mpeaceful = 0;
@@ -76,7 +76,7 @@ void test('non-attack anger leaves the hero engraving and its protection alone',
 });
 for (const asleep of [false, true]) {
     void test(`a missed attack ${asleep ? 'leaves a sleeping target and the engraving alone' : 'angers an awake target and breaks Elbereth'}`, async () => {
-        freshObjectRoom({ hero: { uhitinc: -100, ualign: { type: 0, record: 10 } } });
+        await freshObjectRoom({ hero: { uhitinc: -100, ualign: { type: 0, record: 10 } } });
         requirePlayingGame(game);
         const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         target.mpeaceful = 0;
@@ -93,12 +93,12 @@ for (const asleep of [false, true]) {
     });
 }
 void test('a blind hero hears the native unseen subject when a humanoid gets angry', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const target = await createMonsterAt('gnome', 11, 10, NO_MINVENT);
     target.mpeaceful = 1;
     setHeroBlindnessTurns(5);
-    vision_recalc(0);
+    await vision_recalc(0);
     await angerMonster(target);
     assert.equal(await topline(), 'It gets angry!');
     assert.equal(target.mpeaceful, 0);
@@ -106,7 +106,7 @@ void test('a blind hero hears the native unseen subject when a humanoid gets ang
 for (const lowAlignment of [false, true]) {
     void test(`Elbereth hypocrisy applies before a tame target's early return at ${lowAlignment ? 'low' : 'high'} alignment`, async () => {
         const initialAlignment = lowAlignment ? 3 : 10;
-        freshObjectRoom({ hero: { ualign: { type: 0, record: initialAlignment } } });
+        await freshObjectRoom({ hero: { ualign: { type: 0, record: initialAlignment } } });
         requirePlayingGame(game);
         const target = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
         initializePet(target);
@@ -127,7 +127,7 @@ for (const lowAlignment of [false, true]) {
 }
 for (const attacked of [false, true]) {
     void test(`a shopkeeper outside the hero's shops ${attacked ? 'starts full pursuit when attacked' : 'does not pursue from ordinary waking'}`, async () => {
-        freshObjectRoom({ right: 20 });
+        await freshObjectRoom({ right: 20 });
         requirePlayingGame(game);
         game.plname = 'Pursued';
         const { shopkeeper } = await createStaffedShop({
@@ -150,7 +150,7 @@ for (const attacked of [false, true]) {
     });
 }
 void test('direct shopkeeper anger clears waiting without pretending the keeper was woken', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     requirePlayingGame(game);
     const { shopkeeper } = await createStaffedShop({
         left: 13, right: 18, top: 8, bottom: 12, keeperX: 14, keeperY: 10,
@@ -165,7 +165,7 @@ void test('direct shopkeeper anger clears waiting without pretending the keeper 
     assert.equal(Boolean(shopkeeper.eshk.following), false);
 });
 void test('the hypocrisy message waits before the alignment penalty and engraving deletion', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 0, record: 10 } } });
     requirePlayingGame(game);
     const target = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
     target.mpeaceful = 0;

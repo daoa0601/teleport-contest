@@ -56,18 +56,18 @@ type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
     | typeof W_ARMS | typeof W_ARMG | typeof W_ARMF | typeof W_ARMU;
 
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
-export function seeTrap(trap: Trap, state: GameState = game): void {
+export async function seeTrap(trap: Trap, state: GameState = game): Promise<void> {
     if (trap.tseen) return;
     trap.tseen = true;
-    if (state === game) newsym(trap.tx, trap.ty);
+    if (state === game) await newsym(trap.tx, trap.ty);
 }
 
 // C trap.c:feeltrap(). Touch maps even a known trap without requiring sight.
-export function feelTrap(trap: Trap, state: GameState = game): void {
+export async function feelTrap(trap: Trap, state: GameState = game): Promise<void> {
     trap.tseen = true;
     if (state === game) {
-        map_trap(trap, true);
-        newsym(trap.tx, trap.ty);
+        await map_trap(trap, true);
+        await newsym(trap.tx, trap.ty);
     }
 }
 

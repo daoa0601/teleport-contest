@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 
 async function armedGoblin(otyp: number, cursed = false, x = 11) {
-    freshObjectRoom({ flags: { verbose: false }, hero: { uhp: 100, uhpmax: 100 } });
+    await freshObjectRoom({ flags: { verbose: false }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const monster = await createMonsterAt('goblin', x, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     monster.mux = game.u.ux;

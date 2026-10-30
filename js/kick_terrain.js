@@ -33,7 +33,7 @@ export async function kickNonDoorTerrain(x, y, average, responses) {
             await pline('Crash!  You kick open a secret passage!');
             await exerciseAttribute(A_DEX, true);
             location.typ = CORR;
-            feel_newsym(x, y);
+            await feel_newsym(x, y);
             vision_note_blocker_change(x, y);
         }
         else
@@ -75,7 +75,7 @@ async function kickThrone(x, y, location, responses) {
         await mkgold(rnd(200), x, y);
         await pline(heroIsBlind() ? 'CRASH!  You destroy it.' : 'CRASH!  You destroy the throne.');
         if (!heroIsBlind())
-            newsym(x, y);
+            await newsym(x, y);
         await exerciseAttribute(A_DEX, true);
         return;
     }
@@ -85,7 +85,7 @@ async function kickThrone(x, y, location, responses) {
             placeCreatedObject(await mksobj(rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1), false, true), x, y);
         await pline(heroIsBlind() ? 'You kick something loose!' : 'You kick loose some ornamental coins and gems!');
         if (!heroIsBlind())
-            newsym(x, y);
+            await newsym(x, y);
         location.looted = T_LOOTED;
         return;
     }
@@ -195,7 +195,7 @@ async function kickTree(x, y, location, responses) {
         }
         await exerciseAttribute(A_DEX, true);
         await exerciseAttribute(A_WIS, true);
-        newsym(x, y);
+        await newsym(x, y);
         location.looted = (location.looted ?? 0) | TREE_LOOTED;
         return;
     }
@@ -236,13 +236,13 @@ async function kickSink(x, y, location, responses) {
             await publishHeardMessage('a gushing sound.', pline);
         await makemonAt(pudding, x, y, MM_NOMSG);
         await exerciseAttribute(A_DEX, true);
-        newsym(x, y);
+        await newsym(x, y);
         location.looted = (location.looted ?? 0) | S_LPUDDING;
     }
     else if (!((location.looted ?? 0) & S_LDWASHER) && rn2(3) === 0 && !speciesGone(demon)) {
         await pline(`${heroIsBlind() ? 'Something' : 'The dish washer'} returns!`);
         if (await makemonAt(demon, x, y, MM_NOMSG | (gender === 1 || gender === 2 && rn2(2) ? MM_MALE : MM_FEMALE)))
-            newsym(x, y);
+            await newsym(x, y);
         location.looted = (location.looted ?? 0) | S_LDWASHER;
         await exerciseAttribute(A_DEX, true);
     }

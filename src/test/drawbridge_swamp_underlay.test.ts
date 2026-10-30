@@ -9,7 +9,7 @@ import { createSpecialLevel } from './support/topology.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test("a successful jump off Juiblex's rising bridge lands safely on its exposed swamp bed", async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     game.juiblex_level = createSpecialLevel({ ...game.u.uz });
     const square = level.requireAt(10, 10);

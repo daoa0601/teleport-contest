@@ -11,7 +11,7 @@ import { floorObjects } from './support/level-state.js';
 import { ACID_VENOM, BLINDING_VENOM } from '../js/object_data.js';
 for (const { terrain, name } of [{ terrain: AIR, name: 'air' }, { terrain: CLOUD, name: 'cloud' }]) {
     void test(`horizontal Grimtooth venom breaks when it lands on ${name}`, async () => {
-        const level = freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
+        const level = await freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
         requirePlayingGame(game);
         for (let x = 7; x <= 16; x++) {
             for (let y = 6; y <= 14; y++)
@@ -27,7 +27,7 @@ for (const { terrain, name } of [{ terrain: AIR, name: 'air' }, { terrain: CLOUD
         assert.ok(dagger.age > game.moves);
     });
     void test(`downward Grimtooth venom survives on ${name}`, async () => {
-        const level = freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
+        const level = await freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
         requirePlayingGame(game);
         level.requireAt(game.u.ux, game.u.uy).typ = terrain;
         const dagger = await artifactObject('Grimtooth', { invlet: 'a', where: 'inventory', age: 0 });
@@ -46,7 +46,7 @@ void test('upward Grimtooth venom can hit the ceiling or fall back and blind its
     let hitCeiling = false;
     let blindedOwner = false;
     for (let seed = 1; seed <= 48; seed++) {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             hero: { ualign: { type: -1, record: 10 } }, gameplaySeed: seed,
         });
         requirePlayingGame(game);
@@ -77,7 +77,7 @@ void test('upward Grimtooth venom can hit the ceiling or fall back and blind its
     assert.equal(blindedOwner, true, 'Falling blinding venom must be able to blind its owner');
 });
 void test('Grimtooth flings hero-owned venom without removing the dagger', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 10 },
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 10 },
             acurr: { a: [12, 12, 12, 25, 12, 12] }, amax: { a: [12, 12, 12, 25, 12, 12] } },
         gameplaySeed: 17n });
     requirePlayingGame(game);
@@ -92,7 +92,7 @@ void test('Grimtooth flings hero-owned venom without removing the dagger', async
     assert.equal(game.context.move, 1);
 });
 void test('cancelling Grimtooth poison releases its cooldown and takes no time', async () => {
-    freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
+    await freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
     requirePlayingGame(game);
     const dagger = await artifactObject('Grimtooth', { invlet: 'a', where: 'inventory', age: 0 });
     game.inventory = [dagger];

@@ -20,8 +20,8 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 
-function pushRoom() {
-    const level = freshObjectRoom({ flags: { pickup: false, verbose: true } });
+async function pushRoom() {
+    const level = await freshObjectRoom({ flags: { pickup: false, verbose: true } });
     pushRoomInput();
     return level;
 }
@@ -37,7 +37,7 @@ function pushRoomInput() {
 
 for (const terrain of [LAVAPOOL, POOL]) {
     void test(`pushing a boulder into ${terrain === LAVAPOOL ? 'lava consumes it without filling the lava' : 'water fills a crossing'}`, async () => {
-        const level = pushRoom();
+        const level = await pushRoom();
         level.requireAt(12, 10).typ = terrain;
         const sleeper = terrain === POOL ? await createMonsterAt('newt', 15, 10) : null;
         if (sleeper) sleeper.msleeping = 1;
@@ -59,7 +59,7 @@ for (const { name, message } of [
     { name: 'Clover', message: 'Clover pushes the boulder into the pool of water.' },
 ]) {
     void test(`a steed named ${name} fills a pool with the native verb agreement`, async () => {
-        const level = pushRoom();
+        const level = await pushRoom();
         const steed = await createSaddledSteed('pony', { x: 10, y: 10 });
         steed.mgivenname = name;
         game.u.usteed = steed;
@@ -78,7 +78,7 @@ for (const { name, message } of [
 }
 
 void test('pushing a boulder into a pit fills it and buries its floor pile', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const pit = addTrap(level, PIT, 12, 10);
     const dagger = await floorObject(DAGGER, 12, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
@@ -93,7 +93,7 @@ void test('pushing a boulder into a pit fills it and buries its floor pile', asy
 });
 
 void test('pushing a boulder plugs a hole and makes its floor diggable', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const hole = addTrap(level, HOLE, 12, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
 
@@ -107,7 +107,7 @@ void test('pushing a boulder plugs a hole and makes its floor diggable', async (
 });
 
 void test('a level teleport trap sends the pushed boulder away and reveals the trap', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     requirePlayingGame(game);
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 25 })];
     const trap = addTrap(level, LEVEL_TELEP, 12, 10);
@@ -125,7 +125,7 @@ void test('a level teleport trap sends the pushed boulder away and reveals the t
 });
 
 void test('a deaf hero blocked by an unseen monster gets the direct refusal', async () => {
-    pushRoom();
+    await pushRoom();
     await addInventoryObject(ROCK, { quan: 30 });
     const monster = await createMonsterAt('newt', 12, 10);
     monster.minvis = true;
@@ -141,7 +141,7 @@ void test('a deaf hero blocked by an unseen monster gets the direct refusal', as
 });
 
 void test('Sokoban refuses a diagonal boulder push', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     level.flags.sokoban_rules = true;
     await addInventoryObject(ROCK, { quan: 30 });
     const boulder = await floorObject(BOULDER, 11, 11);
@@ -156,7 +156,7 @@ void test('Sokoban refuses a diagonal boulder push', async () => {
 });
 
 void test('a naked hero can squeeze past an immovable Sokoban boulder with a luck penalty', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     level.flags.sokoban_rules = true;
     level.requireAt(12, 10).typ = STONE;
     const boulder = await floorObject(BOULDER, 11, 10);
@@ -172,7 +172,7 @@ void test('a naked hero can squeeze past an immovable Sokoban boulder with a luc
 
 for (const obstacle of [STONE, IRONBARS, D_CLOSED, D_ISOPEN]) {
     void test(`a loaded hero cannot push a boulder ${obstacle === STONE ? 'into rock' : obstacle === IRONBARS ? 'through bars' : obstacle === D_CLOSED ? 'through a closed door' : 'diagonally into an open doorway'}`, async () => {
-        const level = pushRoom();
+        const level = await pushRoom();
         const diagonal = obstacle === D_ISOPEN;
         const target = level.requireAt(12, diagonal ? 12 : 10);
         target.typ = obstacle === D_CLOSED || obstacle === D_ISOPEN ? DOOR : obstacle;
@@ -192,7 +192,7 @@ for (const obstacle of [STONE, IRONBARS, D_CLOSED, D_ISOPEN]) {
 }
 
 void test('a pit consumes one boulder and leaves the rest blocking the hero', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const pit = addTrap(level, PIT, 12, 10);
     const remaining = await floorObject(BOULDER, 11, 10);
     const falling = await floorObject(BOULDER, 11, 10);
@@ -206,7 +206,7 @@ void test('a pit consumes one boulder and leaves the rest blocking the hero', as
 });
 
 void test('successive boulders on the source square are each pushed into lava', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     level.requireAt(12, 10).typ = LAVAPOOL;
     const first = await floorObject(BOULDER, 11, 10);
     const second = await floorObject(BOULDER, 11, 10);
@@ -220,7 +220,7 @@ void test('successive boulders on the source square are each pushed into lava', 
 });
 
 void test('a same-level teleport leaves the pushed boulder on its trap', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 25 })];
     const trap = addTrap(level, LEVEL_TELEP, 12, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
@@ -236,7 +236,7 @@ void test('a same-level teleport leaves the pushed boulder on its trap', async (
 });
 
 void test('a teleport trap relocates the pushed boulder within the level', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const trap = addTrap(level, TELEP_TRAP, 12, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
     initRng(2n);
@@ -250,7 +250,7 @@ void test('a teleport trap relocates the pushed boulder within the level', async
 });
 
 void test('a pushed boulder triggers and plugs a concealed trap door', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const trap = addTrap(level, TRAPDOOR, 12, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
 
@@ -262,7 +262,7 @@ void test('a pushed boulder triggers and plugs a concealed trap door', async () 
 });
 
 void test('a pushed boulder sets off a land mine', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const trap = addTrap(level, LANDMINE, 12, 10);
     await floorObject(BOULDER, 11, 10);
     initRng(2n);
@@ -274,7 +274,7 @@ void test('a pushed boulder sets off a land mine', async () => {
 });
 
 void test('an unsolid air elemental still blocks a boulder', async () => {
-    pushRoom();
+    await pushRoom();
     await addInventoryObject(ROCK, { quan: 30 });
     await createMonsterAt('air elemental', 12, 10);
     const boulder = await floorObject(BOULDER, 11, 10);
@@ -286,7 +286,7 @@ void test('an unsolid air elemental still blocks a boulder', async () => {
 });
 
 void test('levitation prevents a push even when the hero could squeeze past', async () => {
-    pushRoom();
+    await pushRoom();
     grantIntrinsicProperty('levitation', 'outside');
     const boulder = await floorObject(BOULDER, 11, 10);
 
@@ -298,7 +298,7 @@ void test('levitation prevents a push even when the hero could squeeze past', as
 });
 
 void test('a tiny form squeezes beside a boulder instead of pushing it', async () => {
-    pushRoom();
+    await pushRoom();
     await polymonHero(MONSTER_NAME.indexOf('newt'));
     game._pending_message = '';
     const boulder = await floorObject(BOULDER, 11, 10);
@@ -310,7 +310,7 @@ void test('a tiny form squeezes beside a boulder instead of pushing it', async (
 });
 
 void test('a boulder fills the pit beneath a trapped monster and releases it', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const pit = addTrap(level, PIT, 12, 10);
     const monster = await createMonsterAt('newt', 12, 10);
     monster.mtrapped = 1;
@@ -328,7 +328,7 @@ void test('a boulder fills the pit beneath a trapped monster and releases it', a
 });
 
 void test('pushing onto a rolling-boulder trap launches the boulder toward its endpoint', async () => {
-    const level = pushRoom();
+    const level = await pushRoom();
     const trap = addTrap(level, ROLLING_BOULDER_TRAP, 12, 10, { launch: { x: 14, y: 10 } });
     const boulder = await floorObject(BOULDER, 11, 10);
 
@@ -343,7 +343,7 @@ void test('pushing onto a rolling-boulder trap launches the boulder toward its e
 // C hack.c:moverock() remembers the last pushed boulder in unsaved instance
 // globals, so the first push after restoring always describes the effort.
 void test('the first push after a restore describes the effort again', async () => {
-    pushRoom();
+    await pushRoom();
     const storage = memoryStorage();
     game.plname = 'Pusher';
     await floorObject(BOULDER, 11, 10);
@@ -354,7 +354,7 @@ void test('the first push after a restore describes the effort again', async () 
 
     assert.equal(await saveGame(storage), true);
     resetGame();
-    assert.equal(restoreGame('Pusher', storage), true);
+    assert.equal(await restoreGame('Pusher', storage), true);
     initRng(2n);
     pushRoomInput();
     game._pending_message = '';

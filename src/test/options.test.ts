@@ -75,7 +75,7 @@ async function chooseOption(name: string, accept: boolean, followupKeys: string 
 }
 
 void test('Enter applies a selected advanced boolean without spending a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.time = false;
     game.context.move = 0;
@@ -85,7 +85,7 @@ void test('Enter applies a selected advanced boolean without spending a turn', a
 });
 
 void test('toggling the hit point bar reassesses shortened status fields', async () => {
-    freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
+    await freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
     game._tutorialActive = true;
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 52, rows: 24 }));
     await bot();
@@ -100,7 +100,7 @@ void test('toggling the hit point bar reassesses shortened status fields', async
 });
 
 void test('Escape cancels changes selected in the advanced options menu', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.time = false;
     await chooseOption('time', false);
@@ -113,14 +113,14 @@ for (const [action, keys] of [
     ['toggling autopickup', 'f\x1b'],
 ] as const) {
     void test(`${action} in simple options preserves the lit floor remembered beneath a detected monster`, async () => {
-        const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+        const level = await freshObjectRoom({ flags: { dark_room: true, color: true },
             hero: { detectMonsters: true } });
-        newsym(11, 10);
+        await newsym(11, 10);
         await createMonsterAt('newt', 11, 10, NO_MINVENT);
         game.u.ux = 30;
         level.requireAt(30, 10).typ = ROOM;
-        vision_recalc(0);
-        newsym(11, 10);
+        await vision_recalc(0);
+        await newsym(11, 10);
         assert.equal(cansee(11, 10), false);
         assert.equal(glyphAt(11, 10)?.kind, 'monster');
         const before = level.requireAt(11, 10).remembered_glyph;
@@ -138,14 +138,14 @@ for (const [action, keys] of [
 }
 
 void test('a simple pet-highlight change refreshes the remembered floor beneath a detected monster', async () => {
-    const level = freshObjectRoom({ flags: { dark_room: true, color: true },
+    const level = await freshObjectRoom({ flags: { dark_room: true, color: true },
         hero: { detectMonsters: true } });
-    newsym(11, 10);
+    await newsym(11, 10);
     await createMonsterAt('newt', 11, 10, NO_MINVENT);
     game.u.ux = 30;
     level.requireAt(30, 10).typ = ROOM;
-    vision_recalc(0);
-    newsym(11, 10);
+    await vision_recalc(0);
+    await newsym(11, 10);
     assert.equal(cansee(11, 10), false);
     const before = level.requireAt(11, 10).remembered_glyph;
     assert.ok(before?.kind === 'terrain');
@@ -162,14 +162,14 @@ void test('a simple pet-highlight change refreshes the remembered floor beneath 
 
 for (const symset of ['ASCII', 'DECgraphics']) {
     void test(`enabling color restores the ${symset} floor symbol of a room learned by touch`, async () => {
-        const level = freshObjectRoom({ flags: { dark_room: true, color: false } });
+        const level = await freshObjectRoom({ flags: { dark_room: true, color: false } });
         game.symset = symset;
         const floor = level.requireAt(11, 10);
         floor.lit = false;
         floor.waslit = false;
         setHeroBlindnessTurns(10);
-        vision_recalc(0);
-        feel_location(11, 10);
+        await vision_recalc(0);
+        await feel_location(11, 10);
         await flush_screen(1);
         assert.equal(requireScreenCell(10, 11).ch, ' ');
         assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
@@ -185,15 +185,15 @@ for (const symset of ['ASCII', 'DECgraphics']) {
 for (const option of ['dark_room', 'color']) {
     for (const lit of [true, false]) {
         void test(`turning off ${option} restores ${lit ? 'a remembered lit floor' : 'blankness for a remembered unlit room'}`, async () => {
-            const level = freshObjectRoom({ flags: { dark_room: true, color: true } });
+            const level = await freshObjectRoom({ flags: { dark_room: true, color: true } });
             const floor = level.requireAt(11, 10);
             floor.lit = lit;
-            vision_recalc(0);
-            newsym(11, 10);
+            await vision_recalc(0);
+            await newsym(11, 10);
             game.u.ux = 30;
             level.requireAt(30, 10).typ = ROOM;
-            vision_recalc(0);
-            newsym(11, 10);
+            await vision_recalc(0);
+            await newsym(11, 10);
             assert.equal(cansee(11, 10), false);
             assert.equal(await farlookLocationDescription(11, 10), 'dark part of a room');
 
@@ -218,13 +218,13 @@ for (const option of ['dark_room', 'color']) {
 }
 
 void test('toggling dark_room restores and darkens remembered lit corridors', async () => {
-    const level = freshObjectRoom({ flags: { dark_room: true, color: true } });
+    const level = await freshObjectRoom({ flags: { dark_room: true, color: true } });
     level.requireAt(11, 10).typ = CORR;
-    newsym(11, 10);
+    await newsym(11, 10);
     game.u.ux = 30;
     level.requireAt(30, 10).typ = ROOM;
-    vision_recalc(0);
-    newsym(11, 10);
+    await vision_recalc(0);
+    await newsym(11, 10);
 
     await chooseOption('dark_room', true);
     await flush_screen(1);
@@ -240,7 +240,7 @@ void test('toggling dark_room restores and darkens remembered lit corridors', as
 });
 
 void test('advanced sortloot selection changes the ordering of carried items', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const sword = await knownObject(LONG_SWORD, { invlet: 'a' });
     const dagger = await knownObject(DAGGER, { invlet: 'b' });
@@ -252,7 +252,7 @@ void test('advanced sortloot selection changes the ordering of carried items', a
 });
 
 void test('advanced packorder accepts class symbols and changes live inventory ordering', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
 
     await chooseOption('packorder', true, '%)$\n');
@@ -262,7 +262,7 @@ void test('advanced packorder accepts class symbols and changes live inventory o
 });
 
 void test('Escape in the loot-sort picker retains the previous setting', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.sortloot = 'f';
 
@@ -273,7 +273,7 @@ void test('Escape in the loot-sort picker retains the previous setting', async (
 
 for (const keys of ['a\n', '@\n']) {
     void test(`read-only menu rows cannot be selected (${JSON.stringify(keys)})`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const input = resetInputState();
         input.feed(keys);
@@ -315,7 +315,7 @@ for (const enabled of [false, true]) {
 
 for (const savedValue of [false, true]) {
     void test(`restoring a game does not restore its monster-control setting (${savedValue})`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.plname = 'Control';
         game.flags.debug = true;
@@ -324,7 +324,7 @@ for (const savedValue of [false, true]) {
         assert.equal(await saveGame(storage), true);
         await chooseOption('montelecontrol', true);
 
-        assert.equal(restoreGame('Control', storage), true);
+        assert.equal(await restoreGame('Control', storage), true);
 
         const current = await chooseOption('montelecontrol', false);
         assert.ok(current.includes(`[${!savedValue}]`), 'the menu shows the current runtime setting, not the saved value');
@@ -332,7 +332,7 @@ for (const savedValue of [false, true]) {
 }
 
 void test('ordinary play does not show the Wizard-only monster-control option', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.debug = false;
     const input = resetInputState();
@@ -349,7 +349,7 @@ void test('ordinary play does not show the Wizard-only monster-control option', 
 });
 
 void test('the Wizard options menu lists monpolycontrol next to montelecontrol', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.debug = true;
     game.flags.tips = game.flags.verbose = false;
@@ -366,7 +366,7 @@ void test('the Wizard options menu lists monpolycontrol next to montelecontrol',
 });
 
 void test('ordinary play does not show the Wizard-only polymorph control option', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.debug = false;
     const input = resetInputState();
@@ -383,7 +383,7 @@ void test('ordinary play does not show the Wizard-only polymorph control option'
 });
 
 void test('the in-game option enables real controlled monster relocation', async () => {
-    freshObjectRoom({ right: 24 });
+    await freshObjectRoom({ right: 24 });
     requirePlayingGame(game);
     game.flags.debug = true;
     game.flags.tips = game.flags.verbose = false;
@@ -468,7 +468,7 @@ async function finishOptions({ input, command }: { input: InputGate; command: Pr
 }
 
 void test('status-only option changes return to play without forcing a pager', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.time = false;
     const transaction = await beginSelectedOptions(['time']);
@@ -486,7 +486,7 @@ void test('status-only option changes return to play without forcing a pager', a
 });
 
 void test('one toggle-message acknowledgment opens the selected autopickup editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.showexp = game.flags.time = false;
     const transaction = await beginSelectedOptions(['showexp', 'time', 'pickup_types']);
@@ -509,7 +509,7 @@ void test('one toggle-message acknowledgment opens the selected autopickup edito
 });
 
 void test('the autopickup menu clears toggle text to the left of its corner', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.showexp = false;
     const transaction = await beginSelectedOptions(['showexp', 'pickup_types']);
@@ -534,7 +534,7 @@ void test('the autopickup menu clears toggle text to the left of its corner', as
 });
 
 void test('an overflowing toggle message resumes the remaining changes before opening its editor', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.flags.showexp = game.flags.showrace = game.flags.time = false;
     const transaction = await beginSelectedOptions(['showexp', 'showrace', 'time', 'pickup_types']);
@@ -557,7 +557,7 @@ void test('an overflowing toggle message resumes the remaining changes before op
 });
 
 void test('Escape at an overflowing option notice opens the pickup editor without another acknowledgment', async () => {
-    freshObjectRoom({ flags: { autodig: false, autoopen: true, pickup: true } });
+    await freshObjectRoom({ flags: { autodig: false, autoopen: true, pickup: true } });
     requirePlayingGame(game);
     const transaction = await beginSelectedOptions(['autodig', 'autoopen', 'autopickup', 'pickup_types']);
     try {
@@ -587,7 +587,7 @@ void test('Escape at an overflowing option notice opens the pickup editor withou
 });
 
 void test('a pet-highlight option still waits for its native redraw and repaints the pet', async () => {
-    freshObjectRoom({ flags: { hilite_pet: false } });
+    await freshObjectRoom({ flags: { hilite_pet: false } });
     requirePlayingGame(game);
     const pet = await createMonsterAt('little dog', 12, 10);
     initializePet(pet);

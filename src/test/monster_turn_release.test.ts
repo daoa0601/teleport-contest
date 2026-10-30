@@ -12,7 +12,7 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 
 for (const sticky of [false, true]) {
     void test(`a peaceful holder spends its turn releasing ${sticky ? 'a hero who holds it back' : 'the hero'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         if (sticky) installPolymorphedHero('large mimic', { hitPoints: 200 });
         const python = await createMonsterAt('python', 11, 10, MM_ANGRY | NO_MINVENT);
@@ -34,7 +34,7 @@ for (const sticky of [false, true]) {
 }
 
 void test('a peaceful engulfer expels the hero and ends its turn', async () => {
-    freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
+    await freshObjectRoom({ hero: { uhp: 200, uhpmax: 200 } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 10, 10, MM_ANGRY | NO_MINVENT);
     worm.mpeaceful = 1;

@@ -10,14 +10,14 @@ import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 const RING_CLASS = 4;
-function dipRoom() {
-    const level = freshObjectRoom();
+async function dipRoom() {
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(10, 10).typ = SINK;
     return level;
 }
 async function dipPotion(otyp, seed) {
-    const level = dipRoom();
+    const level = await dipRoom();
     const potion = await addInventoryObject(otyp);
     potion.dknown = true;
     resetInputState().feed('');
@@ -73,7 +73,7 @@ void test('polymorph poured down the drain replaces the sink', async () => {
 });
 // fountain.c:dipsink() '-' dip: wash_hands() instead of water damage.
 void test('dipping bare hands into a sink washes them', async () => {
-    dipRoom();
+    await dipRoom();
     resetInputState().feed('');
     initRng(1n);
     await runExtendedCommand('dip', '-y' + ' '.repeat(20));
@@ -82,7 +82,7 @@ void test('dipping bare hands into a sink washes them', async () => {
 // fountain.c:dipsink(): the rare pipe break converts the sink into an already
 // looted fountain; slippery hands stay slippery through it.
 void test('a breaking sink keeps slippery hands slippery', async () => {
-    const level = dipRoom();
+    const level = await dipRoom();
     setPropertyTimeout('glib', 10);
     resetInputState().feed('');
     initRng(7n);

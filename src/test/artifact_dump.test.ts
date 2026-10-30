@@ -24,7 +24,7 @@ function dumpLine(name: string): string {
 }
 
 void test('a wished artifact has a wish origin before the hero learns it exists', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
 
     const result = await readObjectName('Magicbane', { wizardWish: true });
 
@@ -33,7 +33,7 @@ void test('a wished artifact has a wish origin before the hero learns it exists'
 });
 
 void test('accepting an artifact wish preserves its origin and hero knowledge through save and restore', async () => {
-    freshObjectRoom({ flags: { debug: true, verbose: false } });
+    await freshObjectRoom({ flags: { debug: true, verbose: false } });
     pushKeys('Magicbane\r');
     await makeWish();
     const storage = memoryStorage();
@@ -41,13 +41,13 @@ void test('accepting an artifact wish preserves its origin and hero knowledge th
     assert.equal(await saveGame(storage), true);
     initializeArtifacts();
 
-    assert.equal(restoreGame('Artifact dump', storage), true);
+    assert.equal(await restoreGame('Artifact dump', storage), true);
 
     assert.match(dumpLine('Magicbane'), /\[exists; hero knows; wish\]$/);
 });
 
 void test('an artifact gift replaces its random origin and resets knowledge when its origin changes again', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const magicbane = artifactByName('Magicbane');
     assert.ok(magicbane);
     const athame = await mksobj(magicbane.baseType, false, false);
@@ -64,7 +64,7 @@ void test('an artifact gift replaces its random origin and resets knowledge when
 });
 
 void test('crowning records the gifted sword in the artifact dump', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'barbarian', hero: { ualign: { type: 0, record: 20 } },
     });
     pushKeys(' '.repeat(10));
@@ -75,7 +75,7 @@ void test('crowning records the gifted sword in the artifact dump', async () => 
 });
 
 void test('restoring an artifact from bones replaces its previous wish origin', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('Magicbane', { wizardWish: true });
     assert.ok(result && !result.noWish);
     initializeArtifacts();
@@ -86,7 +86,7 @@ void test('restoring an artifact from bones replaces its previous wish origin', 
 });
 
 void test('uncreating an artifact clears its dump flags before a replacement is generated', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const magicbane = artifactByName('Magicbane');
     assert.ok(magicbane);
     const athame = await mksobj(magicbane.baseType, false, false);
@@ -103,7 +103,7 @@ void test('uncreating an artifact clears its dump flags before a replacement is 
 });
 
 void test('starting a new game clears the previous artifact creation flags', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const result = await readObjectName('Magicbane', { wizardWish: true });
     assert.ok(result && !result.noWish);
 
@@ -117,7 +117,7 @@ for (const { description, origins } of [
     { description: 'an unknown creation origin', origins: new Map([[1, 'rumor']]) },
 ]) {
     void test(`restoring ${description} in the artifact dump leaves the live game intact`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const hero = game.u;
         game.plname = 'Invalid artifact origin';
         const storage = memoryStorage();
@@ -130,7 +130,7 @@ for (const { description, origins } of [
         saved.state._artifactOrigins = origins;
         storage.setItem(key, encodeSavedGraph(saved));
 
-        assert.equal(restoreGame(game.plname, storage), false);
+        assert.equal(await restoreGame(game.plname, storage), false);
 
         assert.equal(game.level, level);
         assert.equal(game.u, hero);

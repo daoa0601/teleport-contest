@@ -45,7 +45,7 @@ void test('Excalibur retains Knight role ownership only for Knights', () => {
     assert.equal(artifactByName('The Magic Mirror of Merlin', state)?.role, 'knight');
 });
 void test('naming Grimtooth permanently poisons its dagger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     initializeArtifacts(game);
     const grimtooth = artifactByName('Grimtooth');
     assert.ok(grimtooth);

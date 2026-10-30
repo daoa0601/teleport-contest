@@ -17,8 +17,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { assertWormBody } from './support/worms.js';
-function rangedRoom() {
-    const level = freshObjectRoom({
+async function rangedRoom() {
+    const level = await freshObjectRoom({
         right: 22, flags: { verbose: true }, hero: { ulevel: 30, uhitinc: 50 },
     });
     requirePlayingGame(game);
@@ -30,7 +30,7 @@ function rangedRoom() {
     return level;
 }
 void test('a hand-thrown rock receives the hero damage bonus through the ordinary hit rules', async () => {
-    rangedRoom();
+    await rangedRoom();
     requirePlayingGame(game);
     game.u.udaminc = 7;
     const rock = await addInventoryObject(ROCK);
@@ -44,7 +44,7 @@ void test('a hand-thrown rock receives the hero damage bonus through the ordinar
 });
 for (const objectType of [BOULDER, HEAVY_IRON_BALL]) {
     void test(`a thrown ${objectType === BOULDER ? 'boulder' : 'iron ball'} uses heavy-object accuracy and physical damage`, async () => {
-        rangedRoom();
+        await rangedRoom();
         const object = await knownObject(objectType);
         const target = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
         target.mhp = target.mhpmax = 100;
@@ -57,7 +57,7 @@ for (const objectType of [BOULDER, HEAVY_IRON_BALL]) {
     });
 }
 void test('an applied polearm miss wakes its defender without recording a weapon hit', async () => {
-    rangedRoom();
+    await rangedRoom();
     requirePlayingGame(game);
     game.u.uhitinc = -100;
     const polearm = await addInventoryObject(OBJECT_NAMES.indexOf('halberd'));
@@ -73,10 +73,10 @@ void test('an applied polearm miss wakes its defender without recording a weapon
     assert.equal(game.u.uconduct.weaphit ?? 0, 0);
 });
 void test('a thrown axe strikes and cuts the worm segment in its actual flight path', async () => {
-    const level = rangedRoom();
+    const level = await rangedRoom();
     const axe = await addInventoryObject(AXE);
     const worm = await createMonsterAt('long worm', 14, 11, NO_MINVENT | MM_NOTAIL);
-    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    await initializeMonsterWormBody(worm, { segmentCount: 0 });
     assertWormBody(worm);
     worm.wormSegments = [{ x: 13, y: 10 }, { x: 12, y: 10 }];
     worm.mhp = worm.mhpmax = 100;
@@ -90,7 +90,7 @@ void test('a thrown axe strikes and cuts the worm segment in its actual flight p
     assert.equal(worm.my, 11);
 });
 void test('a real multishot volley carries each arrow ordinal into physical hit feedback', async () => {
-    rangedRoom();
+    await rangedRoom();
     requirePlayingGame(game);
     installHeroWeaponSkills({ [P_BOW]: P_EXPERT });
     const bow = await addInventoryObject(BOW);

@@ -29,7 +29,7 @@ function levitatingFor(turns: number, state = game) {
 }
 
 void test('the levitation countdown warns at five turns and three turns', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const log = collector();
 
@@ -40,7 +40,7 @@ void test('the levitation countdown warns at five turns and three turns', async 
 });
 
 void test('the levitation countdown stays quiet on even, late, and long timeouts', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const log = collector();
 
@@ -52,7 +52,7 @@ void test('the levitation countdown stays quiet on even, late, and long timeouts
 });
 
 void test('floating above a hazard warns about the surface below', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     let message = await levitationDialogue(levitatingFor(3), collector());
@@ -64,7 +64,7 @@ void test('floating above a hazard warns about the surface below', async () => {
 });
 
 void test('worn levitation sources suppress the countdown dialogue', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantWornProperty('levitation', await knownObject(POT_LEVITATION), 'uarmf');
 
@@ -73,7 +73,7 @@ void test('worn levitation sources suppress the countdown dialogue', async () =>
 });
 
 void test('an invoked levitation artifact suppresses the countdown dialogue', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     setInvokedProperty('levitation', { oartifact: 22 }, true, game);
 
@@ -82,7 +82,7 @@ void test('an invoked levitation artifact suppresses the countdown dialogue', as
 });
 
 void test('the blessed-potion at-will marker does not suppress the dialogue', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     // The marker is intrinsic (C I_SPECIAL lives in HLevitation); only the
     // extrinsic field, not the intrinsic one, silences the countdown.
@@ -94,7 +94,7 @@ void test('the blessed-potion at-will marker does not suppress the dialogue', as
 });
 
 void test('embedded in rock, the countdown stays silent outside hazards', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.level.requireAt(game.u.ux, game.u.uy).typ = STONE;
     assert.equal(await levitationDialogue(levitatingFor(3), collector()),
@@ -102,7 +102,7 @@ void test('embedded in rock, the countdown stays silent outside hazards', async 
 });
 
 void test('each turn advances the timeout without expiring it early', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     levitatingFor(6);
 
@@ -112,7 +112,7 @@ void test('each turn advances the timeout without expiring it early', async () =
 });
 
 void test('levitation expiry lands the hero and clears the at-will marker', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { blessed: true }),
         { publish: collector().publish });
@@ -131,7 +131,7 @@ void test('levitation expiry lands the hero and clears the at-will marker', asyn
 });
 
 void test('timed flight expiring with levitation is bypassed, not taken over', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     levitatingFor(1);
     game.u.flyingTurns = 1;
@@ -149,7 +149,7 @@ void test('timed flight expiring with levitation is bypassed, not taken over', a
 });
 
 void test('timed flight alone lands with its own message', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.u.flyingTurns = 1;
     refreshProperty('flying');
@@ -164,7 +164,7 @@ void test('timed flight alone lands with its own message', async () => {
 });
 
 void test('an independent flight source keeps the hero airborne at timeout', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     grantIntrinsicProperty('flying', 'outside');
     game.u.flyingTurns = 1;
@@ -179,7 +179,7 @@ void test('an independent flight source keeps the hero airborne at timeout', asy
 });
 
 void test('saving and restoring preserves timed at-will levitation', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     game.plname = 'Levitation-Timeout';
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { blessed: true }),
@@ -191,7 +191,7 @@ void test('saving and restoring preserves timed at-will levitation', async () =>
 
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
+    assert.equal(await restoreGame(game.plname, storage), true);
 
     assert.equal(game.u.levitationTurns, turns);
     assert.ok(hasIntrinsicProperty('levitation', 'potion'));

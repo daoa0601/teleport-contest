@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a monster swing describes a corpse as a corpse before the contact identifies its species', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const attacker = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const defender = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('cockatrice'));
@@ -26,7 +26,7 @@ void test('a monster swing describes a corpse as a corpse before the contact ide
 });
 
 void test('an unidentified weapon swing uses the player assigned type name', async () => {
-    freshObjectRoom({ flags: { verbose: true } });
+    await freshObjectRoom({ flags: { verbose: true } });
     const attacker = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const defender = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     const dagger = await knownObject(ELVEN_DAGGER, { typeKnown: false });

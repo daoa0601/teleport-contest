@@ -8,7 +8,7 @@ import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('only the most recent split can be undone', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const daggers = await addInventoryObject(DAGGER, { quan: 4 });
     const first = splitObjectStack(daggers, 1);
     const second = splitObjectStack(daggers, 1);
@@ -20,7 +20,7 @@ void test('only the most recent split can be undone', async () => {
     assert.equal(first.quan, 1);
 });
 void test('a new command ends the opportunity to undo a previous stack split', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     game._moveloopStarted = true;
     const daggers = await addInventoryObject(DAGGER, { quan: 4 });
     const split = splitObjectStack(daggers, 1);

@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 for (const invoked of [false, true]) {
     void test(`a trapdoor ${invoked ? 'can reach the sanctum after' : 'stops at the vibrating-square level before'} invocation`, async () => {
-        freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 4 }, uevent: { invoked } } });
+        await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 4 }, uevent: { invoked } } });
         requirePlayingGame(game);
         game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 5, flags: { hellish: true } })];
         game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
@@ -24,7 +24,7 @@ for (const type of [HOLE, TRAPDOOR]) {
         void test(`quest ${name} ${reachedLocate ? 'can fall past a previously reached' : 'stop at the unreached'} locate level`, async () => {
             let fellPastLocate = false;
             for (let seed = 1; seed <= 24; seed++) {
-                freshObjectRoom({ gameplaySeed: seed });
+                await freshObjectRoom({ gameplaySeed: seed });
                 requirePlayingGame(game);
                 await init_dungeons();
                 const locate = game.specialLevels?.get('x-loca');

@@ -57,7 +57,7 @@ export async function resolveMonsterCombatDamage(attacker, defender, attack, { s
             if (canSpotMonster(attacker))
                 await publish(growth.message);
             finishMonsterGrowth(attacker, growth);
-            newsym(attacker.mx, attacker.my);
+            await newsym(attacker.mx, attacker.my);
             if (growth.genocided)
                 await finishDeath(attacker);
         }

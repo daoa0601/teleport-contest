@@ -15,7 +15,7 @@ for (const { type, key, verb } of [
     { type: SACK, key: 'T', verb: 'tipping' },
 ]) {
     void test(`rejecting reqmenu prevents inventory ${verb}`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(type, { cknown: false });
         const input = resetInputState();
         const core = await startLuaCore(t);

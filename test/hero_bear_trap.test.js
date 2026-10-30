@@ -23,7 +23,7 @@ import { W_AMUL } from '../js/const.js';
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 for (const lifesaving of [false, true]) {
     void test(`a bear trap ${lifesaving ? 'allows life saving' : 'kills a mortally wounded hero'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
         requireFixtureGame(game);
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
         if (lifesaving)
@@ -42,7 +42,7 @@ for (const lifesaving of [false, true]) {
 }
 for (const unchanging of [false, true]) {
     void test(`a bear trap destroying an ogre body ${unchanging ? 'kills an unchanging hero' : 'allows rehumanization'}`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         installPolymorphedHero('ogre', { hitPoints: 1, maxHitPoints: 100 });
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
@@ -64,7 +64,7 @@ for (const unchanging of [false, true]) {
 }
 for (const form of ['kitten', 'gray ooze', 'fog cloud', 'ghost', 'ogre']) {
     void test(`a bear trap respects the ${form} body`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         installPolymorphedHero(form, { hitPoints: 100 });
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
@@ -82,7 +82,7 @@ for (const form of ['kitten', 'gray ooze', 'fog cloud', 'ghost', 'ogre']) {
 }
 for (const type of [IRON_SHOES, KICKING_BOOTS, LOW_BOOTS]) {
     void test(`bear-trap protection depends on the boot material (${type})`, async () => {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const boots = await addInventoryObject(type);
         wearHeroArmor(boots);
@@ -99,7 +99,7 @@ for (const type of [IRON_SHOES, KICKING_BOOTS, LOW_BOOTS]) {
 }
 for (const outcome of ['survives', 'life saved', 'dies']) {
     void test(`a bear trap injures the mount and handles a steed that ${outcome}`, async () => {
-        freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100 } });
+        await freshObjectRoom({ role: 'knight', hero: { ulevel: 30, uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const steed = await createSaddledSteed();
         if (outcome === 'life saved')

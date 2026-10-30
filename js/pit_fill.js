@@ -113,7 +113,7 @@ export async function applyBoulderPitEffects(boulder, trap, x, y, { state = game
     boulder.oy = y;
     await useUpFloorObject(boulder, 1, { state, publish });
     const buriedFloorObjects = await buryFloorObjectsAt(x, y, state, { publish });
-    newsym(x, y);
+    await newsym(x, y);
     return { finished: true, object: null, buriedFloorObjects };
 }
 function ignoresFallingBoulder(mnum) {

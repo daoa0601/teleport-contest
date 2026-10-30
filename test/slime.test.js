@@ -36,7 +36,7 @@ void test('a green slime touch infects and still deals its physical damage', asy
 });
 for (const activity of ['12s', 'L']) {
     void test(`the slime countdown strips speed and interrupts ${activity}`, async () => {
-        freshHeroConditionRoom();
+        await freshHeroConditionRoom();
         game.u.fast = true;
         game.u.veryFast = true;
         game.u.veryFastTurns = 40;
@@ -61,7 +61,7 @@ for (const activity of ['12s', 'L']) {
     });
 }
 void test('the final slime turn changes form before invoking slime death', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     startHeroSliming({ state: game, turns: 1, killer: 'green slime' });
     const armor = await addInventoryObject(LEATHER_ARMOR);
     wearHeroArmor(armor);
@@ -104,7 +104,7 @@ void test('the final slime turn changes form before invoking slime death', async
     assert.equal(result.died, false);
 });
 void test('burning slime clears its countdown, killer, and false appearance', async () => {
-    freshHeroConditionRoom();
+    await freshHeroConditionRoom();
     startHeroSliming({ state: game, turns: 4, killer: 'green slime' });
     game.u.m_ap_type = M_AP_MONSTER;
     game.u.mappearance = PM_GREEN_SLIME;

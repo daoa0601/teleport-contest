@@ -13,7 +13,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const [species, attribute] of [['quasit', A_DEX], ['rabid rat', A_CON]] satisfies [string, typeof A_DEX | typeof A_CON][]) {
     void test(`${species} poison harms its target attribute rather than Strength`, async () => {
-        freshObjectRoom({ flags: { verbose: false } });
+        await freshObjectRoom({ flags: { verbose: false } });
         requirePlayingGame(game);
         const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
         monster.mpeaceful = false;
@@ -31,7 +31,7 @@ for (const [species, attribute] of [['quasit', A_DEX], ['rabid rat', A_CON]] sat
 void test('armor cancellation and a cancelled attacker stop natural poison', async () => {
     const damage = [];
     for (const protection of ['none', 'armor', 'cancelled attacker']) {
-        freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+        await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
         requirePlayingGame(game);
         const spider = await createMonsterAt('giant spider', 10, 10, NO_MINVENT);
         initializePet(spider, { state: game });
@@ -58,7 +58,7 @@ void test('armor cancellation and a cancelled attacker stop natural poison', asy
 void test('weapon poison still works when its wielder is cancelled and the defender wears protection', async () => {
     const damage = [];
     for (const poisoned of [false, true]) {
-        freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+        await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
         requirePlayingGame(game);
         const captain = await createMonsterAt('captain', 10, 10, NO_MINVENT);
         initializePet(captain, { state: game });
@@ -84,7 +84,7 @@ void test('weapon poison still works when its wielder is cancelled and the defen
 void test('poison resistance stops extra poison damage without preventing the bite', async () => {
     const damage = [];
     for (const cancelled of [false, true]) {
-        freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+        await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
         requirePlayingGame(game);
         const spider = await createMonsterAt('giant spider', 10, 10, NO_MINVENT);
         initializePet(spider, { state: game });

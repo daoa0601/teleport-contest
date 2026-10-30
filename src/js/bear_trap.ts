@@ -100,14 +100,14 @@ export async function finishMonsterBearTrap(
             await publish(
                 `${describeMonster(monster)} evades ${event.trap.madeby_u ? 'your' : 'a'} bear trap!`,
             );
-            seeTrap(event.trap, state);
+            await seeTrap(event.trap, state);
         }
         return event;
     }
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
         await publish(`${describeMonster(monster)} is caught in ${owner} bear trap!`);
-        seeTrap(event.trap, state);
+        await seeTrap(event.trap, state);
     } else if (monster.mnum === PM_OWLBEAR || monster.mnum === PM_BUGBEAR) {
         await publishHeardMessage('the roaring of an angry bear!', publish, state);
     }

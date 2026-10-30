@@ -29,7 +29,7 @@ import { createStaffedShop } from './support/shop.js';
 const BIRTH_FLAGS = MM_NOGRP | MM_NOWAIT | NO_MINVENT;
 
 async function searchRoom(species = 'goblin') {
-    const level = freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 16,
+    const level = await freshObjectRoom({ left: 5, right: 25, top: 5, bottom: 16,
         heroX: 20, heroY: 10, moves: 1000, gameplaySeed: 97n });
     requirePlayingGame(game);
     const state = game;
@@ -177,7 +177,7 @@ void test('the Wizard disguise does not prevent pursuing an item beneath him', a
 void test('a sleeping worm tail blocks interest in the item beneath that segment', async () => {
     const { state, search } = await searchRoom();
     const worm = await createMonsterAt('long worm', 13, 10, BIRTH_FLAGS);
-    placeMonsterWormTailRandomly(worm, 2, { state });
+    await placeMonsterWormTailRandomly(worm, 2, { state });
     const segment = worm.wormSegments?.[0];
     assert.ok(segment, 'The open room must fit the real worm tail');
     worm.msleeping = 1;
@@ -217,7 +217,7 @@ void test('an attractive item behind a wall does not become the monster goal', a
 
     level.requireAt(11, 10).typ = STONE;
     vision_note_blocker_change(11, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
 
     assert.deepEqual(search().goal, { x: 20, y: 10 });
 });

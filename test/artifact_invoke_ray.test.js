@@ -8,7 +8,7 @@ import { invokeInventoryObject } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('invoking Sunsword flashes a monster in the chosen direction', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     const sword = await artifactObject('Sunsword', { invlet: 'a', where: 'inventory', age: 0 });
     game.inventory = [sword];
@@ -20,7 +20,7 @@ void test('invoking Sunsword flashes a monster in the chosen direction', async (
     assert.equal(game.context.move, 1);
 });
 void test('Sunsword can flash the hero even while the artifact is cooling down', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 10 }, uen: 30, uenmax: 30 } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 10 }, uen: 30, uenmax: 30 } });
     requirePlayingGame(game);
     const sword = await artifactObject('Sunsword', { invlet: 'a', where: 'inventory', age: 100 });
     game.inventory = [sword];
@@ -31,7 +31,7 @@ void test('Sunsword can flash the hero even while the artifact is cooling down',
     assert.equal(game.context.move, 1);
 });
 void test('cancelling a blinding ray costs no turn and makes Sunsword ready now', async () => {
-    freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
+    await freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     const sword = await artifactObject('Sunsword', { invlet: 'a', where: 'inventory', age: 0 });
     game.inventory = [sword];
@@ -41,7 +41,7 @@ void test('cancelling a blinding ray costs no turn and makes Sunsword ready now'
     assert.equal(game._pending_message, 'Never mind.');
 });
 void test('invoking Sunsword upward lights only the hero map square', async () => {
-    const level = freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
+    const level = await freshObjectRoom({ hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
     level.requireAt(game.u.ux, game.u.uy).lit = false;
     level.requireAt(game.u.ux, game.u.uy).waslit = false;

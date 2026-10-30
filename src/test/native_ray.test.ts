@@ -18,7 +18,7 @@ for (const [type, intelligence, expectedBonus] of [[10, 18, 1], [15, 25, 3]] as 
     void test(`spell ray type ${type} adds the caster's intelligence bonus`, async () => {
         const damages: number[] = [];
         for (const spell of [false, true]) {
-            freshObjectRoom({ hero: { ulevel: 20 } });
+            await freshObjectRoom({ hero: { ulevel: 20 } });
             requirePlayingGame(game);
             game.u.acurr.a[A_INT] = game.u.amax.a[A_INT] = intelligence;
             const ant = await createMonsterAt('giant ant', 11, 10, NO_MINVENT);
@@ -34,7 +34,7 @@ for (const [type, intelligence, expectedBonus] of [[10, 18, 1], [15, 25, 3]] as 
 void test('the Knight quest artifact doubles spell damage before the monster saving throw', async () => {
     const damages: number[] = [];
     for (const carriesArtifact of [false, true]) {
-        freshObjectRoom({ role: 'knight', hero: { ulevel: 20 } });
+        await freshObjectRoom({ role: 'knight', hero: { ulevel: 20 } });
         requirePlayingGame(game);
         ensureQuestStatus().touched_artifact = true;
         if (carriesArtifact) await addInventoryItem(await artifactObject('The Magic Mirror of Merlin'));
@@ -50,7 +50,7 @@ void test('the Knight quest artifact doubles spell damage before the monster sav
 void test('monster fire breath does full damage while hero fire receives a magic saving throw', async () => {
     const damages: number[] = [];
     for (const nativeType of [-21, 21]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const lich = await createMonsterAt('mind flayer', 11, 10, NO_MINVENT);
         lich.mhp = lich.mhpmax = 1000;
@@ -64,7 +64,7 @@ void test('monster fire breath does full damage while hero fire receives a magic
 });
 
 void test('chain lightning damage leaves fatal monster removal to its caller', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const ant = await createMonsterAt('giant ant', 11, 10, NO_MINVENT);
     ant.mhp = 1;
@@ -81,7 +81,7 @@ void test('chain lightning damage leaves fatal monster removal to its caller', a
 void test('a vertical magic missile hits the hero and respects half spell damage', async () => {
     const losses: number[] = [];
     for (const halfSpellDamage of [false, true]) {
-        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 100, halfSpellDamage, dx: 0, dy: 0, dz: -1 } });
+        await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 100, halfSpellDamage, dx: 0, dy: 0, dz: -1 } });
         requirePlayingGame(game);
         const wand = await knownObject(WAN_MAGIC_MISSILE);
         installPagerInput(resetInputState(), { expected: /magic missile hits you|magic missiles? bounce off/i, limit: 2 });
@@ -97,7 +97,7 @@ void test('a vertical magic missile hits the hero and respects half spell damage
 });
 
 void test('a vertical death wand cannot kill a hero protected by magic resistance', async () => {
-    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 100, antimagic: true, dx: 0, dy: 0, dz: 1 } });
+    await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 100, antimagic: true, dx: 0, dy: 0, dz: 1 } });
     requirePlayingGame(game);
     installPagerInput(resetInputState(), { expected: /death.*hits you|You aren.t affected/i, limit: 2 });
 
@@ -111,7 +111,7 @@ void test('a vertical death wand cannot kill a hero protected by magic resistanc
 void test('a swallowed ray uses the spell object and level instead of fixed wand dice', async () => {
     const losses: number[] = [];
     for (const type of [WAN_MAGIC_MISSILE, SPE_MAGIC_MISSILE]) {
-        freshObjectRoom({ role: 'wizard', hero: { ulevel: 20, dx: 1, dy: 0, dz: 0 } });
+        await freshObjectRoom({ role: 'wizard', hero: { ulevel: 20, dx: 1, dy: 0, dz: 0 } });
         requirePlayingGame(game);
         const engulfer = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
         engulfer.mhp = engulfer.mhpmax = 1000;
@@ -133,7 +133,7 @@ void test('a swallowed ray uses the spell object and level instead of fixed wand
 
 
 void test('an unskilled fireball crosses intervening webs and explodes at its first monster', async () => {
-    const level = freshObjectRoom({ left: 7, right: 30, hero: { ulevel: 1, dx: 1, dy: 0, dz: 0 } });
+    const level = await freshObjectRoom({ left: 7, right: 30, hero: { ulevel: 1, dx: 1, dy: 0, dz: 0 } });
     requirePlayingGame(game);
     const passedWeb = addTrap(level, WEB, 12, 10, { tseen: true });
     const burnedWeb = addTrap(level, WEB, 14, 10, { tseen: true });
@@ -153,7 +153,7 @@ void test('an unskilled fireball crosses intervening webs and explodes at its fi
 
 
 void test('the carried Orb of Detection blocks a vertical magic missile', async () => {
-    freshObjectRoom({ role: 'archeologist', hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: -1 } });
+    await freshObjectRoom({ role: 'archeologist', hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: -1 } });
     requirePlayingGame(game);
     ensureQuestStatus().touched_artifact = true;
     await addInventoryItem(await artifactObject('The Orb of Detection'));
@@ -171,7 +171,7 @@ void test('the carried Orb of Detection blocks a vertical magic missile', async 
 void test('the carried Orb of Detection halves a cold ray', async () => {
     const losses: number[] = [];
     for (const carryOrb of [false, true]) {
-        freshObjectRoom({ role: 'archeologist', hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: -1 } });
+        await freshObjectRoom({ role: 'archeologist', hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: -1 } });
         requirePlayingGame(game);
         ensureQuestStatus().touched_artifact = true;
         if (carryOrb) await addInventoryItem(await artifactObject('The Orb of Detection'));

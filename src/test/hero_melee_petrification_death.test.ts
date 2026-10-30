@@ -23,7 +23,7 @@ for (const { mode, command, name } of [
 ]) {
     for (const dismissal of ['Escape', 'space']) {
         void test(`${mode} ${command} contact reaches Die? ${dismissal === 'Escape' ? 'directly after Escape stops the hit' : 'after acknowledging petrification'}`, async () => {
-            freshObjectRoom({
+            await freshObjectRoom({
                 flags: { verbose: true, debug: mode === 'wizard', explore: mode === 'explorer' },
                 hero: { uhitinc: 100, uhp: 40, uhpmax: 40 },
             });
@@ -81,7 +81,7 @@ for (const { lifeSaved, longName, description } of [
     { lifeSaved: true, longName: true, description: 'acknowledges a long hit before life saving zeros HP' },
 ]) {
     void test(`contact petrification ${description}`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             flags: { verbose: true, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
             hero: { uhitinc: 100, uhp: 40, uhpmax: 40 },
         });
@@ -132,7 +132,7 @@ for (const { lifeSaved, longName, description } of [
 }
 
 void test('barehand contact petrification identifies the real invisible named creature', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { verbose: true, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
         hero: { uhitinc: 100, uhp: 40, uhpmax: 40, urexp: 100, seeInvisible: true },
     });
@@ -169,7 +169,7 @@ void test('barehand contact petrification identifies the real invisible named cr
 
 for (const command of ['movement', 'fight'] as const) {
     void test(`${command} contact identifies a life-saving amulet after acknowledging the named bird's petrification`, async () => {
-        freshObjectRoom({
+        await freshObjectRoom({
             flags: { verbose: true },
             hero: { uhitinc: 100, uhp: 40, uhpmax: 40 },
         });

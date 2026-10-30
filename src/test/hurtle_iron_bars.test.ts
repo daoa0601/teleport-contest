@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const form of ['garter snake', 'ghost']) {
     void test(`a hurtling ${form} ${form === 'ghost' ? 'passes' : 'crashes into'} bars`, async () => {
-        const level = freshObjectRoom();
+        const level = await freshObjectRoom();
         const hero = installPolymorphedHero(form);
         const bars = level.requireAt(11, 10);
         bars.typ = IRONBARS;
@@ -35,7 +35,7 @@ for (const form of ['garter snake', 'ghost']) {
 }
 
 void test('a newt knocked toward iron bars stays where it was', async () => {
-    const level = freshObjectRoom({ heroX: 5, right: 20 });
+    const level = await freshObjectRoom({ heroX: 5, right: 20 });
     requirePlayingGame(game);
     const newt = await createMonsterAt('newt', 12, 10, NO_MINVENT);
     level.requireAt(13, 10).typ = IRONBARS;

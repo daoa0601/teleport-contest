@@ -21,7 +21,7 @@ for (const name of ['gnome queen', 'ogre king']) {
     void test(`${name} receives single melee weapons and launchers enchanted to at least +1`, async () => {
         let armedBirths = 0;
         for (let seed = 1n; seed <= 12n; seed++) {
-            freshObjectRoom({ gameplaySeed: seed });
+            await freshObjectRoom({ gameplaySeed: seed });
             const prince = await createMonsterAt(name, 12, 10, MM_NOGRP | MM_NOMSG);
             // Throwing stacks from m_initthrow() retain their raw enchantment.
             const weapons = (prince.minvent ?? []).filter(object => object.oclass === 2
@@ -39,7 +39,7 @@ for (const name of ['gnome queen', 'ogre king']) {
 void test('lawful minions receive uncursed, sound, erosion-proof magical supplies', async () => {
     let suppliedBirths = 0;
     for (let seed = 1n; seed <= 12n; seed++) {
-        freshObjectRoom({ gameplaySeed: seed });
+        await freshObjectRoom({ gameplaySeed: seed });
         const archon = await createMonsterAt('Archon', 12, 10, MM_NOGRP | MM_NOMSG);
         // Archon weapons and shields bypass mongets(); magical supplies do not.
         const supplies = (archon.minvent ?? []).filter(object =>
@@ -57,7 +57,7 @@ void test('lawful minions receive uncursed, sound, erosion-proof magical supplie
 });
 
 void test('Vlad receives an empty, unlit, uncursed candelabrum', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const vlad = await createMonsterAt('Vlad the Impaler', 12, 10, MM_NOGRP | MM_NOMSG);
     const candelabrum = (vlad.minvent ?? []).find(object => object.otyp === CANDELABRUM_OF_INVOCATION);
 

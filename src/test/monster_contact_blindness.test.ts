@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 
 void test('a raven blinding an infravision hero removes distant warm monsters from view', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
@@ -23,8 +23,8 @@ void test('a raven blinding an infravision hero removes distant warm monsters fr
     raven.mux = game.u.ux;
     raven.muy = game.u.uy;
     grantIntrinsicProperty('infravision', 'race');
-    vision_recalc(0);
-    newsym(jackal.mx, jackal.my);
+    await vision_recalc(0);
+    await newsym(jackal.mx, jackal.my);
     await flush_screen(1);
     assert.equal(requireScreenCell(13, 11).ch, 'd');
     resetInputState().feed(' '.repeat(10));
@@ -39,14 +39,14 @@ void test('a raven blinding an infravision hero removes distant warm monsters fr
 });
 
 void test('becoming an eyeless body removes monsters previously seen through infravision', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     for (let x = 7; x <= 16; x++)
         for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
     const soldier = await createMonsterAt('soldier', 14, 10, NO_MINVENT);
     grantIntrinsicProperty('infravision', 'race');
-    vision_recalc(0);
-    newsym(soldier.mx, soldier.my);
+    await vision_recalc(0);
+    await newsym(soldier.mx, soldier.my);
     await flush_screen(1);
     assert.equal(requireScreenCell(13, 11).ch, '@');
     resetInputState().feed(' '.repeat(10));

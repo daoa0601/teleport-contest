@@ -32,7 +32,7 @@ for (const [kind, save, key] of [
     ['panic', saveErrorGame, 'teleport-error-save:preparation'],
 ] as const) {
     void test(`${kind} saves finish one of each in-use item and clear prayer invulnerability`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.plname = 'Preparation';
         const storage = memoryStorage();
@@ -54,7 +54,7 @@ for (const [kind, save, key] of [
 
     for (const [under, nextToHero] of [[DB_ICE, true], [DB_MOAT, false]] as const) {
         void test(`${kind} saves recover an in-flight missile using the raised bridge's surface (${under})`, async () => {
-            freshObjectRoom();
+            await freshObjectRoom();
             requirePlayingGame(game);
             game.plname = 'Preparation';
             const storage = memoryStorage();
@@ -81,7 +81,7 @@ for (const [kind, save, key] of [
     }
 
     void test(`${kind} saves put a temporarily unplaced punishment ball and chain back on the floor`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.plname = 'Preparation';
         const storage = memoryStorage();
@@ -99,7 +99,7 @@ for (const [kind, save, key] of [
         assert.equal(saved.uchain.where, 'floor');
     });
     void test(`${kind} save failure keeps the prior snapshot and completed cleanup`, async t => {
-        freshObjectRoom({ hero: { uhp: 25, uhpmax: 40 } });
+        await freshObjectRoom({ hero: { uhp: 25, uhpmax: 40 } });
         requirePlayingGame(game);
         game.plname = 'Preparation';
         const storage = memoryStorage();
@@ -135,7 +135,7 @@ for (const [kind, save, key] of [
     });
 
     void test(`${kind} save propagates panic termination instead of reporting a failed save`, async t => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         game.plname = 'Preparation';
         const storage = memoryStorage();

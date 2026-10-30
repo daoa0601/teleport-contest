@@ -145,8 +145,8 @@ export async function finishPetEating(
     random: RandomBelow = rn2, calls: MonsterCallLog = [],
 ): Promise<void> {
     if (meal.from.x !== monster.mx || meal.from.y !== monster.my) {
-        newsym(meal.from.x, meal.from.y);
-        newsym(monster.mx, monster.my);
+        await newsym(meal.from.x, meal.from.y);
+        await newsym(monster.mx, monster.my);
     }
     const object = meal.object;
     if (meal.royalJelly && await feedBeeRoyalJelly(monster, object, state)) {

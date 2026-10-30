@@ -15,7 +15,7 @@ import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('genocide changes the newest monster first, as the level list does', async () => {
-    freshObjectRoom({ gameplaySeed: 12n });
+    await freshObjectRoom({ gameplaySeed: 12n });
     requirePlayingGame(game);
     const first = await createMonsterAt('jackal', 11, 10);
     const second = await createMonsterAt('jackal', 12, 10);
@@ -39,7 +39,7 @@ void test('genocide changes the newest monster first, as the level list does', a
 });
 
 void test('genocide records a pet death and releases its leash without kill credit or a corpse', async () => {
-    const level = freshObjectRoom();
+    const level = await freshObjectRoom();
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10);
     initializePet(dog);
@@ -61,7 +61,7 @@ void test('genocide records a pet death and releases its leash without kill cred
 });
 
 void test('genocide announces a surviving shapechanger taking a permitted form', async () => {
-    freshObjectRoom({ gameplaySeed: 12n });
+    await freshObjectRoom({ gameplaySeed: 12n });
     requirePlayingGame(game);
     const monster = await createMonsterAt('jackal', 11, 10);
     monster.cham = MONSTER_NAME.indexOf('chameleon');

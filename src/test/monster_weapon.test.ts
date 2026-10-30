@@ -23,7 +23,7 @@ const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 
 for (const shield of [false, true]) {
     void test(`an enchanted wielded weapon does not change a goblin's ${shield ? 'shielded' : 'unarmored'} AC`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
         if (shield)
             await equipMonsterObject(goblin, await knownObject(SMALL_SHIELD), W_ARMS);
@@ -36,7 +36,7 @@ for (const shield of [false, true]) {
 }
 
 void test('hallucinated weapon swings assign the first identity to the attacker and the second to the defender', async () => {
-    freshObjectRoom({ flags: { verbose: true }, hero: { hallucinationTurns: 10 } });
+    await freshObjectRoom({ flags: { verbose: true }, hero: { hallucinationTurns: 10 } });
     const attacker = await createMonsterAt('balrog', 11, 10, NO_MINVENT);
     const defender = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
     const weapon = await knownObject(BULLWHIP);
@@ -56,7 +56,7 @@ void test('hallucinated weapon swings assign the first identity to the attacker 
 
 for (const targetsMonster of [false, true]) {
     void test(`a balrog lashes its bullwhip at ${targetsMonster ? 'another monster' : 'the hero'} with the perceived possessive pronoun`, async () => {
-        freshObjectRoom({ flags: { verbose: true } });
+        await freshObjectRoom({ flags: { verbose: true } });
         const balrog = await createMonsterAt('balrog', 11, 10, NO_MINVENT);
         const weapon = await knownObject(BULLWHIP);
         const defender = targetsMonster ? await createMonsterAt('goblin', 12, 10, NO_MINVENT) : null;
@@ -71,7 +71,7 @@ for (const targetsMonster of [false, true]) {
 }
 
 void test('wielding identifies a visible invisible monster by its current appearance', async () => {
-    freshObjectRoom({ hero: { seeInvisible: true } });
+    await freshObjectRoom({ hero: { seeInvisible: true } });
     const hobbit = await createMonsterAt('hobbit', 11, 10, NO_MINVENT);
     hobbit.minvis = true;
     await addObjectToMonsterInventory(hobbit, await knownObject(DAGGER));
@@ -84,7 +84,7 @@ void test('wielding identifies a visible invisible monster by its current appear
 });
 
 void test('a hallucinating hero sees a hallucinated monster wield the weapon', async () => {
-    freshObjectRoom({ hero: { hallucination: true, hallucinationTurns: 10 } });
+    await freshObjectRoom({ hero: { hallucination: true, hallucinationTurns: 10 } });
     const hobbit = await createMonsterAt('hobbit', 11, 10, NO_MINVENT);
     await addObjectToMonsterInventory(hobbit, await knownObject(DAGGER));
     hobbit.weaponCheck = NEED_HTH_WEAPON;
@@ -97,7 +97,7 @@ void test('a hallucinating hero sees a hallucinated monster wield the weapon', a
 });
 
 void test('a visible monster names an unidentified tethered weapon by its appearance', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const gnome = await createMonsterAt('gnome', 11, 10, NO_MINVENT);
     const weapon = await knownObject(AKLYS, { known: false, typeKnown: false, dknown: false });
     await addObjectToMonsterInventory(gnome, weapon);
@@ -115,7 +115,7 @@ void test('a visible monster names an unidentified tethered weapon by its appear
 
 void test('a digging monster uses a mattock with free hands and a pick-axe with a shield', async () => {
     for (const shield of [false, true]) {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const dwarf = await createMonsterAt('dwarf', 11, 10, NO_MINVENT);
         await addObjectToMonsterInventory(dwarf, await knownObject(DWARVISH_MATTOCK));
@@ -131,7 +131,7 @@ void test('a digging monster uses a mattock with free hands and a pick-axe with 
 });
 
 void test('a lawful giant prefers Excalibur to its otherwise favored club', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 11, 10, NO_MINVENT);
     const sword = await addObjectToMonsterInventory(giant, await artifactObject('Excalibur'));
@@ -142,7 +142,7 @@ void test('a lawful giant prefers Excalibur to its otherwise favored club', asyn
 });
 
 void test('an ordinary monster refuses another role\'s self-willed quest weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const giant = await createMonsterAt('giant', 11, 10, NO_MINVENT);
     await addObjectToMonsterInventory(giant, await knownObject(CLUB));
@@ -154,7 +154,7 @@ void test('an ordinary monster refuses another role\'s self-willed quest weapon'
 });
 
 void test('gloves let a monster choose a petrifying corpse as its weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     soldier.mpeaceful = false;
@@ -172,7 +172,7 @@ void test('gloves let a monster choose a petrifying corpse as its weapon', async
 });
 
 void test('a werewolf avoids silver and uses a safe dagger', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const werewolf = await createMonsterAt('werewolf', 11, 10, NO_MINVENT);
     await addObjectToMonsterInventory(werewolf, await knownObject(DAGGER));
@@ -184,7 +184,7 @@ void test('a werewolf avoids silver and uses a safe dagger', async () => {
 });
 
 void test('a shield prevents choosing a two-handed weapon', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     await addObjectToMonsterInventory(soldier, await knownObject(TWO_HANDED_SWORD));
@@ -195,7 +195,7 @@ void test('a shield prevents choosing a two-handed weapon', async () => {
 });
 
 void test('a monster keeps inventory order among safe weapons of the same type', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     await addObjectToMonsterInventory(soldier, await knownObject(DAGGER, { spe: 6 }));
@@ -206,7 +206,7 @@ void test('a monster keeps inventory order among safe weapons of the same type',
 });
 
 void test('Orcus can touch the invocation bell but not silver weapons or Demonbane', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const orcus = await createMonsterAt('Orcus', 11, 10, NO_MINVENT);
 
@@ -219,7 +219,7 @@ void test('Orcus can touch the invocation bell but not silver weapons or Demonba
 });
 
 void test('a fixed crysknife can stay intact when a new monster form drops it', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const monster = await createMonsterAt('bugbear', 11, 10, NO_MINVENT);
     const knife = await equipMonsterObject(monster,

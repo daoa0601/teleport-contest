@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // ice boxes 20, sacks and bags of holding 1 item), and initial-inventory
 // sacks stay empty outside level generation.
 void test('generated boxes keep their native content ceilings', async () => {
-    freshObjectRoom({ gameplaySeed: 1213n });
+    await freshObjectRoom({ gameplaySeed: 1213n });
     const chestCounts = [];
     const largeBoxCounts = [];
     const rollBox = async (typ, locked) => {
@@ -36,7 +36,7 @@ void test('generated boxes keep their native content ceilings', async () => {
     assert.ok(largeBoxCounts.every(count => count <= 5));
 });
 void test('ice boxes hold timer-free fresh corpses', async () => {
-    freshObjectRoom({ gameplaySeed: 511n });
+    await freshObjectRoom({ gameplaySeed: 511n });
     let corpses = 0;
     for (let i = 0; i < 60; i++) {
         const box = await mksobj(ICE_BOX, true, false);
@@ -52,7 +52,7 @@ void test('ice boxes hold timer-free fresh corpses', async () => {
 void test('a starting sack stays empty while a bag of holding may not', async () => {
     // C: the moves <= 1 && !in_mklev guard only empties sacks; the hero's
     // initial-inventory sack therefore never carries shop stock.
-    freshObjectRoom({ gameplaySeed: 77n, moves: 1 });
+    await freshObjectRoom({ gameplaySeed: 77n, moves: 1 });
     for (let i = 0; i < 100; i++) {
         assert.equal((await mksobj(SACK, true, false)).contents?.length ?? 0, 0);
         assert.equal((await mksobj(OILSKIN_SACK, true, false)).contents?.length ?? 0, 0);
@@ -71,7 +71,7 @@ void test('a generated bag of holding substitutes its dangerous contents', async
     // C mkbox_cnts(): bags of holding replace nested bags of holding and
     // bags of tricks with plain sacks, and cancellation wands with another
     // wand, so such items never ride inside one.
-    freshObjectRoom({ gameplaySeed: 2024n });
+    await freshObjectRoom({ gameplaySeed: 2024n });
     for (let i = 0; i < 300; i++) {
         const bag = await mksobj(BAG_OF_HOLDING, true, false);
         for (const item of bag.contents ?? []) {

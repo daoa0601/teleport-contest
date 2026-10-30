@@ -24,7 +24,7 @@ async function attackWithDeath(outcome) {
     return [...messages, game._pending_message].join('\n');
 }
 void test('a lucky hero escapes both of Death\'s touches without damage', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10 } });
     const prose = await attackWithDeath(0);
     assert.equal(game.u.uhp, 500);
     assert.equal(game.u.uhpmax, 500);
@@ -32,14 +32,14 @@ void test('a lucky hero escapes both of Death\'s touches without damage', async 
     assert.match(prose, /Death reaches out with its deadly touch\./);
 });
 void test('Death drains maximum HP in proportion to current HP and hero level', async () => {
-    freshObjectRoom({ hero: { uhp: 300, uhpmax: 300, ulevel: 20, uac: 10 } });
+    await freshObjectRoom({ hero: { uhp: 300, uhpmax: 300, ulevel: 20, uac: 10 } });
     const prose = await attackWithDeath(5);
     assert.equal(game.u.uhp, 172);
     assert.equal(game.u.uhpmax, 236);
     assert.match(prose, /You feel your life force draining away/);
 });
 void test('Death only deals reduced contact damage to an undead hero', async () => {
-    freshRoomWithPolymorphedHero('human zombie', {
+    await freshRoomWithPolymorphedHero('human zombie', {
         polymorph: { hitPoints: 500 }, hero: { uac: 10 },
     });
     const prose = await attackWithDeath(19);
@@ -48,21 +48,21 @@ void test('Death only deals reduced contact damage to an undead hero', async () 
     assert.equal(prose.match(/Was that the touch of death\?/g)?.length, 2);
 });
 void test('antimagic changes Death\'s fatal touch into ordinary life force drain', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, antimagic: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, antimagic: true } });
     const prose = await attackWithDeath(19);
     assert.equal(game.u.uhp, 372);
     assert.equal(game.u.uhpmax, 372);
     assert.doesNotMatch(prose, /You feel drained\.\.\./);
 });
 void test('a full touch of death applies its own HP drain without armor or half physical protection', async () => {
-    freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -10, halfPhysicalDamage: true } });
+    await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -10, halfPhysicalDamage: true } });
     const prose = await attackWithDeath(19);
     assert.equal(game.u.uhp, 304);
     assert.equal(game.u.uhpmax, 402);
     assert.equal(prose.match(/You feel drained\.\.\./g)?.length, 2);
 });
 void test('a full touch of death ends a living monster form before the next touch', async () => {
-    freshRoomWithPolymorphedHero('jackal', {
+    await freshRoomWithPolymorphedHero('jackal', {
         polymorph: { hitPoints: 100 }, hero: { uhp: 500, uhpmax: 500, uac: 10 },
     });
     await attackWithDeath(19);

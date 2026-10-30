@@ -11,12 +11,12 @@ function status() {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
 void test('optional equipment fields describe an unarmed naked humanoid', async () => {
-    freshObjectRoom({ flags: { weaponstatus: true, armorstatus: true }, hero: { uhs: 1 } });
+    await freshObjectRoom({ flags: { weaponstatus: true, armorstatus: true }, hero: { uhs: 1 } });
     await bot();
     assert.match(status(), /Bare-hnds Naked/);
 });
 void test('optional equipment fields shorten weapons and show armor slots and protection', async () => {
-    freshObjectRoom({ flags: { weaponstatus: true, armorstatus: true }, hero: { uhs: 1 } });
+    await freshObjectRoom({ flags: { weaponstatus: true, armorstatus: true }, hero: { uhs: 1 } });
     game.uwep = await addInventoryObject(TWO_HANDED_SWORD);
     wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
     wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));

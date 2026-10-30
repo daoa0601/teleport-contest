@@ -19,7 +19,7 @@ import { planInput } from './support/planned-input.js';
 import { assertWormBody } from './support/worms.js';
 void test('#wizfliplevel reflects the active level and its position-dependent effects', async (t) => {
     // C get_level_extends() expands this room to x=7..15, y=7..13.
-    const level = freshObjectRoom({ left: 8, right: 14, top: 8, bottom: 12,
+    const level = await freshObjectRoom({ left: 8, right: 14, top: 8, bottom: 12,
         heroX: 9, heroY: 9, flags: { debug: true } });
     requirePlayingGame(game);
     const blade = await floorObject(DAGGER, 9, 10);
@@ -57,7 +57,7 @@ void test('#wizfliplevel reflects the active level and its position-dependent ef
     assert.equal(game.context.move, 0);
 });
 void test('cancelling #wizfliplevel keeps the hero and map in place', async (t) => {
-    const level = freshObjectRoom({ flags: { debug: true } });
+    const level = await freshObjectRoom({ flags: { debug: true } });
     const blade = await floorObject(DAGGER, 9, 10);
     const input = resetInputState();
     planInput(input, t, [{ prompt: /Flip 0=randomly/, keys: '\x1b' }]);
@@ -73,7 +73,7 @@ for (const [axis, expectedX, expectedY, pitDirections] of [
     ['3', 13, 11, 1 << 2],
 ]) {
     void test(`#wizfliplevel option ${axis} reflects the hero and pit directions as C does`, async (t) => {
-        const level = freshObjectRoom({ left: 8, right: 14, top: 8, bottom: 12,
+        const level = await freshObjectRoom({ left: 8, right: 14, top: 8, bottom: 12,
             heroX: 9, heroY: 9, flags: { debug: true } });
         level.traps.push({ ttyp: PIT, tx: 8, ty: 9, tseen: true, once: false,
             launch: { x: -1, y: -1 }, conjoined: 1 << 2 });
@@ -87,7 +87,7 @@ for (const [axis, expectedX, expectedY, pitDirections] of [
     });
 }
 void test('a flip replaces a punishment pair that straddles the flip boundary', async (t) => {
-    const level = freshObjectRoom({ left: 8, right: 14, top: 8, bottom: 12,
+    const level = await freshObjectRoom({ left: 8, right: 14, top: 8, bottom: 12,
         heroX: 8, heroY: 10, flags: { debug: true } });
     await punishHero();
     const ball = game.uball;
@@ -111,10 +111,10 @@ void test('a flip replaces a punishment pair that straddles the flip boundary', 
 for (const axis of [1, 2, 3]) {
     void test(`#wizfliplevel option ${axis} transforms a worm without remapping an overwritten segment`, async (t) => {
         // The room's flip area is x=6..26, y=5..15.
-        const level = freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14,
+        const level = await freshObjectRoom({ left: 7, right: 25, top: 6, bottom: 14,
             flags: { debug: true } });
         const worm = await createMonsterAt('long worm', 18, 10, MM_ANGRY | MM_NOTAIL | NO_MINVENT);
-        initializeMonsterWormBody(worm, { segmentCount: 3 });
+        await initializeMonsterWormBody(worm, { segmentCount: 3 });
         assertWormBody(worm);
         const overwritten = worm.wormSegments[0];
         assert.ok(overwritten);

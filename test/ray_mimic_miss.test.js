@@ -7,7 +7,7 @@ import { ARROW } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a detected mimic disguised as an object still reports a ray miss', async () => {
-    freshObjectRoom({ hero: { detectMonsters: true }, flags: { verbose: true } });
+    await freshObjectRoom({ hero: { detectMonsters: true }, flags: { verbose: true } });
     requirePlayingGame(game);
     const mimic = await createMonsterAt('giant mimic', 11, 10, NO_MINVENT);
     mimic.m_ap_type = M_AP_OBJECT;

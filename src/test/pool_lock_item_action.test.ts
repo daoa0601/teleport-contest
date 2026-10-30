@@ -9,7 +9,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 for (const type of [LOCK_PICK, CREDIT_CARD, SKELETON_KEY]) {
     void test(`the item menu offers lock picking for ${type === LOCK_PICK ? 'a lock pick' : type === CREDIT_CARD ? 'a credit card' : 'a key'}`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         const item = await addInventoryObject(type);
         const input = resetInputState();
         const menu = ddoinv();

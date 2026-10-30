@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('empty discoveries print a message without opening a text window or using a turn', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const input = resetInputState();
     input.display = {
         async readKey(): Promise<number> {

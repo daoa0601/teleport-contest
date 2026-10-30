@@ -19,7 +19,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
 const weaponAttack = [AT_WEAP, AD_PHYS, 1, 6];
 async function weaponFight(species = 'hill giant') {
-    freshObjectRoom({ role: 'tourist', flags: { verbose: true }, gameplaySeed: 1n });
+    await freshObjectRoom({ role: 'tourist', flags: { verbose: true }, gameplaySeed: 1n });
     requirePlayingGame(game);
     game.u.uhitinc = 100;
     const monster = await createMonsterAt(species, 11, 10, MM_NOGRP | NO_MINVENT);
@@ -150,7 +150,7 @@ void test('a Cleaver wielder can save after attacking and continue fighting afte
     const savedHealth = monster.mhp;
     assert.ok(savedHealth < 100, 'The first Cleaver attack must damage the target.');
     assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame('CleaverSaver', storage), true);
+    assert.equal(await restoreGame('CleaverSaver', storage), true);
     requirePlayingGame(game);
     const restoredMonster = game.level.monsters.find(candidate => candidate.m_id === monster.m_id);
     assert.ok(restoredMonster, 'The saved combat target must be restored.');

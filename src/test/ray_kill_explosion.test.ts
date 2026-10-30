@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // golem passes XKILL_NOCORPSE.  A corpseless gas spore therefore still
 // reaches corpse_chance(), which sets off its explosion.
 void test('a gas spore killed by a cold ray explodes over its neighbors', async () => {
-    freshObjectRoom({ right: 20 });
+    await freshObjectRoom({ right: 20 });
     const spore = await createMonsterAt('gas spore', 13, 10, NO_MINVENT);
     const goblin = await createMonsterAt('goblin', 13, 11, NO_MINVENT);
     goblin.mhp = goblin.mhpmax = 100;

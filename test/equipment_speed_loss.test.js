@@ -10,7 +10,7 @@ import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js'
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('speed boots announce slowing to intrinsic speed when taken off', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     grantIntrinsicProperty('fast', 'outside');
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('speed boots'), { known: false });
     await dress('W', boots);
@@ -20,7 +20,7 @@ void test('speed boots announce slowing to intrinsic speed when taken off', asyn
     assert.match(messages, /You feel yourself slow down a bit\./);
 });
 void test('a timed speed effect keeps the hero very fast after speed boots come off', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const boots = await addInventoryObject(OBJECT_NAMES.indexOf('speed boots'), { known: false });
     await dress('W', boots);
     setPropertyTimeout('fast', 30);
@@ -29,7 +29,7 @@ void test('a timed speed effect keeps the hero very fast after speed boots come 
     assert.doesNotMatch(messages, /slow down/);
 });
 void test('losing blue dragon armor announces the loss of its extra speed', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const scales = await addInventoryObject(OBJECT_NAMES.indexOf('blue dragon scales'), { known: false });
     await dress('W', scales);
     const messages = await dress('T', scales);
@@ -37,7 +37,7 @@ void test('losing blue dragon armor announces the loss of its extra speed', asyn
     assert.match(messages, /You slow down\./);
 });
 void test('interrupted blue dragon mail dressing uses the native item name and armor-off feedback', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     const mail = await addInventoryObject(OBJECT_NAMES.indexOf('blue dragon scale mail'), { known: false });
     const input = resetInputState();
     const messages = [];

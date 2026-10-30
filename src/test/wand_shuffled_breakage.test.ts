@@ -16,7 +16,7 @@ const IRON = 11;
 
 for (const [material, label] of [[GLASS, 'glass'], [IRON, 'iron']] as const) {
     void test(`a wand whose shuffled appearance is ${label} ${material === GLASS ? 'shatters' : 'survives'} an impact`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         game.objectMaterials ??= [];
         game.objectMaterials[WAN_STRIKING] = material;
         const wand = await floorObject(WAN_STRIKING, 11, 10);

@@ -10,7 +10,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 for (const peaceful of [false, true]) {
     void test(`killing a watchman forced ${peaceful ? 'peaceful' : 'hostile'} by #wizgenesis ${peaceful ? 'penalizes alignment and counts as murder' : 'rewards alignment without murder'}`, async () => {
-        const level = freshObjectRoom({
+        const level = await freshObjectRoom({
             flags: { debug: true }, moves: 2000,
             hero: { ualign: { type: A_LAWFUL, record: 0 }, uluck: 0 },
         });

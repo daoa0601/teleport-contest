@@ -10,7 +10,7 @@ import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const count of [3, 4]) {
     void test(`revival ${count === 3 ? 'escapes' : 'is blocked by'} ${count} nested sacks`, async () => {
-        freshObjectRoom();
+        await freshObjectRoom();
         requirePlayingGame(game);
         const corpse = await untimedCorpse(MONSTER_NAME.indexOf('troll'));
         let outer = corpse;

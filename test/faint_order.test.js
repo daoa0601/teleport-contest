@@ -14,7 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
 void test('hunger-induced burden pages the faint before monsters move after wizard teleport', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         flags: { debug: true, tips: false, pickup: false, verbose: false },
         hero: { uhunger: 100, uhs: HUNGRY, umovement: 12 },
     });

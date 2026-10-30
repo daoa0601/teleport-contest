@@ -56,7 +56,7 @@ void test('a rust trap announces water hitting a monster seen through infravisio
     requirePlayingGame(game);
     const monster = await createMonsterAt('minotaur', 15, 10, NO_MINVENT);
     for (let x = 8; x <= 18; x++) for (let y = 8; y <= 12; y++) level.requireAt(x, y).lit = false;
-    vision_recalc(0);
+    await vision_recalc(0);
     assert.equal(canSeeMonster(monster), true);
     const trap = addTrap(level, RUST_TRAP, 15, 10);
     const messages: string[] = [];
@@ -133,7 +133,7 @@ for (const deaf of [false, true]) {
             launch: { x: 18, y: 10 }, launch2: { x: 24, y: 10 },
         });
         const boulder = await floorObject(BOULDER, 18, 10);
-        vision_recalc(0);
+        await vision_recalc(0);
         const hp = monster.mhp;
         const messages: string[] = [];
         const options = { random: (limit: number) => limit - 1, publish: async (message: string) => { messages.push(message); } };
@@ -156,7 +156,7 @@ for (const [offset, description] of [[4, 'nearby'], [5, 'in the distance']] as c
         for (let x = 4; x <= 30; x++) for (let y = 8; y <= 12; y++) level.requireAt(x, y).lit = false;
         const start = { x: game.u.ux + offset, y: 10 };
         await floorObject(BOULDER, start.x, start.y);
-        vision_recalc(0);
+        await vision_recalc(0);
         const messages: string[] = [];
 
         await launchRollingBoulder(start, { x: 25, y: 10 }, {
@@ -186,7 +186,7 @@ void test('disabled acoustics suppress both an unseen launch and its splash', as
     for (let x = 12; x <= 30; x++) for (let y = 8; y <= 12; y++) level.requireAt(x, y).lit = false;
     level.requireAt(19, 10).typ = LAVAPOOL;
     const boulder = await floorObject(BOULDER, 18, 10);
-    vision_recalc(0);
+    await vision_recalc(0);
     const messages: string[] = [];
 
     await launchRollingBoulder({ x: 18, y: 10 }, { x: 24, y: 10 }, {

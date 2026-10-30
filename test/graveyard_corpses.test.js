@@ -11,7 +11,7 @@ import { freshObjectRoom } from './support/object-room.js';
 // call tests it again, so undead killed in a graveyard pass two 1-in-3 rolls
 // before the ordinary 1-in-tmp corpse roll.
 void test('undead slain in a graveyard leave a corpse about one time in twenty-seven', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     const level = requireGameLevel();
     level.flags.graveyard = true;

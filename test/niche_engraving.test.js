@@ -11,7 +11,7 @@ import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('a niche warning with an eroded question mark still ends its reading with a period', async () => {
-    freshObjectRoom();
+    await freshObjectRoom();
     requirePlayingGame(game);
     await init_dungeons();
     game.u.uz = { dnum: 0, dlevel: 18 };

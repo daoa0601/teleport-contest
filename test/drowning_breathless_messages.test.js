@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const verbose of [false, true]) {
     void test(`a breathless hero reaches the pool bottom with verbose mode ${verbose ? 'on' : 'off'}`, async () => {
-        const level = freshObjectRoom({ hero: { breathless: true }, flags: { verbose } });
+        const level = await freshObjectRoom({ hero: { breathless: true }, flags: { verbose } });
         requirePlayingGame(game);
         level.requireAt(11, 10).typ = POOL;
         const messages = [];

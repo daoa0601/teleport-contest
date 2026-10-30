@@ -87,7 +87,7 @@ void test('a pet killed by a falling rock where it stood shows the rock on its p
     requirePlayingGame(game);
     initializePet(monster, { state: game });
     await floorObject(SADDLE, 11, 10);
-    newsym(11, 10);
+    await newsym(11, 10);
     pushKeys(' '.repeat(10));
     // dog_move() returns MMOVE_MOVED without a step; postmov() still runs
     // mintrap() and redraws the square after the trap kills the pet.

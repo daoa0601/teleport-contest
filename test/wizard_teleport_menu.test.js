@@ -12,7 +12,7 @@ import { ensureHeroSkills } from '../js/skills.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const command of ['m\x14', 'm#teleport\n']) {
     void test(`${command.includes('#') ? 'm #teleport' : 'm Ctrl-T'} cancels its mode menu without taking time or nutrition`, async () => {
-        freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+        await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
         requirePlayingGame(game);
         const hunger = game.u.uhunger;
         const energy = game.u.uen;
@@ -37,7 +37,7 @@ for (const command of ['m\x14', 'm#teleport\n']) {
 }
 for (const choice of ['w', '\r']) {
     void test(`the teleport mode menu uses debug mode when ${choice === 'w' ? 'its preselection is toggled off' : 'Enter accepts its preselection'}`, async () => {
-        freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+        await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
         requirePlayingGame(game);
         const hunger = game.u.uhunger;
         const energy = game.u.uen;
@@ -67,7 +67,7 @@ for (const choice of ['w', '\r']) {
     });
 }
 void test('the try-teleport mode suppresses intrinsic teleport and the known spell for this command', async () => {
-    freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     grantIntrinsicProperty('teleportation', 'outside');
     forceLearnSpell(SPE_TELEPORT_AWAY);
@@ -90,7 +90,7 @@ void test('the try-teleport mode suppresses intrinsic teleport and the known spe
     assert.equal(game.spells[0], spell, 'The original spell entry is restored');
 });
 void test('normal teleport mode grants a temporary intrinsic and charges energy and nutrition', async () => {
-    freshObjectRoom({ hero: { ulevel: 12, uen: 50, uenmax: 50 }, flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ hero: { ulevel: 12, uen: 50, uenmax: 50 }, flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     forceLearnSpell(SPE_TELEPORT_AWAY);
     const spell = game.spells[0];
@@ -122,7 +122,7 @@ void test('normal teleport mode grants a temporary intrinsic and charges energy 
     assert.equal(game.spells[0], spell);
 });
 void test('normal teleport mode obeys the hero experience-level requirement without taking time', async () => {
-    freshObjectRoom({ hero: { ulevel: 1, uen: 50 }, flags: { debug: true, tips: false, verbose: false } });
+    await freshObjectRoom({ hero: { ulevel: 1, uen: 50 }, flags: { debug: true, tips: false, verbose: false } });
     requirePlayingGame(game);
     const input = resetInputState();
     input.feed('m\x14');
@@ -140,7 +140,7 @@ void test('normal teleport mode obeys the hero experience-level requirement with
     assert.equal(propertyIsActive('teleportation'), false);
 });
 void test('the try-teleport mode suppresses teleportation in a teleporting polymorphed form', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         hero: { umonnum: nameToMonster('tengu'), mtimedone: 100, mh: 20, mhmax: 20 },
         flags: { debug: true, tips: false, verbose: false },
     });
@@ -161,7 +161,7 @@ void test('the try-teleport mode suppresses teleportation in a teleporting polym
     assert.equal(propertyIsActive('teleportation'), true);
 });
 void test('spell teleport mode casts on the hero and removes its temporarily learned spell', async () => {
-    freshObjectRoom({
+    await freshObjectRoom({
         role: 'wizard', hero: { ulevel: 30, uen: 50, uenmax: 50, acurr: { a: [18, 25, 18, 18, 18, 18] } },
         flags: { debug: true, tips: false, verbose: false },
     });

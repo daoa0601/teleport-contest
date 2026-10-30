@@ -98,7 +98,7 @@ async function restoreBubbleContents(bubble, dx, dy) {
             const occupant = monsterAtPosition(level, x, y);
             const oldx = game.u.ux, oldy = game.u.uy;
             await placeHeroOnLevel(x, y);
-            newsym(oldx, oldy);
+            await newsym(oldx, oldy);
             if (occupant)
                 await moveMonsterNextToHero(occupant, game, { flags: RLOC_NOMSG });
         }
@@ -109,7 +109,7 @@ async function restoreBubbleContents(bubble, dx, dy) {
     }
     bubble.contents = [];
 }
-function collectWaterBubbleContents(bubble) {
+async function collectWaterBubbleContents(bubble) {
     const level = requireGameLevel();
     bubble.contents = [];
     for (const { x, y } of bubbleCells(bubble)) {
@@ -128,11 +128,11 @@ function collectWaterBubbleContents(bubble) {
         if (monster) {
             bubble.contents.unshift({ kind: 'monster', x, y, monster });
             if (monster.wormno)
-                clearMonsterWormFromMap(monster);
+                await clearMonsterWormFromMap(monster);
             monster.mx = 0;
             monster.my = 0;
             monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
-            newsym(x, y);
+            await newsym(x, y);
         }
         if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
             bubble.contents.unshift({ kind: 'hero', x, y });
@@ -295,7 +295,7 @@ export async function moveElementalBubbles() {
     if (!Array.isArray(bubbles) || !bubbles.length)
         return;
     const level = requireGameLevel();
-    vision_recalc(2);
+    await vision_recalc(2);
     game._heroBubble = null;
     const traversalUp = !!game._bubbleTraversalUp;
     let ballChainPin = 0;
@@ -305,7 +305,7 @@ export async function moveElementalBubbles() {
         const collectionOrder = traversalUp
             ? bubbles : [...bubbles].reverse();
         for (const bubble of collectionOrder)
-            collectWaterBubbleContents(bubble);
+            await collectWaterBubbleContents(bubble);
     }
     else if (Is_airlevel(game.u?.uz)) {
         for (let x = 1; x < COLNO; x++) {
