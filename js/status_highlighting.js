@@ -127,7 +127,12 @@ export class StatusHighlights {
                 change = compare(previous.raw, current.raw);
         }
         const expired = !!previous?.expires && !state.multi && previous.expires < (this.moves ?? state.moves);
-        if (!reset && !change && !percentChanged && !expired && (!previous.rule || rules.includes(previous.rule)))
+        // botl.c:1584 re-sends a field only for gu.update_all, a value or
+        // percentage change, or a temporary-hilite expiry. A rule list that
+        // changed on its own never re-sends anything: the tty keeps the
+        // buffered color of a removed rule until one of those rounds runs
+        // (reset_status_hilites() supplies update_all when highlighting is on).
+        if (!reset && !change && !percentChanged && !expired)
             return;
         const rule = chooseHilite(rules, { ...current, percent }, change, field === BL_HP && rules.some(entry => entry.behavior === BL_TH_CRITICALHP)
             && criticallyLowHp(false, state), field === BL_TITLE && Upolyd(state.u));

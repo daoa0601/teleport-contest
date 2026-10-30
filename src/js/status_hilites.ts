@@ -290,8 +290,10 @@ export function clearStatusHilites(iflags: InterfaceFlags = game.iflags): void {
     iflags.statusThresholds = Array.from({ length: MAXBLSTATS }, () => []);
 }
 
-// botl.c reset_status_hilites(): repaint even when highlighting is off,
-// but only re-evaluate unchanged fields when it is already on.
+// botl.c reset_status_hilites(): the tty repaint (disp.botlx = TRUE, a full
+// BL_RESET render of both rows) is carried by context.botl here because every
+// status refresh repaints the rows in full; the update_all round that
+// re-evaluates unchanged fields runs only while highlighting is on.
 export function resetStatusHilites(): void {
     if (game.iflags.hiliteDelta) game.nhDisplay?.statusHighlights.reset();
     game.context.botl = true;

@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { M_AP_OBJECT, M_AP_TYPE, NO_MINVENT } from '../js/const.js';
 import { deleteObject } from '../js/object_delete.js';
+import { mergable } from '../js/object_merge.js';
 import { addFruit, changePreferredFruit, fruitFromIndex, fruitFromName, fruitName, initializeFruitRegistry, } from '../js/fruit.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -87,14 +88,16 @@ void test('runtime fruit conflicts and juice names follow native singular and co
 void test('fruit wishes distinguish historical names from the generic fruit type', async () => {
     freshObjectRoom();
     await changeFruitThroughOptions('Papaya');
-    await mksobj(SLIME_MOLD, true, false);
+    const papaya = await mksobj(SLIME_MOLD, true, false);
     await changeFruitThroughOptions('Guava');
     const wishedOld = await readObjectName('a Papaya', { wizardWish: true });
     const wishedCurrent = await readObjectName('fruit', { wizardWish: true });
     assert.ok(wishedOld && !wishedOld.noWish);
     assert.equal(objectName(wishedOld.object), 'Papaya');
+    assert.ok(mergable(papaya, wishedOld.object), 'wishing an old fruit name stacks with that fruit identity');
     assert.ok(wishedCurrent && !wishedCurrent.noWish);
     assert.equal(objectName(wishedCurrent.object), 'Guava');
+    assert.ok(!mergable(papaya, wishedCurrent.object), 'the current fruit is a separate stack from the historical one');
     assert.equal(await readObjectName('papaya', { wizardWish: true }), null, 'named fruit is case sensitive');
     assert.equal(await readObjectName('slime mold', { wizardWish: true }), null, 'the old object type name is unavailable when no registered fruit has that name');
 });
