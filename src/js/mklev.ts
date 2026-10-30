@@ -132,7 +132,7 @@ import {
     DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
     TREE, AIR, CLOUD,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
-    AM_SHRINE, AM_SANCTUM, Align2amask,
+    AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
     MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK,
@@ -6123,7 +6123,7 @@ async function createLuaFeature(
     }
 }
 
-function noncoalignedSpecialAlignment() {
+function noncoalignedSpecialAlignmentDraw() {
     const original = game.u?.ualignbase?.[1]
         ?? game.u?.ualign?.type ?? A_NEUTRAL;
     const choice = rn2(2);
@@ -6131,6 +6131,22 @@ function noncoalignedSpecialAlignment() {
         return choice ? A_CHAOTIC : A_LAWFUL;
     return choice ? -original : A_NEUTRAL;
 }
+
+// C sp_lev.c sp_amask_to_amask(): the Align2amask() argument is a ternary
+// macro that re-evaluates noncoalignment() for every comparison. Its first
+// comparison tests against A_NONE (-128), which noncoalignment() never
+// returns, so resolution always continues: a lawful second draw stops after
+// two rn2(2) draws, anything else forces a third and can store the shifted
+// (alignment + 2) mask.
+function noncoalignedSpecialAmask(): number {
+    const first = noncoalignedSpecialAlignmentDraw();
+    if (first === A_NONE) return AM_NONE;
+    const second = noncoalignedSpecialAlignmentDraw();
+    if (second === A_LAWFUL) return AM_LAWFUL;
+    return (noncoalignedSpecialAlignmentDraw() + 2) & 0xff;
+}
+
+
 
 function luaSpecialAlignment(value = 'random') {
     if (value === 'noalign') return A_NONE;
@@ -6141,7 +6157,7 @@ function luaSpecialAlignment(value = 'random') {
         return game.u?.ualignbase?.[1]
             ?? game.u?.ualign?.type ?? A_NEUTRAL;
     }
-    if (value === 'noncoaligned') return noncoalignedSpecialAlignment();
+    if (value === 'noncoaligned') return Amask2align(noncoalignedSpecialAmask());
     if (value === 'random') return inducedAlignment(80);
     throw new Error(`unsupported Lua alignment ${value}`);
 }
@@ -6161,8 +6177,12 @@ async function createLuaAltar(context: SpecialLevelContext, options: DesOptions)
     const altar = level.at(point.x, point.y);
     if (!altar) return;
     if (!setLevelTerrainType(point.x, point.y, ALTAR)) return;
-    const alignment = luaSpecialAlignment(options.align);
-    altar.flags = Align2amask(alignment);
+    // sp_amask_to_amask() resolves the whole mask (including the
+    // re-evaluated noncoalignment ternary) before the altar stores it.
+    const amask = options.align === 'noncoaligned'
+        ? noncoalignedSpecialAmask() : Align2amask(luaSpecialAlignment(options.align));
+    const alignment = Amask2align(amask);
+    altar.flags = amask;
     const altarType = options.type ?? 'altar';
     if (!['altar', 'shrine', 'sanctum'].includes(altarType))
         throw new Error(`unsupported Lua altar type ${altarType}`);
