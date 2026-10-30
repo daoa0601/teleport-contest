@@ -136,9 +136,8 @@ import { beginCommandResult, clearCannedCommands, commandResultCancelled, comman
     commandResultSpentTime, endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
-import {
-    pickupAtHero, pickupObjectClass, pickupClassOrder,
-} from './pickup.js';
+import { pickupAtHero } from './pickup.js';
+import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
@@ -4910,7 +4909,20 @@ async function wizIdentify(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const unidentified = game.inventory.filter(objectNeedsFullIdentification);
+    if (game.flags.fixinv === false) reassignInventoryLetters();
+    // display_pickinv() sorts the whole inventory before omitting fully
+    // identified objects. Wizard naming also applies during the sort, so
+    // alphabetization uses the names the menu reveals without discovering them.
+    const override = game.iflags.override_ID;
+    game.iflags.override_ID = true;
+    let ordered: GameObject[];
+    try {
+        ordered = sortObjects(game.inventory, { mode: inventorySortMode() });
+    } finally {
+        if (override === undefined) delete game.iflags.override_ID;
+        else game.iflags.override_ID = override;
+    }
+    const unidentified = ordered.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
             'Debug Identify',
@@ -4921,23 +4933,6 @@ async function wizIdentify(): Promise<void> {
         return;
     }
 
-    const sections = [];
-    for (const heading of pickupClassOrder()) {
-        const objects = unidentified
-            .filter(item => pickupObjectClass(item) === heading)
-            .sort((a, b) => inventoryCommandLetter(a).localeCompare(inventoryCommandLetter(b)));
-        if (!objects.length) continue;
-        const items = [];
-        for (const item of objects) {
-            observeObjectForNaming(item);
-            items.push({
-                key: inventoryCommandLetter(item),
-                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
-                value: item,
-            });
-        }
-        sections.push({ heading, items });
-    }
     const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
     const window = tty_create_nhwindow<GameObject | 'all'>(NHW_MENU);
     let selected: (GameObject | 'all')[];
@@ -4955,13 +4950,17 @@ async function wizIdentify(): Promise<void> {
                 ? 'it' : 'any or all of them'} to permanently identify${
                 unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
         });
-        for (const section of sections) {
-            addMenuHeading(window, section.heading);
-            for (const item of section.items)
-                tty_add_menu(window, {
-                    identifier: item.value, selector: item.key,
-                    group: OBJECT_CLASS_SYMBOLS[item.value.oclass] ?? '', text: item.text,
-                });
+        let previousClass: number | null = null;
+        for (const item of unidentified) {
+            if (game.flags.sortpack !== false && item.oclass !== previousClass)
+                addMenuHeading(window, objectClassHeading(item.oclass));
+            previousClass = item.oclass;
+            observeObjectForNaming(item);
+            tty_add_menu(window, {
+                identifier: item, selector: inventoryCommandLetter(item),
+                group: OBJECT_CLASS_SYMBOLS[item.oclass] ?? '',
+                text: await wizardIdentifyDescription(item, inventoryPrimaryHandDetail(item)),
+            });
         }
         tty_end_menu(window);
         const result = await tty_select_menu(window, PICK_ANY);
