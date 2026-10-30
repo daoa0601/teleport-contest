@@ -21,6 +21,28 @@ void test('#wizcustom shows the active symbol set without taking a turn', async 
     assert.match(text, /G_vwall_mines/);
     assert.equal(game.context.move, 0);
 });
+void test('#wizcustom updates the base wall color when color is toggled', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    applyNethackrc('OPTIONS=symset:DECgraphics');
+    const rows = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        rows.push(...(game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')) ?? []));
+        input.feed(' ');
+    };
+    for (const { option, color } of [
+        { option: '!color', color: '08' },
+        { option: 'color', color: '07' },
+        { option: '!color', color: '08' },
+    ]) {
+        applyNethackrc(`OPTIONS=${option}`);
+        rows.length = 0;
+        await runExtendedCommand('wizcustom');
+        const wall = rows.find(row => row.includes('G_vwall_mines')) ?? '';
+        assert.ok(wall.includes(`'\\248' ${color} 00001000003`), `${option} must update the base color and retain the custom palette: ${wall}`);
+        assert.equal(game.context.move, 0);
+    }
+});
 for (const { symset, vertical, horizontal } of [
     { symset: 'DECgraphics', vertical: 248, horizontal: 241 },
     { symset: 'curses', vertical: 248, horizontal: 241 },
