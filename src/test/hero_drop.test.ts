@@ -109,6 +109,27 @@ void test('an unpaid swallowed drop names the owning shopkeeper', async () => {
     assert.doesNotMatch(game._pending_message, /[0-9a-z]kabale/);
 });
 
+void test('an unpaid stack dropped into an engulfer keeps its owner, count, and plural noun', async () => {
+    await freshObjectRoom();
+    requireFixtureGame(game);
+    const { shopkeeper } = await createStaffedShop();
+    shopkeeper.eshk.shknam = 'Kabale';
+    const arrows = await addInventoryObject(OBJECT_NAMES.indexOf('arrow'), {
+        quan: 4, unpaid: true,
+    });
+    const vortex = await createMonsterAt('ice vortex', 10, 10);
+    game.u.uswallow = 1;
+    game.u.ustuck = vortex;
+    const messages: string[] = [];
+
+    await dropHeroObject(arrows, { publish: message => { messages.push(message); } });
+
+    assert.ok(messages.includes("You drop Kabale's 4 arrows into the ice vortex."),
+        `Expected the counted shop-owned stack in the drop message: ${messages.join('\n')}`);
+    assert.equal(arrows.where, 'minvent');
+    assert.ok(vortex.minvent.includes(arrows));
+});
+
 // C do.c:753-757: rings over a sink divert to the sink owner.
 void test('a ring over a sink diverts to the sink owner', async () => {
     await freshObjectRoom({ gameplaySeed: 83 });
