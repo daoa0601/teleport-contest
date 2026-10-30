@@ -51,6 +51,7 @@ import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
+import { finishHeroDeath } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import {
     createDesBindings, mapOrigin, objectTypeForName, tablePoint,
@@ -130,7 +131,7 @@ import {
     ICED_POOL, ICED_MOAT,
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
-    TREE, AIR, CLOUD,
+    TREE, AIR, CLOUD, TRICKED,
     A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
@@ -3574,7 +3575,20 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 17;
+const BONES_VERSION = 18;
+
+// C files.c:set_bonesfile_name(): special levels keep their identity when
+// dungeon generation changes their depth; quest bones also belong to a role.
+function bonesLevelId(): string {
+    const location = game.u.uz;
+    if (!location) throw new Error('Bones require an initialized dungeon location');
+    const tag = game.dungeons[location.dnum]?.bonetag;
+    if (!tag) return '';
+    const role = In_quest(location) ? game.urole?.filecode : '0';
+    if (role === undefined) throw new Error('Quest bones require an initialized role');
+    const special = specialLevelAt(location);
+    return `${tag}${role}.${special ? special.bonetag ?? '' : location.dlevel}`;
+}
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -3679,6 +3693,7 @@ export function saveBonesLevel(): boolean {
     try {
         payload = decodeBonesPayload(encodeSavedGraph({
             version: BONES_VERSION,
+            bonesId: bonesLevelId(),
             savedAt: game.moves,
             level: game.level,
             stairs: game.stairs || null,
@@ -3957,6 +3972,19 @@ async function getbones(): Promise<boolean> {
     if (game.flags.debug
         && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
+    if (payload.bonesId.length >= 40) return false;
+    const expectedId = bonesLevelId();
+    if (payload.bonesId !== expectedId) {
+        if (game.flags.debug)
+            await pline(`This is bones level '${payload.bonesId}', not '${expectedId}'!`);
+        await pline('Strange, this map is not as I remember it.');
+        await pline('Somebody is trying some trickery here...');
+        await pline('This game is void.');
+        if (await finishHeroDeath({ killer: '', deathType: TRICKED })) return false;
+        await finishBonesRestore();
+        return false;
+    }
+
     restoreMonsterWormHeads(payload.level);
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
@@ -3974,13 +4002,13 @@ async function getbones(): Promise<boolean> {
     repairBonesConnections(game.level, location);
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
-    sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = await finishBonesRestore(sourceDisplayLevel);
     return game._restoredBones;
 }
 
 async function finishBonesRestore(displayLevel: GameMap | null = null): Promise<boolean> {
+    sanitizeEngravings(requireGameLevel());
     const roleplay = game.u.uroleplay;
     if (!roleplay) throw new Error('Bones restoration requires initialized roleplay counters');
     roleplay.numbones++;
@@ -4002,6 +4030,7 @@ export async function l_nhcore_init(): Promise<void> {
 export async function mklev(): Promise<void> {
     const g = game;
     if (await getbones()) return;
+    if (g.program_state.gameover) return;
     g.in_mklev = true;
     await makelevel();
     await currentLuaLifecycle().runCallbacks(g, 'level_enter');

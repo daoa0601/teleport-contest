@@ -3605,6 +3605,8 @@ export async function newgame() {
     // Real mklev generates the level with correct room positions
     // Structural phase consumes RNG for rooms/corridors/doors/stairs
     await mklev();
+    if (g.program_state.gameover)
+        return;
     // C mklev() begins with init_mapseen(): the starting level joins the
     // overview history (dungeon.c:1582) before the hero takes a turn.
     initOverviewRecord(g.u.uz ?? { dnum: 0, dlevel: 1 }, g);

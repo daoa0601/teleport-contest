@@ -318,6 +318,8 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         initOverviewRecord(destinationDepth, game);
         game._specialLevelPrototype = specialPrototypeAt(destinationDepth.dnum, destinationDepth.dlevel);
         await mklev();
+        if (game.program_state.gameover)
+            return true;
     }
     // Every arrival repaints from glyph numbers against the live symbols
     // (goto_level() → docrt()), so a cached destination re-skins under

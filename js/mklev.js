@@ -40,6 +40,7 @@ import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
+import { finishHeroDeath } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { createDesBindings, mapOrigin, objectTypeForName, tablePoint, } from './lua/des.js';
 import { luaInteger, luaString, luaToInteger, luaNumberValue } from './lua/arguments.js';
@@ -76,7 +77,7 @@ import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
-import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
+import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_DIR, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, TRICKED, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, SPE_DIG, POT_SICKNESS, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, } from './monster_data.js';
 import { isReviver, isRider, zombieForm, } from './corpse_species.js';
@@ -3520,7 +3521,22 @@ export function randomEngraving() {
         text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
     };
 }
-const BONES_VERSION = 17;
+const BONES_VERSION = 18;
+// C files.c:set_bonesfile_name(): special levels keep their identity when
+// dungeon generation changes their depth; quest bones also belong to a role.
+function bonesLevelId() {
+    const location = game.u.uz;
+    if (!location)
+        throw new Error('Bones require an initialized dungeon location');
+    const tag = game.dungeons[location.dnum]?.bonetag;
+    if (!tag)
+        return '';
+    const role = In_quest(location) ? game.urole?.filecode : '0';
+    if (role === undefined)
+        throw new Error('Quest bones require an initialized role');
+    const special = specialLevelAt(location);
+    return `${tag}${role}.${special ? special.bonetag ?? '' : location.dlevel}`;
+}
 function bonesStorageKey(level = game.u.uz) {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
 }
@@ -3624,6 +3640,7 @@ export function saveBonesLevel() {
     try {
         payload = decodeBonesPayload(encodeSavedGraph({
             version: BONES_VERSION,
+            bonesId: bonesLevelId(),
             savedAt: game.moves,
             level: game.level,
             stairs: game.stairs || null,
@@ -3923,6 +3940,20 @@ async function getbones() {
     if (game.flags.debug
         && await bonesPrompt('Get bones? [yn] (n) ') !== 'y')
         return false;
+    if (payload.bonesId.length >= 40)
+        return false;
+    const expectedId = bonesLevelId();
+    if (payload.bonesId !== expectedId) {
+        if (game.flags.debug)
+            await pline(`This is bones level '${payload.bonesId}', not '${expectedId}'!`);
+        await pline('Strange, this map is not as I remember it.');
+        await pline('Somebody is trying some trickery here...');
+        await pline('This game is void.');
+        if (await finishHeroDeath({ killer: '', deathType: TRICKED }))
+            return false;
+        await finishBonesRestore();
+        return false;
+    }
     restoreMonsterWormHeads(payload.level);
     restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
@@ -3940,12 +3971,12 @@ async function getbones() {
     repairBonesConnections(game.level, location);
     resetBonesObjects(game.level, 'restore');
     await fixShopDamage(game);
-    sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = await finishBonesRestore(sourceDisplayLevel);
     return game._restoredBones;
 }
 async function finishBonesRestore(displayLevel = null) {
+    sanitizeEngravings(requireGameLevel());
     const roleplay = game.u.uroleplay;
     if (!roleplay)
         throw new Error('Bones restoration requires initialized roleplay counters');
@@ -3965,6 +3996,8 @@ export async function l_nhcore_init() {
 export async function mklev() {
     const g = game;
     if (await getbones())
+        return;
+    if (g.program_state.gameover)
         return;
     g.in_mklev = true;
     await makelevel();

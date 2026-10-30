@@ -10,10 +10,12 @@ export function decodeBonesPayload(encoded, expectedVersion) {
     if (!isSavedRecord(value) || value.version !== expectedVersion)
         throw new TypeError('Bones use an unsupported save version');
     for (const key of Object.keys(value)) {
-        if (key !== 'version' && key !== 'level' && key !== 'stairs'
+        if (key !== 'version' && key !== 'bonesId' && key !== 'level' && key !== 'stairs'
             && key !== 'heroTrack' && key !== 'fruits' && key !== 'savedAt')
             throw new TypeError(`Bones contain unsupported field ${key.slice(0, 80)}`);
     }
+    if (!string(value.bonesId))
+        throw new TypeError('Bones contain an invalid level identity');
     if (!integer(value.savedAt))
         throw new TypeError('Bones contain an invalid save time');
     if (!validSavedStairways(value.stairs))
@@ -24,6 +26,7 @@ export function decodeBonesPayload(encoded, expectedVersion) {
         throw new TypeError('Bones contain invalid fruit definitions');
     return {
         version: expectedVersion,
+        bonesId: value.bonesId,
         savedAt: value.savedAt,
         level: restoreSavedMap(value.level, createSavedEntityChecks()),
         stairs: value.stairs,

@@ -373,6 +373,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             destinationDepth.dnum, destinationDepth.dlevel,
         );
         await mklev();
+        if (game.program_state.gameover) return true;
     }
 
     // Every arrival repaints from glyph numbers against the live symbols
