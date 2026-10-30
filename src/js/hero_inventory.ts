@@ -2,7 +2,7 @@
 // and attrib.c:set_moreluck().
 
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
-import { artifactById, artifactByName } from './artifacts.js';
+import { artifactById } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { setCarriedArtifactProperties } from './artifact_properties.js';
@@ -11,7 +11,7 @@ import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { HeroPossessions } from './hero_types.js';
-import { panic } from './diagnostics.js';
+import { impossible, panic } from './diagnostics.js';
 import { recordLiteracy } from './literacy.js';
 import { levelPrizeKind } from './level_prize.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -39,6 +39,14 @@ const CARRIED_FLAGS = new Map<number, keyof HeroPossessions>([
     [AMULET_OF_YENDOR, 'amulet'], [BELL_OF_OPENING, 'bell'],
     [CANDELABRUM_OF_INVOCATION, 'menorah'], [SPE_BOOK_OF_THE_DEAD, 'book'],
 ]);
+
+const DUPLICATE_POSSESSION_MESSAGES: Record<keyof HeroPossessions, string> = {
+    amulet: 'already have amulet?',
+    bell: 'already have silver bell?',
+    book: 'already have the book?',
+    menorah: 'already have candelabrum?',
+    questart: 'already have quest artifact?',
+};
 
 // C do.c:canletgo(). A silent check still discovers curses.
 export async function canLetGo(object: GameObject, verb = '', state: GameState = game) {
@@ -118,6 +126,9 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
 // C addinv_core1(): these effects precede merging and inventory insertion.
 export async function prepareInventoryAddition(object: GameObject, state: GameState = game) {
     if (object.oclass === COIN_CLASS) state.context.botl = true;
+    const flag = carriedPossessionFlag(object, state);
+    if (flag && state.u.uhave?.[flag])
+        await impossible(DUPLICATE_POSSESSION_MESSAGES[flag], { state });
     updateCarriedFlags(object, true, state);
     const achievement = object.otyp === AMULET_OF_YENDOR ? ACH_AMUL
         : object.otyp === BELL_OF_OPENING ? ACH_BELL
@@ -187,14 +198,15 @@ export async function finishInventoryRemoval(object: GameObject, state: GameStat
 }
 
 function updateCarriedFlags(object: GameObject, carried: boolean, state: GameState): void {
-    let flag = CARRIED_FLAGS.get(object.otyp);
-    if (object.oartifact
-        && object.oartifact === artifactByName(state.urole?.artifactName, state)?.id)
-        flag = 'questart';
+    const flag = carriedPossessionFlag(object, state);
     if (flag) {
         if (!state.u.uhave) throw new Error('Carried quest objects require initialized hero possessions');
         state.u.uhave[flag] = carried;
     }
+}
+
+function carriedPossessionFlag(object: GameObject, state: GameState): keyof HeroPossessions | undefined {
+    return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
 }
 
 export function updateCarriedLuck(object: GameObject, state: GameState = game): void {

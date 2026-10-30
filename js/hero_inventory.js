@@ -1,13 +1,13 @@
 // C invent.c:freeinv_core()/addinv_core1()/addinv_core2()/learn_unseen_invent()
 // and attrib.c:set_moreluck().
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
-import { artifactById, artifactByName } from './artifacts.js';
+import { artifactById } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
 import { setCarriedArtifactProperties } from './artifact_properties.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { panic } from './diagnostics.js';
+import { impossible, panic } from './diagnostics.js';
 import { recordLiteracy } from './literacy.js';
 import { levelPrizeKind } from './level_prize.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -29,6 +29,13 @@ const CARRIED_FLAGS = new Map([
     [AMULET_OF_YENDOR, 'amulet'], [BELL_OF_OPENING, 'bell'],
     [CANDELABRUM_OF_INVOCATION, 'menorah'], [SPE_BOOK_OF_THE_DEAD, 'book'],
 ]);
+const DUPLICATE_POSSESSION_MESSAGES = {
+    amulet: 'already have amulet?',
+    bell: 'already have silver bell?',
+    book: 'already have the book?',
+    menorah: 'already have candelabrum?',
+    questart: 'already have quest artifact?',
+};
 // C do.c:canletgo(). A silent check still discovers curses.
 export async function canLetGo(object, verb = '', state = game) {
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
@@ -110,6 +117,9 @@ export function recordHeroPrizeAcquisition(object, state = game) {
 export async function prepareInventoryAddition(object, state = game) {
     if (object.oclass === COIN_CLASS)
         state.context.botl = true;
+    const flag = carriedPossessionFlag(object, state);
+    if (flag && state.u.uhave?.[flag])
+        await impossible(DUPLICATE_POSSESSION_MESSAGES[flag], { state });
     updateCarriedFlags(object, true, state);
     const achievement = object.otyp === AMULET_OF_YENDOR ? ACH_AMUL
         : object.otyp === BELL_OF_OPENING ? ACH_BELL
@@ -180,15 +190,15 @@ export async function finishInventoryRemoval(object, state = game) {
     }
 }
 function updateCarriedFlags(object, carried, state) {
-    let flag = CARRIED_FLAGS.get(object.otyp);
-    if (object.oartifact
-        && object.oartifact === artifactByName(state.urole?.artifactName, state)?.id)
-        flag = 'questart';
+    const flag = carriedPossessionFlag(object, state);
     if (flag) {
         if (!state.u.uhave)
             throw new Error('Carried quest objects require initialized hero possessions');
         state.u.uhave[flag] = carried;
     }
+}
+function carriedPossessionFlag(object, state) {
+    return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
 }
 export function updateCarriedLuck(object, state = game) {
     if (confersLuck(object, state)) {

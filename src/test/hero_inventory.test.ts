@@ -11,7 +11,7 @@ import { freeInventoryObject } from '../js/hero_inventory.js';
 import { consumeInventoryItem } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { doneObjectCleanup } from '../js/object_cleanup.js';
-import { GOLD_PIECE, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
+import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, GOLD_PIECE, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
 import { propertyIsActive } from '../js/properties.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
@@ -115,3 +115,26 @@ void test('freeing carried coins removes the purse and updates the displayed gol
     await flush_screen(1);
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\$:0\b/);
 });
+
+for (const { type, message } of [
+    { type: AMULET_OF_YENDOR, message: 'already have amulet?' },
+    { type: BELL_OF_OPENING, message: 'already have silver bell?' },
+    { type: CANDELABRUM_OF_INVOCATION, message: 'already have candelabrum?' },
+    { type: SPE_BOOK_OF_THE_DEAD, message: 'already have the book?' },
+]) {
+    void test(`acquiring a second invocation item reports: ${message}`, async () => {
+        freshObjectRoom();
+        await addInventoryObject(type);
+        const pages: string[] = [];
+        installPagerInput(resetInputState(), {
+            expected: /already have|Program in disorder|Please report/,
+            limit: 4, pages,
+        });
+
+        const duplicate = await addInventoryObject(type);
+
+        assert.ok(pages.some(page => page.includes(message)), `Missing diagnostic: ${message}`);
+        assert.equal(game.inventory.filter(object => object.otyp === type).length, 2);
+        assert.equal(duplicate.where, 'inventory');
+    });
+}
