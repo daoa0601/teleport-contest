@@ -640,13 +640,19 @@ audit-init-misc unit found the port faithful in all five: every function
 compared with no play-reachable divergence; `.cache/audit-init-misc/final.md`
 records the verification, including the unreachable `init_attr()` subtract
 phase, the NO_CURS_ON_U flush that its only caller overrides, and the rumors
-padding of 60 bytes including the newline), and `o_init.c`, `extralev.c`,
+padding of 60 bytes including the newline), `o_init.c`, `extralev.c`,
 `rect.c`, `stairs.c` and `track.c` (the audit-small-gen unit compared every
 function against the port with no play-reachable divergence;
 `.cache/audit-small-gen/final.md` records the verification, including the dead
 `impossible()` diagnostics in `roguecorr()`, `makeroguerooms()`, `add_rect()`,
 the per-level hero-track ring that `savelev()`/`getlev()` own, and the
-unreachable `oinit()` in `lspo_reset_level()`).
+unreachable `oinit()` in `lspo_reset_level()`), and `insight.c` (the
+audit-insight unit compared every function against the port with no
+play-reachable divergence; `.cache/audit-insight/final.md` records the
+verification, including the dead "swimming"/"in water" branch that
+`Underwater (u.uinwater)` makes unreachable, the frozen-clock " none" elapsed
+time, and the three eval sessions whose vanquished `[ynq]` prompt now replays
+1:1).
 
 The shared `windows.ts` layout still hardcodes terminal dimensions; native
 live resize (`resize_tty()`) is unported.
